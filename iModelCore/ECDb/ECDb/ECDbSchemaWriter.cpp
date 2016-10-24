@@ -199,29 +199,17 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-#ifdef ECECSCHEMAUPDATE_INVARIANT
-    if (ecClass.GetIsDisplayLabelDefined())
+    if (!ecClass.GetInvariantDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+
     if (!ecClass.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-#else
-    if (!ecClass.GetDisplayLabel().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-    if (!ecClass.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-#endif
 
     if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecClass.GetClassType())))
         return ERROR;
@@ -313,30 +301,17 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-#ifdef ECECSCHEMAUPDATE_INVARIANT
-    if (ecEnum.GetIsDisplayLabelDefined())
+    if (!ecEnum.GetInvariantDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+
     if (!ecEnum.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-#else
-    if (!ecEnum.GetDisplayLabel().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-    if (!ecEnum.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-#endif
-
 
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
@@ -533,29 +508,17 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_OK != stmt->BindText(3, ecProperty.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
-#ifdef ECECSCHEMAUPDATE_INVARIANT
-    if (ecProperty.GetIsDisplayLabelDefined())
+    if (!ecProperty.GetInvariantDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+
     if (!ecProperty.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-#else
-    if (!ecProperty.GetDisplayLabel().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-    if (!ecProperty.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-#endif
 
     if (BE_SQLITE_OK != stmt->BindBoolean(6, ecProperty.GetIsReadOnly()))
         return ERROR;
@@ -707,7 +670,7 @@ BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContain
 BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,RoleLabel,IsPolymorphic) VALUES (?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES (?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -722,18 +685,27 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
     if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetMultiplicity().GetUpperLimit()))
         return ERROR;
 
+    if (BE_SQLITE_OK != stmt->BindBoolean(5, relationshipConstraint.GetIsPolymorphic()))
+        return ERROR;
+
     if (relationshipConstraint.IsRoleLabelDefinedLocally())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(6, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
-        return ERROR;
+    if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
+        {
+        ECClassCR abstractConstraintClass = *relationshipConstraint.GetAbstractConstraint();
+        if (SUCCESS != ImportECClass(abstractConstraintClass))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindId(7, abstractConstraintClass.GetId()))
+            return ERROR;
+        }
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
-
 
     constraintId = ECRelationshipConstraintId((uint64_t) m_ecdb.GetLastInsertRowId());
     return SUCCESS;
@@ -754,31 +726,17 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-
-#ifdef ECECSCHEMAUPDATE_INVARIANT
-    if (ecSchema.GetIsDisplayLabelDefined())
+    if (!ecSchema.GetInvariantDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+
     if (!ecSchema.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-#else
-    if (!ecSchema.GetDisplayLabel().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-    if (!ecSchema.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-#endif
-
 
     if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
         return ERROR;

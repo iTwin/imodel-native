@@ -723,13 +723,12 @@ BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt,
-        "SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
-        "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
-        "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
-        "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId)"
-        "FROM ec_Schema S WHERE S.Id=?"))
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
+                                                        "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId)"
+                                                        "FROM ec_Schema S WHERE S.Id=?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
@@ -1173,7 +1172,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR c
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel, AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -1194,6 +1193,26 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 
     if (!stmt->IsColumnNull(4))
         constraint.SetRoleLabel(stmt->GetValueText(4));
+
+    ECClassId abstractConstraintClassId;
+    if (!stmt->IsColumnNull(5))
+        abstractConstraintClassId = stmt->GetValueId<ECClassId>(5);
+
+    //release statement as we have read all information and so that child calls can reuse the same statement without repreparation.
+    stmt = nullptr;
+
+    if (abstractConstraintClassId.IsValid())
+        {
+        ECClassCP abstractConstraintClass = GetECClass(ctx, abstractConstraintClassId);
+        if (abstractConstraintClass == nullptr || !abstractConstraintClass->IsEntityClass())
+            {
+            BeAssert(false && "Could not load abstract constraint class or it is not an entity class");
+            return ERROR;
+            }
+
+        if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP()))
+            return ERROR;
+        }
 
     if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, ctx, constraintId))
         return ERROR;

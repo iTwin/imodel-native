@@ -178,6 +178,7 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
     ECDbMapCustomAttributeHelper::TryGetShareColumns(m_shareColumnsCA, ecClass);
 
     m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ecClass);
+    ECDbMapCustomAttributeHelper::TryGetDbIndexList(m_dbIndexListCA, ecClass);
     return SUCCESS;
     }
 

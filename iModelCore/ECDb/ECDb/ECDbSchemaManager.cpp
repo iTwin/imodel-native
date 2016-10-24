@@ -219,16 +219,26 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
     bvector<ECSchemaCP> schemasToImport;
     for (ECSchemaCP schema : schemas)
         {
-        BeAssert(schema != nullptr);
-        if (schema == nullptr) 
-            continue;
+        if (schema == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        //this is the in-memory version of ECSchemas. ECDb only supports the latest in-memory version.
+        //Deserializing into older versions is not needed in ECDb and therefore not supported.
+        if (schema->GetECVersion() == ECVersion::V2_0 || schema->GetECVersion() == ECVersion::V3_0)
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be 3.1 or later, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(schema->GetECVersion()));
+            return ERROR;
+            }
 
         if (schema->HasId())
             {
             ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
             if (!id.IsValid() || id != schema->GetId())
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -241,7 +251,15 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
     for (ECSchemaCP schema : schemasToImport)
         {
         if (schema->IsSupplementalSchema())
+            {
+            if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas culture-invariantly.", schema->GetFullSchemaName().c_str());
+                continue;
+                }
+
             suppSchemas.push_back(const_cast<ECSchemaP> (schema));
+            }
         else
             primarySchemas.push_back(schema);
         }
@@ -258,7 +276,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
 

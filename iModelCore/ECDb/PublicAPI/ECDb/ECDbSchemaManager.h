@@ -102,7 +102,8 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
         //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
         //! they should be obtained as needed through the ECDbSchemaManager API.
-        //!
+        //! @remarks ECDb always persists ECSchemas in their invariant culture. That means localization ECSchemas are ignored
+        //! during the import.
         //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
         //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
         //!                     (the method detects that they are already imported, and simply skips them)

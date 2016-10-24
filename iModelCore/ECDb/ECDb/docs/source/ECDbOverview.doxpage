@@ -302,7 +302,7 @@
 
     #### DbIndex ECStructClass
     - @b Modify: 
-        - @ref BentleyApi::ECN::ECDbClassMap::DbIndex::GetName "Name"
+        - @ref BentleyApi::ECN::DbIndexList::DbIndex::GetName "Name"
         
     @see @ref ECDbOverview
     */

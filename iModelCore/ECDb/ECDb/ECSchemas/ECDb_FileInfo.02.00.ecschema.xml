@@ -58,7 +58,7 @@
     
     <ECEntityClass typeName="FileInfoOwnership">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                   <Indexes>
                     <DbIndex>
                         <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>
@@ -83,7 +83,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="OwnerId" typeName="long">
             <ECCustomAttributes>

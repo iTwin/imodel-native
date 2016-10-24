@@ -215,8 +215,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ClassWithPrimitiveProperties" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy/>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>IDX_ON_intProp_doubleProp_stringProp</Name>
@@ -244,7 +243,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="intProp" typeName="int" readOnly="false">
             <ECCustomAttributes>

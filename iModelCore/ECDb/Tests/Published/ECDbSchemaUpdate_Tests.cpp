@@ -2572,7 +2572,7 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     {
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
-
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
 
@@ -4694,7 +4694,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='B'>"
         "       <ECCustomAttributes>"
-        "           <ClassMap xmlns='ECDbMap.02.00'>"
+        "           <DbIndexList xmlns='ECDbMap.02.00'>"
         "               <Indexes>"
         "                   <DbIndex>"
         "                       <Name>IDX_Partial_Index</Name>"
@@ -4704,7 +4704,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "                       </Properties>"
         "                   </DbIndex>"
         "               </Indexes>"
-        "           </ClassMap>"
+        "           </DbIndexList>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='PB' typeName='int' />"
         "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
@@ -4750,7 +4750,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='B'>"
         "       <ECCustomAttributes>"
-        "           <ClassMap xmlns='ECDbMap.02.00'>"
+        "           <DbIndexList xmlns='ECDbMap.02.00'>"
         "               <Indexes>"
         "                   <DbIndex>"
         "                       <Name>IDX_Partial</Name>"
@@ -4760,7 +4760,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "                       </Properties>"
         "                   </DbIndex>"
         "               </Indexes>"
-        "           </ClassMap>"
+        "           </DbIndexList>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='PB' typeName='int' />"
         "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
@@ -6285,10 +6285,6 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
         "   </ECCustomAttributeClass>"
-        "   <ECCustomAttributes>"
-        "       <SystemSchema xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
-        "       </SystemSchema>"
-        "   </ECCustomAttributes>"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "        <ECCustomAttributes>"
         "            <TestCA xmlns='TestSchema.01.00'>"

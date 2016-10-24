@@ -170,7 +170,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
+TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     {
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));

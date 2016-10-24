@@ -341,7 +341,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 
         }
 
-    if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, classMap.IsValid() ? &classMap : nullptr))
+    if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, caCache.GetDbIndexListCA()))
         return ERROR;
 
     return InitializeClassHasCurrentTimeStampProperty();
@@ -1125,15 +1125,15 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, ECDbClassMap const* customClassMap)
+BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, DbIndexList const& dbIndexListCA)
     {
-    if (customClassMap != nullptr)
+    if (dbIndexListCA.IsValid())
         {
-        bvector<ECDbClassMap::DbIndex> indices;
-        if (ECObjectsStatus::Success != customClassMap->TryGetIndexes(indices))
+        bvector<DbIndexList::DbIndex> indices;
+        if (ECObjectsStatus::Success != dbIndexListCA.GetIndexes(indices))
             return ERROR;
 
-        for (ECDbClassMap::DbIndex const& index : indices)
+        for (DbIndexList::DbIndex const& index : indices)
             {
             bool addPropsAreNotNullWhereExp = false;
 
@@ -1145,7 +1145,7 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
                     addPropsAreNotNullWhereExp = true;
                 else
                     {
-                    ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause());
+                    ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause());
                     return ERROR;
                     }
                 }
@@ -1230,9 +1230,9 @@ BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingIn
     //not in internal cache, so read index info from ECClass (and cache it)
     std::vector<IndexMappingInfoPtr>& newIndexInfos = m_indexInfoCache[&classMap];
     ECClassCR ecClass = classMap.GetClass();
-    ECDbClassMap customClassMap;
-    const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass);
-    if (SUCCESS != IndexMappingInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, hasCustomClassMap ? &customClassMap : nullptr))
+    DbIndexList dbIndexListCA;
+    ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, ecClass);
+    if (SUCCESS != IndexMappingInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, dbIndexListCA))
         return ERROR;
 
     indexInfos = &newIndexInfos;

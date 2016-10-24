@@ -43,5 +43,3 @@ ECDbMappingTestFixture.UserDefinedIndexTest
 
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
-
-
