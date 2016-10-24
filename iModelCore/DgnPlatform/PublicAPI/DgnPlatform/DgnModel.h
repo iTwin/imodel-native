@@ -137,7 +137,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         DgnDbR              m_dgndb;
         DgnClassId          m_classId;
         DgnElementId        m_modeledElementId;
-        BeSQLite::BeGuid    m_federationGuid;
         DgnCode             m_code;
         bool                m_inGuiList;
         bool                m_isTemplate = false;
@@ -154,7 +153,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
-        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnModel created with this CreateParams
         void SetCode(DgnCode code) {m_code = code;} //!< Set the DgnCode for models created with this CreateParams
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;} //!< Set the visibility of models created with this CreateParams in model lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
@@ -196,7 +194,6 @@ protected:
     DgnModelId          m_modelId;
     DgnClassId          m_classId;
     DgnElementId        m_modeledElementId;
-    BeSQLite::BeGuid    m_federationGuid;
     DgnCode             m_code;
     bool                m_inGuiList;
     bool                m_isTemplate;
@@ -477,12 +474,6 @@ public:
 
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-
-    //! Get the FederationGuid of this DgnModel.
-    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
-    //! Set the FederationGuid for this DgnModel.
-    //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
-    void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
 
     //! Get the visibility in model lists shown to the user
     bool GetInGuiList() const {return m_inGuiList;}

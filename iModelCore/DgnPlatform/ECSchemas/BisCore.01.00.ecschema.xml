@@ -209,14 +209,6 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_bis_Model_FederationGuid</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>FederationGuid</string>
-                        </Properties>
-                        <Where>IndexedColumnsAreNotNull</Where>
-                    </DbIndex>
-                    <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
@@ -230,14 +222,6 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
         </ECNavigationProperty>
-        <ECProperty propertyName="FederationGuid" typeName="binary">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
