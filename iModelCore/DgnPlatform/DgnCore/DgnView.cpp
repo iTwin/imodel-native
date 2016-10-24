@@ -379,9 +379,9 @@ static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Option
 #else
     // ECSql doesn't support bitwise operators...
     typedef ViewDefinition::Iterator::Options::Source Source;
-    bool user { 0 != static_cast<uint8_t>(source & Source::User) };
-    bool gen  { 0 != static_cast<uint8_t>(source & Source::Generated) };
-    bool priv { 0 != static_cast<uint8_t>(source & Source::Private) };
+    bool user {0 != static_cast<uint8_t>(source & Source::User) };
+    bool gen  {0 != static_cast<uint8_t>(source & Source::Generated) };
+    bool priv {0 != static_cast<uint8_t>(source & Source::Private) };
 
     if (!user && !gen && !priv)
         return;
@@ -490,39 +490,11 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::Entry::IsOrthographicView() const { return isEntryOfClass<OrthographicViewDefinition>(*this); }
-bool ViewDefinition::Entry::IsCameraView() const { return isEntryOfClass<CameraViewDefinition>(*this); }
-bool ViewDefinition::Entry::IsSpatialView() const { return isEntryOfClass<SpatialViewDefinition>(*this); }
-bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
-bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& filter) const
-    {
-    T_Super::_Dump(str, filter);
-    str.append("{");
-    Utf8CP comma = "";
-    for (auto id : m_categories)
-        {
-        str.append(comma).append(id.ToString().c_str());
-        comma = ",";
-        }
-    str.append("}\n");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CategorySelector::_Equals(DgnElementCR rhsElement, DgnElement::ComparePropertyFilter const& filter) const
-    {
-    if (!T_Super::_Equals(rhsElement, filter))
-        return false;
-
-    auto const& rhs = (CategorySelector const&)rhsElement;
-    return m_categories == rhs.m_categories;
-    }
+bool ViewDefinition::Entry::IsOrthographicView() const {return isEntryOfClass<OrthographicViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsCameraView() const {return isEntryOfClass<CameraViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsSpatialView() const {return isEntryOfClass<SpatialViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsDrawingView() const {return isEntryOfClass<DrawingViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsSheetView() const {return isEntryOfClass<SheetViewDefinition>(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
@@ -619,17 +591,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
     return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
-    {
-    if (onOff)
-        m_categories.insert(categoryId);
-    else
-        m_categories.erase(categoryId);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  10/2016
 //---------------------------------------------------------------------------------------
@@ -675,34 +636,6 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
             }
         }
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-*@bsimethod                                    Sam.Wilson                      08 / 16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ModelSelector::_Equals(DgnElementCR rhsElement, DgnElement::ComparePropertyFilter const& ignore) const
-    {
-    if (!T_Super::_Equals(rhsElement, ignore))
-        return false;
-
-    auto const& rhs = (ModelSelector const&)rhsElement;
-    return m_models == rhs.m_models;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& ignore) const
-    {
-    T_Super::_Dump(str, ignore);
-    str.append("{");
-    Utf8CP comma = "";
-    for (auto id : m_models)
-        {
-        str.append(comma).append(id.ToString().c_str());
-        comma = ",";
-        }
-    str.append("}\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -927,6 +860,15 @@ Point2d ViewDefinition::GetThumbnailSize() const
     size.x = value[str_Width()].asInt();
     size.y = value[str_Height()].asInt();
     return size;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::DeleteThumbnail() const
+    {
+    GetDgnDb().DeleteProperty(DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1204,7 +1146,7 @@ void DisplayStyle::SetBackgroundColor(ColorDef val)
     SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
 
-OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr; }
-CameraViewControllerPtr CameraViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToCameraViewP() : nullptr; }
-DrawingViewControllerPtr DrawingViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr; }
-SheetViewControllerPtr SheetViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToSheetViewP() : nullptr; }
+OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
+CameraViewControllerPtr CameraViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
+DrawingViewControllerPtr DrawingViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
+SheetViewControllerPtr SheetViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}

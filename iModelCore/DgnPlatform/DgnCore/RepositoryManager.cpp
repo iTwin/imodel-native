@@ -1638,16 +1638,21 @@ void RepositoryJson::BriefcaseIdToJson(JsonValueR value, BeBriefcaseId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::LockLevelFromJson(LockLevel& level, JsonValueCR value)
     {
-    if (value.isConvertibleTo(Json::uintValue))
+    return value.isConvertibleTo(Json::uintValue) && LockLevelFromUInt(level, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockLevelFromUInt(LockLevel& level, unsigned int value)
+    {
+    switch (static_cast<LockLevel>(value))
         {
-        level = static_cast<LockLevel>(value.asUInt());
-        switch (level)
-            {
-            case LockLevel::None:
-            case LockLevel::Shared:
-            case LockLevel::Exclusive:
-                return true;
-            }
+        case LockLevel::None:
+        case LockLevel::Shared:
+        case LockLevel::Exclusive:
+            level = static_cast<LockLevel>(value);
+            return true;
         }
 
     return false;
@@ -1666,16 +1671,21 @@ void RepositoryJson::LockLevelToJson(JsonValueR value, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::LockableTypeFromJson(LockableType& type, JsonValueCR value)
     {
-    if (value.isConvertibleTo(Json::uintValue))
+    return value.isConvertibleTo(Json::uintValue) && LockableTypeFromUInt(type, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockableTypeFromUInt(LockableType& type, unsigned int value)
+    {
+    switch (static_cast<LockableType>(value))
         {
-        type = static_cast<LockableType>(value.asUInt());
-        switch (type)
-            {
-            case LockableType::Db:
-            case LockableType::Model:
-            case LockableType::Element:
-                return true;
-            }
+        case LockableType::Db:
+        case LockableType::Model:
+        case LockableType::Element:
+            type = static_cast<LockableType>(value);
+            return true;
         }
 
     return false;
@@ -1694,10 +1704,15 @@ void RepositoryJson::LockableTypeToJson(JsonValueR value, LockableType type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value)
     {
-    if (!value.isConvertibleTo(Json::uintValue))
-        return false;
+    return value.isConvertibleTo(Json::uintValue) && RepositoryStatusFromUInt(status, value.asUInt());
+    }
 
-    status = static_cast<RepositoryStatus>(value.asUInt());
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RepositoryStatusFromUInt(RepositoryStatus& status, unsigned int value)
+    {
+    status = static_cast<RepositoryStatus>(value);
     return true;
     }
 
@@ -2016,7 +2031,15 @@ void RepositoryJson::ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value)
     {
-    options = static_cast<IBriefcaseManager::ResponseOptions>(value.asUInt());
+    return value.isConvertibleTo(Json::uintValue) && ResponseOptionsFromUInt(options, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::ResponseOptionsFromUInt(IBriefcaseManager::ResponseOptions& options, unsigned int value)
+    {
+    options = static_cast<IBriefcaseManager::ResponseOptions>(value);
     return true;
     }
 
@@ -2025,8 +2048,24 @@ bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions&
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value)
     {
-    purpose = static_cast<IBriefcaseManager::RequestPurpose>(value.asUInt());
-    return true;
+    return value.isConvertibleTo(Json::uintValue) && RequestPurposeFromUInt(purpose, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RequestPurposeFromUInt(IBriefcaseManager::RequestPurpose& purpose, unsigned int value)
+    {
+    switch (static_cast<IBriefcaseManager::RequestPurpose>(value))
+        {
+        case IBriefcaseManager::RequestPurpose::Acquire:
+        case IBriefcaseManager::RequestPurpose::Query:
+        case IBriefcaseManager::RequestPurpose::FastQuery:
+            purpose = static_cast<IBriefcaseManager::RequestPurpose>(value);
+            return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

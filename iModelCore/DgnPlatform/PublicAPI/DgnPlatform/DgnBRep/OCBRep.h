@@ -128,6 +128,7 @@ struct OCBRepUtil
 DGNPLATFORM_EXPORT static void GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order);
 DGNPLATFORM_EXPORT static void HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face, bool evaluateNurbsCurvature = true);
 DGNPLATFORM_EXPORT static TopAbs_ShapeEnum GetShapeType(TopoDS_Shape const& shape); // Try to get uniform type from shape that is TopAbs_COMPOUND...
+DGNPLATFORM_EXPORT static bool IsEmptyCompoundShape(TopoDS_Shape const& shape); // Check that a compound shape isn't empty (i.e. is actually useful/valid).
 
 }; // OCBRepUtil
 //__PUBLISH_SECTION_START__

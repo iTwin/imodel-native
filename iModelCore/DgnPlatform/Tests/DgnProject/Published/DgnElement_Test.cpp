@@ -2087,6 +2087,6 @@ TEST_F(DgnElementTests, DemoArrayProblem)
 
     DgnDbStatus stat;
     DgnElementPtr dgnElement = m_db->Elements().CreateElement(&stat, *ecInstance);
-    //DgnElementCPtr inserted = dgnElement->Insert(&stat);
-
+    DgnElementCPtr inserted = dgnElement->Insert(&stat);
+    ASSERT_TRUE(inserted != nullptr);
     }

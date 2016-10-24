@@ -281,7 +281,13 @@ TopoDS_Shape& GetShapeR() {return m_shape;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape) {return new OpenCascadeEntity(shape);}
+static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape)
+    {
+    if (OCBRepUtil::IsEmptyCompoundShape(shape))
+        return nullptr; // Don't create OpenCascadeEntity from empty compound (ex. useless result from BRepAlgoAPI_Cut if target is completely inside tool)...
+
+    return new OpenCascadeEntity(shape);
+    }
 
 }; // OpenCascadeEntity
 

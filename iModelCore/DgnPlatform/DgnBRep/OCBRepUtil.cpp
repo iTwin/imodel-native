@@ -33,6 +33,19 @@ TopAbs_ShapeEnum OCBRepUtil::GetShapeType(TopoDS_Shape const& shape)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRepUtil::IsEmptyCompoundShape(TopoDS_Shape const& shape)
+    {
+    if (TopAbs_COMPOUND != shape.ShapeType())
+        return false;
+
+    TopoDS_Iterator shapeIter(shape);
+
+    return (!shapeIter.More());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OCBRepUtil::GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)

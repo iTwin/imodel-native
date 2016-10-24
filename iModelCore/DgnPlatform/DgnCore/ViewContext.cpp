@@ -1403,7 +1403,7 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
 
     if (cameraOn)
         {
-        CameraInfo const& camera = vp.GetCamera();
+        auto const& camera = vp.GetCamera();
         double sizeLimit = (s_maxHorizonGrids * colSpacing) / vp.GetViewDelta()->x;
 
         vp.GetRotMatrix().GetRow(viewZ, 2);
