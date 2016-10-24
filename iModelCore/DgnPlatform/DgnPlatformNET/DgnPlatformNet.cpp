@@ -16,6 +16,8 @@
 #pragma managed
 #include <vcclr.h> // PtrToStringChars
 
+[assembly:System::Runtime::CompilerServices::InternalsVisibleTo ("DTPlatform")];
+
 #using      <system.dll>
 #using      <Bentley.GeometryNET.dll>
 #using      <Bentley.GeometryNET.Structs.dll>

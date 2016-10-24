@@ -50,12 +50,12 @@ dirToSearch  = $(PrivateApiSrc)
 DgnPlatformNETObj               = $(OutDgnPlatformBuild)DgnPlatformNET/
 
 DLM_OBJECT_DEST                 = $(DgnPlatformNETObj)
-ASSEMBLY_STRONGNAME             = 1
 
 #---------------------------------------------------------
 #  Set up for signing
 #---------------------------------------------------------
-RIGHTSCOMPLIANT = true
+RIGHTSCOMPLIANT                 = false
+ASSEMBLY_NO_STRONGNAME          = 1
 %include $(SrcDgnPlatform)privmki/DgnPlatformSignatureDefaults.mki
 
 #----------------------------------------------------------------------
@@ -99,6 +99,16 @@ LINKER_LIBRARIES        = $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) 
                           $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                           $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 
-%include $(sharedMki)linkLibrary.mki
+
+ASSEMBLY_TITLE              = $(DLM_NAME)
+ASSEMBLY_PRODUCT_NAME       = Bentley DgnPlatform
+ASSEMBLY_DESCRIPTION        = Managed API for Bentley DgnPlatform
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+
+%include linkMixedAssembly.mki
 
 

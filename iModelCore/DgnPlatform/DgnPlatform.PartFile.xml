@@ -625,9 +625,12 @@
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 
-    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" >
+    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <SubPart PartName="DgnPlatformDLL" />
+        <Bindings>
+            <Assemblies>Delivery/Bentley.DgnPlatformNET.dll</Assemblies>
+        </Bindings>
     </Part>
 
     <ProductDirectoryList ListName="TilePublisherDirs" >
