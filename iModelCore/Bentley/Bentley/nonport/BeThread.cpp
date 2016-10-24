@@ -347,17 +347,6 @@ void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
 #endif // NDEBUG
     }
 
-#if defined (BENTLEY_WINRT)
-static T_ThreadStartHandler s_threadStartHandler = nullptr;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::SetThreadStartHandler(T_ThreadStartHandler handler)
-    {
-    s_threadStartHandler = handler;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -374,19 +363,12 @@ BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart sta
         pthread_detach(threadHandle);
     pthread_attr_destroy(&threadAttr);
     return (0 == retval) ? SUCCESS : ERROR;
-#elif defined (BENTLEY_WIN32)
+#elif defined(BENTLEY_WIN32) || defined(BENTLEY_WINRT)
     uintptr_t handle = _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
     if (0 == handle)
         return ERROR;
     CloseHandle((HANDLE)handle);
     return SUCCESS;
-#elif defined (BENTLEY_WINRT)
-    if (nullptr == s_threadStartHandler)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    return (0 != s_threadStartHandler(startAddr, arg)) ? SUCCESS : ERROR;
 #else
     #error unknown platform
     return ERROR;
