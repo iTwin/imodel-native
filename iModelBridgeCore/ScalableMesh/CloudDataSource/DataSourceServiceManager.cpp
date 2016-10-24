@@ -9,17 +9,19 @@
 
 DataSourceServiceManager::DataSourceServiceManager(DataSourceManager &manager)
 {
-    initialize(manager);
+#pragma warning(disable: 4100)
+	//    initialize(manager);
 }
 
 DataSourceServiceManager::~DataSourceServiceManager(void)
 {
-    destroyServices();
+
 }
 
 
 DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager)
 {
+
     DataSourceService *    service;
     DataSourceStatus    status;
 
@@ -44,6 +46,12 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
 
     return status;
 
+}
+
+
+void DataSourceServiceManager::shutdown(void)
+{
+	destroyServices();
 }
 
 DataSourceStatus DataSourceServiceManager::addService(DataSourceService * service)

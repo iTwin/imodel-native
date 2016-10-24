@@ -43,6 +43,8 @@ protected:
                                                     Manager                 (void);
     virtual                                        ~Manager                 (void);
 
+	virtual void									shutdown				(bool deleteItems);
+
     T                *                              create                  (const ItemName &name, T *item);
     bool                                            destroy                 (const ItemName &name, bool deleteItem);
     bool                                            destroy                 (T *item, bool deleteItem);
@@ -72,6 +74,12 @@ template<typename T>
 inline Manager<T>::~Manager(void)
 {
 
+}
+
+template<typename T>
+inline void Manager<T>::shutdown(bool deleteItems)
+{
+	destroyAll(deleteItems);
 }
 
 template<typename T>

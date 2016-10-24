@@ -58,6 +58,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include <CloudDataSource/DataSourceManager.h>
 
+//extern DataSourceManager s_dataSourceManager;
+
+
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -88,7 +91,6 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     WString                             m_baseExtraFilesPath;
 
-    static DataSourceManager            s_dataSourceManager;
     DataSourceAccount               *   m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
@@ -113,7 +115,7 @@ public:
 
     const WChar*                        GetPath                 () const;
 
-    static DataSourceManager &          GetDataSourceManager    (void)                                  {return s_dataSourceManager;}
+    static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
    

@@ -9,6 +9,36 @@
 #include "include\DataSourceManager.h"
 #include <assert.h>
 
+DataSourceManager *DataSourceManager::dataSourceManager = nullptr;
+
+
+DataSourceManager *DataSourceManager::Get(void)
+{
+	if (dataSourceManager == nullptr)
+	{
+		dataSourceManager = new DataSourceManager;
+	}
+
+	return dataSourceManager;
+}
+
+
+void DataSourceManager::Shutdown(void)
+{
+	if (dataSourceManager != nullptr)
+	{
+		dataSourceManager->shutdown();
+
+		delete dataSourceManager;
+
+		dataSourceManager = nullptr;
+	}
+}
+
+void DataSourceManager::shutdown(void)
+{
+	DataSourceServiceManager::shutdown();
+}
 
 
 DataSourceManager::DataSourceManager(void) : DataSourceServiceManager(*this)

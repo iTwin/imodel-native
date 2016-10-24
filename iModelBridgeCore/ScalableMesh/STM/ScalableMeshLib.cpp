@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include "ScalableMeshFileMoniker.h"
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include "SMMemoryPool.h"
-
+#include <CloudDataSource/DataSourceManager.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -63,6 +63,7 @@ void ScalableMeshLib::Host::Initialize()
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,6 +87,9 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
+
+	DataSourceManager::Shutdown();
+
     }
 
 /*======================================================================+

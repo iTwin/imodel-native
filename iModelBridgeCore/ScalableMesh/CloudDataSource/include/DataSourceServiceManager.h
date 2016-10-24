@@ -21,6 +21,8 @@ public:
 
             DataSourceStatus                    initialize                    (DataSourceManager &manager);
 
+			void								shutdown					  (void);
+
             DataSourceStatus                    addService                    (DataSourceService *service);
             DataSourceStatus                    destroyService                (const ServiceName &serviceName);
             DataSourceStatus                    destroyServices               (void);

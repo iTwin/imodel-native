@@ -51,7 +51,8 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshEdit.h"
 //#include "CGALEdgeCollapse.h"
 
-DataSourceManager ScalableMeshBase::s_dataSourceManager;
+//DataSourceManager s_dataSourceManager;
+
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
