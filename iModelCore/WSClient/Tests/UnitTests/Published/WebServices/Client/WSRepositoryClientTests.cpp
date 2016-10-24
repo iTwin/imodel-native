@@ -861,6 +861,51 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipT
     EXPECT_EQ("ServerSkipToken", result.GetValue().GetSkipToken());
     }
 
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23_CapsWebApiToV23)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 3}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.3/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 4}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 5}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
