@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnPlatform.h>
+#include <ScalableMesh\IScalableMeshTextureGenerator.h>
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
@@ -18,24 +19,36 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 +===============+===============+===============+===============+===============+======*/
 struct ScalableMeshAdmin : DgnHost::IHostObject
 {
-    virtual int                     _GetVersion() const {return 1;} // Do not override!
-    virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
-    
-    virtual bool _CanImportPODfile() const
-        {
-        return false;
-        }
-#ifdef VANCOUVER_API
-    virtual DgnModelRefP _GetActiveModelRef() const
-        {
-        return 0;
-        }
+    private :         
 
-    virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
-        {
-        return ERROR;
-        }       
-#endif
+    public : 
+
+        virtual int                     _GetVersion() const {return 1;} // Do not override!
+        virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
+    
+        virtual bool _CanImportPODfile() const
+            {
+            return false;
+            }
+
+        virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator () 
+            {
+            IScalableMeshTextureGeneratorPtr textureGeneratorPtr;
+
+            return textureGeneratorPtr;
+            }        
+
+    #ifdef VANCOUVER_API
+        virtual DgnModelRefP _GetActiveModelRef() const
+            {
+            return 0;
+            }
+
+        virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
+            {
+            return ERROR;
+            }       
+    #endif
 };
 
 struct WsgTokenAdmin
