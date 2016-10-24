@@ -197,22 +197,13 @@ public:
 #endif
 
 #define THREAD_MAIN_DECL static THREAD_MAIN_IMPL
-
-#if defined (BENTLEY_WINRT)
-typedef unsigned (__stdcall *T_ThreadStartHandler)(T_ThreadStart startAddr, void* arg);
-#endif
-
+    
 //=======================================================================================
 //! Utilities for dealing with threads
 //  @bsiclass
 //=======================================================================================
 struct  BeThreadUtilities
 {
-
-#if defined (BENTLEY_WINRT)
-    BENTLEYDLL_EXPORT static void SetThreadStartHandler(T_ThreadStartHandler);
-#endif
-
     //! Set the name for the current thread. Useful for debugging only, not guaranteed to do anything
     //! @param[in] newName Name to call thread.
     BENTLEYDLL_EXPORT static void SetCurrentThreadName(Utf8CP newName);
