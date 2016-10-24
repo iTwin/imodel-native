@@ -675,7 +675,10 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
                 m_BufferDataForNextBlockSize += 128;
                 }
             }
+#pragma warning (push)              // Code verified
+#pragma warning (disable:6386)
         m_pBufferDataForNextBlock[m_BufferDataForNextBlockPos] = (Byte)pi_Code;
+#pragma warning (pop)
         m_BufferDataForNextBlockPos++;
         }
     else
