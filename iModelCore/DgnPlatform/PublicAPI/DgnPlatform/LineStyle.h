@@ -383,11 +383,11 @@ public:
     virtual double      _GetLengthForTexture    () const           {return _GetLength();}
     virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
     virtual void        _ClearPostProcess       () { return; }
-    virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
+    virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const override;
+    virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
                                                     double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
