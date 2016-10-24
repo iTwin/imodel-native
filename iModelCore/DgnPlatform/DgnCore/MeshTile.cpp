@@ -932,21 +932,6 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
     m_statistics.m_cachePopulationTime = timer.GetCurrentSeconds();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::RemoveChild (TileNodeCR tile)
-    {
-    for (auto child = m_children.begin(); child != m_children.end(); child++)
-        {
-        if (child->get() == &tile)
-            {
-            m_children.erase (child);
-            return;
-            }
-         }
-    BeAssert (false && "child not found");
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
@@ -967,13 +952,12 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 
         if (tile.GetGeometries().empty())
             {
-            if (nullptr != tile.GetParent())
-                tile.GetParent()->RemoveChild (tile);
-
+            m_completedVolume += tile.GetDgnRange().Volume();
             m_completedTiles++;
             return;
             }
 
+        tile.SetIsEmpty (false);
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
@@ -982,7 +966,11 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
         collector._AcceptTile(tile);
         tile.ClearGeometry();
 
-        if (!isLeaf)
+        if (isLeaf)
+            {
+            m_completedVolume += tile.GetDgnRange().Volume();
+            }
+        else
             {
             size_t              siblingIndex = 0;
             bvector<DRange3d>   subRanges;
@@ -1033,7 +1021,7 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     static const uint32_t s_sleepMillis = 1000.0;
     do
         {
-        m_progressMeter._IndicateProgress(m_completedTiles, m_totalTiles);
+        m_progressMeter._IndicateProgress((uint32_t (100.0) * m_completedVolume / m_totalVolume), 100);
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
     while (m_completedTiles < m_totalTiles);
@@ -1365,19 +1353,25 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     if (BelowMinRange(tileRange))
         return;
 
-    m_curElemGeometries.clear();
-    bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
-    if (!haveCached)
+    try
         {
-        m_curElemId = elemId;
-        context.VisitElement(elemId, false);
+        m_curElemGeometries.clear();
+        bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
+        if (!haveCached)
+            {
+            m_curElemId = elemId;
+            context.VisitElement(elemId, false);
+            }
+        for (auto& geom : m_curElemGeometries)
+            PushGeometry(*geom);
+
+        if (!haveCached)
+            m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
         }
-
-    for (auto& geom : m_curElemGeometries)
-        PushGeometry(*geom);
-
-    if (!haveCached)
-        m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
+    catch (...)
+        {
+        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
