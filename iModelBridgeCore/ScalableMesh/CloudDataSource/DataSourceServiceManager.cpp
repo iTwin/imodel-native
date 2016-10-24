@@ -23,7 +23,7 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
 {
 
     DataSourceService *    service;
-    DataSourceStatus    status;
+    DataSourceStatus       status;
 
     if ((service = new DataSourceServiceFile(manager, DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Memory_Allocation);
