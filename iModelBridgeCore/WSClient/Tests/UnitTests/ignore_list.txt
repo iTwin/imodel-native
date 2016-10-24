@@ -12,10 +12,13 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 # Pending fix on UniqueTaskHolder
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 
-
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
+
+ChangeGraphTests.*
+    # DgnDb61-16Q2, WinX86, DEBUG
+    # <Random crashes among these tests, no output or stack printed>
 
 CachingDataSourceTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
