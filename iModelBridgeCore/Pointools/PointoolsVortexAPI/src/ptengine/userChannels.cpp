@@ -793,6 +793,7 @@ void OOCFile::create( class UserChannel *uchannel )
 		if (s_tempFolder.length())
 		{
 			wcsncpy( path, s_tempFolder.c_wstr(), MAX_PATH-1 );	// user user provided folder
+            path[MAX_PATH - 1] = 0;
 		}
 		else
 		{
