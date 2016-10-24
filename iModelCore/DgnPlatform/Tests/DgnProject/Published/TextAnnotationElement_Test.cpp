@@ -10,11 +10,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                            Umar.Hayat      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TextAnnotationTest : public ::testing::Test
-{
-private:
-    ScopedDgnHost host;
-};
+struct TextAnnotationTest : DgnDbTestFixture
+    {};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
@@ -24,7 +22,7 @@ static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::Get(db, STYLE_NAME);
     if (existingStyle.IsValid())
         return existingStyle->GetElementId();
-    
+
     AnnotationTextStyle style(db);
     style.SetColorType(AnnotationColorType::RGBA);
     style.SetColorValue(ColorDef(0x00, 0xff, 0x00));
@@ -33,23 +31,24 @@ static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     style.SetName(STYLE_NAME);
 
     style.Insert();
-    
+
     return style.GetElementId();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST_F (TextAnnotationTest, BasicCrud2d)
+TEST_F(TextAnnotationTest, BasicCrud2d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
 
-    BeFileName fileName(TEST_FIXTURE_NAME, true);
-    fileName.AppendToPath(L"TextAnnotation2dTest-BasicCrud.dgndb");
-
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", fileName.c_str(), __FILE__));
+    if (true)
+        {
+        SetupSeedProject();
+        dbPath = BeFileName(m_db->GetDbFileName());
+        }
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -59,189 +58,191 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
     // Write the element to the database.
     //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
-        
-        DgnCategory category(DgnCategory::CreateParams(*db, "Annotation Category", DgnCategory::Scope::Annotation));
-        DgnSubCategory::Appearance categoryAppearance;
-        category.Insert(categoryAppearance);
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        DgnCategoryId categoryId = category.GetCategoryId();
-        ASSERT_TRUE(categoryId.IsValid());
+    DgnCategory category(DgnCategory::CreateParams(*db, "Annotation Category", DgnCategory::Scope::Annotation));
+    DgnSubCategory::Appearance categoryAppearance;
+    category.Insert(categoryAppearance);
 
-        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
-        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
+    DgnCategoryId categoryId = category.GetCategoryId();
+    ASSERT_TRUE(categoryId.IsValid());
 
-        modelId = model->GetModelId();
-        ASSERT_TRUE(modelId.IsValid());
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
+    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
-        textStyleId = ensureAnnotationTextStyle1(*db);
-        ASSERT_TRUE(textStyleId.IsValid());
-        
-        TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
-        ASSERT_TRUE(nullptr != annotation.GetTextCP());
+    modelId = model->GetModelId();
+    ASSERT_TRUE(modelId.IsValid());
 
-        //.........................................................................................
-        TextAnnotation2dPtr annotationElement = new TextAnnotation2d(TextAnnotation2d::CreateParams(*db, modelId, TextAnnotation2d::QueryDgnClassId(*db), categoryId));
-        annotationElement->SetAnnotation(&annotation);
-        ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
+    textStyleId = ensureAnnotationTextStyle1(*db);
+    ASSERT_TRUE(textStyleId.IsValid());
 
-        TextAnnotation2dCPtr insertedAnnotationElement = annotationElement->Insert();
-        ASSERT_TRUE(insertedAnnotationElement.IsValid());
-        
-        insertedElementId = insertedAnnotationElement->GetElementId();
-        ASSERT_TRUE(insertedElementId.IsValid());
+    TextAnnotation annotation(*db);
+    annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
+    ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
-        // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
-        //.........................................................................................
-        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
-        EXPECT_TRUE(view.Insert().IsValid());
+    //.........................................................................................
+    TextAnnotation2dPtr annotationElement = new TextAnnotation2d(TextAnnotation2d::CreateParams(*db, modelId, TextAnnotation2d::QueryDgnClassId(*db), categoryId));
+    annotationElement->SetAnnotation(&annotation);
+    ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
 
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        DrawingViewController viewController(*db, view.GetViewId());
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
+    TextAnnotation2dCPtr insertedAnnotationElement = annotationElement->Insert();
+    ASSERT_TRUE(insertedAnnotationElement.IsValid());
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
-        }
+    insertedElementId = insertedAnnotationElement->GetElementId();
+    ASSERT_TRUE(insertedElementId.IsValid());
+
+    // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
+    //.........................................................................................
+    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
+                                                                   ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
+
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+
+    DrawingViewController viewController(*db, view.GetViewId());
+    viewController.SetStandardViewRotation(StandardView::Top);
+    viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+    viewController.ChangeCategoryDisplay(categoryId, true);
+    viewController.ChangeModelDisplay(modelId, true);
+
+    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+
+    db->SaveChanges();
+    }
 
     // Read the element back out, modify, and rewrite.
     //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
-        
-        //.........................................................................................
-        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
-        TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
-        ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
+    //.........................................................................................
+    TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
-        ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
-        
-        AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
-        ASSERT_TRUE(1 == existingParagraphs.size());
-        
-        AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
-        ASSERT_TRUE(1 == existingRuns.size());
-        
-        ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
-        EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
+    // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
+    TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
+    ASSERT_TRUE(nullptr != existingAnnotation);
+    EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
+    EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
 
-        // Update Annotation Element ( update text, and frame and leader )
-        //.........................................................................................
-        AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
-        AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
-        ASSERT_TRUE(frame.IsValid());
+    AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
+    ASSERT_TRUE(nullptr != existingText);
+    EXPECT_TRUE(textStyleId == existingText->GetStyleId());
 
-        AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
-        AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
-        leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
-        leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
-        ASSERT_TRUE(leader.IsValid());
+    AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
+    ASSERT_TRUE(1 == existingParagraphs.size());
 
-        TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
-        annotation.SetFrame(frame.get());
-        ASSERT_TRUE(nullptr != annotation.GetFrameP());
-        annotation.m_leaders.push_back(leader);
+    AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
+    ASSERT_TRUE(1 == existingRuns.size());
 
-        TextAnnotation2dPtr annotationElement = TextAnnotation2d::GetForEdit(*db, insertedElementId);
-        ASSERT_TRUE(annotationElement.IsValid());
+    ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
+    EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP) existingRuns[0].get())->GetContent().c_str()));
 
-        annotationElement->SetAnnotation(&annotation);
-        
-        TextAnnotation2dCPtr updatedAnnotationElement = annotationElement->Update();
-        ASSERT_TRUE(updatedAnnotationElement.IsValid());
-        EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
-        }
-    
+    // Update Annotation Element ( update text, and frame and leader )
+    //.........................................................................................
+    AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
+    AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
+    ASSERT_TRUE(frame.IsValid());
+
+    AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
+    AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
+    leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
+    leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
+    ASSERT_TRUE(leader.IsValid());
+
+    TextAnnotation annotation(*db);
+    annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
+    annotation.SetFrame(frame.get());
+    ASSERT_TRUE(nullptr != annotation.GetFrameP());
+    annotation.m_leaders.push_back(leader);
+
+    TextAnnotation2dPtr annotationElement = TextAnnotation2d::GetForEdit(*db, insertedElementId);
+    ASSERT_TRUE(annotationElement.IsValid());
+
+    annotationElement->SetAnnotation(&annotation);
+
+    TextAnnotation2dCPtr updatedAnnotationElement = annotationElement->Update();
+    ASSERT_TRUE(updatedAnnotationElement.IsValid());
+    EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
+
+    db->SaveChanges();
+    }
+
     // Verify the modified element.
     //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        //.........................................................................................
-        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    //.........................................................................................
+    TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
-        TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
-        ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
+    // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
+    TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
+    ASSERT_TRUE(nullptr != existingAnnotation);
+    EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
+    EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
 
-        AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
-        ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
+    AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
+    ASSERT_TRUE(nullptr != existingText);
+    EXPECT_TRUE(textStyleId == existingText->GetStyleId());
 
-        AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
-        ASSERT_TRUE(1 == existingParagraphs.size());
+    AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
+    ASSERT_TRUE(1 == existingParagraphs.size());
 
-        AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
-        ASSERT_TRUE(1 == existingRuns.size());
+    AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
+    ASSERT_TRUE(1 == existingRuns.size());
 
-        ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
-        EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
-        }
-    
+    ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
+    EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP) existingRuns[0].get())->GetContent().c_str()));
+    }
+
     // Delete the element.
     //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        //.........................................................................................
-        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    //.........................................................................................
+    TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        annotationElementC->Delete();
+    annotationElementC->Delete();
 
-        annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
-        ASSERT_TRUE(!annotationElementC.IsValid());
-        }
+    annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
+    ASSERT_TRUE(!annotationElementC.IsValid());
+
+    db->SaveChanges();
+    }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST_F (TextAnnotationTest, BasicCrud3d)
+TEST_F(TextAnnotationTest, BasicCrud3d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
 
-    BeFileName fileName(TEST_FIXTURE_NAME, true);
-    fileName.AppendToPath(L"TextAnnotation3dTest-BasicCrud.dgndb");
-    
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", fileName.c_str(), __FILE__));
+    if (true)
+        {
+        SetupSeedProject();
+        dbPath = BeFileName(m_db->GetDbFileName());
+        }
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -250,173 +251,174 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
 
     // Write the element to the database.
-    //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
-        
-        DgnCategory category(DgnCategory::CreateParams(*db, "Physical Category", DgnCategory::Scope::Physical));
-        DgnSubCategory::Appearance categoryAppearance;
-        category.Insert(categoryAppearance);
+    //..........................................................................................
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        DgnCategoryId categoryId = category.GetCategoryId();
-        ASSERT_TRUE(categoryId.IsValid());
+    DgnCategory category(DgnCategory::CreateParams(*db, "Physical Category", DgnCategory::Scope::Physical));
+    DgnSubCategory::Appearance categoryAppearance;
+    category.Insert(categoryAppearance);
 
-        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
-        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
+    DgnCategoryId categoryId = category.GetCategoryId();
+    ASSERT_TRUE(categoryId.IsValid());
 
-        modelId = model->GetModelId();
-        ASSERT_TRUE(modelId.IsValid());
+    DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
+    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
-        textStyleId = ensureAnnotationTextStyle1(*db);
-        ASSERT_TRUE(textStyleId.IsValid());
-        
-        TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
-        ASSERT_TRUE(nullptr != annotation.GetTextCP());
+    modelId = model->GetModelId();
+    ASSERT_TRUE(modelId.IsValid());
 
-        //.........................................................................................
-        TextAnnotation3dPtr annotationElement = new TextAnnotation3d(TextAnnotation3d::CreateParams(*db, modelId, TextAnnotation3d::QueryDgnClassId(*db), categoryId));
-        annotationElement->SetAnnotation(&annotation);
-        ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
+    textStyleId = ensureAnnotationTextStyle1(*db);
+    ASSERT_TRUE(textStyleId.IsValid());
 
-        TextAnnotation3dCPtr insertedAnnotationElement = annotationElement->Insert();
-        ASSERT_TRUE(insertedAnnotationElement.IsValid());
-        
-        insertedElementId = insertedAnnotationElement->GetElementId();
-        ASSERT_TRUE(insertedElementId.IsValid());
+    TextAnnotation annotation(*db);
+    annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
+    ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
-        // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
-        //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
-        EXPECT_TRUE(view.Insert().IsValid());
+    //.........................................................................................
+    TextAnnotation3dPtr annotationElement = new TextAnnotation3d(TextAnnotation3d::CreateParams(*db, modelId, TextAnnotation3d::QueryDgnClassId(*db), categoryId));
+    annotationElement->SetAnnotation(&annotation);
+    ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
 
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        SpatialViewController viewController(*db, view.GetViewId());
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
+    TextAnnotation3dCPtr insertedAnnotationElement = annotationElement->Insert();
+    ASSERT_TRUE(insertedAnnotationElement.IsValid());
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
-        }
+    insertedElementId = insertedAnnotationElement->GetElementId();
+    ASSERT_TRUE(insertedElementId.IsValid());
+
+    // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
+    //.........................................................................................
+    CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
+                                                                 ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
+
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+
+    SpatialViewController viewController(*db, view.GetViewId());
+    viewController.SetStandardViewRotation(StandardView::Top);
+    viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+    viewController.ChangeCategoryDisplay(categoryId, true);
+    viewController.ChangeModelDisplay(modelId, true);
+
+    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+
+    db->SaveChanges();
+    }
 
     // Read the element back out, modify, and rewrite.
     //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
-        
-        //.........................................................................................
-        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
-        TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
-        ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
+    //.........................................................................................
+    TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
-        ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
-        
-        AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
-        ASSERT_TRUE(1 == existingParagraphs.size());
-        
-        AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
-        ASSERT_TRUE(1 == existingRuns.size());
-        
-        ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
-        EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
-        
-        // Update Annotation Element ( update text, and frame and leader )
-        //.........................................................................................
-        AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
-        AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
-        ASSERT_TRUE(frame.IsValid());
+    // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
+    TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
+    ASSERT_TRUE(nullptr != existingAnnotation);
+    EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
+    EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
 
-        AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
-        AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
-        leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
-        leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
-        ASSERT_TRUE(leader.IsValid());
+    AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
+    ASSERT_TRUE(nullptr != existingText);
+    EXPECT_TRUE(textStyleId == existingText->GetStyleId());
 
-        TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
-        annotation.SetFrame(frame.get());
-        ASSERT_TRUE(nullptr != annotation.GetFrameP());
-        annotation.m_leaders.push_back(leader);
+    AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
+    ASSERT_TRUE(1 == existingParagraphs.size());
 
-        TextAnnotation3dPtr annotationElement = TextAnnotation3d::GetForEdit(*db, insertedElementId);
-        ASSERT_TRUE(annotationElement.IsValid());
+    AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
+    ASSERT_TRUE(1 == existingRuns.size());
 
-        annotationElement->SetAnnotation(&annotation);
-        
-        TextAnnotation3dCPtr updatedAnnotationElement = annotationElement->Update();
-        ASSERT_TRUE(updatedAnnotationElement.IsValid());
-        EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
-        }
-    
+    ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
+    EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP) existingRuns[0].get())->GetContent().c_str()));
+
+    // Update Annotation Element ( update text, and frame and leader )
+    //.........................................................................................
+    AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
+    AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
+    ASSERT_TRUE(frame.IsValid());
+
+    AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
+    AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
+    leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
+    leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
+    ASSERT_TRUE(leader.IsValid());
+
+    TextAnnotation annotation(*db);
+    annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
+    annotation.SetFrame(frame.get());
+    ASSERT_TRUE(nullptr != annotation.GetFrameP());
+    annotation.m_leaders.push_back(leader);
+
+    TextAnnotation3dPtr annotationElement = TextAnnotation3d::GetForEdit(*db, insertedElementId);
+    ASSERT_TRUE(annotationElement.IsValid());
+
+    annotationElement->SetAnnotation(&annotation);
+
+    TextAnnotation3dCPtr updatedAnnotationElement = annotationElement->Update();
+    ASSERT_TRUE(updatedAnnotationElement.IsValid());
+    EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
+
+    db->SaveChanges();
+    }
+
     // Verify the modified element.
-    //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    //.........................................................................................
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        //.........................................................................................
-        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    //.........................................................................................
+    TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
-        TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
-        ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
+    // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
+    TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
+    ASSERT_TRUE(nullptr != existingAnnotation);
+    EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
+    EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
 
-        AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
-        ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
+    AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
+    ASSERT_TRUE(nullptr != existingText);
+    EXPECT_TRUE(textStyleId == existingText->GetStyleId());
 
-        AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
-        ASSERT_TRUE(1 == existingParagraphs.size());
+    AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
+    ASSERT_TRUE(1 == existingParagraphs.size());
 
-        AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
-        ASSERT_TRUE(1 == existingRuns.size());
+    AnnotationRunCollectionCR existingRuns = existingParagraphs[0]->GetRuns();
+    ASSERT_TRUE(1 == existingRuns.size());
 
-        ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
-        EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
-        }
-    
+    ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
+    EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP) existingRuns[0].get())->GetContent().c_str()));
+    }
+
     // Delete the element.
-    //.............................................................................................
-        {
-        //.........................................................................................
-        DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    //..........................................................................................
+    {
+    DbResult openStatus;
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+    ASSERT_TRUE(db.IsValid());
 
-        //.........................................................................................
-        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
-        ASSERT_TRUE(annotationElementC.IsValid());
+    //.........................................................................................
+    TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
+    ASSERT_TRUE(annotationElementC.IsValid());
 
-        annotationElementC->Delete();
+    annotationElementC->Delete();
 
-        annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
-        ASSERT_TRUE(!annotationElementC.IsValid());
-        }
+    annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
+    ASSERT_TRUE(!annotationElementC.IsValid());
+
+    db->SaveChanges();
+    }
     }
