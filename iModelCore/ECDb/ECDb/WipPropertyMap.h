@@ -712,6 +712,9 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
             }
         virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
             {
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                m_tables.insert(&propertyMap.GetTable());
+
             return DispatcherFeedback::NextSibling;
             }
         virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override
@@ -730,7 +733,7 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
         DbTable const* GetSingleTable() const 
             { 
             BeAssert(!m_tables.empty()); 
-            if (m_tables.size() == 1) 
+            if (m_tables.size() != 1) 
                 return nullptr; 
 
             return *(m_tables.begin()); 
@@ -747,39 +750,50 @@ struct WipPropertyMapTypeDispatcher final : IPropertyMapDispatcher
     private:
         mutable std::vector<WipPropertyMap const*> m_propertyMaps;
         PropertyMapKind m_filter;
-        bool m_recordCompondProperties;
+        bool m_traverseCompoundProperties;
     private:
-        DispatcherFeedback Record(WipPropertyMap const& propertyMap) const
+
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override
             {
             if (Enum::Contains(m_filter, propertyMap.GetKind()))
                 m_propertyMaps.push_back(&propertyMap);
 
             return DispatcherFeedback::Next;
             }
-        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
             {
-            if (m_recordCompondProperties)
-                return Record(propertyMap);
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                {
+                if (m_traverseCompoundProperties)
+                    return DispatcherFeedback::Next;
+
+                m_propertyMaps.push_back(&propertyMap);
+                return DispatcherFeedback::NextSibling;
+                }
 
             return DispatcherFeedback::Next;
             }
-        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
-            {
-            return Record(propertyMap);
-            }
         virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override
             {
-            return Record(propertyMap);
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                m_propertyMaps.push_back(&propertyMap);
+
+            return DispatcherFeedback::Next;
             }
 
     public:
-        WipPropertyMapTypeDispatcher(PropertyMapKind filter = PropertyMapKind::All, bool recordCompoundProperties = false)
-            :m_filter(filter), m_recordCompondProperties(recordCompoundProperties)
+        WipPropertyMapTypeDispatcher(PropertyMapKind filter = PropertyMapKind::All, bool traverseCompoundProperties = false)
+            :m_filter(filter), m_traverseCompoundProperties(traverseCompoundProperties)
             {}
         ~WipPropertyMapTypeDispatcher() {}
         void Reset() { m_propertyMaps.clear(); }
         std::vector<WipPropertyMap const*> const& ResultSet() const { return m_propertyMaps; }
-      
+        static std::vector<WipPropertyMap const*> Accept(WipPropertyMap const& propertyMap, PropertyMapKind filter = PropertyMapKind::All, bool traverseCompoundProperties = false)
+            {
+            WipPropertyMapTypeDispatcher typeDispatcher(filter, traverseCompoundProperties);
+            propertyMap.Accept(typeDispatcher);
+            return typeDispatcher.ResultSet();
+            }
     };
 
 //=======================================================================================
@@ -844,13 +858,21 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
 
     public:
         WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false)
-            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses)
+            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_status(SUCCESS)
             {}
         ~WipPropertyMapSqlDispatcher() {}
 
         BentleyStatus GetStatus() const { return m_status; }
         std::vector<Result> const& GetResultSet() const { return m_resultSet; }
         const Result* Find(Utf8CP accessString) const;
+        NativeSqlBuilder::List ToList() const 
+            {
+            NativeSqlBuilder::List list;
+            for (Result const& r : m_resultSet)
+                list.push_back(r.GetSqlBuilder());
+
+            return list;
+            }
         void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); m_status = SUCCESS; }
     };
 

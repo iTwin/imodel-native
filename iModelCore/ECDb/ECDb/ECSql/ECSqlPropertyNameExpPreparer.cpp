@@ -97,19 +97,11 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         BeAssert(false && "WIP");
         return false;
         }
-
-    if (columnDispatcher.GetColumns().size() != 1)
-        {
-        BeAssert(false && "WIP");
-        return false;
-        }
-
-
-    DbColumn const* column = columnDispatcher.GetColumns().front();
+ 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     WipConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetKind() == PropertyMapKind::ConstraintECClassIdPropertyMap ? static_cast<WipConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
     bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
-    if (column->GetPersistenceType() == PersistenceType::Virtual || isConstraintIdPropertyMap)
+    if (columnDispatcher.AreResultingColumnsAreVirtual() || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
@@ -184,10 +176,12 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     WipPropertyMapTableDispatcher tableDispatcher;
     propMap.Accept(tableDispatcher);
 
-    WipPropertyMapSqlDispatcher sqlDispatcher(*tableDispatcher.GetSingleTable(), 
+    WipPropertyMapSqlDispatcher sqlDispatcher(*tableDispatcher.GetSingleTable(),
                                               ecsqlType == ECSqlType::Select ? WipPropertyMapSqlDispatcher::SqlTarget::View : WipPropertyMapSqlDispatcher::SqlTarget::Table, classIdentifier, exp.HasParentheses());
-    
-    nativeSqlSnippets.push_back(sqlDispatcher.GetResultSet().front().GetSqlBuilder());
+
+    propMap.Accept(sqlDispatcher);
+    for (WipPropertyMapSqlDispatcher::Result const& r : sqlDispatcher.GetResultSet())
+        nativeSqlSnippets.push_back(r.GetSqlBuilder());
     }
 
 //-----------------------------------------------------------------------------------------

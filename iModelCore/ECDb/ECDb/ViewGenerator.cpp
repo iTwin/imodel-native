@@ -595,7 +595,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All);
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, true /*traverse compound properties*/);
     for (WipPropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
         {
         typeDispatcher.Reset();
