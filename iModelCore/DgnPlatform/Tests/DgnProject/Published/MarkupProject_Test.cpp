@@ -33,6 +33,7 @@ void DgnMarkupProjectTest::checkProjectAssociation(DgnDbR dgnProject, DgnMarkupP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_Sam
 TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     {
     DgnDomains::RegisterDomain(MarkupDomain::GetDomain());
@@ -160,3 +161,4 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     // *** WIP Create association - to do that, we'd need a real ViewInfo
     // rdlModel->SetAssociation (*dgnProject, dgnProjectViewInfo);
     }
+#endif

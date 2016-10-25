@@ -679,6 +679,7 @@ public:
     //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
     //! @param[in] size Optional size (x,y) for the thumbnail. Thumbnails are usually square. Default size is 768x768 pixels.
     //! @param[in] modeOverride Optional override for the RenderMode for the thumbnail. If nullptr, use RenderMode from the DisplayStyle.
+    //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
 

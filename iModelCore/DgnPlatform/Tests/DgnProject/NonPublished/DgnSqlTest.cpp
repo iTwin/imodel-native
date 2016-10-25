@@ -859,7 +859,7 @@ TEST_F(SqlFunctionsTest, bbox_union) // FIXME: Hard-coded DgnModelId
 
     stmt.Prepare(*m_db, str.GetUtf8CP());
     //__PUBLISH_EXTRACT_END__
-    stmt.BindId(1, DgnDbTestUtils::QueryFirstGeometricModelId(*dgndb));
+    stmt.BindId(1, DgnDbTestUtils::QueryFirstGeometricModelId(*m_db));
     DbResult rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);
 
