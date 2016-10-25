@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
+#include <Logging/bentleylogging.h>
 
 #define SQLITE_ENABLE_SESSION 1
 #define SQLITE_ENABLE_PREUPDATE_HOOK 1
