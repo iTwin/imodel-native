@@ -1160,7 +1160,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     // format: "%4d:%02d:%02d %02d:%02d:%02d"
                     //        Year Month  Day  H    M   S
                     char AttDate[20];
-                    memset(AttDate, 0, 21);
+                    memset(AttDate, 0, 20);
                     AttDate[0] = pDate[20];     // year
                     AttDate[1] = pDate[21];
                     AttDate[2] = pDate[22];

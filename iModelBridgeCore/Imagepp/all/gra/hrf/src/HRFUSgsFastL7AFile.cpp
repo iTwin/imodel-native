@@ -704,7 +704,7 @@ bool HRFUSgsFastL7AFile::GetHeaderFile(HFCBinStream& pi_rHeaderFile)
         pi_rHeaderFile.Read(&TagName,14);
         pi_rHeaderFile.Read(&m_HeaderInfo.m_AdminInfo.m_Satellite[i].m_SensorMode, sizeof m_HeaderInfo.m_AdminInfo.m_Satellite[i].m_SensorMode-1);
         pi_rHeaderFile.Read(&TagName,13);
-        pi_rHeaderFile.Read(&Value, 6);
+        pi_rHeaderFile.Read(&Value, 6); Value[6] = 0;
         m_HeaderInfo.m_AdminInfo.m_Satellite[i].m_LookAngle = (float)atof(Value);
         pi_rHeaderFile.Read(&Blank,24);
         pi_rHeaderFile.Read(&TagName,11);
@@ -855,7 +855,7 @@ bool HRFUSgsFastL7AFile::GetHeaderFile(HFCBinStream& pi_rHeaderFile)
     pi_rHeaderFile.Read(&Blank,30);
 
     // Read Bias and Gain of each Band
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 7; i++) 
         {
         pi_rHeaderFile.Read(&Value,24);
         m_HeaderInfo.m_Bands[i].m_Radiometric.m_Bias = atof(Value);

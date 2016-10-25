@@ -220,7 +220,7 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
     uint32_t j;
     uint16_t Input;
     Byte  Count;
-    Byte* pPixel = 0;
+    Byte pPixel[4];  // worst case
     size_t  NbBytes = 0;
 
     if (GetSubsetPosY() == 0)
@@ -229,7 +229,6 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
     switch (m_NumberOfBitsPerPixelInOutput)
         {
         case 8 :
-            pPixel = new Byte[1];
             for (i = 0; i < pi_InDataSize;)
                 {
                 Count = (((Byte*)pi_pInData)[i] & 0x7f) + 1;
@@ -249,11 +248,9 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
                         ((Byte*)po_pOutBuffer)[NbBytes++] = ((Byte*)pi_pInData)[i++];
                     }
                 }
-            delete pPixel;
             break;
         case 15 :
         case 16 :
-            pPixel = new Byte[3];
             for (i = 0; i < pi_InDataSize;)
                 {
                 Count = (((Byte*)pi_pInData)[i] & 0x7f) + 1;
@@ -284,14 +281,11 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
                         }
                     }
                 }
-
-            delete[] pPixel;
             break;
         case 24 :
         case 32 :
             uint32_t PixelSizeInByte = static_cast<uint32_t>(GetBitsPerPixel() / 8);
             Byte Swap;
-            pPixel = new Byte [PixelSizeInByte];
             for (i = 0; i < pi_InDataSize;)
                 {
                 Count = (((Byte*)pi_pInData)[i] & 0x7f) + 1;
@@ -334,7 +328,6 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
                     }
 
                 }
-            delete[] pPixel;
             break;
         }
 

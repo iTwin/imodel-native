@@ -381,11 +381,11 @@ size_t HCDCodecRLE8::DecompressSubsetN8(const void* pi_pInData,
 
     size_t BytesCount;
 
-    int8_t* pSrc = (int8_t*)pi_pInData;
+    int8_t const* pSrc = static_cast<int8_t const*>(pi_pInData);
     Byte* pDest = (Byte*)po_pOutBuffer;
 
-    Byte* pColorPlan = new Byte[GetSubsetWidth()];
-    Byte* pColorPlanBegin = pColorPlan;
+    std::unique_ptr<Byte[]> pColorPlanBuffer(new Byte[GetSubsetWidth()]);
+    Byte* pColorPlan = pColorPlanBuffer.get();
 
     int32_t Count;
     uint16_t ColorPlanCount = (uint16_t)(GetBitsPerPixel() / 8);
@@ -427,21 +427,18 @@ size_t HCDCodecRLE8::DecompressSubsetN8(const void* pi_pInData,
                     pSrc++;
                     }
                 }
+
             // Replace the pixel in RGB order in the out buffer
             for(uint32_t i = 0; i < GetSubsetWidth(); ++i)
-                pDest[(i*ColorPlanCount)+colorPlan] = pColorPlanBegin[i];
+                pDest[(i*ColorPlanCount)+colorPlan] = pColorPlanBuffer[i];
 
-            // Move the Color Plan pointer to the beginning of the buffer
-            // for the next color plan
-            pColorPlan = pColorPlanBegin;
+            // Move the Color Plan pointer to the beginning of the buffer for the next color plan
+            pColorPlan = pColorPlanBuffer.get();
             }
 
         pDest += ((GetSubsetWidth() * ColorPlanCount*8) + GetLinePaddingBits()) / 8;
         LinesCount--;
         }
-
-    // Delete the temporary buffer
-    delete[] pColorPlanBegin;
 
     SetCompressedImageIndex(GetCompressedImageIndex() + (((Byte*)pSrc) - ((Byte*)pi_pInData)));
 

@@ -261,7 +261,8 @@ bool HRFNitfCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool                       Result = false;
     HAutoPtr<HFCBinStream>      pFile;
-    char                        pLine[5];
+    char                        pLine[6];
+    pLine[5] = 0; // null terminate
 
     // Open the IMG File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
@@ -439,7 +440,7 @@ void HRFNitfFile::CreateDescriptors()
         // format: "%4d:%02d:%02d %02d:%02d:%02d"
         //        Year Month  Day  H    M   S
         char AttDate[20];
-        memset(AttDate, 0, 21);
+        memset(AttDate, 0, 20);
         AttDate[0] = pNITF_IDATIM[0];       // year
         AttDate[1] = pNITF_IDATIM[1];
         AttDate[2] = pNITF_IDATIM[2];

@@ -186,14 +186,7 @@ void trf_transfoCoordDoTpsScanLine2D(int32_t            mapping,
     {
         for (j=0; j<s_nbDeltaY[mapping]; j++)
         {
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable:6386)
-#endif
             s_deltaY[mapping][j] = SQR(mat_v(coef3D->tpsPoints[mapping],j,1) - yprod[0]);
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
         }
     }
 
@@ -210,14 +203,8 @@ void trf_transfoCoordDoTpsScanLine2D(int32_t            mapping,
             */
             for (i=3, j=0; i<coef3D->nbTpsCoef[XIND]; i++, j++)
             {
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable:6385)
-#endif
                 r2 = SQR(mat_v(coef3D->tpsPoints[mapping], j, 0) - scanLineOriginX) + s_deltaY[mapping][j];
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
+
                 
                 if (0.0 != r2)
                 {

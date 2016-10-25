@@ -9,6 +9,9 @@
 //*****************************************************************************
 // Friend functions
 
+
+PUSH_MSVC_IGNORE(6385)  // will cause performance hit to validate range of every row/column access. At least we have asserts for runtime check. 
+
 BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // operator* template function
@@ -230,10 +233,7 @@ HFCMatrixRow<Columns, NumericType>::operator[](size_t pi_ColumnNumber) const
     HPRECONDITION(pi_ColumnNumber < Columns && pi_ColumnNumber >= 0);
 
     // Return constant reference to value
-    if (pi_ColumnNumber < Columns)
-        return (m_Values[pi_ColumnNumber]);
-    else
-        return (m_Values[0]); // error case, necessary to remove C6385
+    return m_Values[pi_ColumnNumber];
     }
 
 
@@ -250,11 +250,7 @@ HFCMatrixRow<Columns, NumericType>::operator[](size_t pi_ColumnNumber)
     HPRECONDITION(pi_ColumnNumber >= 0);
 
     // Return reference to value
-    if (pi_ColumnNumber < Columns)
-        return (m_Values[pi_ColumnNumber]);
-    else
-        return (m_Values[0]); // error case, necessary to remove C6385
-
+    return m_Values[pi_ColumnNumber];
     }
 
 
@@ -753,10 +749,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator[](size_t pi_RowNumber) const
     HPRECONDITION(pi_RowNumber < Rows && pi_RowNumber >= 0);
 
     // Return constant reference to self
-    if (pi_RowNumber < Rows)
-        return(m_Rows[pi_RowNumber]);
-    else
-        return(m_Rows[0]);  // error case, necessary to remove C6385
+    return m_Rows[pi_RowNumber];
     }
 
 /**----------------------------------------------------------------------------
@@ -781,10 +774,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator[](size_t pi_RowNumber)
     // The row index must be valid
     HPRECONDITION(pi_RowNumber < Rows && pi_RowNumber >= 0);
 
-    if (pi_RowNumber < Rows)
-        return(m_Rows[pi_RowNumber]);
-    else
-        return(m_Rows[0]);   // error case, necessary to remove C6385
+    return m_Rows[pi_RowNumber];
     }
 
 
@@ -1048,4 +1038,7 @@ HFCMatrix<Rows, Columns, NumericType>::CalculateTranspose() const
     // Return result
     return(NewMatrix);
     }
+
+POP_MSVC_IGNORE
+
 END_IMAGEPP_NAMESPACE

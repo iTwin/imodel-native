@@ -181,7 +181,6 @@ bool HRFImgRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HAutoPtr<HFCBinStream> pFile;
 
     bool                  Result  = false;
-    char                  aBuffer[4];
     uint32_t                Width =0 ;
     uint32_t                Height = 0;
     HFCPtr<HFCURL>         pRedFileURL;
@@ -198,6 +197,9 @@ bool HRFImgRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // This test reduces the number of false RGB file, like some worldfiles.
     if (pFile->GetSize() != 12)
         goto WRAPUP;
+
+    char aBuffer[5];
+    aBuffer[4] = 0; // need to be null terminated for sscanf
 
     // Read .a file
     if (pFile->Read(aBuffer,  4) != 4 || sscanf(aBuffer, "%u", &Width) != 1  || Width == 0) // validate if it is in 1..9999 range

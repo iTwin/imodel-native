@@ -125,8 +125,8 @@ protected:
 
     // members
     unique_ptr<NCSObjects>  m_pNcsObjs; 
-    uint32_t*               m_pBandList;
-    double*                 m_pRatio;
+    std::unique_ptr <uint32_t[]> m_pBandList;
+    std::unique_ptr <double []>  m_pRatio;
     bool                    m_IsJpeg2000;
     bool                    m_IsECWP;
 

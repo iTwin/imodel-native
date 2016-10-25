@@ -1095,17 +1095,19 @@ void HRFIntergraphTileEditor::AddInitialFreeBlock (const uint32_t* pi_pOffset, c
 
 bool HRFIntergraphTileEditor::GetListFreeBlock (uint32_t** pi_ppOffset, uint32_t** pi_ppSize, uint32_t* pi_pCount)
     {
-    if ((*pi_pCount = (uint32_t)m_ListOfFreeBlock.size()) > 0)
+    if (m_ListOfFreeBlock.size() > 0)
         {
+        *pi_pCount = (uint32_t) m_ListOfFreeBlock.size();
         *pi_ppOffset = new uint32_t[*pi_pCount];
         *pi_ppSize   = new uint32_t[*pi_pCount];
 
-        HRFIntergraphFile::ListOfFreeBlock::iterator Itr;
-        uint32_t i=0;
-        for (Itr=m_ListOfFreeBlock.begin(); Itr != m_ListOfFreeBlock.end(); Itr++,i++)
+        auto itr = m_ListOfFreeBlock.begin();
+        
+        for (uint32_t i = 0; i < *pi_pCount; ++i) // loop over pi_pCount instead of m_ListOfFreeBlock to get rid of security warning C6385
             {
-            (*pi_ppOffset)[i] = (*Itr).Offset;
-            (*pi_ppSize)[i]   = (*Itr).Size;
+            (*pi_ppOffset)[i] = itr->Offset;
+            (*pi_ppSize)[i]   = itr->Size;
+            ++itr;
             }
         }
     else
