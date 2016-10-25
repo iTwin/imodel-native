@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="BisCore" nameSpacePrefix="bis" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
@@ -79,7 +80,7 @@
         <ECProperty propertyName="StatementTypes" typeName="AutoHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
-  <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
@@ -214,7 +215,7 @@
                         <Properties>
                             <string>FederationGuid</string>
                         </Properties>
-                        <Where>IndexedColumnsAreNotNull</Where>
+                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                     <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
@@ -490,7 +491,7 @@
                     </DbIndex>
                 </Indexes>
             </DbIndexList>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -589,7 +590,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
                 <CustomHandledProperty>
@@ -1307,6 +1308,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="Variables" typeName="string" />
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewAttachment">
@@ -1901,7 +1903,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Styles" typeName="string"/>
+        <ECProperty propertyName="Styles" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle3d">
         <BaseClass>DisplayStyle</BaseClass>
@@ -1921,7 +1923,7 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
-        <ECProperty propertyName="Details" typeName="string"/>
+        <ECProperty propertyName="Details" typeName="string" />
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward"/>
         <ECNavigationProperty propertyName="DisplayStyle" relationshipName="ViewDefinitionUsesDisplayStyle" direction="Forward"/>
     </ECEntityClass>

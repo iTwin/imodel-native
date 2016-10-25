@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
-#include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/VolumeElement.h>
 #include <DgnPlatform/GenericDomain.h>
 

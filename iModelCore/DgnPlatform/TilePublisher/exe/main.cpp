@@ -1,4 +1,5 @@
 /*--------------------------------------------------------------------------------------+
+
 |
 |     $Source: TilePublisher/exe/main.cpp $
 |
@@ -46,6 +47,7 @@ enum class ParamId
     GlobeImagery,
     GlobeTerrain,
     Standalone,
+    NoReplace,
     Invalid,
 };
 
@@ -79,6 +81,7 @@ static CommandParam s_paramTable[] =
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
+        { L"nr", L"noreplace", L"Do not replace existing files", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -157,6 +160,7 @@ private:
     Utf8String      m_terrainProvider;
     bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
+    bool            m_overwriteExisting = true;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -172,6 +176,7 @@ public:
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+    bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -351,7 +356,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 break;
                 }
-
+            case ParamId::NoReplace:
+                m_overwriteExisting = false;
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -807,7 +814,6 @@ int wmain(int ac, wchar_t const** av)
     if (db.IsNull())
         return 1;
 
-
     ViewControllerPtr viewController = createParams.LoadViewController(*db);
     if (viewController.IsNull())
         return 1;
@@ -816,6 +822,16 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
     TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
+
+    if (!createParams.GetOverwriteExistingOutputFile())
+        {
+        BeFileName  outputFile (nullptr, createParams.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), L".html");
+        if (outputFile.DoesPathExist())
+            {
+            printf ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
+            return 1;
+            }
+        }
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

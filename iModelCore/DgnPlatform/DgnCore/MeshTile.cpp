@@ -972,7 +972,13 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
        
         DgnPlatformLib::AdoptHost(host);
 
-        tile.CollectGeometry (m_cache, m_dgndb, leafThresholdExceeded, leafTolerance, tileTolerance, maxPointsPerTile);
+        // This initial collection is done at the (target) leaf tolerance.  If this is not already a leaf (tolerance < leaf tolerance)
+        // then collection will only happen until the maxPointsPerTile is exceeded.  If leaf size is exceeded we'll have to add
+        // discard this geometry, recollect at tile tolerance and add children (below).   
+        tile.CollectGeometry (m_cache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 :maxPointsPerTile);
+
+        if (!isLeaf && !leafThresholdExceeded)
+            isLeaf = true;
 
         if (tile.GetGeometries().empty())
             {
@@ -982,16 +988,12 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
             }
 
         tile.SetIsEmpty (false);
-        if (!isLeaf && !leafThresholdExceeded)
-            isLeaf = true;
-
-        tile.SetTolerance (isLeaf ? leafTolerance : tileTolerance);
         tile.SetIsLeaf(isLeaf);
-        collector._AcceptTile(tile);
-        tile.ClearGeometry();
 
         if (isLeaf)
             {
+            tile.SetTolerance (leafTolerance);
+            collector._AcceptTile(tile);
             m_completedVolume += tile.GetDgnRange().Volume();
             }
         else
@@ -1008,8 +1010,14 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
                 tile.GetChildren().push_back (child);
                 ProcessTile (*child, collector, leafTolerance, maxPointsPerTile);
                 }
-            }
 
+            tile.SetTolerance (tileTolerance);
+            tile.ClearGeometry();     // Discard initial geometry (collected at leaf tolerance).
+            tile.CollectGeometry (m_cache, m_dgndb, nullptr, tileTolerance, 0);
+            collector._AcceptTile(tile);
+            }
+ 
+        tile.ClearGeometry();
         DgnPlatformLib::ForgetHost();
         m_completedTiles++;
         });
@@ -1193,8 +1201,7 @@ private:
     virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
 public:
-    TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : 
-                                 m_processor(processor), m_cache(cache), 
+    TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache), 
 #if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
     m_statement(db.GetPreparedECSqlStatement(s_geometrySource3dECSql))
 #else
@@ -1295,8 +1302,7 @@ private:
     Transform               m_transformFromDgn;
     TileGeometryList        m_curElemGeometries;
     double                  m_minRangeDiagonal;
-    bool&                   m_leafThresholdExceeded;
-    double                  m_tileTolerance;
+    bool*                   m_leafThresholdExceeded;
     size_t                  m_leafCountThreshold;
     size_t                  m_leafCount;
 
@@ -1317,12 +1323,12 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool& leafThresholdExceeded, double leafTolerance, double tileTolerance, size_t leafCountThreshold) 
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
-          m_leafThresholdExceeded(leafThresholdExceeded), m_tileTolerance(tileTolerance), m_leafCountThreshold(leafCountThreshold), m_leafCount(0)
+          m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0)
         {
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
-        m_minRangeDiagonal = s_minRangeBoxSize * leafTolerance;
+        m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
 
@@ -1353,7 +1359,7 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     if (BelowMinRange(geom.GetTileRange()))
         return;
 
-    if (!m_leafThresholdExceeded)
+    if (nullptr != m_leafThresholdExceeded)
         {
         DRange3d intersection = DRange3d::FromIntersection (geom.GetTileRange(), m_tileRange, true);
 
@@ -1361,8 +1367,7 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
             return;
 
         m_leafCount += intersection.DiagonalDistance() * geom.GetFacetCountDensity();
-        if (false != (m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold)))
-            m_minRangeDiagonal =  s_minRangeBoxSize * m_tileTolerance;
+        *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
         }
         
     m_geometries.push_back(&geom);
@@ -1376,7 +1381,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     DRange3d    tileRange;
 
     m_transformFromDgn.Multiply (tileRange, dgnRange);
-    if (BelowMinRange(tileRange))
+    if ((nullptr != m_leafThresholdExceeded && *m_leafThresholdExceeded) || BelowMinRange(tileRange))
         return;
 
     try
@@ -1553,11 +1558,11 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool& leafThresholdExceeded, double leafTolerance, double tileTolerance, size_t leafCountThreshold)
+void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(GetTolerance());
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, leafTolerance, tileTolerance, leafCountThreshold);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, leafCountThreshold);
     TileGeometryProcessorContext    context(processor, db, cache);
 
     processor._OutputGraphics(context);
