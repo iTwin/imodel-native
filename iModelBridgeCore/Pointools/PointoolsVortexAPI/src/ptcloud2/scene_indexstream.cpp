@@ -844,11 +844,11 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 
 		/*write this to disk*/ 
 		PTTRACEOUT << "PodIO::writeCloudData";
-		int *voxel_sizes = 0;
+        std::unique_ptr<int[]> voxel_sizes;
 
 		try
 		{
-			voxel_sizes = new int[voxread.size()];
+			voxel_sizes.reset(new int[voxread.size()]);
 		}
 		catch(...)
 		{
@@ -860,9 +860,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		for (uint v=0;v<voxread.size(); v++) voxel_sizes[v] = voxread[v];
 
 		PodIO::writeCloudData( *buildInfo->job, buildInfo->cloudInfo()->_cloudPosInScene, 
-            start_voxel, static_cast<int>(processvoxels.size()), voxel_sizes, true);
-
-		delete [] voxel_sizes;
+            start_voxel, static_cast<int>(processvoxels.size()), voxel_sizes.get(), true);
 
 		PTTRACE_LINE
 		
