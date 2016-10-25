@@ -24,6 +24,8 @@
 #include <ScalableMesh\IScalableMeshSources.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
+#include <Bentley\BeDirectoryIterator.h>
+
 USING_NAMESPACE_GROUND_DETECTION
 
 /*----------------------------------------------+
@@ -50,14 +52,20 @@ IScalableMeshGroundExtractorPtr IScalableMeshGroundExtractor::Create(const WStri
     return groundExtractor;
     }
 
-StatusInt IScalableMeshGroundExtractor::ExtractAndEmbed()
+StatusInt IScalableMeshGroundExtractor::ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {
-    return _ExtractAndEmbed();
+    return _ExtractAndEmbed(coverageTempDataFolder);
     }        
 
 StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d>& area)
     {
     return _SetExtractionArea(area);
+    }        
+
+void IScalableMeshGroundExtractor::GetTempDataLocation(BeFileName& textureSubFolderName, BeFileName& extraLinearFeatureFileName)
+    {
+    textureSubFolderName = BeFileName(L"\\Textures\\");    
+    extraLinearFeatureFileName = BeFileName(L"CoverageBreaklines.dat");        
     }        
 
 /*----------------------------------------------------------------------------+
@@ -212,7 +220,7 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     }
     */
 
-StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
+StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
     StatusInt status;
             
@@ -237,12 +245,41 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     sourceImportConfig.SetReplacementSMData(data);
     terrainCreator->EditSources().Add(groundPtsSource);
 
-    /*
-    if (s_createTexture)
+    //Add texture if any    
+    BeFileName currentTextureDir(coverageTempDataFolder);
+
+    BeFileName textureSubFolderName;
+    BeFileName extraLinearFeatureFileName;
+
+    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);        
+
+    currentTextureDir.AppendString(textureSubFolderName.c_str());    
+    
+    BeDirectoryIterator directoryIter(currentTextureDir);
+
+    BeFileName currentTextureName;
+    bool       isDir;            
+
+    while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
         {        
-        CreateAndAddTexture(IDTMSourceCollection&);
+        if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+            {
+            IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
+            terrainCreator->EditSources().Add(textureSource);                       
+            }        
+
+        directoryIter.ToNext();
         }
-        */
+
+    BeFileName coverageBreaklineFile(coverageTempDataFolder);
+    coverageBreaklineFile.AppendString(L"\\");    
+    coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
+    
+    if (coverageBreaklineFile.DoesPathExist())
+        {
+        IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
+        terrainCreator->EditSources().Add(coverageBreaklineSource);                       
+        }
 
     status = terrainCreator->Create(true, true);
     assert(status == SUCCESS);
@@ -255,9 +292,10 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     return status;
     }
 
-#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
+//#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
+#define LARGEST_STRUCTURE_SIZE_DEFAULT 30 
 
-StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
+StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {    
     IGroundDetectionServices* serviceP(GroundDetectionManager::GetServices());
 
@@ -304,7 +342,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
     params->SetGroundPointsAccumulator(nullAcc);
     accumPtr = 0;
 
-    status = CreateSmTerrain();
+    status = CreateSmTerrain(coverageTempDataFolder);
     
     return status;        
     } 

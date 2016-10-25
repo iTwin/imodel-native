@@ -39,11 +39,11 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         bvector<DPoint3d> m_extractionArea;       
         WString           m_smTerrainPath;
 
-        StatusInt CreateSmTerrain();
+        StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);
 
     protected:                   
 
-        virtual StatusInt                   _ExtractAndEmbed() override;     
+        virtual StatusInt                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;     
 
         virtual StatusInt                   _SetExtractionArea(const bvector<DPoint3d>& area) override;
 

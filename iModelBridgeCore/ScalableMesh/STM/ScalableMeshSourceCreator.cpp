@@ -52,6 +52,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
     #include <ImagePP\all\h\HRFMapboxFile.h>
 #endif
 
+#include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
+#include <ImagePP\all\h\HRFUtility.h>
+
+
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
@@ -828,6 +832,8 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
             {
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
             }
+
+        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);        
                                                                                                                             
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
