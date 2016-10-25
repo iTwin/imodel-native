@@ -649,7 +649,9 @@ int main(int argc, char** argv)
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-    ECSchemaReadContext::Initialize(exeDirectory);
+    BeFileName assetsDirectory(exeDirectory);
+    assetsDirectory.AppendToPath(L"Assets");
+    ECSchemaReadContext::Initialize(assetsDirectory);
 #endif
 
     Options options;
