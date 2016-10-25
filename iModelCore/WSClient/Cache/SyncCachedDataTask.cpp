@@ -12,7 +12,6 @@
 #include <WebServices/Cache/ServerQueryHelper.h>
 
 #include "Logging.h"
-#include "DownloadFilesTask.h"
 #include "SyncCachedInstancesSeperatelyTask.h"
 #include "SyncCachedInstancesTask.h"
 
@@ -176,12 +175,14 @@ void SyncCachedDataTask::CacheFiles()
         ReportProgress(fileName);
         };
 
-    auto task = std::make_shared<DownloadFilesTask>(m_ds, filesToDownload, FileCache::Persistent, onProgress, GetCancellationToken());
-    m_ds->GetCacheAccessThread()->Push(task);
-
-    task->Then(m_ds->GetCacheAccessThread(), [=]
+    m_ds->DownloadAndCacheFiles(
+        filesToDownload,
+        FileCache::Persistent,
+        onProgress,
+        GetCancellationToken())
+    ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult& result)
         {
-        AddResult(task->GetResult());
+        AddResult(result);
         });
     }
 

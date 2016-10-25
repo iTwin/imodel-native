@@ -489,13 +489,19 @@
     <ClCompile Include="DgnDbServerClient\DgnDbBriefcaseInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\FileDownloadManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerBriefcaseInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryAdmin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\FileInfo.cpp">
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerBreakHelper.cpp">
@@ -1112,6 +1118,18 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcaseInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Client\Logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\FileDownloadManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryAdmin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1149,6 +1167,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
@@ -1175,6 +1194,5 @@
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
     <None Include=".hgignore" />
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

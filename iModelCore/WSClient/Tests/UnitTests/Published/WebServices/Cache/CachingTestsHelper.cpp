@@ -86,11 +86,18 @@ bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key)
     return ecInstanceId.IsValid();
     }
 
-Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key)
+Json::Value ReadInstance(IDataSourceCache& cache, ECInstanceKeyCR key)
     {
     Json::Value instance;
-    EXPECT_EQ(SUCCESS, ds.GetAdapter().GetJsonInstance(instance, key));
+    EXPECT_EQ(SUCCESS, cache.GetAdapter().GetJsonInstance(instance, key));
     return instance;
+    }
+
+Json::Value ReadInstance(IDataSourceCache& cache, ObjectIdCR objectId)
+    {
+    Json::Value instanceJson;
+    EXPECT_EQ(CacheStatus::OK, cache.ReadInstance(objectId, instanceJson));
+    return instanceJson;
     }
 
 Json::Value ReadModifiedProperties(IDataSourceCache& ds, ECInstanceKeyCR key)

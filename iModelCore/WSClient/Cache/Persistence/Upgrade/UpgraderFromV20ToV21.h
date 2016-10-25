@@ -1,25 +1,25 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h $
+|     $Source: Cache/Persistence/Upgrade/UpgraderFromV20ToV21.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-#include <WebServices/Connect/IConnectTokenProvider.h>
+
+#include "UpgraderBase.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-#if defined (USE_GTEST)
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    08/2014
+*  @bsiclass                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockConnectTokenProvider : public IConnectTokenProvider
+struct UpgraderFromV20ToV21 : private UpgraderBase
     {
     public:
-        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<SamlTokenPtr>());
-        MOCK_METHOD0(GetToken, SamlTokenPtr());
+        UpgraderFromV20ToV21(ECDbAdapter& adapter);
+        BentleyStatus Upgrade();
     };
-#endif
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

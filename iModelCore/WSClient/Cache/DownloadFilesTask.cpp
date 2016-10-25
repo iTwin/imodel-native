@@ -25,12 +25,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 DownloadFilesTask::DownloadFilesTask
 (
 CachingDataSourcePtr cachingDataSource,
+std::shared_ptr<FileDownloadManager> fileDownloadManager,
 bset<ObjectId> filesToDownload,
 FileCache fileCacheLocation,
 CachingDataSource::LabeledProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(cachingDataSource, ct),
+m_fileDownloadManager(fileDownloadManager),
 m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
 m_onProgressCallback(ProgressFilter::Create(onProgress)),
@@ -99,60 +101,40 @@ void DownloadFilesTask::ContinueDownloadingFiles()
         {
         if (IsTaskCanceled()) break;
 
-        auto launchedTask = DownloadFile(m_filesToDownload[m_nextFileToDownloadIndex]);
+        DownloadFileProperties& file = m_filesToDownload[m_nextFileToDownloadIndex];
 
         m_nextFileToDownloadIndex++;
 
         m_downloadTasksRunning++;
-        launchedTask->Then(m_ds->GetCacheAccessThread(), [=]
+
+        auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(file));
+        m_fileDownloadManager->DownloadAndCacheFile(file.objectId, file.name, m_fileCacheLocation, onProgress, GetCancellationToken())
+            ->Then(m_ds->GetCacheAccessThread(), [=, &file] (ICachingDataSource::Result& result)
             {
             m_downloadTasksRunning--;
+
+            if (IsTaskCanceled()) return;
+
+            if (!result.IsSuccess())
+                {
+                WSError::Id errorId = result.GetError().GetWSError().GetId();
+
+                if (WSError::Id::InstanceNotFound == errorId ||
+                    WSError::Id::NotEnoughRights == errorId)
+                    {
+                    auto txn = m_ds->StartCacheTransaction();
+                    AddFailedObject(txn, file.objectId, result.GetError());
+                    txn.Commit();
+                    return;
+                    }
+                else
+                    {
+                    SetError(result.GetError());
+                    return;
+                    }
+                }
+            
             ContinueDownloadingFiles();
             });
         }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> DownloadFilesTask::DownloadFile(DownloadFileProperties& file)
-    {
-    auto txn = m_ds->StartCacheTransaction();
-    TempFilePtr tempFile = m_ds->GetTempFile(file.name, file.objectId);
-    Utf8String fileCacheTag = txn.GetCache().ReadFileCacheTag(file.objectId);
-    auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(file));
-
-    return m_ds->m_client->SendGetFileRequest(file.objectId, tempFile->GetPath(), fileCacheTag, onProgress, GetCancellationToken())
-        ->Then(m_ds->GetCacheAccessThread(), [=, &file] (WSFileResult& fileResult)
-        {
-        if (IsTaskCanceled()) return;
-
-        auto txn = m_ds->StartCacheTransaction();
-        if (!fileResult.IsSuccess())
-            {
-            WSError::Id errorId = fileResult.GetError().GetId();
-
-            if (WSError::Id::InstanceNotFound == errorId ||
-                WSError::Id::NotEnoughRights == errorId)
-                {
-                AddFailedObject(txn, file.objectId, fileResult.GetError());
-                txn.GetCache().RemoveFile(file.objectId);
-                return;
-                }
-            else
-                {
-                SetError(fileResult.GetError());
-                return;
-                }
-            }
-
-        if (SUCCESS != txn.GetCache().CacheFile(file.objectId, fileResult.GetValue(), m_fileCacheLocation))
-            {
-            SetError();
-            return;
-            }
-
-        txn.Commit();
-        tempFile->Cleanup();
-        });
     }
