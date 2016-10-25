@@ -131,7 +131,7 @@ namespace IndexECPlugin.Source.Helpers
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
 
 
-            List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem);
+            List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem, major);
 
             realityDataNetList.AddRange(UsgsPackager(sender, connection, queryModule, usgsRequestedEntities));
 
@@ -191,7 +191,7 @@ namespace IndexECPlugin.Source.Helpers
             return instance.InstanceId;
             }
 
-        private List<RealityDataNet> RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem)
+        private List<RealityDataNet> RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, int major)
             {
             List<RealityDataNet> RDNList = new List<RealityDataNet>();
             if ( basicRequestedEntities.Count == 0 )
@@ -309,9 +309,6 @@ namespace IndexECPlugin.Source.Helpers
                     //This is a multiband source
 
                     GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
-                    MultiBandSourceNet msn = MultiBandSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
-                    
-                    SetRdsnFields(msn, genericInfo);
 
                     IECRelationshipInstance multibandSourceRel;
                     if ( requestedEntity.SpatialDataSourceID == null )
@@ -347,6 +344,18 @@ namespace IndexECPlugin.Source.Helpers
                     string blueBandSisterFilesString = (firstMultibandSource.GetPropertyValue("BlueBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("BlueBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("BlueBandSisterFiles").StringValue;
                     string greenBandSisterFilesString = (firstMultibandSource.GetPropertyValue("GreenBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("GreenBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("GreenBandSisterFiles").StringValue;
                     string panchromaticBandSisterFilesString = (firstMultibandSource.GetPropertyValue("PanchromaticBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("PanchromaticBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("PanchromaticBandSisterFiles").StringValue;
+
+                    MultiBandSourceNet msn;
+                    if ( major == 1 )
+                        {
+                        msn = MultiBandSourceNet.Create(UriNet.Create(panchromaticBandURL, genericInfo.FileInCompound), genericInfo.Type);
+                        }
+                    else
+                        {
+                        msn = MultiBandSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
+                        }
+
+                    SetRdsnFields(msn, genericInfo);
 
                     redBandFileSize = Math.Max(0, redBandFileSize);
                     greenBandFileSize = Math.Max(0, greenBandFileSize);

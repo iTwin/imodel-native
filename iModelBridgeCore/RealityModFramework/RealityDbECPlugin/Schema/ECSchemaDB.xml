@@ -1751,7 +1751,7 @@
             </ECCustomAttributes>
         </ECProperty>
             
-        <ECProperty propertyName="Occlusion" typeName="string">
+        <ECProperty propertyName="Occlusion" typeName="double">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>Occlusion</ColumnName>
@@ -2019,6 +2019,7 @@
         <ECProperty propertyName="OSM" typeName="boolean" />
         <ECProperty propertyName="Requestor" typeName="string" />
         <ECProperty propertyName="RequestorVersion" typeName="string" />
+		<ECProperty propertyName="Version" typeName="string" />
     </ECClass>
 
     <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">

@@ -226,55 +226,6 @@ WmsDataSource::~WmsDataSource() {}
 Utf8CP WmsDataSource::_GetElementName() const {return PACKAGE_ELEMENT_WmsSource;}
 
 
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-/*
-RealityPackageStatus WmsDataSource::_Read(BeXmlNodeR dataSourceNode)
-    {
-    // Always read base first.
-    RealityPackageStatus status = T_Super::_Read(dataSourceNode);
-    if(RealityPackageStatus::Success != status)
-        return status;
-
-    // Create MapSettings xml fragment from xml node.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    xmlStatus = dataSourceNode.GetXmlString(m_mapSettings);
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    return status;
-    }
-*/
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-/*
-RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
-    {
-    // Always write base first.
-    RealityPackageStatus status = T_Super::_Write(dataSourceNode);
-    if(RealityPackageStatus::Success != status)
-        return status;
-
-    if (m_mapSettings.empty())
-        return RealityPackageStatus::Success;
-
-    // Create Xml Dom from string.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_mapSettings.c_str());
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    // Add root node.
-    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
-
-    return status;
-    }
-*/
-
 //=======================================================================================
 //                              OsmDataSource
 //=======================================================================================
@@ -328,54 +279,6 @@ OsmDataSource::~OsmDataSource() {}
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
 Utf8CP OsmDataSource::_GetElementName() const { return PACKAGE_ELEMENT_OsmSource; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-/*
-RealityPackageStatus OsmDataSource::_Read(BeXmlNodeR dataSourceNode)
-    {
-    // Always read base first.
-    RealityPackageStatus status = T_Super::_Read(dataSourceNode);
-    if (RealityPackageStatus::Success != status)
-        return status;
-
-    // Create Osm data source xml fragment from xml node.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    xmlStatus = dataSourceNode.GetXmlString(m_osmResource);
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    return status;
-    }
-*/
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-/*
-RealityPackageStatus OsmDataSource::_Write(BeXmlNodeR dataSourceNode) const
-    {
-    // Always write base first.
-    RealityPackageStatus status = T_Super::_Write(dataSourceNode);
-    if (RealityPackageStatus::Success != status)
-        return status;
-
-    if (m_osmResource.empty())
-        return RealityPackageStatus::Success;
-
-    // Create Xml Dom from string.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_osmResource.c_str());
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    // Add root node.
-    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
-
-    return status;
-    }
-*/
 
 
 //=======================================================================================
