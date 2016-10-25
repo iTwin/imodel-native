@@ -2689,6 +2689,51 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     }
 
+// This test was to illustrate a problem with the ECDiff tool.  However, we decided to not to make the fix on this branch.  The tool has been rewritten on bim0200.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+//TEST(SchemaDiffTests, RightNotLeft)
+//    {
+//    Utf8CP leftXml = 
+//        "<?xml version='1.0' encoding='utf-8'?>"
+//
+//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
+//        "    </ECClass>"
+//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
+//        "        <BaseClass>NAMED_ITEM</BaseClass>"
+//        "    </ECClass>"
+//        "</ECSchema>";
+//
+//    Utf8CP rightXml = 
+//        "<?xml version='1.0' encoding='utf-8'?>"
+//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
+//        "    </ECClass>"
+//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
+//        "        <BaseClass>NAMED_ITEM</BaseClass>"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Tag Number\" />"
+//        "    </ECClass>"
+//        "</ECSchema>";
+//
+//    ECSchemaReadContextPtr leftSchemaContext = ECSchemaReadContext::CreateContext();
+//    ECSchemaReadContextPtr rightSchemaContext = ECSchemaReadContext::CreateContext();
+//    ECSchemaPtr leftSchema, rightSchema;
+//    ECSchema::ReadFromXmlString(leftSchema, leftXml, *leftSchemaContext);
+//    ECSchema::ReadFromXmlString(rightSchema, rightXml, *rightSchemaContext);
+//    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
+//    ASSERT_TRUE(diff.IsValid());
+//
+//    ECSchemaPtr mergedSchema;
+//    MergeStatus status = diff->Merge(mergedSchema, CONFLICTRULE_TakeLeft);
+//    ASSERT_EQ(status, MergeStatus::Success);
+//    ASSERT_TRUE(mergedSchema.IsValid());
+//
+//    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Robert.Schili                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
