@@ -1821,12 +1821,6 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             return ERROR;
             }
 
-        if (WipNavigationPropertyMap const* nav = dynamic_cast<WipNavigationPropertyMap const*>(propertyMap))
-            {
-            if (nav->IsSupportedInECSql())
-                continue;
-            }
-
         //Reject overriden property
         if (propertyMap->GetProperty().GetBaseProperty() != nullptr)
             {

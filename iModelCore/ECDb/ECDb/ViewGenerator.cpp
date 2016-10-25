@@ -217,12 +217,6 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (result->GetKind() == PropertyMapKind::NavigationPropertyMap)
-            {
-            if (!static_cast<WipNavigationPropertyMap const&>(*result).IsSupportedInECSql())
-                return ERROR;
-            }
-
         WipPropertyMapColumnDispatcher baseColumnDispatcher, derivedColumnDispatcher;
         result->Accept(baseColumnDispatcher);
         derivedPropertyMap->Accept(derivedColumnDispatcher);
@@ -595,7 +589,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, true /*traverse compound properties*/);
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, true /*traverse compound properties but compound properties themself is not included*/);
     baseClassMap.GetPropertyMaps().Accept(typeDispatcher);
 
     for (WipPropertyMap const* baseClassPropertyMap : typeDispatcher.ResultSet())
@@ -604,11 +598,6 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
             continue;
 
         if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetAccessString().c_str()))
-            continue;
-
-        //This is compound property and we will get its components instead of parent property. So to call IsSupportedInECSql we must call its parent.
-        if (baseClassPropertyMap->IsKindOf(PropertyMapKind::NavigationPropertyMap) &&
-            !static_cast<WipNavigationPropertyMap const*>(baseClassPropertyMap->GetParent())->IsSupportedInECSql())
             continue;
 
         WipPropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMaps().Find(baseClassPropertyMap->GetAccessString().c_str());
@@ -626,7 +615,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql, DbTable const& table, std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> const& viewPropMaps, bool forNullView)
     {
-    bool second = false;
+    bool second = false; 
     for (auto const& propMapPair : viewPropMaps)
         {
         WipPropertyMap const* basePropMap = propMapPair.first;
@@ -642,14 +631,11 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         DbTable const& basePropMapTable = basePropMap->GetClassMap().GetJoinedTable();
         DbTable const& actualPropMapTable = actualPropMap->GetClassMap().GetJoinedTable();
-        WipPropertyMapSqlDispatcher baseSqlDispatcher(basePropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
-        WipPropertyMapSqlDispatcher actualSqlDispatcher(actualPropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, actualPropMapTable.GetName().c_str());
-        WipPropertyMapSqlDispatcher actualSqlDispatcherWithTableName(actualPropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+        WipPropertyMapSqlDispatcher baseSqlDispatcher(basePropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr,false, false);
+        WipPropertyMapSqlDispatcher actualSqlDispatcher(actualPropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, actualPropMapTable.GetName().c_str(), false, true);
 
         basePropMap->Accept(baseSqlDispatcher);
         actualPropMap->Accept(actualSqlDispatcher);
-        actualPropMap->Accept(actualSqlDispatcherWithTableName);
-        
 
         const bool generateECClassView = m_viewAccessStringList && m_captureViewAccessStringList;
         const size_t snippetCount = actualSqlDispatcher.GetResultSet().size();
@@ -661,90 +647,42 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         const WipPropertyMapSqlDispatcher::Result& baseResult = baseSqlDispatcher.GetResultSet().front();
         const WipPropertyMapSqlDispatcher::Result& actualResult = actualSqlDispatcher.GetResultSet().front();
-        const WipPropertyMapSqlDispatcher::Result& actualResultWithoutTable = actualSqlDispatcherWithTableName.GetResultSet().front();
 
-        if (WipECClassIdPropertyMap const* baseECClassIdPropertyMap = dynamic_cast<WipECClassIdPropertyMap const*>(basePropMap))
-            {
-            if (generateECClassView)
-                m_viewAccessStringList->push_back(basePropMap->GetAccessString());
+        if (second)
+            viewSql.AppendComma();
+        else
+            second = true;
 
-            WipColumnVerticalPropertyMap const* baseVMap = baseECClassIdPropertyMap->FindVerticalPropertyMap(basePropMapTable);
-            if (baseVMap == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            if (second)
-                viewSql.AppendComma();
-            else
-                second = true;
-
-            if (forNullView)
-                {
-                viewSql.Append("NULL").AppendSpace().Append(baseVMap->GetColumn().GetName().c_str());
-                }
-            else
-                {
-                WipECClassIdPropertyMap const* actualECClassIdPropertyMap = static_cast<WipECClassIdPropertyMap  const*>(actualPropMap);
-                WipColumnVerticalPropertyMap const* actuallVMap = actualECClassIdPropertyMap->FindVerticalPropertyMap(actualPropMapTable);
-                if (actuallVMap == nullptr)
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
-
-                if (actuallVMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
-                    {
-                    viewSql.AppendEscaped(actuallVMap->GetColumn().GetTable().GetName().c_str()).AppendDot().AppendEscaped(actuallVMap->GetColumn().GetName().c_str());
-                    }
-                else
-                    {
-                    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-                    actualECClassIdPropertyMap->GetDefaultECClassId().ToString(classIdStr);
-                    viewSql.Append(classIdStr).AppendSpace().Append(COL_ECClassId);
-                    }
-                }
-            }
+        Utf8CP aliasSqlSnippet = baseResult.GetSql();
+        if (forNullView)
+            viewSql.Append("NULL ").AppendSpace().Append(aliasSqlSnippet);
         else
             {
-            if (second)
-                viewSql.AppendComma();
-            else
-                second = true;
-
-            Utf8CP aliasSqlSnippet = baseResult.GetSql();
-            if (forNullView)
-                viewSql.Append("NULL ");
-            else
-                {
-                if (generateECClassView)
-                    {
-
-                    if (!actualResult.GetPropertyMap().GetColumn().IsShared())
-                        viewSql.Append(actualResult.GetSql());
-                    else
-                        {
-                        const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(actualResult.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
-                        viewSql.Append("CAST (");
-                        viewSql.Append(actualResult.GetSql());
-                        viewSql.Append(" AS ").Append(DbColumn::TypeToSql(colType));
-                        viewSql.Append(")");
-                        
-                        }
-                    }
-                else
-                    {
-                    viewSql.Append(actualResult.GetSql());
-                    }
-                }
-
-            if (strcmp(actualResultWithoutTable.GetSql(), aliasSqlSnippet) != 0 || forNullView) //do not add alias if column name is same as alias.
-                viewSql.AppendSpace().Append(aliasSqlSnippet);
-
             if (generateECClassView)
                 {
+                if (!actualResult.GetPropertyMap().GetColumn().IsShared())
+                    viewSql.Append(actualResult.GetSql());
+                else
+                    {
+                    const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(actualResult.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
+                    viewSql.Append("CAST (");
+                    viewSql.Append(actualResult.GetSql());
+                    viewSql.Append(" AS ").Append(DbColumn::TypeToSql(colType));
+                    viewSql.Append(")");
+
+                    }
+
                 m_viewAccessStringList->push_back(baseResult.GetPropertyMap().GetAccessString());
+                }
+            else
+                {
+                viewSql.Append(actualResult.GetSql());
+                }
+
+            if (!actualResult.GetPropertyMap().IsKindOf(PropertyMapKind::System))
+                {
+                if (actualResult.GetColumn().GetName() != baseResult.GetColumn().GetName()) //do not add alias if column name is same as alias.
+                    viewSql.AppendSpace().Append(aliasSqlSnippet);
                 }
             }
         }
