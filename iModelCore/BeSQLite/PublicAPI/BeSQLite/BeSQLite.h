@@ -1385,17 +1385,18 @@ public:
 //! and make sure the DbTableIterator is valid for the lifetime of its Entries.
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct DbTableIterator
+struct DbTableIterator : NonCopyableClass
 {
-private:
-    DbTableIterator& operator=(DbTableIterator const& rhs);
-
 protected:
     mutable DbP    m_db;
     mutable CachedStatementPtr m_stmt;
     NamedParams m_params;
 
     explicit DbTableIterator(DbCR db) : m_db((DbP)&db) {}
+
+    //! Move ctor. DbTableIterator are not copyable, but they are movable.
+    DbTableIterator(DbTableIterator&& rhs) : m_db(rhs.m_db), m_stmt(std::move(rhs.m_stmt)), m_params(rhs.m_params) {}
+
     BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
 
 public:
