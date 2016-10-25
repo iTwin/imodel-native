@@ -117,6 +117,12 @@ void IScalableMeshProgressiveQueryEngine::InitScalableMesh(IScalableMeshPtr& sca
     }
 
 
+void IScalableMeshProgressiveQueryEngine::ClearOverviews(IScalableMesh* scalableMeshP)
+    {
+    return _ClearOverviews(scalableMeshP);
+    }
+
+
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
@@ -902,7 +908,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
         }        
     }
 
-void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
+void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {                
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false);
@@ -913,6 +919,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
+    m_smOverviews.push_back(sMesh);
         
     if (meshNode->GetLevel() < MAX_PRELOAD_OVERVIEW_LEVEL)
         {                
@@ -922,7 +929,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
             {            
             HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> node;
             node = (dynamic_cast<ScalableMeshNode<DPoint3d>*>(childNode.get()))->GetNodePtr();            
-            PreloadOverview(node);
+            PreloadOverview(node, sMesh);
             }
         }            
     }             
@@ -979,7 +986,7 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 
-    PreloadOverview(rootNodePtr);       
+    PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
 	int64_t nbObjects = 0;
 	int64_t nbNodes = 0;
@@ -1000,6 +1007,7 @@ ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     //NEEDS_WORK_SM : Need to cancel only for particular ScalableMesh
     s_queryProcessor.CancelAllQueries();    
     m_overviewNodes.clear();
+    m_smOverviews.clear();
     }
 
 
@@ -1495,7 +1503,23 @@ void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& sca
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 
-    PreloadOverview(rootNodePtr);
+    PreloadOverview(rootNodePtr, scalableMeshPtr.get());
+    }
+
+void ScalableMeshProgressiveQueryEngine::_ClearOverviews(IScalableMesh* scalableMeshP)
+    {
+    bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_remainingOverviews;
+    bvector<IScalableMesh*> m_meshForOverviews;
+    for (auto& node : m_overviewNodes)
+        {
+        if (m_smOverviews[&node - &m_overviewNodes.front()] != scalableMeshP)
+            {
+            m_remainingOverviews.push_back(node);
+            m_meshForOverviews.push_back(m_smOverviews[&node - &m_overviewNodes.front()]);
+            }
+        }
+    m_overviewNodes = m_remainingOverviews;
+    m_smOverviews = m_meshForOverviews;
     }
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int                                                                      queryId,

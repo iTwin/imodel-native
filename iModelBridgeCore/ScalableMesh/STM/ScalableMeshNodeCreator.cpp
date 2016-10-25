@@ -163,8 +163,12 @@ void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshN
         status = BSIERROR;
         return;
         }
-    nodeP->SortSubNodes();
-    if (computeNeighbors) nodeP->SetupNeighborNodesAfterSplit();
+
+    if (computeNeighbors)
+        {
+        nodeP->SortSubNodes();
+        nodeP->SetupNeighborNodesAfterSplit();
+        }
     status = BSISUCCESS;
     return;
     }

@@ -743,7 +743,7 @@ uint64_t SMSQLiteFile::GetLastNodeId()
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMPoint ORDER BY NodeId DESC LIMIT 1");
+    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMNodeHeader ORDER BY NodeId DESC LIMIT 1");
     stmt->Step();
     auto numResults = stmt->GetColumnCount();
 

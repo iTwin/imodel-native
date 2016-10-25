@@ -250,6 +250,15 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     //Add texture if any    
     BeFileName currentTextureDir(coverageTempDataFolder);
 
+
+
+    BeFileName textureSubFolderName;
+    BeFileName extraLinearFeatureFileName;
+
+    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);        
+
+    currentTextureDir.AppendString(textureSubFolderName.c_str());    
+
     IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
 
     assert(textureGenerator.IsValid());
@@ -273,14 +282,6 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     closedPolygonPoints.assign(rangePts, rangePts + 5);
 
     textureGenerator->GenerateTexture(closedPolygonPoints);
-
-
-    BeFileName textureSubFolderName;
-    BeFileName extraLinearFeatureFileName;
-
-    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);        
-
-    currentTextureDir.AppendString(textureSubFolderName.c_str());    
     
     BeDirectoryIterator directoryIter(currentTextureDir);
 
@@ -308,7 +309,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         terrainCreator->EditSources().Add(coverageBreaklineSource);                       
         }
 
-    status = terrainCreator->Create(true, true);
+    status = terrainCreator->Create();
     assert(status == SUCCESS);
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;

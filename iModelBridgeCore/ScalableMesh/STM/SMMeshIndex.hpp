@@ -1837,6 +1837,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
     m_wasBalanced = false;
     SetDirty(true);
 
+
     return true;
     }
 

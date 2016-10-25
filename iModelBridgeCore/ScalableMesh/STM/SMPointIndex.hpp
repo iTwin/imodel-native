@@ -5111,6 +5111,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddArr
     if (s_inEditing)
         {
         InvalidateFilteringMeshing (); 
+        m_delayedDataPropagation = false;
         }
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
@@ -7644,6 +7645,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
             }
 
         }
+    m_nextNodeID = m_dataStore->GetNextID()+1;
 
     if (m_indexHeader.m_rootNodeBlockID.IsValid() && m_pRootNode == nullptr && shouldCreateRoot)
         {
