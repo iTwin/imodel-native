@@ -132,7 +132,7 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateDisplayStyleCode(name);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateDisplayStyleCode(name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
@@ -195,8 +195,10 @@ public:
     /** @{ */
     //! Determine whether the SkyBox is displayed in this DisplayStyle3d.
     bool IsSkyBoxEnabled() const {return m_environment.m_skybox.m_enabled;}
+
     //! Determine whether the Ground Plane is displayed in this DisplayStyle3d.
     bool IsGroundPlaneEnabled() const {return m_environment.m_groundPlane.m_enabled;}
+
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
 
@@ -255,10 +257,11 @@ public:
     void AddModel(DgnModelId id) {m_models.insert(id);}
 
     //! Drop a model from this ModelSelector
+    //! @return true if the model was dropped, false if it was not in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateModelSelectorCode(name);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateModelSelectorCode(name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
@@ -317,7 +320,7 @@ public:
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateCategorySelectorCode(name);} //!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateCategorySelectorCode(name);} //!< @private
 };
 
 //=======================================================================================
@@ -428,7 +431,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateViewDefinitionCode(name);}
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateViewDefinitionCode(name);}
 
     //! Look up the Id of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
@@ -488,7 +491,7 @@ public:
         OrthographicViewDefinitionCPtr GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
     };
 
-    //! An iterator over the view definitions stored in a DgnDb
+    //! An iterator over the ViewDefinitions stored in a DgnDb
     struct Iterator : ECSqlStatementIterator<Entry>
     {
         // Options controlling ViewDefinition iteration

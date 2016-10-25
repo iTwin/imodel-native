@@ -11,6 +11,7 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "MemoryManager.h"
+#include "SessionManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
@@ -21,7 +22,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 // @bsiclass                                                    Keith.Bentley   05/13
 //=======================================================================================
 enum DgnDbSchemaValues : int32_t
-    {
+{
     DGNDB_CURRENT_VERSION_Major = 6,
     DGNDB_CURRENT_VERSION_Minor = 3,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
@@ -29,7 +30,7 @@ enum DgnDbSchemaValues : int32_t
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 3,
-    };
+};
 
 //=======================================================================================
 //! Supplies the parameters necessary to create new DgnDbs.
@@ -128,7 +129,6 @@ protected:
     friend struct Txns;
     friend struct DgnElement;
 
-#if !defined (DOCUMENTATION_GENERATOR)
     Utf8String          m_fileName;
     DgnElements         m_elements;
     DgnModels           m_models;
@@ -139,6 +139,7 @@ protected:
     DgnUnits            m_units;
     DgnAuthorities      m_authorities;
     TxnManagerPtr       m_txnManager;
+    SessionManager      m_sessionManager;
     MemoryManager       m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
@@ -152,19 +153,18 @@ protected:
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     virtual void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
-    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateAuthorities();
-    BeSQLite::DbResult CreateRepositoryModel();
-    BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, DgnCodeCR);
-    BeSQLite::DbResult CreateDictionaryModel();
-    BeSQLite::DbResult CreateSessionModel();
-    BeSQLite::DbResult CreateRealityDataSourcesModel();
-    BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
-    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
-    BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
-#endif
+    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult CreateAuthorities(); //!< @private
+    BeSQLite::DbResult CreateRepositoryModel(); //!< @private
+    BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, DgnCodeCR); //!< @private
+    BeSQLite::DbResult CreateDictionaryModel(); //!< @private
+    BeSQLite::DbResult CreateSessionModel(); //!< @private
+    BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
+    BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2)); //!< @private
+    BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:
     DgnDb();
@@ -210,6 +210,7 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
+    SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
 
@@ -238,8 +239,8 @@ public:
     //! Ids for DgnPlatform threads
     enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, RealityData=103};
 
-    DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
-    DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string
+    DGNPLATFORM_EXPORT static ThreadId GetThreadId();    //!< Get the ThreadId for the current thread
+    DGNPLATFORM_EXPORT static WCharCP GetThreadIdName(); //!< For debugging purposes, get the current ThreadId as a string
     static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
     static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
