@@ -757,6 +757,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
             for (auto& coverageVal : coverages)
                 {
+                DPoint3d origin;
+                DVec3d normal;
+                double area;
+                PolygonOps::CentroidNormalAndArea(&coverageVal[0], (int)coverageVal.size(), origin, normal, area);
+                Transform toCoverageTrans = Transform::FromFixedPointAndScaleFactors(origin, 1.1, 1.1, 1);
+                toCoverageTrans.Multiply(&coverageVal[0], (int)coverageVal.size());
                 CurveVectorPtr curvePtr = CurveVector::CreateLinear(coverageVal, CurveVector::BOUNDARY_TYPE_Outer, true);
                 ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
                 clipPrimitive->SetIsMask(false);
@@ -901,12 +907,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         m_DTMDataRef->GetVisibleClips(clips);
         */
         auto terrainSM = m_smPtr->GetTerrainSM();
-        status = m_progressiveQueryEngine->StartQuery(terrainQueryId,
-                                                      viewDependentQueryParams,
-                                                      m_currentDrawingInfoPtr->m_terrainMeshNodes,
-                                                      true, //No wireframe mode, so always load the texture.
-                                                      clips,
-                                                     terrainSM);
+        if (terrainSM.IsValid())
+            {
+            status = m_progressiveQueryEngine->StartQuery(terrainQueryId,
+                                                          viewDependentQueryParams,
+                                                          m_currentDrawingInfoPtr->m_terrainMeshNodes,
+                                                          true, //No wireframe mode, so always load the texture.
+                                                          clips,
+                                                          terrainSM);
+            }
 
         if (!m_isProgressiveDisplayOn)
             {
@@ -1301,6 +1310,15 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
     return tmFileName;
     }
 
+void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->ClearOverviews(targetSM.get());
+    }
+
+void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->InitScalableMesh(targetSM);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     3/2016
