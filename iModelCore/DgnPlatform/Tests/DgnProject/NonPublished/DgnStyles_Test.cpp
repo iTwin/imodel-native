@@ -58,18 +58,22 @@ TEST_F(DgnLineStyleTest, InsertnReadLineStyles)
     {
     SetupSeedProject();
 
-    //Get line styles
-    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
-    LsCacheP cache = styleTable.GetLsCacheP();
-    LsCacheStyleIterator iterLineStyles = cache->begin();
+    // Add new component.
+    LsComponentId componentId0(LsComponentType::LineCode, 10);
+    ASSERT_TRUE(componentId0.IsValid());
+    LsComponentId componentId1(LsComponentType::LineCode, 11);
+    ASSERT_TRUE(componentId1.IsValid());
+    Json::Value     jsonValue(Json::objectValue);
+    LsComponent::AddComponentAsJsonProperty(componentId0, *m_db, LsComponentType::LineCode, jsonValue);
+    LsComponent::AddComponentAsJsonProperty(componentId1, *m_db, LsComponentType::LineCode, jsonValue);
 
     // Add new line styles
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
     DgnStyleId styleId0;
-    LsComponentId componentId0(LsComponentType::LineCode, 6);
+    DgnStyleId styleId1;
     ASSERT_EQ(SUCCESS, styleTable.Insert(styleId0, "ATestLineStyle0", componentId0, 53, 0.0)) << "Insert line style return value should be SUCCESS";
     ASSERT_TRUE(styleId0.IsValid());
-    DgnStyleId styleId1;
-    LsComponentId componentId1(LsComponentType::LineCode, 7);
+
     ASSERT_EQ(SUCCESS, styleTable.Insert(styleId1, "ATestLineStyle1", componentId1, 53, 0.0)) << "Insert line style return value should be SUCCESS";
     ASSERT_TRUE(styleId1.IsValid());
     ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
