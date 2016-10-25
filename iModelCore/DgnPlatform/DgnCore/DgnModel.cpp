@@ -564,7 +564,7 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetModel::_OnInsert()
     {
-    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
+    if (!GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
         {
         BeAssert(false && "A SheetModel should be modeling a Sheet element");
         return DgnDbStatus::BadElement;
@@ -576,7 +576,7 @@ DgnDbStatus SheetModel::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize)
+SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
     {
     DgnDbR db = sheet.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
@@ -595,9 +595,7 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheet
         return nullptr;
         }
 
-    SheetModelPtr sheetModel = dynamic_cast<SheetModelP>(model.get());
-    sheetModel->m_size = sheetSize;
-    return sheetModel;
+    return dynamic_cast<SheetModelP>(model.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1549,15 +1547,6 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(SHEET_MODEL_PROP_SheetSize, ECSqlClassParams::StatementType::All);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1736,57 +1725,6 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
-    {
-    statement.BindPoint2d(statement.GetParameterIndex(SHEET_MODEL_PROP_SheetSize), m_size);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_BindInsertParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
-    {
-    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_size = statement.GetValuePoint2d(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SheetModel::_InitFrom(DgnModelCR other)
-    {
-    T_Super::_InitFrom(other);
-    SheetModelCP otherModel = other.ToSheetModel();
-    if (nullptr != otherModel)
-        m_size = otherModel->m_size;
     }
 
 /*---------------------------------------------------------------------------------**//**
