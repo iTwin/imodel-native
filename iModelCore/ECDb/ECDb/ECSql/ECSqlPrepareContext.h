@@ -57,11 +57,6 @@ struct ECSqlPrepareContext
                     }
             private:
                 std::set<Utf8String, CompareIUtf8Ascii> m_selection;
-
-            public:
-                SelectionOptions() {}
-                ~SelectionOptions() {}
-
                 void AddProperty(Utf8CP accessString)
                     {
                     Utf8String path;
@@ -76,6 +71,21 @@ struct ECSqlPrepareContext
                         }
                     }
 
+            public:
+                SelectionOptions() {}
+                ~SelectionOptions() {}
+
+
+                void AddProperty(WipPropertyMap const& propertyMap)
+                    {
+                    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, /*traverseCompoundProperties = */ true);
+                    propertyMap.Accept(typeDispatcher);
+                    Utf8String path;
+                    for (WipPropertyMap const* m : typeDispatcher.ResultSet())
+                        {
+                        AddProperty(m->GetAccessString().c_str());
+                        }
+                    }
                 bool IsSelected(Utf8CP accessString) const
                     {
                     if (m_selection.find(accessString) != m_selection.end())

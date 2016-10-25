@@ -148,18 +148,32 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
         void FinishEditing() { BeAssert(m_isInEditMode);  m_isInEditMode = false; }
+        //! Get name of the property.
         Utf8String GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
+        //! return full access string from root property to current property.
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
+        //! return parent propertymap if any. 
         WipPropertyMap const* GetParent() const { return m_parentPropertMap; }
+        //! return classmap that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
+        //! return root propertymap.
         WipPropertyMap const& GetRoot() const;
+        //! return kind for this property. Its not a OR'd flag rather exact type. 
         PropertyMapKind GetKind() const { return m_kind; }
+        //! Test if currrent property is of type system. 
         bool IsSystem() const { return Enum::Contains(PropertyMapKind::System, GetKind()); }
+        //! Test if currrent property is of type business. 
         bool IsBusiness () const { return Enum::Contains(PropertyMapKind::Business, GetKind()); }
+        //! Test if current properyt map mapped to a specific table or not.
         bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
+        //! Test if current property map part of classmap tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
+        //! Test for inherited type/
+        bool IsKindOf(const PropertyMapKind kindOfThisOrOneOfItsParent) const;
+        //! Test if property map is constructed correctly.
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
+   
     };
 
 //=======================================================================================
@@ -181,7 +195,7 @@ struct WipVerticalPropertyMap : WipPropertyMap
             {}
         ~WipVerticalPropertyMap() {}
         DbTable const& GetTable() const { return _GetTable(); }
-       
+        //! create copy of the this property map with new context classmap
         RefCountedPtr<WipVerticalPropertyMap> CreateCopy(ClassMap const& newClassMapContext) const;
     };
 
@@ -213,6 +227,7 @@ struct WipHorizontalPropertyMap : WipPropertyMap
         virtual std::vector<DbTable const*> const& _GetTables() const = 0;
 
     public:
+        //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return _GetTables(); }
     };
 
@@ -285,7 +300,7 @@ struct WipColumnVerticalPropertyMap: WipVerticalPropertyMap
             : WipVerticalPropertyMap(kind, ecProperty, parentPropertyMap), m_column(column)
             {}
         virtual ~WipColumnVerticalPropertyMap() {}
-    public:
+    public:       
         DbColumn const& GetColumn() const { return m_column; }
     };
 
@@ -325,6 +340,7 @@ struct WipSystemPropertyMap : WipColumnHorizontalPropertyMap
         static BentleyStatus TryCreateVerticalMaps(std::vector<RefCountedPtr<WipPrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
     public:
         bool IsMappedToSingleTable() const { return GetVerticalPropertyMaps().size() == 1LL; }
+        static PropertyMapKind ToPropertyMapKind(ECSqlSystemProperty systemProperty);
     };
 
 //==============================Concerte implementations=================================
@@ -346,6 +362,8 @@ struct WipPrimitivePropertyMap final : WipColumnVerticalPropertyMap
         virtual ~WipPrimitivePropertyMap() {}
     public:
         static RefCountedPtr<WipPrimitivePropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
+        static RefCountedPtr<WipPrimitivePropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, PropertyMapKind kind);
+
         static RefCountedPtr<WipPrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column);
     };
 //=======================================================================================
@@ -463,7 +481,6 @@ struct WipNavigationPropertyMap final : WipCompoundPropertyMap
         BentleyStatus Setup(DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId, DbColumn const& idColumn);
         RelECClassIdPropertyMap const& GetRelECClassId() const { return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME)); }
         IdPropertyMap const& GetId() const { return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME)); };
-        bool IsSupportedInECSql(bool logIfNotSupported = false) const;
         static RefCountedPtr<WipNavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty);
     };
 //=======================================================================================
@@ -805,10 +822,9 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
     enum SqlTarget
         {
         View, //!Inline view is in from. Normally it happen only in SELECT statement where view has a contract.
-        Table //!Direct query against a table
+        Table, //!Direct query against a table
         };
-
-    struct Result
+  struct Result
         {
         private:
             WipColumnVerticalPropertyMap const* m_propertyMap;
@@ -825,7 +841,6 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
             WipColumnVerticalPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
             NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
             NativeSqlBuilder const& GetSqlBuilder() const{ return m_sql; }
-
             Utf8CP GetSql() const { return m_sql.ToString(); }
             DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
             DbTable const& GetTable() const { return GetColumn().GetTable(); }
@@ -841,6 +856,7 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
         Utf8CP m_classIdentifier;
         DbTable const& m_tableFilter;
         bool m_wrapInParentheses;
+        bool m_usePropertyNameAsAliasForSystemPropertyMaps;
     private:
         Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
         bool IsAlienTable(DbTable const& table) const;
@@ -857,9 +873,16 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
         virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
-        WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false)
-            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_status(SUCCESS)
-            {}
+        WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false, bool usePropertyNameAsAliasForSystemPropertyMaps = false)
+            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_status(SUCCESS), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)
+            {
+            if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+                {
+                BeAssert(target == SqlTarget::Table);
+                BeAssert(wrapInParentheses == false);
+                }
+            }
+
         ~WipPropertyMapSqlDispatcher() {}
 
         BentleyStatus GetStatus() const { return m_status; }

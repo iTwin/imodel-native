@@ -25,16 +25,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     WipPropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
-    if (propMap.GetKind() == PropertyMapKind::NavigationPropertyMap)
-        {
-        if (!static_cast<WipNavigationPropertyMap const&>(propMap).IsSupportedInECSql(true))
-            return ECSqlStatus::InvalidECSql;
-        }
-    else
-        {
-        if (!NeedsPreparation(currentScope, propMap))
-            return ECSqlStatus::Success;
-        }
+    if (!NeedsPreparation(currentScope, propMap))
+        return ECSqlStatus::Success;
 
     Utf8String classIdentifier;
     ECSqlStatus stat = DetermineClassIdentifier(classIdentifier, currentScope, *exp, propMap);
@@ -152,7 +144,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 
             WipPropertyMapTableDispatcher tableDispatcher;
             propMap.Accept(tableDispatcher);
-            BeAssert(tableDispatcher.GetTables().size() != 1);
+            BeAssert(tableDispatcher.GetTables().size() == 1);
             DbTable const* contextTable = *tableDispatcher.GetTables().begin();
             if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
                 classIdentifier.assign(contextTable->GetName());
