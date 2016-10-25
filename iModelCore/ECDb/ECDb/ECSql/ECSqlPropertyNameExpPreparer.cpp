@@ -144,7 +144,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 
             WipPropertyMapTableDispatcher tableDispatcher;
             propMap.Accept(tableDispatcher);
-            BeAssert(tableDispatcher.GetTables().size() != 1);
+            BeAssert(tableDispatcher.GetTables().size() == 1);
             DbTable const* contextTable = *tableDispatcher.GetTables().begin();
             if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
                 classIdentifier.assign(contextTable->GetName());

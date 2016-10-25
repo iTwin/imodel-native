@@ -1197,7 +1197,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     if (m_viewAccessStringList && m_captureViewAccessStringList)
         m_viewAccessStringList->push_back(rTargetECInstanceId.GetAccessString());
     viewSql.AppendComma();
-
+    //single table/ not virtual/ different table or same table
     //TargetECClassId--------------------------------------
     classIdPropMap = relationMap.GetTargetECClassIdPropMap();
     if (rTargetECClassId.IsColumnPersisted())
