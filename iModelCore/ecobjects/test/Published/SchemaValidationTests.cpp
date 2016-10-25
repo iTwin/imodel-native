@@ -156,18 +156,18 @@ TEST_F(SchemaValidationTests, TestClassConstraintDelayedValidation)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid()) << "The schema should have successfully been read from the xml string.";
 
-    EXPECT_FALSE(schema->IsECVersion(3, 1)) << "The schema should stay a 3.0 schema and not be upgraded to a 3.1 schema.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should stay a 3.0 schema and not be upgraded to a 3.1 schema.";
 
     // Attempt to validate the schema, should remain a 3.0 schema
     EXPECT_TRUE(schema->Validate());
-    EXPECT_FALSE(schema->IsECVersion(3, 1)) << "The schema should still not be a 3.1 schema after the validation is ran.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should still not be a 3.1 schema after the validation is ran.";
 
     // Update the schema to now be a validate 3.1 schema
     ECClassCP baseClass = schema->GetClassCP("B");
     EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("C")->AddBaseClass(*baseClass)) << "Adding a base class to C to make the relationship constraints valid.";
 
     schema->Validate();
-    EXPECT_TRUE(schema->IsECVersion(3, 1)) << "The schema should now be a 3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should now be a 3.1 schema.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_FALSE(schema->IsECVersion(3, 1)) << "The schema should have been read as a 3.0 schema. It fails validation.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should have been read as a 3.0 schema. It fails validation.";
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
@@ -222,7 +222,7 @@ TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
     EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("ARelB")->GetRelationshipClassP()->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany())) << "Fixing the Target multiplicity to not violate the narrowing rule.";
 
     EXPECT_TRUE(schema->Validate());
-    EXPECT_TRUE(schema->IsECVersion(3, 1)) << "Since the validation passed, the schema should not be an EC3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "Since the validation passed, the schema should not be an EC3.1 schema.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

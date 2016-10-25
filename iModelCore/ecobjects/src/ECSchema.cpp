@@ -471,43 +471,6 @@ bool ECSchema::GetIsDisplayLabelDefined () const
     return m_hasExplicitDisplayLabel;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajorVersion, uint32_t ecMinorVersion)
-    {
-    if (ecMajorVersion == 2 && ecMinorVersion == 0)
-        ecVersion = ECVersion::V2_0;
-    else if (ecMajorVersion == 3 && ecMinorVersion == 0)
-        ecVersion = ECVersion::V3_0;
-    else if (ecMajorVersion == 3 && ecMinorVersion == 1)
-        ecVersion = ECVersion::V3_1;
-    else
-        return ECObjectsStatus::InvalidECVersion;
-
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion)
-    {
-    ECVersion version;
-    if (ECObjectsStatus::Success != CreateECVersion(version, ecMajorVersion, ecMinorVersion))
-        return false;
-
-    return IsECVersion(version);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsECVersion(ECVersion ecVersion) const
-    {
-    return m_ecVersion == ecVersion;
-    }
-
 static Utf8CP s_standardSchemaNames[] =
     {
     "Bentley_Standard_CustomAttributes",
@@ -717,25 +680,27 @@ ECVersion ECSchema::GetECVersion
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajorVersion, uint32_t ecMinorVersion)
+    {
+    if (ecMajorVersion == 2 && ecMinorVersion == 0)
+        ecVersion = ECVersion::V2_0;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 0)
+        ecVersion = ECVersion::V3_0;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 1)
+        ecVersion = ECVersion::V3_1;
+    else
+        return ECObjectsStatus::InvalidECVersion;
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion)
     {
-    switch (ecVersion)
-        {
-        case ECVersion::V2_0:
-            ecVersionMajor = 2;
-            ecVersionMinor = 0;
-            break;
-        case ECVersion::V3_0:
-            ecVersionMajor = 3;
-            ecVersionMinor = 0;
-            break;
-        case ECVersion::V3_1:
-            ecVersionMajor = 3;
-            ecVersionMinor = 1;
-            break;
-        default:
-            return ECObjectsStatus::InvalidECVersion;
-        }
+    ecVersionMajor = (uint32_t) ((uint32_t) ecVersion >> 16);
+    ecVersionMinor = (uint32_t) (0xFFFF & (uint32_t) ecVersion);
 
     return ECObjectsStatus::Success;
     }

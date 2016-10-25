@@ -3251,16 +3251,13 @@ public:
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
-    //! Returns true if the schema's EC version matches the given EC major and minor version
-    //! @param[in] ecMajorVersion
-    //! @param[in] ecMinorVersion
-    //! @return True if the schema's EC version matches the given major and minor version
-    ECOBJECTS_EXPORT bool               IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion);
-
     //! Returns true if the schema's EC version matches the given ECVersion
     //! @param[in] ecVersion
     //! @return True if the schema's EC version matches the given ECVersion
-    ECOBJECTS_EXPORT bool               IsECVersion(ECVersion ecVersion) const;
+    bool               IsECVersion(ECVersion ecVersion) const { return m_ecVersion == ecVersion; }
+
+    //! Returns true if the schema's EC version is the latest ECVersion supported
+    bool               IsLatestECVersion() const { return m_ecVersion == ECVersion::V3_1; }
 
     //! Validates the schema against the latest version of EC
     ECOBJECTS_EXPORT bool               Validate();

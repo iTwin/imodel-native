@@ -41,7 +41,7 @@ struct SchemaDeserializationTest : ECTestFixture
     void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
         {
         ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(schema->IsECVersion(3, 1));
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1));
 
         EXPECT_STREQ ("Widgets", schema->GetName ().c_str ());
         EXPECT_STREQ ("wid", schema->GetAlias ().c_str ());
@@ -1883,7 +1883,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "An ECSchema with ECRelationshipConstraint that inherits a roleLabel attribute should succeed.";
     ASSERT_TRUE(schema.IsValid()) << "schema should not be a nullptr";
-    ASSERT_TRUE(schema->IsECVersion(3, 1));
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
 
     ASSERT_STREQ("testSource", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
     ASSERT_STREQ("testTarget", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
@@ -1935,7 +1935,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(3, 1));
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
 
     for (auto const& pClass : schema->GetClasses())
         {

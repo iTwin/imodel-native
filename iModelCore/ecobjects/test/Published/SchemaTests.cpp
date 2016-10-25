@@ -2735,7 +2735,7 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
 //    }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Robert.Schili                     10/16
+// @bsimethod                                   Caleb.Shafer                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaVersionTest, CreateECVersionTest)
     {
@@ -2754,6 +2754,28 @@ TEST_F(SchemaVersionTest, CreateECVersionTest)
     ECVersion ecVersion31;
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion31, 3, 1)) << "Creating a 3.1 ECVersion should succeed";
     EXPECT_EQ(ECVersion::V3_1, ecVersion31) << "The ECVersion should have been set to 3.1.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, IsLatestECVersionTest)
+    {
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_1);
+    EXPECT_TRUE(schema->IsLatestECVersion()) << "The schema was created as a EC3.1 schema and IsLatest should return true.";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_0);
+    EXPECT_FALSE(schema->IsLatestECVersion()) << "The schema was created as a EC3.0 schema so it is not the latest";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
+    EXPECT_FALSE(schema->IsLatestECVersion()) << "The schema was created as a EC2.0 schema so it is not the latest";
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
