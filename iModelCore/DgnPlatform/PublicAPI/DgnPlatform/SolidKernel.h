@@ -214,7 +214,7 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 
 //=======================================================================================
 //! @private
-//! Wrapper class around facets that at least act like Parasold fin tables.
+//! Wrapper class around facets that at least act like Parasolid fin tables.
 //=======================================================================================
 struct IFacetTopologyTable : BentleyApi::IRefCounted
 {

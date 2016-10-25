@@ -7,26 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley\GlobalHandleContainer.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <PSolid/frustrum_tokens.h>
-#include <PSolid/kernel_interface.h>
-#include <PSolid/parasolid_kernel.h>
-#include <PSolid/parasolid_debug.h>
-#include <PSolid/frustrum_ifails.h>
-#endif
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 
 static int s_parasolidInitialized = 0;
 static bool s_usingExternalFrustrum = false;
-
-#define PKI_OK          0
-#define PKI_FAILURE     1
-
-#define PKI_ENTITY_ID_ATTRIB_NAME               "BSI_EntityId"
-#define PKI_FACE_UNCHANGED_ATTRIB_NAME          "BSI_OldFace"
-#define PKI_USERDATA_ATTRIB_NAME                "BSI_UserData"
 
 #define PPI_DELTA_DATA_BLOCK_SIZE 10240
 
@@ -2394,7 +2381,7 @@ void
 )
     {
     if (s_parasolidInitialized)
-        return PKI_OK;
+        return SUCCESS;
 
     int                     failureCode;
     WString                 debugFileName;

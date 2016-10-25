@@ -9,11 +9,7 @@
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 #elif defined (BENTLEYCONFIG_PARASOLID) 
-#include <PSolid/frustrum_tokens.h>
-#include <PSolid/kernel_interface.h>
-#include <PSolid/parasolid_kernel.h>
-#include <PSolid/parasolid_debug.h>
-#include <PSolid/frustrum_ifails.h>
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 enum SolidDataVersion
@@ -127,12 +123,12 @@ virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceT
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IFaceMaterialAttachmentsPtr Create (ISolidKernelEntityCR entity, Render::GeometryParamsCR baseParams)
     {
-#if defined (NOT_NOW)
     int         nFaces;
     PK_FACE_t*  faces = NULL;
 
-    if (SUCCESS != PK_BODY_ask_faces (PSolidUtil::GetEntityTag (entity), &nFaces, &faces))
-        return NULL;
+//    if (SUCCESS != PK_BODY_ask_faces (PSolidUtil::GetEntityTag (entity), &nFaces, &faces))
+    if (SUCCESS != PK_BODY_ask_faces(SolidKernelUtil::GetEntityTag(entity), &nFaces, &faces))
+        return nullptr;
 
     FaceMaterialAttachments* attachments = new FaceMaterialAttachments ();
 
@@ -144,9 +140,6 @@ static IFaceMaterialAttachmentsPtr Create (ISolidKernelEntityCR entity, Render::
     PK_MEMORY_free (faces);
 
     return attachments;
-#else
-    return nullptr;
-#endif
     }
 
 }; // FaceMaterialAttachments
@@ -971,27 +964,6 @@ void            PSolidFacetTopologyTable::RemoveHiddenFaces (PK_ENTITY_t entityT
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil_GetBodyFaces (bvector<PK_FACE_t>& faces, PK_BODY_t body)
-    {
-    int             faceCount = 0;
-    PK_FACE_t*      pFaceTagArray = NULL;
-
-    if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray))
-        return ERROR;
-
-    faces.resize (faceCount);
-    for (int i=0; i<faceCount; i++)
-        faces[i] = pFaceTagArray[i];
-
-    if (pFaceTagArray)
-        PK_MEMORY_free (pFaceTagArray);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMaterialAttachmentsCP attachments, bool hasHiddenEdge, bool hasHiddenFace)
@@ -1014,7 +986,7 @@ void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMat
         {
         bvector<PK_FACE_t> faces;
 
-        PSolidUtil_GetBodyFaces (faces, entityTag);
+        PSolidUtil::GetBodyFaces (faces, entityTag);
 
         for (size_t i=0; i<faces.size(); i++)
             m_faceToSubElemIdMap[faces[i]] = make_bpair((int32_t) (i + 1), 0); // 0 is invalid attachment index...
@@ -1181,8 +1153,7 @@ void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, 
     options.control.surface_plane_ang    = angleTol;
 
     options.control.match                = PK_facet_match_topol_c;
-//    options.control.max_facet_sides      = PSolidUtil::HasCurvedFacesOrEdges (entityTag) ? facetOptions.GetCurvedSurfaceMaxPerFace () : facetOptions.GetMaxPerFace ();
-    options.control.max_facet_sides      = facetOptions.GetCurvedSurfaceMaxPerFace ();
+    options.control.max_facet_sides      = PSolidUtil::HasCurvedFacesOrEdges (entityTag) ? facetOptions.GetCurvedSurfaceMaxPerFace () : facetOptions.GetMaxPerFace ();
     options.control.shape                = facetOptions.GetConvexFacetsRequired () ? PK_facet_shape_convex_c : PK_facet_shape_cut_c;
 
     PK_TOPOL_facet_choice_2_o_m (options.choice);
@@ -1600,137 +1571,11 @@ IFacetOptionsCR                 facetOptions
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int      pki_get_curve_of_edge
-(
-int             *curveTagOutP,
-double          *startParamP,
-double          *endParamP,
-bool            *reversedP,
-int             edgeTagIn
-)
-    {
-    PK_FIN_t        fin;
-    PK_INTERVAL_t   interval;
-    PK_LOGICAL_t    sense = PK_LOGICAL_true;
-
-    *curveTagOutP = NULTAG;
-
-    if (SUCCESS == PK_EDGE_ask_oriented_curve (edgeTagIn, curveTagOutP, &sense) && *curveTagOutP != NULTAG)
-        {
-        if (startParamP || endParamP)
-            {
-            if (SUCCESS != PK_EDGE_find_interval (edgeTagIn, &interval))
-                PK_CURVE_ask_interval (*curveTagOutP, &interval);
-            }
-        }
-    else if (SUCCESS == PK_EDGE_ask_first_fin (edgeTagIn, &fin))
-        {
-        PK_FIN_ask_oriented_curve (fin, curveTagOutP, &sense);
-
-        if ((startParamP || endParamP) && *curveTagOutP != NULTAG)
-            PK_FIN_find_interval (fin, &interval);
-        }
-
-    if (startParamP)
-        *startParamP = interval.value[sense == PK_LOGICAL_true ? 0 : 1];
-
-    if (endParamP)
-        *endParamP = interval.value[sense == PK_LOGICAL_true ? 1 : 0];
-
-    if (reversedP)
-        *reversedP = (sense == PK_LOGICAL_true ? false : true);
-
-    return (*curveTagOutP != NULTAG ? SUCCESS : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil_HasCurvedFacesOrEdges (PK_BODY_t entity)
-    {
-    if (!entity)
-        return false;
-
-    int         numFaces = 0;
-    PK_FACE_t*  faces = NULL;
-
-    PK_BODY_ask_faces (entity, &numFaces, &faces);
-
-    for (int i=0; i < numFaces; i++)
-        {
-        PK_SURF_t       surfaceTag;
-        PK_LOGICAL_t    orientation;
-        bool            isPlanar = false;
-
-        if (SUCCESS == PK_FACE_ask_oriented_surf (faces[i], &surfaceTag, &orientation))
-            {
-            PK_CLASS_t  entityClass;
-
-            PK_ENTITY_ask_class (surfaceTag, &entityClass);
-
-            switch (entityClass)
-                {
-                case PK_CLASS_plane:
-                case PK_CLASS_circle:
-                case PK_CLASS_ellipse:
-                    {
-                    isPlanar = true;
-                    break;
-                    }
-                }
-            }
-
-        if (!isPlanar)
-            {
-            PK_MEMORY_free (faces);
-
-            return true;
-            }
-        }
-
-    if (faces)
-        PK_MEMORY_free (faces);
-
-    int         numEdges = 0;
-    PK_EDGE_t*  edges = NULL;
-
-    PK_BODY_ask_edges (entity, &numEdges, &edges);
-
-    for (int i=0; i < numEdges; i++)
-        {
-        PK_CURVE_t      curveTag;
-        bool            isStraight = false;
-
-        if (SUCCESS == pki_get_curve_of_edge (&curveTag, NULL, NULL, NULL, edges[i]))
-            {
-            PK_CLASS_t  entityClass;
-
-            PK_ENTITY_ask_class (curveTag, &entityClass);
-            isStraight = (PK_CLASS_line == entityClass);
-            }
-
-        if (!isStraight)
-            {
-            PK_MEMORY_free (edges);
-
-            return true;
-            }
-        }
-
-    if (edges)
-        PK_MEMORY_free (edges);
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
     {
-    return PSolidUtil_HasCurvedFacesOrEdges(GetEntityTag(entity));
+    return PSolidUtil::HasCurvedFacesOrEdges(GetEntityTag(entity));
     }
 
 /*---------------------------------------------------------------------------------**//**
