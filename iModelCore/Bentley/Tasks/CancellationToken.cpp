@@ -32,16 +32,6 @@ void SimpleCancellationListener::OnCanceled ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimpleCancellationToken::SimpleCancellationToken (bool canceled) : m_canceled (canceled) {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-SimpleCancellationToken::~SimpleCancellationToken () {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 SimpleCancellationTokenPtr SimpleCancellationToken::Create (bool canceled)
     {
     return std::make_shared<SimpleCancellationToken> (canceled);
