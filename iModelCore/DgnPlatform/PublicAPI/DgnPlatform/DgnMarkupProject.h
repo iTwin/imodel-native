@@ -144,7 +144,7 @@ public:
     //! Save an image to display in this redline model.
     //! @param source the image source 
     //! @param origin the coordinates (in meters) of the lower left corner of the image
-    //! @param origin the size of the image (in meters)
+    //! @param size   the size of the image (in meters)
     DGNPLATFORM_EXPORT void StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, DVec2dCR size);
 
     //! Get the DgnMarkupProject that contains this redline model
@@ -176,8 +176,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
 
     public:
         //! Create a redline view definition element.
-        //! @param redlineModel     The redline model to view
-        //! @param viewSize         The width and height of the view in meters.
+        //! @param model     The redline model to view
+        //! @param viewSize  The width and height of the view in meters.
         //! @return a new non-persistent, redline view definition element.
         DGNPLATFORM_EXPORT static RedlineViewDefinitionPtr Create(RedlineModelR model, DVec2dCR viewSize);
     };
