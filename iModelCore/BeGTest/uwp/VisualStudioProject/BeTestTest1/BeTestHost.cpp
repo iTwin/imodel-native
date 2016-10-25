@@ -26,16 +26,6 @@ using namespace Windows::ApplicationModel::Core;
 
 typedef void (*NativeSizeChangedEventHandler) (double width, double height);
 
-static unsigned _stdcall startNewThread (T_ThreadStart startAddr, void* arg)
-    {
-    auto workItemHandler = ref new WorkItemHandler ([=] (IAsyncAction^)
-        {
-        startAddr (arg);
-        }, Platform::CallbackContext::Any);
-    ThreadPool::RunAsync (workItemHandler);
-    return 1;
-    }
-
 void ExecuteOnUiThread (DispatchedHandler^ action)
     {
     HANDLE syncEvent = ::CreateEventEx (NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
@@ -62,8 +52,6 @@ BeTestHost::BeTestHost (wchar_t const* home)
 
     m_temp.SetName (Windows::Storage::ApplicationData::Current->TemporaryFolder->Path->Data ());
     m_temp.AppendSeparator();
-        
-    BeThreadUtilities::SetThreadStartHandler (startNewThread);
     }
 
 void BeTestHost::_GetDocumentsRoot (BeFileName& path) 
