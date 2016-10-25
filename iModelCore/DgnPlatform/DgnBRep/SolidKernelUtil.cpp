@@ -1970,7 +1970,7 @@ BentleyStatus SolidKernelUtil::SaveEntityToMemory
 uint8_t**               ppBuffer,
 size_t&                 bufferSize,
 ISolidKernelEntityCR    entity
-) const
+)
     {
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
 
@@ -1998,7 +1998,7 @@ ISolidKernelEntityPtr&  entityOut,
 uint8_t const*          buffer,
 size_t                  bufferSize,
 TransformCR             transform
-) const
+)
     {
     PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
 
