@@ -1810,7 +1810,8 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
             }
         }
 
-    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize); // NEEDSWORK: Account for pixelSizeRange and remove code above?
+//    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize); // NEEDSWORK: Account for pixelSizeRange and remove code above?
+    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, *facetOptions);
 
     if (!facetTopo->_IsTableValid())
         return nullptr;
