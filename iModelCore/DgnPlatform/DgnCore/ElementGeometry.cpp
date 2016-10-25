@@ -10,7 +10,9 @@
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 using namespace flatbuffers;
 
@@ -167,7 +169,26 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
     if (localToWorld.IsIdentity())
         return GetRange(localRange);
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+    GeometricPrimitivePtr clone;
+
+    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
+    if (GeometryType::SolidKernelEntity == GetGeometryType())
+        {
+        ISolidKernelEntityPtr geom = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(*GetAsISolidKernelEntity()), GetAsISolidKernelEntity()->GetEntityTransform(), false);
+
+//        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(geom, *GetAsISolidKernelEntity()))
+//            return false;
+
+        clone = new GeometricPrimitive(geom);
+        }
+    else
+        {
+        clone = Clone();
+        }
+#else
     GeometricPrimitivePtr clone = Clone();
+#endif
     Transform worldToLocal;
 
     worldToLocal.InverseOf(localToWorld);
@@ -698,7 +719,14 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::CurvePrimitive:
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
+#if defined (BENTLEYCONFIG_OPENCASCADE)    
         case OpCode::OpenCascadeBRep:
+#elif defined (BENTLEYCONFIG_PARASOLID)
+        case OpCode::ParasolidBRep:
+#else
+        case OpCode::BRepPolyface:
+        case OpCode::BRepCurveVector:
+#endif
         case OpCode::TextString:
             return true;
 
@@ -1022,6 +1050,138 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    size_t      bufferSize = 0;
+    uint8_t*    buffer = nullptr;
+
+    if (SUCCESS != SolidKernelUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
+    bvector<FB::FaceSymbology> fbSymbVec;
+    bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
+
+    if (nullptr != attachments)
+        {
+        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+        for (FaceAttachment attachment : faceAttachmentsVec)
+            {
+            // NOTE: First entry is base symbology, it's redundant with GeometryStream, storing it makes implementing Get easier/cleaner...
+            FB::DPoint2d    uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
+            GeometryParams  faceParams;
+
+            attachment.ToGeometryParams(faceParams);
+
+            FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
+                                       faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
+                                       faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterialId().GetValueUnchecked(),
+                                       faceParams.GetTransparency(), uv);
+
+            fbSymbVec.push_back(fbSymb);
+            }
+
+        T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+
+        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+            {
+            FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
+
+            fbSymbIndexVec.push_back(fbSymbIndex);
+            }
+        }
+
+    FlatBufferBuilder fbb;
+
+    auto entityData = fbb.CreateVector(buffer, bufferSize);
+    auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
+    auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs(&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
+
+    FB::BRepDataBuilder builder(fbb);
+    Transform entityTransform = entity.GetEntityTransform();
+
+    builder.add_entityTransform((FB::Transform*) &entityTransform);
+    builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
+    builder.add_entityData(entityData);
+
+    if (nullptr != attachments)
+        {
+        builder.add_symbology(faceSymb);
+        builder.add_symbologyIndex(faceSymbIndex);
+        }
+
+    auto mloc = builder.Finish();
+
+    fbb.Finish(mloc);
+    Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+
+    // NOTE: Append redundant representation for platforms where we don't yet have support for Parasolid...
+    switch (entity.GetEntityType())
+        {
+        case ISolidKernelEntity::EntityType::Wire:
+            {
+            // Save wire body as CurveVector...
+            CurveVectorPtr wireGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+
+            if (wireGeom.IsValid())
+                Append(*wireGeom, OpCode::BRepCurveVector);
+
+            return;
+            }
+
+        case ISolidKernelEntity::EntityType::Sheet:
+            {
+            // Save sheet body that is a single planar face as CurveVector...
+            CurveVectorPtr faceGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+
+            if (faceGeom.IsValid())
+                {
+                Append(*faceGeom, OpCode::BRepCurveVector);
+                return;
+                }
+
+            // Fall through...
+            }
+
+        case ISolidKernelEntity::EntityType::Solid:
+            {
+            IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
+
+            facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
+
+#if defined (NOT_NOW)
+            if (nullptr != attachments)
+                {
+                bvector<PolyfaceHeaderPtr> polyfaces;
+                bvector<GeometryParams> params;
+
+                WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
+                facetFailure = (0 == polyfaces.size());
+
+                for (size_t i = 0; i < polyfaces.size(); i++)
+                    {
+                    if (0 == polyfaces[i]->GetPointCount())
+                        continue;
+
+                    Append(params[i], true);
+                    Append(*polyfaces[i], OpCode::BRepPolyface);
+                    }
+                }
+            else
+#endif
+                {
+                PolyfaceHeaderPtr polyface = SolidKernelUtil::FacetEntity(entity, *facetOpt);
+
+                if (polyface.IsValid())
+                    Append(*polyface, OpCode::BRepPolyface);
+                }
+            break;
+            }
+        }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)    
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape || shape->IsNull())
@@ -1049,6 +1209,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
     fbb.Finish(mloc);
     Append(Operation(OpCode::OpenCascadeBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1470,6 +1631,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, MSBsplineSurfacePtr& s
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     if (OpCode::OpenCascadeBRep != egOp.m_opCode)
         return false;
 
@@ -1488,6 +1650,63 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr&
     entity = SolidKernelUtil::CreateNewEntity(shape);
 
     return true;
+#elif defined (BENTLEYCONFIG_PARASOLID)
+    if (OpCode::ParasolidBRep != egOp.m_opCode)
+        return false;
+
+    auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+
+    // NOTE: It's possible to check ppfb->brepType() to avoid calling restore in order to check type...
+    if (SUCCESS != SolidKernelUtil::RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
+        return false;
+
+    if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+        return true;
+
+    for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+        {
+        FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+
+        GeometryParams faceParams;
+
+        if (fbSymb->useColor())
+            faceParams.SetLineColor(ColorDef(fbSymb->color()));
+
+        if (fbSymb->useMaterial())
+            faceParams.SetMaterialId(DgnMaterialId((uint64_t)fbSymb->materialId()));
+
+        faceParams.SetTransparency(fbSymb->transparency());
+
+        if (nullptr == entity->GetFaceMaterialAttachments())
+            entity->InitFaceMaterialAttachments(&faceParams);
+        else
+            const_cast<T_FaceAttachmentsVec&>(entity->GetFaceMaterialAttachments()->_GetFaceAttachmentsVec()).push_back(faceParams);
+        }
+
+    if (nullptr == entity->GetFaceMaterialAttachments())
+        return true;
+
+    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity->GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
+    bmap<int32_t, uint32_t> subElemIdToFaceMap;
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        subElemIdToFaceMap[curr->second.first] = curr->first;
+
+    for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
+        {
+        FB::FaceSymbologyIndex const* fbSymbIndex = ((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data())+iSymbIndex;
+        bmap<int32_t, uint32_t>::const_iterator foundIndex = subElemIdToFaceMap.find(fbSymbIndex->faceIndex());
+
+        if (foundIndex == subElemIdToFaceMap.end())
+            continue;
+
+        const_cast<T_FaceToSubElemIdMap&>(faceToSubElemIdMap)[foundIndex->second] = make_bpair(fbSymbIndex->faceIndex(), fbSymbIndex->symbIndex());
+        }
+
+    return true;
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1920,7 +2139,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             if (!Get(egOp, meshData))
                 break;
 
-            elemGeom = GeometricPrimitive::Create(meshData); // Copy...
+            elemGeom = GeometricPrimitive::Create(meshData);
             return true;
             }
 
@@ -1946,6 +2165,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             ISolidKernelEntityPtr entityPtr;
@@ -1956,6 +2176,40 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             elemGeom = GeometricPrimitive::Create(entityPtr);
             return true;
             }
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            {
+            ISolidKernelEntityPtr entityPtr;
+
+            if (!Get(egOp, entityPtr))
+                break;
+
+            elemGeom = GeometricPrimitive::Create(entityPtr);
+            return true;
+            }
+#else
+        case GeometryStreamIO::OpCode::BRepPolyface:
+            {
+            PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
+
+            if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
+                break;
+
+            elemGeom = GeometricPrimitive::Create(meshData);
+            return true;
+            }
+
+        case GeometryStreamIO::OpCode::BRepCurveVector:
+            {
+            CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
+
+            if (!curvePtr.IsValid())
+                break;
+
+            elemGeom = GeometricPrimitive::Create(curvePtr);
+            return true;
+            }
+#endif
 
         case GeometryStreamIO::OpCode::TextString:
             {
@@ -2082,6 +2336,50 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), fbSymb->origin(), fbSymb->size(), fbSymb->yaw(), fbSymb->pitch(), fbSymb->roll());
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+
+                if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+                    {
+                    writer.Append(egOp);
+                    break;
+                    }
+
+                bvector<FB::FaceSymbology> remappedFaceSymbVec;
+
+                for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                    {
+                    FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+
+                    if (fbSymb->useMaterial())
+                        {
+                        DgnMaterialId materialId((uint64_t)fbSymb->materialId());
+                        DgnMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapMaterialId(materialId) : DgnMaterialId());
+                        BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
+
+                        FB::FaceSymbology  remappedfbSymb(fbSymb->useColor(), fbSymb->useMaterial(),
+                                                          fbSymb->color(), remappedMaterialId.GetValueUnchecked(),
+                                                          fbSymb->transparency(), fbSymb->uv());
+
+                        remappedFaceSymbVec.push_back(remappedfbSymb);
+                        }
+                    else
+                        {
+                        remappedFaceSymbVec.push_back(*fbSymb);
+                        }
+                    }
+
+                FlatBufferBuilder remappedfbb;
+                auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
+                auto remappedFaceSymbIndex = remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length());
+                auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
 
@@ -2437,6 +2735,24 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::OpenCascadeBRep\n").c_str());
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::BRepPolyface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface\n").c_str());
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::BRepCurveVector:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepCurveVector\n").c_str());
                 break;
                 }
 
@@ -3112,6 +3428,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 entryId.Increment();
@@ -3134,6 +3451,68 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 currGraphic->AddBody(*entityPtr);
                 break;
                 }
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+                {
+                entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
+
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                    break;
+
+                ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+
+                if (!entityPtr.IsValid())
+                    {
+                    if (!reader.Get(egOp, entityPtr))
+                        break;
+
+                    DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
+                    }
+
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddBody(*entityPtr);
+                break;
+                }
+#else
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+                {
+                // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
+                entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
+                continue; // Don't exit loop in case we are in a sub-graphic...must add BRepPolyface or BRepCurveVector...
+                }
+
+            case GeometryStreamIO::OpCode::BRepPolyface:
+                {
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                    break;
+
+                PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
+
+                if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
+                    break;
+
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddPolyface(meshData, false);
+                break;
+                };
+
+            case GeometryStreamIO::OpCode::BRepCurveVector:
+                {
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
+                    break;
+
+                CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
+
+                if (!curvePtr.IsValid())
+                    break;
+
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddCurveVector(*curvePtr, false);
+                break;
+                };
+#endif
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -3408,6 +3787,15 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             return EntryType::SolidKernelEntity;
 
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            return EntryType::SolidKernelEntity;
+
+        case GeometryStreamIO::OpCode::BRepPolyface:
+            return EntryType::Polyface;
+
+        case GeometryStreamIO::OpCode::BRepCurveVector:
+            return EntryType::CurveVector;
+
         case GeometryStreamIO::OpCode::TextString:
             return EntryType::TextString;
 
@@ -3472,12 +3860,35 @@ bool GeometryCollection::Iterator::IsSurface() const
             return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)  
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
+#elif defined (BENTLEYCONFIG_PARASOLID)  
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            }
+#else
+        case GeometryStreamIO::OpCode::BRepPolyface:
+            {
+            GeometricPrimitivePtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+
+        case GeometryStreamIO::OpCode::BRepCurveVector:
+            {
+            GeometricPrimitivePtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && geom->GetAsCurveVector()->IsAnyRegionType());
+            }
+#endif
 
         default:
             return false;
@@ -3505,12 +3916,28 @@ bool GeometryCollection::Iterator::IsSolid() const
             return (geom.IsValid() && geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)  
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
+#elif defined (BENTLEYCONFIG_PARASOLID)  
+        case GeometryStreamIO::OpCode::ParasolidBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            }
+#else
+        case GeometryStreamIO::OpCode::BRepPolyface:
+            {
+            GeometricPrimitivePtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+#endif
 
         default:
             return false;
@@ -3612,10 +4039,23 @@ void GeometryCollection::Iterator::ToNext()
 
             default:
                 {
+#if defined (BENTLEYCONFIG_PARASOLID) || defined (BENTLEYCONFIG_OPENCASCADE)
                 if (!m_egOp.IsGeometryOp())
                     break;
 
                 m_state->m_geomStreamEntryId.Increment();
+#else
+                if (!m_egOp.IsGeometryOp())
+                    {
+                    if (GeometryStreamIO::OpCode::ParasolidBRep == m_egOp.m_opCode)
+                        m_state->m_geomStreamEntryId.Increment(); // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
+                    break;
+                    }
+
+                if (!(GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode || GeometryStreamIO::OpCode::BRepCurveVector == m_egOp.m_opCode))
+                    m_state->m_geomStreamEntryId.Increment();
+#endif
+
                 m_state->m_geometry = nullptr; // Defer extract until asked...
 
                 if (m_state->m_geomParams.GetCategoryId().IsValid())
@@ -4097,7 +4537,26 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom, CoordSystem coord)
     if (CoordSystem::Local == coord)
         return AppendLocal(geom);
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+    GeometricPrimitivePtr clone;
+
+    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
+    if (GeometricPrimitive::GeometryType::SolidKernelEntity == geom.GetGeometryType())
+        {
+        ISolidKernelEntityPtr clone = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(*geom.GetAsISolidKernelEntity()), geom.GetAsISolidKernelEntity()->GetEntityTransform(), false);
+
+//        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(geom, *GetAsISolidKernelEntity()))
+//            return false;
+
+        geomPtr = new GeometricPrimitive(clone);
+        }
+    else
+        {
+        geomPtr = geom.Clone();
+        }
+#else
     GeometricPrimitivePtr geomPtr = geom.Clone();
+#endif
 
     return AppendWorld(*geomPtr);
     }
@@ -4285,7 +4744,16 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
         return true;
         }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
+    ISolidKernelEntityPtr clone = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(geom), geom.GetEntityTransform(), false);
+
+//    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
+//        return false;
+#else
     ISolidKernelEntityPtr clone = geom.Clone();
+#endif
+
     GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(clone);
 
     return AppendWorld(*geomPtr);

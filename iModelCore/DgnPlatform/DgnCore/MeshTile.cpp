@@ -9,7 +9,9 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #include <Geom/XYZRangeTree.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -869,6 +871,7 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -905,6 +908,33 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
 
 
     return polyface;
+#elif defined (BENTLEYCONFIG_PARASOLID)    
+    // Cannot process the same solid entity simultaneously from multiple threads...
+    BeMutexHolder lock(m_mutex);
+
+    DRange3d entityRange = m_entity->GetEntityRange();
+    if (entityRange.IsNull())
+        return nullptr;
+
+    double              rangeDiagonal = entityRange.DiagonalDistance();
+    static double       s_minRangeRelTol = 1.0e-4;
+    double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
+    IFacetOptionsPtr    pFacetOptions;
+    
+    if (facetOptions.GetChordTolerance() < minChordTolerance)
+        {
+        pFacetOptions = facetOptions.Clone();
+        pFacetOptions->SetChordTolerance (minChordTolerance);
+        }
+    else
+        {
+        pFacetOptions = &facetOptions;
+        }
+
+    return SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

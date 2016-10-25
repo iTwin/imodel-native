@@ -6,8 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 #include <GeomLib_IsPlanarSurface.hxx>
+#endif
 
 #define TRIANGLE_MULTIPLIER 2
 
@@ -366,6 +368,7 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
     return options;
     }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -452,14 +455,19 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     auto shape = SolidKernelUtil::GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
+#else
+    return 0;
+#endif
     }
 
