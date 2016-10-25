@@ -106,7 +106,7 @@ struct MarkupDomain : Dgn::DgnDomain
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Redline : Document
     {
-    DEFINE_T_SUPER(Document)
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_Redline, Document);
     friend struct dgn_ElementHandler::RedlineElementHandler;
 
     Redline(CreateParams const& params) : T_Super(params) {}
