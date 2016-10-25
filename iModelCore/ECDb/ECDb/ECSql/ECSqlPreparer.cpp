@@ -1295,7 +1295,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     WipPropertyMapSqlDispatcher fromECInstanceIdSqlDispatcher(*fromECInstanceIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
-    fromECInstanceIdPropMap->Accept(fromECInstanceIdSqlDispatcher);
+    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlDispatcher);
     sql.Append(fromECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }

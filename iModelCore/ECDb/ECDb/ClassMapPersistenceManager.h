@@ -83,23 +83,23 @@ struct DbClassMapSaveContext : public NonCopyableClass
 // @bsiclass                                                   Affan.Khan          07/16
 // Allow to collect columns from property maps
 //+===============+===============+===============+===============+===============+======
-struct WipPropertyMapSaveDispatcher final : IPropertyMapDispatcher
+struct WipPropertyMapSaveDispatcher final : IPropertyMapVisitor
     {
     private:
         DbClassMapSaveContext& m_context;
         mutable BentleyStatus m_status;
-        mutable WipPropertyMap const* m_failedMap;
+        mutable PropertyMap const* m_failedMap;
 
     private:
-        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
+        virtual VisitorFeedback _Visit(WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual VisitorFeedback _Visit(WipCompoundPropertyMap const& propertyMap) const override;
+        virtual VisitorFeedback _Visit(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
         WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx);
         ~WipPropertyMapSaveDispatcher() {}
         BentleyStatus GetStatus() const { return m_status; }
-        WipPropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
+        PropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
         void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

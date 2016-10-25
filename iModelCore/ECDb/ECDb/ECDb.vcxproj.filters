@@ -386,13 +386,13 @@
     <ClInclude Include="ClassMapPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="WipPropertyMap.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ClassMapper.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="SqlNames.h" />
+    <ClInclude Include="PropertyMap.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -714,10 +714,10 @@
     <ClCompile Include="ClassMapPersistenceManager.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="WipPropertyMap.cpp">
+    <ClCompile Include="ClassMapper.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ClassMapper.cpp">
+    <ClCompile Include="PropertyMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

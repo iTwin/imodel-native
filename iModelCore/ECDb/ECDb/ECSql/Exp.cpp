@@ -38,7 +38,7 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
         if (!propertyNameExp->IsPropertyRef())
             {
             WipPropertyMapTableDispatcher tableDispatcher;
-            propertyNameExp->GetTypeInfo().GetPropertyMap()->Accept(tableDispatcher);
+            propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableDispatcher);
             for (auto table : tableDispatcher.GetTables())
                 {
                 if (table->GetPersistenceType() == PersistenceType::Persisted)
@@ -442,7 +442,7 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
 
         if (property == nullptr && i == 0)
             {
-            WipPropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyName);
+            PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyName);
             if (propertyMap != nullptr)
                 property = &propertyMap->GetProperty();
             }

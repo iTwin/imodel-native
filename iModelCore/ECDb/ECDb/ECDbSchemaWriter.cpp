@@ -1814,7 +1814,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             return ERROR;
             }
 
-        WipPropertyMap const* propertyMap = partitionRootClassMap->GetPropertyMaps().Find(deletedProperty.GetName().c_str());
+        PropertyMap const* propertyMap = partitionRootClassMap->GetPropertyMaps().Find(deletedProperty.GetName().c_str());
         if (propertyMap == nullptr)
             {
             BeAssert(false && "Failed to find propertymap");
@@ -1832,8 +1832,8 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
 
         //Delete DbTable entries
 
-        WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::Business);
-        propertyMap->Accept(columnDispatcher);
+        WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::Data);
+        propertyMap->AcceptVisitor(columnDispatcher);
         for (DbColumn const* column : columnDispatcher.GetColumns())
             {
             //For shared column do not delete column itself.

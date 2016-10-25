@@ -22,7 +22,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     if (exp->IsPropertyRef())
         return PrepareInSubqueryRef(nativeSqlSnippets, ctx, *exp);
 
-    WipPropertyMap const& propMap = exp->GetPropertyMap();
+    PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
     if (!NeedsPreparation(currentScope, propMap))
@@ -34,7 +34,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return stat;
 
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
-    WipPropertyMap const* effectivePropMap = &propMap;
+    PropertyMap const* effectivePropMap = &propMap;
     if (currentScopeECSqlType == ECSqlType::Delete)
         {
         if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause) &&
@@ -79,11 +79,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, WipPropertyMap const& propertyMap)
+bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::All, true);
-    propertyMap.Accept(columnDispatcher);
+    propertyMap.AcceptVisitor(columnDispatcher);
     if (columnDispatcher.GetColumns().empty())
         {
         BeAssert(false && "WIP");
@@ -121,7 +121,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, WipPropertyMap const& propMap)
+ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
     {
     switch (scope.GetECSqlType())
         {
@@ -143,7 +143,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
                 }
 
             WipPropertyMapTableDispatcher tableDispatcher;
-            propMap.Accept(tableDispatcher);
+            propMap.AcceptVisitor(tableDispatcher);
             BeAssert(tableDispatcher.GetTables().size() == 1);
             DbTable const* contextTable = *tableDispatcher.GetTables().begin();
             if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
@@ -163,15 +163,15 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipPropertyMap const& propMap, Utf8CP classIdentifier)
+void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
     WipPropertyMapTableDispatcher tableDispatcher;
-    propMap.Accept(tableDispatcher);
+    propMap.AcceptVisitor(tableDispatcher);
 
     WipPropertyMapSqlDispatcher sqlDispatcher(*tableDispatcher.GetSingleTable(),
                                               ecsqlType == ECSqlType::Select ? WipPropertyMapSqlDispatcher::SqlTarget::View : WipPropertyMapSqlDispatcher::SqlTarget::Table, classIdentifier, exp.HasParentheses());
 
-    propMap.Accept(sqlDispatcher);
+    propMap.AcceptVisitor(sqlDispatcher);
     for (WipPropertyMapSqlDispatcher::Result const& r : sqlDispatcher.GetResultSet())
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
     }
@@ -183,7 +183,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
 ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipConstraintECClassIdPropertyMap const& propMap, Utf8CP classIdentifier)
     {
     WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::All, true);
-    propMap.Accept(columnDispatcher);
+    propMap.AcceptVisitor(columnDispatcher);
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
         !propMap.IsMappedToClassMapTables() && !columnDispatcher.AreResultingColumnsAreVirtual())
@@ -204,11 +204,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
             if (classIdPropMap == &propMap)
                 {
                 WipPropertyMapColumnDispatcher  classIdDispatcher(PropertyMapKind::All, true);
-                classIdPropMap->Accept(classIdDispatcher);
+                classIdPropMap->AcceptVisitor(classIdDispatcher);
                 DbColumn const* classIdColumn = classIdDispatcher.GetSingleColumn();
 
                 WipPropertyMapColumnDispatcher  ecInstanceIdDispatcher(PropertyMapKind::All, true);
-                referencedEndConstraintMappings.GetECInstanceIdPropMap()->Accept(ecInstanceIdDispatcher);
+                referencedEndConstraintMappings.GetECInstanceIdPropMap()->AcceptVisitor(ecInstanceIdDispatcher);
                 NativeSqlBuilder str;
                 str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",
                                     classIdColumn->GetName().c_str(),

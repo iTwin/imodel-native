@@ -864,7 +864,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
     foreignEndConstraintMap.SetECInstanceIdPropMap(static_cast<WipConstraintECInstanceIdPropertyMap const*>(clonedConstraintInstanceId.get()));
 
     WipPropertyMapTableDispatcher tableDisp;
-    clonedConstraintInstanceId->Accept(tableDisp);
+    clonedConstraintInstanceId->AcceptVisitor(tableDisp);
     for (DbTable const* table : tableDisp.GetTables())
         {
         AddTable(*const_cast<DbTable *>(table));
@@ -1178,7 +1178,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
     for (auto constraintMap : constraintMaps)
         {
         Utf8CP keyPropAccessString = keyPropertyName.c_str();
-        WipPropertyMap const* keyPropertyMap = constraintMap->GetPropertyMaps().Find(keyPropAccessString);
+        PropertyMap const* keyPropertyMap = constraintMap->GetPropertyMaps().Find(keyPropAccessString);
         if (keyPropertyMap == nullptr)
             {
             Utf8String error;
@@ -1198,7 +1198,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
 
         std::vector<DbColumn const*> columns;
         WipPropertyMapColumnDispatcher columnDispatcher(constraintMap->GetJoinedTable());
-        keyPropertyMap->Accept(columnDispatcher);
+        keyPropertyMap->AcceptVisitor(columnDispatcher);
         if (columnDispatcher.GetColumns().size() != 1)
             {
             BeAssert(false && "Key property map is expected to map to a single column.");
@@ -1263,11 +1263,11 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
         }
 
     //now determine the property map defined just before the nav prop in the ECClass, that is mapped to
-    WipPropertyMap const* precedingPropMap = nullptr;
-    WipPropertyMap const* succeedingPropMap = nullptr;
+    PropertyMap const* precedingPropMap = nullptr;
+    PropertyMap const* succeedingPropMap = nullptr;
     bool foundNavProp = false;
     WipPropertyMapTypeDispatcher isSystemOrNavPropertyMapDispatcher(Enum::Or(PropertyMapKind::System, PropertyMapKind::NavigationPropertyMap));
-    for (WipPropertyMap const* propMap : classMap->GetPropertyMaps())
+    for (PropertyMap const* propMap : classMap->GetPropertyMaps())
         {
         if (&propMap->GetProperty() == singleNavProperty)
             {
@@ -1280,7 +1280,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             }
 
         isSystemOrNavPropertyMapDispatcher.Reset();
-        propMap->Accept(isSystemOrNavPropertyMapDispatcher); //Skip system properties and navigation properties
+        propMap->AcceptVisitor(isSystemOrNavPropertyMapDispatcher); //Skip system properties and navigation properties
         if (!isSystemOrNavPropertyMapDispatcher.ResultSet().empty())
             continue;
 
@@ -1308,9 +1308,9 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
         return SUCCESS;
 
     WipPropertyMapColumnDispatcher precedingColsDispatcher(table);
-    WipPropertyMap const* precedingPropMap = fkColInfo.GetPropertyMapBeforeNavProp();
+    PropertyMap const* precedingPropMap = fkColInfo.GetPropertyMapBeforeNavProp();
     if (precedingPropMap != nullptr)
-        precedingPropMap->Accept(precedingColsDispatcher);
+        precedingPropMap->AcceptVisitor(precedingColsDispatcher);
 
     bool isNeighborColumnPreceeding = true;
     DbColumn const* neighborColumn = nullptr;
@@ -1319,10 +1319,10 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
     else
         {
 
-        WipPropertyMap const* succeedingPropMap = fkColInfo.GetPropertyMapAfterNavProp();
+        PropertyMap const* succeedingPropMap = fkColInfo.GetPropertyMapAfterNavProp();
         WipPropertyMapColumnDispatcher succeedingColsDispatcher(table);
         if (succeedingPropMap != nullptr)
-            succeedingPropMap->Accept(succeedingColsDispatcher);
+            succeedingPropMap->AcceptVisitor(succeedingColsDispatcher);
 
         if (!succeedingColsDispatcher.GetColumns().empty())
             {

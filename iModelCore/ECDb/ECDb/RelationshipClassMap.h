@@ -118,13 +118,13 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 bool m_canImplyFromNavigationProperty;
                 Utf8String m_impliedColumnName;
                 bool m_appendToEnd;
-                WipPropertyMap const* m_propMapBeforeNavProp;
-                WipPropertyMap const* m_propMapAfterNavProp;
+                PropertyMap const* m_propMapBeforeNavProp;
+                PropertyMap const* m_propMapAfterNavProp;
 
             public:
                 ForeignKeyColumnInfo() : m_canImplyFromNavigationProperty(false), m_appendToEnd(true), m_propMapBeforeNavProp(nullptr), m_propMapAfterNavProp(nullptr) {}
 
-                void Assign(Utf8CP impliedColName, bool appendToEnd, WipPropertyMap const* propMapBeforeNavProp, WipPropertyMap const* propMapAfterNavProp)
+                void Assign(Utf8CP impliedColName, bool appendToEnd, PropertyMap const* propMapBeforeNavProp, PropertyMap const* propMapAfterNavProp)
                     {
                     m_canImplyFromNavigationProperty = true;
                     m_impliedColumnName.assign(impliedColName);
@@ -145,8 +145,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
                 Utf8StringCR GetImpliedColumnName() const { return m_impliedColumnName; }
                 bool AppendToEnd() const { return m_appendToEnd; }
-                WipPropertyMap const* GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
-                WipPropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
+                PropertyMap const* GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
+                PropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
 
         bool m_hasKeyPropertyFk;

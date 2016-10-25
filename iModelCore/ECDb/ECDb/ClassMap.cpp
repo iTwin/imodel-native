@@ -368,10 +368,10 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             }
 
         //look for the base class' property map as property is inherited
-        WipVerticalPropertyMap const* baseClassPropMap = nullptr;
+        DataPropertyMap const* baseClassPropMap = nullptr;
         for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
-            if (baseClassPropMap = dynamic_cast<WipVerticalPropertyMap const*>(baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
+            if (baseClassPropMap = dynamic_cast<DataPropertyMap const*>(baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
                 break;
             }
 
@@ -382,7 +382,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             continue;
             }
 
-        RefCountedPtr<WipVerticalPropertyMap> propertyMap = baseClassPropMap->CreateCopy(*this);        
+        RefCountedPtr<DataPropertyMap> propertyMap = baseClassPropMap->CreateCopy(*this);        
         if (GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
             return MappingStatus::Error;
         }
@@ -391,7 +391,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
 
     for (ECPropertyCP property : propertiesToMap)
         {
-        if (WipPropertyMap* newProperyMap = ClassMapper::MapProperty(*this, *property))
+        if (PropertyMap* newProperyMap = ClassMapper::MapProperty(*this, *property))
             {
             if (property->GetIsNavigation())
                 {
@@ -424,7 +424,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
         bset<DbTable const*> involvedTables;
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
-            WipPropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
+            PropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
@@ -446,7 +446,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 }
 
             WipPropertyMapColumnDispatcher columnDispatcher(GetJoinedTable());
-            propertyMap->Accept(columnDispatcher);
+            propertyMap->AcceptVisitor(columnDispatcher);
             std::vector<DbColumn const*> const& columns = columnDispatcher.GetColumns();
             if (0 == columns.size())
                 {
@@ -589,10 +589,10 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
 
     DbClassMapSaveContext classMapSaveContext(ctx);
     WipPropertyMapSaveDispatcher saveDispatcher(classMapSaveContext);
-    for (WipPropertyMap const* propertyMap : GetPropertyMaps())
+    for (PropertyMap const* propertyMap : GetPropertyMaps())
         {
         BeAssert(GetClass().GetId() == propertyMap->GetClassMap().GetClass().GetId());
-        propertyMap->Accept(saveDispatcher);
+        propertyMap->AcceptVisitor(saveDispatcher);
         if (saveDispatcher.GetStatus() != SUCCESS)
             return ERROR;
         }
@@ -701,12 +701,12 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     bvector<ECPropertyCP> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        WipVerticalPropertyMap const*  tphBaseClassPropMap = nullptr;
+        DataPropertyMap const*  tphBaseClassPropMap = nullptr;
         if (&property->GetClass() != &m_ecClass && inheritanceMode == PropertyMapInheritanceMode::Clone)
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
-                if (tphBaseClassPropMap = dynamic_cast<WipVerticalPropertyMap const*> (baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
+                if (tphBaseClassPropMap = dynamic_cast<DataPropertyMap const*> (baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
                     break;
                 }
             }
@@ -720,7 +720,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         else
             {
-            RefCountedPtr<WipPropertyMap> propMap = tphBaseClassPropMap->CreateCopy(*this);
+            RefCountedPtr<PropertyMap> propMap = tphBaseClassPropMap->CreateCopy(*this);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -734,14 +734,14 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         GetColumnFactory().Update(true);
         for (ECPropertyCP property : failedToLoadProperties)
             {
-            WipPropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
+            PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
             if (propMap == nullptr)
             	{
                 BeAssert(false);
                 return ERROR;
                 }
 
-            WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap);
+            DataPropertyMap* vMap = dynamic_cast<DataPropertyMap*>(propMap);
             if (vMap == nullptr)
                 {
                 BeAssert(false);
@@ -759,7 +759,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             ctx.BeginSaving(*this);
             DbClassMapSaveContext classMapContext(ctx);
             WipPropertyMapSaveDispatcher saveDispatcher(classMapContext);
-            propMap->Accept(saveDispatcher);
+            propMap->AcceptVisitor(saveDispatcher);
             ctx.EndSaving(*this);
             }
         }
@@ -1179,7 +1179,7 @@ void ColumnFactory::Update(bool includeDerivedClasses) const
     {
     m_idsOfColumnsInUseByClassMap.clear();
     WipPropertyMapColumnDispatcher navigationProperytMapColumns(PropertyMapKind::NavigationPropertyMap);
-    m_classMap.GetPropertyMaps().Accept(navigationProperytMapColumns);
+    m_classMap.GetPropertyMaps().AcceptVisitor(navigationProperytMapColumns);
 
     for (DbColumn const* columnInUse : navigationProperytMapColumns.GetColumns())
         {

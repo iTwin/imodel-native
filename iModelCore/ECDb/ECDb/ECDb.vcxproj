@@ -117,10 +117,10 @@
     <ClCompile Include="IssueReporter.cpp" />
     <ClCompile Include="LightweightCache.cpp" />
     <ClCompile Include="MapStrategy.cpp" />
+    <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
     <ClCompile Include="ViewGenerator.cpp" />
-    <ClCompile Include="WipPropertyMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
@@ -220,11 +220,11 @@
     <ClInclude Include="IssueReporter.h" />
     <ClInclude Include="LightweightCache.h" />
     <ClInclude Include="MapStrategy.h" />
+    <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
     <ClInclude Include="SqlNames.h" />
     <ClInclude Include="ViewGenerator.h" />
-    <ClInclude Include="WipPropertyMap.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="docs\source\ECDbExamples.doxpage" />

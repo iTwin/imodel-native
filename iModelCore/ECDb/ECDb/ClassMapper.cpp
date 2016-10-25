@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-WipPropertyMap* ClassMapper::MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty)
+PropertyMap* ClassMapper::MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty)
     {
     ClassMapper mapper(classMap);
     return mapper.ProcessProperty(ecProperty);
@@ -25,7 +25,7 @@ WipPropertyMap* ClassMapper::MapProperty(ClassMapR classMap, ECN::ECPropertyCR e
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static
-WipPropertyMap* ClassMapper::LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext)
+PropertyMap* ClassMapper::LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext)
     {
     ClassMapper mapper(classMap, loadContext);
     return mapper.ProcessProperty(ecProperty);
@@ -242,7 +242,7 @@ DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
     {
     if (property.GetType() != PRIMITIVETYPE_Point2d)
         return nullptr;
@@ -309,7 +309,7 @@ RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primit
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
     {
     if (property.GetType() != PRIMITIVETYPE_Point3d)
         return nullptr;
@@ -391,7 +391,7 @@ RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primit
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const* parent)
+Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, DataPropertyMap const* parent)
     {
     Utf8String accessString;
     if (parent)
@@ -404,7 +404,7 @@ Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, WipVer
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipVerticalPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
     {
     if (property.GetType() == PRIMITIVETYPE_Point2d)
         return MapPoint2dProperty(property, parent);
@@ -451,7 +451,7 @@ RefCountedPtr<WipVerticalPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::Pri
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, DataPropertyMap const* parent)
     {
     Utf8String accessString = ComputeAccessString(property, parent);
     DbColumn const* column = nullptr;
@@ -491,7 +491,7 @@ RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProper
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, DataPropertyMap const* parent)
     {
     //TODO: Create column or map to existing column
     Utf8String accessString = ComputeAccessString(property, parent);
@@ -571,7 +571,7 @@ RefCountedPtr<WipNavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, WipVerticalPropertyMap const* parent)
+RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent)
     {
     RefCountedPtr<WipStructPropertyMap> structPropertyMap;
     if (parent)
@@ -581,7 +581,7 @@ RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructEC
 
     for (ECN::ECPropertyCP property : property.GetType().GetProperties())
         {
-        RefCountedPtr<WipVerticalPropertyMap> propertyMap;
+        RefCountedPtr<DataPropertyMap> propertyMap;
         if (auto typedProperty = property->GetAsPrimitiveProperty())
             propertyMap = MapPrimitiveProperty(*typedProperty, structPropertyMap.get());
         else if (auto typedProperty = property->GetAsArrayProperty())
@@ -631,9 +631,9 @@ RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructEC
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-WipPropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
+PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     {
-    RefCountedPtr<WipPropertyMap> propertyMap;
+    RefCountedPtr<PropertyMap> propertyMap;
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
         {
         BeAssert(false && "PropertyMap already exist");

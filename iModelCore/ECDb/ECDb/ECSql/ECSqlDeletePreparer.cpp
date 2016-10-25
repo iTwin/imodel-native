@@ -75,13 +75,13 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
     WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All);
-    classMap.GetPropertyMaps().Accept(typeDispatcher);
-    for (WipPropertyMap const* propMap : typeDispatcher.ResultSet())
+    classMap.GetPropertyMaps().AcceptVisitor(typeDispatcher);
+    for (PropertyMap const* propMap : typeDispatcher.ResultSet())
         {
         bool isSystem = propMap->IsSystem();
         if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
             {
-            propMap->Accept(sqlDispatcher);           
+            propMap->AcceptVisitor(sqlDispatcher);           
             WipPropertyMapSqlDispatcher::Result const* r = sqlDispatcher.Find(propMap->GetAccessString().c_str());;
             if (r == nullptr)
                 {

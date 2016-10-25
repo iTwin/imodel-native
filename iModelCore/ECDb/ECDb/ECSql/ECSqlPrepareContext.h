@@ -76,12 +76,12 @@ struct ECSqlPrepareContext
                 ~SelectionOptions() {}
 
 
-                void AddProperty(WipPropertyMap const& propertyMap)
+                void AddProperty(PropertyMap const& propertyMap)
                     {
                     WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, /*traverseCompoundProperties = */ true);
-                    propertyMap.Accept(typeDispatcher);
+                    propertyMap.AcceptVisitor(typeDispatcher);
                     Utf8String path;
-                    for (WipPropertyMap const* m : typeDispatcher.ResultSet())
+                    for (PropertyMap const* m : typeDispatcher.ResultSet())
                         {
                         AddProperty(m->GetAccessString().c_str());
                         }

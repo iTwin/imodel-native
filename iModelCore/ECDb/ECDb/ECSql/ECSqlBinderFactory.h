@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlTypeInfo.h"
-#include "../WipPropertyMap.h"
+#include "../PropertyMap.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -27,7 +27,7 @@ struct ECSqlBinderFactory
     public:
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints);
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, WipPropertyMap const& propMap);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

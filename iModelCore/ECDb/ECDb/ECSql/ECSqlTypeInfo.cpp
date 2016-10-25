@@ -50,7 +50,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(WipPropertyMap const& propertyMap)
+ECSqlTypeInfo::ECSqlTypeInfo(PropertyMap const& propertyMap)
     : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
     {
     DetermineTypeInfo(propertyMap.GetProperty());

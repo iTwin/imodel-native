@@ -31,7 +31,7 @@ void StructToColumnsECSqlBinder::Initialize()
     WipStructPropertyMap const* structPropMap = static_cast<WipStructPropertyMap const*> (typeInfo.GetPropertyMap());
 
     int totalMappedSqliteParameterCount = 0;
-    for (WipPropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
+    for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
         {
         auto binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *memberPropMap);
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount();

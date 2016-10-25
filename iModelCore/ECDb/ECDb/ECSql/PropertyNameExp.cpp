@@ -272,7 +272,7 @@ Utf8CP PropertyNameExp::GetPropertyName() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-WipPropertyMap const& PropertyNameExp::GetPropertyMap() const
+PropertyMap const& PropertyNameExp::GetPropertyMap() const
     {
     BeAssert(GetClassRefExp() != nullptr);
     if (GetClassRefExp()->GetType() == Exp::Type::ClassName)
@@ -298,7 +298,7 @@ WipPropertyMap const& PropertyNameExp::GetPropertyMap() const
         }
 
     BeAssert(false && "Case not handled");
-    return *((WipPropertyMap const*) (nullptr));
+    return *((PropertyMap const*) (nullptr));
     }
 
 

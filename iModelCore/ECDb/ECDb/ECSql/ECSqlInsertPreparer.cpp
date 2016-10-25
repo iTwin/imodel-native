@@ -332,7 +332,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
                 }
 
             WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
-            ecInstanceIdPropMap->Accept(sqlDispatcher);
+            ecInstanceIdPropMap->AcceptVisitor(sqlDispatcher);
             
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlDispatcher.GetResultSet().front().GetSqlBuilder()});
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder()});

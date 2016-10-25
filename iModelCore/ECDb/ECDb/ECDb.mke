@@ -42,6 +42,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
+                $(baseDir)PropertyMap.h \
+                $(baseDir)ClassMapper.h \
                 $(baseDir)ClassMapPersistenceManager.h \
                 $(baseDir)ECDbSchemaPersistenceHelper.h \
                 $(baseDir)ECDbSchemaReader.h \
@@ -111,8 +113,6 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)LightweightCache.h \
-                $(baseDir)WipPropertyMap.h \
-                $(baseDir)ClassMapper.h \
                 $(baseDir)SqlNames.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
@@ -167,6 +167,10 @@ $(o)ClassMappingInfo$(oext):                                  $(baseDir)ClassMap
 $(o)ClassMap$(oext):                                          $(baseDir)ClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)RelationshipClassMap$(oext):                              $(baseDir)RelationshipClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)PropertyMap$(oext):                                       $(baseDir)PropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ClassMapper$(oext):                                       $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMapPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  
@@ -336,9 +340,6 @@ $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpr
 
 $(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)WipPropertyMap$(oext):                            $(baseDir)WipPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassMapper$(oext):                            $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

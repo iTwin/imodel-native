@@ -25,16 +25,16 @@ struct ClassMapper final
     private:
         ClassMapper(ClassMapR classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
         ClassMapper(ClassMapR classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
-        RefCountedPtr<WipPoint2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent);
-        RefCountedPtr<WipPoint3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent);
-        RefCountedPtr<WipVerticalPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent);
-        RefCountedPtr<WipPrimitiveArrayPropertyMap> MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, WipVerticalPropertyMap const* parent);
-        RefCountedPtr<WipStructPropertyMap> MapStructProperty(ECN::StructECPropertyCR property, WipVerticalPropertyMap const* parent);
-        RefCountedPtr<WipStructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR property, WipVerticalPropertyMap const* parent);
+        RefCountedPtr<WipPoint2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
+        RefCountedPtr<WipPoint3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
+        RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
+        RefCountedPtr<WipPrimitiveArrayPropertyMap> MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, DataPropertyMap const* parent);
+        RefCountedPtr<WipStructPropertyMap> MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent);
+        RefCountedPtr<WipStructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR property, DataPropertyMap const* parent);
         RefCountedPtr<WipNavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR property);
-        Utf8String ComputeAccessString(ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const* parent);
+        Utf8String ComputeAccessString(ECN::ECPropertyCR ecProperty, DataPropertyMap const* parent);
         DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR ecProperty, Utf8CP accessString, DbColumn::Type colType);
-        WipPropertyMap* ProcessProperty(ECN::ECPropertyCR ecProperty);
+        PropertyMap* ProcessProperty(ECN::ECPropertyCR ecProperty);
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR prop, WipNavigationPropertyMap::NavigationEnd end);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR navProp, RelationshipClassMapCR relClassMap, WipNavigationPropertyMap::NavigationEnd end);
 
@@ -43,8 +43,8 @@ struct ClassMapper final
         //This method does not create system property maps
         static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR navProp, WipNavigationPropertyMap::NavigationEnd end);
         static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8CP propAccessString);
-        static WipPropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
-        static WipPropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
+        static PropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
+        static PropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);
         static BentleyStatus CreateECClassIdPropertyMap(ClassMap& classMap);
         static BentleyStatus SetupNavigationPropertyMap(WipNavigationPropertyMap& propertyMap);

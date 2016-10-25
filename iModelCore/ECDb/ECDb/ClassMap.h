@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDb.h>
-#include "WipPropertyMap.h"
+#include "PropertyMap.h"
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
 

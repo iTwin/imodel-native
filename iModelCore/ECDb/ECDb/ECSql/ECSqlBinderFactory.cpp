@@ -93,7 +93,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, WipPropertyMap const& propMap)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap)
     {
     return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap));
     }

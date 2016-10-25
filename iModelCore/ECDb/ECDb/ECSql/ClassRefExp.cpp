@@ -53,7 +53,7 @@ BentleyStatus ClassNameExp::_CreatePropertyNameExpList(std::function<void(std::u
         }
 
     ClassMap const& classMap = m_info->GetMap();
-    for (WipPropertyMap const* propertyMap : classMap.GetPropertyMaps())
+    for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
         std::unique_ptr<PropertyNameExp> exp(new PropertyNameExp(propertyMap->GetAccessString(), *this, classMap));
         addDelegate(exp);
@@ -73,7 +73,7 @@ bool ClassNameExp::_ContainProperty(Utf8CP propertyName) const
         return false;
         }
 
-    WipPropertyMap const* propertyMap = m_info->GetMap().GetPropertyMaps().Find(propertyName);
+    PropertyMap const* propertyMap = m_info->GetMap().GetPropertyMaps().Find(propertyName);
     return propertyMap != nullptr;
     }
 

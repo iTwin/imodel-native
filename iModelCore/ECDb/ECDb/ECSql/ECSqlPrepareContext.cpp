@@ -255,9 +255,9 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                     }
                 }
             }        
-        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Business))
+        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Data))
             {
-            WipVerticalPropertyMap const& businessPropertyMap = static_cast<WipVerticalPropertyMap const&>(property->GetPropertyMap());
+            DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
                 joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -362,7 +362,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             }
         else if (property->GetPropertyMap().IsBusiness())
             {
-            WipVerticalPropertyMap const& businessPropertyMap = static_cast<WipVerticalPropertyMap const&>(property->GetPropertyMap());
+            DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
                 joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
