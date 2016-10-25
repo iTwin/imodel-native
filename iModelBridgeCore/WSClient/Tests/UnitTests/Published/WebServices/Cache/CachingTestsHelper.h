@@ -50,7 +50,8 @@ ECInstanceKey FindRelationship(
 int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey);
 bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key);
 
-Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key);
+Json::Value ReadInstance(IDataSourceCache& cache, ECInstanceKeyCR key);
+Json::Value ReadInstance(IDataSourceCache& cache, ObjectIdCR objectId);
 Json::Value ReadModifiedProperties(IDataSourceCache& ds, ECInstanceKeyCR key);
 
 ICachingDataSource::ObjectsResult StubObjectsResult(

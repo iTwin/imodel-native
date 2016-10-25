@@ -618,6 +618,233 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     EXPECT_EQ(1, onProgressCalled);
     }
 
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedForAllCallers)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+
+    StubInstances fileInstances;
+    fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
+    txn.Commit();
+
+    // Act & Assert
+    BeFileName filePath;
+    auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
+        {
+        SimpleWriteToFile("TestContent", filePath);
+
+        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        });
+
+    AsyncTestCheckpoint check1;
+
+    Http::Request::ProgressCallback onProgress;
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        filePath = path;
+        onProgress = progress;
+        
+        check1.Checkin();
+        return downloadTask;
+        }));
+
+    bool progressReported1 = false;
+    double bytesTransfered1 = 0;
+    double bytesTotal1 = 0;
+    CachingDataSource::LabeledProgressCallback onProgress1 =
+        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+        {
+        progressReported1 = true;
+        bytesTransfered1 = bytesTransfered;
+        bytesTotal1 = bytesTotal;
+        };
+
+    auto lastTask = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress1, nullptr)
+        ->Then([&] (CachingDataSource::FileResult result)
+        {
+        });
+
+    bool progressReported2 = false;
+    double bytesTransfered2 = 0;
+    double bytesTotal2 = 0;
+    CachingDataSource::LabeledProgressCallback onProgress2 =
+        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+        {
+        progressReported2 = true;
+        bytesTransfered2 = bytesTransfered;
+        bytesTotal2 = bytesTotal;
+        };
+    auto lastTask2 = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress2, nullptr)
+        ->Then([&] (CachingDataSource::FileResult result)
+        {
+        });
+
+    check1.WaitUntilReached();
+    onProgress(2,42);
+
+    downloadTask->Execute();
+
+    lastTask->Wait();
+    lastTask2->Wait();
+
+    ASSERT_TRUE(progressReported1);
+    ASSERT_TRUE(progressReported2);
+    EXPECT_EQ(bytesTransfered1, bytesTransfered2);
+    EXPECT_EQ(bytesTotal2, bytesTotal2);
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+
+    StubInstances fileInstances;
+    fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
+    txn.Commit();
+
+    // Act & Assert
+    CachingDataSource::LabeledProgressCallback onProgress =
+        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+        {
+        };
+
+    BeFileName filePath;
+    auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
+        {
+        SimpleWriteToFile("TestContent", filePath);
+
+        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        });
+
+    bool downloadStarted = false;
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        filePath = path;
+        downloadStarted = true;
+
+        return downloadTask;
+        }));
+
+
+    bool task1Finished = false;
+    auto ct1 = SimpleCancellationToken::Create();
+    auto lastTask = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress, ct1)
+    ->Then([&] (CachingDataSource::FileResult result)
+        {
+        task1Finished = true;
+        EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
+        });
+
+    while (!downloadStarted);
+
+    bool task2Finished = false;
+    auto ct2 = SimpleCancellationToken::Create();
+    auto lastTask2 = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress, ct2)
+        ->Then([&] (CachingDataSource::FileResult result)
+        {
+        task2Finished = true;
+        EXPECT_TRUE(result.IsSuccess());
+        });
+
+    ct1->SetCanceled();
+
+    lastTask->Wait();
+
+    ASSERT_TRUE(task1Finished);
+
+    downloadTask->Execute();
+
+    lastTask2->Wait();
+
+    ASSERT_TRUE(task2Finished);
+    }
+
+TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_SecondCallbackIsCancelledFirstFinishes)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+
+    StubInstances fileInstances;
+    fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
+    txn.Commit();
+
+    // Act & Assert
+    CachingDataSource::LabeledProgressCallback onProgress =
+        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+        {
+        };
+
+    BeFileName filePath;
+    auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
+        {
+        SimpleWriteToFile("TestContent", filePath);
+
+        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        });
+
+    bool downloadStarted = false;
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        filePath = path;
+        downloadStarted = true;
+
+        return downloadTask;
+        }));
+
+
+    bool task1Finished = false;
+    auto ct1 = SimpleCancellationToken::Create();
+    auto lastTask = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress, ct1)
+        ->Then([&] (CachingDataSource::FileResult result)
+        {
+        task1Finished = true;
+        EXPECT_TRUE(result.IsSuccess());
+        });
+
+    while (!downloadStarted);
+
+    bool task2Finished = false;
+    auto ct2 = SimpleCancellationToken::Create();
+    auto lastTask2 = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress, ct2)
+        ->Then([&] (CachingDataSource::FileResult result)
+        {
+        task2Finished = true;
+        EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
+        });
+
+    ct2->SetCanceled();
+
+    lastTask2->Wait();
+
+    ASSERT_TRUE(task2Finished);
+
+    downloadTask->Execute();
+
+    lastTask->Wait();
+
+    ASSERT_TRUE(task1Finished);
+    }
+
 TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName)
     {
     // Arrange

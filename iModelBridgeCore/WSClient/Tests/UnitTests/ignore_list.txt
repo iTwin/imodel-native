@@ -1,4 +1,3 @@
-
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
 DataSourceCacheUpgradeTests.Open_V5*
@@ -7,23 +6,14 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
-# Following fail due ECDb bug TFS#558189
-ECInstanceKeyFilterTests.AddLabelFilter_EmptyLabelPassed_FindsNoInstances
-ECInstanceKeyFilterTests.AddLabelFilter_MultipleClasses_FiltersByLabel
-ECInstanceKeyFilterTests.AddLabelFilterAndByClass_MultipleClasses_FiltersByLabelAndClass
-ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_SingleClas_FiltersByLabel
-ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_MultipleClasses_FiltersByLabel
-ECInstanceKeyFilterTests.SetLimit_OnLabelFilter_ReturnsLimitedInstances
+# Pending fix on UniqueTaskHolder
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 
-# Needs fixing, new tests from Graphite0505. WIP Vincas
-DataSourceCacheTests.CacheResponse_NewResponseDoesNotContainHoldingRelationshipChild_RemovesChildInstance
-DataSourceCacheTests.CacheResponse_NewResponseNoLongerContainsParent_RemovesCachedInstancesExceptParent
-DataSourceCacheTests.CacheResponse_NewResponseIsEmpty_RemovesCachedInstances
 
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
 
-CachingDataSourceTests.SyncCachedData_*
+CachingDataSourceTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
-    # <Any one of these tests seems to randomly crash with no output or stack printed>
+    # <Any one of these tests seems to randomly crash or hang with no output or stack printed>

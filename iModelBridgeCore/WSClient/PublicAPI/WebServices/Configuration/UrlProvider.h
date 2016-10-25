@@ -45,10 +45,11 @@ struct UrlProvider
                 //! Get URL name used to identify it
                 Utf8StringCR GetName() const;
 
-                //! Retrieve cached, server configured or default URL if no connection exists.
+                //! Retrieve cached, server configured or default configured URL.
+                //! Will update URL in cache periodically in background.
                 WSCLIENT_EXPORT Utf8String Get() const;
 
-                //! Retrieve cached, server configured or default URL if no connection exists.
+                //! DEPRECATED
                 WSCLIENT_EXPORT AsyncTaskPtr<Utf8String> GetAsync() const;
             };
 
@@ -61,10 +62,11 @@ struct UrlProvider
         static IJsonLocalState* s_localState;
         static IBuddiClientPtr s_buddi;
         static IHttpHandlerPtr s_customHandler;
+        static ITaskSchedulerPtr s_thread;
 
     private:
-        static AsyncTaskPtr<Utf8String> GetBuddiUrl(Utf8StringCR urlName);
-        static AsyncTaskPtr<Utf8String> GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls);
+        static AsyncTaskPtr<Utf8String> CacheBuddiUrl(Utf8StringCR urlName);
+        static Utf8String GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls);
 
     public:
         //! Initialize UrlProvider for current session.
