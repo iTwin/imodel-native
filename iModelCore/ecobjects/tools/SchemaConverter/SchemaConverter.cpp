@@ -100,7 +100,11 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     GetOutputFile(outputFile, schema, options);
 
     s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), options.OutputDirectory.GetName());
-    SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), ECSchema::CreateECVersion(options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor));
+    ECVersion version;
+    if (ECObjectsStatus::Success != ECSchema::CreateECVersion(version, options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor))
+        return false;
+    
+    SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), version);
     if (status != SchemaWriteStatus::Success)
         {
         s_logger->errorv("Failed to save '%s' as ECXml version '%d'.'%d'", schema.GetName(), options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor);

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 	<!-- This schema is modified for testing, don't use it anywhere else -->
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
@@ -400,7 +401,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
             <DbIndexList xmlns="ECDbMap.02.00">
@@ -460,7 +461,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>

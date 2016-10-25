@@ -1221,7 +1221,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
     diff->Add (DiffNodeId::Multiplicity)->GetValue(direction).SetValue (relationshipConstraint.GetMultiplicity().ToString());
     diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
     diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
-    //diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
+    diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
     if (!relationshipConstraint.GetClasses().empty())
@@ -1881,7 +1881,8 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         {
         uint32_t ecVersionMajor, ecVersionMinor;
         sscanf(v->GetValueString().c_str(), "%d.%d", &ecVersionMajor, &ecVersionMinor);
-        ecVersion = ECSchema::CreateECVersion(ecVersionMajor, ecVersionMinor);
+        if (ECObjectsStatus::Success != ECSchema::CreateECVersion(ecVersion, ecVersionMajor, ecVersionMinor))
+            return MergeStatus::ErrorCreatingMergeSchema;
         }
     else
         ecVersion = GetDefault().GetECVersion();
@@ -2802,10 +2803,17 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
     mergedRelationshipClassConstraint.SetMultiplicity (defaultRelationshipClassConstraint.GetMultiplicity());
     mergedRelationshipClassConstraint.SetIsPolymorphic (defaultRelationshipClassConstraint.GetIsPolymorphic());
     mergedRelationshipClassConstraint.SetRoleLabel (defaultRelationshipClassConstraint.GetRoleLabel());
-    mergedRelationshipClassConstraint.SetAbstractConstraint(*defaultRelationshipClassConstraint.GetAbstractConstraint());
     status = AppendCustomAttributesToMerge (mergedRelationshipClassConstraint, defaultRelationshipClassConstraint);
     if (status != MergeStatus::Success)
         return status;
+
+    ECClassCP resolvedAbstractConstraint = ResolveClass(defaultRelationshipClassConstraint.GetAbstractConstraint()->GetFullName());
+    BeAssert(resolvedAbstractConstraint != NULL);
+    if (resolvedAbstractConstraint == NULL)
+        return MergeStatus::ErrorClassNotFound;
+    if (nullptr == resolvedAbstractConstraint->GetEntityClassCP())
+        return MergeStatus::ErrorClassTypeMismatch;
+    mergedRelationshipClassConstraint.SetAbstractConstraint(*resolvedAbstractConstraint->GetEntityClassCP());
 
     for(auto constraintClass: defaultRelationshipClassConstraint.GetConstraintClasses())
         {

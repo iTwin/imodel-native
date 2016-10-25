@@ -3226,19 +3226,11 @@ public:
     
     
     //! Indicates whether this schema is a so-called @b dynamic schema by
-    //! checking whether the @b DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
+    //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
     //! is assigned to the schema.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @return true, if this schema is a dynamic schema. false, otherwise
     ECOBJECTS_EXPORT bool IsDynamicSchema () const;
-
-    //! Marks a schema as @b dynamic schema by adding the custom attribute @b DynamicSchema from the standard schema @b 
-    //! Bentley_Standard_CustomAttributes to it.
-    //! If the standard schema is not yet referenced, an error will be returned.
-    //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
-    //! @param[in]  isDynamic true, if this schema should be marked as dynamic schema. false, otherwise.
-    //! @return A status code indicating success or error
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsDynamicSchema (bool isDynamic);
 
     //! Indicates whether this schema is a system schema (in contrast to a user-supplied schema) by
     //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
@@ -3555,16 +3547,17 @@ public:
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
     ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema);
 
-    //! Given a major and minor version number, this will parse them into the proper ECVersion
+    //! Given a major and minor version number, this will parse them into an ECVersion
+    //! @param[out]  ecVersion       The ECVersion to create
     //! @param[in]  ecVersionMajor  The major version number
     //! @param[in]  ecVersionMinor  The minor version number
-    //! @return The ECVersion if the provided major and minor version were used to successfully create an ECVersion.
-    ECOBJECTS_EXPORT static ECVersion                   CreateECVersion(uint32_t ecVersionMajor, uint32_t ecVersionMinor);
+    //! @return A status code indicating whether the provided major and minor version were successfully used to create an ECVersion.
+    ECOBJECTS_EXPORT static ECObjectsStatus             CreateECVersion(ECVersion &ecVersion, uint32_t ecVersionMajor, uint32_t ecVersionMinor);
 
     //! Given an ecVersion it will parse it into a version string M.N
     //! @param[in] ecVersion       The ECVersion to convert to a string
-    //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return an empty string.
-    static Utf8CP                   GetECVersionString(ECVersion ecVersion);
+    //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return nullptr.
+    ECOBJECTS_EXPORT static Utf8CP                      GetECVersionString(ECVersion ecVersion);
 
     //! Given an ecVersion this will parse it the specific version major and minor
     //! @param[out] ecVersionMajor  The major version of the ECVersion

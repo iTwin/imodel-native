@@ -31,6 +31,7 @@ struct SchemaComparisonTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
+struct SchemaVersionTest : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   03/13
@@ -2445,16 +2446,18 @@ TEST_F(SchemaTest, CreateDynamicSchema)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext->AddSchemaLocater(*schemaLocater);
 
-    SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
+    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
     ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
+    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema;
 
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
     schema->AddReferencedSchema(*standardCASchema);
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetIsDynamicSchema(true));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
+    
 
     ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
     ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
@@ -2684,6 +2687,28 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, CreateECVersionTest)
+    {
+    ECVersion ecVersion;
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 0, 0)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 9, 9)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion, 2, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V2_0, ecVersion) << "The ECVersion should have been set to 2.0.";
+
+    ECVersion ecVersion3;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion3, 3, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_0, ecVersion3) << "The ECVersion should have been set to 3.0.";
+
+    ECVersion ecVersion31;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion31, 3, 1)) << "Creating a 3.1 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_1, ecVersion31) << "The ECVersion should have been set to 3.1.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
