@@ -296,6 +296,7 @@ void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
     {
+    data.SetServerId(ServerConnection::GetInstance().SaveServer(data.GetServer()));
     if (m_updateMode)
         ServerConnection::GetInstance().Update(data);
     else
