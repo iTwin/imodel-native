@@ -446,7 +446,7 @@ bool Color::string(const char* pColor)
 String Color::name() const
 {
   const_cast<Color*>(this)->toRGB();
-  int i = numNamedColors;
+  int i = numNamedColors-1;
   while (i-- && m_COLORVAL != m_namedColor[i].color);
   if (i < 0)
   {

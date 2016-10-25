@@ -115,7 +115,7 @@ public:
 	inline bit bitmask_after(elem_t elem) const
 	{
 		assert(BITS_SZ == 8);
-		static bit m [] = { 255, 127, 63, 31, 15, 7, 3 };
+		static bit m [] = { 255, 127, 63, 31, 15, 7, 3, 1 };
 		return m[elem % BITS_SZ];
 	}
 	inline void assign(elem_t start, elem_t end, const bool &value) 
