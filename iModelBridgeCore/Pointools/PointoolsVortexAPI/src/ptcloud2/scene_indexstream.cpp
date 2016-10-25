@@ -848,7 +848,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 
 		try
 		{
-			voxel_sizes = new int[voxread.size()];
+			voxel_sizes = new unsigned long[voxread.size()];
 		}
 		catch(...)
 		{
@@ -857,7 +857,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 			break;
 		}
 
-		for (v=0;v<voxread.size(); v++) voxel_sizes[v] = voxread[v];
+		for (uint v=0;v<voxread.size(); v++) voxel_sizes[v] = voxread[v];
 
 		PodIO::writeCloudData( *buildInfo->job, buildInfo->cloudInfo()->_cloudPosInScene, 
             start_voxel, static_cast<int>(processvoxels.size()), voxel_sizes, true);
