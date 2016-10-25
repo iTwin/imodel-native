@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+//#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
 #include "Edits/DifferenceSet.h"
 #include "SMMemoryPool.h"
 
@@ -21,8 +21,8 @@ template <typename POINT> class ScalableMeshMemoryPools
                 
         size_t m_diffSetPoolSize;
         size_t m_genericPoolSize;                
-        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment * m_myMemMgr;        
-        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_diffSetPool;
+        //HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment * m_myMemMgr;        
+//        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_diffSetPool;
         SMMemoryPoolPtr                                    m_genericPool;
 
         ScalableMeshMemoryPools();
@@ -30,13 +30,13 @@ template <typename POINT> class ScalableMeshMemoryPools
 
     public:
         static ScalableMeshMemoryPools* Get();                        
-        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetDiffSetPool();
+//        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetDiffSetPool();
         SMMemoryPoolPtr& GetGenericPool();
     };
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {
-    m_myMemMgr = new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(POINT));        
+    //m_myMemMgr = new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(POINT));        
     m_diffSetPoolSize = 4000000;        
     m_genericPoolSize = 2000000000;          
    // m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
@@ -54,10 +54,10 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPoo
     return m_instance;
     }
 
-template <typename POINT> HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>   ScalableMeshMemoryPools<POINT>::GetDiffSetPool()
-    {
-    return m_diffSetPool;
-    }
+//template <typename POINT> HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>   ScalableMeshMemoryPools<POINT>::GetDiffSetPool()
+ //   {
+//    return m_diffSetPool;
+//    }
 
 template <typename POINT> SMMemoryPoolPtr& ScalableMeshMemoryPools<POINT>::GetGenericPool()
     {

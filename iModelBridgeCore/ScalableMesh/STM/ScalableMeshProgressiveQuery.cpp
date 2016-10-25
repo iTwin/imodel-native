@@ -1410,7 +1410,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         vector<size_t> queryNodeOrder;
         bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> nodes;
         for (auto& node : newQuery.m_overviewMeshNodes) nodes.push_back(dynamic_cast<ScalableMeshNode<DPoint3d>*>(node.get())->GetNodePtr());
-        queryObjectP->GetQueryNodeOrder(queryNodeOrder, nodes[0], &nodes[0], nodes.size());
+        if(!nodes.empty()) queryObjectP->GetQueryNodeOrder(queryNodeOrder, nodes[0], &nodes[0], nodes.size());
 
         bmap<IScalableMeshCachedDisplayNode*, size_t> mapNodes;
         for (auto& node : newQuery.m_overviewMeshNodes) mapNodes[node.get()] = &node - &newQuery.m_overviewMeshNodes[0];

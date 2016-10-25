@@ -173,6 +173,7 @@ struct IScalableMeshCreator::Impl
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
+          WString                             m_baseExtraFilesPath;
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
@@ -188,11 +189,13 @@ struct IScalableMeshCreator::Impl
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile);  
+        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
 
         StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         StatusInt                           Filter                         ();
+
+        void                               SetBaseExtraFilesPath(const WString& path);
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

@@ -25,6 +25,8 @@ extern bool   GET_HIGHEST_RES;
 
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
+#include <ScalableMesh/GeoCoords/Reprojection.h>
+
 
 #include "ScalableMeshQuery.h"
 #include "ScalableMeshSourcesPersistance.h"
@@ -52,6 +54,7 @@ extern bool   GET_HIGHEST_RES;
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshNodeCreator.h>
 //#include "CGALEdgeCollapse.h"
 
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
@@ -355,6 +358,11 @@ void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     return _SetEditFilesBasePath(path);
     }
 
+Utf8String IScalableMesh::GetEditFilesBasePath()
+    {
+    return _GetEditFilesBasePath();
+    }
+
 IScalableMeshNodePtr IScalableMesh::GetRootNode()
     {
     return _GetRootNode();
@@ -595,7 +603,7 @@ bool ScalableMeshBase::LoadGCSFrom()
         return true;
 
     ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
-    BaseGCS::WktFlavor  wktFlavor;
+    BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
 
     bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
 
@@ -778,7 +786,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 
         isSingleFile = m_smSQLitePtr->IsSingleFile();
 
-        if (hasPoints || !isSingleFile)
+        //if (hasPoints || !isSingleFile)
             {    
 
 
@@ -1910,6 +1918,11 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
     }
 
+template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
+    {
+    return Utf8String(m_baseExtraFilesPath);
+    }
+
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
     auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
@@ -2112,11 +2125,37 @@ static bool s_doGroundExtract = true;
 
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    if (s_doGroundExtract && m_scmTerrainIndexPtr == nullptr)
+    WString newPath = m_path + L"_terrain.3sm";
+
+    if (m_scmTerrainIndexPtr == nullptr)
+        {
+        StatusInt status;
+        m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
+        if (status != SUCCESS) return BSIERROR;
+        if (m_terrainP == nullptr)
+            {
+            auto sm = IScalableMeshNodeCreator::GetFor(newPath.c_str(),  status);
+            sm->Create();
+            StatusInt addStatus;
+            auto node = sm->AddNode(addStatus);
+            DRange3d range;
+            GetRange(range);
+            node->SetNodeExtent(range);
+            node = 0;
+            sm->SaveToFile();
+            sm = 0;
+            m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
+            }
+
+       // dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->SetMainIndexP(m_scmIndexPtr->CloneIndex(dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP()->GetDataStore()));
+        m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+
+        }
+
+    if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {        
         IScalableMeshPtr scalableMeshPtr(this);
 
-        WString newPath = m_path + L"_terrain.3sm";
         m_scmTerrainIndexPtr = 0;
         m_terrainP = 0;
         /*

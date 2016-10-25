@@ -45,11 +45,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_END__*/
 
-#include "SMPointIndex.h"
-#include "SMMeshIndex.h"
+//#include "SMPointIndex.h"
+//#include "SMMeshIndex.h"
 
-#include <ScalableMesh/GeoCoords/Reprojection.h>
-#include <ScalableMesh/GeoCoords/GCS.h>
+
 #include "ScalableMeshMemoryPools.h"
 
 #include "Stores/SMSQLiteStore.h"
@@ -63,6 +62,11 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+namespace GeoCoords
+    {
+    struct GCS;
+    };
 
 extern bool s_useSQLFormat;
 //typedef ISMStore::Extent3d64f        Extent3dType;
@@ -316,6 +320,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
+        virtual Utf8String                               _GetEditFilesBasePath() override;
+
         virtual IScalableMeshNodePtr               _GetRootNode() override;
 
 #ifdef WIP_MESH_IMPORT
@@ -338,6 +344,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void                SetMinScreenPixelsPerPoint(double pi_minScreenPixelsPerPoint);     
 
         HFCPtr<MeshIndexType> GetMainIndexP() { return m_scmIndexPtr; }
+
+        void SetMainIndexP(HFCPtr<MeshIndexType> newIndex) { m_scmIndexPtr = newIndex; }
                                     
     };
 
@@ -436,6 +444,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+        virtual Utf8String                               _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
             assert(false);

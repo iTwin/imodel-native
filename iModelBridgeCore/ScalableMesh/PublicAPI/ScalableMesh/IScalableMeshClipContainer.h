@@ -13,7 +13,7 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-typedef vector<DPoint3d> ScalableMeshClipPointContainer;
+typedef std::vector<DPoint3d> ScalableMeshClipPointContainer;
 
 struct IScalableMeshClipInfo;
 typedef RefCountedPtr<IScalableMeshClipInfo> IScalableMeshClipInfoPtr;

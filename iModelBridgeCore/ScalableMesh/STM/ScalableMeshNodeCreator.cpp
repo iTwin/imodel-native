@@ -109,7 +109,7 @@ void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status, computeNeighbors);
     }
 
-int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
+int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
     {
     int status = BSISUCCESS;
 

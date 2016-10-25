@@ -13,6 +13,7 @@
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshGroundExtractor.h"
 #include "ScalableMeshPointsProvider.h"
+#include "..\STM\ScalableMesh.h"
 
 #include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
 #include <TerrainModel\AutomaticGroundDetection\GroundDetectionManager.h>
@@ -21,6 +22,7 @@
 
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
 #include <ScalableMesh\IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
 USING_NAMESPACE_GROUND_DETECTION
 
@@ -217,7 +219,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), status));
 
     assert(status == SUCCESS);
-        
+    auto editFilesString = ((ScalableMeshBase*)m_scalableMesh.get())->GetPath();
+    terrainCreator->SetBaseExtraFilesPath(editFilesString);
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
 
@@ -226,6 +229,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     BeFileName xyzFile(GetTempXyzFilePath());
 
     IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzFile.c_str()));
+    SourceImportConfig& sourceImportConfig = groundPtsSource->EditConfig();
+    Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+
+    data.SetRepresenting3dData(false);
+
+    sourceImportConfig.SetReplacementSMData(data);
     terrainCreator->EditSources().Add(groundPtsSource);
 
     /*
@@ -235,7 +244,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
         }
         */
 
-    status = terrainCreator->Create();
+    status = terrainCreator->Create(true, true);
     assert(status == SUCCESS);
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;

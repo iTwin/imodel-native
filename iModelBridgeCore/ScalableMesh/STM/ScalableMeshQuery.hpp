@@ -2816,6 +2816,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvect
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetNodeExtent(DRange3d& extent)
     {
     m_node->m_nodeHeader.m_nodeExtent = ExtentOp<Extent3dType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
+    m_node->SetDirty(true);
     return BSISUCCESS;
     }
 
@@ -2823,6 +2824,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetContentExtent(
     {
     m_node->m_nodeHeader.m_contentExtentDefined = true;
     m_node->m_nodeHeader.m_contentExtent = ExtentOp<Extent3dType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
+    m_node->SetDirty(true);
     return BSISUCCESS;
     }
 

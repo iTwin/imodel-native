@@ -1797,6 +1797,50 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
 #endif
 
 //=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre 10/14
+//=======================================================================================
+template<class POINT, class EXTENT>
+bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseDataRemoved)
+    {
+
+    // In theory the two next variable invalidations are not required as
+    // but just in case the HGFIndexNode            
+    if (m_nodeHeader.m_filtered)
+        {
+
+            //Remove the sub-resolution data.
+            //            setNbPointsUsedForMeshIndex(0);
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
+
+            indicesPtr->clear();
+
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvPtr = GetUVCoordsPtr();
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIPtr = GetUVsIndicesPtr();
+            if (uvPtr.IsValid())
+                uvPtr->clear();
+            if (uvIPtr.IsValid())
+                uvIPtr->clear();
+
+
+        m_nodeHeader.m_filtered = false;
+        }
+
+    InvalidateStitching();
+
+    if (becauseDataRemoved)
+        {
+        m_nodeHeader.m_contentExtentDefined = false;
+        }
+
+    m_nodeHeader.m_nbFaceIndexes = 0;
+    m_nodeHeader.m_balanced = false;
+    m_wasBalanced = false;
+    SetDirty(true);
+
+    return true;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
     template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
@@ -2192,6 +2236,23 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::AddCli
         }
     }
 
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 10/16
+//=======================================================================================
+template<class POINT, class EXTENT>
+void SMMeshIndexNode<POINT, EXTENT>::PropagateFullMeshDown(size_t depth)
+    {
+    if (!IsLeaf() && m_nodeHeader.m_nodeCount == m_nodeHeader.m_totalCount)
+        {
+        SplitMeshForChildNodes();
+        for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+            {
+            if (m_apSubNodes[indexNodes] != nullptr)
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->PropagateFullMeshDown(depth);
+            }
+        }
+
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
@@ -2835,17 +2896,22 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Import
     m_nodeHeader.m_numberOfSubNodesOnSplit = use2d ? 4 : sourceChildren.size();
     if (use2d) m_nodeHeader.m_arePoints3d = false;
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
-    int j = 0;
-    for (size_t i = 0; i < m_apSubNodes.size(); ++i)
+    if (!m_nodeHeader.m_IsBranched) m_apSubNodes.resize(1);
+    if (!m_nodeHeader.m_IsLeaf)
         {
-        if (use2d && sourceChildren[i]->GetNodeExtent().low.z > sourceNode->GetNodeExtent().low.z) continue;
-        m_apSubNodes[j] = CloneChild(sourceChildren[i]->GetNodeExtent());
-        ++j;
-        dynamic_cast<SMMeshIndexNode<POINT,EXTENT>*>(m_apSubNodes[j].GetPtr())->ImportTreeFrom(sourceChildren[i]);
-        }
-    m_nodeHeader.m_apSubNodeID.resize(m_apSubNodes.size());
+        int j = 0;
+        for (size_t i = 0; i < m_apSubNodes.size() && i < sourceChildren.size(); ++i)
+            {
+            if (!sourceChildren[i].IsValid()) continue;
+            if (use2d && sourceChildren[i]->GetNodeExtent().low.z > sourceNode->GetNodeExtent().low.z) continue;
+            m_apSubNodes[j] = CloneChild(sourceChildren[i]->GetNodeExtent());
+            dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_apSubNodes[j].GetPtr())->ImportTreeFrom(sourceChildren[i], shouldCopyData, use2d);
+            ++j;
+            }
+        m_nodeHeader.m_apSubNodeID.resize(m_apSubNodes.size());
 
-    for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
+        for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
+        }
     SetDirty(true);
 
     }
@@ -4031,7 +4097,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
-    bool shouldBuildSkirts = false;
     int nCoverages = 0;
     int nSkirts = 0;
     for (const auto& diffSet : *diffsetPtr)
@@ -4742,6 +4807,16 @@ template<class POINT, class EXTENT>  size_t  SMMeshIndex<POINT, EXTENT>::GetNext
     }
 
 
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::PropagateFullMeshDown()
+    {
+    size_t depth = GetDepth();
+    if (m_pRootNode != NULL)
+        {
+        HFCPtr<SMMeshIndexNode<POINT, EXTENT>> node = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode);
+        node->PropagateFullMeshDown(depth);
+        }
+    }
+
 /**----------------------------------------------------------------------------
 Mesh
 Mesh the data.
@@ -4959,12 +5034,13 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 
 template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POINT, EXTENT>::CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore)
     {
-    SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter,
+    SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter->Clone(),
                                                                        m_indexHeader.m_balanced, m_indexHeader.m_textured,
                                                                        m_propagatesDataDown, m_mesher2_5d, m_mesher3d);
     auto node = GetRootNode();
     if (node == nullptr) return index;
-    auto rootClone = index->CreateRootNode(node->GetBlockID().m_integerID);
+    auto rootClone = index->GetRootNode();
+    if(rootClone == nullptr) index->CreateRootNode(node->GetBlockID().m_integerID);
     auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(const_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
     IScalableMeshNodePtr nodeP(
 #ifndef VANCOUVER_API

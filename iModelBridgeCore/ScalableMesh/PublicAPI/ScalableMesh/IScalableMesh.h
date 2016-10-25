@@ -181,6 +181,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
+        virtual Utf8String                         _GetEditFilesBasePath() = 0;
+
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
@@ -251,6 +253,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
 
         BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
+
+        BENTLEY_SM_EXPORT Utf8String              GetEditFilesBasePath();
 
         BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
 

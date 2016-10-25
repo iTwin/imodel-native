@@ -173,6 +173,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void Unload() override;
 
+    virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false) override;
+
     virtual bool IsGraphLoaded() const;
 
     void LockGraph()
@@ -266,6 +268,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void SplitNodeBasedOnImageRes();
     void SplitMeshForChildNodes();
+
+    void PropagateFullMeshDown(size_t depth);
 
     void UpdateNodeFromBcDTM();
 
@@ -780,6 +784,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
 #endif
+
+        void PropagateFullMeshDown();
 
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);

@@ -72,7 +72,7 @@ public:
 
         //BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEY_SM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
+        BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
 
         BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
@@ -111,6 +111,8 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                                                                     gcsPtr);
+
+        BENTLEY_SM_EXPORT  void                   SetBaseExtraFilesPath(const WString& path);
 
 
 

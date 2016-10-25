@@ -157,16 +157,21 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     config.SetScalableMeshConfig(ScalableMeshConfig(sourceData.GetScalableMeshData()));
     WString gcsWKT = sourceData.GetGCS();
 
-    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
+    ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor::WktFlavor_Oracle9;
+    if (!gcsWKT.empty())
+        fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
 
-    bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
-    assert(result == true);
+    if (!gcsWKT.empty())
+        {
+        bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+        assert(result == true);
+        }
 
     GCS gcs(GCS::GetNull());
     SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
-    gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
+    if (!gcsWKT.empty()) gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
 
     if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return false;
