@@ -908,6 +908,8 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         }
 
     return SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+#else
+    return nullptr;
 #endif
     }
 

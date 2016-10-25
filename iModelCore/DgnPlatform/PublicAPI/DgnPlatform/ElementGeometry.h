@@ -169,11 +169,10 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
-#elif defined (BENTLEYCONFIG_PARASOLID)
         ParasolidBRep           = 25,   //!< Parasolid body
-#endif
+        BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
+        BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 
     };
 
     //=======================================================================================

@@ -1767,7 +1767,7 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
     if (!HasCurvedFaceOrEdge(entity))
         {
         facetOptions->SetAngleTolerance(Angle::PiOver2()); // Shouldn't matter...use max angle tolerance...
-        facetOptions->SetChordTolerance(1.0); // Shouldn't matter...avoid expense of getting AABB...
+        facetOptions->SetChordTolerance(1.0); // Shouldn't matter...don't bother getting AABB...
         }
     else
         {
@@ -1781,11 +1781,6 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
             }
         else
             {
-            DVec3d xColumn;
-    
-            entity.GetEntityTransform().GetMatrixColumn(xColumn, 0);
-            pixelSize /= xColumn.Magnitude(); // Scale pixelSize to kernel units
-
             static double sizeDependentRatio = 5.0;
             static double pixelToChordRatio = 0.5;
             static double minRangeRelTol = 1.0e-4;
@@ -1796,7 +1791,7 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
             bool isMin = false, isMax = false;
 
             if (isMin = (chordTol < minChordTol))
-                chordTol = minChordTol; // Don't allow chord to get too small relative to shape size...
+                chordTol = minChordTol; // Don't allow chord to get too small relative to BRep size...
             else if (isMax = (chordTol > maxChordTol))
                 chordTol = maxChordTol; // Don't keep creating coarser and coarser graphics as you zoom out, at a certain point it just wastes memory/time...
 
@@ -1815,8 +1810,7 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
             }
         }
 
-//    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize); // NEEDSWORK: return pixelSizeRange...
-    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, *facetOptions);
+    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize); // NEEDSWORK: Account for pixelSizeRange and remove code above?
 
     if (!facetTopo->_IsTableValid())
         return nullptr;
