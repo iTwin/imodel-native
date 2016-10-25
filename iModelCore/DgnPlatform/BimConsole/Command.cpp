@@ -58,7 +58,7 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 22 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -76,8 +76,6 @@ void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".classmapping")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
@@ -1260,68 +1258,6 @@ void DbSchemaCommand::Search(ECDbCR ecdb, Utf8CP searchTerm) const
         {
         Console::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
         } while (BE_SQLITE_ROW == stmt.Step());
-    }
-
-
-//******************************* ClassMappingCommand ******************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     04/2016
-//---------------------------------------------------------------------------------------
-Utf8String ClassMappingCommand::_GetUsage() const
-    {
-    return " .classmapping, .cm [<ECSchemaName>|<ECSchemaName> <ECClassName>]\r\n"
-        COMMAND_USAGE_IDENT "Returns ECClass mapping information for the file, the specified ECSchema, or the specified ECClass.\r\n";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     04/2016
-//---------------------------------------------------------------------------------------
-void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
-    {
-    if (args.size() < 1 || args.size() > 3)
-        {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    if (!session.IsFileLoaded(true))
-        return;
-
-    Json::Value json;
-
-    if (args.size() == 1)
-        {
-        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
-            {
-            Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
-            return;
-            }
-        }
-    else
-        {
-        Utf8StringCR schemaName = args[1];
-        if (args.size() == 2)
-            {
-            if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), schemaName, false))
-                {
-                Console::WriteErrorLine("Retrieving ECClass mapping information for ECSchema '%s' failed.", schemaName.c_str());
-                return;
-                }
-            }
-        else
-            {
-            if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName, args[2]))
-                {
-                Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
-                return;
-                }
-            }
-        }
-
-    Json::FastWriter writer;
-    Utf8String infoStr = writer.write(json);
-    Console::WriteLine(infoStr.c_str());
     }
 
 //******************************* DebugCommand ******************
