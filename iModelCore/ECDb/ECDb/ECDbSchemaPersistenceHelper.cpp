@@ -287,8 +287,8 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
             return ERROR;
             }
 
-        if (!enumValue->GetDisplayLabel().empty())
-            enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = Json::Value(enumValue->GetDisplayLabel().c_str());
+        if (!enumValue->GetInvariantDisplayLabel().empty())
+            enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = Json::Value(enumValue->GetInvariantDisplayLabel().c_str());
 
         enumValuesJson.append(enumValueJson);
         }

@@ -229,7 +229,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
         //Deserializing into older versions is not needed in ECDb and therefore not supported.
         if (schema->GetECVersion() == ECVersion::V2_0 || schema->GetECVersion() == ECVersion::V3_0)
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be 3.1 or later, but is: %d.", schema->GetFullSchemaName().c_str(), (int) schema->GetECVersion());
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be 3.1 or later, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(schema->GetECVersion()));
             return ERROR;
             }
 
@@ -251,7 +251,15 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
     for (ECSchemaCP schema : schemasToImport)
         {
         if (schema->IsSupplementalSchema())
+            {
+            if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas culture-invariantly.", schema->GetFullSchemaName().c_str());
+                continue;
+                }
+
             suppSchemas.push_back(const_cast<ECSchemaP> (schema));
+            }
         else
             primarySchemas.push_back(schema);
         }
