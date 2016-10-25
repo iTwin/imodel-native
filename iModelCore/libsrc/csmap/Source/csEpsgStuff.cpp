@@ -4159,6 +4159,7 @@ bool TcsEpsgDataSetV6::FieldToDegrees (double& result,const wchar_t* field,const
 		// Get a copy of the field we are to convert in a place where we
 		// modify same.  Not really necessary, but whatthe heck.
 		wcsncpy (wrkBufr,field,64);
+        wrkBufr[63] = L'\0';
 
 		// Need to extract the hemisphere (i.e. sign).  We'll skip any
 		// white space which may be there.
