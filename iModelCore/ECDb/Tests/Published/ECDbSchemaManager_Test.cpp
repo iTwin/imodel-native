@@ -46,6 +46,116 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
+    {
+    ECDbCR ecdb = SetupECDb("invariantculturetest.ecdb");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, SchemaItem({
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+        "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='string' isStrict='True'>"
+        "        <ECEnumerator value='Dog' />"
+        "        <ECEnumerator value='Cat'/>"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='SpatialElement' displayLabel='Spatial Element'>"
+        "        <ECProperty propertyName='Pet' typeName='Animal' displayLabel='Pet Type' />"
+        "        <ECProperty propertyName='LastMod' typeName='DateTime' displayLabel='Last Modified Date'>"
+        "          <ECCustomAttributes>"
+        "            <DateTimeInfo xmlns='CoreCustomAttributes.01.00'>"
+        "                <DateTimeKind>Unspecified</DateTimeKind>"
+        "            </DateTimeInfo>"
+        "          </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>",
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='TestSchema_Supplemental_Localization' alias='loc_de_DE' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00.13' alias='bsca' />"
+        "    <ECSchemaReference name='SchemaLocalizationCustomAttributes' version='01.00.00' alias='LocCA' />"
+        "<ECCustomAttributes>"
+        "<SupplementalSchemaMetaData xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "  <PrimarySchemaName>House</PrimarySchemaName>"
+        "  <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>"
+        "  <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>"
+        "  <Precedence>9900</Precedence>"
+        "  <Purpose>Localization</Purpose>"
+        "  <IsUserSpecific>False</IsUserSpecific>"
+        "</SupplementalSchemaMetaData>"
+        "<LocalizationSpecification xmlns='SchemaLocalizationCustomAttributes.01.00'>"
+        "   <Locale>de-DE</Locale>"
+        "   <Resource>"
+        "      <LocalizationData>"
+        "           <Key>TestSchema.DisplayLabel:aec9699d</Key>"
+        "           <Value>Test Schema</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:SpatialElement.DisplayLabel:8d38c538</Key>"
+        "           <Value>Raeumliches Element</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:SpatialElement:Pet.DisplayLabel:71edba29</Key>"
+        "           <Value>Haustiertyp</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:SpatialElement:LastMod.DisplayLabel:51b7fc8b</Key>"
+        "           <Value>Letzte Aenderung</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:Animal.DisplayLabel:88c59a40</Key>"
+        "           <Value>Tier</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:Animal:Dog.DisplayLabel:71bb24ef</Key>"
+        "           <Value>Hund</Value>"
+        "       </LocalizationData>"
+        "       <LocalizationData>"
+        "           <Key>TestSchema:Animal:Cat.DisplayLabel:7fb2ebb9</Key>"
+        "           <Value>Katze</Value>"
+        "       </LocalizationData>"
+        "   </Resource>"
+        "</LocalizationSpecification>"
+        "</ECCustomAttributes>"
+        "</ECSchema>"
+        }, true, ""));
+    ASSERT_FALSE(asserted);
+
+    ECDbSchemaManager const& schemas = GetECDb().Schemas();
+    ECSchemaCP testSchema = schemas.GetECSchema("TestSchema", false);
+    ASSERT_TRUE(testSchema != nullptr);
+    ASSERT_STRCASEEQ("Test Schema", testSchema->GetDisplayLabel().c_str());
+
+    ECEnumerationCP animalEnum = schemas.GetECEnumeration("TestSchema", "Animal");
+    ASSERT_TRUE(animalEnum != nullptr);
+    ASSERT_STRCASEEQ("Animal", animalEnum->GetDisplayLabel().c_str());
+    ASSERT_EQ(2, (int) animalEnum->GetEnumeratorCount());
+    for (ECEnumerator const* enumValue : animalEnum->GetEnumerators())
+        {
+        if (enumValue->GetString().EqualsIAscii("Dog"))
+            ASSERT_STRCASEEQ("Dog", enumValue->GetDisplayLabel().c_str());
+        else if (enumValue->GetString().EqualsIAscii("Cat"))
+            ASSERT_STRCASEEQ("Cat", enumValue->GetDisplayLabel().c_str());
+        else
+            FAIL();
+        }
+
+    ECClassCP spatialElementClass = schemas.GetECClass("TestSchema", "SpatialElement");
+    ASSERT_TRUE(spatialElementClass != nullptr);
+    ASSERT_STRCASEEQ("Spatial Element", spatialElementClass->GetDisplayLabel().c_str());
+
+    ECPropertyCP prop = spatialElementClass->GetPropertyP("Pet");
+    ASSERT_TRUE(prop != nullptr);
+    ASSERT_STRCASEEQ("Pet Type", prop->GetDisplayLabel().c_str());
+
+    prop = spatialElementClass->GetPropertyP("LastMod");
+    ASSERT_TRUE(prop != nullptr);
+    ASSERT_STRCASEEQ("Last Modified Date", prop->GetDisplayLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/12
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, IncrementalLoading)

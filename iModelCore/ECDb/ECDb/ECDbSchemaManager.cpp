@@ -254,7 +254,7 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
             {
             if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas culture-invariantly.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
                 continue;
                 }
 
