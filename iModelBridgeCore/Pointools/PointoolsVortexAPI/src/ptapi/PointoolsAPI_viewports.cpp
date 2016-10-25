@@ -663,9 +663,11 @@ PTvoid	PTAPI ptRemoveViewport(PTint index)
 		}
 	}
 
+#ifdef _MSC_VER
 #pragma warning (push)              // Code verified
 #pragma warning (disable:6385)
 #pragma warning (disable:6386)
+#endif
 
 	if(index != -1 && g_viewports[index])
 	{
@@ -682,7 +684,9 @@ PTvoid	PTAPI ptRemoveViewport(PTint index)
 		if (g_currentViewport == index)
 			ptSetViewport( next );
 	}
+#ifdef _MSC_VER
 #pragma warning (pop)
+#endif
 }
 //-------------------------------------------------------------------------------
 // Enable a viewport

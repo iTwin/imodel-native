@@ -848,7 +848,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 
 		try
 		{
-			voxel_sizes = new unsigned long[voxread.size()];
+			voxel_sizes = new int[voxread.size()];
 		}
 		catch(...)
 		{
