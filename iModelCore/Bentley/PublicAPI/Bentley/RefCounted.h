@@ -37,7 +37,7 @@ public:
 
 #if defined DEBUG_REF_COUNTING
     # define REFCOUNT_RELEASE_CHECK(val) BeAssert(0!=val)
-    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < GetExcessiveRefCountThreshold() && "Unusually large number of referents to this object")
+    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < _GetExcessiveRefCountThreshold() && "Unusually large number of referents to this object")
 #else
     # define REFCOUNT_RELEASE_CHECK(val)
     # define REFCOUNT_EXCESSIVE_CHECK(val)
@@ -55,7 +55,7 @@ public:
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
 private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
-    virtual uint32_t GetExcessiveRefCountThreshold() const { return 1000; } \
+    virtual uint32_t _GetExcessiveRefCountThreshold() const {return 1000;} \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
     uint32_t AddRef() const                             \
@@ -108,7 +108,7 @@ public:
 };
 
 /*=================================================================================**//**
-* Concrete class that can be used to implement the reference-counting pattern.
+* Base class that can be used to implement the reference-counting pattern.
 * Inheriting from this class is equivalent to inheriting from RefCounted<IRefCounted>.
 * @bsiclass                                                     Keith.Bentley   09/07
 +===============+===============+===============+===============+===============+======*/
