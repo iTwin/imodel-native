@@ -23,6 +23,8 @@
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshTextureGenerator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 #include <Bentley\BeDirectoryIterator.h>
 
@@ -247,6 +249,31 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     //Add texture if any    
     BeFileName currentTextureDir(coverageTempDataFolder);
+
+    IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
+
+    assert(textureGenerator.IsValid());
+
+    textureGenerator->SetPixelSize(0.10);
+    textureGenerator->SetTextureTempDir(currentTextureDir);
+
+    DRange3d covExt = DRange3d::From(m_extractionArea);
+    bvector<bvector<DPoint3d>> polys;
+    m_scalableMesh->GetAllCoverages(polys);
+
+    for (auto& poly : polys)
+        {
+        DRange3d newRange = DRange3d::From(poly);
+        covExt.Extend(newRange);
+        }
+    covExt.ScaleAboutCenter(covExt, 1.1);
+    bvector<DPoint3d> closedPolygonPoints;
+    DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
+        DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
+    closedPolygonPoints.assign(rangePts, rangePts + 5);
+
+    textureGenerator->GenerateTexture(closedPolygonPoints);
+
 
     BeFileName textureSubFolderName;
     BeFileName extraLinearFeatureFileName;
