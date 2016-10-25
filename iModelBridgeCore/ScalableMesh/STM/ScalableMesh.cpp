@@ -780,7 +780,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         if (!LoadGCSFrom())
             return BSIERROR; // Error loading layer gcs
 
-        bool hasPoints = m_smSQLitePtr->HasPoints();                 
+       // bool hasPoints = m_smSQLitePtr->HasPoints();                 
         
         bool isSingleFile = true;
                 
