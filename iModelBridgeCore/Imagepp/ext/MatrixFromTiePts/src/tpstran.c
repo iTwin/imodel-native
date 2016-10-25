@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/tpstran.c $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -130,12 +130,12 @@ void trf_transfoCoordDoTps2D  (int32_t             mapping,
 |  Stephane Poulin   JULY 1998
 |____________________________________________________________________________*/
 void trf_transfoCoordDoTpsScanLine2D(int32_t            mapping,
-                                                                                             pCOEFFICIENTS_3D   coef3D,
-                                                                                             double            scanLineOriginX,
-                                                                                             double            scanLinePixelSizeX,
-                                                                                             int32_t           scanLineLength,
-                                                                                             pDCOORD_3D         ptOut,
-                                                                                             double           *yprod)
+                                     pCOEFFICIENTS_3D   coef3D,
+                                     double            scanLineOriginX,
+                                     double            scanLinePixelSizeX,
+                                     int32_t           scanLineLength,
+                                     pDCOORD_3D         ptOut,
+                                     double           *yprod)
 {
     int32_t pt;
 
@@ -186,7 +186,10 @@ void trf_transfoCoordDoTpsScanLine2D(int32_t            mapping,
     {
         for (j=0; j<s_nbDeltaY[mapping]; j++)
         {
+#pragma warning (push)
+#pragma warning (disable:6386)
             s_deltaY[mapping][j] = SQR(mat_v(coef3D->tpsPoints[mapping],j,1) - yprod[0]);
+#pragma warning (pop)
         }
     }
 
@@ -203,7 +206,10 @@ void trf_transfoCoordDoTpsScanLine2D(int32_t            mapping,
             */
             for (i=3, j=0; i<coef3D->nbTpsCoef[XIND]; i++, j++)
             {
-                r2 = SQR(mat_v(coef3D->tpsPoints[mapping],j,0) - scanLineOriginX) + s_deltaY[mapping][j];
+#pragma warning (push)
+#pragma warning (disable:6385)
+                r2 = SQR(mat_v(coef3D->tpsPoints[mapping], j, 0) - scanLineOriginX) + s_deltaY[mapping][j];
+#pragma warning (pop)
 
                 if (0.0 != r2)
                 {
