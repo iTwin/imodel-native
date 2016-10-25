@@ -305,7 +305,6 @@ protected:
 
     void ClearData() {m_image.Clear();}
     void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgb) {m_height=height; m_width=width; m_format=format; ClearData();}
-
     void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
     void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
 
@@ -330,28 +329,28 @@ public:
     //! @note If the source is invalid, or if the decompression fails, IsValid() will return false on the new Image.
     DGNPLATFORM_EXPORT explicit Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
 
-    //! Create an image from a Jpeg.
-    //! @param[in]      srcData      the Jpeg data
-    //! @param[in]      srcLen       the number of bytes of Jpeg data
-    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! Create an Image from a Jpeg.
+    //! @param[in] srcData the Jpeg data
+    //! @param[in] srcLen  the number of bytes of Jpeg data
+    //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
     //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
-    //! @param[in]      bottomUp     If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
+    //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
     //! @return The decompressed Image, or an invalid Image if decompression failed.
     DGNPLATFORM_EXPORT static Image FromJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
 
-    //! Create an image from a Png.
-    //! @param[in]      srcData      the Png data
-    //! @param[in]      srcLen       the number of bytes of Png data
-    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! Create an Image from a Png.
+    //! @param[in] srcData the Png data
+    //! @param[in] srcLen the number of bytes of Png data
+    //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
     //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
     //! @return The decompressed Image, or an invalid Image if decompression failed.
     DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba);
 
-    //! Create an image by resizing a source image.
+    //! Create an Image by resizing a source Image.
     //! @param[in] width the width of the image in pixels
     //! @param[in] height the height of the image in pixels
     //! @param[in] sourceImage the source image
-    DGNPLATFORM_EXPORT static Image FromResizedImage (uint32_t width, uint32_t height, ImageCR sourceImage);
+    DGNPLATFORM_EXPORT static Image FromResizedImage(uint32_t width, uint32_t height, ImageCR sourceImage);
 
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
     void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
@@ -1136,7 +1135,7 @@ struct Graphic : RefCounted<NonCopyableClass>
     struct CreateParams
     {
         DgnViewportCP m_vp;
-Transform     m_placement;
+        Transform     m_placement;
         double        m_pixelSize;
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
@@ -1151,6 +1150,8 @@ protected:
     virtual ~Graphic() {}
     virtual bool _IsForDisplay() const {return false;}
     virtual StatusInt _EnsureClosed() = 0;
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
 
