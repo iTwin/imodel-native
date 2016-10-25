@@ -148,17 +148,30 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
         void FinishEditing() { BeAssert(m_isInEditMode);  m_isInEditMode = false; }
+        //Get name of the property.
         Utf8String GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
+        //Return full access string from root property to current property.
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
+        //! Return parent propertymap if any. 
         WipPropertyMap const* GetParent() const { return m_parentPropertMap; }
+        //! return classmap that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
+        //! return root propertymap.
         WipPropertyMap const& GetRoot() const;
+        //! return kind for this property. Its not a OR'd flag rather exact type. 
         PropertyMapKind GetKind() const { return m_kind; }
+        //! Test if currrent property is of type system. 
         bool IsSystem() const { return Enum::Contains(PropertyMapKind::System, GetKind()); }
+        //! Test if currrent property is of type business. 
         bool IsBusiness () const { return Enum::Contains(PropertyMapKind::Business, GetKind()); }
+        //! Test if current properyt map mapped to a specific table or not.
         bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
+        //! Test if current property map part of classmap tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
+        //! Test for inherited type/
+        bool IsKindOf(const PropertyMapKind kindOfThisOrOneOfItsParent) const;
+        //! Test if property map is constructed correctly.
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
     };
 

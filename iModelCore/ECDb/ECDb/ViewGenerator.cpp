@@ -596,31 +596,23 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
     {
     propMaps.clear();
     WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, true /*traverse compound properties*/);
-    for (WipPropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
-        {
-        typeDispatcher.Reset();
-        baseClassPropertyMap->Accept(typeDispatcher);
-        PropertyMapKind basePropertyMapType = typeDispatcher.ResultSet().front()->GetKind();
+    baseClassMap.GetPropertyMaps().Accept(typeDispatcher);
 
-        if (skipSystemProperties && Enum::Contains(PropertyMapKind::System, basePropertyMapType))
+    for (WipPropertyMap const* baseClassPropertyMap : typeDispatcher.ResultSet())
+        {
+        if (skipSystemProperties && baseClassPropertyMap->IsSystem())
             continue;
 
         if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetAccessString().c_str()))
             continue;
 
-        if (basePropertyMapType == PropertyMapKind::NavigationPropertyMap &&
-            !static_cast<WipNavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
+        //This is compound property and we will get its components instead of parent property. So to call IsSupportedInECSql we must call its parent.
+        if (baseClassPropertyMap->IsKindOf(PropertyMapKind::NavigationPropertyMap) &&
+            !static_cast<WipNavigationPropertyMap const*>(baseClassPropertyMap->GetParent())->IsSupportedInECSql())
             continue;
 
         WipPropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMaps().Find(baseClassPropertyMap->GetAccessString().c_str());
         if (childClassCounterpartPropMap == nullptr)
-            return ERROR;
-
-        WipPropertyMapColumnDispatcher baseClassColumnDispatcher, derivedClassColumnDispatcher;
-        baseClassPropertyMap->Accept(baseClassColumnDispatcher);
-        childClassCounterpartPropMap->Accept(derivedClassColumnDispatcher);
-
-        if (baseClassColumnDispatcher.GetColumns().size() != derivedClassColumnDispatcher.GetColumns().size())
             return ERROR;
 
         propMaps.push_back({baseClassPropertyMap, childClassCounterpartPropMap});

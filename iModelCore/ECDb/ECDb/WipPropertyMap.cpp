@@ -109,6 +109,22 @@ WipPropertyMap::WipPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecPropert
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
+bool WipPropertyMap::IsKindOf(const PropertyMapKind kindOfThisOrOneOfItsParent) const
+    {
+    const WipPropertyMap *c = this;
+    do
+        {
+        if (c->GetKind() == kindOfThisOrOneOfItsParent)
+            return true;
+
+        c = c->GetParent();
+        } while (c != nullptr);
+
+        return false;
+    }
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
 WipPropertyMap const& WipPropertyMap::GetRoot() const
     {
     WipPropertyMap const* root = this;
