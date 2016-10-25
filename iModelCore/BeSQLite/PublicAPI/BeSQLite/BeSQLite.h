@@ -1385,10 +1385,10 @@ public:
 //! and make sure the DbTableIterator is valid for the lifetime of its Entries.
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct DbTableIteratorsd  : NonCopyableClass
+struct DbTableIterator  : NonCopyableClass
 {
 protected:
-    mutable DbP    m_db;
+    mutable DbP m_db;
     mutable CachedStatementPtr m_stmt;
     NamedParams m_params;
 
