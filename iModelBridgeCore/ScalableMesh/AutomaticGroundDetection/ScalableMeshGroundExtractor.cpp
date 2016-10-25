@@ -35,13 +35,20 @@ USING_NAMESPACE_GROUND_DETECTION
 +----------------------------------------------*/
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+static int s_xyzId = 0;
+
 BeFileName GetTempXyzFilePath()
     {
+    
     BeFileName tempPath;
     BeFileNameStatus status = BeFileName::BeGetTempPath(tempPath);
     assert(status == BeFileNameStatus::Success);
-    tempPath.AppendToPath(L"detectGround.xyz");
 
+    wchar_t bufferId[10];
+    _swprintf(bufferId, L"%i", s_xyzId);
+    tempPath.AppendToPath(L"detectGround");
+    tempPath.AppendString(bufferId);    
+    tempPath.AppendString(L".xyz");
     return tempPath;
     }
 
@@ -222,6 +229,8 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     }
     */
 
+static bool s_deactivateForMultiCoverage = false;
+
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
     StatusInt status;
@@ -230,7 +239,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(status == SUCCESS);
     auto editFilesString = ((ScalableMeshBase*)m_scalableMesh.get())->GetPath();
-    terrainCreator->SetBaseExtraFilesPath(editFilesString);
+    terrainCreator->SetBaseExtraFilesPath(m_smTerrainPath);
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
 
@@ -249,9 +258,6 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     //Add texture if any    
     BeFileName currentTextureDir(coverageTempDataFolder);
-
-
-
     BeFileName textureSubFolderName;
     BeFileName extraLinearFeatureFileName;
 
@@ -267,27 +273,36 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     textureGenerator->SetTextureTempDir(currentTextureDir);
 
     DRange3d covExt = DRange3d::From(m_extractionArea);
-    bvector<bvector<DPoint3d>> polys;
-    m_scalableMesh->GetAllCoverages(polys);
 
-    for (auto& poly : polys)
+    if (!s_deactivateForMultiCoverage)
         {
-        DRange3d newRange = DRange3d::From(poly);
-        covExt.Extend(newRange);
-        }
-    covExt.ScaleAboutCenter(covExt, 1.1);
-    bvector<DPoint3d> closedPolygonPoints;
-    DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
-        DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
-    closedPolygonPoints.assign(rangePts, rangePts + 5);
+        bvector<bvector<DPoint3d>> polys;
+        m_scalableMesh->GetAllCoverages(polys);
 
-    textureGenerator->GenerateTexture(closedPolygonPoints);
+        for (auto& poly : polys)
+            {
+            DRange3d newRange = DRange3d::From(poly);
+            covExt.Extend(newRange);
+            }
+        }
+
     
+    covExt.ScaleAboutCenter(covExt, 1.1);
+
+     if (!s_deactivateForMultiCoverage)
+        {
+        bvector<DPoint3d> closedPolygonPoints;
+        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
+            DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
+        closedPolygonPoints.assign(rangePts, rangePts + 5);
+
+        textureGenerator->GenerateTexture(closedPolygonPoints);
+        }
+
     BeDirectoryIterator directoryIter(currentTextureDir);
 
     BeFileName currentTextureName;
     bool       isDir;            
-
     while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
         {        
         if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
@@ -305,8 +320,11 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     
     if (coverageBreaklineFile.DoesPathExist())
         {
-        IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
-        terrainCreator->EditSources().Add(coverageBreaklineSource);                       
+        if (!s_deactivateForMultiCoverage)
+            {
+            IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
+            terrainCreator->EditSources().Add(coverageBreaklineSource);                       
+            }        
         }
 
     status = terrainCreator->Create();
@@ -314,8 +332,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;
 
-    int result = _wremove(xyzFile.c_str());
-    assert(result == 0);
+    s_xyzId++;
+
+    if (!s_deactivateForMultiCoverage)
+        {    
+        int result = _wremove(xyzFile.c_str());
+        assert(result == 0);
+        }
 
     return status;
     }

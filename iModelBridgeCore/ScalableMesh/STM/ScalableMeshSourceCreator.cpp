@@ -467,7 +467,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
-    if (!PolygonOps::IsConvex(m_filterPolygon))
+    if (m_filterPolygon.size() > 0 && !PolygonOps::IsConvex(m_filterPolygon))
         {
             pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
         }

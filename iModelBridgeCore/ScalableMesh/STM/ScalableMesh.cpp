@@ -2127,6 +2127,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
     {
     WString newPath = m_path + L"_terrain.3sm";
 
+#if 0     
     if (m_scmTerrainIndexPtr == nullptr)
         {
         StatusInt status;
@@ -2134,7 +2135,8 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         if (status != SUCCESS) return BSIERROR;
         if (m_terrainP == nullptr)
             {
-            auto sm = IScalableMeshNodeCreator::GetFor(newPath.c_str(),  status);
+            auto sm = IScalableMeshNodeCreator::GetFor(newPath.c_str(),  status);            
+            sm->SetBaseExtraFilesPath(newPath);
             sm->Create();
             StatusInt addStatus;
             auto node = sm->AddNode(addStatus);
@@ -2144,13 +2146,14 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
             node = 0;
             sm->SaveToFile();
             sm = 0;
-            m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
+            //m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
             }
 
        // dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->SetMainIndexP(m_scmIndexPtr->CloneIndex(dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP()->GetDataStore()));
-        m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+        //m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
 
         }
+#endif       
 
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {        
