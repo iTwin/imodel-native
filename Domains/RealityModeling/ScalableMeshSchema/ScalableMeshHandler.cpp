@@ -894,8 +894,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             }
         }
 
-    int terrainQueryId = -1;
-    bool foundTerrainMesh = false; 
+    int terrainQueryId = -1;    
     auto terrainSM = m_smPtr->GetTerrainSM();
     
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
