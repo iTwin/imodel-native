@@ -396,7 +396,7 @@
         <SubPart PartName="RealityDbECPluginUnitTests"/>
     </Part>
 
-    <Product Name="RealityContextServicesTests" PrgOutputDir="RealityContextServicesTests">
+    <Product Name="RealityContextServicesTests">
         <SubProduct ProductName="RealityContextServices"/>
         <SubPart PartName="RealityDbECPluginUnitTests"/>
         <Directories DirectoryListName="RealityDbECPluginTestsDirList" />
@@ -427,7 +427,7 @@
         
     </ProductDirectoryList>
 
-    <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServicesTests">
+    <Product Name="RealityContextServicesTested">
         <SubProduct ProductName="RealityContextServicesTests" />
         <SubPart PartName="RunRealityDbECPluginTests" />
         <Directories DirectoryListName="RealityDbECPluginUnitTested" />
