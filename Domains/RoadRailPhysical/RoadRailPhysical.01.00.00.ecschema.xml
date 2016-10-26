@@ -297,20 +297,52 @@
     <ECEntityClass typeName="RepetitiveTemplateGeometryDefinitionElement" modifier="Abstract">
         <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
         <ECProperty propertyName="DefaultSpacing" typeName="double" kindOfQuantity="LENGTH"/>
-        <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />                
+        <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="PartEncapsulatedAsStartGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="PartEncapsulatedAsEndGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="PartEncapsulatedAsRepeatedGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="PartEncapsulatedAsExtrudedGeometry" direction="Backward" />
     </ECEntityClass>
     <ECEntityClass typeName="GenericRepetitiveTemplateGeometryDefinition" modifier="Sealed">
         <BaseClass>RepetitiveTemplateGeometryDefinitionElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesPart" strength="embedding">
+    <ECRelationshipClass typeName="PartEncapsulatedAsStartGeometry" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="TemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="TemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="TemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="TemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding">
         <BaseClass>bis:ElementEncapsulatesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is encapsulated by a definition">
             <Class class="TemplateGeometryDefinitionElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+        <Target multiplicity="(0..N)" polymorphic="false" roleLabel="encapsulates N parts">
             <Class class="bis:GeometryPart"/>
         </Target>
     </ECRelationshipClass>
