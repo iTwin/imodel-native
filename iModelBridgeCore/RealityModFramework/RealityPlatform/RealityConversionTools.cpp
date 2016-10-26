@@ -13,7 +13,8 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*----------------------------------------------------------------------------------**//**
 * Fills a bvector with SpatialEntityData objects, created with data extracted from JSON
-* Currently parses JSON for Name, DataType, Provider, Date, Size, Resolution and Footprint
+* Currently parses JSON for Name, DataType, Classification, Provider, Date, Size, 
+* Resolution and Footprint. 
 * None of these fields are guaranteed, and should be validated by the user 
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
@@ -54,6 +55,10 @@ StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bvector<S
         // DataType
         if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
             data->SetDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
+
+        // Classification
+        if (properties.isMember("Classification") && !properties["Classification"].isNull())
+            data->SetClassification(Utf8CP(properties["Classification"].asString().c_str()));
 
         // Provider
         if(properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
