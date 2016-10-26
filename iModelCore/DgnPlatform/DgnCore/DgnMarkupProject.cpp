@@ -977,7 +977,7 @@ RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR mod
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     {
-    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+    // DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
     Utf8String name = doc.GetCode().GetValue();
     DgnCode code = CreateModelCode(doc.GetCode().GetValue(), doc.GetElementId());
     RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId(), code);
