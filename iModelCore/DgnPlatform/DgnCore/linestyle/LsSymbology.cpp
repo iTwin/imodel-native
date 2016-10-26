@@ -573,7 +573,8 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     //  to ElementGeometry and then add something like:
     //
     //      if (GetTexture failed) SetUseStroker(true)
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), params.GetWeight());
+    uint32_t weight = context.GetViewFlags().m_weights ? params.GetWeight() : 0;
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), weight);
     }
 
 /*---------------------------------------------------------------------------------**//**
