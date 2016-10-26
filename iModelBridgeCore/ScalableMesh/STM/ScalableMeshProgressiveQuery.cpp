@@ -325,6 +325,48 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         return true;
         }
 
+#if 0
+    bool IsComplete(size_t threadInd)
+        {                        
+        m_searchingNodeMutexes[threadInd].lock();
+        if (m_searchingNodes[threadInd].size() > 0)
+            {
+            m_searchingNodeMutexes[threadInd].unlock();
+            return false;            
+            }
+
+        m_searchingNodeMutexes[threadInd].unlock();        
+
+        m_nodeQueryProcessorMutexes[threadInd].lock();
+        if (m_nodeQueryProcessors[threadInd] != 0)
+            {
+            m_nodeQueryProcessorMutexes[threadInd].unlock();
+            return false;            
+            }
+
+        m_nodeQueryProcessorMutexes[threadInd].unlock();
+                        
+        if (m_producedFoundNodes.WaitConsumption())
+            return false;        
+        
+        
+        m_toLoadNodeMutexes[threadInd].lock();
+            if (m_toLoadNodes[threadInd].size() > 0)
+                {
+                m_toLoadNodeMutexes[threadInd].unlock();
+                break;
+                }
+
+            m_toLoadNodeMutexes[threadInd].unlock();
+            }
+
+        if (threadInd != m_toLoadNodes.size())
+            return false;
+
+        return true;
+        }
+#endif 
+
     static Ptr Create(int                                               queryId,
                       int                                               nbWorkingThreads,
                       ISMPointIndexQuery<POINT, EXTENT>*                queryObjectP,
@@ -359,7 +401,8 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
     };
 
-static bool s_delayJoinThread = true;
+//NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
+static bool s_delayJoinThread = false;
 
 class QueryProcessor
     {
@@ -489,19 +532,20 @@ private:
         ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr;
 
         do
-            {
-            
+            {            
+            processingQueryPtr = nullptr;
+
             m_processingQueriesMutex.lock();
             //assert(m_processingQueries.size() <= 1);
 
-            if (m_processingQueries.size() > 0)
+            for (auto& processingQuery : m_processingQueries)
                 {
-                processingQueryPtr = m_processingQueries.front();
-                }
-            else
-                {
-                processingQueryPtr = 0;
-                }
+                if (!processingQuery->IsComplete())
+                    {
+                    processingQueryPtr = processingQuery;
+                    break;
+                    }
+                }            
 
             m_processingQueriesMutex.unlock();
 
