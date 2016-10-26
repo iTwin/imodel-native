@@ -903,7 +903,6 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         {
         polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
         polyface->Transform(Transform::FromProduct(GetTransform(), m_entity->GetEntityTransform()));
-    
         }
 
 
@@ -931,7 +930,12 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         pFacetOptions = &facetOptions;
         }
 
-    return SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+    auto polyface = SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+    
+    if (polyface.IsValid() && !GetTransform().IsIdentity())
+        polyface->Transform (GetTransform());
+
+    return polyface;
 #else
     return nullptr;
 #endif
