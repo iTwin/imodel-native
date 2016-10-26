@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "StdAfx.h"
-#include "SpatioTemporalData.h"
 
 #include <RealityPlatform/SpatioTemporalSelector.h>
+#include <RealityPlatform/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -104,9 +104,26 @@ const SpatioTemporalSelector::ResolutionMap SpatioTemporalSelector::GetIDsByResF
     if (NULL == pDataset.get())
         return selectedIDsByRes;
 
+    // GetIDs.
+    return GetIDsByRes(*pDataset, regionOfInterest);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+const SpatioTemporalSelector::ResolutionMap SpatioTemporalSelector::GetIDsByRes(SpatioTemporalDatasetCR dataset,
+                                                                                const bvector<GeoPoint2d>& regionOfInterest)
+    {
+    ResolutionMap selectedIDsByRes = ResolutionMap();
+
+    // Create shape that represents the region of interest.
+    HFCPtr<HGF2DShape> pROIShape = CreateShapeFromGeoPoints(regionOfInterest);
+    if (pROIShape->IsEmpty())
+        return selectedIDsByRes;
+
     // Select high res data.
-    bvector<Utf8String> highResImageryIDs = GetIDs(pDataset->GetImageryGroup(), *pROIShape, ResolutionCriteria::High, DateCriteria::UpToDate);
-    bvector<Utf8String> highResTerrainIDs = GetIDs(pDataset->GetTerrainGroup(), *pROIShape, ResolutionCriteria::High, DateCriteria::UpToDate);
+    bvector<Utf8String> highResImageryIDs = GetIDs(dataset.GetImageryGroup(), *pROIShape, ResolutionCriteria::High, DateCriteria::UpToDate);
+    bvector<Utf8String> highResTerrainIDs = GetIDs(dataset.GetTerrainGroup(), *pROIShape, ResolutionCriteria::High, DateCriteria::UpToDate);
 
     bvector<Utf8String> highResIDs = bvector<Utf8String>();
     if (!highResImageryIDs.empty())
@@ -115,8 +132,8 @@ const SpatioTemporalSelector::ResolutionMap SpatioTemporalSelector::GetIDsByResF
         highResIDs.insert(highResIDs.end(), highResTerrainIDs.begin(), highResTerrainIDs.end());
 
     // Select medium res data.
-    bvector<Utf8String> mediumResimageryIDs = GetIDs(pDataset->GetImageryGroup(), *pROIShape, ResolutionCriteria::Medium, DateCriteria::UpToDate);
-    bvector<Utf8String> mediumResTerrainIDs = GetIDs(pDataset->GetTerrainGroup(), *pROIShape, ResolutionCriteria::Medium, DateCriteria::UpToDate);
+    bvector<Utf8String> mediumResimageryIDs = GetIDs(dataset.GetImageryGroup(), *pROIShape, ResolutionCriteria::Medium, DateCriteria::UpToDate);
+    bvector<Utf8String> mediumResTerrainIDs = GetIDs(dataset.GetTerrainGroup(), *pROIShape, ResolutionCriteria::Medium, DateCriteria::UpToDate);
 
     bvector<Utf8String> mediumResIDs = bvector<Utf8String>();
     if (!mediumResimageryIDs.empty())
@@ -125,8 +142,8 @@ const SpatioTemporalSelector::ResolutionMap SpatioTemporalSelector::GetIDsByResF
         mediumResIDs.insert(mediumResIDs.end(), mediumResTerrainIDs.begin(), mediumResTerrainIDs.end());
 
     // Select low res data.
-    bvector<Utf8String> lowResImageryIDs = GetIDs(pDataset->GetImageryGroup(), *pROIShape, ResolutionCriteria::Low, DateCriteria::UpToDate);
-    bvector<Utf8String> lowResTerrainIDs = GetIDs(pDataset->GetTerrainGroup(), *pROIShape, ResolutionCriteria::Low, DateCriteria::UpToDate);
+    bvector<Utf8String> lowResImageryIDs = GetIDs(dataset.GetImageryGroup(), *pROIShape, ResolutionCriteria::Low, DateCriteria::UpToDate);
+    bvector<Utf8String> lowResTerrainIDs = GetIDs(dataset.GetTerrainGroup(), *pROIShape, ResolutionCriteria::Low, DateCriteria::UpToDate);
 
     bvector<Utf8String> lowResIDs = bvector<Utf8String>();
     if (!lowResImageryIDs.empty())
