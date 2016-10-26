@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnSubCategory);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler { struct SubCategory; }
+namespace dgn_ElementHandler {struct SubCategory;}
 
 typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
@@ -171,37 +171,35 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
-    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
     static CreateParams CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties);
 
-//__PUBLISH_SECTION_END__
 public:
     static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer);
-//__PUBLISH_SECTION_START__
-public:
+
     //! Constructs a new DgnSubCategory with the specified parameters.
     explicit DgnSubCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) {}
 
-    DgnSubCategoryId GetSubCategoryId() const { return DgnSubCategoryId(GetElementId().GetValue()); } //!< The ID of this sub-category
-    Utf8String GetSubCategoryName() const { return GetCode().GetValue(); } //!< The name of this sub-category.
-    DgnCategoryId GetCategoryId() const { return DgnCategoryId(GetParentId().GetValue()); } //!< The ID of the category to which this sub-category belongs
+    DgnSubCategoryId GetSubCategoryId() const {return DgnSubCategoryId(GetElementId().GetValue());} //!< The ID of this sub-category
+    Utf8String GetSubCategoryName() const {return GetCode().GetValue();} //!< The name of this sub-category.
+    DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetParentId().GetValue());} //!< The ID of the category to which this sub-category belongs
     DGNPLATFORM_EXPORT bool IsDefaultSubCategory() const; //!< Returns true if this is the default sub-category for its category
 
-    DgnSubCategoryCPtr Insert(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status); } //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
-    DgnSubCategoryCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnSubCategory>(*this, status); } //!< Updates this sub-category in the DgnDb and returns the updated persistent sub-category
+    DgnSubCategoryCPtr Insert(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status);} //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
+    DgnSubCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnSubCategory>(*this, status);} //!< Updates this sub-category in the DgnDb and returns the updated persistent sub-category
 
-    Utf8CP GetDescription() const { return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str(); } //!< The sub-category description, or nullptr if not defined
+    Utf8CP GetDescription() const {return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str();} //!< The sub-category description, or nullptr if not defined
     Appearance const& GetAppearance() const {return m_data.m_appearance;} //!< This sub-category's appearance
-    Appearance& GetAppearanceR() { return m_data.m_appearance;} //!< A writable reference to this sub-category's appearance
+    Appearance& GetAppearanceR() {return m_data.m_appearance;} //!< A writable reference to this sub-category's appearance
     void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the description
 
     //! Create a DgnCode for the name of a sub-category of the specified category
-    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }
+    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) {return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName);}
 
     //! Create a DgnCode for the name of a sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
@@ -210,10 +208,10 @@ public:
     DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(DgnCode const& code, DgnDbR db);
 
     //! Looks up a sub-category ID by name and category ID.
-    static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) { return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName), db); }
+    static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) {return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName), db);}
 
     //! Looks up a sub-category by ID.
-    static DgnSubCategoryCPtr QuerySubCategory(DgnSubCategoryId subCategoryId, DgnDbR db) { return db.Elements().Get<DgnSubCategory>(subCategoryId); }
+    static DgnSubCategoryCPtr QuerySubCategory(DgnSubCategoryId subCategoryId, DgnDbR db) {return db.Elements().Get<DgnSubCategory>(subCategoryId);}
 
     //! Looks up the ID of the category containing the specified sub-category
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId, DgnDbR db);
@@ -230,8 +228,8 @@ public:
     //! @return The number of sub-categories.
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory); } //!< Returns the class ID used for sub-categories.
-    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for sub-categories
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory);} //!< Returns the class ID used for sub-categories.
+    static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for sub-categories
 };
 
 /**
@@ -276,11 +274,11 @@ public:
         Scope m_scope;
         Rank m_rank;
 
-        Data(Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="") { Init(scope, rank, descr); }
+        Data(Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="") {Init(scope, rank, descr);}
 
-        void Init(Scope scope, Rank rank=Rank::User, Utf8StringCR descr="") { m_descr=descr; m_scope=scope; m_rank=rank; }
+        void Init(Scope scope, Rank rank=Rank::User, Utf8StringCR descr="") {m_descr=descr; m_scope=scope; m_rank=rank;}
 
-        uint32_t GetMemSize() const { return static_cast<uint32_t> (sizeof(*this) + m_descr.length()); }
+        uint32_t GetMemSize() const {return static_cast<uint32_t> (sizeof(*this) + m_descr.length());}
     };
 
     //! Parameters used to construct a DgnCategory
@@ -294,13 +292,13 @@ public:
         //! Constructor from base class. Chiefly for internal use.
         //! @private
         explicit CreateParams(DgnElement::CreateParams const& params, Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(params), m_data(scope, rank, descr) { }
+            : T_Super(params), m_data(scope, rank, descr) {}
 
         //! Constructs parameters for a category. Chiefly for internal use.
         //! @private
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
                 Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) {}
 
         //! Constructs parameters for creating a category.
         //! @param[in]      db    The DgnDb in which the category resides
@@ -331,7 +329,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -339,22 +337,20 @@ protected:
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
-    DgnDbStatus _SetParentId(DgnElementId parentId) override { return DgnDbStatus::InvalidParent; }
-    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
 
     void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
 
-//__PUBLISH_SECTION_END__
 public:
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
-//__PUBLISH_SECTION_START__
-public:
-    DgnCategoryId GetCategoryId() const { return DgnCategoryId(GetElementId().GetValue()); } //!< Returns the ID of this category.
-    DgnSubCategoryId GetDefaultSubCategoryId() const { return GetDefaultSubCategoryId(GetCategoryId()); } //!< Returns the ID of this category's default sub-category
-    Utf8String GetCategoryName() const { return GetCode().GetValue(); } //!< The name of this category
+
+    DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetElementId().GetValue());} //!< Returns the ID of this category.
+    DgnSubCategoryId GetDefaultSubCategoryId() const {return GetDefaultSubCategoryId(GetCategoryId());} //!< Returns the ID of this category's default sub-category
+    Utf8String GetCategoryName() const {return GetCode().GetValue();} //!< The name of this category
 
     //! Construct a new DgnCategory with the specified parameters
-    explicit DgnCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
+    explicit DgnCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) {}
 
     //! Inserts this category into the DgnDb and initializes its default sub-category with the specified appearance.
     //! @note Using DgnElement::Insert() instead of this method will also create a default sub-category, using a default appearance.
@@ -363,24 +359,24 @@ public:
     //! @return The persistent DgnCategory, or nullptr if insertion failed.
     DGNPLATFORM_EXPORT DgnCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
 
-    DgnCategoryCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnCategory>(*this, status); } //!< Updates this category in the DgnDb and returns the updated persistent category
+    DgnCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnCategory>(*this, status);} //!< Updates this category in the DgnDb and returns the updated persistent category
 
-    Utf8CP GetDescription() const { return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str(); } //!< The category description, or null if not defined.
-    Scope GetScope() const { return m_data.m_scope; } //!< The category's scope.
-    Rank GetRank() const { return m_data.m_rank; } //!< The category's rank.
+    Utf8CP GetDescription() const {return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str();} //!< The category description, or null if not defined.
+    Scope GetScope() const {return m_data.m_scope;} //!< The category's scope.
+    Rank GetRank() const {return m_data.m_rank;} //!< The category's rank.
 
     bool IsSystemCategory() const {return GetRank()==Rank::System;}
     bool IsUserCategory() const {return GetRank()==Rank::User;}
 
-    void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the category description.
-    void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
-    void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
+    void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the category description.
+    void SetScope(Scope scope) {m_data.m_scope = scope;} //!< Set the category's scope.
+    void SetRank(Rank rank) {m_data.m_rank = rank;} //!< Set the category's rank.
 
-    static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") { return CategoryAuthority::CreateCategoryCode(categoryName, nameSpace); } //!< Creates a Code for a category name.
+    static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return CategoryAuthority::CreateCategoryCode(categoryName, nameSpace);} //!< Creates a Code for a category name.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnCode const& code, DgnDbR db); //!< Looks up the ID of a category by code.
-    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
-    static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.
-    static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) { return QueryCategory(QueryCategoryId(categoryName, db), db); } //!< Looks up a category by name.
+    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) {return QueryCategoryId(CreateCategoryCode(categoryName), db);} //!< Looks up the ID of a category by name.
+    static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) {return db.Elements().Get<DgnCategory>(categoryId);} //!< Looks up a category by ID.
+    static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) {return QueryCategory(QueryCategoryId(categoryName, db), db);} //!< Looks up a category by name.
 
     //! Returns the ID of the default sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnSubCategoryId GetDefaultSubCategoryId(DgnCategoryId categoryId);
@@ -392,15 +388,15 @@ public:
     DGNPLATFORM_EXPORT static DgnCategoryIdList QueryOrderedCategories(DgnDbR db);
 
     //! Returns the IDs of all sub-categories of this category
-    DgnSubCategoryIdSet QuerySubCategories() const { return DgnSubCategory::QuerySubCategories(GetDgnDb(), GetCategoryId()); }
+    DgnSubCategoryIdSet QuerySubCategories() const {return DgnSubCategory::QuerySubCategories(GetDgnDb(), GetCategoryId());}
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db); //! Returns the number of categories in the DgnDb
-    size_t QuerySubCategoryCount() const { return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId()); } //! Returns the number of sub-categories belonging to this category
+    size_t QuerySubCategoryCount() const {return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId());} //! Returns the number of sub-categories belonging to this category
     DGNPLATFORM_EXPORT static DgnCategoryId QueryFirstCategoryId(DgnDbR db); //!< Returns the ID of the first category found in the DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryId QueryHighestCategoryId(DgnDbR db); //!< Returns the highest category ID found in the DgnDb
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Category); } //!< Returns the class ID used for categories.
-    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for categories
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Category);} //!< Returns the class ID used for categories.
+    static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for categories
 
     //! Get a string containing the list of characters that may NOT appear in category codes.
     static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}

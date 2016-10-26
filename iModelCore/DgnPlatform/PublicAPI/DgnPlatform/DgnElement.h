@@ -480,7 +480,7 @@ public:
 * and then apply validation logic after the copy is done.
 *
 * <h3>Custom Properties</h3>
-* If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
+* In rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
 * That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
 * This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
 * CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams in order to load and store
@@ -942,43 +942,53 @@ protected:
     //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a DPoint3d ECProperty by name
     //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a DPoint2d ECProperty by name
     //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a boolean ECProperty by name
     //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a double ECProperty by name
     //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a integer ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of a UInt64 ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Return the value of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
         {
         return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
         }
+
     //! Return the value of a string ECProperty by name
     DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
     //! Get the 3 property values that back a YPR
     DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a DPoint3d ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
@@ -1446,15 +1456,18 @@ public:
 
     //! Get the DgnModelId of this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
+
     //! Get the DgnModel of this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the (optional) DgnModelId of the DgnModel that is modeling this DgnElement.  That is, the DgnModel that is beneath this element in the hierarchy.
     //! @return Invalid if model does not exist
     DGNPLATFORM_EXPORT DgnModelId GetSubModelId() const;
+
     //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
     //! @return Invalid if model does not exist
     DGNPLATFORM_EXPORT DgnModelPtr GetSubModel() const;
+
     //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
     //! @return Invalid if model does not exist
     template<class T> RefCountedPtr<T> GetSub() const {return dynamic_cast<T*>(GetSubModel().get());}
@@ -1478,6 +1491,7 @@ public:
 
     //! Get the FederationGuid of this DgnElement.
     BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+
     //! Set the FederationGuid for this DgnElement.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
     void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
@@ -1486,6 +1500,7 @@ public:
     //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
+
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
@@ -1497,9 +1512,11 @@ public:
 
     //! Return true if this DgnElement has a label.
     bool HasUserLabel() const {return !m_userLabel.empty();}
+
     //! Get the label of this DgnElement.
     //! @note may be nullptr
     Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
+
     //! Set the label of this DgnElement.
     void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);}
 
@@ -1520,7 +1537,6 @@ public:
 
     //! @name Properties 
     //! @{
-
     //! Get the user property on this DgnElement to get or set its value. Also see @ref ElementProperties.
     //! @param[in] name Name of the user property
     //! @remarks The element needs to be held in memory to access the returned property value. 
@@ -1578,7 +1594,6 @@ public:
         return _SetPropertyValue(access, value, aidx);
         }
 
-
     //! Set the value of a property. 
     //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
@@ -1626,12 +1641,11 @@ public:
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
-
     //! @}
 };
 
 //=======================================================================================
-//! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
+//! A stream of geometry, stored on a DgnElement, created by a GeometryBuilder.
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
@@ -1639,13 +1653,9 @@ struct GeometryStream : ByteStream
 {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-
-    //! @private
-    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
-    //! @private
-    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP tableName, Utf8CP columnName);
-    //! @private
-    DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const;
+    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP tableName, Utf8CP columnName); //!< @private
+    DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
 };
 
 //=======================================================================================
@@ -2110,9 +2120,11 @@ protected:
 public:
     //! Set the PhysicalType for this PhysicalElement
     DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId) {return SetPropertyValue("PhysicalType", physicalTypeId);}
+
     //! Get the DgnElementId of the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
     DgnElementId GetPhysicalTypeId() const {return GetPropertyValueId<DgnElementId>("PhysicalType");}
+
     //! Get the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
     DGNPLATFORM_EXPORT PhysicalTypeCPtr GetPhysicalType() const;
@@ -2147,9 +2159,11 @@ protected:
 public:
     //! Set the GraphicalType for this GraphicalElement2d
     DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId) {return SetPropertyValue("GraphicalType", graphicalTypeId);}
+
     //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
     DgnElementId GetGraphicalTypeId() const {return GetPropertyValueId<DgnElementId>("GraphicalType");}
+
     //! Get the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
     DGNPLATFORM_EXPORT GraphicalType2dCPtr GetGraphicalType() const;
@@ -2224,8 +2238,10 @@ protected:
 public:
     //! Query for the members of this group
     DgnElementIdSet QueryMembers() const {return ElementGroupsMembers::QueryMembers(*_ToGroupElement());}
+
     //! Returns true if this group has the specified member
     bool HasMemberElement(DgnElementCR member) const {return ElementGroupsMembers::HasMember(*_ToGroupElement(), member);}
+
     //! Query for the priority of the specified member within this group
     //! @return the priority or -1 in case of an error
     int QueryMemberPriority(DgnElementCR member) const {return ElementGroupsMembers::QueryMemberPriority(*_ToGroupElement(), member);}
@@ -2244,6 +2260,7 @@ template<class T> class IElementGroupOf : public IElementGroup
 protected:
     //! Called prior to member being added to group
     virtual DgnDbStatus _OnMemberAdd(T const& member) const {return DgnDbStatus::Success;}
+
     //! Called after member is added to group
     virtual void _OnMemberAdded(T const& member) const {}
 
@@ -2422,7 +2439,8 @@ protected:
 };
 
 //=======================================================================================
-//! @ingroup GROUP_DgnElement
+//! A session holds a collection of "session varibles" that save the state of an visualization or editing session of a bim.
+//! Session variables are stored as Json objects grouped by name (typically some top-level namespace).
 // @bsiclass                                                    Shaun.Sewall    10/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Session : DefinitionElement
@@ -2431,10 +2449,41 @@ struct EXPORT_VTABLE_ATTRIBUTE Session : DefinitionElement
     friend struct dgn_ElementHandler::Session;
 
 protected:
+    mutable bool m_dirty;
+    Json::Value m_variables;
+    
     explicit Session(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnInsert() override {SaveVariables(); return T_Super::_OnInsert();}
+    DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveVariables(); return T_Super::_OnUpdate(original);}
 
 public:
+    DGNPLATFORM_EXPORT void SaveVariables() const;
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : SessionAuthority::CreateSessionCode(name);} //!< @private
+
+    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this Session
+
+    DGNPLATFORM_EXPORT static SessionCPtr GetByName(DgnDbR db, Utf8StringCR name);
+
     DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
+
+    //! Get the Json::Value associated with a variable in this Session. If the variable is not present, the returned Json::Value will be "null".
+    //! @param[in] name The namespace of the variable 
+    JsonValueCR GetVariable(Utf8CP name) const {return m_variables[name];}
+
+    //! Set a variable in this Session.
+    //! @param[in] name The name of the variable
+    //! @param[in] value The value for the the variable
+    //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
+    void SetVariable(Utf8CP name, JsonValueCR value) {m_variables[name] = value; m_dirty=true;}
+
+    //! Remove a variable from this Session.
+    //! @param[in] name The name of the variable to remove
+    //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
+    void RemoveVariable(Utf8CP name) {m_variables.removeMember(name); m_dirty=true;}
 };
 
 //=======================================================================================
@@ -3070,7 +3119,7 @@ public:
 };
 
 //=======================================================================================
-//! Applies a transform one or more elements
+//! Applies a transform to one or more elements
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct DgnElementTransformer

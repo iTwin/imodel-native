@@ -781,7 +781,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     DgnCode code = CreateCode(redline->GetCode().GetValue());
     if (!view->IsValidCode(code))
         {
-        createStatus = DgnDbStatus::BadElement;
+        createStatus = DgnDbStatus::InvalidName;
         BeDataAssert(false && "redline element must have a code that is valid for its view to use as its code");
         return nullptr;
         }
@@ -965,7 +965,7 @@ RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR mod
     if (!code.IsValid())
         {
         BeAssert(false && "A code is required");
-        createStatus = DgnDbStatus::BadArg;
+        createStatus = DgnDbStatus::InvalidName;
         return nullptr;
         }
     Redline::CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), code);

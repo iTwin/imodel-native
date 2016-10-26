@@ -1085,7 +1085,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
-    DgnElementPtr el = (DgnElementP) elements.FindElement(elementId);
+    DgnElementCPtr el = elements.FindElement(elementId);
     if (el.IsValid())
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
@@ -1618,3 +1618,4 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
             part->Graphics().DropFor(viewport);
         });
     }
+

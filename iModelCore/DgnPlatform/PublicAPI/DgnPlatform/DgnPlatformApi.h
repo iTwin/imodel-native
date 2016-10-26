@@ -31,41 +31,14 @@
 
 /** @cond DGNPLATFORM_SDK_DOCS */
 /**
- @defgroup  DocumentManager Document Manager
- @defgroup  DgnPlatformFilesGroup Design Files
- @defgroup  DgnPlatformModelsGroup Models
 
  @defgroup DgnPlatformElementsGroup Elements
      @{
-     @defgroup  ElemHandles              Element Handles
      @defgroup  GeometricQueries         Geometric Queries
      @defgroup  GeometryCollectors       Geometry Collectors
-     @defgroup  XAttributes              XAttributes
      @defgroup  ElementCopying           Element Copying
-     @defgroup  ElementProperties        Element Properties
-         @{
-         @defgroup  PropertyContext          Property Context
-         @defgroup
-         @}
-     @defgroup  ElementHandler           Element Handlers
-         @{
-         @defgroup  DisplayHandler           Displayable Elements
-             @{
-             @defgroup  Cells                Cell Elements
-             @defgroup  SharedCells          Shared Cell Elements
-             @defgroup  CurveElements        Curve Elements
-             @defgroup  RegionElements       Region Elements
-             @defgroup  3DElements           Surface And Solid Elements
-             @defgroup  DigitalSignatures    Digital Signature Elements
-             @defgroup  MultilineElements    Multi-line Elements
-             @defgroup
-             @}
-        @defgroup  Handler                  Non-Graphic Elements
-        @defgroup
-        @}
-    @defgroup Manipulators             Element Manipulators
-    @defgroup
- @}
+     @defgroup Manipulators             Element Manipulators
+     @}
  @defgroup  DgnECGroup EC Data/Metadata Persistence
      @{
      @defgroup  ECObjectsGroup       ECObjects
@@ -80,8 +53,7 @@
         @defgroup
        @}
      @defgroup  ViewContext              ViewContext
-     @defgroup  ViewController                 ViewController
-     @defgroup  ViewGroup                View Groups
+     @defgroup  ViewController           ViewController
      @defgroup  NamedView                Named Views
      @defgroup  DisplayStyles            Display Styles
      @defgroup
@@ -108,7 +80,6 @@
  @defgroup GROUP_TxnManager                   Transaction Manager
  @defgroup GeoCoordinate            Geographic Coordination
  @defgroup AuxiliaryCoordinateSystems Auxiliary Coordinate Systems
- @defgroup XMLFragments             XML Fragments
 
  @defgroup ConfigManagement         Configuration Manager
  @{
@@ -116,21 +87,6 @@
     @defgroup
  @}
 
- @defgroup RegisteredApp RegisteredApps stored in DWG files
-
- @defgroup DgnDesignHistory Design history
-
- @defgroup CodeSamples Code Samples
- @{
-    @defgroup ElementCopyingCodeSamples ElementCopying Code Samples
-    @defgroup DgnDesignHistoryCodeSamples DesignHistory Code Samples
-//__PUBLISH_SECTION_END__
-    @defgroup DgnDesignHistoryCallbacks DesignHistory Callbacks
-//__PUBLISH_SECTION_START__
-    @defgroup LevelCacheCodeSamples LevelCache Code Samples
-    @defgroup ViewInfoCodeSamples ViewController Code Samples
- @}
- @defgroup IntegrationManager  Integration Manager
 */
 /** @endcond */
 
@@ -174,6 +130,5 @@ For a list of configuration variables used by DgnPlatform, see \ref ConfigVariab
 
 #include "DgnPlatform.h"
 #include "DgnCoreAPI.h"
-#include "DgnHandlersAPI.h"
 //__PUBLISH_SECTION_END__
 #include  <Bentley/BeAssert.h>
