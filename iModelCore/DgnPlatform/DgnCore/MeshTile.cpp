@@ -9,7 +9,9 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #include <Geom/XYZRangeTree.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -23,10 +25,49 @@ static UnconditionalTileGenerationFilter s_defaultFilter;
 
 struct RangeTreeNode
 {
-    // ###TODO: On 64-bit hardware, don't allocate a node just to hold a 64-bit integer...
+#if defined(BENTLEYCONFIG_64BIT_HARDWARE)
+    static void FreeAll(XYZRangeTreeRoot& tree) { }
+
+    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
+        {
+        tree.Add(reinterpret_cast<void*>(elemId.GetValueUnchecked()), range);
+        }
+
+    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
+        {
+        return DgnElementId(reinterpret_cast<uint64_t>(leaf.GetData()));
+        }
+#else
     DgnElementId    m_elementId;
 
     RangeTreeNode(DgnElementId elemId) : m_elementId(elemId) { }
+
+    struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
+    {
+        virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
+            {
+            delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
+            return true;
+            }
+    };
+
+    static void FreeAll(XYZRangeTreeRoot& tree)
+        {
+        FreeLeafDataTreeHandler handler;
+        tree.Traverse(handler);
+        }
+
+    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
+        {
+        tree.Add(new RangeTreeNode(elemId), range);
+        }
+
+    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
+        {
+        auto const& node = *reinterpret_cast<RangeTreeNode const*>(leaf.GetData());
+        return node.m_elementId;
+        }
+#endif
 };
 
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
@@ -126,25 +167,12 @@ GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemI
     return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
-{
-    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-        {
-        delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
-        return true;
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::~TileGenerationCache()
     {
-    FreeLeafDataTreeHandler handler;
-    m_tree->Traverse(handler);
+    RangeTreeNode::FreeAll(*m_tree);
 
     XYZRangeTreeRoot::Free(m_tree);
     }
@@ -163,9 +191,7 @@ DRange3d TileGenerationCache::GetRange() const
 void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
-    static const Utf8CP s_sql =
-        "SELECT r.ECInstanceId,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
-        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId)";
+    static const Utf8CP s_sql = "SELECT ECInstanceId,MinX,MinY,MinZ,MaxX,MaxY,MaxZ " "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex);
 
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
     while (BE_SQLITE_ROW == stmt->Step())
@@ -177,7 +203,7 @@ void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
         DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
                 stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
 
-        m_tree->Add(new RangeTreeNode(elemId), elRange);
+        RangeTreeNode::Add(*m_tree, elemId, elRange);
         }
     }
 
@@ -845,6 +871,7 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -876,11 +903,42 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         {
         polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
         polyface->Transform(Transform::FromProduct(GetTransform(), m_entity->GetEntityTransform()));
-    
         }
 
 
     return polyface;
+#elif defined (BENTLEYCONFIG_PARASOLID)    
+    // Cannot process the same solid entity simultaneously from multiple threads...
+    BeMutexHolder lock(m_mutex);
+
+    DRange3d entityRange = m_entity->GetEntityRange();
+    if (entityRange.IsNull())
+        return nullptr;
+
+    double              rangeDiagonal = entityRange.DiagonalDistance();
+    static double       s_minRangeRelTol = 1.0e-4;
+    double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
+    IFacetOptionsPtr    pFacetOptions;
+    
+    if (facetOptions.GetChordTolerance() < minChordTolerance)
+        {
+        pFacetOptions = facetOptions.Clone();
+        pFacetOptions->SetChordTolerance (minChordTolerance);
+        }
+    else
+        {
+        pFacetOptions = &facetOptions;
+        }
+
+    auto polyface = SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+    
+    if (polyface.IsValid() && !GetTransform().IsIdentity())
+        polyface->Transform (GetTransform());
+
+    return polyface;
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1004,8 +1062,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
     {
-    StopWatch   timer(true);
-
     m_totalTiles++;
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
@@ -1024,6 +1080,8 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     T_HOST.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
+    StopWatch timer(true);
+
     ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile);
 
     static const uint32_t s_sleepMillis = 1000.0;
@@ -1034,6 +1092,8 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
         }
     while (m_completedTiles < m_totalTiles);
 
+    // NB: No longer possible to differentiate between tile collection + tile generation time - they happen simultaneously
+    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
     m_statistics.m_tileCount = m_totalTiles;
     m_statistics.m_tileDepth = root->GetMaxDepth();
 
@@ -1499,8 +1559,8 @@ struct GatherGeometryHandler : XYZRangeTreeHandler
         {
         if (pLeaf->Range().IntersectsWith(m_range) && !m_processor.BelowMinRange(pLeaf->Range()))
             {
-            auto const& node = *reinterpret_cast<RangeTreeNode const*>(pLeaf->GetData());
-            m_processor.ProcessElement(m_context, node.m_elementId, pLeaf->Range());
+            DgnElementId elemId = RangeTreeNode::GetElementId(*pLeaf);
+            m_processor.ProcessElement(m_context, elemId, pLeaf->Range());
             }
 
         return true;
@@ -1535,7 +1595,7 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
-    IFacetOptionsPtr                facetOptions = createTileFacetOptions(GetTolerance());
+    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, leafCountThreshold);
     TileGeometryProcessorContext    context(processor, db, cache);
 

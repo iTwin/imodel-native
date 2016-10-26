@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -685,6 +687,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
         return true;
         }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -708,6 +711,16 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
+#else
+    double      amount = 0;
+    DPoint3d    centroid = DPoint3d::FromZero();
+    RotMatrix   inertia = RotMatrix::FromIdentity();
+    double      iXY, iXZ, iYZ;
+    DPoint3d    moments;
+
+    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
+    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
+#endif
 
     return true;
     }
@@ -722,6 +735,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
     if (GetPreFlattenTransform (flattenTransform, graphic))
         return false; // Facet and flatten...
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -751,6 +765,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
+#endif
 
     return true;
     }
@@ -760,6 +775,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -789,6 +805,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
+#endif
 
     return true;
     }
@@ -808,10 +825,12 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
                 }
             else if (ISolidKernelEntity::EntityType::Sheet == entity.GetEntityType ())
                 {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
                 TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
                 if (nullptr == shape || OCBRep::HasCurvedFaceOrEdge(*shape))
                     return true; // Not valid type for operation...
+#endif
                 }
 
             return DoAccumulateLengths (entity, graphic);
