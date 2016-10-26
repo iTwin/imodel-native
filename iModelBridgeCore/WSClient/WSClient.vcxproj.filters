@@ -507,6 +507,9 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerBreakHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\FileInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1168,6 +1171,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.01.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
