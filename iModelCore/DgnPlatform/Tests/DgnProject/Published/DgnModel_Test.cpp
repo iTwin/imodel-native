@@ -196,7 +196,6 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     static Utf8CP s_sheetModel1NameUPPER = "SHEETMODEL1";
     static Utf8CP s_sheetModel2Name = "SheetModel2";
     
-    DPoint2d sheet1Size;
     BeFileName dbFileName;
     
     if (true)
@@ -206,9 +205,8 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         // Create a sheet
         DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("SheetListModel"));
-        DPoint2d sheetSize = DPoint2d::From(.100, .100);
         SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet1");
-        SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1, DgnModel::CreateModelCode(s_sheetModel1Name), sheetSize);
+        SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1, DgnModel::CreateModelCode(s_sheetModel1Name));
 
         ASSERT_EQ(1, countSheetModels(*db));
         ASSERT_NE(DgnDbStatus::Success, sheetModel1->Insert()) << "Should be illegal to INSERT a SheetModel that is already persistent";
@@ -222,12 +220,9 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         db->Models().GetModelCode(modelCode, modelId);
         ASSERT_STREQ(sheetModel1->GetCode().GetValueCP(), modelCode.GetValueCP());
 
-        sheet1Size = sheetModel1->GetSize();
-        ASSERT_TRUE(sheet1Size.IsEqual(sheetSize));
-
         // Create a second sheet
         SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet2");
-        SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2, DgnModel::CreateModelCode(s_sheetModel2Name), sheetSize);
+        SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2, DgnModel::CreateModelCode(s_sheetModel2Name));
 
         ASSERT_EQ(2, countSheetModels(*db));
         ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name)).IsValid());
@@ -252,9 +247,6 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_TRUE(sheetModel1.IsValid());
         ASSERT_EQ(modelId, sheetModel1->GetModelId());
         ASSERT_STREQ(s_sheetModel1Name, sheetModel1->GetCode().GetValueCP());
-
-        ASSERT_EQ(sheet1Size.x, sheetModel1->GetSize().x);
-        ASSERT_EQ(sheet1Size.y, sheetModel1->GetSize().y);
 
         // Delete Sheet2
         ASSERT_EQ(2, countSheetModels(*db));
