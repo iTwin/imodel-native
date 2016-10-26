@@ -80,7 +80,7 @@
         <ECProperty propertyName="StatementTypes" typeName="AutoHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
-  <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
@@ -215,7 +215,7 @@
                         <Properties>
                             <string>FederationGuid</string>
                         </Properties>
-                        <Where>IndexedColumnsAreNotNull</Where>
+                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                     <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
@@ -1308,6 +1308,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="Variables" typeName="string" />
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewAttachment">
@@ -1902,7 +1903,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Styles" typeName="string"/>
+        <ECProperty propertyName="Styles" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle3d">
         <BaseClass>DisplayStyle</BaseClass>
@@ -1922,7 +1923,7 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
-        <ECProperty propertyName="Details" typeName="string"/>
+        <ECProperty propertyName="Details" typeName="string" />
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward"/>
         <ECNavigationProperty propertyName="DisplayStyle" relationshipName="ViewDefinitionUsesDisplayStyle" direction="Forward"/>
     </ECEntityClass>

@@ -10,7 +10,9 @@
 
 #include "Render.h"
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 class TopoDS_Shape;
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -211,16 +213,126 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 }; // ISubEntity
 
 //=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so
-//! that the entire set of Open CASCADE includes isn't required for the published api.
+//! @private
+//! Wrapper class around facets that at least act like Parasolid fin tables.
+//=======================================================================================
+struct IFacetTopologyTable : BentleyApi::IRefCounted
+{
+public:
+
+virtual bool        _IsTableValid () = 0;
+virtual int         _GetFacetCount () = 0;
+virtual int         _GetFinCount () = 0;
+
+virtual DPoint3dCP  _GetPoint () = 0;
+virtual int         _GetPointCount () = 0;
+
+virtual int const*  _GetPointIndex () = 0;
+virtual int         _GetPointIndexCount () = 0;
+
+virtual DVec3dCP    _GetNormal () = 0;
+virtual int         _GetNormalCount () = 0;
+
+virtual int const*  _GetNormalIndex () = 0;
+virtual int         _GetNormalIndexCount () = 0;
+
+virtual DPoint2dCP  _GetParamUV () = 0;
+virtual int         _GetParamUVCount () = 0;
+
+virtual int const*  _GetParamUVIndex () = 0;
+virtual int         _GetParamUVIndexCount () = 0;
+
+virtual int const*  _GetFinData () = 0;
+virtual int         _GetFinDataCount () = 0;
+
+virtual int const*  _GetFinFin () = 0;
+virtual int         _GetFinFinCount () = 0;
+
+virtual Point2dCP   _GetFacetFin () = 0;
+virtual int         _GetFacetFinCount () = 0;
+
+virtual Point2dCP   _GetStripFin () = 0;
+virtual int         _GetStripFinCount () = 0;
+
+virtual int const*  _GetStripFaceId () = 0;         // Array of face subElemId (body face index)
+virtual int         _GetStripFaceIdCount () = 0;
+
+virtual Point2dCP   _GetFinEdge () = 0;             // NOTE: Parasolid only hidden edge support (fin index, edge tag pair)
+virtual int         _GetFinEdgeCount () = 0;
+
+virtual int const*  _GetFacetFace () = 0;           // NOTE: Parasolid only hidden face support (array of face tags)
+virtual int         _GetFacetFaceCount () = 0;
+
+virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool useHighestId) = 0; 
+
+virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
+virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
+
+virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec () = 0;
+virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap () = 0;
+
+public:
+
+//! Translate from IFacetTopologyTable to PolyfaceHeader.
+//! @param [in,out] polyface polyface data.  Prior contents are cleared.
+//! @param [in] ftt Facet topology table
+//! @param [in] facetOptions Facet options
+DGNPLATFORM_EXPORT static StatusInt ConvertToPolyface
+(
+PolyfaceHeaderR         polyface,
+IFacetTopologyTable&    ftt,
+IFacetOptionsCR         facetOptions
+);
+
+//! Translate from IFacetTopologyTable to multi symbology polyfaces with face ids.
+//! @param [in,out] polyfaces Map from face index to the polyfaces.
+//! @param [in] facePolyfaces Face color/material attachments nap.
+//! @param [in] ftt Facet topology table
+//! @param [in] facetOptions Facet options
+DGNPLATFORM_EXPORT static StatusInt ConvertToPolyfaces
+(
+bvector<PolyfaceHeaderPtr>&     polyfaces,
+bmap<int, PolyfaceHeaderCP>&    facePolyfaces,
+IFacetTopologyTable&            ftt,
+IFacetOptionsCR                 facetOptions
+);
+
+}; // IFacetTopologyTable
+
+typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
+
+//=======================================================================================
+//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
+//! that the entire set of solid kernel includes isn't required for the published api.
 //=======================================================================================
 struct SolidKernelUtil
 {
+#if defined (BENTLEYCONFIG_PARASOLID)
+DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned = true); //!< NOTE: Will return an invalid entity if entity tag is not valid.
+DGNPLATFORM_EXPORT static uint32_t GetEntityTag(ISolidKernelEntityCR);
+DGNPLATFORM_EXPORT static BentleyStatus SaveEntityToMemory(uint8_t** ppBuffer, size_t& bufferSize, ISolidKernelEntityCR);
+DGNPLATFORM_EXPORT static BentleyStatus RestoreEntityFromMemory (ISolidKernelEntityPtr&, uint8_t const* pBuffer, size_t bufferSize, TransformCR);
+#elif defined (BENTLEYCONFIG_OPENCASCADE)    
 DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
+#endif
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, IFacetOptionsR);
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(ISolidKernelEntityCR);
 };
+
+//__PUBLISH_SECTION_END__
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/2009
++===============+===============+===============+===============+===============+======*/
+struct PSolidKernelManager
+{
+DGNPLATFORM_EXPORT static void StartSession();
+DGNPLATFORM_EXPORT static void StopSession();
+DGNPLATFORM_EXPORT static void SetExternalFrustrum(); // Frustrum registered and session started by external dll (V8 convert)...
+
+}; // PSolidKernelManager
+//__PUBLISH_SECTION_START__
 
 END_BENTLEY_DGN_NAMESPACE
