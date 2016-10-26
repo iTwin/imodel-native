@@ -371,13 +371,9 @@ namespace IndexECPlugin.Source
                     {
                     case "PackageRequest":
                         int version;
-                        string versionString = null;
-                        var VersionPropValue = instance.GetPropertyValue("Version");
-                        if ( (VersionPropValue != null) && (!VersionPropValue.IsNull) )
-                            {
-                            versionString = VersionPropValue.StringValue;
-                            }
-                        if ( (versionString == "2") )
+                        string requestor = null;
+                        string requestorVersion = null;
+                        if ( (extendedParameters.ContainsKey("Version")) && (extendedParameters["Version"].ToString() == "2") )
                             {
                             version = 2;
                             }
@@ -385,10 +381,19 @@ namespace IndexECPlugin.Source
                             {
                             version = 1;
                             }
-                        Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
-                        packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0);
-                        return;
 
+                        if ( extendedParameters.ContainsKey("Requestor") )
+                            {
+                            requestor = extendedParameters["Requestor"].ToString();
+                            }
+                        if ( extendedParameters.ContainsKey("RequestorVersion") )
+                            {
+                            requestorVersion = extendedParameters["RequestorVersion"].ToString();
+                            }
+                            Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
+                            packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0, requestor, requestorVersion);
+                            return;
+                            
                     //case "AutomaticRequest":
                     //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
                     //    return;

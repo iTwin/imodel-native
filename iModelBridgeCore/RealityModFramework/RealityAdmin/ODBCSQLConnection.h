@@ -35,7 +35,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetStrings(const char* dbName, const char* pwszConnStr);
     void TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x);
     SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
-    SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
+    REALITYDATAPLATFORM_EXPORT SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
     RETCODE ExecuteSQL(CHAR* query);
     RETCODE ExecuteSQL(SQLHSTMT stmt);
     RETCODE ExecutePrepared();
@@ -49,7 +49,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void Save(SpatialEntityDataCR data, bool dualMode);
     REALITYDATAPLATFORM_EXPORT void Update(SpatialEntityDataCR data);
     REALITYDATAPLATFORM_EXPORT bool CheckExists(Utf8String id);
-    REALITYDATAPLATFORM_EXPORT SQLINTEGER SaveServer(std::string url);
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER SaveServer(SpatialEntityServerCR server);
 };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

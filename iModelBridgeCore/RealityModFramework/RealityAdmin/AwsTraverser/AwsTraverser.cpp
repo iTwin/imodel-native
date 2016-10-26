@@ -295,7 +295,18 @@ int main(int argc, char *argv[])
 
         getline(file, line);
 
-        SQLINTEGER serverId = serverConnection.SaveServer("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
+        SpatialEntityServerPtr serverptr = SpatialEntityServer::Create();
+        serverptr->SetProtocol("http");
+        serverptr->SetName("s3-us-west-2.amazonaws.com");
+        serverptr->SetUrl("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
+        serverptr->SetOnline(1);
+
+        DateTime dateTime = DateTime::GetCurrentTimeUtc();
+        serverptr->SetLastCheck(dateTime);
+        serverptr->SetLastTimeOnline(dateTime);
+        serverptr->SetLatency(-1.0);
+
+        SQLINTEGER serverId = serverConnection.SaveServer(*serverptr);
 
         size_t comma;
         std::string id, rest, downloadUrl;
@@ -303,6 +314,13 @@ int main(int argc, char *argv[])
         size_t idx;
         AwsPinger& pinger = AwsPinger::GetInstance();
         SpatialEntityDataPtr data;
+        SpatialEntityMetadataPtr metaData = SpatialEntityMetadata::Create();
+        metaData->SetDescription("Landsat data provided by Amazon Web Services");
+        metaData->SetProvenance("landsat8");
+        metaData->SetLegal("Data available from the U.S. Geological Survey.");
+        SpatialEntityThumbnailPtr thumbnail = SpatialEntityThumbnail::Create();
+        thumbnail->SetProvenance("Provided by Amazon Web Services");
+        thumbnail->SetFormat("png");
         float redSize = 0;
         float blueSize = 0;
         float greenSize = 0;
@@ -405,10 +423,29 @@ int main(int argc, char *argv[])
 
             if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
                 {
-                //data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId);
+                Utf8String dUrl = Utf8String(downloadUrl.c_str());
+                size_t ext = dUrl.rfind("/");
+                Utf8String baseUrl = dUrl.substr(0, ext + 1);
+                baseUrl.append(id.c_str());
+                Utf8String thumbUrl = baseUrl;
+                thumbUrl.append("_thumb_large.jpg");
+                Utf8String blueUrl = baseUrl;
+                blueUrl.append("_B2.TIF");
+                Utf8String greenUrl = baseUrl;
+                greenUrl.append("_B3.TIF");
+                Utf8String redUrl = baseUrl;
+                redUrl.append("_B4.TIF");
+                Utf8String panUrl = baseUrl;
+                panUrl.append("_B8.TIF");
+                Utf8String metadataUrl = baseUrl;
+                metadataUrl.append("_MTL.txt");
+
                 data = SpatialEntityData::Create();
                 data->SetName(Utf8CP(id.c_str()));
-                data->SetMultibandUrl(Utf8String(downloadUrl.c_str()));
+                data->SetUrl(dUrl.c_str());
+                data->SetMultibandUrls(redUrl, greenUrl, blueUrl, panUrl);
+                thumbnail->SetThumbnailUrl(thumbUrl.c_str());
+                metaData->SetMetadataUrl(metadataUrl.c_str());
                 data->SetCloudCover(cloudCover);
                 data->SetFootprintExtents(DRange2d::From(min_lon, min_lat, max_lon, max_lat));
                 data->SetIsMultiband(true);
@@ -416,7 +453,19 @@ int main(int argc, char *argv[])
                 data->SetGreenBandSize(greenSize);
                 data->SetBlueBandSize(blueSize);
                 data->SetPanchromaticBandSize(panSize);
-                data->SetMultibandServerId(serverId);
+                data->SetServerId(serverId);
+                data->SetResolution("15.00x15.00");
+
+                data->SetProvider("USGS");
+                data->SetProviderName("Amazon Landsat 8");
+                data->SetDataset("Landat 8");
+                data->SetDataType("tif");
+                data->SetClassification("Imagery");
+
+                data->SetNoDataValue(0);
+
+                data->SetThumbnail(*thumbnail);
+                data->SetMetadata(*metaData);
 
                 serverConnection.Save(*data, false);
                 }

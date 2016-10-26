@@ -107,6 +107,9 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGenerationDetails() const;
     REALITYDATAPLATFORM_EXPORT void SetGenerationDetails(Utf8CP details);
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetThumbnailUrl() const;
+    REALITYDATAPLATFORM_EXPORT void SetThumbnailUrl(Utf8CP thumbnailUrl);
+
 protected:
     SpatialEntityThumbnail();
 
@@ -117,6 +120,7 @@ protected:
     DateTime m_stamp;
     bvector<Byte> m_data;
     Utf8String m_generationDetails;
+    Utf8String m_thumbnailUrl;
 };
 
 
@@ -156,6 +160,9 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetData() const;
     REALITYDATAPLATFORM_EXPORT void SetData(Utf8CP data);
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
+    REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
+
 protected:
     SpatialEntityMetadata();
     SpatialEntityMetadata(Utf8CP filePath);
@@ -166,6 +173,7 @@ protected:
     Utf8String m_legal;
     Utf8String m_format;
     Utf8String m_data;
+    Utf8String m_metadataUrl;
 };
 
 
@@ -272,13 +280,19 @@ public:
     REALITYDATAPLATFORM_EXPORT uint64_t GetSize() const; // in bytes.
     REALITYDATAPLATFORM_EXPORT void SetSize(uint64_t size); // in bytes.
 
-                                                            //! Get/Set
+    REALITYDATAPLATFORM_EXPORT uint64_t GetNoDataValue() const;
+    REALITYDATAPLATFORM_EXPORT void SetNoDataValue(uint64_t value); // in bytes.
+
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetResolution() const; // in meters.
     REALITYDATAPLATFORM_EXPORT void SetResolution(Utf8CP resolution); // in meters.
 
-                                                                      //! Get/Set
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
     REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProviderName() const;
+    REALITYDATAPLATFORM_EXPORT void SetProviderName(Utf8CP providerName);
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataType() const;
@@ -322,8 +336,8 @@ public:
     REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
     REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
 
-    REALITYDATAPLATFORM_EXPORT Utf8String GetMultibandUrl() const;
-    REALITYDATAPLATFORM_EXPORT void SetMultibandUrl( Utf8String url );
+    REALITYDATAPLATFORM_EXPORT void GetMultibandUrls( Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl ) const;
+    REALITYDATAPLATFORM_EXPORT void SetMultibandUrls( Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl );
     
     REALITYDATAPLATFORM_EXPORT float GetCloudCover() const;
     REALITYDATAPLATFORM_EXPORT void SetCloudCover( float cover );
@@ -340,8 +354,9 @@ public:
     REALITYDATAPLATFORM_EXPORT float GetPanchromaticBandSize() const;
     REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( float size );
 
-    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetMultibandServerId() const;
-    REALITYDATAPLATFORM_EXPORT void SetMultibandServerId( SQLINTEGER id );
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetServerId() const;
+    //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
+    REALITYDATAPLATFORM_EXPORT void SetServerId( SQLINTEGER id ) const;
 
 protected:
     SpatialEntityData();
@@ -353,6 +368,7 @@ protected:
     uint64_t m_size;
     Utf8String m_resolution;
     Utf8String m_provider;
+    Utf8String m_providerName;
     Utf8String m_dataType;
     Utf8String m_classification;
     Utf8String m_locationInCompound;
@@ -363,15 +379,20 @@ protected:
     SpatialEntityThumbnailPtr m_pThumbnail;
     SpatialEntityMetadataPtr m_pMetadata;
     SpatialEntityServerPtr m_pServer;
+    uint64_t m_noDataValue;
 
     bool m_isMultiband = false;
-    Utf8String m_multibandDownloadUrl;
-    float m_cloudCover;
+    Utf8String m_redDownloadUrl;
+    Utf8String m_blueDownloadUrl;
+    Utf8String m_greenDownloadUrl;
+    Utf8String m_panchromaticDownloadUrl;
+    float m_cloudCover = -1.0f;
     float m_redSize;
     float m_blueSize;
     float m_greenSize;
     float m_panchromaticSize;
-    SQLINTEGER m_multibandServerId;
+
+    mutable SQLINTEGER m_serverId;
 }; 
    
 

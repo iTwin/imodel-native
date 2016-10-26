@@ -45,11 +45,17 @@ void SpatialEntityData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
 uint64_t SpatialEntityData::GetSize() const { return m_size; }
 void SpatialEntityData::SetSize(uint64_t size) { m_size = size; }
 
+uint64_t SpatialEntityData::GetNoDataValue() const { return m_noDataValue; }
+void SpatialEntityData::SetNoDataValue(uint64_t value) { m_noDataValue = value; }
+
 Utf8StringCR SpatialEntityData::GetResolution() const { return m_resolution; }
 void SpatialEntityData::SetResolution(Utf8CP res) { m_resolution = res; }
 
 Utf8StringCR SpatialEntityData::GetProvider() const { return m_provider; }
 void SpatialEntityData::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR SpatialEntityData::GetProviderName() const { return m_providerName; }
+void SpatialEntityData::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
 
 Utf8StringCR SpatialEntityData::GetDataset() const { return m_dataset; }
 void SpatialEntityData::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
@@ -84,8 +90,21 @@ void SpatialEntityData::SetServer(SpatialEntityServerR server) { m_pServer = &se
 bool SpatialEntityData::GetIsMultiband() const { return m_isMultiband; }
 void SpatialEntityData::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }
 
-Utf8String SpatialEntityData::GetMultibandUrl() const { return m_multibandDownloadUrl; }
-void SpatialEntityData::SetMultibandUrl(Utf8String url) { m_multibandDownloadUrl = url; }
+void SpatialEntityData::GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl) const 
+    { 
+    redUrl = m_redDownloadUrl;
+    blueUrl = m_blueDownloadUrl;
+    greenUrl = m_greenDownloadUrl;
+    panchromaticUrl = m_panchromaticDownloadUrl;
+    }
+
+void SpatialEntityData::SetMultibandUrls(Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl) 
+    { 
+    m_redDownloadUrl = redUrl;
+    m_blueDownloadUrl = blueUrl;
+    m_greenDownloadUrl = greenUrl;
+    m_panchromaticDownloadUrl = panchromaticUrl;
+    }
 
 float SpatialEntityData::GetCloudCover() const { return m_cloudCover; }
 void SpatialEntityData::SetCloudCover(float cover) { m_cloudCover = cover; }
@@ -102,8 +121,8 @@ void SpatialEntityData::SetGreenBandSize(float size) { m_greenSize = size; }
 float SpatialEntityData::GetPanchromaticBandSize() const { return m_panchromaticSize; }
 void SpatialEntityData::SetPanchromaticBandSize(float size) { m_panchromaticSize = size; }
 
-SQLINTEGER SpatialEntityData::GetMultibandServerId() const { return m_multibandServerId; }
-void SpatialEntityData::SetMultibandServerId(SQLINTEGER id) { m_multibandServerId = id; }
+SQLINTEGER SpatialEntityData::GetServerId() const { return m_serverId; }
+void SpatialEntityData::SetServerId(SQLINTEGER id) const { m_serverId = id; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -152,6 +171,9 @@ void SpatialEntityThumbnail::SetData(const bvector<Byte>& data) { m_data = data;
 Utf8StringCR SpatialEntityThumbnail::GetGenerationDetails() const { return m_generationDetails; }
 void SpatialEntityThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
 
+Utf8StringCR SpatialEntityThumbnail::GetThumbnailUrl() const { return m_thumbnailUrl; }
+void SpatialEntityThumbnail::SetThumbnailUrl(Utf8CP thumbnailUrl) { m_thumbnailUrl = thumbnailUrl; }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
@@ -199,6 +221,9 @@ void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format; }
 
 Utf8StringCR SpatialEntityMetadata::GetData() const { return m_data; }
 void SpatialEntityMetadata::SetData(Utf8CP data) { m_data = data; }
+
+Utf8StringCR SpatialEntityMetadata::GetMetadataUrl() const { return m_metadataUrl; }
+void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
