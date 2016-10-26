@@ -855,7 +855,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     SqlPrintfString str = SqlPrintfString("SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
-                    " AS g WHERE e.ModelId=%llu AND e.id=g.ElementId", m_defaultModelId);
+                    " AS g WHERE e.ModelId=%llu AND e.id=g.ElementId", m_defaultModelId.GetValue());
 
     stmt.Prepare(*m_db, str.GetUtf8CP());
     //__PUBLISH_EXTRACT_END__

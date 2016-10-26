@@ -594,8 +594,8 @@ DgnDbStatus LineStyleElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
-        Utf8String data = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data));
+        m_description = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
+        m_data = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data));
 
         //  m_data.Init(baseModelId, source, descr);
         }
