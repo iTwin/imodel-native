@@ -2115,7 +2115,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
     skirts.push_back(coverageData);
    // _AddSkirt(skirts, id, false);
 
-    DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
+/*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
     m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
     return SUCCESS;
     }
