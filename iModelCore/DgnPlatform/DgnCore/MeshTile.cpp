@@ -778,7 +778,7 @@ private:
     BeMutex                 m_mutex;
 
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
@@ -930,7 +930,7 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         pFacetOptions = &facetOptions;
         }
 
-    auto polyface = SolidKernelUtil::FacetEntity(*m_entity, *pFacetOptions);
+    auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
     
     if (polyface.IsValid() && !GetTransform().IsIdentity())
         polyface->Transform (GetTransform());
