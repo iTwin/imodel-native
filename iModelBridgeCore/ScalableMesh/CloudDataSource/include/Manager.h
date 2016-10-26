@@ -9,8 +9,10 @@
 
 #define    MANAGER_DEFAULT_ACCESS_TIMEOUT    30 * 1000
 
+#define T_MANAGER   template<typename T, bool managePointered>
 
-template<typename T> class Manager
+
+template<typename T, bool managePointered> class Manager
 {
 
 public:
@@ -36,19 +38,24 @@ protected:
     std::recursive_timed_mutex                      itemMutex;
     Timeout                                         accessTimeout;
 
-protected:
+    bool                                            deletePointered;
 
 protected:
+
+    void                                            setDeletePointered      (bool del);
+    bool                                            getDeletePointered      (void);
+
+public:
 
                                                     Manager                 (void);
     virtual                                        ~Manager                 (void);
 
-	virtual void									shutdown				(bool deleteItems);
+	virtual void									shutdown				(void);
 
     T                *                              create                  (const ItemName &name, T *item);
-    bool                                            destroy                 (const ItemName &name, bool deleteItem);
-    bool                                            destroy                 (T *item, bool deleteItem);
-    bool                                            destroyAll              (bool deleteItems);
+    bool                                            destroy                 (const ItemName &name);
+    virtual bool                                    destroy                 (T *item);
+    virtual bool                                    destroyAll              (void);
 
     bool                                            apply                   (ApplyFunction f);
 
@@ -64,26 +71,42 @@ protected:
 };
 
 
-template<typename T>
-inline Manager<T>::Manager(void)
+T_MANAGER
+inline Manager<T, managePointered>::Manager(void)
 {
+    setDeletePointered(managePointered);
+
     setAccessTimeout(Timeout(MANAGER_DEFAULT_ACCESS_TIMEOUT));
 }
 
-template<typename T>
-inline Manager<T>::~Manager(void)
+T_MANAGER
+inline Manager<T, managePointered>::~Manager(void)
 {
 
 }
 
-template<typename T>
-inline void Manager<T>::shutdown(bool deleteItems)
+T_MANAGER
+inline void Manager<T, managePointered>::setDeletePointered(bool del)
 {
-	destroyAll(deleteItems);
+    deletePointered = del;
 }
 
-template<typename T>
-inline T * Manager<T>::create(const ItemName & name, T * item)
+
+T_MANAGER
+inline bool Manager<T, managePointered>::getDeletePointered(void)
+{
+    return deletePointered;
+}
+
+
+T_MANAGER
+inline void Manager<T, managePointered>::shutdown(void)
+{
+	destroyAll();
+}
+
+T_MANAGER
+inline T * Manager<T, managePointered>::create(const ItemName & name, T * item)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return nullptr;
@@ -95,8 +118,8 @@ inline T * Manager<T>::create(const ItemName & name, T * item)
     return item;
 }
 
-template<typename T>
-inline bool Manager<T>::destroy(const ItemName & name, bool deleteItem)
+T_MANAGER
+inline bool Manager<T, managePointered>::destroy(const ItemName & name)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return false;
@@ -104,9 +127,16 @@ inline bool Manager<T>::destroy(const ItemName & name, bool deleteItem)
     Iterator it = getEntry(name);
     if (it != items.end())
     {
-        if (deleteItem && it->second)
-        {
-            delete it->second;
+        T *i = it->second;
+
+        if (i)
+		{
+            i->destroyAll();
+
+            if (getDeletePointered())
+            {
+                delete i;
+            }
         }
 
         items.erase(it);
@@ -122,8 +152,8 @@ inline bool Manager<T>::destroy(const ItemName & name, bool deleteItem)
 }
 
 
-template<typename T>
-inline bool Manager<T>::destroy(T * item, bool deleteItem)
+T_MANAGER
+inline bool Manager<T, managePointered>::destroy(T * item)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return false;
@@ -132,9 +162,14 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
 
     if (it != items.end())
     {
-        if (deleteItem && it->second)
+        T *i = it->second;
+
+        if (i)
         {
-            delete it->second;
+            if (getDeletePointered())
+            {
+                delete i;
+            }
         }
 
         items.erase(it);
@@ -149,8 +184,8 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
     return false;
 }
 
-template<typename T>
-inline bool Manager<T>::destroyAll(bool deleteItems)
+T_MANAGER
+inline bool Manager<T, managePointered>::destroyAll(void)
 {
     Iterator it;
 
@@ -159,9 +194,16 @@ inline bool Manager<T>::destroyAll(bool deleteItems)
 
     for (it = items.begin(); it != items.end(); it++)
     {
-        if (deleteItems && it->second)
+        T *i = it->second;
+
+        if (i)
         {
-            delete it->second;
+            i->destroyAll();
+
+            if (getDeletePointered())
+            {
+                delete i;
+            }
         }
     }
 
@@ -172,8 +214,8 @@ inline bool Manager<T>::destroyAll(bool deleteItems)
     return true;
 }
 
-template<typename T>
-bool typename Manager<T>::apply(ApplyFunction f)
+T_MANAGER
+bool typename Manager<T, managePointered>::apply(ApplyFunction f)
 {
     bool traverse = true;
 
@@ -192,8 +234,8 @@ bool typename Manager<T>::apply(ApplyFunction f)
 }
 
 
-template<typename T>
-inline typename Manager<T>::ItemCount Manager<T>::getCount(void)
+T_MANAGER
+inline typename Manager<T, managePointered>::ItemCount Manager<T, managePointered>::getCount(void)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return 0;
@@ -205,8 +247,8 @@ inline typename Manager<T>::ItemCount Manager<T>::getCount(void)
     return numItems;
 }
 
-template<typename T>
-inline T * Manager<T>::get(const ItemName & name)
+T_MANAGER
+inline T * Manager<T, managePointered>::get(const ItemName & name)
 {
     Iterator it;
 
@@ -224,8 +266,8 @@ inline T * Manager<T>::get(const ItemName & name)
     return nullptr;
 }
 
-template<typename T>
-inline typename Manager<T>::Iterator Manager<T>::getEntry(const ItemName &name)
+T_MANAGER
+inline typename Manager<T, managePointered>::Iterator Manager<T, managePointered>::getEntry(const ItemName &name)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return Iterator();
@@ -237,8 +279,8 @@ inline typename Manager<T>::Iterator Manager<T>::getEntry(const ItemName &name)
     return it;
 }
 
-template<typename T>
-inline typename Manager<T>::Iterator Manager<T>::getEntry(T * item)
+T_MANAGER
+inline typename Manager<T, managePointered>::Iterator Manager<T, managePointered>::getEntry(T * item)
 {
     Iterator it;
 
@@ -261,14 +303,14 @@ inline typename Manager<T>::Iterator Manager<T>::getEntry(T * item)
     return it;
 }
 
-template<typename T>
-inline void Manager<T>::setAccessTimeout(Timeout timeMilliseconds)
+T_MANAGER
+inline void Manager<T, managePointered>::setAccessTimeout(Timeout timeMilliseconds)
 {
     accessTimeout = timeMilliseconds;
 }
 
-template<typename T>
-inline typename Manager<T>::Timeout Manager<T>::getAccessTimeout(void)
+T_MANAGER
+inline typename Manager<T, managePointered>::Timeout Manager<T, managePointered>::getAccessTimeout(void)
 {
     return accessTimeout;
 }

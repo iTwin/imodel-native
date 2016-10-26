@@ -9,8 +9,7 @@
 
 DataSourceServiceManager::DataSourceServiceManager(DataSourceManager &manager)
 {
-#pragma warning(disable: 4100)
-	//    initialize(manager);
+    initialize(manager);
 }
 
 DataSourceServiceManager::~DataSourceServiceManager(void)
@@ -102,7 +101,7 @@ DataSourceAccount * DataSourceServiceManager::getAccount(const DataSourceAccount
 DataSourceStatus DataSourceServiceManager::destroyService(const ServiceName & serviceName)
 {
                                                             // Find and destroy service
-    if (destroy(serviceName, true))
+    if (destroy(serviceName))
     {
         return DataSourceStatus();
     }
@@ -113,7 +112,7 @@ DataSourceStatus DataSourceServiceManager::destroyService(const ServiceName & se
 
 DataSourceStatus DataSourceServiceManager::destroyServices(void)
 {
-    if (destroyAll(true))
+    if (destroyAll())
     {
         return DataSourceStatus();
     }

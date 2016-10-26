@@ -6,7 +6,7 @@
 #include "DataSourceAccount.h"
 
 
-class DataSourceServiceManager : public Manager<DataSourceService>
+class DataSourceServiceManager : public Manager<DataSourceService, true>
 {
 public:
 
