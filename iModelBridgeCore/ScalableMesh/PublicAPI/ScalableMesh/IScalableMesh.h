@@ -56,6 +56,7 @@ enum DTMAnalysisType
     {
     Precise =0,
     Fast,
+    RawDataOnly,
     Qty
     };
 

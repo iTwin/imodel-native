@@ -951,6 +951,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         m_scalableMeshDTM[DTMAnalysisType::Precise]->SetAnalysisType(DTMAnalysisType::Precise);
         m_scalableMeshDTM[DTMAnalysisType::Fast] = ScalableMeshDTM::Create(this);
         m_scalableMeshDTM[DTMAnalysisType::Fast]->SetAnalysisType(DTMAnalysisType::Fast);
+        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly] = ScalableMeshDTM::Create(this);
+        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly]->SetAnalysisType(DTMAnalysisType::RawDataOnly);
         return BSISUCCESS;  
         }
     catch(...)

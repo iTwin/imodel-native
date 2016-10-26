@@ -1813,6 +1813,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
 
             indicesPtr->clear();
+            m_nodeHeader.m_nbFaceIndexes = 0;
 
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvPtr = GetUVCoordsPtr();
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIPtr = GetUVsIndicesPtr();
@@ -1934,6 +1935,8 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
     //=======================================================================================
     template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
         {
+        if (!IsLoaded())
+            Load();
         assert(points.size()>0);
         if (s_inEditing)
             {
@@ -3765,7 +3768,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
         ClearPtsIndices();    
         PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
+        RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
+        uvCoords->clear();
         PushUV(/*texId + 1,*/ &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
+        uvIndexes->clear();
         PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());        
         }
 
@@ -4763,7 +4770,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
         while (!extent.IsContained(nodeRange))
             {
             // If the item is not in root node and extent is limited then it is impossible to add item
-            if (m_indexHeader.m_HasMaxExtent)
+            if (!s_inEditing && m_indexHeader.m_HasMaxExtent)
                 return;
 
             // The extent is not contained... we must create a new node

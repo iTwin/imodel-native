@@ -8206,7 +8206,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::AddArray(c
             // Not all Item could not be added
 
             // If the item is not in root node and extent is limited then it is impossible to add item
-            if (m_indexHeader.m_HasMaxExtent)
+            if (!s_inEditing && m_indexHeader.m_HasMaxExtent)
                 return false;
 
             // The extent is not contained... we must create a new node

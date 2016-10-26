@@ -511,7 +511,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
             return BSIERROR;
         }
-    else
+    else if (!s_inEditing)
         {
         size_t endLevel = pDataIndex->GetMaxFilledLevel();
         pDataIndex->PropagateDataDownImmediately((int)endLevel);
@@ -652,6 +652,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
     pDataIndex->Store();
+    m_smSQLitePtr->CommitAll();
+
     pDataIndex = 0;
 
     if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
