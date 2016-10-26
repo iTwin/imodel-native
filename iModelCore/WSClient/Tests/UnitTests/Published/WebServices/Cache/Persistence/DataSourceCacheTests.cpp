@@ -78,6 +78,48 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), params));
     }
 
+TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithEmptyEnvironment_Empty)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(BeFileName(":memory:"), CacheEnvironment()));
+
+    CacheEnvironment cacheEnv = cache.GetEnvironment();
+    EXPECT_EQ(L"", cacheEnv.persistentFileCacheDir);
+    EXPECT_EQ(L"", cacheEnv.temporaryFileCacheDir);
+    EXPECT_EQ(L"", cacheEnv.externalFileCacheDir);
+    }
+
+TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment)
+    {
+    CacheEnvironment baseEnv;
+    baseEnv.persistentFileCacheDir = GetTestsTempDir().AppendToPath(L"Pers");
+    baseEnv.temporaryFileCacheDir = GetTestsTempDir().AppendToPath(L"Temp");
+    baseEnv.externalFileCacheDir = GetTestsTempDir().AppendToPath(L"Ext");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(BeFileName(":memory:"), baseEnv));
+
+    CacheEnvironment cacheEnv = cache.GetEnvironment();
+    EXPECT_THAT(cacheEnv.persistentFileCacheDir.c_str(), HasSubstr(baseEnv.persistentFileCacheDir.c_str()));
+    EXPECT_THAT(cacheEnv.temporaryFileCacheDir.c_str(), HasSubstr(baseEnv.temporaryFileCacheDir.c_str()));
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(baseEnv.externalFileCacheDir.c_str()));
+    }
+
+TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir)
+    {
+    CacheEnvironment baseEnv;
+    baseEnv.persistentFileCacheDir = GetTestsTempDir().AppendToPath(L"Pers");
+    baseEnv.temporaryFileCacheDir = GetTestsTempDir().AppendToPath(L"Temp");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(BeFileName(":memory:"), baseEnv));
+
+    CacheEnvironment cacheEnv = cache.GetEnvironment();
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(baseEnv.persistentFileCacheDir.c_str()));
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(cacheEnv.persistentFileCacheDir.c_str()));
+    EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"//ext//")));
+    }
+
 TEST_F(DataSourceCacheTests, UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds)
     {
     auto cache = GetTestCache();
@@ -2653,7 +2695,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
-    auto parent =  StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
 
     // Arrange
     auto partialResponseKey = CachedResponseKey(parent, "Partial");
