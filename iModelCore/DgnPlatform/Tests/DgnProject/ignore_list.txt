@@ -145,3 +145,13 @@ CsvFileTests.GetRowAndMaxColumnCount
     # [  FAILED  ] CsvFileTests.GetRowAndMaxColumnCount (0 ms)
 
 CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
+
+#TFS613849 notifed Paul
+SingleBriefcaseLocksTest.AcquireLocks
+SingleBriefcaseLocksTest.RelinquishLocks
+DoubleBriefcaseTest.Contention
+DoubleBriefcaseTest.ReformulateRequest
+DoubleBriefcaseTest.DemoteLocks
+DoubleBriefcaseTest.StandaloneBriefcase
+ExtractLocksTest.UsedLocks
+CodesManagerTest.ReserveQueryRelinquish
