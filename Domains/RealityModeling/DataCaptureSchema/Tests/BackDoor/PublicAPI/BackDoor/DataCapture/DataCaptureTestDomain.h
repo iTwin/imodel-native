@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#if 0 //NOT NOW
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnDb.h>
@@ -61,4 +62,6 @@ public:
     static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
     };
 
+
 END_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE
+#endif
