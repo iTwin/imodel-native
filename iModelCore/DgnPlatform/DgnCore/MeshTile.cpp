@@ -1595,7 +1595,7 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
-    IFacetOptionsPtr                facetOptions = createTileFacetOptions(GetTolerance());
+    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, leafCountThreshold);
     TileGeometryProcessorContext    context(processor, db, cache);
 

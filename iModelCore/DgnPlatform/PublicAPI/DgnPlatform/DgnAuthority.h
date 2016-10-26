@@ -230,7 +230,7 @@ public:
     static DgnCode CreateDisplayStyleCode(Utf8StringCR name) {return CreateResourceCode(name,"dstyle");}
     static DgnCode CreateModelSelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"models");}
     static DgnCode CreateCategorySelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"catgs");}
-    static DgnCode CreateViewDefinitionCode(Utf8StringCR name) {return CreateResourceCode(name,"view");}
+    DGNPLATFORM_EXPORT static DgnCode CreateViewDefinitionCode(Utf8StringCR name);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetResourceAuthorityId();
     static bool IsResourceAuthority(DgnAuthorityCR auth) {return auth.GetAuthorityId() == GetResourceAuthorityId();}
 };

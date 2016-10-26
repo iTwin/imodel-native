@@ -22,13 +22,32 @@
         <BaseClass>bis:LinkElement</BaseClass>
     </ECEntityClass>
 
+    <ECRelationshipClass typeName="RedlineModelBreaksDownRedline" strength="embedding" strengthDirection="Backward">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="RedlineModel"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="Redline" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="Redline">
+        <BaseClass>bis:Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Height" displayLabel="Height in pixels" typeName="int"/> <!-- really, uint16_t -->
+        <ECProperty propertyName="Width" displayLabel="Width in pixels" typeName="int"/> <!-- really, uint16_t -->
+    </ECEntityClass>
+
     <ECEntityClass typeName="RedlineModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>bis:SheetModel</BaseClass>
+        <BaseClass>bis:GraphicalModel2d</BaseClass>
     </ECEntityClass>
-    
+
     <ECEntityClass typeName="SpatialRedlineModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

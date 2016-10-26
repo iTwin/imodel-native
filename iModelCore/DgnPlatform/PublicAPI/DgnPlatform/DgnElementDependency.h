@@ -25,7 +25,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElementDependencyHandler : DgnDomain::Handler
 protected:
     friend struct DgnElementDependencyGraph;
 
-    //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
+    //! Called by DgnElementDependencyGraph after the ElementDrivesElement ECRelationship itself is created and then whenever the
+    //! source or target DgnElement is changed directly or by an upstream dependency.
     //! This base class implementation of _OnRootChanged calls Txns::ReportValidationError to indicate a missing handler.
     //! @note This callback is \em not invoked when the source or target element is deleted. See _ProcessDeletedDependency
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 

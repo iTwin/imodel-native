@@ -833,7 +833,7 @@ public:
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
 
-    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
@@ -965,7 +965,7 @@ public:
     CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
 
-    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
@@ -1127,7 +1127,9 @@ public:
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
+    void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
+    void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
     };
@@ -1160,7 +1162,7 @@ public:
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
@@ -1192,7 +1194,7 @@ public:
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}

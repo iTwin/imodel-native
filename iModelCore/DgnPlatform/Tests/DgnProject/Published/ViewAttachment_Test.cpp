@@ -91,7 +91,7 @@ void ViewAttachmentTest::SetUp()
     // Set up a sheet to hold attachments
     DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("SheetListModel"));
     SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "MySheet");
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"), DPoint2d::From(10,10));
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"));
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
