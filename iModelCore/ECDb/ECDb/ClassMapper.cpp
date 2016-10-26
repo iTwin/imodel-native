@@ -141,6 +141,23 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& 
         return ERROR;
         }
 
+    //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
+    RelationshipClassEndTableMap const& endTableRelClassMap = *static_cast<RelationshipClassEndTableMap const*> (relClassMap);
+    const ECRelationshipEnd foreignEnd = endTableRelClassMap.GetForeignEnd();
+    const ECRelatedInstanceDirection navDirection = navigationProperty->GetDirection();
+    if ((foreignEnd == ECRelationshipEnd_Source && navDirection == ECRelatedInstanceDirection::Backward) ||
+        (foreignEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
+        {
+        Utf8CP constraintEndName = foreignEnd == ECRelationshipEnd_Source ? "Source" : "Target";
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                    "Failed to map NavigationECProperty '%s.%s'. "
+                                                                     "NavigationECProperties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
+                                                                     "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
+                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
+                                                                    relClassMap->GetClass().GetFullName(), constraintEndName);
+        return ERROR;
+        }
+
     ClassMap const& classMap = propertyMap.GetClassMap();
 
     WipColumnVerticalPropertyMap const* idProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
