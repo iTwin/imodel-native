@@ -35,9 +35,11 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
+<!-- 
     <Part Name="OpenCASCADEShim" ExcludePlatforms="MacOS*,Linux*">
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
+ -->
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="PsolidShim" OnlyPlatforms="x64,x86">
