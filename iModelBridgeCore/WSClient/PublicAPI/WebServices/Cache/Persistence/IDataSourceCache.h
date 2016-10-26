@@ -66,8 +66,20 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Misc
         //--------------------------------------------------------------------------------------------------------------------------------+
-        virtual BentleyStatus Create(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment, const ECDb::CreateParams& params) = 0;
-        virtual BentleyStatus Open(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment, const ECDb::OpenParams& params) = 0;
+
+        //! Create new cache database
+        //! @param cacheFilePath - file path where to store cache database
+        //! @param baseEnvironment - base environment for directories where cached files should be stored
+        //! @param params - custom DB creation parameters 
+        virtual BentleyStatus Create(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment, const ECDb::CreateParams& params) = 0;
+
+        //! Open existing cache database
+        //! @param cacheFilePath - file path where cache database is saved
+        //! @param baseEnvironment - base environment for directories where cached files should be stored
+        //! @param params - custom DB open parameters
+        virtual BentleyStatus Open(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment, const ECDb::OpenParams& params) = 0;
+
+        //! Close cache database connection
         virtual BentleyStatus Close() = 0;
 
         //! Register for ECSchema change events.
@@ -88,6 +100,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
 
         //! Returns path to sqlite database
         virtual BeFileName GetCacheDatabasePath() = 0;
+
+        //! Returns actual environment used by cache
+        virtual CacheEnvironmentCR GetEnvironment() = 0;
 
         //! Get IECDbAdapter for accessing common functionality
         virtual IECDbAdapterR GetAdapter() = 0;
