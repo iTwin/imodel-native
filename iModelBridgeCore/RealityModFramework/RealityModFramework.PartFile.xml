@@ -73,7 +73,7 @@
     </Part>
     
     <Part Name="RealityServicesNet" BMakeFile="RealityServicesNet\RealityServicesNet.mke">
-        <SubPart PartName="RealityPlatform" />
+        <SubPart PartName="RealityPackage" />
         <Bindings>
             <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>
