@@ -1136,15 +1136,18 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     //We only want to render propertyMap w.r.t contextTable. A endRelationship can now have more then one columns in each different table for ECInstanceId, SourceECInstanceId, TargetECInstanceId ...
     //There for we only need to render in term of context table that is chosen before this function is called. Resulting select are UNIONed.
     WipPropertyMapSqlDispatcher sqlDispatcher(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::View, contextTable.GetName().c_str());
-   
+    WipPropertyMapColumnDispatcher sourceECClassIdDispatcher(PropertyMapKind::ConstraintECClassIdPropertyMap, /*doNotSkipHorizontalPropertyMaps = */ true);
+    WipPropertyMapColumnDispatcher targetECClassIdDispatcher(PropertyMapKind::ConstraintECClassIdPropertyMap, /*doNotSkipHorizontalPropertyMaps = */ true);
+
     relationMap.GetECInstanceIdPropertyMap()->AcceptVisitor(sqlDispatcher);
     relationMap.GetECClassIdPropertyMap()->AcceptVisitor(sqlDispatcher);
     relationMap.GetSourceECInstanceIdPropMap()->AcceptVisitor(sqlDispatcher);
-    relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlDispatcher);
     relationMap.GetTargetECInstanceIdPropMap()->AcceptVisitor(sqlDispatcher);
-    relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlDispatcher);
 
-    if (sqlDispatcher.GetResultSet().size() != 6)
+    relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sourceECClassIdDispatcher);
+    relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(targetECClassIdDispatcher);
+
+    if (sqlDispatcher.GetResultSet().size() != 4)
         {
         BeAssert(false);
         return ERROR;
@@ -1153,9 +1156,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     WipPropertyMapSqlDispatcher::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
     WipPropertyMapSqlDispatcher::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
     WipPropertyMapSqlDispatcher::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
-    WipPropertyMapSqlDispatcher::Result const& rSourceECClassId = sqlDispatcher.GetResultSet().at(3);
-    WipPropertyMapSqlDispatcher::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(4);
-    WipPropertyMapSqlDispatcher::Result const& rTargetECClassId = sqlDispatcher.GetResultSet().at(5);
+    WipPropertyMapSqlDispatcher::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(3);
 
 
     //ECInstanceId-----------------------------------------
@@ -1178,12 +1179,13 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
 
     //SourceECClassId--------------------------------------
     WipConstraintECClassIdPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
-    if (rSourceECClassId.IsColumnPersisted())
+    if (!sourceECClassIdDispatcher.AreResultingColumnsAreVirtual())
         {
+        
         if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
             viewSql.AppendEscaped(GetECClassIdPrimaryTableAlias(ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot();
         else
-            viewSql.AppendEscaped(rSourceECClassId.GetTable().GetName().c_str()).AppendDot();
+            viewSql.AppendEscaped(sourceECClassIdDispatcher.GetSingleColumn()->GetTable().GetName().c_str()).AppendDot();
         }
 
     AppendConstraintClassIdPropMap(viewSql, *classIdPropMap, relationMap, relationMap.GetRelationshipClass().GetSource(), contextTable);
@@ -1200,12 +1202,12 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     //single table/ not virtual/ different table or same table
     //TargetECClassId--------------------------------------
     classIdPropMap = relationMap.GetTargetECClassIdPropMap();
-    if (rTargetECClassId.IsColumnPersisted())
+    if (!targetECClassIdDispatcher.AreResultingColumnsAreVirtual())
         {
         if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Target))
             viewSql.AppendEscaped(GetECClassIdPrimaryTableAlias(ECRelationshipEnd::ECRelationshipEnd_Target)).AppendDot();
         else
-            viewSql.AppendEscaped(rTargetECClassId.GetTable().GetName().c_str()).AppendDot();
+            viewSql.AppendEscaped(targetECClassIdDispatcher.GetSingleColumn()->GetTable().GetName().c_str()).AppendDot();
         }
 
     AppendConstraintClassIdPropMap(viewSql, *classIdPropMap, relationMap, relationMap.GetRelationshipClass().GetTarget(), contextTable);
@@ -1281,6 +1283,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, WipConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, DbTable const& contextTable)
     {
     WipPropertyMapSqlDispatcher sqlDispatherTable(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+    propMap.AcceptVisitor(sqlDispatherTable);
     if (sqlDispatherTable.GetStatus() == ERROR || sqlDispatherTable.GetResultSet().empty())
         {
         BeAssert(false);
