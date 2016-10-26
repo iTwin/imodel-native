@@ -227,9 +227,9 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
 
         //this is the in-memory version of ECSchemas. ECDb only supports the latest in-memory version.
         //Deserializing into older versions is not needed in ECDb and therefore not supported.
-        if (schema->GetECVersion() == ECVersion::V2_0 || schema->GetECVersion() == ECVersion::V3_0)
+        if (schema->GetECVersion() != ECVersion::Latest)
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be 3.1 or later, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(schema->GetECVersion()));
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
             return ERROR;
             }
 

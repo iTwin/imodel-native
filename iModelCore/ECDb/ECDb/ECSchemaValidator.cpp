@@ -69,11 +69,12 @@ bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECC
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoPropertiesOfSameTypeAsClassRule(ecClass)));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidNavigationPropertyRule(ecClass)));
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties(true))
         {
-        for (auto& task : validationTasks)
+        for (std::unique_ptr<ECSchemaValidationRule>& task : validationTasks)
             {
             bool succeeded = task->ValidateClass(ecClass, *prop);
             if (!succeeded)
@@ -81,7 +82,7 @@ bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECC
             }
         }
 
-    for (auto& task : validationTasks)
+    for (std::unique_ptr<ECSchemaValidationRule>& task : validationTasks)
         {
         task->AddErrorToResult(result);
         }
@@ -251,7 +252,7 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
 ValidRelationshipRule::ValidRelationshipRule()
-    : ECSchemaValidationRule(Type::ValidRelationshipRule), m_error(nullptr)
+    : ECSchemaValidationRule(Type::ValidRelationshipClass), m_error(nullptr)
     {
     m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
@@ -388,4 +389,79 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
     return str;
     }
 
+//**********************************************************************
+// ValidRelationshipRule
+//**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+ValidNavigationPropertyRule::ValidNavigationPropertyRule(ECClassCR ecClass)
+    : ECSchemaValidationRule(Type::ValidNavigationProperty), m_error(nullptr)
+    {
+    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+bool ValidNavigationPropertyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+    {
+    NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
+    if (navProp == nullptr)
+        return true;
+
+    if (navProp->IsMultiple())
+        {
+        m_error->AddInconsistency(*navProp, Error::Kind::MultiplicityGreaterThanOne);
+        return false;
+        }
+
+    return true;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+Utf8String ValidNavigationPropertyRule::Error::_ToString() const
+    {
+    if (!HasInconsistencies())
+        return "";
+
+    Utf8String str("ECClass '");
+    str.append(m_ecClass->GetFullName()).append("' contains invalid NavigationECProperties: ");
+
+    bool isFirstItem = true;
+    for (Inconsistency const& inconsistency : m_inconsistencies)
+        {
+        if (!isFirstItem)
+            str.append(" - ");
+
+        const Kind kind = inconsistency.m_kind;
+        if (Enum::Contains(kind, Kind::MultiplicityGreaterThanOne))
+            {
+            NavigationECProperty const& navProp = *inconsistency.m_navProp;
+            ECRelationshipClassCR relClass = *navProp.GetRelationshipClass();
+            ECRelationshipConstraintCR toConstraint = navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
+            str.append("NavigationECProperty '").append(navProp.GetName());
+            str.append("' has a multiplicity of '").append(toConstraint.GetMultiplicity().ToString().c_str());
+            str.append("ECDb only supports NavigationECProperties with a maximum multiplicity of 1.");
+            }
+
+        isFirstItem = false;
+        }
+
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSchemaValidationRule::Error> ValidNavigationPropertyRule::_GetError() const
+    {
+    if (!m_error->HasInconsistencies())
+        return nullptr;
+
+    return std::move(m_error);
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
