@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "SpatioTemporalData.h"
+#include <RealityPlatform/SpatioTemporalData.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 

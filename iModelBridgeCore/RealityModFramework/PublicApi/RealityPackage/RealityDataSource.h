@@ -88,6 +88,23 @@ struct RealityDataSource : public RefCountedBase
         REALITYPACKAGE_EXPORT Utf8StringCR GetProvider() const;
         REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
 
+        //&&JFC TODO
+        ////! Get/Set the server authentication hint. Might be empty.
+        //REALITYPACKAGE_EXPORT Utf8StringCR GetServerLoginKey() const;
+        //REALITYPACKAGE_EXPORT void         SetServerLoginKey(Utf8CP key);
+        //
+        ////! Get/Set the server authentication hint. Might be empty.
+        //REALITYPACKAGE_EXPORT Utf8StringCR GetServerLoginMethod() const;
+        //REALITYPACKAGE_EXPORT void         SetServerLoginMethod(Utf8CP method);
+        //
+        ////! Get/Set the server authentication hint. Might be empty.
+        //REALITYPACKAGE_EXPORT Utf8StringCR GetServerRegistrationPage() const;
+        //REALITYPACKAGE_EXPORT void         SetServerRegistrationPage(Utf8CP link);
+        //
+        ////! Get/Set the server authentication hint. Might be empty.
+        //REALITYPACKAGE_EXPORT Utf8StringCR GetServerOrganisationPage() const;
+        //REALITYPACKAGE_EXPORT void         SetServerOrganisationPage(Utf8CP link);
+
         //! Get/Set the size in kilobytes. Default to 0.
         REALITYPACKAGE_EXPORT uint64_t     GetSize() const;
         REALITYPACKAGE_EXPORT void         SetSize(uint64_t sizeInKB);
