@@ -178,12 +178,29 @@ static void createImageCategory(DgnDbR db)
     imageCategory.Insert(appearance);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+static void createRedlineCodeAuthority(DgnDbR db)
+    {
+    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
+    DgnAuthority::CreateParams params(db, db.Domains().GetClassId(hdlr), MARKUP_SCHEMA(MARKUP_CLASSNAME_Redline));
+    DgnAuthorityPtr auth = hdlr.Create(params);
+    BeAssert(auth.IsValid());
+    if (auth.IsValid())
+        {
+        auth->Insert();
+        BeAssert(auth->GetAuthorityId().IsValid());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     {
     createImageCategory(db);
+    createRedlineCodeAuthority(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -546,8 +563,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         }
 
     //  ------------------------------------------------------------------
-    //  Mark all pre-existing models and views as internal. They may be used
-    //  as seeds, but they will never be used directly by the app or the user.
+    //  Mark all pre-existing models and views as internal. They will never be used directly by the app or the user.
     //  ------------------------------------------------------------------
     for (auto const& entry : ViewDefinition::MakeIterator(*this))
         {
@@ -723,12 +739,22 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, Redline
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewDefinitionPtr RedlineViewDefinition::Create(RedlineModelR model, DVec2dCR viewSize)
+RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateStatus, RedlineModelR model, DVec2dCR viewSize)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+
+    if (!model.GetModelId().IsValid())
+        {
+        createStatus = DgnDbStatus::BadModel;
+        BeAssert(false && "RedlineModel must be persistent");
+        return nullptr;
+        }
+
     auto& db = model.GetDgnDb();
 
     if (nullptr == db.Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
+        createStatus = DgnDbStatus::MissingDomain;
         BeAssert(false && "Markup domain not registered");
         return nullptr;
         }
@@ -736,12 +762,31 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(RedlineModelR model, DVec
     auto redline = db.Elements().Get<Redline>(model.GetModeledElementId());
     if (!redline.IsValid())
         {
-        BeAssert(false);
+        createStatus = DgnDbStatus::BadModel;
+        BeAssert(false && "Can't find modeled Redline element from redline");
         return nullptr;
         }
 
-    // The view always has the same name as the redline itself
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), model.GetModelId(), CategorySelector(db, ""), DisplayStyle(db));
+    if (!redline->GetElementId().IsValid())
+        {
+        createStatus = DgnDbStatus::BadModel;
+        BeAssert(false && "Redline element must be persistent");
+        return nullptr;
+        }
+
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), 
+                                                              model.GetModelId(), CategorySelector(db, ""), DisplayStyle(db));
+
+    //  The view always has the same name as the redline and its model
+    DgnCode code = CreateCode(redline->GetCode().GetValue());
+    if (!view->IsValidCode(code))
+        {
+        createStatus = DgnDbStatus::BadElement;
+        BeDataAssert(false && "redline element must have a code that is valid for its view to use as its code");
+        return nullptr;
+        }
+
+    view->SetCode(code);
 
     //  The origin of a RedlineViewDefinition is always 0,0.
     view->SetOrigin2d(DPoint2d::FromZero());
@@ -914,8 +959,15 @@ ViewControllerPtr RedlineViewDefinition::_SupplyController() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlinePtr Redline::Create(DocumentListModelCR model, DgnCodeCR code)
+RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, DgnCodeCR code)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+    if (!code.IsValid())
+        {
+        BeAssert(false && "A code is required");
+        createStatus = DgnDbStatus::BadArg;
+        return nullptr;
+        }
     Redline::CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), code);
     return new Redline(params);
     }
@@ -923,8 +975,11 @@ RedlinePtr Redline::Create(DocumentListModelCR model, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelPtr RedlineModel::Create(Redline& doc)
+RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     {
-    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId(), DgnCode());
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+    Utf8String name = doc.GetCode().GetValue();
+    DgnCode code = CreateModelCode(doc.GetCode().GetValue(), doc.GetElementId());
+    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId(), code);
     return new RedlineModel(params);
     }

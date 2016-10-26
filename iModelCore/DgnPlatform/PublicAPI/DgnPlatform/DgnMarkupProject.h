@@ -47,12 +47,10 @@
 
 #define MARKUP_CLASSNAME_MarkupExternalLink         "MarkupExternalLink"
 #define MARKUP_CLASSNAME_MarkupExternalLinkGroup    "MarkupExternalLinkGroup"
-#define MARKUP_CLASSNAME_RedlineModel               "RedlineModel"
-#define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
-
 #define MARKUP_CLASSNAME_Redline                    "Redline"
 #define MARKUP_CLASSNAME_RedlineModel               "RedlineModel"
 #define MARKUP_CLASSNAME_RedlineViewDefinition      "RedlineViewDefinition"
+#define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
 
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
@@ -113,11 +111,14 @@ struct EXPORT_VTABLE_ATTRIBUTE Redline : Document
 public:
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_Redline)); }
 
-    //! Create a Redline document element.
+    //! Create a Redline document element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
     //! @param model    The model where the Redline is listed. @see DgnMarkupProject::GetRedlineListModel
     //! @param code     The name of the redline.
-    //! @return A new, non-persistent Redline element. 
-    DGNPLATFORM_EXPORT static RedlinePtr Create(DocumentListModelCR model, DgnCodeCR code);
+    //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
+    DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
+
+    static DgnCode CreateCode(Utf8StringCR value, DgnDbR db) {return NamespaceAuthority::CreateCode(MARKUP_SCHEMA(MARKUP_CLASSNAME_Redline), value, db);}
     };
 
 //=======================================================================================
@@ -128,7 +129,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : GraphicalModel2d
     {
-    DGNMODEL_DECLARE_MEMBERS("RedlineModel", GraphicalModel2d);
+    DGNMODEL_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineModel, GraphicalModel2d);
 
     friend struct dgn_ModelHandler::Redline;
 
@@ -136,10 +137,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : GraphicalModel2d
 public:
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineModel)); }
 
-    //! Create a RedlineModel that contains the graphics for the specified Redline
+    //! Create a RedlineModel that is to contain the graphics for the specified Redline.  @note It is the caller's responsibility to call Insert on the returned model in order to make it persistent.
+    //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
     //! @param[in] doc      The Redline element
-    //! @return a RedlineModel. Don't forget to call Insert on it.
-    DGNPLATFORM_EXPORT static RedlineModelPtr Create(Redline& doc); 
+    //! @return a new, non-persisetnt RedlineModel object or an invalid handle if \a doc is invalid
+    DGNPLATFORM_EXPORT static RedlineModelPtr Create(DgnDbStatus* createStatus, Redline& doc); 
 
     //! Save an image to display in this redline model.
     //! @param source the image source 
@@ -175,11 +177,12 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
         static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
 
     public:
-        //! Create a redline view definition element.
+        //! Create a new redline view definition element, prior to inserting it.  @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+        //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
         //! @param model     The redline model to view
         //! @param viewSize  The width and height of the view in meters.
-        //! @return a new non-persistent, redline view definition element.
-        DGNPLATFORM_EXPORT static RedlineViewDefinitionPtr Create(RedlineModelR model, DVec2dCR viewSize);
+        //! @return a new non-persistent, redline view definition element or null if the model is invalid.
+        DGNPLATFORM_EXPORT static RedlineViewDefinitionPtr Create(DgnDbStatus* createStatus, RedlineModelR model, DVec2dCR viewSize);
     };
 
 //=======================================================================================

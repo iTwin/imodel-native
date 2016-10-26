@@ -56,12 +56,14 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     // Create a redline model
     DgnDbStatus createStatus = DgnDbStatus::Success;
-    auto redline = Redline::Create(*mproject->GetRedlineListModel(), DgnCode());
-    redline->SetUserLabel("Redline 1");
+    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), Redline::CreateCode("Redline 1", *mproject));
+    ASSERT_TRUE(redline.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
     ASSERT_TRUE(redline->Insert(&createStatus).IsValid());
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
-    RedlineModelPtr rdlModel = RedlineModel::Create(*redline);
+    RedlineModelPtr rdlModel = RedlineModel::Create(&createStatus, *redline);
     ASSERT_TRUE(rdlModel.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
     createStatus = rdlModel->Insert();
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
 
@@ -70,8 +72,9 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     // Create a redline model view
     auto viewSize = DVec2d::From(0.5, 0.5); // in meters
     createStatus = DgnDbStatus::Success;
-    RedlineViewDefinitionPtr rdlview = RedlineViewDefinition::Create(*rdlModel, viewSize);
+    RedlineViewDefinitionPtr rdlview = RedlineViewDefinition::Create(&createStatus, *rdlModel, viewSize);
     ASSERT_TRUE(rdlview.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
     RedlineViewDefinitionCPtr persistentView = mproject->Elements().Insert(*rdlview, &createStatus);
     ASSERT_TRUE(persistentView.IsValid());
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
