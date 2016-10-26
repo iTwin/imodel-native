@@ -427,7 +427,7 @@
         
     </ProductDirectoryList>
 
-    <Product Name="RealityContextServicesTested">
+    <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
         <SubProduct ProductName="RealityContextServicesTests" />
         <SubPart PartName="RunRealityDbECPluginTests" />
         <Directories DirectoryListName="RealityDbECPluginUnitTested" />
