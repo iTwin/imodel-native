@@ -1438,6 +1438,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV23WithFile_ErrorN
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+#ifdef USE_GTEST
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1455,6 +1456,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_Ad
 
     client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue, nullptr, filePath)->Wait();
     }
+#endif
 
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
     {
