@@ -1216,9 +1216,7 @@ void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, 
     options.choice.facet_face           = PK_LOGICAL_true;
     options.choice.fin_data             = PK_LOGICAL_true;
     options.choice.facet_fin            = PK_LOGICAL_true;
-
-    if (hasHiddenEdge)
-        options.choice.fin_edge = PK_LOGICAL_true;
+    options.choice.fin_edge             = PK_LOGICAL_true;
 
     options.choice.consistent_parms     = PK_facet_consistent_parms_yes_c;
     options.choice.split_strips         = PK_facet_split_strip_yes_c; // TR# 269038.
