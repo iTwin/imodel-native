@@ -3256,9 +3256,6 @@ public:
     //! @return True if the schema's EC version matches the given ECVersion
     bool               IsECVersion(ECVersion ecVersion) const { return m_ecVersion == ecVersion; }
 
-    //! Returns true if the schema's EC version is the latest ECVersion supported
-    bool               IsLatestECVersion() const { return m_ecVersion == ECVersion::V3_1; }
-
     //! Validates the schema against the latest version of EC
     ECOBJECTS_EXPORT bool               Validate();
 
@@ -3403,14 +3400,14 @@ public:
     //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::V3_1) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::Latest) const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::V3_1) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::Latest) const;
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
@@ -3418,7 +3415,7 @@ public:
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::V3_1, bool utf16 = false) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false) const;
 
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
@@ -3426,7 +3423,7 @@ public:
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::V3_1, bool utf16 = false);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false);
     
     //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
     Utf8String             GetFullSchemaName() const { return m_key.GetFullSchemaName(); }
@@ -3479,7 +3476,7 @@ public:
     //! @return A status code indicating whether the call was succesful or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
                                                          Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, 
-                                                         ECVersion ecVersion = ECVersion::V3_1);
+                                                         ECVersion ecVersion = ECVersion::Latest);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
