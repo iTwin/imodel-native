@@ -677,7 +677,6 @@ bool HTIFFGeoKey::SetValues (GeoKeyID pi_Key, const char* pi_pVal, uint32_t pi_I
     {
     HPRECONDITION(pi_pVal != 0);
 
-    Byte*  pData;
     bool   Ret         = true;
     uint32_t Count = (uint32_t)strlen(pi_pVal) + 1;
 
@@ -685,22 +684,25 @@ bool HTIFFGeoKey::SetValues (GeoKeyID pi_Key, const char* pi_pVal, uint32_t pi_I
     if ((Itr = m_KeyList.find(pi_Key)) != m_KeyList.end())
         {
         HASSERT(HTagInfo::ASCII == ((*Itr).second).Type);
+        HASSERT((pi_Index + Count) < UINT16_MAX);
+
+        uint16_t newCount = (uint16_t) (pi_Index + Count);
 
         // Check if Key data can receive this value
-        if ((pi_Index+Count) > ((*Itr).second).Count)
+        if (newCount > ((*Itr).second).Count)
             {
             // Need to realloc
             size_t PrevCount = ((*Itr).second).Count;
 
-            ((*Itr).second).Count = (uint16_t)(pi_Index+Count);
-            pData = (Byte*)new char[((*Itr).second).Count];
+            ((*Itr).second).Count = newCount;
+            Byte* pData = new Byte[newCount];
 
             // Copy previous Data
             if (PrevCount <= 2)
-                memcpy(pData, &(((*Itr).second).DataShort), PrevCount * sizeof(char));
+                memcpy(pData, &(((*Itr).second).DataShort), PrevCount * sizeof(Byte));
             else
                 {
-                memcpy(pData, ((*Itr).second).pData, PrevCount * sizeof(char));
+                memcpy(pData, ((*Itr).second).pData, PrevCount * sizeof(Byte));
                 delete[] ((*Itr).second).pData;
                 }
 

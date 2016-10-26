@@ -839,16 +839,6 @@ void HRFErMapperSupportedFile::Close()
 
         m_IsOpen = false;
         }
-
-    if (m_pBandList != 0)
-        {
-        delete m_pBandList;
-        }
-
-    if (m_pRatio != 0)
-        {
-        delete m_pRatio;
-        }
     }
 
 
@@ -986,8 +976,8 @@ bool HRFErMapperSupportedFile::Open()
         if (error == 0)
             {
             // Prepare bands (optimization)
-            m_pBandList = new uint32_t[m_pNcsObjs->m_pFileInfo->nBands];
-            for (uint16_t Band = 0; Band < m_pNcsObjs->m_pFileInfo->nBands; Band++)
+            m_pBandList.reset(new uint32_t[m_pNcsObjs->m_pFileInfo->nBands]);
+            for (uint16_t Band = 0; Band < m_pNcsObjs->m_pFileInfo->nBands; ++Band)
                 m_pBandList[Band] = Band;
 
             HasFileBeenOpened = true;
@@ -1243,7 +1233,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
         }
 
     // Allocate memory for ReadBlock() utilities (optimization)
-    m_pRatio         = new double[ResCount];
+    m_pRatio.reset(new double[ResCount]);
 
     // Fill resolution descriptors
     ResWidth = Width;
@@ -1636,8 +1626,8 @@ HRFErMapperSupportedFile::HRFErMapperSupportedFile(const HFCPtr<HFCURL>&        
 
     m_pNcsObjs.reset(new NCSObjects);
 
-    m_pBandList         = 0;
-    m_pRatio            = 0;
+    m_pBandList.reset(nullptr);
+    m_pRatio.reset(nullptr);
 
     if (GetAccessMode().m_HasWriteAccess)
         {
@@ -1769,7 +1759,7 @@ double HRFErMapperSupportedFile::GetRatio(uint16_t pi_ResolutionNb)
 //-----------------------------------------------------------------------------
 uint32_t* HRFErMapperSupportedFile::GetBandList()
     {
-    return m_pBandList;
+    return m_pBandList.get();
     }
 
 #endif // IPP_HAVE_ERMAPPER_SUPPORT

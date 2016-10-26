@@ -1003,18 +1003,20 @@ public:
 
     void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
+PUSH_MSVC_IGNORE(6385)
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
         // since the black and white position is determined by the pixel type.
-        Byte*  pSourceComposite = (Byte*)pi_pSourceRawData;
+        Byte const*  pSourceComposite = (Byte const*)pi_pSourceRawData;
         uint16_t* pFinalDst = (uint16_t*)pio_pDestRawData;
 
         // Alloc a buffer able to hold the original destination.
         size_t RunCount = 0;
         for(size_t i(0); i < pi_PixelsCount; i+=pFinalDst[RunCount++]);
-        HArrayAutoPtr<uint16_t> pTempDst(new uint16_t[RunCount]);
+
+        std::unique_ptr<uint16_t []> pTempDst(new uint16_t[RunCount]);
 
         // Copy the dest.
         uint16_t* pDst = pTempDst.get();
@@ -1114,6 +1116,7 @@ public:
         *pFinalDst = (uint16_t)FinalDstRunLen;
         //++pFinalDst;
         //FinalDstOnState = !FinalDstOnState;
+POP_MSVC_IGNORE
         }
 
     virtual const int16_t* GetLostChannels() const override

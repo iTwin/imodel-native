@@ -383,20 +383,21 @@ void HTIFFStream::AddInitialFreeBlock (const uint32_t* pi_pOffset, const uint32_
 // Return true if the list has been modifying
 //-----------------------------------------------------------------------------
 
-bool HTIFFStream::GetListFreeBlock (uint64_t** pi_ppOffset, uint64_t** pi_ppSize, uint32_t* pi_pCount)
+bool HTIFFStream::GetListFreeBlock (uint64_t** pi_ppOffset, uint64_t** pi_ppSize, uint32_t* pi_pCount) const
     {
-    if ((*pi_pCount = (uint32_t)m_ListOfFreeBlock.size()) > 0)
+    if (m_ListOfFreeBlock.size() > 0)
         {
+        *pi_pCount   = (uint32_t) m_ListOfFreeBlock.size();
         *pi_ppOffset = new uint64_t[*pi_pCount];
         *pi_ppSize   = new uint64_t[*pi_pCount];
 
-        ListOfFreeBlock::iterator Itr;
-        uint32_t i=0;
-        for (Itr=m_ListOfFreeBlock.begin(); Itr != m_ListOfFreeBlock.end(); Itr++,i++)
+        ListOfFreeBlock::const_iterator itr = m_ListOfFreeBlock.begin();
+        for (uint32_t i = 0; i < *pi_pCount; ++i)       // loop over pi_pCount instead of m_ListOfFreeBlock to get rid of security warning C6385
             {
-            (*pi_ppOffset)[i] = (*Itr).Offset;
-            (*pi_ppSize)[i]   = (*Itr).Size;
-            }
+            (*pi_ppOffset)[i] = itr->Offset;
+            (*pi_ppSize)[i]   = itr->Size;
+            ++itr;
+            }        
         }
     else
         {

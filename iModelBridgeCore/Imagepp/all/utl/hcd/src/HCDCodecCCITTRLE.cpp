@@ -197,7 +197,6 @@ void HCDCodecCCITTRLE::CCITTRLEState::Pre(int32_t pi_Width, int32_t pi_Height, b
     m_invertResult = pi_InvertResult;
     m_decodeMode = pi_Decode;
 
-    m_max_lrs = CCITTRLE_MAXLRS_GROW_RATE;
     m_ccittrleError = CCITTRLE_NOERROR;
     m_code = 0;
     m_ccittrleWord = 0;
@@ -209,6 +208,7 @@ void HCDCodecCCITTRLE::CCITTRLEState::Pre(int32_t pi_Width, int32_t pi_Height, b
     m_bstop  = pi_Width;
     m_bstopp1= pi_Width + 1;
 
+    m_max_lrs = CCITTRLE_MAXLRS_GROW_RATE;
     m_buf1  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
     m_buf1c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
     m_buf2  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
@@ -2240,7 +2240,7 @@ void HCDCodecCCITTRLE::CCITTRLEState::EncodeLine()
     int32_t apt = 1;
     int32_t value;
 
-    for(int32_t i(0); i < m_lrsCount; ++i)
+    for(uint32_t lrsItr(0); lrsItr < m_lrsCount; ++lrsItr)
         {
         value = m_a[apt+0] - oldr - 1;
         CodeWhite(value);

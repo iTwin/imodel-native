@@ -197,7 +197,7 @@ void HCDCodecCCITTFax4::CCITT4State::Pre(int32_t pi_Width, int32_t pi_Height, bo
     m_invertResult = pi_InvertResult;
     m_decodeMode = pi_Decode;
 
-    m_max_lrs = GP4_MAXLRS_GROW_RATE;
+    
     m_g4error = GP4_NOERROR;
     m_code = 0;
     m_g4word = 0;
@@ -208,6 +208,7 @@ void HCDCodecCCITTFax4::CCITT4State::Pre(int32_t pi_Width, int32_t pi_Height, bo
     m_bstop  = pi_Width;
     m_bstopp1= pi_Width + 1;
 
+    m_max_lrs = GP4_MAXLRS_GROW_RATE;
     m_buf1  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
     m_buf1c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
     m_buf2  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));

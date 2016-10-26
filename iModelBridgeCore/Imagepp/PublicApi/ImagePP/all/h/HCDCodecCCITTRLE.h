@@ -111,7 +111,7 @@ private:
         int32_t  FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const;
         int32_t  FindDiff(Byte* cp, int32_t bitStart, int32_t bitEnd, int32_t color) const;
 
-        int32_t            m_max_lrs;                    /*  max lrs allowed per scan line */
+        uint32_t           m_max_lrs;                    /*  max lrs allowed per scan line */
         Byte m_ccittrleMask;                     /*  mask word used to get next bit in g4word */
 
         Byte m_ccittrleWord;                     /*  current Byte that is being disassembled */
@@ -120,7 +120,7 @@ private:
 
         int32_t            m_code;                       /*  value of code returned by red_getcode () */
 
-        int32_t            m_lrsCount;
+        uint32_t           m_lrsCount;
 
         bool  m_eol;
         int32_t* m_buf1;       /* buffer of transitions */

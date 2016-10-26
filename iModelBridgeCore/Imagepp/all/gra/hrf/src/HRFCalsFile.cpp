@@ -784,52 +784,53 @@ bool HRFCalsFile::CreateHeaderBlock(HRFResolutionDescriptor* pi_pResolutionDescr
     HPRECONDITION(m_pCalsHeader == 0);
 
     bool Result = true;
-    uint32_t BufferSize;
-
-    char WidthString [7];
-    char HeightString[7];
-    char StringBuffer[20];
 
     // Use the most well recognized format.
+    CalsHeaderBlock_MIL_28002C* pHeader28002C = new CalsHeaderBlock_MIL_28002C;
     m_CalsType    = MIL_28002C;
-    m_pCalsHeader = new CalsHeaderBlock_MIL_28002C;
-
-    memset(StringBuffer, 0, 19);
+    m_pCalsHeader = pHeader28002C;
 
     // Construct a standard header block information...
     memset(m_pCalsHeader, 0, HRF_CALS_TYPE1_BLOCK_SIZE);
 
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->SourceDocID, "srcdocid: NONE",  14);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->DestDocID,   "dstdocid: NONE",  14);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->TextFileID,  "txtfilid: NONE",  14);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->FigureID,    "figid: NONE",     11);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->SourceGraph, "srcgph: NONE",    12);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->DocClass,    "doccls: NONE",    12);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->RasterType,  "rtype: 1",         8);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->Orientation, "rorient: 000,270",16);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->PelCount,    "rpelcnt: 000,000",16);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->Density,     "rdensty: 0300",   13);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->Notes,       "notes: NONE",     11);
+    strncpy(pHeader28002C->SourceDocID, "srcdocid: NONE",  14);
+    strncpy(pHeader28002C->DestDocID,   "dstdocid: NONE",  14);
+    strncpy(pHeader28002C->TextFileID,  "txtfilid: NONE",  14);
+    strncpy(pHeader28002C->FigureID,    "figid: NONE",     11);
+    strncpy(pHeader28002C->SourceGraph, "srcgph: NONE",    12);
+    strncpy(pHeader28002C->DocClass,    "doccls: NONE",    12);
+    strncpy(pHeader28002C->RasterType,  "rtype: 1",         8);
+    strncpy(pHeader28002C->Orientation, "rorient: 000,270",16);
+    // set below. strncpy(pHeader28002C->PelCount,    "rpelcnt: 000,000",16);
+    strncpy(pHeader28002C->Density,     "rdensty: 0300",   13);
+    strncpy(pHeader28002C->Notes,       "notes: NONE",     11);
 
-    // rpelcnt: Image size in pixel.  Width, Height
+    // pHeader28002C->PelCount syntax: "rpelcnt: " + "6 char width" + ", " + "6 char height"
+
+    char WidthString[7];        // max 6 char excluding the null.
+    char HeightString[7];
+
     BeStringUtilities::Snprintf (WidthString, 7, "%I64u", pi_pResolutionDescriptor->GetWidth());
     BeStringUtilities::Snprintf (HeightString, 7, "%I64u", pi_pResolutionDescriptor->GetHeight());
 
-    BufferSize = (uint32_t)strlen(WidthString);
-    if (BufferSize < 6)
-        strncpy(StringBuffer, "      ", 6 - BufferSize);
-    else
-        BufferSize = 6;
-    strncpy(StringBuffer + (6 - BufferSize), WidthString, BufferSize);
-    strncpy(StringBuffer + 6 , ", ", 2);
+    strcpy(pHeader28002C->PelCount, "rpelcnt: ");
+    
+    // width: 6 char. Prefix with spaces if required
+    size_t stringLen = strlen(WidthString);
+    if (stringLen < 6)
+        strncat(pHeader28002C->PelCount, "      ", 6 - stringLen);
 
-    BufferSize = (uint32_t)strlen(HeightString);
-    if (BufferSize < 6)
-        strncpy(StringBuffer + 8, "      ", 6 - BufferSize);
-    else
-        BufferSize = 6;
-    strncpy(StringBuffer + 8 + (6 - BufferSize), HeightString, BufferSize);
-    strncpy(((CalsHeaderBlock_MIL_28002C*)m_pCalsHeader)->PelCount + 9, StringBuffer, strlen(StringBuffer));
+    strncat(pHeader28002C->PelCount, WidthString, stringLen);
+
+    // spacer
+    strcat(pHeader28002C->PelCount, ", ");
+
+    // height : 6 char. Prefix with spaces if required
+    stringLen = strlen(HeightString);
+    if (stringLen < 6)
+        strncat(pHeader28002C->PelCount, "      ", 6 - stringLen);
+
+    strncat(pHeader28002C->PelCount, HeightString, stringLen);
 
     return Result;
     }

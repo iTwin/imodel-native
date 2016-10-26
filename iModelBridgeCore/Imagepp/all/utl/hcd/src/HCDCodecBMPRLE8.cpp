@@ -93,8 +93,8 @@ size_t HCDCodecBMPRLE8::CompressSubset(const void* pi_pInData,
     Byte Value;
     int32_t Len;
 
-    Byte* pLineBuffer = new Byte[GetSubsetWidth()*2];
-    Byte* pLineBufferBegin = pLineBuffer;
+    std::unique_ptr<Byte[]> pLineBufferBegin(new Byte[GetSubsetWidth()*2]);
+    Byte* pLineBuffer = pLineBufferBegin.get();
     uint32_t LineBufferCount = 0;
 
     // We begin to compress the last line first !!!
@@ -203,7 +203,7 @@ size_t HCDCodecBMPRLE8::CompressSubset(const void* pi_pInData,
                 }
             }
 
-        memcpy(pDest, pLineBufferBegin, LineBufferCount);
+        memcpy(pDest, pLineBufferBegin.get(), LineBufferCount);
         pDest += LineBufferCount;
 
         // End of line code (0x0000)
@@ -215,11 +215,9 @@ size_t HCDCodecBMPRLE8::CompressSubset(const void* pi_pInData,
         pSrc -= (GetSubsetWidth()*2);
 
         LinesCount--;
-        pLineBuffer     = pLineBufferBegin;
+        pLineBuffer     = pLineBufferBegin.get();
         LineBufferCount = 0;
         }
-
-    delete pLineBufferBegin;
 
     // End of bits maps (0x0001)
     *pDest = 0x00;

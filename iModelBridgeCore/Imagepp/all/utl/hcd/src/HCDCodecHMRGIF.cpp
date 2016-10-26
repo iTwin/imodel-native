@@ -654,6 +654,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
                               size_t& pi_rPosBuffer,
                               size_t& pi_rBufferSize)
     {
+    PUSH_MSVC_IGNORE(6386)
     bool Status = true;
 
     // We are try to write data that goes with the block.
@@ -676,7 +677,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
                 }
             }
         m_pBufferDataForNextBlock[m_BufferDataForNextBlockPos] = (Byte)pi_Code;
-        m_BufferDataForNextBlockPos++;
+        ++m_BufferDataForNextBlockPos;
         }
     else
         {
@@ -704,6 +705,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
             }
         }
 
+    POP_MSVC_IGNORE
     return Status;
     }
 

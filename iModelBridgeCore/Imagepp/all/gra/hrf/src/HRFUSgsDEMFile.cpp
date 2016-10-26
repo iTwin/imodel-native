@@ -237,7 +237,8 @@ bool HRFUSgsDEMCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool                       Result = true;
     HAutoPtr<HFCBinStream>      pFile;
-    char                        pLine[6];
+    char                        pLine[7];
+    pLine[6] = 0; // null terminated
 
     // Open the IMG File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);

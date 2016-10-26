@@ -1310,38 +1310,36 @@ void HTagFile::PrintDirectory (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi
 //
 // Realloc_MAX_DIR_COUNT
 //
-// This method increase the memry for  m_ppListDir and m_pListDirOffset
+// This method increase the memory for  m_ppListDir and m_pListDirOffset
 // if necessary.
 //
 void HTagFile::Realloc_MAX_DIR_COUNT()
-    {
+    {    
     if (m_ListDirCount >= DEF_MAX_DIR_COUNT)
         {
-        uint32_t i;
-        int32_t NewCount = DEF_MAX_DIR_COUNT + DEF_MAX_DIR_COUNT_INCR;
+        uint32_t NewCount = m_ListDirCount + DEF_MAX_DIR_COUNT_INCR;
 
-        HTIFFDirectory** ppListDir      = new HTIFFDirectory*[NewCount];
-        uint64_t*          pListDirOffset= new uint64_t[NewCount];
-        memset(pListDirOffset, 0, sizeof(uint64_t)*NewCount);
+        std::unique_ptr<uint64_t[]> pListDirOffset(new uint64_t[NewCount]);
+        memset(pListDirOffset.get(), 0, sizeof(uint64_t)*NewCount);
 
-        memset(ppListDir, 0, NewCount*sizeof(HTIFFDirectory*));
+        std::unique_ptr<HTIFFDirectory*[]> ppListDir(new HTIFFDirectory*[NewCount]);
+        memset(ppListDir.get(), 0, NewCount*sizeof(HTIFFDirectory*));
+
         // Copy the previous value
-        for (i=0; i<m_ListDirCount; i++)
+        for (uint32_t i=0; i<m_ListDirCount; ++i)
             {
             ppListDir[i] = m_ppListDir[i].get();
             m_ppListDir[i].release();
             }
 
-        memcpy(pListDirOffset, m_pListDirOffset64, m_ListDirCount*sizeof(uint64_t));
+        memcpy(pListDirOffset.get(), m_pListDirOffset64, m_ListDirCount*sizeof(uint64_t));
         m_ppListDir = new HAutoPtr<HTIFFDirectory>[NewCount];
 
-        for (i=0; i<m_ListDirCount; i++)
+        for (uint32_t i=0; i<m_ListDirCount; ++i)
             m_ppListDir[i] = ppListDir[i];
 
-        delete[] ppListDir;
-
         // Assign new pointer
-        m_pListDirOffset64 = pListDirOffset;
+        m_pListDirOffset64 = pListDirOffset.release();
         DEF_MAX_DIR_COUNT= NewCount;
 
         _PostReallocDirectories(NewCount);

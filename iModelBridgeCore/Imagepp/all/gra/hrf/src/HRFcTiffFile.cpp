@@ -1757,19 +1757,21 @@ void HRFcTiffFile::WritePrivateDirectory (uint32_t pi_Page)
 
         // Set transparency palette.
         if (pPixelType->CountIndexBits() != 0 &&
-            pPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
+            pPixelType->GetPalette().GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
             {
-            Byte* pTransPalette = new Byte[pPixelType->GetPalette().GetMaxEntries()];
-            Byte* pSourceComposite;
+            BeAssert(pPixelType->GetPalette().GetPixelEntrySize() == 4); // Assumed a 32 bits RGBA palette.
 
-            for (uint32_t i = 0; i < pPixelType->GetPalette().GetMaxEntries(); ++i)
+            std::unique_ptr <Byte []> pTransPalette(new Byte[pPixelType->GetPalette().GetMaxEntries()]);
+            memset(pTransPalette.get(), 0, pPixelType->GetPalette().GetMaxEntries());
+
+            for (uint32_t i = 0; i < pPixelType->GetPalette().CountUsedEntries(); ++i)
                 {
-                pSourceComposite = (Byte*) (pPixelType->GetPalette().GetCompositeValue(i));
-                pTransPalette[i] = (Byte) pSourceComposite[3];
+                pTransPalette[i] = ((Byte const*)pPixelType->GetPalette().GetCompositeValue(i))[3];
                 }
+
             GetFilePtr()->SetField(HMR_TRANSPARENCY_PALETTE,
                                    pPixelType->GetPalette().GetMaxEntries(),
-                                   pTransPalette);
+                                   pTransPalette.get());
             }
         }
     GetFilePtr()->SetDirectory(CurDir);

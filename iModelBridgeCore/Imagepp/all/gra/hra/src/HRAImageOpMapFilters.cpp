@@ -17,8 +17,8 @@
 #include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
 #include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
 
-
-
+PUSH_MSVC_IGNORE(6386)  // get rid of security warning.
+   
 /*-------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------HRAImageOpMapFilter----------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -1203,3 +1203,5 @@ bool HRAImageOpTintFilter::_SetupMapFilter(MapFilter& mapFilter, HRPPixelType co
 
     return true;
     }
+
+POP_MSVC_IGNORE

@@ -146,10 +146,10 @@ HRFErdasImgEditor::HRFErdasImgEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                     }
                 else if (pErdasFile->IsReadPixelReal() == true)
                     {
-                    double* pBandMins = new double[m_NbBands];
-                    double* pBandMaxs = new double[m_NbBands];
+                    std::unique_ptr <double[]> pBandMins(new double[m_NbBands]);
+                    std::unique_ptr <double[]> pBandMaxs(new double[m_NbBands]);
 
-                    FindRealPVminMax(pBandMins, pBandMaxs);
+                    FindRealPVminMax(pBandMins.get(), pBandMaxs.get());
 
                     if (pErdasFile->GetBandInd(GCI_AlphaBand) != -1)
                         {
@@ -167,9 +167,6 @@ HRFErdasImgEditor::HRFErdasImgEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                  pBandMins[GREEN_BAND], pBandMaxs[GREEN_BAND],
                                                  pBandMins[BLUE_BAND],  pBandMaxs[BLUE_BAND]);
                         }
-
-                    delete pBandMins;
-                    delete pBandMaxs;
                     }
                 }
             break;

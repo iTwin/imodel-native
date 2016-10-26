@@ -1878,77 +1878,57 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
     size_t          MaxPaletteEntries  = pi_rPalette.GetMaxEntries();
     bool            HasAlpha           = pi_rPalette.GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
 
-    Byte*           pPaletteEntry;
-    uint16_t*         rm = NULL;         // Store the Red Channel
-    uint16_t*         gm = NULL;         // Store the Green Channel
-    uint16_t*         bm = NULL;         // Store the Blue Channel
-    Byte*           am = NULL;         // Store the Alpha Channel
-
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess );
 
     // Validate the file access
     if (GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess )
         {
-        // Create RGB buffer to convert the palette entry
-        rm = new uint16_t[MaxPaletteEntries];
-        gm = new uint16_t[MaxPaletteEntries];
-        bm = new uint16_t[MaxPaletteEntries];
+        std::unique_ptr<uint16_t[]> reds(new uint16_t[MaxPaletteEntries]);
+        std::unique_ptr<uint16_t[]> greens(new uint16_t[MaxPaletteEntries]);
+        std::unique_ptr<uint16_t[]> blues(new uint16_t[MaxPaletteEntries]);
+
+        std::unique_ptr<Byte[]> alphas;
         if(HasAlpha)
-            am = new Byte[MaxPaletteEntries];
+            alphas.reset(new Byte[MaxPaletteEntries]);
 
-        if ((rm) && (gm) && (bm))
+        if (MaxPaletteEntries != pi_rPalette.CountUsedEntries())
             {
-            if (MaxPaletteEntries != pi_rPalette.CountUsedEntries())
-                {
-                memset(rm, 0, MaxPaletteEntries * sizeof(uint16_t));
-                memset(gm, 0, MaxPaletteEntries * sizeof(uint16_t));
-                memset(bm, 0, MaxPaletteEntries * sizeof(uint16_t));
-                if (HasAlpha)
-                    memset(am, 0, MaxPaletteEntries * sizeof(Byte));
-                }
-            // Convert the palette entry to the RGB buffer
-            for (uint32_t i=0; i<pi_rPalette.CountUsedEntries(); i++)
-                {
-                pPaletteEntry = (Byte*)pi_rPalette.GetCompositeValue(i);
-                rm[i] = (uint16_t)(pPaletteEntry[0] * 257);
-                gm[i] = (uint16_t)(pPaletteEntry[1] * 257);
-                bm[i] = (uint16_t)(pPaletteEntry[2] * 257);
-                if(HasAlpha)
-                    am[i] = pPaletteEntry[3];
-                }
-            // Store the RGB buffer to TIFF
-            m_pTiff->SetField (TCOLORMAP, rm, gm, bm);
-            if(HasAlpha)
-                {
-                // Get HMR directorie information.
-                HTIFFFile::DirectoryID CurDir = GetFilePtr()->CurrentDirectory();
-                // Check if the private tag is present
-                //
-                if (m_pTiff->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, pi_Page)))
-                    {
-                    GetFilePtr()->SetField(HMR_TRANSPARENCY_PALETTE,
-                                           pi_rPalette.GetMaxEntries(),
-                                           am);
-
-                    // Reset Directory
-                    GetFilePtr()->SetDirectory(CurDir);
-                    }
-                }
-
+            memset(reds.get(), 0, MaxPaletteEntries * sizeof(uint16_t));
+            memset(greens.get(), 0, MaxPaletteEntries * sizeof(uint16_t));
+            memset(blues.get(), 0, MaxPaletteEntries * sizeof(uint16_t));
+            if (HasAlpha)
+                memset(alphas.get(), 0, MaxPaletteEntries * sizeof(Byte));
             }
 
-        // Free the RGB Buffer
-        if (rm)
-            delete rm;
+        // Convert the palette entry to the RGB buffer
+        for (uint32_t i=0; i<pi_rPalette.CountUsedEntries(); i++)
+            {
+            Byte* pPaletteEntry = (Byte*)pi_rPalette.GetCompositeValue(i);
 
-        if (gm)
-            delete gm;
+            reds[i] = (uint16_t)(pPaletteEntry[0] * 257);
+            greens[i] = (uint16_t)(pPaletteEntry[1] * 257);
+            blues[i] = (uint16_t)(pPaletteEntry[2] * 257);
+            if(HasAlpha)
+                alphas[i] = pPaletteEntry[3];
+            }
 
-        if (bm)
-            delete bm;
-        if (am)
-            delete am;
+        // Store the RGB buffer to TIFF
+        m_pTiff->SetField (TCOLORMAP, reds.get(), greens.get(), blues.get());
+        if(HasAlpha)
+            {
+            // Get HMR directorie information.
+            HTIFFFile::DirectoryID CurDir = GetFilePtr()->CurrentDirectory();
+            // Check if the private tag is present
+            //
+            if (m_pTiff->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, pi_Page)))
+                {
+                GetFilePtr()->SetField(HMR_TRANSPARENCY_PALETTE, pi_rPalette.GetMaxEntries(), alphas.get());
+
+                // Reset Directory
+                GetFilePtr()->SetDirectory(CurDir);
+                }
+            }
         }
     }
 

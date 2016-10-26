@@ -622,7 +622,7 @@ public:
     void                AddInitialFreeBlock (const uint64_t* pi_pOffset, const uint64_t* pi_pSize, uint32_t pi_Count);
     void                AddInitialFreeBlock (const uint32_t* pi_pOffset, const uint32_t* pi_pSize, uint32_t pi_Count);
 
-    bool               GetListFreeBlock    (uint64_t** pi_ppOffset, uint64_t** pi_ppSize, uint32_t* pi_pCount);
+    bool               GetListFreeBlock    (uint64_t** pi_ppOffset, uint64_t** pi_ppSize, uint32_t* pi_pCount) const;
     IMAGEPP_EXPORT void                CheckAlloc          (uint64_t* pio_pOffset, uint32_t pi_CurSize, uint32_t pi_NewSize);
     IMAGEPP_EXPORT void                ReleaseBlock        (uint64_t pi_Offset, uint32_t pi_Size);
     void                GetBlock            (uint64_t* po_pOffset, uint32_t pi_Size);

@@ -261,7 +261,8 @@ bool HRFNitfCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool                       Result = false;
     HAutoPtr<HFCBinStream>      pFile;
-    char                        pLine[5];
+    char                        pLine[6];
+    pLine[5] = 0; // null terminate
 
     // Open the IMG File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);

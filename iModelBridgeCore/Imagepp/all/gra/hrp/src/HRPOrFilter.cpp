@@ -95,6 +95,8 @@ void HRPOrFilter::Convert(  HRPPixelBuffer* pi_pInputBuffer,
     bool LastBitOn;
     bool NewLastBitOn;
 
+    Byte const* pTable = m_sTable[m_OnBit ? 1 : 0];
+
     while(LinesCount != 0)
         {
         LastBitOn = false;
@@ -103,7 +105,7 @@ void HRPOrFilter::Convert(  HRPPixelBuffer* pi_pInputBuffer,
 
         while(BytesCount != 0)
             {
-            *pDst = m_sTable[m_OnBit][*pSrc];
+            *pDst = pTable[*pSrc];
 
             NewLastBitOn = *pSrc & 0x01;
 
