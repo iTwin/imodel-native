@@ -249,7 +249,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
             m_toLoadNodes[nodeId % nbWorkingThreads].push_back(toLoadNodes[nodeId]);
             }
 
-        m_searchingNodeMutexes = new std::mutex[nbWorkingThreads];
+        m_searchingNodeMutexes = new std::mutex[nbWorkingThreads];        
         m_toLoadNodeMutexes = new std::mutex[nbWorkingThreads];
         m_foundMeshNodes.resize(nbWorkingThreads);
         m_foundMeshNodeMutexes = new std::mutex[nbWorkingThreads];
@@ -325,7 +325,6 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         return true;
         }
 
-#if 0
     bool IsComplete(size_t threadInd)
         {                        
         m_searchingNodeMutexes[threadInd].lock();
@@ -351,21 +350,19 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         
         
         m_toLoadNodeMutexes[threadInd].lock();
-            if (m_toLoadNodes[threadInd].size() > 0)
-                {
-                m_toLoadNodeMutexes[threadInd].unlock();
-                break;
-                }
-
+        if (m_toLoadNodes[threadInd].size() > 0)
+            {
             m_toLoadNodeMutexes[threadInd].unlock();
+            return false;
             }
 
+        m_toLoadNodeMutexes[threadInd].unlock();
+        
         if (threadInd != m_toLoadNodes.size())
             return false;
 
         return true;
         }
-#endif 
 
     static Ptr Create(int                                               queryId,
                       int                                               nbWorkingThreads,
@@ -540,7 +537,7 @@ private:
 
             for (auto& processingQuery : m_processingQueries)
                 {
-                if (!processingQuery->IsComplete())
+                if (!processingQuery->IsComplete(threadId))
                     {
                     processingQueryPtr = processingQuery;
                     break;
