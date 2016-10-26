@@ -101,63 +101,52 @@
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   DataCapture        /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="DataCapture" BentleyBuildMakeFile="DataCapture/DataCapture.mke">
-        <SubPart PartName="DataCapturePublicAPI"/>
-        <SubPart PartName="ECDb"            PartFile="ECDb"         Repository="ECDb"/>
-        <SubPart PartName="ECObjectsNative" PartFile="ECObjects"    Repository="ecobjects" />
-        <SubPart PartName="DgnPlatformLib"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+    <Part Name="DataCaptureSchemasPublicAPI" BentleyBuildMakeFile="DataCaptureSchema/DataCaptureSchema.prewire.mke"  WipPartEnable="PhotoPlanner" >
         <Bindings>
-            <Libs Required="false">Delivery/$(libprefix)DataCapture$(libext)</Libs>
-            <Assemblies Required="false">Delivery/$(shlibprefix)DataCapture$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="DataCapturePublicAPI" BentleyBuildMakeFile="DataCapture/DataCapture.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="DataCapture"/>
+            <PublicAPI Domain="DataCaptureSchema"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/DataCapture*.xml
             </Files>
         </Bindings>
     </Part>
 
-    <Part Name="DataCapturePublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
-          BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
-        <SubPart PartName="DataCapture"/>
+    <Part Name="DataCaptureSchema" BentleyBuildMakeFile="DataCaptureSchema/DataCaptureSchema.mke"  WipPartEnable="PhotoPlanner" >
+        <SubPart PartName="DataCaptureSchemasPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/DataCapture"/>
+            <Libs ProductDirectoryName="DataCaptureLibs" Required="false">Delivery/$(shlibprefix)DataCaptureSchema$(libext)</Libs>
+            <Assemblies  ProductDirectoryName="DataCaptureAssemblies" Required="false">Delivery/$(shlibprefix)DataCaptureSchema$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <!-- ********************************************************************************************** -->
-    <!-- Unit tests -->
+    <!--  DataCapture Unit tests -->
     <!-- ********************************************************************************************** -->
-    <Part Name="DataCapturePrewireForUnitTests" BentleyBuildMakeFile="DataCapture/Tests/prewire.mke">
+    <Part Name="DataCapturePrewireForUnitTests" BentleyBuildMakeFile="DataCaptureSchema/Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="DataCapture" SubPartDirectory="UnitTests/DataCapture"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="DataCaptureBackdoorForUnitTests" BentleyBuildMakeFile="DataCapture/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
-        <SubPart PartName="DataCapture"/>
+    <Part Name="DataCaptureBackdoorForUnitTests" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="DataCaptureSchema"/>
         <SubPart PartName="DataCapturePrewireForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCapture/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
         </Bindings>
     </Part>
 
-    <Part Name="DataCaptureUnitTests-NonPublished" BentleyBuildMakeFile="DataCapture/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <Part Name="DataCaptureUnitTests-NonPublished" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="DataCaptureBackdoorForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCapture/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
-    <Part Name="DataCaptureUnitTests-Published" BentleyBuildMakeFile="DataCapture/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="DataCaptureUnitTests-Published" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
         <SubPart PartName="DataCaptureBackdoorForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCapture/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
 
@@ -168,12 +157,26 @@
         <SubPart PartName="DataCaptureUnitTests-Published"/>
     </Part>
 
-    <Product Name="DataCapture-Tests">
-        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <Part Name="RunGtestDatacapture" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DataCapture-Tests/DataCaptureTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DataCaptureTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Gtest-DataCapture-Tests" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- This part runs DataCaptureTests on platforms that support it. -->
+    <Part Name="DataCapture-Tested">
+        <SubPart PartName="RunGtestDatacapture" />
+    </Part>
+
+
+    <!-- ********************************************************************************************** -->
+    <!--  RealityModeling Unit tests -->
+    <!-- ********************************************************************************************** -->
+    <Product Name="RealityModeling-Tests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="DataCaptureTests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
 
@@ -187,23 +190,23 @@
         <SubPart PartName="GtestDatacapture"/>
     </Product>
 
-    <Part Name="GtestDatacapture" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DataCaptureTests -dTEST_COLLECTION_PRODUCT=DataCapture-Tests -dTEST_FRAMEWORK_SQLANG=DataCapture_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="DataCapture-Tests"/>
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModelingTests -dTEST_COLLECTION_PRODUCT=RealityModeling-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*"  WipPartEnable="PhotoPlanner" >
+        <SubProduct ProductName="RealityModeling-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DataCaptureTests/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DataCaptureTests/Assets" />
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModelingTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModelingTests/Assets" />
         </Bindings>
     </Part>
 
-    <Part Name="RunGtestDatacapture" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DataCapture-Tests/DataCaptureTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DataCaptureTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Gtest-DataCapture-Tests" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    </Part>
+    <Product Name="RealityModeling-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
 
-    <!-- This part runs DataCaptureTests on platforms that support it. -->
-    <Part Name="DataCapture-Tested">
-        <SubPart PartName="RunGtestDatacapture" />
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModeling-Gtest/RealityModelingTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModelingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*" WipPartEnable="PhotoPlanner" >
+        <SubProduct ProductName="RealityModeling-Gtest" />
+        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
     </Part>
 
 
