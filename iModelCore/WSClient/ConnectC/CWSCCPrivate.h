@@ -39,7 +39,6 @@ class WSPathProvider : public IApplicationPathsProvider
         virtual BeFileNameCR _GetCachesDirectory() const { return m_nullPath; }
         virtual BeFileNameCR _GetLocalStateDirectory() const { return m_nullPath; }
         virtual BeFileNameCR _GetAssetsRootDirectory() const { return m_assetDirectory; }
-        virtual BeFileNameCR _GetMarkupSeedFilePath() const { return m_nullPath; }
                 
     public:
         WSPathProvider(BeFileName tempDir, BeFileName assetDir)

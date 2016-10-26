@@ -44,11 +44,6 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
             {
             return m_platformAssetsDirectory;
             }
-        virtual BeFileNameCR _GetMarkupSeedFilePath() const override
-            {
-            static BeFileName s_blank;
-            return s_blank;
-            }
 
     public:
         TestAppPathProvider();
