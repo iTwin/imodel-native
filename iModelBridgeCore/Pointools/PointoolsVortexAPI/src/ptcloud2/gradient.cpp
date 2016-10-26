@@ -186,12 +186,12 @@ void Gradient::updateGradientImg()
 	if (m_gradImg)
 		delete [] m_gradImg;
 
-	int size = m_gradSize * 4;
-	size *= size;
+	int rowSize = m_gradSize * 4;
+	int Imgsize = m_gradSize * rowSize;
 
-	m_gradImg = new ubyte[ size ];
+	m_gradImg = new ubyte[Imgsize];
 
-	memset( m_gradImg, 0, size );
+	memset( m_gradImg, 0, Imgsize);
 	
 	if (!m_firstKey) return;
 
@@ -203,9 +203,9 @@ void Gradient::updateGradientImg()
 		key = key->next;
 	}
 	/* copy row into other rows */ 
-	for (int i=0; i<m_gradSize; i++)
+	for (int i=1; i<m_gradSize; i++)
 	{
-		memcpy( &m_gradImg[ m_gradSize * 4 ], m_gradImg, m_gradSize * 4 ); 
+		memcpy( &m_gradImg[rowSize*i], m_gradImg, rowSize);
 	}
 }
 //-----------------------------------------------------------------------------
