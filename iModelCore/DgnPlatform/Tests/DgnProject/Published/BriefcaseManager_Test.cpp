@@ -966,17 +966,14 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
+struct RepositoryManagerTest : public DgnDbTestFixture, DgnPlatformLib::Host::RepositoryAdmin
 {
-public: 
-    static void SetUpTestCase();
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+public:
     typedef IRepositoryManager::Request Request;
     typedef IRepositoryManager::Response Response;
     typedef IBriefcaseManager::ResponseOptions ResponseOptions;
 
     mutable RepositoryManager   m_server;
-    ScopedDgnHost               m_host;
 
     RepositoryManagerTest()
         {
@@ -995,14 +992,26 @@ public:
 
     virtual void _OnSetupDb(DgnDbR db) { }
 
-    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.idgndb")
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId)
         {
         //** Force to copy the file in Sub-Directory of TestCase
-        BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
-        testFileName.AppendToPath(testFile);
+        BeFileName testfixtureName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
+        BeFileName outPath;
+        BeTest::GetHost().GetOutputRoot(outPath);
+        outPath.AppendToPath(testfixtureName);
 
-        BeFileName outFileName;
-        EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFileName.c_str(), __FILE__));
+        WString fileName(TEST_NAME, BentleyCharEncoding::Utf8);
+        fileName.append(L".dgndb");
+        BeFileName sourceFilepath(outPath);
+        sourceFilepath.AppendToPath(fileName.c_str());
+
+        BeFileName outFileName(outPath);
+        outFileName.AppendToPath(testFile);
+
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(sourceFilepath, outFileName));
+        //BeFileName::BeCopyFile(fullFileName, outFullFileName) != BeFileNameStatus::Success
+
+        //EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFileName.c_str(), __FILE__));
         auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_TRUE(db.IsValid());
         if (!db.IsValid())
@@ -1019,15 +1028,15 @@ public:
         return db;
         }
 };
-DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             08/2016
 //---------------------------------------------------------------------------------------
-void RepositoryManagerTest::SetUpTestCase()
-    {
-    ScopedDgnHost tempHost;
-    RepositoryManagerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
-    }
+//void RepositoryManagerTest::SetUpTestCase()
+//    {
+//    ScopedDgnHost tempHost;
+//    RepositoryManagerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -1192,7 +1201,6 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
 
     // Our DgnDb is masquerading as a briefcase...it has no actual master copy.
     BeBriefcaseId   m_bcId;
-    DgnDbPtr        m_db;
     DgnModelId      m_modelId;
     DgnElementId    m_elemId;
 
@@ -1201,6 +1209,11 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
         m_db = &db;
         m_modelId = DgnModel::DictionaryId();
         m_elemId = DgnCategory::QueryFirstCategoryId(db);
+        }
+
+    void SetUp()
+        {
+        SetupSeedProject();
         }
 
     SingleBriefcaseLocksTest() : m_bcId(2) { }
@@ -1215,7 +1228,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     {
-    SetupDb(L"AcquireLocks.dgndb", m_bcId);
+    SetupDb(L"AcquireLocksTest.dgndb", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelPtr pModel = db.Models().GetModel(m_modelId);
@@ -1294,7 +1307,7 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     {
-    SetupDb(L"RelinquishLocks.dgndb", m_bcId);
+    SetupDb(L"RelinquishLocksTest.dgndb", m_bcId);
 
     // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
@@ -1330,7 +1343,7 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     {
-    SetupDb(L"LocallyCreatedObjects.dgndb", m_bcId);
+    SetupDb(L"LocallyCreatedObjectsTest.dgndb", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelPtr model = db.Models().GetModel(m_modelId);
@@ -1390,7 +1403,7 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
     BeFileName filename;
     DgnModelId newModelId;
         {
-        SetupDb(L"DisconnectedWorkflow.dgndb", m_bcId);
+        SetupDb(L"DisconnectedWorkflowTest.dgndb", m_bcId);
 
         DgnDbR db = *m_db;
         DgnModelPtr pModel = db.Models().GetModel(m_modelId);
@@ -1469,8 +1482,6 @@ struct DoubleBriefcaseTest : LocksManagerTest
             m_dbB->SaveChanges();
         }
 
-    static WCharCP SeedFileName() { return L"ElementsSymbologyByLevel.idgndb"; }
-    
     DgnModelId Model3dId() { return m_modelIds[0]; }
     DgnModelId Model2dId() { return m_modelIds[1]; }
 
@@ -1496,11 +1507,21 @@ struct DoubleBriefcaseTest : LocksManagerTest
         return false;
         }
 
+    void SetUp()
+        {
+        SetupSeedProject();
+        CreateElement(*m_defaultModelP, false);
+        CreateElement(*m_defaultModelP, false);
+        DgnModelPtr modelA2d0 = CreateModel("Model2d", *m_db);
+        CreateElement(*modelA2d0.get(), false);
+        CreateElement(*modelA2d0.get(), false);
+        m_db->SaveChanges();
+        }
+
     void SetupDbs(uint32_t baseBcId=2)
         {
-        //ScopedDgnHost tempHost;
-        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(baseBcId), SeedFileName());
-        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(baseBcId+1), SeedFileName());
+        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(baseBcId));
+        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(baseBcId+1));
 
         ASSERT_TRUE(m_dbA.IsValid());
         ASSERT_TRUE(m_dbB.IsValid());
@@ -2182,7 +2203,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
     };
 
     AssertScope V_V_V_Asserts;
-    m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
+    m_db = SetupDb(L"UsedLocksTests.dgndb", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelR model = *db.Models().GetModel(m_modelId);
@@ -2243,6 +2264,11 @@ TEST_F(ExtractLocksTest, UsedLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CodesManagerTest : RepositoryManagerTest
 {
+    void SetUp()
+        {
+        SetupSeedProject();
+        }
+
     static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
         return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : DgnCategory::CreateCategoryCode(name);
@@ -2257,6 +2283,7 @@ struct CodesManagerTest : RepositoryManagerTest
         info.SetReserved(db.GetBriefcaseId());
         return info;
         }
+
     static DgnCodeInfo MakeUsedOrDiscarded(DgnCodeCR code, Utf8StringCR rev, bool discarded)
         {
         DgnCodeInfo info(code);
@@ -2273,6 +2300,7 @@ struct CodesManagerTest : RepositoryManagerTest
         expectInfos.insert(expect);
         ExpectStates(expectInfos, db);
         }
+
     void ExpectStates(DgnCodeInfoSet const& expect, DgnDbR db)
         {
         DgnCodeInfoSet actual;
@@ -2283,17 +2311,20 @@ struct CodesManagerTest : RepositoryManagerTest
         EXPECT_STATUS(Success, m_server.QueryCodeStates(actual, codes));
         ExpectEqual(expect, actual);
         }
+
     void ExpectEqual(DgnCodeInfoSet const& expected, DgnCodeInfoSet const& actual)
         {
         EXPECT_EQ(expected.size(), actual.size());
         for (auto expIter = expected.begin(), actIter = actual.begin(); expIter != expected.end() && actIter != actual.end(); ++expIter, ++actIter)
             ExpectEqual(*expIter, *actIter);
         }
+
     void ExpectEqual(DgnCodeInfoCR exp, DgnCodeInfoCR act)
         {
         EXPECT_EQ(exp.GetCode(), act.GetCode());
         ExpectEqual(static_cast<DgnCodeState>(exp), static_cast<DgnCodeState>(act));
         }
+
     void ExpectEqual(DgnCodeStateCR exp, DgnCodeStateCR act)
         {
         if (exp.IsAvailable())
@@ -2325,6 +2356,7 @@ struct CodesManagerTest : RepositoryManagerTest
         style.DgnElement::Insert(&status);
         return status;
         }
+
     static DgnCode MakeStyleCode(Utf8CP name, DgnDbR db)
         {
         // Because AnnotationTextStyle::CreateCodeFromName() is private for some reason...
@@ -2367,7 +2399,7 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     {
-    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquishTest.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
@@ -2413,7 +2445,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
     {
-    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"AutoReserveCodesTest.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
 
     // Simulate a pre-existing style having been committed in a previous revision
@@ -2470,7 +2502,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, CodesInRevisions)
     {
-    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"CodesInRevisionsTest.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
