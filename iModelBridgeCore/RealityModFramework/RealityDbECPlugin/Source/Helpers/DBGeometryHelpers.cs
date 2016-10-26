@@ -102,7 +102,7 @@ namespace IndexECPlugin.Source.Helpers
 
             if ( splitStr.Length == 0 )
                 {
-                throw new ArgumentException(String.Format("Invalid WKT polygon : {0}", polygon));
+                throw new ArgumentException("Invalid WKT polygon");
                 }
 
             string outerShell = splitStr[1];
@@ -112,7 +112,7 @@ namespace IndexECPlugin.Source.Helpers
             // A length of 4 is the minimum amount of points in a WKT polygon (triangle), since the last point is supposed to be the same as the first.
             if ( outerShellPoints.Length < 4 )
                 {
-                throw new ArgumentException(String.Format("Invalid WKT polygon : {0}", polygon));
+                throw new ArgumentException("Invalid WKT polygon");
                 }
 
             for ( int i = 0; i < outerShellPoints.Length; i++ )
@@ -120,7 +120,7 @@ namespace IndexECPlugin.Source.Helpers
                 string[] coords = outerShellPoints[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if ( coords.Length != 2 )
                     {
-                    throw new ArgumentException(String.Format("Invalid WKT polygon : {0}", polygon));
+                    throw new ArgumentException("Invalid WKT polygon : {0}");
                     }
 
                 resultString += "[" + coords[0] + "," + coords[1] + "]";
