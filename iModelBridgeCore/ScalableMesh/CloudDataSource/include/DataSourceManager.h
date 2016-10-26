@@ -5,7 +5,7 @@
 #include "DataSourceServiceManager.h"
 
 
-class DataSourceManager : public Manager<DataSource>, public DataSourceServiceManager
+class DataSourceManager : public Manager<DataSource, true>, public DataSourceServiceManager
 {
 public:
 
@@ -19,11 +19,12 @@ protected:
 												DataSourceManager		(void);
 											   ~DataSourceManager		(void);
 
-	void										shutdown				(void);
-
 public:
 	CLOUD_EXPORT static DataSourceManager   *   Get						(void);
 	CLOUD_EXPORT static void					Shutdown				(void);
+
+    bool                                        destroyAll              (void);
+
 
     DataSource                              *   createDataSource		(const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
 	DataSource                              *   createDataSource		(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);

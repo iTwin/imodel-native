@@ -74,6 +74,8 @@ public:
     virtual            DataSourceStatus             open                (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
     virtual            DataSourceStatus             close               (void) = 0;
 
+    virtual            bool                         destroyAll          (void);
+
     virtual            DataSourceStatus             read                (Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
     virtual            DataSourceStatus             write               (const Buffer *source, DataSize size) = 0;
 

@@ -9,7 +9,7 @@
 
 class DataSourceManager;
 
-class DataSourceService : public Manager<DataSourceAccount>
+class DataSourceService : public Manager<DataSourceAccount, true>
 {
 
 public:

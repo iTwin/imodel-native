@@ -38,7 +38,7 @@ const DataSourceService::ServiceName & DataSourceService::getServiceName(void)
 
 DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountName)
 {
-    if (destroy(accountName, true))
+    if (destroy(accountName))
     {
         return DataSourceStatus();
     }

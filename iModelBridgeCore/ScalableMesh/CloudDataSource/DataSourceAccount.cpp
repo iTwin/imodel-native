@@ -25,8 +25,15 @@ DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
 
 DataSourceAccount::~DataSourceAccount(void)
     {
-                                                            // Destroy DataSources associated with this 
-    destroyDataSources();
+                                                            // Note: Call destroyAll() before deletion
+    }
+
+bool DataSourceAccount::destroyAll(void)
+    {
+        if (destroyDataSources().isOK())
+            return true;
+
+        return false;
     }
 
 DataSourceStatus DataSourceAccount::destroyDataSources(void)
