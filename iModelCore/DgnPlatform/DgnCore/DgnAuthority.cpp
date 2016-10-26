@@ -519,21 +519,13 @@ DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace)
+DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
     {
     // ###TODO_CODES: Silently replace illegal characters?
     Utf8String trimmed(modelName);
     trimmed.Trim();
 
-    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Model, codeValue, modeledElementId);
+    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, "");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -809,20 +801,9 @@ Utf8CP DgnCode::Iterator::Options::GetECSql() const
     {
 #define SELECT_CODE_COLUMNS_FROM "SELECT [CodeAuthorityId],[CodeValue],[CodeNamespace],ECInstanceId FROM "
 #define SELECT_ELEMENT_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Element)
-#define SELECT_MODEL_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Model)
-#define SELECT_MODEL_AND_ELEMENT_CODES SELECT_ELEMENT_CODES " UNION ALL " SELECT_MODEL_CODES
 #define EXCLUDE_EMPTY_CODES " WHERE [CodeValue] IS NOT NULL"
-#define SELECT_MODEL_AND_ELEMENT_CODES_EXCLUDE_EMPTY SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES " UNION ALL " SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES
 
-    switch (m_include)
-        {
-        case Include::Elements:
-            return m_includeEmpty ? SELECT_ELEMENT_CODES : SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
-        case Include::Models:
-            return m_includeEmpty ? SELECT_MODEL_CODES : SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES;
-        default:
-            return m_includeEmpty ? SELECT_MODEL_AND_ELEMENT_CODES : SELECT_MODEL_AND_ELEMENT_CODES_EXCLUDE_EMPTY;
-        }
+    return m_includeEmpty ? SELECT_ELEMENT_CODES : SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -832,4 +813,3 @@ DgnCode::Iterator::Iterator(DgnDbR db, Options options)
     {
     Prepare(db, options.GetECSql(), 3);
     }
-

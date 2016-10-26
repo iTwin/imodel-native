@@ -1709,13 +1709,13 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DocumentListModelPtr DgnMarkupProject::GetSheetListModel()
     {
-    DgnCode modelCode = DgnModel::CreateModelCode("Sheets", MARKUP_SCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode("Markup Sheets");
     DgnModelId modelId = Models().QueryModelId(modelCode);
 
     if (modelId.IsValid())
         return Models().Get<DocumentListModel>(modelId);
 
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Sheets");
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Markup Sheets");
     if (!partition.IsValid())
         return nullptr;
 

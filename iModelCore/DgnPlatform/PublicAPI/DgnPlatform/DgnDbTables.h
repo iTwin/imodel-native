@@ -213,22 +213,12 @@ public:
     struct Iterator : ECSqlStatementIterator<Entry>
     {
     public:
-        enum class Include
-        {
-            Elements = 1 << 0,
-            Models = 1 << 1,
-            Both = Elements | Models
-        };
-
         struct Options
         {
         private:
-            Include m_include;
             bool    m_includeEmpty;
         public:
-            Options(Include include, bool includeEmpty=false) : m_include(include), m_includeEmpty(includeEmpty) {}
-            Options() : Options(Include::Both) {}
-
+            Options(bool includeEmpty=false) : m_includeEmpty(includeEmpty) {}
             Utf8CP GetECSql() const;
         };
 
@@ -240,8 +230,6 @@ public:
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
-
-ENUM_IS_FLAGS(DgnCode::Iterator::Include);
 
 typedef bset<DgnCode> DgnCodeSet;
 
@@ -318,7 +306,6 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnElementId m_modeledElementId;
-        BeSQLite::BeGuid m_federationGuid;
         DgnCode m_code;
         bool m_inGuiList = true;
         bool m_isTemplate = false;
@@ -333,7 +320,6 @@ public:
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
-        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
         DgnCode const& GetCode() const {return m_code;}
@@ -341,7 +327,6 @@ public:
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
         bool GetIsTemplate() const {return m_isTemplate;}
     }; // Model
 
@@ -362,12 +347,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT DgnCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
-            DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
             DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-            DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
             DGNPLATFORM_EXPORT bool GetIsTemplate() const;
 
             Entry const& operator*() const {return *this;}

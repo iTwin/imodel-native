@@ -9,8 +9,6 @@
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_ModeledElementId "ModeledElementId"
-#define MODEL_PROP_CodeAuthorityId "CodeAuthorityId"
-#define MODEL_PROP_CodeNamespace "CodeNamespace"
 #define MODEL_PROP_CodeValue "CodeValue"
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
@@ -23,10 +21,8 @@
 DgnModelId DgnModels::QueryModelId(DgnCode code) const
     {
     CachedStatementPtr stmt;
-    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE CodeAuthorityId=? AND CodeNamespace=? AND CodeValue=? LIMIT 1");
-    stmt->BindId(1, code.GetAuthority());
-    stmt->BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
-    stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE CodeValue=? LIMIT 1");
+    stmt->BindText(1, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
@@ -35,7 +31,7 @@ DgnModelId DgnModels::QueryModelId(DgnCode code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeValue,ECClassId,Visibility,CodeNamespace,CodeAuthorityId,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue,ECClassId,Visibility,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -44,11 +40,11 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     if (out) // this can be null to just test for the existence of a model by id
         {
         out->m_id = id;
+        out->m_code = DgnModel::CreateModelCode(stmt.GetValueText(0));
         out->m_classId = stmt.GetValueId<DgnClassId>(1);
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(2));
-        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(4), stmt.GetValueText(0), stmt.GetValueText(3));
-        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(5);
-        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(6));
+        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(3);
+        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(4));
         }
 
     return SUCCESS;
@@ -59,14 +55,14 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::GetModelCode(DgnCode& code, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeAuthorityId,CodeNamespace,CodeValue FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
-        return  ERROR;
+        return ERROR;
 
-    code.From(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
-    return  SUCCESS;
+    code = DgnModel::CreateModelCode(stmt.GetValueText(0));
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,9 +70,7 @@ BentleyStatus DgnModels::GetModelCode(DgnCode& code, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    DgnCode code;
-    code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
-    return code;
+    return DgnModel::CreateModelCode(entry.GetCodeValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,7 +135,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,CodeValue,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,Visibility,ECClassId,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -166,10 +160,8 @@ DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return
 Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); return m_sql->GetValueText(1);}
 bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(2)); }
 DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(3);}
-Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(4);}
-DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(5);}
-DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(6);}
-bool            DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(7));}
+DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(4);}
+bool            DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(5));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -669,11 +661,7 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     if (m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(MODEL_PROP_CodeValue))))
         return DgnDbStatus::BadArg;
 
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
-        return DgnDbStatus::BadArg;
-
-    if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(MODEL_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
+    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeValue), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
     if (!m_modeledElementId.IsValid())
@@ -1529,8 +1517,6 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {    
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElementId, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(MODEL_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(MODEL_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
@@ -1555,35 +1541,15 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
     DgnCode code;
-    //! The authority ID must be non-null and identify a valid authority.
-    //! The namespace may not be null, but may be a blank string.
-    //! The value may be null if and only if the namespace is blank, signifying that the authority
-    //! assigns no special meaning to the object's code.
-    //! The value may not be an empty string.
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeAuthorityId) || v.IsNull())
-            {
-            stat = DgnDbStatus::BadArg;
-            return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
-            }
-        DgnAuthorityId id((uint64_t) v.GetLong());
-
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeNamespace) || v.IsNull())
-            {
-            stat = DgnDbStatus::BadArg;
-            return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
-            }
-        Utf8String codeName(v.GetUtf8CP());
-
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeValue) || (v.IsNull() && !Utf8String::IsNullOrEmpty(codeName.c_str())) ||
-            (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeValue) || (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
             {
             stat = DgnDbStatus::BadArg;
             return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
             }
 
-        code.From(id, v.GetUtf8CP(), codeName);
+        code = DgnModel::CreateModelCode(v.GetUtf8CP());
         }
     ECN::ECValue v;
     bool inGuiList = true;
@@ -1620,7 +1586,7 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     //    return DgnDbStatus::BadArg;
     //    }
 
-    if (0 == strcmp(MODEL_PROP_CodeAuthorityId, name) || 0 == strcmp(MODEL_PROP_CodeNamespace, name) || 0 == strcmp(MODEL_PROP_CodeValue, name))
+    if (0 == strcmp(MODEL_PROP_CodeValue, name))
         {
         return DgnDbStatus::BadRequest;
         }
@@ -1650,8 +1616,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_CodeAuthorityId) || propName.Equals(MODEL_PROP_CodeNamespace) || propName.Equals(MODEL_PROP_CodeValue) || 
-            propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElementId) || propName.Equals(MODEL_PROP_Visibility))
+        if (propName.Equals(MODEL_PROP_CodeValue) || propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElementId) || propName.Equals(MODEL_PROP_Visibility))
             continue;
 
         ECN::ECValue value;

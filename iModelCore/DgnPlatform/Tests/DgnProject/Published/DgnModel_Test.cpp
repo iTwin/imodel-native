@@ -359,8 +359,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (m1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model1", entry.GetCodeValue ());
             EXPECT_EQ (true, entry.GetInGuiList ());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
         else if (entry.GetModelId () == m2id)
@@ -368,8 +366,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (m2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model2", entry.GetCodeValue ());
             EXPECT_EQ(true, entry.GetInGuiList());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
         else if (entry.GetModelId () == m3id)
@@ -377,8 +373,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (m3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
             EXPECT_STREQ ("Model3", entry.GetCodeValue ());
             EXPECT_EQ(true, entry.GetInGuiList());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
         }

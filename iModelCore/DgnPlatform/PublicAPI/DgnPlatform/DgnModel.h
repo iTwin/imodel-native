@@ -652,10 +652,7 @@ public:
     void OnValidate() {_OnValidate();}
 
     //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
-    static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="") {return ModelAuthority::CreateModelCode(modelName, nameSpace);}
-
-    //! Creates a DgnCode for a model with the given code value and a namespace derived from the modeled element.
-    static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId) {return ModelAuthority::CreateModelCode(codeValue, modeledElementId);}
+    static DgnCode CreateModelCode(Utf8StringCR modelName) {return ModelAuthority::CreateModelCode(modelName);}
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate

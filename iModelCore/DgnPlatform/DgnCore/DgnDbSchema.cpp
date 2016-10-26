@@ -175,13 +175,11 @@ static void importBisCoreSchema(DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId, DgnCodeCR modelCode)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,Visibility) VALUES(?,?,?,?,?,?,0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeValue,Visibility) VALUES(?,?,?,?,0)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
-    stmt.BindId(4, modelCode.GetAuthority());
-    stmt.BindText(5, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
-    stmt.BindText(6, modelCode.GetValueCP(), Statement::MakeCopy::No);
+    stmt.BindText(4, modelCode.GetValueCP(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -223,14 +221,14 @@ DbResult DgnDb::CreateDictionaryModel()
     DgnElementId modeledElementId = Elements().GetDictionaryPartitionId();
     BeAssert(modeledElementId.GetValue() == DgnModel::DictionaryId().GetValue());
 
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_CLASS_DictionaryModel, Elements().GetRootSubjectId());
+    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA(BIS_CLASS_DictionaryModel), Elements().GetRootSubjectId());
     DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, partitionCode);
     if (BE_SQLITE_DONE != result)
         return result;
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
     BeAssert(classId.IsValid());
-    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_DictionaryModel, BIS_ECSCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_SCHEMA(BIS_CLASS_DictionaryModel));
     return insertIntoDgnModel(*this, modeledElementId, classId, modelCode);
     }
 
@@ -240,14 +238,14 @@ DbResult DgnDb::CreateDictionaryModel()
 DbResult DgnDb::CreateSessionModel()
     {
     DgnElementId modeledElementId = Elements().GetSessionPartitionId();
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_CLASS_SessionModel, Elements().GetRootSubjectId());
+    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA(BIS_CLASS_SessionModel), Elements().GetRootSubjectId());
     DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, partitionCode);
     if (BE_SQLITE_DONE != result)
         return result;
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Session::GetHandler());
     BeAssert(classId.IsValid());
-    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_SessionModel, BIS_ECSCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_SCHEMA(BIS_CLASS_SessionModel));
     return insertIntoDgnModel(*this, modeledElementId, classId, modelCode);
     }
 
@@ -257,14 +255,14 @@ DbResult DgnDb::CreateSessionModel()
 DbResult DgnDb::CreateRealityDataSourcesModel()
     {
     DgnElementId modeledElementId = Elements().GetRealityDataSourcesPartitionId();
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode("RealityDataSources", Elements().GetRootSubjectId());
+    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA("RealityDataSources"), Elements().GetRootSubjectId());
     DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_LinkPartition), modeledElementId, partitionCode);
     if (BE_SQLITE_DONE != result)
         return result;
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Link::GetHandler());
     BeAssert(classId.IsValid());
-    DgnCode modelCode = DgnModel::CreateModelCode("RealityDataSources", BIS_ECSCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_SCHEMA("RealityDataSources"));
     return insertIntoDgnModel(*this, modeledElementId, classId, modelCode);
     }
 
@@ -274,7 +272,7 @@ DbResult DgnDb::CreateRealityDataSourcesModel()
 DbResult DgnDb::CreateRepositoryModel()
     {
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
-    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_RepositoryModel, BIS_ECSCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_SCHEMA(BIS_CLASS_RepositoryModel));
 
     BeAssert(DgnModel::RepositoryModelId().GetValue() == Elements().GetRootSubjectId().GetValue());
 

@@ -178,19 +178,6 @@
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
-            <Class class="Authority"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="Model"/>
-        </Target>
-    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
         <ECCustomAttributes>
@@ -207,43 +194,9 @@
                 <SharedColumnCount>8</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
-            <DbIndexList xmlns="ECDbMap.02.00">
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_bis_Model_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>CodeAuthorityId</string>
-                            <string>CodeNamespace</string>
-                            <string>CodeValue</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </DbIndexList>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
         </ECNavigationProperty>
-        <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
-        <ECProperty propertyName="CodeNamespace" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
