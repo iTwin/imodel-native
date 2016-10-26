@@ -1113,14 +1113,6 @@ void StructArrayJsonPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToProp
 //static
 PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassId ownerClassMapId, ECN::NavigationECPropertyCR navProp, Utf8CP propertyAccessString)
     {
-    if (navProp.IsMultiple())
-        {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
-                                                      navProp.GetClass().GetFullName(), navProp.GetName().c_str(),
-                                                      GetConstraint(navProp, NavigationEnd::To).GetMultiplicity().ToString().c_str());
-        return nullptr;
-        }
-
     return new NavigationPropertyMap(ctx, ownerClassMapId, navProp, propertyAccessString);
     }
 
@@ -1192,8 +1184,24 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMap const& ecdbMap)
         return ERROR;
         }
 
-    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
+    //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
+    RelationshipClassEndTableMap const& endTableRelClassMap = *static_cast<RelationshipClassEndTableMap const*> (relClassMap);
+    const ECRelationshipEnd foreignEnd = endTableRelClassMap.GetForeignEnd();
+    const ECRelatedInstanceDirection navDirection = GetNavigationProperty().GetDirection();
+    if ((foreignEnd == ECRelationshipEnd_Source && navDirection == ECRelatedInstanceDirection::Backward) ||
+        (foreignEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
+        {
+        Utf8CP constraintEndName = foreignEnd == ECRelationshipEnd_Source ? "Source" : "Target";
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                    "Failed to map NavigationECProperty '%s.%s'. "
+                    "NavigationECProperties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
+                    "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
+                    GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str(), constraintEndName,
+                    relClassMap->GetClass().GetFullName(), constraintEndName);
+        return ERROR;
+        }
 
+    m_relClassMap = &endTableRelClassMap;
     ECClassCP ownerClass = ecdbMap.GetECDb().Schemas().GetECClass(GetOwnerClassMapId());
     if (ownerClass == nullptr)
         {
@@ -1238,32 +1246,12 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMap const& ecdbMap)
 bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDb const* ecdb) const
     {
     BeAssert(!logIfNotSupported || ecdb != nullptr);
-
-    if (GetNavigationProperty().IsMultiple())
-        {
-        if (logIfNotSupported)
-            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                           "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
-                                                           GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str(),
-                                                           GetConstraint(GetNavigationProperty(), NavigationEnd::To).GetMultiplicity().ToString().c_str(),
-                                                           RelationshipMultiplicity::ZeroOne().ToString().c_str(),
-                                                           RelationshipMultiplicity::OneOne().ToString().c_str());
-        return false;
-        }
     if (m_relClassMap == nullptr)
         {
         if (logIfNotSupported)
             ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a virtual table.",
                                                            GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str());
 
-        return false;
-        }
-
-    if (m_relClassMap->GetType() != ClassMap::Type::RelationshipEndTable)
-        {
-        if (logIfNotSupported)
-            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a link table.",
-                                                           GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str());
         return false;
         }
 

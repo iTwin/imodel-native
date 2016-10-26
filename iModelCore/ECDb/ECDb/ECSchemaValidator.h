@@ -42,7 +42,8 @@ struct ECSchemaValidationRule
         enum Type
             {
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-            ValidRelationshipRule
+            ValidRelationshipClass,
+            ValidNavigationProperty
             };
 
         //=======================================================================================
@@ -209,6 +210,57 @@ struct ValidRelationshipRule : ECSchemaValidationRule
     public:
         ValidRelationshipRule();
         ~ValidRelationshipRule() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      10/2016
+//+===============+===============+===============+===============+===============+======
+struct ValidNavigationPropertyRule : ECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      10/2016
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            enum class Kind
+                {
+                MultiplicityGreaterThanOne
+                };
+
+            private:
+                struct Inconsistency
+                    {
+                    ECN::NavigationECPropertyCP m_navProp;
+                    Kind m_kind;
+
+                    Inconsistency(ECN::NavigationECPropertyCR navProp, Kind kind)
+                        : m_navProp(&navProp), m_kind(kind)
+                        {}
+                    };
+
+                ECN::ECClassCP m_ecClass;
+                std::vector<Inconsistency> m_inconsistencies;
+
+                virtual Utf8String _ToString() const override;
+
+
+            public:
+                explicit Error(Type ruleType, ECN::ECClassCR ecClass) : ECSchemaValidationRule::Error(ruleType), m_ecClass(&ecClass) {}
+                ~Error() {}
+
+                void AddInconsistency(ECN::NavigationECPropertyCR navProp, Kind kind) { m_inconsistencies.push_back(Inconsistency(navProp, kind)); }
+                bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
+            };
+
+        mutable std::unique_ptr<Error> m_error;
+
+        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
+        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+    public:
+        explicit ValidNavigationPropertyRule(ECN::ECClassCR);
+        ~ValidNavigationPropertyRule() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
