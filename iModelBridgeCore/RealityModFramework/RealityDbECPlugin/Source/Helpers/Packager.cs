@@ -31,11 +31,9 @@ namespace IndexECPlugin.Source.Helpers
             m_executeQuery = executeQuery;
             }
 
-        public string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule, int major, int minor)
+        public string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule, int major, int minor, string requestor, string requestorVersion)
             {
             string coordinateSystem = null;
-            string requestor = null;
-            string requestorVersion = null;
 
             string name = Guid.NewGuid().ToString();
             instance.InstanceId = name + ".xrdp";
@@ -47,18 +45,6 @@ namespace IndexECPlugin.Source.Helpers
             if ( (csPropValue != null) && (!csPropValue.IsNull) )
                 {
                 coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
-                }
-
-            var RequestorPropValue = instance.GetPropertyValue("Requestor");
-            if ( (RequestorPropValue != null) && (!RequestorPropValue.IsNull) )
-                {
-                requestor = instance.GetPropertyValue("Requestor").StringValue;
-                }
-
-            var ReqVerPropValue = instance.GetPropertyValue("RequestorVersion");
-            if ( (ReqVerPropValue != null) && (!ReqVerPropValue.IsNull) )
-                {
-                requestorVersion = instance.GetPropertyValue("RequestorVersion").StringValue;
                 }
 
             var osmPropValue = instance.GetPropertyValue("OSM");
