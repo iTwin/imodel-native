@@ -28,10 +28,10 @@ struct DgnViewElemTest : public DgnDbTestFixture
     typedef Iter::Options IterOpts;
     template<typename T> ViewDefinitionCPtr AddSpatialView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
-        T view(*m_db, name, CategorySelector(*m_db, ""), DisplayStyle3d(*m_db, ""), ModelSelector(*m_db, ""));
+        T view(*m_db, name, *new CategorySelector(*m_db, ""), *new DisplayStyle3d(*m_db, ""), *new ModelSelector(*m_db, ""));
         view.SetDescr(descr);
         view.SetSource(source);
-        view.GetModelSelectorR().AddModel(baseModelId);
+        view.GetModelSelector().AddModel(baseModelId);
         auto cpView = view.Insert();
         EXPECT_TRUE(cpView.IsValid());
         return cpView;

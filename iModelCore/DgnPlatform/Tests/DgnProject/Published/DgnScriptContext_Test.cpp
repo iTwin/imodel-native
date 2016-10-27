@@ -260,8 +260,8 @@ TEST_F(DgnScriptTest, RunScripts)
     ASSERT_TRUE(newModel.IsValid());
 
     Json::Value parms = Json::objectValue;
-    parms["modelName"] = model->GetCode().GetValueCP();
-    parms["newModelName"] = newModel->GetCode().GetValueCP();
+    parms["modeledElementIdStr"] = model->GetModeledElementId().ToString().c_str();
+    parms["newModeledElementIdStr"] = newModel->GetModeledElementId().ToString().c_str();
     parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
     project->SaveChanges(); // digest other schema imports ??!!
     int retstatus = 0;

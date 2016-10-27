@@ -103,7 +103,7 @@ Json::Value ViewFlags::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
-    GetViewDefinitionR().GetCategorySelectorR().ChangeCategoryDisplay(categoryId, onOff);
+    GetViewDefinition().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
     _OnCategoryChange(onOff);
     }
 
@@ -599,7 +599,7 @@ void CameraViewDefinition::_OnTransform(TransformCR trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::TransformBy(TransformCR trans)
     {
-    GetSpatialViewDefinitionR()._OnTransform(trans);
+    GetSpatialViewDefinition()._OnTransform(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
