@@ -277,6 +277,7 @@ struct RealityDataSerializerV1 : public RealityDataSerializer
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 
 //=====================================================================================
@@ -308,6 +309,7 @@ struct RealityDataSerializerV2 : public RealityDataSerializer
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 
 //=====================================================================================
