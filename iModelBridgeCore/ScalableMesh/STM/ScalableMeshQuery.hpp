@@ -1776,16 +1776,33 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::AddClipVector(
      
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() const
     {
-    return m_cachedDisplayMeshData.IsValid();
+    if (!m_cachedDisplayMeshData.IsValid())
+        return false;
+
+    for (auto& textureData : m_cachedDisplayTextureData)
+        {
+        if (!textureData.IsValid())
+            return false;
+        }    
+
+    return true;
     }
 
 template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
     {
     if (!m_cachedDisplayMeshData.IsValid()) return false;
+
     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
         {
         if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
         }
+
+    for (auto& textureData : m_cachedDisplayTextureData)
+        {
+        if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr)
+            return false;
+        }
+
     return true;
     }
 
@@ -1839,14 +1856,12 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
 
 template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::RemoveDisplayDataFromCache() 
     {
-    if (IsLoaded())
+    if (m_cachedDisplayMeshData.IsValid())
         {
         auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
             
        // assert(m_cachedDisplayData->GetRefCount() == 2);
-        m_cachedDisplayMeshData = 0;
-        m_cachedDisplayTextureData.clear();
-
+        m_cachedDisplayMeshData = 0;        
         meshNode->RemoveDisplayMesh();
         }
     }
@@ -1968,7 +1983,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
     LOAD_NODE
             
-    if (displayCacheManagerPtr != 0 && !m_cachedDisplayMeshData.IsValid())                
+    if (displayCacheManagerPtr != 0)                
         {        
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->GetNbPoints() > 0)
