@@ -67,6 +67,13 @@ public:
     REALITYDATAPLATFORM_EXPORT static const ResolutionMap GetIDsByResFromJson(Utf8CP data,
                                                                               const bvector<GeoPoint2d>& regionOfInterest);
 
+    //! Get the best matching IDs for every resolution for a selected region from a user-defined dataset.
+    //! High res mosaic: High res first, but can be completed by medium and low res if there is any hole left by the high res.
+    //! Medium res mosaic: Medium res first, but can be completed by low res if there is any hole left by the medium res.
+    //! Low res mosaic: Low res only, a hole may exists if there is no suitable data.
+    REALITYDATAPLATFORM_EXPORT static const ResolutionMap GetIDsByRes(SpatioTemporalDatasetCR dataset,
+                                                                      const bvector<GeoPoint2d>& regionOfInterest);
+
 private:
     //! Take a list of GeoPoints and create a shape from it.
     static ImagePP::HFCPtr<ImagePP::HGF2DShape> CreateShapeFromGeoPoints(const bvector<GeoPoint2d>& regionOfInterest);

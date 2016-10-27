@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/SpatioTemporalData.h $
+|     $Source: PublicApi/RealityPlatform/SpatioTemporalData.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "StdAfx.h"
+#include "RealityPlatformAPI.h"
 
 #include <Bentley/DateTime.h>
-#include <RealityPlatform/RealityPlatformAPI.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -23,11 +23,15 @@ struct SpatioTemporalDataset : public RefCountedBase
     {
 public:
     //! Create from Json.
-    static SpatioTemporalDatasetPtr CreateFromJson(Utf8CP data);
+    REALITYDATAPLATFORM_EXPORT static SpatioTemporalDatasetPtr CreateFromJson(Utf8CP data);
 
-    //! Get dataset.
-    const bvector<SpatioTemporalDataPtr>& GetImageryGroup() const;
-    const bvector<SpatioTemporalDataPtr>& GetTerrainGroup() const;
+    //! Get imagery data.
+    REALITYDATAPLATFORM_EXPORT const bvector<SpatioTemporalDataPtr>&   GetImageryGroup() const;
+    REALITYDATAPLATFORM_EXPORT bvector<SpatioTemporalDataPtr>&         GetImageryGroupR();
+
+    //! Get terrain data.
+    REALITYDATAPLATFORM_EXPORT const bvector<SpatioTemporalDataPtr>&   GetTerrainGroup() const;
+    REALITYDATAPLATFORM_EXPORT bvector<SpatioTemporalDataPtr>&         GetTerrainGroupR();
 
 private:
     SpatioTemporalDataset();
@@ -44,19 +48,19 @@ struct SpatioTemporalData : public RefCountedBase
     {
 public:
     //! Create from Json.
-    static SpatioTemporalDataPtr Create(Utf8CP identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint);
+    REALITYDATAPLATFORM_EXPORT static SpatioTemporalDataPtr Create(Utf8CP identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint);
 
     //! Get identifier.
-    Utf8StringCR GetIdentifier() const;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
 
     //! Get date.
-    const DateTime& GetDate() const;
+    REALITYDATAPLATFORM_EXPORT const DateTime& GetDate() const;
 
     //! Get resolution.
-    const double& GetResolution() const;
+    REALITYDATAPLATFORM_EXPORT const double& GetResolution() const;
 
     //! Get footprint.
-    HFCPtr<HGF2DShape> GetFootprint() const;
+    REALITYDATAPLATFORM_EXPORT HFCPtr<HGF2DShape> GetFootprint() const;
 
 private:
     SpatioTemporalData(Utf8CP identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint);
