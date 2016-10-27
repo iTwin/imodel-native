@@ -733,7 +733,7 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
     {
     // Required fields.
     UriCR uri = source.GetUri();
