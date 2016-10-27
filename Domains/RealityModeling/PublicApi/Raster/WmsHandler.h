@@ -96,7 +96,7 @@ protected:
     WmsModel(CreateParams const& params, WmsMap const& prop);
 
 public:
-    
+    RASTER_EXPORT WmsMap const& GetMap() const;    
 };
 
 //=======================================================================================

@@ -49,13 +49,14 @@ public:
     //! Get the clip boundary.  Might be null.
     RASTER_EXPORT CurveVectorCP GetBoundaryCP() const;
 
-    //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of outer type. Use null to remove.
+    //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of CurveVector::BOUNDARY_TYPE_Outer type. 
+    //! Use null to remove boundary.
     RASTER_EXPORT StatusInt SetBoundary(CurveVectorP pBoundary);
 
     //! Get the clip mask list.
     RASTER_EXPORT MaskVector const& GetMasks() const;
 
-    //! Set the clip mask list.  Curve must be of inner type.
+    //! Set the clip mask list.  Curve must be of CurveVector::BOUNDARY_TYPE_Inner type.
     RASTER_EXPORT StatusInt SetMasks(MaskVector const&);
 
     //! Add a single clip mask to the list. Curve is not copied, its refcount will be incremented. Curve must be of inner type.
