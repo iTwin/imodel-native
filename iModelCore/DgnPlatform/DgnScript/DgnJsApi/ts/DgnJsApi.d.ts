@@ -438,22 +438,36 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     type DgnObjectIdSetP = cxx_pointer<DgnObjectIdSet>;
 
-    /** AuthorityIssuedCodeValue - Projection of BentleyApi::Dgn::DgnCode */
-    class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    /** DgnCode - Projection of BentleyApi::Dgn::DgnCode */
+    class DgnCode implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
-        /*** NATIVE_TYPE_NAME = JsAuthorityIssuedCode ***/
+        /*** NATIVE_TYPE_NAME = JsDgnCode ***/
+
+        /** Make a DgnCode object from a JSON-encoded DgnCode
+          * @param db   The BIM
+          * @param json The JSON encoding of the code
+          */
+        static FromJson(db: DgnDbP, json: Bentley_Utf8String): DgnCodeP;
+
+        /** The CodeAuthority of this code */
+        Authority: DgnObjectIdP;
+
+        /** The Namespace of this code */
+        Namespace: Bentley_Utf8String;
+
+        /** The Value of this code */
+        Value: Bentley_Utf8String;
+
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type AuthorityIssuedCode = cxx_pointer<AuthorityIssuedCodeValue>;
+    type DgnCodeP = cxx_pointer<DgnCode>;
 
     /** DgnModels - Projection of BentleyApi::Dgn::DgnModels */
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
-        /** Look up a DgnModelId by the model's code. @param name The code to look up. @return The ID of the corresponding model if found */
-        QueryModelId(name: AuthorityIssuedCode): DgnObjectIdP;
         /** Find or load the model identified by the specified ID. @param id The model ID. @return The loaded model or null if not found */
         GetModel(id: DgnObjectIdP): DgnModelP;
         OnDispose(): void;
@@ -477,12 +491,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         FindElement(id: DgnObjectIdP): DgnElementP;
 
         /** Look for the element that has the specified code
-          * @param codeAuthorityName    The name of the CodeAuthority
-          * @param codeValue            The name portion of the Code
-          * @param nameSpace            The namespace portion of the Code
+          * @param code The DgnCode to look up
           * @return the DgnElementId of the element found or null if no element with that specified code was found
           */
-        QueryElementIdByCode(codeAuthorityName: Bentley_Utf8String, codeValue: Bentley_Utf8String, nameSpace: Bentley_Utf8String): DgnObjectIdP;
+        QueryElementIdByCode(code: DgnCodeP): DgnObjectIdP;
 
         /**
          * Get a DgnElement from the DgnDb by its DgnElementId.
@@ -526,19 +538,21 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/
-        /** The Element's ID */
+        /** The element's ID */
         ElementId: DgnObjectIdP;
-        /** The Element's Code */
-        Code: AuthorityIssuedCode;
-        /** The Model that contains the Element */
+        /** The element's Code */
+        Code: DgnCodeP;
+        /** The Model that contains the element */
         Model: DgnModelP;
+        /** The Model that breaks down or models the element */
+        SubModel: DgnModelP;
         /** The ECClass of this element */
         ElementClass: ECClassP;
-        /** Insert this Element into its Model in the DgnDb. @return non-zero if the insert failed. */
+        /** Insert this element into its Model in the DgnDb. @return non-zero if the insert failed. */
         Insert(): cxx_int32_t;
-        /** Update this Element in its Model in the DgnDb. @return non-zero if the update failed. */
+        /** Update this element in its Model in the DgnDb. @return non-zero if the update failed. */
         Update(): cxx_int32_t;
-        /** Set the Parent of this Element. @param parent The parent element. */
+        /** Set the Parent of this element. @param parent The parent element. */
         SetParent(parent: cxx_pointer<DgnElement>): void;
 
         /**
@@ -732,11 +746,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /** The ID of this model */
         ModelId: DgnObjectIdP;
         /** The Code of this model */
-        Code: AuthorityIssuedCode;
+        Code: DgnCodeP;
         /** The DgnDb that contains this model */
         DgnDb: DgnDbP;
         /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
-        static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
+        static CreateModelCode(name: Bentley_Utf8String): DgnCodeP;
 
         /**
         * Add any required locks and/or codes to the specified request in preparation for the specified operation
@@ -1222,7 +1236,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /** Add a request to lock the briefcase at the specified level */
         AddBriefcase(level: cxx_enum_class_uint8_t<LockLevel>): void;
         /** Add a request to reserve a code */
-        AddCode(code: AuthorityIssuedCode): void;
+        AddCode(code: DgnCodeP): void;
 
         OnDispose(): void;
         Dispose(): void;

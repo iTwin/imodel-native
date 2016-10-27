@@ -2155,5 +2155,5 @@ TEST_F(DgnElementTests, AutoHandleViewDefinition)
     CameraViewDefinitionCPtr camera = m_db->Elements().Get<CameraViewDefinition>(inserted->GetElementId());
     ASSERT_TRUE(camera.IsValid());
     DPoint3d eyepoint = camera->GetEyePoint();
-//    ASSERT_EQ(293.99476935528162, eyepoint.x);
+    ASSERT_EQ(293.99476935528162, eyepoint.x);
     }
