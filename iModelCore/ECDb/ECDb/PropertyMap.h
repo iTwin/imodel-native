@@ -27,6 +27,7 @@ struct WipNavigationPropertyMap;
 struct WipPoint2dPropertyMap;
 struct WipPoint3dPropertyMap;
 struct WipPropertyMapContainer;
+
 #define EC_ACCESSSTRING_DELIMITER "."
 
 
@@ -870,6 +871,9 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapVisitor
     private:
         Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
         bool IsAlienTable(DbTable const& table) const;
+        DbTable const* RequiresJoinTo(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+        Utf8CP GetECClassIdPrimaryTableAlias(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+
         WipColumnVerticalPropertyMap const* FindSystemPropertyMapForTable(WipSystemPropertyMap const& systemPropertyMap) const;
         VisitorFeedback ToNativeSql(WipColumnVerticalPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(WipConstraintECInstanceIdPropertyMap const& propertyMap) const;

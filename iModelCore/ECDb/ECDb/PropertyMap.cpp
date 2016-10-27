@@ -1578,16 +1578,31 @@ VisitorFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdPropertyMap
     return VisitorFeedback::Next;
     }
 
+
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECClassIdPropertyMap const& propertyMap) const
     {
+    const DbTable *requireJoinToTable = RequiresJoinTo(propertyMap);
+    Utf8CP alias = nullptr;
+    if (requireJoinToTable != nullptr)
+        {
+        DbColumn const* ecClassId;
+        if (!requireJoinToTable->TryGetECClassIdColumn(ecClassId))
+            {
+            //ERROR;
+            }
+        if (ecClassId)
+        alias = GetECClassIdPrimaryTableAlias(propertyMap);
+        }
+    
     WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
     if (vmap == nullptr)
         {
         return VisitorFeedback::Cancel;
         }
+
 
     Result& result = Record(*vmap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
