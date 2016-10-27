@@ -101,8 +101,8 @@ TEST_F (SchemaElementIdTests, IdsAreNotSetAutomatically)
     EXPECT_EQ(id, primitiveProperty->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on primitive";
 
     //Add Property of Array type to structClass
-    ArrayECPropertyP MyArrayProp;
-    structClass->CreateArrayProperty (MyArrayProp, "ArrayProperty");
+    PrimitiveArrayECPropertyP MyArrayProp;
+    structClass->CreatePrimitiveArrayProperty (MyArrayProp, "ArrayProperty");
     ASSERT_TRUE (MyArrayProp != NULL);
     EXPECT_FALSE(MyArrayProp->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateArrayProperty";
     MyArrayProp->SetId(ECPropertyId(id));

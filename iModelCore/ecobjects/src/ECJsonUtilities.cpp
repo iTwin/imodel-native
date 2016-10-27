@@ -237,10 +237,9 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECPropertyCR property, Utf8StringCR accessString)
     {
-    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
     NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
 
-    if ((arrayProp == nullptr && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
+    if ((!property.GetIsArray() && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
         return ERROR;
 
     if (!EXPECTED_CONDITION(jsonValue.isArray()))
@@ -254,9 +253,9 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
     ECObjectsStatus status = instance.AddArrayElements(accessString.c_str(), length);
     POSTCONDITION(ECObjectsStatus::Success == status, ERROR);
 
-    if (arrayProp != nullptr && arrayProp->GetKind() == ARRAYKIND_Struct)
+    if (property.GetIsStructArray())
         {
-        auto structArrayProperty = arrayProp->GetAsStructArrayProperty();
+        auto structArrayProperty = property.GetAsStructArrayProperty();
         if (nullptr == structArrayProperty)
             return ERROR;
 
@@ -278,7 +277,8 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
         return SUCCESS;
         }
 
-    PrimitiveType primType = arrayProp != nullptr ? arrayProp->GetPrimitiveElementType() : navProp->GetType();
+    PrimitiveArrayECPropertyCP arrProp = property.GetAsPrimitiveArrayProperty();
+    PrimitiveType primType = arrProp != nullptr ? arrProp->GetPrimitiveElementType() : navProp->GetType();
 
     for (uint32_t ii = 0; ii < length; ii++)
         {
@@ -656,13 +656,12 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, RapidJsonValueCR jsonValue, ECPropertyCR property, Utf8StringCR accessString)
     {
-    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
     NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
 
     if (!jsonValue.IsArray())
         return ERROR;
 
-    if ((arrayProp == nullptr && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
+    if ((!property.GetIsArray() && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
         return ERROR;
 
     rapidjson::SizeType size = jsonValue.Size();
@@ -672,9 +671,9 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
     if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), size))
         return ERROR;
 
-    if (arrayProp != nullptr && arrayProp->GetKind() == ARRAYKIND_Struct)
+    if (property.GetIsStructArray())
         {
-        StructArrayECPropertyCP structArrayProperty = arrayProp->GetAsStructArrayProperty();
+        StructArrayECPropertyCP structArrayProperty = property.GetAsStructArrayProperty();
         BeAssert(nullptr != structArrayProperty);
 
         ECClassCP structType = structArrayProperty->GetStructElementType();
@@ -698,6 +697,7 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
         return SUCCESS;
         }
 
+    PrimitiveArrayECPropertyCP arrayProp = property.GetAsPrimitiveArrayProperty();
     PrimitiveType primType = arrayProp != nullptr ? arrayProp->GetPrimitiveElementType() : navProp->GetType();
 
     BentleyStatus returnStatus = SUCCESS;

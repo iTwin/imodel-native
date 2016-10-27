@@ -2887,12 +2887,13 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     ArrayKind   arrayKind = arrayProperty->GetKind();
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType = arrayProperty->GetPrimitiveElementType();
-        PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType(*arrayProperty);
+        PrimitiveArrayECPropertyCP primitiveArray = arrayProperty->GetAsPrimitiveArrayProperty();
+        PrimitiveType   memberType = primitiveArray->GetPrimitiveElementType();
+        PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType(*primitiveArray);
 
         bool            isFixedSizeArray = false;
 
-        if (arrayProperty->GetMinOccurs() == arrayProperty->GetMaxOccurs())
+        if (primitiveArray->GetMinOccurs() == primitiveArray->GetMaxOccurs())
             isFixedSizeArray = true;
 
         InstanceReadStatus status = ReadPrimitiveArrayValues(ecInstance, accessString, memberType, serializedMemberType, isFixedSizeArray, propertyValueNode);
@@ -3789,7 +3790,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        InstanceWriteStatus status = WritePrimitiveArray(ecInstance, accessString, nElements, arrayProperty.GetPrimitiveElementType());
+        InstanceWriteStatus status = WritePrimitiveArray(ecInstance, accessString, nElements, arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
         if (InstanceWriteStatus::Success != status)
             return status;
         }

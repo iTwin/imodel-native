@@ -173,8 +173,8 @@ bool ParserRegex::Apply (IECInstanceR instance, Utf8CP calculatedValue) const
         PrimitiveType primType;
         if (ecprop->GetIsPrimitive())
             primType = ecprop->GetAsPrimitiveProperty()->GetType();
-        else if (ecprop->GetIsArray())
-            primType = ecprop->GetAsArrayProperty()->GetPrimitiveElementType();
+        else if (ecprop->GetIsPrimitiveArray())
+            primType = ecprop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
         else
             return false;
 
@@ -322,8 +322,8 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
                 IECTypeAdapter* typeAdapter = nullptr;
                 if (ecprop->GetIsPrimitive())
                     typeAdapter = ecprop->GetAsPrimitiveProperty()->GetTypeAdapter();
-                else if (ecprop->GetIsArray())
-                    typeAdapter = ecprop->GetAsArrayProperty()->GetMemberTypeAdapter();
+                else if (ecprop->GetIsPrimitiveArray())
+                    typeAdapter = ecprop->GetAsPrimitiveArrayProperty()->GetMemberTypeAdapter();
 
                 if (nullptr != typeAdapter)
                     {

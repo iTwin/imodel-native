@@ -1567,8 +1567,8 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     ECEntityClassP class1;
     testSchema->CreateEntityClass(class1, "TestClass");
-    ArrayECPropertyP primitiveArrayProp;
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray");
+    PrimitiveArrayECPropertyP primitiveArrayProp;
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray");
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
 
     StandaloneECEnablerPtr enabler = class1->GetDefaultStandaloneEnabler();
@@ -3082,8 +3082,8 @@ TEST_F(DefaultStandaloneEnablerTests, Type)
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, SetValue("Struct.Old", "def"));
     EXPECT_EQ(ECObjectsStatus::Success, SetValue("Struct.New", "xyz"));
 
-    ArrayECPropertyP arrayProp;
-    m_class->CreateArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
+    PrimitiveArrayECPropertyP arrayProp;
+    m_class->CreatePrimitiveArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
     EXPECT_EQ(ECObjectsStatus::Success, SetValue("Array", "abc", 0));
     arrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Integer);
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, SetValue("Array", "def", 0));

@@ -215,9 +215,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 return ExpressionStatus::ArrayRequired;
                 }
 
-            ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
-
-            if (NULL == arrayProp)
+            if (!currentProperty->GetIsArray())
                 {
                 evalResult.Clear();
                 return ExpressionStatus::ArrayRequired;
@@ -247,7 +245,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             uint32_t       arrayIndex = (uint32_t)indexResult.GetECValue()->GetInteger();
 
             //  May need to get an instance or primitive value.
-            if (arrayProp->GetKind() == ECN::ARRAYKIND_Primitive)
+            if (currentProperty->GetIsPrimitiveArray())
                 {
                 if (TOKEN_None != nextOperation)
                     {
@@ -262,7 +260,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 return ExpressionStatus::Success;
                 }
 
-            BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
+            BeAssert(currentProperty->GetIsStructArray());
 
             ::uint32_t   propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECObjectsStatus::Success)
@@ -365,8 +363,8 @@ static bool isPointProperty (bool& is2d, ECPropertyCP prop)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isPointArrayProperty (bool& is2d, ECPropertyCP prop)
     {
-    ArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
-    return nullptr != arrayProp && ARRAYKIND_Primitive == arrayProp->GetKind() ? isPointProperty (is2d, arrayProp->GetPrimitiveElementType()) : false;
+    PrimitiveArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsPrimitiveArrayProperty() : nullptr;
+    return nullptr != arrayProp ? isPointProperty (is2d, arrayProp->GetPrimitiveElementType()) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -519,14 +517,13 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         }
     else if (TOKEN_LeftBracket == nextOperation)
         {
-        ArrayECPropertyCP arrayProp = NULL;
-        if (NULL == currentProperty || NULL == (arrayProp = currentProperty->GetAsArrayProperty()))
+        if (NULL == currentProperty || !currentProperty->GetIsArray())
             { evalResult.Clear(); return ExpressionStatus::ArrayRequired; }
 
         LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP> (primaryList.GetOperatorNode (index++));
         nextOperation = primaryList.GetOperation (index);
 
-        bool isPrimitive = (ARRAYKIND_Primitive == arrayProp->GetKind());
+        bool isPrimitive = currentProperty->GetIsPrimitiveArray();
         bool is2d = false;
         uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
         if (isPrimitive && TOKEN_Dot == nextOperation && isPointArrayProperty (is2d, currentProperty))
@@ -568,6 +565,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         if (isPrimitive && (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation () || globalContext.EnforcesUnits ()))
             {
+            PrimitiveArrayECPropertyCP arrayProp = currentProperty->GetAsPrimitiveArrayProperty();
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)
                 {
@@ -596,7 +594,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             return ExpressionStatus::Success;
             }
 
-        BeAssert (ARRAYKIND_Struct == arrayProp->GetKind());
+        BeAssert (currentProperty->GetIsStructArray());
 
         if (arrayVal.IsNull())
             {

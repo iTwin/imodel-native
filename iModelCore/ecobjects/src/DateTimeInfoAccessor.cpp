@@ -15,9 +15,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //static
 ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
-    ArrayECPropertyCP arrayDateTimeProp = nullptr;
+    PrimitiveArrayECPropertyCP arrayDateTimeProp = nullptr;
     PRECONDITION((dateTimeProperty.GetIsPrimitive() && dateTimeProperty.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_DateTime) ||
-        ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty()) != nullptr && arrayDateTimeProp->GetKind() == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime), ECObjectsStatus::DataTypeNotSupported);
+        ((arrayDateTimeProp = dateTimeProperty.GetAsPrimitiveArrayProperty()) != nullptr && arrayDateTimeProp->GetKind() == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime), ECObjectsStatus::DataTypeNotSupported);
 
     IECInstancePtr caInstance = nullptr;
 

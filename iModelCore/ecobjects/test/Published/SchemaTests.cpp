@@ -90,8 +90,8 @@ TEST_F(SchemaTest, ExpectReadOnly)
     ASSERT_TRUE(enumeration != nullptr);
 
     //Add Property of Array type to structClass
-    ArrayECPropertyP MyArrayProp;
-    structClass->CreateArrayProperty(MyArrayProp, "ArrayProperty");
+    PrimitiveArrayECPropertyP MyArrayProp;
+    structClass->CreatePrimitiveArrayProperty(MyArrayProp, "ArrayProperty");
     ASSERT_TRUE(MyArrayProp != NULL);
 
     //Create customAttributeClass
@@ -533,8 +533,8 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     entityClass->CreatePrimitiveProperty(primitiveProperty10, "Primitive10", PrimitiveType::PRIMITIVETYPE_String);
     PrimitiveECPropertyP calculatedProperty;
     entityClass->CreatePrimitiveProperty(calculatedProperty, "Calculated", PrimitiveType::PRIMITIVETYPE_String);
-    ArrayECPropertyP arrayProperty;
-    entityClass->CreateArrayProperty(arrayProperty, "Array", PrimitiveType::PRIMITIVETYPE_Long);
+    PrimitiveArrayECPropertyP arrayProperty;
+    entityClass->CreatePrimitiveArrayProperty(arrayProperty, "Array", PrimitiveType::PRIMITIVETYPE_Long);
 
     ECClassCP calcSpecClass = standardCASchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr calcSpecAttr = calcSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -887,17 +887,15 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
 
-    ArrayECPropertyP primitiveArrayProp;
+    PrimitiveArrayECPropertyP primitiveArrayProp;
 
-    class1->CreateStructProperty(structProp, "StructMember");
+    class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
 
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
     primitiveArrayProp->SetMinOccurs(1);
     primitiveArrayProp->SetMaxOccurs(10);
-
-    structProp->SetType(*structClass);
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     class1->RemoveProperty("StructMember");
@@ -1078,14 +1076,13 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     PrimitiveECPropertyP stringProp;
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
-    ArrayECPropertyP primitiveArrayProp;
+    PrimitiveArrayECPropertyP primitiveArrayProp;
 
     class1->CreatePrimitiveProperty(stringProp, "StringMember");
-    class1->CreateStructProperty(structProp, "StructMember");
+    class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray");
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray");
 
-    structProp->SetType(*structClass);
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
     primitiveArrayProp->SetMinOccurs(1);
     primitiveArrayProp->SetMaxOccurs(10);
@@ -1176,7 +1173,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 
     class1->CreateStructProperty(structProp, "StructMember2", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray2", structClass);
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray2", PRIMITIVETYPE_Integer);
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray2", PRIMITIVETYPE_Integer);
     EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->GetKind());
     EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->GetKind());
     EXPECT_EQ(0, strcmp(structProp->GetType().GetName().c_str(), "StructClass"));
@@ -1488,14 +1485,14 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     PrimitiveECPropertyP baseIntProp;
     PrimitiveECPropertyP baseDoubleProp;
     StructECPropertyP baseStructProp;
-    ArrayECPropertyP baseStringArrayProperty;
+    PrimitiveArrayECPropertyP baseStringArrayProperty;
     StructArrayECPropertyP baseStructArrayProp;
 
     baseClass1->CreatePrimitiveProperty(baseStringProp, "StringProperty", PRIMITIVETYPE_String);
     baseClass1->CreatePrimitiveProperty(baseIntProp, "IntegerProperty", PRIMITIVETYPE_Integer);
     baseClass1->CreatePrimitiveProperty(baseDoubleProp, "DoubleProperty", PRIMITIVETYPE_Double);
     baseClass1->CreateStructProperty(baseStructProp, "StructProperty", *structClass);
-    baseClass1->CreateArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
     baseClass1->CreateStructArrayProperty(baseStructArrayProp, "StructArrayProperty", structClass);
 
     PrimitiveECPropertyP longProperty = NULL;
@@ -1525,38 +1522,33 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     {
     // Structs overriding primitives
     DISABLE_ASSERTS
-        EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "IntegerProperty"));
+        EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "IntegerProperty", *structClass2));
     }
 
     // Structs overriding structs
-    // If we don't specify a struct type for the new property, then it should succeed
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(structProperty, "StructProperty"));
-    class1->RemoveProperty("StructProperty");
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructProperty", *structClass2));
 
     // Structs overriding arrays
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StringArrayProperty"));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StringArrayProperty", *structClass));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty"));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty", *structClass));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty", *structClass2));
 
-    ArrayECPropertyP stringArrayProperty;
-    ArrayECPropertyP stringArrayProperty2;
+    PrimitiveArrayECPropertyP stringArrayProperty;
+    PrimitiveArrayECPropertyP stringArrayProperty2;
     StructArrayECPropertyP structArrayProperty;
     // Arrays overriding primitives
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, "IntegerProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, "StringProperty", PRIMITIVETYPE_String));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty2, "StringProperty"));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "IntegerProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "StringProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty2, "StringProperty"));
 
     // Arrays overriding structs
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass2));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass));
 
-    ArrayECPropertyP intArrayProperty;
+    PrimitiveArrayECPropertyP intArrayProperty;
     // Arrays overriding arrays
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(intArrayProperty, "StringArrayProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateArrayProperty(stringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(intArrayProperty, "StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String));
     class1->RemoveProperty("StringArrayProperty");
     }
 
@@ -1949,23 +1941,23 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
     schema->CreateEntityClass(child, "child");
 
     PrimitiveECPropertyP baseIntProp;
-    ArrayECPropertyP baseIntArrayProperty;
-    ArrayECPropertyP baseStringArrayProperty;
-    ArrayECPropertyP baseBoolArrayProperty;
+    PrimitiveArrayECPropertyP baseIntArrayProperty;
+    PrimitiveArrayECPropertyP baseStringArrayProperty;
+    PrimitiveArrayECPropertyP baseBoolArrayProperty;
 
     base->CreatePrimitiveProperty(baseIntProp, "IntegerProperty", PRIMITIVETYPE_Integer);
-    base->CreateArrayProperty(baseIntArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Integer);
-    base->CreateArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
-    base->CreateArrayProperty(baseBoolArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Boolean);
+    base->CreatePrimitiveArrayProperty(baseIntArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Integer);
+    base->CreatePrimitiveArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
+    base->CreatePrimitiveArrayProperty(baseBoolArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Boolean);
 
     PrimitiveECPropertyP childIntProperty;
-    ArrayECPropertyP childIntArrayProperty;
-    ArrayECPropertyP childStringArrayProperty;
-    ArrayECPropertyP childBoolArrayProperty;
+    PrimitiveArrayECPropertyP childIntArrayProperty;
+    PrimitiveArrayECPropertyP childStringArrayProperty;
+    PrimitiveArrayECPropertyP childBoolArrayProperty;
 
     child->AddBaseClass(*base);
     // Override an integer property with an array of ints
-    ECObjectsStatus status = child->CreateArrayProperty(childIntArrayProperty, "IntegerProperty", PRIMITIVETYPE_Integer);
+    ECObjectsStatus status = child->CreatePrimitiveArrayProperty(childIntArrayProperty, "IntegerProperty", PRIMITIVETYPE_Integer);
     if (allowOverriding)
         {
         ASSERT_EQ(ECObjectsStatus::Success, status);
@@ -1975,7 +1967,7 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
         ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an integer property with an array of strings
-    status = child->CreateArrayProperty(childStringArrayProperty, "IntegerProperty", PRIMITIVETYPE_String);
+    status = child->CreatePrimitiveArrayProperty(childStringArrayProperty, "IntegerProperty", PRIMITIVETYPE_String);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an integer array with an integer
@@ -1993,11 +1985,11 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an array of boolean with an array of integers
-    status = child->CreateArrayProperty(childIntArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Integer);
+    status = child->CreatePrimitiveArrayProperty(childIntArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Integer);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an array of integers with an array of boolean
-    status = child->CreateArrayProperty(childBoolArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Boolean);
+    status = child->CreatePrimitiveArrayProperty(childBoolArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Boolean);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     }

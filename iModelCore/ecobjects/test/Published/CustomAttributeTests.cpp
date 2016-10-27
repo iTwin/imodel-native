@@ -502,14 +502,14 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     {
     ECSchemaPtr             schema;
     ECEntityClassP                ecclass;
-    PrimitiveECPropertyP    primProp;
-    ArrayECPropertyP        arrayProp;
-    PrimitiveECPropertyP    pointProp;
+    PrimitiveECPropertyP        primProp;
+    PrimitiveArrayECPropertyP   arrayProp;
+    PrimitiveECPropertyP        pointProp;
 
     ECSchema::CreateSchema (schema, "TestSchema", "ts", 1, 0, 2);
     schema->CreateEntityClass (ecclass, "TestClass");
     ecclass->CreatePrimitiveProperty (primProp, "PrimitiveProperty", PRIMITIVETYPE_String);
-    ecclass->CreateArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
+    ecclass->CreatePrimitiveArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
     ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3d);
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();

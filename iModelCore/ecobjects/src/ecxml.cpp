@@ -341,7 +341,7 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
         SetOrAppendValue(str, "PrimitiveProperty");
     if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
         SetOrAppendValue(str, "StructProperty");
-    if (TestValue(CustomAttributeContainerType::ArrayProperty, containerType))
+    if (TestValue(CustomAttributeContainerType::PrimitiveArrayProperty, containerType))
         SetOrAppendValue(str, "ArrayProperty");
     if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
         SetOrAppendValue(str, "StructArrayProperty");
@@ -399,7 +399,7 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
         else if (typeToken.EqualsI("StructProperty"))
             containerType = containerType | CustomAttributeContainerType::StructProperty;
         else if (typeToken.EqualsI("ArrayProperty"))
-            containerType = containerType | CustomAttributeContainerType::ArrayProperty;
+            containerType = containerType | CustomAttributeContainerType::PrimitiveArrayProperty;
         else if (typeToken.EqualsI("StructArrayProperty"))
             containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
         else if (typeToken.EqualsI("NavigationProperty"))
