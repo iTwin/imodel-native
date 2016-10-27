@@ -775,7 +775,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         }
 
     RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), 
-                                                              model.GetModelId(), CategorySelector(db, ""), DisplayStyle(db));
+                                                              model.GetModelId(), *new CategorySelector(db, ""), *new DisplayStyle(db));
 
     //  The view always has the same name as the redline and its model
     DgnCode code = CreateCode(redline->GetCode().GetValue());
@@ -796,9 +796,9 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     flags.SetRenderMode(RenderMode::Wireframe);
     flags.SetShowWeights(true);
     flags.SetShowFill(false);
-    view->GetDisplayStyleR().SetViewFlags(flags);
+    view->GetDisplayStyle().SetViewFlags(flags);
 
-    auto& catsel = view->GetCategorySelectorR();
+    auto& catsel = view->GetCategorySelector();
     for (auto const& catId : DgnCategory::QueryCategories(db))
         catsel.AddCategory(catId);
         
