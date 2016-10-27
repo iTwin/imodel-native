@@ -492,6 +492,14 @@ static bool validateResourceCode(DgnCode const& code, Utf8CP nameSpace)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ResourceAuthority::CreateViewDefinitionCode(Utf8StringCR name)
+    {
+    return CreateResourceCode(name, BIS_CLASS_ViewDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::IsValidCode(DgnCode const& code)

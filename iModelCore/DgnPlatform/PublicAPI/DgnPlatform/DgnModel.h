@@ -1144,57 +1144,22 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicalModel2d
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SheetModel, GraphicalModel2d);
-public:
-    struct CreateParams : GraphicalModel2d::CreateParams
-    {
-        DEFINE_T_SUPER(GraphicalModel2d::CreateParams);
-        DPoint2d m_size;
-
-        //! Parameters for creating a new SheetModel.
-        //! @param[in] dgndb the DgnDb into which the SheetModel will be created
-        //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
-        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code the code of the new SheetModel
-        //! @param[in] size the size of the SheetModel, in meters.
-        //! @param[in] displayInfo the Properties of the new SheetModel
-        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
-            T_Super(dgndb, classId, modeledElementId, code, displayInfo, inGuiList), m_size(size) {}
-
-        explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
-
-        DPoint2dCR GetSize() const {return m_size;} //!< Get the size of the SheetModel to be created, in meters. 
-        void SetSize(DPoint2dCR size) {m_size = size;} //!< Set the size of the SheetModel to be created, in meters. 
-    };
-
-private:
-    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
-    DPoint2d m_size;
-
     SheetModelCP _ToSheetModel() const override final {return this;}
 
-    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
-
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
 public:
     //! construct a new SheetModel
-    explicit SheetModel(CreateParams const& params) : T_Super(params), m_size(params.m_size) {}
+    explicit SheetModel(CreateParams const& params) : T_Super(params) {}
 
     //! Construct a SheetModel
     //! @param[in] params The CreateParams for the new SheetModel
     static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
     //! Create a SheetModel that breaks down the specified Sheet element
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize=DPoint2d::FromZero());
-
-    //! Get the sheet size, in meters
-    DPoint2d GetSize() const {return m_size;}
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code);
 };
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
@@ -1269,8 +1234,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for RoleModel

@@ -13,49 +13,30 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void checkProjectAssociation (DgnDbR dgnProject, DgnMarkupProjectR markupProject)
+struct DgnMarkupProjectTest : DgnDbTestFixture
     {
-    DgnProjectAssociationData::CheckResults results = markupProject.CheckAssociation (dgnProject);
-    ASSERT_TRUE( !results.GuidChanged );
-    ASSERT_TRUE( !results.NameChanged );
-    ASSERT_TRUE( !results.ContentsChanged );
-    ASSERT_TRUE( !results.UnitsChanged );
-    }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
+TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     {
-    ScopedDgnHost  autoDgnHost;
+    SetupSeedProject();
     DgnDomains::RegisterDomain(MarkupDomain::GetDomain());
 
     Utf8CP     markupProjectBasename = "CreateDgnMarkupProject.markupdb";
-    BeFileName dgnProjectFileName;
     BeFileName markupProjectFileName;
 
     DgnModelId  seedModelId;
     DgnViewId   seedViewId;
     if (true)
         {
-        DgnDbTestDgnManager tdmSeed (L"empty2d_english.ibim", __FILE__, Db::OpenMode::Readonly, false);
-        seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId (DgnModel::CreateModelCode("RedlineSeedModel"));
-        seedViewId = ViewDefinition::QueryViewId("RedlineSeedView", *tdmSeed.GetDgnProjectP());
+        markupProjectFileName = DgnDbTestDgnManager::GetOutputFilePath(L"CreateDgnMarkupProject");
 
-        DgnDbTestDgnManager tdm (L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::Readonly, false);
-        DgnDbP project = tdm.GetDgnProjectP();
-        ASSERT_TRUE( project != NULL );
-
-        dgnProjectFileName.SetNameUtf8 (project->GetDbFileName());
-
-        markupProjectFileName = DgnDbTestDgnManager::GetOutputFilePath  (L"CreateDgnMarkupProject");
-
-        CreateDgnMarkupProjectParams cparms (*project);
+        CreateDgnMarkupProjectParams cparms (*m_db);
         cparms.SetOverwriteExisting(true);
-        cparms.SetSeedDb (BeFileName(tdmSeed.GetPath()));
+        cparms.SetRootSubjectLabel("CreateDgnMarkupProject");
         DbResult status;
         DgnMarkupProjectPtr mproject = DgnMarkupProject::CreateDgnDb (&status, markupProjectFileName, cparms);
         ASSERT_TRUE( status == BE_SQLITE_OK );
@@ -63,8 +44,6 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         Utf8String mpname = mproject->GetDbFileName();
         ASSERT_TRUE( mpname.find (markupProjectBasename) != Utf8String::npos );
         }
-
-    //  Both .bim are now closed
 
     DbResult status;
 
@@ -75,68 +54,34 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     Utf8String mpname = mproject->GetDbFileName();
     ASSERT_TRUE( mpname.find (markupProjectBasename) != Utf8String::npos );
 
-    // Reopen DgnDb
-
-    DgnDbPtr dgnProject = DgnDb::OpenDgnDb (&status, dgnProjectFileName, oparms);
-    ASSERT_TRUE( status == BE_SQLITE_OK );
-    ASSERT_TRUE( dgnProject.get() != NULL );
-
-    checkProjectAssociation (*dgnProject, *mproject);
-
     // Create a redline model
     DgnDbStatus createStatus = DgnDbStatus::Success;
-    RedlineModelP rdlModel = mproject->CreateRedlineModel (&createStatus, "foo", seedModelId);
-    ASSERT_TRUE( NULL != rdlModel );
+    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), Redline::CreateCode("Redline 1", *mproject));
+    ASSERT_TRUE(redline.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
+    ASSERT_TRUE(redline->Insert(&createStatus).IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
+    RedlineModelPtr rdlModel = RedlineModel::Create(&createStatus, *redline);
+    ASSERT_TRUE(rdlModel.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
+    createStatus = rdlModel->Insert();
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
 
     ASSERT_EQ( rdlModel->GetDgnMarkupProject(), mproject.get() );
 
-#ifdef WIP_REDLINE_ECINSTANCE
-    // Work with redline properties
-    ECN::ECClassCP rdlClass = rdlModel->GetECClass();
-    
-    if (true) // Check that the Name property was set (in model creation) as expected and can be accessed as an ECProperty
-        {
-        Utf8String selectECSql("SELECT Name FROM ONLY ");
-        selectECSql.append(rdlClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
-        ECSqlStatement selectStmt;
-        selectStmt.Prepare (*mproject, selectECSql.c_str ());
-        selectStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
-        ASSERT_STREQ( selectStmt.GetValueText(0), "foo" );
-        }
-
-    //TODO: ECSQL does not support updates yet. Once it does, this code needs to be adopted
-    if (true) // Set the Description property
-        {
-        Utf8String updateECSql("UPDATE ONLY ");
-        updateECSql.append(rdlClass->GetECSqlName()).append(" SET Description='Some Description' WHERE ECInstanceId=?");
-        ECSqlStatement updateStmt;
-        updateStmt.Prepare (*mproject, updateECSql.c_str ());
-        updateStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (updateStmt.Step() == BE_SQLITE_DONE);
-        mproject->SaveChanges();
-        }
-
-    if (true) // Check that the Description property was set as expected
-        {
-        Utf8String selectECSql("SELECT Description FROM ONLY ");
-        selectECSql.append(rdlClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
-        ECSqlStatement selectStmt;
-        selectStmt.Prepare (*mproject, selectECSql.c_str ());
-        selectStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
-        ASSERT_STREQ( selectStmt.GetValueText(0), "Some Description" );
-        }
-#endif
-
     // Create a redline model view
-    BSIRect rect;
-    rect.Init (0,0, 1024, 768);
+    auto viewSize = DVec2d::From(0.5, 0.5); // in meters
     createStatus = DgnDbStatus::Success;
-    mproject->CreateRedlineModelView (&createStatus, *rdlModel, seedViewId, rect, rect);
+    RedlineViewDefinitionPtr rdlview = RedlineViewDefinition::Create(&createStatus, *rdlModel, viewSize);
+    ASSERT_TRUE(rdlview.IsValid());
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
+    RedlineViewDefinitionCPtr persistentView = mproject->Elements().Insert(*rdlview, &createStatus);
+    ASSERT_TRUE(persistentView.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
+    ASSERT_TRUE(persistentView->GetDelta2d().IsEqual(viewSize));
+    ASSERT_TRUE(persistentView->GetOrigin2d().IsEqual(DPoint2d::FromZero()));
+
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == mproject->SaveChanges());
-    // *** WIP Create association - to do that, we'd need a real ViewInfo
-    // rdlModel->SetAssociation (*dgnProject, dgnProjectViewInfo);
+
+
     }

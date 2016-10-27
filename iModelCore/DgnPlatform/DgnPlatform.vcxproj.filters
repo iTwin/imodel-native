@@ -1081,5 +1081,8 @@
     <ClCompile Include="DgnHandlers\DgnECTypeAdapters.cpp">
       <Filter>DgnHandlers</Filter>
     </ClCompile>
+    <ClCompile Include="DgnCore\DgnElementProperties.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

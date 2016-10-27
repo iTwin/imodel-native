@@ -600,8 +600,10 @@ struct DependencyRevisionTest : RevisionTestFixture
 
     TestElementCPtr InsertElement(int32_t intProp1);
     void UpdateRootProperty(int32_t intProp1, DgnElementId eId);
-    void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
     void VerifyRootProperty(DgnElementId, int32_t);
+    void UpdateDependentProperty(DgnElementId eId, uint8_t index, int32_t value);
+    void VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value);
+    void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
 
     DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.ibim", true) { }
 };
@@ -639,6 +641,28 @@ void DependencyRevisionTest::VerifyRootProperty(DgnElementId eId, int32_t prop)
     auto el = m_testDb->Elements().Get<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(el->GetIntegerProperty(0), prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::UpdateDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
+    {
+    auto el = m_testDb->Elements().GetForEdit<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    el->SetIntegerProperty(index, value);
+    ASSERT_TRUE(el->Update().IsValid());
+    VerifyDependentProperty(eId, index, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
+    {
+    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(el->GetIntegerProperty(index), value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,6 +914,47 @@ TEST_F(DependencyRevisionTest, Conflict)
     UpdateRootProperty(987, bId);
     m_testDb->SaveChanges("Modify B again");
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Directly modify a dependent element, then run dependency callbacks which indirectly
+* modify the dependent element in a different way.
+* Expect that no conflicts occur in merging revisions containing these changes.
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
+    {
+    CreateDgnDb();
+
+    // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
+    DgnElementId rootId = InsertElement(123)->GetElementId();
+    DgnElementId depId = InsertElement(456)->GetElementId();
+    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    ASSERT_TRUE(CreateRevision().IsValid());
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
+    BackupTestFile();
+
+    // Modify dependent property directly
+    UpdateDependentProperty(depId, 2, 789);
+    VerifyDependentProperties(depId, { 456, 0, 789, 0 });
+
+    // Saving changes will re-run dependency logic
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
+
+    // Create a revision
+    DgnRevisionPtr rev = CreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    DumpRevision(*rev);
+
+    // Apply revision to original state - expect same state + no conflicts
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
     }
 
 /*---------------------------------------------------------------------------------**//**

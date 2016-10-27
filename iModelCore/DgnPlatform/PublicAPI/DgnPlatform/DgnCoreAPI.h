@@ -47,12 +47,12 @@
 #include "LinkElement.h"
 #include "DgnProvenance.h"
 #include "MeshTile.h"
-
-//__PUBLISH_SECTION_END__
 #include "SnapContext.h"
-#include "LineStyleApi.h"
 #include "NullContext.h"
 #include "Sprites.h"
+
+//__PUBLISH_SECTION_END__
+#include "LineStyleApi.h"
 //__PUBLISH_SECTION_START__
 
 #endif // DOCUMENTATION_GENERATOR

@@ -28,6 +28,13 @@
  *      BBoxHigh : point3d
  */
 
+namespace ElementStrings
+{
+    static Utf8CP str_Variables() {return "Variables";}
+};
+
+using namespace ElementStrings;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,8 +282,54 @@ SessionPtr Session::Create(DgnDbR db, Utf8CP name)
     {
     DgnModelId modelId = db.GetSessionModel()->GetModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Session::GetHandler());
-    DgnCode code = SessionAuthority::CreateSessionCode(name);
-    return new Session(CreateParams(db, modelId, classId, code));
+    return new Session(CreateParams(db, modelId, classId, CreateCode(name)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SessionCPtr Session::GetByName(DgnDbR db, Utf8StringCR name)
+    {
+    auto& elements = db.Elements(); 
+    return elements.Get<Session>(elements.QueryElementIdByCode(CreateCode(name)));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Session::_LoadFromDb() 
+    {
+    auto stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    Json::Reader::Parse(GetPropertyValueString(str_Variables()), m_variables);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Session::_CopyFrom(DgnElementCR el) 
+    {
+    auto& other = static_cast<SessionCR>(el);
+    other.SaveVariables();
+    T_Super::_CopyFrom(el);
+
+    m_variables = other.m_variables;
+    m_dirty = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Session::SaveVariables() const
+    {
+    if (!m_dirty)
+        return;
+
+    auto& ncThis = const_cast<SessionR>(*this);
+    ncThis.SetPropertyValue(str_Variables(), Json::FastWriter::ToString(m_variables).c_str());
+    m_dirty = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2522,21 +2575,21 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
     std::call_once(s_accessorsFlag, []()
         {
 #define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT3(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3dCR plc = el.GetPlacement();                                       \
             value.SetPoint3d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
-            {                                                                           \
+            {                                                                          \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
@@ -2630,21 +2683,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     std::call_once(s_accessorsFlag, []()
         {
 #define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
-            value.SetDouble(EXPR);                                                      \
+            value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
+            {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
-            {                                                                           \
+            {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \

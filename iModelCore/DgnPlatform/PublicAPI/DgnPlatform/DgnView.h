@@ -132,7 +132,7 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateDisplayStyleCode(name);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateDisplayStyleCode(name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
@@ -195,8 +195,10 @@ public:
     /** @{ */
     //! Determine whether the SkyBox is displayed in this DisplayStyle3d.
     bool IsSkyBoxEnabled() const {return m_environment.m_skybox.m_enabled;}
+
     //! Determine whether the Ground Plane is displayed in this DisplayStyle3d.
     bool IsGroundPlaneEnabled() const {return m_environment.m_groundPlane.m_enabled;}
+
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
 
@@ -255,10 +257,11 @@ public:
     void AddModel(DgnModelId id) {m_models.insert(id);}
 
     //! Drop a model from this ModelSelector
+    //! @return true if the model was dropped, false if it was not in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateModelSelectorCode(name);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateModelSelectorCode(name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
@@ -317,7 +320,7 @@ public:
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateCategorySelectorCode(name);} //!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateCategorySelectorCode(name);} //!< @private
 };
 
 //=======================================================================================
@@ -428,7 +431,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateViewDefinitionCode(name);}
+    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateViewDefinitionCode(name);}
 
     //! Look up the Id of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
@@ -488,7 +491,7 @@ public:
         OrthographicViewDefinitionCPtr GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
     };
 
-    //! An iterator over the view definitions stored in a DgnDb
+    //! An iterator over the ViewDefinitions stored in a DgnDb
     struct Iterator : ECSqlStatementIterator<Entry>
     {
         // Options controlling ViewDefinition iteration
@@ -676,8 +679,9 @@ public:
     //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
     //! @param[in] size Optional size (x,y) for the thumbnail. Thumbnails are usually square. Default size is 768x768 pixels.
     //! @param[in] modeOverride Optional override for the RenderMode for the thumbnail. If nullptr, use RenderMode from the DisplayStyle.
+    //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size=Point2d::From(768,768), Render::RenderMode const* modeOverride=nullptr) const;
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
 
     //! Save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
     //! @param[in] size the size (x,y) of the thumbnail.
@@ -829,7 +833,7 @@ public:
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
 
-    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
@@ -961,7 +965,7 @@ public:
     CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
 
-    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
@@ -1123,7 +1127,9 @@ public:
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
+    void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
+    void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
     };
@@ -1156,7 +1162,7 @@ public:
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
@@ -1188,7 +1194,7 @@ public:
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}
