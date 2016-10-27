@@ -172,10 +172,12 @@ NativeSqlBuilder& NativeSqlBuilder::Append(UnarySqlOperator op)
 //+---------------+---------------+---------------+---------------+---------------+------
 NativeSqlBuilder& NativeSqlBuilder::AppendFormatted(Utf8CP format, ...)
     {
-    va_list ap;
-    va_start(ap, format);
-    Append(Utf8PrintfString::CreateFromVaList(format, ap).c_str());
-    va_end(ap);
+    va_list args;
+    va_start(args, format);
+    Utf8String formattedMessage;
+    formattedMessage.VSprintf(format, args);
+    Append(formattedMessage.c_str());
+    va_end(args);
     return *this;
     }
 
