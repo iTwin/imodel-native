@@ -9,8 +9,10 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "RealityPlatformAPI.h"
+#include <ctime>
 #include <Bentley/BeFile.h>
+#include <Bentley/bmap.h>
+#include "RealityPlatformAPI.h"
 
 //! Callback function to follow the download progression.
 //! @param[out] index       Url index set at the creation, (-1)General error, (-2)Retry the command. 
@@ -52,7 +54,7 @@ enum class SetupCurlStatus
 
 
 struct RealityDataDownload : public RefCountedBase
-{
+    {
 public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
@@ -71,6 +73,7 @@ public:
         FileTransfer* nextSister;
         size_t sisterIndex;
         size_t totalSisters;
+        std::time_t DownloadStart;
         };
 
     struct FileTransfer 
@@ -107,6 +110,37 @@ public:
             fromCache(true), iAppend(ft->iAppend), pProgressFunc(ft->pProgressFunc), filesize(ft->filesize),
             downloadedSizeStep(ft->downloadedSizeStep), progressStep(ft->progressStep), nbRetry(ft->nbRetry)
             {}
+        };
+
+    //where the curl download ended, either in success or failure
+    struct DownloadResult
+        {
+        int                     errorCode; //code returned by curl
+        //a relative measure of how much of the file was loaded = (total filesize * (% downloaded + 1%))
+        size_t                  downloadProgress; 
+        };
+
+    //results for a single file
+    struct TransferReport
+        {
+        AString                 url; //url that was contacted
+        size_t                  filesize; //size of the file
+        bvector<DownloadResult> retries; //the results of each retry performed
+        //time between when the download was added to the thread pool and when it either succeeded or failed its final retry
+        //important to note, that if the source limits the number of parallel downloads, this value may be artificially extended
+        std::time_t             timeSpent; 
+        };
+
+    //results of all downloads queued for a package
+    struct DownloadReport
+        {
+        size_t                  packageId;
+        bmap<WString, TransferReport*> results;
+        ~DownloadReport()
+            {
+            for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
+                delete (it->second);
+            }
         };
 
     //{{url, file},{url, file}}
@@ -149,7 +183,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
     //! Start the download progress for all links.
-    REALITYDATAPLATFORM_EXPORT bool Perform();
+    REALITYDATAPLATFORM_EXPORT DownloadReport* Perform();
 
 private:
     RealityDataDownload() { m_pCurlHandle=NULL;};
@@ -158,10 +192,12 @@ private:
     RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
     ~RealityDataDownload();
 
-    SetupCurlStatus SetupCurlandFile(FileTransfer* ft);
+    SetupCurlStatus SetupCurlandFile(FileTransfer* ft, bool isRetry = false);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
     void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index, size_t sisterCount, size_t sisterIndex);
+
+    void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;
@@ -172,9 +208,10 @@ private:
     Utf8String                              m_proxyUrl;
     Utf8String                              m_proxyCreds;
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
-    float                                   m_progressStep;
+    float                                   m_progressStep = 0.01;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
+    DownloadReport                          m_dlReport;
 
-};
-
+    };
+    
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

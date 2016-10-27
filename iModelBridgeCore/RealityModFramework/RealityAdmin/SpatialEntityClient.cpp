@@ -96,7 +96,7 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
         pDownload->SetCertificatePath(m_certificatePath.GetName());
 
     pDownload->SetStatusCallBack(ConstructRepositoryMapping);
-    if (!pDownload->Perform())
+    if (pDownload->Perform() == nullptr)
         return SpatialEntityStatus::DownloadError;
 
     return status;

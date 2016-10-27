@@ -392,7 +392,7 @@ protected:
     float m_greenSize;
     float m_panchromaticSize;
 
-    mutable SQLINTEGER m_serverId;
+    mutable SQLINTEGER m_serverId = -1;
 }; 
    
 
