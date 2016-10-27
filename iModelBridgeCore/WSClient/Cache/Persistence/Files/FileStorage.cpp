@@ -323,10 +323,10 @@ BeFileName FileStorage::CreateFileStoragePath(BeFileName rootDir, WStringCR cach
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment)
+CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment)
     {
     CacheEnvironment fullEnvironment;
-    if (inputEnvironment.persistentFileCacheDir.empty() || inputEnvironment.temporaryFileCacheDir.empty())
+    if (baseEnvironment.persistentFileCacheDir.empty() || baseEnvironment.temporaryFileCacheDir.empty())
         {
         return fullEnvironment;
         }
@@ -336,9 +336,9 @@ CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath,
     if (cacheName == L":memory:")
         cacheName = L"_in_memory_cache_";
 
-    fullEnvironment.persistentFileCacheDir = CreateFileStoragePath(inputEnvironment.persistentFileCacheDir, cacheName);
-    fullEnvironment.temporaryFileCacheDir = CreateFileStoragePath(inputEnvironment.temporaryFileCacheDir, cacheName);
-    fullEnvironment.externalFileCacheDir = inputEnvironment.externalFileCacheDir;
+    fullEnvironment.persistentFileCacheDir = CreateFileStoragePath(baseEnvironment.persistentFileCacheDir, cacheName);
+    fullEnvironment.temporaryFileCacheDir = CreateFileStoragePath(baseEnvironment.temporaryFileCacheDir, cacheName);
+    fullEnvironment.externalFileCacheDir = baseEnvironment.externalFileCacheDir;
 
     if (fullEnvironment.externalFileCacheDir.empty())
         {

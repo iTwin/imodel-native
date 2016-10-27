@@ -42,7 +42,7 @@ struct FileStorage
         BentleyStatus CacheFile(FileInfo& info, BeFileNameCR filePath, Utf8CP cacheTag, FileCache location, bool copyFile);
 
         static BentleyStatus DeleteFileCacheDirectories(CacheEnvironmentCR fullEnvironment);
-        static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
+        static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment);
 
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
 
