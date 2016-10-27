@@ -1358,14 +1358,28 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
     {
-    OrthographicViewDefinitionCP    orthographicView;
-    CameraViewDefinitionCP          cameraView;
+    CameraViewDefinitionCP          cameraView = view.ToCameraView();
+    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
+
+    if (nullptr == cameraView && nullptr == orthographicView)
+        {
+        BeAssert(false && "unsupported view type");
+        return;
+        }
+
+    json["name"] = view.GetName();
+    json["modelSelector"] = view.GetModelSelector().GetElementId().ToString();
+    json["categorySelector"] = view.GetCategorySelector().GetElementId().ToString();
+    json["displayStyle"] = view.GetDisplayStyle().GetElementId().ToString();
+
     DVec3d                          xVec, yVec, zVec;
     RotMatrix                       rotation;
     DPoint3d                        eyePoint;
 
-    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
+    if (nullptr != cameraView)
         {
+        json["type"] = "camera";
+
         // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
         // Simulate by pointing the camera toward the center of the viewed volume.
         eyePoint = cameraView->GetEyePoint();
@@ -1391,8 +1405,10 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
 
         json["fov"]   =  2.0 * atan2 (extents.x/2.0, cameraView->GetFocusDistance());
         }
-    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
+    else
         {
+        json["type"] = "ortho";
+
         // Simulate orthographic with a small field of view.
         static const    double s_orthographicFieldOfView = .01;
         DVec3d          extents = orthographicView->GetExtents();
@@ -1410,10 +1426,6 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         eyePoint.SumOf (backCenter, zVec, zDistance);
         json["fov"] = s_orthographicFieldOfView;
         }
-    else
-        {
-        BeAssert (false && "unsuppored view type");
-        }
 
     transform.Multiply(eyePoint);
     transform.MultiplyMatrixOnly(yVec);
@@ -1429,4 +1441,133 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
     json["up"] = PointToJson(yVec);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+    {
+    Utf8String rootNameUtf8(m_rootName.c_str());
+    json["name"] = rootNameUtf8;
+
+    if (!m_tileToEcef.IsIdentity())
+        {
+        DPoint3d groundEcefPoint;
+        transform.Multiply(groundEcefPoint, groundPoint);
+        json["groundPoint"] = PointToJson(groundEcefPoint);
+        }
+
+    DgnViewId defaultViewId;
+    DgnElementIdSet allModelSelectors;
+    DgnElementIdSet allCategorySelectors;
+    DgnElementIdSet allDisplayStyles;
+
+    auto& viewsJson = (json["views"] = Json::objectValue);
+    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
+        {
+        auto viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
+        SpatialViewDefinitionCP spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
+        if (nullptr == spatialView)
+            continue;
+
+        Json::Value entry(Json::objectValue);
+
+        allModelSelectors.insert(spatialView->GetModelSelector().GetElementId());
+        allCategorySelectors.insert(spatialView->GetCategorySelector().GetElementId());
+        allDisplayStyles.insert(spatialView->GetDisplayStyle().GetElementId());
+
+        GetSpatialViewJson(entry, *spatialView, transform);
+        viewsJson[view.GetId().ToString()] = entry;
+
+        // If for some reason the default view is not in the published set, we'll use the first view as the default
+        if (!defaultViewId.IsValid() || view.GetId() == GetViewController().GetViewId())
+            defaultViewId = view.GetId();
+        }
+
+    if (!defaultViewId.IsValid())
+        return Status::NoGeometry;
+
+    json["defaultView"] = defaultViewId.ToString();
+
+    WriteModelsJson(json, allModelSelectors);
+    WriteCategoriesJson(json, allCategorySelectors);
+    json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
+
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors)
+    {
+    DgnModelIdSet allModels;
+    Json::Value& selectorsJson = (json["modelSelectors"] = Json::objectValue);
+    for (auto const& selectorId : allModelSelectors)
+        {
+        auto selector = GetDgnDb().Elements().Get<ModelSelector>(selectorId);
+        if (selector.IsValid())
+            {
+            auto models = selector->GetModels();
+            selectorsJson[selectorId.ToString()] = IdSetToJson(models);
+            allModels.insert(models.begin(), models.end());
+            }
+        }
+
+    json["models"] = GetModelsJson(allModels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteCategoriesJson(Json::Value& json, DgnElementIdSet const& selectorIds)
+    {
+    DgnCategoryIdSet allCategories;
+    Json::Value& selectorsJson = (json["categorySelectors"] = Json::objectValue);
+    for (auto const& selectorId : selectorIds)
+        {
+        auto selector = GetDgnDb().Elements().Get<CategorySelector>(selectorId);
+        if (selector.IsValid())
+            {
+            auto cats = selector->GetCategories();
+            selectorsJson[selectorId.ToString()] = IdSetToJson(cats);
+            allCategories.insert(cats.begin(), cats.end());
+            }
+        }
+
+    json["categories"] = GetCategoriesJson(allCategories);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetDisplayStylesJson(DgnElementIdSet const& styleIds)
+    {
+    Json::Value json(Json::objectValue);
+    for (auto const& styleId : styleIds)
+        {
+        auto style = GetDgnDb().Elements().Get<DisplayStyle>(styleId);
+        if (style.IsValid())
+            json[styleId.ToString()] = GetDisplayStyleJson(*style);
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
+    {
+    Json::Value json(Json::objectValue);
+
+    ColorDef bgColor = style.GetBackgroundColor();
+    auto& bgColorJson = (json["backgroundColor"] = Json::objectValue);
+    bgColorJson["red"] = bgColor.GetRed() / 255.0;
+    bgColorJson["green"] = bgColor.GetGreen() / 255.0;
+    bgColorJson["blue"] = bgColor.GetBlue() / 255.0;
+
+    // ###TODO: skybox, ground plane, view flags...
+
+    return json;
+    }
 
