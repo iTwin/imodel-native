@@ -6351,6 +6351,8 @@ bool                 anyWord
     BeAssert (numMixedCase >= numUpperCase);
 
     char concatString[4096];
+    concatString[0] = '\0';
+
     strcpy (concatString, m_csParameters->csdef.key_nm);
     strcat (concatString, m_csParameters->csdef.dat_knm);
     strcat (concatString, m_csParameters->csdef.elp_knm);
