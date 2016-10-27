@@ -28,11 +28,27 @@ struct EdgeToCurveIdMap : bmap <uint32_t, CurvePrimitiveIdCP> {};
 +===============+===============+===============+===============+===============+======*/
 struct PSolidUtil
 {
-DGNPLATFORM_EXPORT static BentleyStatus IdFromEntity (FaceId& faceId, PK_ENTITY_t entityTag, bool useHighestId) {return ERROR;}
+DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned = true); //!< NOTE: Will return an invalid entity if entity tag is not valid.
+DGNPLATFORM_EXPORT static ISolidKernelEntityPtr InstanceEntity(ISolidKernelEntityCR); //!< Create non-owning instance of an existing entity...
+DGNPLATFORM_EXPORT static uint32_t GetEntityTag(ISolidKernelEntityCR);
+
+DGNPLATFORM_EXPORT static BentleyStatus SaveEntityToMemory(uint8_t** ppBuffer, size_t& bufferSize, ISolidKernelEntityCR); // NOTE: The entity transform must be saved separately...
+DGNPLATFORM_EXPORT static BentleyStatus RestoreEntityFromMemory (ISolidKernelEntityPtr&, uint8_t const* pBuffer, size_t bufferSize, TransformCR);
+
+DGNPLATFORM_EXPORT static IFaceMaterialAttachmentsPtr CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams);
+DGNPLATFORM_EXPORT static void SetFaceAttachments(ISolidKernelEntityR, IFaceMaterialAttachmentsP);
+
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR entity, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR entity, IFacetOptionsR);
+
+DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+
+DGNPLATFORM_EXPORT static BentleyStatus IdFromEntity (FaceId& faceId, PK_ENTITY_t entityTag, bool useHighestId) {return ERROR;} // NEEDSWORK...
 
 DGNPLATFORM_EXPORT static BentleyStatus GetBodyFaces (bvector<PK_FACE_t>& faces, PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus GetCurveOfEdge (PK_CURVE_t& curveTagOut, double* startParamP, double* endParamP, bool* reversedP, PK_EDGE_t edgeTagIn);
-DGNPLATFORM_EXPORT static bool HasCurvedFacesOrEdges (PK_BODY_t entity);
+DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge (PK_BODY_t entity);
 
 DGNPLATFORM_EXPORT static CurveVectorPtr FaceToUVCurveVector (PK_FACE_t faceTag, PK_UVBOX_t* uvBox, bool splineParameterization);
 DGNPLATFORM_EXPORT static CurveVectorPtr PlanarFaceToCurveVector (PK_FACE_t face, EdgeToCurveIdMap const* idMap = nullptr);
@@ -58,9 +74,21 @@ DGNPLATFORM_EXPORT static BentleyStatus CreateMSBsplineSurfaceFromFace (MSBsplin
 DGNPLATFORM_EXPORT static BentleyStatus CreateMSBsplineSurfaceFromSurface (MSBsplineSurfaceR surface, PK_SURF_t surfTag, PK_SURF_trim_data_t* trimData, PK_GEOM_t* spaceCurves, PK_INTERVAL_t* interval, int uRules, int vRules, double tolerance, bool normalizeSurface = true);
 DGNPLATFORM_EXPORT static BentleyStatus CreateSurfaceFromMSBsplineSurface (PK_BSURF_t* surfTag, MSBsplineSurfaceCR surface);
 DGNPLATFORM_EXPORT static BentleyStatus CreateSheetBodyFromTrimmedSurface (PK_ENTITY_t* bodyTagP, PK_ENTITY_t** spaceCurveEntitiesPP, PK_ENTITY_t** uvCurveEntitiesPP, int preferSpaceCurvesFlag, double** trimPP, int boundCount, PK_ENTITY_t surfaceTag, double tolerance, int adaptive);
+
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);
 
 }; // PSolidUtil
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/2009
++===============+===============+===============+===============+===============+======*/
+struct PSolidKernelManager
+{
+DGNPLATFORM_EXPORT static void StartSession();
+DGNPLATFORM_EXPORT static void StopSession();
+DGNPLATFORM_EXPORT static void SetExternalFrustrum(); // Frustrum registered and session started by external dll (V8 convert)...
+
+}; // PSolidKernelManager
 
 END_BENTLEY_DGN_NAMESPACE
 

@@ -12,6 +12,8 @@
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 using namespace flatbuffers;
@@ -169,23 +171,14 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
     if (localToWorld.IsIdentity())
         return GetRange(localRange);
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
+#if defined (BENTLEYCONFIG_PARASOLID)
     GeometricPrimitivePtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
     if (GeometryType::SolidKernelEntity == GetGeometryType())
-        {
-        ISolidKernelEntityPtr geom = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(*GetAsISolidKernelEntity()), GetAsISolidKernelEntity()->GetEntityTransform(), false);
-
-//        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(geom, *GetAsISolidKernelEntity()))
-//            return false;
-
-        clone = new GeometricPrimitive(geom);
-        }
+        clone = new GeometricPrimitive(PSolidUtil::InstanceEntity(*GetAsISolidKernelEntity()));
     else
-        {
         clone = Clone();
-        }
 #else
     GeometricPrimitivePtr clone = Clone();
 #endif
@@ -1054,7 +1047,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     size_t      bufferSize = 0;
     uint8_t*    buffer = nullptr;
 
-    if (SUCCESS != SolidKernelUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
+    if (SUCCESS != PSolidUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
         {
         BeAssert(false);
         return;
@@ -1152,14 +1145,12 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
             facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
 
-#if defined (NOT_NOW)
             if (nullptr != attachments)
                 {
                 bvector<PolyfaceHeaderPtr> polyfaces;
                 bvector<GeometryParams> params;
 
-                WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
-                facetFailure = (0 == polyfaces.size());
+                BRepUtil::FacetEntity(entity, polyfaces, params, *facetOpt);
 
                 for (size_t i = 0; i < polyfaces.size(); i++)
                     {
@@ -1171,9 +1162,8 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                     }
                 }
             else
-#endif
                 {
-                PolyfaceHeaderPtr polyface = SolidKernelUtil::FacetEntity(entity, *facetOpt);
+                PolyfaceHeaderPtr polyface = BRepUtil::FacetEntity(entity, *facetOpt);
 
                 if (polyface.IsValid())
                     Append(*polyface, OpCode::BRepPolyface);
@@ -1657,7 +1647,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr&
     auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
     // NOTE: It's possible to check ppfb->brepType() to avoid calling restore in order to check type...
-    if (SUCCESS != SolidKernelUtil::RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
+    if (SUCCESS != PSolidUtil::RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
     if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
@@ -4537,28 +4527,19 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom, CoordSystem coord)
     if (CoordSystem::Local == coord)
         return AppendLocal(geom);
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
+#if defined (BENTLEYCONFIG_PARASOLID)
     GeometricPrimitivePtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
     if (GeometricPrimitive::GeometryType::SolidKernelEntity == geom.GetGeometryType())
-        {
-        ISolidKernelEntityPtr clone = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(*geom.GetAsISolidKernelEntity()), geom.GetAsISolidKernelEntity()->GetEntityTransform(), false);
-
-//        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(geom, *GetAsISolidKernelEntity()))
-//            return false;
-
-        geomPtr = new GeometricPrimitive(clone);
-        }
+        clone = GeometricPrimitive::Create(PSolidUtil::InstanceEntity(*geom.GetAsISolidKernelEntity()));
     else
-        {
-        geomPtr = geom.Clone();
-        }
+        clone = geom.Clone();
 #else
-    GeometricPrimitivePtr geomPtr = geom.Clone();
+    GeometricPrimitivePtr clone = geom.Clone();
 #endif
 
-    return AppendWorld(*geomPtr);
+    return AppendWorld(*clone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4744,12 +4725,9 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
         return true;
         }
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
+#if defined (BENTLEYCONFIG_PARASOLID)
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    ISolidKernelEntityPtr clone = SolidKernelUtil::CreateNewEntity(SolidKernelUtil::GetEntityTag(geom), geom.GetEntityTransform(), false);
-
-//    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
-//        return false;
+    ISolidKernelEntityPtr clone = PSolidUtil::InstanceEntity(geom);
 #else
     ISolidKernelEntityPtr clone = geom.Clone();
 #endif

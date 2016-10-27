@@ -318,7 +318,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="RoleModel" displayLabel="Role Model">
         <BaseClass>Model</BaseClass>
@@ -793,11 +792,13 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+  
     <ECEntityClass typeName="Sheet">
         <BaseClass>Document</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="Scale" displayLabel="Sheet Scale" typeName="double"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="InformationCarrierElement" modifier="Abstract">

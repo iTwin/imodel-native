@@ -469,7 +469,7 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
-    PK_ENTITY_t entityTag = SolidKernelUtil::GetEntityTag(entity);
+    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity);
 
     if (0 == entityTag)
         return 0;
@@ -513,20 +513,19 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
             case PK_CLASS_swept:
                 {
                 ISolidPrimitivePtr  solidPrimitive;
-                CurveVectorPtr      uvBoundaries;
 
-                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, &uvBoundaries)).IsValid())
+                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
                     facetCount += GetFacetCount(*solidPrimitive);
                 break;
                 }
 
             default:
                 {
-                MSBsplineSurfacePtr bSplineSurface;
-                CurveVectorPtr      uvBoundaries;
+                MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
 
-                if (SUCCESS == PSolidUtil::FaceToBSplineSurface (bSplineSurface, uvBoundaries, faceTag))
+                if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
                     facetCount += GetFacetCount(*bSplineSurface);
+
                 break;
                 }
             }

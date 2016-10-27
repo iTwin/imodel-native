@@ -116,9 +116,6 @@ public:
     //! Set the Rendering flags for this DisplayStyle
     void SetViewFlags(Render::ViewFlags flags) {m_viewFlags=flags; m_dirty=true;}
 
-    //! Get a reference to the ViewFlags of this DisplayStyle
-    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags; m_dirty=true;}
-
     //! Determine whether this DisplayStyle has any SubCategory overrides
     bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
 
@@ -211,7 +208,7 @@ public:
 
 //=======================================================================================
 //! A list of GeometricModels for a SpatialViewDefinition.
-//! When a SpatialViewDefinition is loaded into memory, it makes a copy of its ModelSelector, so any in-memory changes do not affect the original.
+//! When a SpatialViewDefinition is loaded into a ViewController, it makes a copy of its ModelSelector, so any in-memory changes do not affect the original.
 //! Changes are not saved unless someone calls Update on the modified copy.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
@@ -256,8 +253,8 @@ public:
     //! Add a model to this ModelSelector
     void AddModel(DgnModelId id) {m_models.insert(id);}
 
-    //! Drop a model from this ModelSelector
-    //! @return true if the model was dropped, false if it was not in this ModelSelector
+    //! Drop a model from this ModelSelector. Model will no longer be displayed by views that use this ModelSelector.
+    //! @return true if the model was dropped, false if it was not previously in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
@@ -341,40 +338,44 @@ public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(ViewDefinition::T_Super::CreateParams);
-        CategorySelectorCP m_categorySelector=nullptr;
-        DisplayStyleCP m_displayStyle=nullptr;
+        CategorySelectorP m_categorySelector=nullptr;
+        DisplayStyleP m_displayStyle=nullptr;
 
     public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorCP categorySelector=nullptr, DisplayStyleCP displayStyle=nullptr)
-            : T_Super(db, DgnModel::DictionaryId(), classId, code, nullptr, DgnElementId()), m_categorySelector(categorySelector), m_displayStyle(displayStyle) {}
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyleR displayStyle)
+            : T_Super(db, DgnModel::DictionaryId(), classId, code, nullptr, DgnElementId()), m_categorySelector(&categorySelector), m_displayStyle(&displayStyle) {}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
 
 protected:
     mutable bool m_dirty;
-    CategorySelectorPtr m_categorySelector;
-    DisplayStylePtr m_displayStyle;
+    mutable CategorySelectorPtr m_categorySelector;
+    mutable DisplayStylePtr m_displayStyle;
     Json::Value m_details;
 
     DGNPLATFORM_EXPORT void SaveState() const;
+    void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
     static Utf8CP str_Source() {return "Source";}
     static Utf8CP str_Descr() {return "Descr";}
     static bool IsValidCode(DgnCode const& code);
 
-    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {SetCategorySelector(params.m_categorySelector); SetDisplayStyle(params.m_displayStyle);}
+    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector) SetCategorySelector(*params.m_categorySelector); 
+                                                                           if (params.m_displayStyle) SetDisplayStyle(*params.m_displayStyle);}
 
-    DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionCR) const;
+    DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
     DgnDbStatus _OnInsert() override {SaveState(); return T_Super::_OnInsert();}
+    void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
+    void _OnUpdateFinished() const override {ClearState(); T_Super::_OnUpdateFinished();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveState(); return T_Super::_OnUpdate(original);}
-    virtual void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
+    void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    virtual DgnCode _GenerateDefaultCode() const override {return DgnCode();}
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return ResourceAuthority::IsResourceAuthority(auth);}
-    virtual DgnDbStatus _SetParentId(DgnElementId) override {return DgnDbStatus::InvalidParent;}
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnCode _GenerateDefaultCode() const override {return DgnCode();}
+    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return ResourceAuthority::IsResourceAuthority(auth);}
+    DgnDbStatus _SetParentId(DgnElementId) override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     virtual ViewControllerPtr _SupplyController() const = 0;
     virtual bool _IsValidBaseModel(DgnModelCR model) const {return true;}
     virtual OrthographicViewDefinitionCP _ToOrthographicView() const {return nullptr;}
@@ -382,7 +383,7 @@ protected:
     virtual SpatialViewDefinitionCP _ToSpatialView() const {return nullptr;}
     virtual DrawingViewDefinitionCP _ToDrawingView() const {return nullptr;}
     virtual SheetViewDefinitionCP _ToSheetView() const {return nullptr;}
-    virtual bool _ViewsModel(DgnModelId mid) const = 0;
+    virtual bool _ViewsModel(DgnModelId mid) = 0;
     virtual DPoint3d _GetOrigin() const = 0;
     virtual DVec3d _GetExtents() const = 0;
     virtual RotMatrix _GetRotation() const = 0;
@@ -395,7 +396,7 @@ protected:
 
 public:
     //! Determine whether two ViewDefinitions are "equal", including their unsaved "state"
-    bool EqualState(ViewDefinitionCR other) const {return _EqualState(other);}
+    bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
     Utf8String GetDescr() const {return GetPropertyValueString(str_Descr());} //!< Get description
     DgnDbStatus SetDescr(Utf8StringCR value) {return SetPropertyValue(str_Descr(), value.c_str());} //!< Set description
@@ -563,24 +564,24 @@ public:
     SheetViewDefinitionP ToSheetViewP() {return const_cast<SheetViewDefinitionP>(ToSheetView());}
 
     //! Get the CategorySelector for this ViewDefinition
-    CategorySelectorCR GetCategorySelector() const {return *m_categorySelector;}
-    CategorySelectorR GetCategorySelectorR() const {return *m_categorySelector;}
+    DGNPLATFORM_EXPORT CategorySelectorR GetCategorySelector();
+    DGNPLATFORM_EXPORT DgnElementId GetCategorySelectorId() const;
 
     //! Get the DisplayStyle for this ViewDefinition
-    DisplayStyleCR GetDisplayStyle() const {return *m_displayStyle;}
-    DisplayStyleR GetDisplayStyleR() const {return *m_displayStyle;}
+    DGNPLATFORM_EXPORT DisplayStyleR GetDisplayStyle();
+    DGNPLATFORM_EXPORT DgnElementId GetDisplayStyleId() const;
 
     //! Set the CategorySelector for this view.
-    void SetCategorySelector(CategorySelectorCP categories) {m_categorySelector = categories ? categories->MakeCopy<CategorySelector>() : new CategorySelector(m_dgndb, ""); m_dirty=true;}
+    void SetCategorySelector(CategorySelectorR categories) {BeAssert(!IsPersistent()); m_categorySelector = &categories; m_dirty=true;}
 
     //! Set the DisplayStyle for this view.
-    void SetDisplayStyle(DisplayStyleCP style) {m_displayStyle = style ? style->MakeCopy<DisplayStyle>() : new DisplayStyle(m_dgndb, ""); m_dirty=true;}
+    void SetDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_dirty=true;}
 
     //! Query if the specified model is displayed in this view
-    bool ViewsModel(DgnModelId modelId) const {return _ViewsModel(modelId);}
+    bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
 
     //! Query if the specified Category is displayed in this view
-    bool ViewsCategory(DgnCategoryId id) const {return m_categorySelector->IsCategoryViewed(id);}
+    bool ViewsCategory(DgnCategoryId id) {return GetCategorySelector().IsCategoryViewed(id);}
 
     //! Get the origin of this view
     DPoint3d GetOrigin() const {return _GetOrigin();}
@@ -717,7 +718,7 @@ protected:
     RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
 
     DGNPLATFORM_EXPORT void SaveViewDef3d();
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus _OnInsert() override {SaveViewDef3d(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveViewDef3d(); return T_Super::_OnUpdate(original);}
@@ -736,8 +737,7 @@ public:
     virtual void _OnTransform(TransformCR) = 0; //! @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));}
 
-    DisplayStyle3dCR GetDisplayStyle3d() const {return (DisplayStyle3dCR) *m_displayStyle;}
-    DisplayStyle3dR GetDisplayStyle3dR() const {return (DisplayStyle3dR) *m_displayStyle;}
+    DisplayStyle3dR GetDisplayStyle3d() {return (DisplayStyle3dR) GetDisplayStyle();}
 };
 
 //=======================================================================================
@@ -753,56 +753,50 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
-        ModelSelectorCP m_modelSelector=nullptr;
+        ModelSelectorP m_modelSelector=nullptr;
 
     public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorCP categorySelector=nullptr, DisplayStyle3dCP displayStyle=nullptr, ModelSelectorCP modelSelector=nullptr)
-            : T_Super(db, classId, code, categorySelector, displayStyle), m_modelSelector(modelSelector) {}
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector)
+            : T_Super(db, classId, code, categorySelector, displayStyle), m_modelSelector(&modelSelector) {}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
 
 protected:
-    ModelSelectorPtr m_modelSelector;
+    mutable ModelSelectorPtr m_modelSelector;
 
     DGNPLATFORM_EXPORT void UpdateModelSelectorId();
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DgnDbStatus _OnInsert() override {UpdateModelSelectorId(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {UpdateModelSelectorId(); return T_Super::_OnUpdate(original);}
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
+    void _OnUpdateFinished() const override {m_modelSelector=nullptr; T_Super::_OnUpdateFinished();}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT bool _ViewsModel(DgnModelId modelId) const override {return m_modelSelector->ContainsModel(modelId);}
-    virtual SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
+    bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}
+    SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
     static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
-
-public:
-    //! Determine whether the eyepoint is above or below an elevation (position along world-z axis).
-    //! @param[in] elevation The elevation to test
-    //! @return true if the eyepoint is above the elevation.
     virtual bool _IsEyePointAbove(double elevation) const {return GetZVector().z > 0;}
     DGNPLATFORM_EXPORT virtual DPoint3d _ComputeEyePoint(Frustum const&) const;
 
+public:
     //! @return true if the eyepoint is above the specified elevation
     //! @param[in] elevation the elevation to test
     bool IsEyePointAbove(double elevation) const {return _IsEyePointAbove(elevation);}
 
     //! If this is a camera view, this method merely returns the eyepoint from the camera. If it is a non-camera view,
     //! compute an pseudo-eyepoint based on the supplied frustum.
-    DPoint3d ComputeEyePoint(Frustum const& f) const {return _ComputeEyePoint(f);}
+    DPoint3d ComputeEyePoint(Frustum const& frustum) const {return _ComputeEyePoint(frustum);}
 
     //! Create a SpatialViewDefintion from CreateParams
-    explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {SetModelSelector(params.m_modelSelector);}
-
-    //! Get the ModelSelector for this SpatialViewDefinition
-    ModelSelectorCR GetModelSelector() const {return *m_modelSelector;}
+    explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_modelSelector) SetModelSelector(*params.m_modelSelector);}
 
     //! Get a writable reference to the ModelSelector for this SpatialViewDefinition
-    ModelSelectorR GetModelSelectorR() const {return *m_modelSelector;}
+    DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector();
+    DGNPLATFORM_EXPORT DgnElementId GetModelSelectorId() const;
 
     //! Set the ModelSelector for this SpatialViewDefinition
-    //! @param[in] models The new ModelSelector. If nullptr, a new unnamed, empty, ModelSelector is used.
-    //! @note this method makes a copy of the supplied ModelSelector.
-    void SetModelSelector(ModelSelectorCP models) {m_modelSelector = models ? models->MakeCopy<ModelSelector>() : new ModelSelector(m_dgndb, "");}
+    //! @param[in] models The new ModelSelector.
+    void SetModelSelector(ModelSelectorR models) {BeAssert(!IsPersistent()); m_modelSelector = &models;}
 };
 
 //=======================================================================================
@@ -830,10 +824,10 @@ public:
     //! @param categories The CategorySelector for this view
     //! @param displayStyle The DisplayStyle for this view
     //! @param models The ModelSelector for this view
-    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
+    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
+        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
@@ -939,7 +933,7 @@ protected:
     Camera m_camera;  //!< The camera used for this view.
 
     explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     DgnDbStatus _OnInsert() override {SaveCamera(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveCamera(); return T_Super::_OnUpdate(original);}
@@ -962,10 +956,10 @@ public:
     //! @param categories The CategorySelector for this view
     //! @param displayStyle The DisplayStyle for this view
     //! @param models The ModelSelector for this view
-    CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorCR categories, DisplayStyle3dCR displayStyle, ModelSelectorCR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), &categories, &displayStyle, &models)) {}
+    CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
+        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
@@ -1105,7 +1099,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
 
     DGNPLATFORM_EXPORT void SaveViewDef2d();
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DgnDbStatus _OnInsert() override {SaveViewDef2d(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveViewDef2d(); return T_Super::_OnUpdate(original);}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
@@ -1116,18 +1110,20 @@ protected:
     void _SetRotation(RotMatrixCR rot) override {DVec3d xColumn; rot.GetColumn(xColumn, 0); m_rotAngle = atan2(xColumn.y, xColumn.x);}
     DVec3d _GetExtents() const override {return DVec3d::From(m_delta.x, m_delta.y);}
     RotMatrix _GetRotation() const override {return RotMatrix::FromAxisAndRotationAngle(2, m_rotAngle);}
-    bool _ViewsModel(DgnModelId mid) const override {return mid == m_baseModelId;}
+    bool _ViewsModel(DgnModelId mid) override {return mid == m_baseModelId;}
     DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorCR categorySelector, DisplayStyleCR displayStyle) :
-            T_Super(CreateParams(db, classId, CreateCode(name), &categorySelector, &displayStyle)), m_baseModelId(baseModelId) {}
+    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyleR displayStyle) :
+            T_Super(CreateParams(db, classId, CreateCode(name), categorySelector, displayStyle)), m_baseModelId(baseModelId) {}
 
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
+    void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
+    void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
     };
@@ -1153,14 +1149,14 @@ protected:
 
 public:
     //! Construct a DrawingViewDefinition subclass prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
 
     //! Construct a DrawingViewDefinition prior to inserting it
-    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
@@ -1185,14 +1181,14 @@ protected:
 
 public:
     //! Construct a new SheetViewDefinition subclass prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, classId, baseModelId, categories, displayStyle) {}
 
     //! Construct a new SheetViewDefinition prior to inserting it
-    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) :
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}

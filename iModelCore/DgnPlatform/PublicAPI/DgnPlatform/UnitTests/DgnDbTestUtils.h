@@ -53,7 +53,7 @@ public:
 
     //! Insert a SheetModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetModelPtr InsertSheetModel(SheetCR, DgnCode modelCode, DPoint2dCR sheetSize=DPoint2d::FromZero());
+    static SheetModelPtr InsertSheetModel(SheetCR, DgnCode modelCode);
 
     //! Insert a LinkModel
     //! @note Also creates a Subject for the LinkModel to describe

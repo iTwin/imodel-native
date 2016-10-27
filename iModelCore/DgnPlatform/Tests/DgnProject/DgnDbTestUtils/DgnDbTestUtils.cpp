@@ -113,10 +113,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode, DPoint2dCR sheetSize)
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet, modelCode, sheetSize);
+    SheetModelPtr model = SheetModel::Create(sheet, modelCode);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -176,10 +176,10 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
-    viewController->GetViewDefinitionR().LookAtVolume(db.Units().GetProjectExtents());
+    viewController->GetViewDefinition().LookAtVolume(db.Units().GetProjectExtents());
 
     DgnDbStatus stat;
-    viewController->GetViewDefinitionR().Update(&stat);
+    viewController->GetViewDefinition().Update(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat);
     }
 
@@ -258,8 +258,8 @@ void addAllCategories(DgnDbR db, CategorySelectorR selector)
 DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewDescr)
     {
     auto& db = model.GetDgnDb();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), CategorySelector(db,""), DisplayStyle(db,""));
-    addAllCategories(db, viewDef->GetCategorySelectorR());
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    addAllCategories(db, viewDef->GetCategorySelector());
     viewDef->Insert();
     return viewDef;
     }
@@ -270,8 +270,8 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
 DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
     {
     auto& db = model.GetDgnDb();
-    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), CategorySelector(db,""), DisplayStyle3d(db,""), ModelSelector(db,""));
-    addAllCategories(db, viewDef.GetCategorySelectorR());
+    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
+    addAllCategories(db, viewDef.GetCategorySelector());
     viewDef.Insert();
     return viewDef.GetViewId();
     }
