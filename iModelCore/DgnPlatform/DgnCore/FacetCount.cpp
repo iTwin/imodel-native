@@ -513,9 +513,8 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
             case PK_CLASS_swept:
                 {
                 ISolidPrimitivePtr  solidPrimitive;
-                CurveVectorPtr      uvBoundaries;
 
-                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, &uvBoundaries)).IsValid())
+                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
                     facetCount += GetFacetCount(*solidPrimitive);
                 break;
                 }
