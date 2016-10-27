@@ -87,10 +87,22 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, code, label);
+    SheetPtr sheet = Sheet::Create(model, scale, height, width, code, label);
+    EXPECT_TRUE(sheet.IsValid());
+    EXPECT_TRUE(sheet->Insert().IsValid());
+    return sheet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SheetPtr sheet = Sheet::Create(model, scale, templateId, code, label);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;

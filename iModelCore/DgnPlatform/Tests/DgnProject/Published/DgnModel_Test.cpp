@@ -203,9 +203,17 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         DgnDbPtr db = m_db;
         ASSERT_EQ(0, countSheetModels(*db));
 
+        double scale1 = 1.0;
+        double height1 = 1.5;
+        double width1 = 1.1;
+
+        double scale2 = 2.0;
+        double height2 = 2.5;
+        double width2 = 2.2;
+
         // Create a sheet
         DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("SheetListModel"));
-        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet1");
+        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, DgnCode(), "Sheet1");
         SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1, DgnModel::CreateModelCode(s_sheetModel1Name));
 
         ASSERT_EQ(1, countSheetModels(*db));
@@ -221,12 +229,19 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_STREQ(sheetModel1->GetCode().GetValueCP(), modelCode.GetValueCP());
 
         // Create a second sheet
-        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet2");
+        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, DgnCode(), "Sheet2");
         SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2, DgnModel::CreateModelCode(s_sheetModel2Name));
 
         ASSERT_EQ(2, countSheetModels(*db));
         ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name)).IsValid());
         ASSERT_NE(sheetModel2->GetModelId(), sheetModel1->GetModelId());
+
+        ASSERT_EQ(scale1, sheet1->GetScale());
+        ASSERT_EQ(scale2, sheet2->GetScale());
+        ASSERT_EQ(height1, sheet1->GetHeight());
+        ASSERT_EQ(height2, sheet2->GetHeight());
+        ASSERT_EQ(width1, sheet1->GetWidth());
+        ASSERT_EQ(width2, sheet2->GetWidth());
 
         sheet1 = nullptr;
         sheet2 = nullptr;

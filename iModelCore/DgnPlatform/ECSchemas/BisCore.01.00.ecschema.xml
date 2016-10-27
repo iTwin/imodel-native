@@ -816,14 +816,77 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-  
+
+    <ECEntityClass typeName="SheetBorderTemplate">
+        <BaseClass>Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SheetBorder">
+        <BaseClass>DrawingGraphic</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <!-- Template is required -->
+        <!-- Should have IsNullable=False ...? -->
+        <ECNavigationProperty propertyName="BorderTemplate" relationshipName="SheetBorderHasSheetBorderTemplate" direction="Forward"></ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SheetTemplate">
+        <BaseClass>Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <!-- Height and Width will be locked to the border, if there is one -->
+        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+        <!-- Border is optional -->
+        <ECNavigationProperty propertyName="Border" relationshipName="SheetTemplateHasSheetBorder" direction="Forward"></ECNavigationProperty>
+    </ECEntityClass>
+
     <ECEntityClass typeName="Sheet">
         <BaseClass>Document</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Scale" displayLabel="Sheet Scale" typeName="double"/>
+        <ECProperty propertyName="Scale" displayLabel="The scale of the drawing" typeName="double"/>
+        <!-- Height and Width will be locked to the template, if there is one -->
+        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+        <!-- Template is optional -->
+        <ECNavigationProperty propertyName="SheetTemplate" relationshipName="SheetHasSheetTemplate" direction="Forward"></ECNavigationProperty>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="Sheet" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="SheetTemplate"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="SheetTemplate" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="SheetBorder"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="SheetBorder" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="SheetBorderTemplate"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="InformationCarrierElement" modifier="Abstract">
         <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
