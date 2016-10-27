@@ -159,4 +159,23 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue);
     };
 
+/*=================================================================================**//**
+* JsonEcInstanceWriter - creates Json object from ECInstance
+* @bsiclass                                                     Bill.Steinbock  02/2016
++===============+===============+===============+===============+===============+======*/
+struct JsonEcInstanceWriter
+    {
+    private:
+        static Utf8CP        GetPrimitiveTypeString(ECN::PrimitiveType primitiveType);
+        static void          AppendAccessString(Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName);
+        static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType);
+        static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    public:
+        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        ECOBJECTS_EXPORT static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
+    };
+
+
 END_BENTLEY_ECOBJECT_NAMESPACE
