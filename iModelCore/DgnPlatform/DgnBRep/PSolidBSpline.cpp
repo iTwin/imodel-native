@@ -2448,7 +2448,7 @@ StatusInt PSolidUtil::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveV
     PK_SURF_t       surfaceTag;
     PK_CLASS_t      surfaceClass = 0;
     PK_LOGICAL_t    orientation;
-    double          tolerance = 1.0E-8;     // Needs work.
+    double          tolerance = 1.0E-6;     // Needs work.
 
     if (SUCCESS != PK_FACE_ask_oriented_surf (faceTag, &surfaceTag, &orientation) ||
         SUCCESS != PK_FACE_is_uvbox (faceTag, &isBox, &uvBox) ||
