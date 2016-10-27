@@ -257,7 +257,7 @@ namespace IndexECPlugin.Source
                             default:
                                 //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                                 //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                                throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
                             }
                         }
                     }

@@ -578,7 +578,7 @@ namespace IndexECPlugin.Source.Helpers
             catch ( JsonSerializationException )
                 {
                 //Log.Logger.error("Package creation aborted. The polygon format is not valid");
-                throw new Bentley.Exceptions.UserFriendlyException(String.Format("The polygon format of the database entry {0} is not valid.", entityId));
+                throw new Bentley.Exceptions.UserFriendlyException("The polygon format of a selected entry is not valid.");
                 }
 
             MapInfo mapInfo = new MapInfo
