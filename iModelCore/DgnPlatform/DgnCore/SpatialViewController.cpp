@@ -243,7 +243,7 @@ void SpatialViewController::ClearNeverDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
-    auto& models = GetSpatialViewDefinitionR().GetModelSelectorR().GetModelsR();
+    auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
     if (onOff == models.Contains(modelId))
         return;
 
