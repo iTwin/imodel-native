@@ -51,7 +51,7 @@
 #define END_BENTLEY_DATACAPTURE_NAMESPACE          } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_DATACAPTURE        using namespace BENTLEY_NAMESPACE_NAME::DataCapture;
 
-// create the Bentley.ConceptCivil namespace
+// create the Bentley.DataCapture namespace
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 END_BENTLEY_DATACAPTURE_NAMESPACE
 
