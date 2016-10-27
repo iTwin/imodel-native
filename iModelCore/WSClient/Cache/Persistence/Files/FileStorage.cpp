@@ -8,6 +8,7 @@
 
 #include "FileStorage.h"
 
+#include <Bentley/BeDirectoryIterator.h>
 #include <WebServices/Cache/Util/FileUtil.h>
 
 #include "../../Logging.h"
@@ -305,7 +306,7 @@ BentleyStatus FileStorage::StoreFile(FileInfoR info, BeFileNameCR filePathIn, Fi
     // Remove old file
     if (!oldAbsolutePath.empty() && !oldAbsolutePath.Equals(newAbsolutePath))
         {
-        if (SUCCESS != RemoveStoredFile(oldAbsolutePath, oldLocation, &newAbsolutePath))
+        if (SUCCESS != RemoveStoredFile(oldAbsolutePath, oldLocation, oldRelativePath, &newAbsolutePath))
             return ERROR;
         }
 
@@ -380,38 +381,91 @@ BentleyStatus FileStorage::DeleteFileCacheDirectories(CacheEnvironmentCR fullEnv
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::RemoveStoredFile(FileInfoCR info)
     {
-    return RemoveStoredFile(info.GetFilePath(), info.GetLocation());
+    return RemoveStoredFile(info.GetFilePath(), info.GetLocation(), info.GetRelativePath());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCP newFilePath)
+BentleyStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath) const
     {
     if (filePath.empty())
         return SUCCESS;
 
-    if (FileCache::External == location || nullptr != newFilePath && newFilePath->GetDirectoryName() == filePath.GetDirectoryName())
+    if (filePath.DoesPathExist() && BeFileNameStatus::Success != BeFileName::BeDeleteFile(filePath))
         {
-        if (filePath.DoesPathExist() && BeFileNameStatus::Success != BeFileName::BeDeleteFile(filePath))
-            {
-            BeAssert(false);
-            return ERROR;
-            }
+        BeAssert(false);
+        return ERROR;
         }
-    else
+
+    // Check if new file is in same folder
+    if (nullptr != newFilePath && newFilePath->GetDirectoryName() == filePath.GetDirectoryName())
+        return SUCCESS;
+
+    // Do folder cleanup
+    if (FileCache::External == location)
         {
-        BeFileName directoryPath(BeFileName::GetDirectoryName(filePath));
-        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(directoryPath);
-        if (status != BeFileNameStatus::Success &&
-            status != BeFileNameStatus::FileNotFound)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
+        CleanupDirsNotContainingFiles(m_environment.externalFileCacheDir, relativePath.GetDirectoryName());
+        return SUCCESS;
+        }
+
+    BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(filePath.GetDirectoryName());
+    if (status != BeFileNameStatus::Success &&
+        status != BeFileNameStatus::FileNotFound)
+        {
+        BeAssert(false);
+        return ERROR;
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void FileStorage::CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir)
+    {
+    if (relativeDir.empty())
+        return;
+
+    BeFileName dir = baseDir;
+    dir.AppendToPath(relativeDir);
+
+    if (dir.DoesPathExist())
+        {
+        if (DoesDirContainFiles(dir))
+            return;
+
+        if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(dir))
+            {
+            BeAssert(false);
+            return;
+            }
+        }
+
+    BeFileName parentRelativeDir = BeFileName(relativeDir).PopDir();
+    if (parentRelativeDir == relativeDir)
+        return;
+
+    CleanupDirsNotContainingFiles(baseDir, parentRelativeDir);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FileStorage::DoesDirContainFiles(BeFileNameCR dir)
+    {
+    BeFileName subPath;
+    bool isDir;
+    for (BeDirectoryIterator it(dir); it.GetCurrentEntry(subPath, isDir) == SUCCESS; it.ToNext())
+        {
+        if (!isDir)
+            return true;
+
+        if (DoesDirContainFiles(subPath))
+            return true;
+        }
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+

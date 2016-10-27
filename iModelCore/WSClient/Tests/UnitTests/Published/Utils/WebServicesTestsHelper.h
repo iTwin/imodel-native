@@ -155,4 +155,6 @@ BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "
 Utf8String SimpleReadFile(BeFileNameCR filePath);
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
 
+std::set<Utf8String> GetFolderContent(BeFileNameCR dir);
+
 END_WSCLIENT_UNITTESTS_NAMESPACE

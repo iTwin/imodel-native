@@ -33,7 +33,14 @@ struct FileStorage
 
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
-        static BentleyStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCP newFilePath = nullptr);
+
+        //! Remove file and do parent folder cleanup
+        BentleyStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr) const;
+
+        //! Remove directory relative paths if they don't contain any files.
+        static void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
+        //! Check if directory or any sub-directories contain any files
+        static bool DoesDirContainFiles(BeFileNameCR dir);
 
     public:
         FileStorage(ECDbAdapter& dbAdapter, ECSqlStatementCache& statementCache, CacheEnvironmentCR environment);
