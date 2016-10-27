@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RoadIntersection.cpp $
+|     $Source: AlignmentPairIntersection.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Earlin.Lutz                     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValidatedDEllipse3d RoadIntersection::_ArcFromStartShoulderTarget
+ValidatedDEllipse3d AlignmentPairIntersection::_ArcFromStartShoulderTarget
 (
 DPoint3dCR pointA, // Start point of arc
 DPoint3dCR pointB, // shoulder point
@@ -39,7 +39,7 @@ DPoint3dCR pointC  // target point for outbound tangent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Earlin.Lutz                     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr RoadIntersection::ConstructDoubleFillet (
+CurveVectorPtr AlignmentPairIntersection::ConstructDoubleFillet (
     DPoint3dCR pointA,
     DVec3dCR directionA,
     double distanceA,
@@ -52,8 +52,8 @@ CurveVectorPtr RoadIntersection::ConstructDoubleFillet (
     auto unitB = directionB.ValidatedNormalize ();
     DPoint3d shoulderA = pointA + distanceA * unitA;
     DPoint3d shoulderB = pointB + distanceB * unitB;
-    auto arcA = RoadIntersection::_ArcFromStartShoulderTarget (pointA, shoulderA, shoulderB);
-    auto arcB = RoadIntersection::_ArcFromStartShoulderTarget (pointB, shoulderB, shoulderA);
+    auto arcA = AlignmentPairIntersection::_ArcFromStartShoulderTarget (pointA, shoulderA, shoulderB);
+    auto arcB = AlignmentPairIntersection::_ArcFromStartShoulderTarget (pointB, shoulderB, shoulderA);
     DPoint3d pointA2 = pointA;
     DPoint3d pointB2 = pointB;
     if (arcA.IsValid ())
@@ -74,7 +74,7 @@ CurveVectorPtr RoadIntersection::ConstructDoubleFillet (
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoadIntersection::ComputePotentialFillets (const double& primaryOffset, const double & secondaryOffset, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
+bool AlignmentPairIntersection::ComputePotentialFillets (const double& primaryOffset, const double & secondaryOffset, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
     {
     CurveVectorPtr primaryHzAlignment = m_primaryRoad->HorizontalCurveVector ();
     if (!primaryHzAlignment.IsValid ()) return false;
@@ -90,7 +90,7 @@ bool RoadIntersection::ComputePotentialFillets (const double& primaryOffset, con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadIntersection::SetPrimaryOffsets (const double& right, const double& left)
+void AlignmentPairIntersection::SetPrimaryOffsets (const double& right, const double& left)
     {
     m_primaryLeftOffset = left;
     m_primaryRightOffset = right;
@@ -99,7 +99,7 @@ void RoadIntersection::SetPrimaryOffsets (const double& right, const double& lef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadIntersection::SetSecondaryOffsets (const double& right, const double& left)
+void AlignmentPairIntersection::SetSecondaryOffsets (const double& right, const double& left)
     {
     m_secondaryLeftOffset = left;
     m_secondaryRightOffset = right;
@@ -108,7 +108,7 @@ void RoadIntersection::SetSecondaryOffsets (const double& right, const double& l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoadIntersection::ComputeIntersectionPointImpl (DPoint3dR pt, DPoint3dCP checkPoint, double * primaryStation, double * secondaryStation, bool allowExtension)
+bool AlignmentPairIntersection::ComputeIntersectionPointImpl (DPoint3dR pt, DPoint3dCP checkPoint, double * primaryStation, double * secondaryStation, bool allowExtension)
     {
     AlignmentIntersectionPtr alignmentIntersection = AlignmentIntersection::Create (m_primaryRoad.get (), m_secondaryRoad.get ());
     if (allowExtension) // this is now vague
@@ -144,7 +144,7 @@ bool RoadIntersection::ComputeIntersectionPointImpl (DPoint3dR pt, DPoint3dCP ch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadIntersection::UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt)
+void AlignmentPairIntersection::UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt)
     {
     if (m_secondaryRoad.IsValid ())
         m_secondaryRoad->UpdateCurveVectors (&hz, vt);
@@ -153,7 +153,7 @@ void RoadIntersection::UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sandy.Bugai                     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoadIntersection::ComputeIntersectionPoint(DPoint3dR pt, double * primaryStation, double * secondaryStation, bool allowExtension)
+bool AlignmentPairIntersection::ComputeIntersectionPoint(DPoint3dR pt, double * primaryStation, double * secondaryStation, bool allowExtension)
     {
     return ComputeIntersectionPointImpl(pt, nullptr, primaryStation, secondaryStation, allowExtension);
     }
@@ -161,7 +161,7 @@ bool RoadIntersection::ComputeIntersectionPoint(DPoint3dR pt, double * primarySt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RoadIntersection::ComputeOffsetFillet (const double& offsetDist, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
+bool AlignmentPairIntersection::ComputeOffsetFillet (const double& offsetDist, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
     {
     CurveVectorPtr primaryHZ = m_primaryRoad->HorizontalCurveVector ();
     CurveVectorPtr secondaryHZ = m_secondaryRoad->HorizontalCurveVector ();
@@ -185,9 +185,9 @@ bool RoadIntersection::ComputeOffsetFillet (const double& offsetDist, const doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadIntersectionPtr RoadIntersection::Create (AlignmentPairCP primary, AlignmentPairCP secondary)
+AlignmentPairIntersectionPtr AlignmentPairIntersection::Create (AlignmentPairCP primary, AlignmentPairCP secondary)
     {
-    return new RoadIntersection (const_cast<AlignmentPairP>( primary ), const_cast<AlignmentPairP>( secondary ));
+    return new AlignmentPairIntersection (const_cast<AlignmentPairP>( primary ), const_cast<AlignmentPairP>( secondary ));
     }
 
 /////////////////////////////////////////////////////////////////////////////////////

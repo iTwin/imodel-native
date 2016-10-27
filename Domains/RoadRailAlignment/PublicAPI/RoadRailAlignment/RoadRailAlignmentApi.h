@@ -147,11 +147,11 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairEditor)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadIntersection)
 
 
 //-----------------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadIntersection)
 #include "RoadRailAlignment.h"
 #include "AlignmentPair.h"
 #include "AlignmentPairEditor.h"
-#include "RoadIntersection.h"
+#include "AlignmentPairIntersection.h"
 #include "RoadAlignmentPairEditor.h"
 #include "AlignmentModel.h"
 #include "Alignment.h"

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/RoadRailAlignment/RoadIntersection.h $
+|     $Source: PublicAPI/RoadRailAlignment/AlignmentPairIntersection.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,11 +13,11 @@
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
-#define ROADINTERSECTION_TOLERANCE 7.0
+#define ALIGNMENTPAIRINTERSECTION_TOLERANCE 7.0
 
 // base class to handle specialty intersection geometry
 //
-struct RoadIntersection : NonCopyableClass, RefCountedBase
+struct AlignmentPairIntersection : NonCopyableClass, RefCountedBase
 {
 protected:
     AlignmentPairPtr m_primaryRoad;
@@ -31,10 +31,10 @@ protected:
     bool m_isExit;
 
 protected:
-    ROADRAILALIGNMENT_EXPORT RoadIntersection (AlignmentPairP primary, AlignmentPairP secondary)
+    ROADRAILALIGNMENT_EXPORT AlignmentPairIntersection(AlignmentPairP primary, AlignmentPairP secondary)
         : m_primaryRoad (primary), m_secondaryRoad (secondary)
         {
-        m_primaryLeftOffset = m_primaryRightOffset = m_secondaryLeftOffset = m_secondaryRightOffset = ROADINTERSECTION_TOLERANCE;
+        m_primaryLeftOffset = m_primaryRightOffset = m_secondaryLeftOffset = m_secondaryRightOffset = ALIGNMENTPAIRINTERSECTION_TOLERANCE;
         }
 
     // return (if possible) a DEllipse3d which starts at pointA, with initial tangent vector towards pointB, ends on the line containing pointB and pointC
@@ -71,7 +71,7 @@ public:
     ROADRAILALIGNMENT_EXPORT void UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt);
 
 public:
-    ROADRAILALIGNMENT_EXPORT static RoadIntersectionPtr Create (AlignmentPairCP primary, AlignmentPairCP secondary);
+    ROADRAILALIGNMENT_EXPORT static AlignmentPairIntersectionPtr Create (AlignmentPairCP primary, AlignmentPairCP secondary);
 
     // Construct two arcs and a line segment such that:
     // start at pointA.
@@ -85,7 +85,7 @@ public:
     ROADRAILALIGNMENT_EXPORT static CurveVectorPtr ConstructDoubleFillet (DPoint3dCR pointA,
                     DVec3dCR directionA, double distanceA, DPoint3dCR pointB, DVec3dCR directionB, double distanceB);
 
-}; // RoadIntersection
+}; // AlignmentPairIntersection
 
 struct AlignmentIntersection;
 //
@@ -123,10 +123,10 @@ public:
 
 //
 // This class was developed as the public face of alignment intersection computation
-// and should supercede any public apis for RoadIntersection
+// and should supercede any public apis for AlignmentPairIntersection
 //
 // We found we needed much more explicit logic for potential intersection, extended intersections, etc.
-struct AlignmentIntersection : RoadIntersection
+struct AlignmentIntersection : AlignmentPairIntersection
 {
 private:
     bool m_computeIntersectionsAtAlignmentEndPoints;
@@ -157,7 +157,7 @@ protected:
 
 protected:
     AlignmentIntersection (AlignmentPairP primary, AlignmentPairP secondary)
-        : RoadIntersection (primary, secondary), m_computeStations (true), m_computeZs (false),
+        : AlignmentPairIntersection (primary, secondary), m_computeStations (true), m_computeZs (false),
         m_extendPrimaryEnd (false), m_extendPrimaryStart (false), m_extendSecondaryEnd (false), m_extendSecondaryStart (false)
         {
         m_computeIntersectionsAtAlignmentEndPoints = true;

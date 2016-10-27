@@ -51,6 +51,8 @@ $(o)AlignmentPair$(oext) : $(_MakeFilePath)AlignmentPair.cpp ${MultiCompileDepen
 
 $(o)AlignmentPairEditor$(oext) : $(_MakeFilePath)AlignmentPairEditor.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPairEditor.h
 
+$(o)AlignmentPairIntersection$(oext) : $(_MakeFilePath)AlignmentPairIntersection.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPairIntersection.h
+
 $(o)AlignmentReferent$(oext) : $(_MakeFilePath)AlignmentReferent.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentReferent.h
 
 $(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(appPublicApi)GeometryDebug.h
@@ -58,8 +60,6 @@ $(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepen
 $(o)GeometryHelper$(oext) : $(_MakeFilePath)GeometryHelper.cpp ${MultiCompileDepends} $(appPublicApi)GeometryHelper.h
 
 $(o)RoadAlignmentPairEditor$(oext) : $(_MakeFilePath)RoadAlignmentPairEditor.cpp ${MultiCompileDepends} $(appPublicApi)RoadAlignmentPairEditor.h
-
-$(o)RoadIntersection$(oext) : $(_MakeFilePath)RoadIntersection.cpp ${MultiCompileDepends} $(appPublicApi)RoadIntersection.h
 
 $(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
 

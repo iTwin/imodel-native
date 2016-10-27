@@ -28,11 +28,11 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentModel.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h" />
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryDebug.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryHelper.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h" />
-    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadIntersection.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignment.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentApi.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentDomain.h" />
@@ -47,11 +47,11 @@
     <ClCompile Include="AlignmentModel.cpp" />
     <ClCompile Include="AlignmentPair.cpp" />
     <ClCompile Include="AlignmentPairEditor.cpp" />
+    <ClCompile Include="AlignmentPairIntersection.cpp" />
     <ClCompile Include="AlignmentReferent.cpp" />
     <ClCompile Include="GeometryDebug.cpp" />
     <ClCompile Include="GeometryHelper.cpp" />
     <ClCompile Include="RoadAlignmentPairEditor.cpp" />
-    <ClCompile Include="RoadIntersection.cpp" />
     <ClCompile Include="RoadRailAlignmentDomain.cpp" />
     <ClCompile Include="RoadRailAlignmentInternal.cpp" />
   </ItemGroup>

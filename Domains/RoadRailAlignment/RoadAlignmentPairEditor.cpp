@@ -383,7 +383,7 @@ CurveVectorPtr DividedRoadAlignmentPairEditor::AddStartDoubleCurve(CurveVectorP 
     ICurvePrimitivePtr smallLine = ICurvePrimitive::CreateLine(DSegment3d::From(m_startSplitPt, newStartSplitPt));
 
     double tangentLength = 0.25 * m_transitionLength; 
-    CurveVectorPtr doubleFillet = RoadIntersection::ConstructDoubleFillet(newStartSplitPt, newStartSplitVec, tangentLength, start, startTan, tangentLength);
+    CurveVectorPtr doubleFillet = AlignmentPairIntersection::ConstructDoubleFillet(newStartSplitPt, newStartSplitVec, tangentLength, start, startTan, tangentLength);
 
     // add double fillet to offsetCurve
     CurveVectorPtr returnVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -417,7 +417,7 @@ CurveVectorPtr DividedRoadAlignmentPairEditor::AddEndDoubleCurve (CurveVectorP o
     ICurvePrimitivePtr smallLine = ICurvePrimitive::CreateLine(DSegment3d::From(newEndSplitPt, m_endSplitPt));
 
     double tangentLength = 0.25 * m_transitionLength;
-    CurveVectorPtr doubleFillet = RoadIntersection::ConstructDoubleFillet (end, endTan, tangentLength, newEndSplitPt, newEndSplitVec, tangentLength);
+    CurveVectorPtr doubleFillet = AlignmentPairIntersection::ConstructDoubleFillet (end, endTan, tangentLength, newEndSplitPt, newEndSplitVec, tangentLength);
     // add double fillet to end off original
     CurveVectorPtr returnVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     for (auto prim : *origCurve)

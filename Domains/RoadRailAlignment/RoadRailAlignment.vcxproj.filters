@@ -61,10 +61,10 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryHelper.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadIntersection.h">
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h">
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
@@ -102,10 +102,10 @@
     <ClCompile Include="GeometryHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RoadIntersection.cpp">
+    <ClCompile Include="RoadAlignmentPairEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RoadAlignmentPairEditor.cpp">
+    <ClCompile Include="AlignmentPairIntersection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
