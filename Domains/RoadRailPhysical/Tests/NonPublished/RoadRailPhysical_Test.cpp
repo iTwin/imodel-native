@@ -52,7 +52,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment
-    auto transitionPtr = TransitionSegment::Create(*roadRangeCPtr, 50, 100);
+    auto transitionPtr = RoadTransitionSegment::Create(*roadRangeCPtr, 50, 100);
     auto transitionCPtr = transitionPtr->Insert();
     ASSERT_TRUE(transitionCPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
@@ -68,7 +68,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
     ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetToDistanceAlong());
 
-    transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    transitionCPtr = RoadTransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
     ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
@@ -123,7 +123,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment #1
-    auto transition1Ptr = TransitionSegment::Create(*roadRangeCPtr, 10, 20);
+    auto transition1Ptr = RoadTransitionSegment::Create(*roadRangeCPtr, 10, 20);
     auto transition1CPtr = transition1Ptr->Insert();
     ASSERT_TRUE(transition1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition1CPtr->GetLinearElementId());
@@ -174,7 +174,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(abutment2Ptr->GetElementId(), superPtr->GetToBridgeSupportId());
 
     // Create TransitionSegment #2
-    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 120, 140);
+    auto transition2Ptr = RoadTransitionSegment::Create(*roadRangeCPtr, 120, 140);
     auto transition2CPtr = transition2Ptr->Insert();
     ASSERT_TRUE(transition2CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());

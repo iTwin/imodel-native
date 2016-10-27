@@ -55,6 +55,8 @@ $(o)Segment$(oext) : $(_MakeFilePath)Segment.cpp ${MultiCompileDepends} $(appPub
 
 $(o)SegmentRange$(oext) : $(_MakeFilePath)SegmentRange.cpp ${MultiCompileDepends} $(appPublicApi)SegmentRange.h
 
+$(o)RoadSegment$(oext) : $(_MakeFilePath)RoadSegment.cpp ${MultiCompileDepends} $(appPublicApi)RoadSegment.h
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------

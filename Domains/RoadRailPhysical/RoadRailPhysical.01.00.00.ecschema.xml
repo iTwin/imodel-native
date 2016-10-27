@@ -91,20 +91,23 @@
             <Class class="SegmentElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="RoadSegmentElement" modifier="Abstract" description="Base class for Physical segment of a road." >
+    <ECEntityClass typeName="RegularSegmentElement" modifier="Abstract" description="Base class for Physical segments with a constant cross-section definition.">
         <BaseClass>SegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RailSegmentElement" modifier="Abstract" description="Base class for Physical segment of a rail." >
+    <ECEntityClass typeName="TransitionSegmentElement" modifier="Abstract" description="Base class for Physical segments with variable cross-section.">
         <BaseClass>SegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="IntersectionSegmentElement" modifier="Abstract" description="Base class for Physical segment of a road connected to an intersection.">
-        <BaseClass>RoadSegmentElement</BaseClass>
+        <BaseClass>SegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing">
@@ -117,23 +120,23 @@
     </ECRelationshipClass>
     <!-- END SegmentElement Class Hierarchy -->
 
-    <!-- BEGIN RoadSegmentElement Class Hierarchy -->
+    <!-- BEGIN RoadSegment Element Class Hierarchy -->
     <ECEntityClass typeName="RoadSegment" modifier="Sealed" description="Physical segment of a road, with a constant cross-section." >
-        <BaseClass>RoadSegmentElement</BaseClass>
+        <BaseClass>RegularSegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <!--ECNavigationProperty propertyName="RoadCrossSectionDefinitionId" relationshipName="RoadCrossSectionReferencesDefinition" direction="forward"/-->
         <ECProperty propertyName="CrossSectionDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
     </ECEntityClass>
-    <ECEntityClass typeName="TransitionSegment" modifier="Sealed" description="Physical segment of a road, with a variable cross-section.">
-        <BaseClass>RoadSegmentElement</BaseClass>
+    <ECEntityClass typeName="RoadTransitionSegment" modifier="Sealed" description="Physical segment of a road, with a variable cross-section.">
+        <BaseClass>TransitionSegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ElevatedRoadSegment" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
-        <BaseClass>RoadSegmentElement</BaseClass>
+        <BaseClass>RegularSegmentElement</BaseClass>
         <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -149,43 +152,51 @@
             <Class class="bphys:Bridge"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="IntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection." >
+    <ECEntityClass typeName="RoadIntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection." >
         <BaseClass>IntersectionSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <!--ECNavigationProperty propertyName="RoadIntersectionLegDefinitionId" relationshipName="RoadIntersectionLegReferencesDefinition" direction="forward"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="ElevatedIntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection, supported by a bridge.">
+    <ECEntityClass typeName="ElevatedRoadIntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection, supported by a bridge.">
         <BaseClass>IntersectionSegmentElement</BaseClass>
+        <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="IntersectionSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="RoadIntersectionSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
         <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false">
-            <Class class="ElevatedIntersectionSegment"/>
+            <Class class="ElevatedRoadIntersectionSegment"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false">
             <Class class="bphys:Bridge"/>
         </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="Intersection" modifier="Sealed" description="Physical road intersection.">
-        <BaseClass>IntersectionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ElevatedIntersection" modifier="Sealed" description="Physical road intersection supported on a bridge.">
-        <BaseClass>IntersectionElement</BaseClass>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="IntersectionAssemblesBridge" strength="embedding" modifier="Sealed">
-        <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
-            <Class class="ElevatedIntersection"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
-            <Class class="bphys:Bridge"/>
-        </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass>    
     <!-- END RoadSegmentElement Class Hierarchy -->
 
     <!-- BEGIN IntersectionElement Class Hierarchy -->
     <ECEntityClass typeName="IntersectionElement" modifier="Abstract" description="Base class for Physical intersections.">
         <BaseClass>bis:PhysicalElement</BaseClass>
-    </ECEntityClass>    
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadIntersection" modifier="Sealed" description="Physical road intersection.">
+        <BaseClass>IntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedRoadIntersection" modifier="Sealed" description="Physical road intersection supported on a bridge.">
+        <BaseClass>IntersectionElement</BaseClass>
+        <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadIntersectionAssemblesBridge" strength="embedding" modifier="Sealed">
+        <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="ElevatedRoadIntersection"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="bphys:Bridge"/>
+        </Target>
+    </ECRelationshipClass>
     <!-- END IntersectionElement Class Hierarchy -->
 
     <!-- BEGIN Tunnel-related Classes -->
@@ -422,4 +433,138 @@
         </Target>
     </ECRelationshipClass-->
     <!-- END General Aspects classes -->
+
+    <!-- BEGIN CrossSection Element classes -->
+    <ECEntityClass typeName="CrossSectionDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionTemplateModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="Guid" typeName="string"/>
+        <ECProperty propertyName="Origin" typeName="point2d"/>
+        <ECProperty propertyName="Author" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="LastUsed" typeName="dateTime"/>
+        <ECProperty propertyName="Thumbnail" typeName="binary"/>
+        <ECProperty propertyName="IsFavorite" typeName="boolean"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionComponentElement" displayLabel="Component">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="int"/>
+        <ECProperty propertyName="SubType" typeName="int"/>
+        <ECProperty propertyName="Material" typeName="int"/>
+        <ECProperty propertyName="IsClosed" typeName="boolean"/>
+        <ECProperty propertyName="IsEndCondition" typeName="boolean"/>
+    </ECEntityClass>    
+    <ECEntityClass typeName="CrossSectionComponent" displayLabel="Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionEndConditionComponent" displayLabel="End-condition Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="IsInfiniteLength" typeName="boolean"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionPoint" displayLabel="Point">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="Coordinates" typeName="point2d"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionParameter" displayLabel="Parameter">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinValue" typeName="double"/>
+        <ECProperty propertyName="MaxValue" typeName="double"/>
+        <ECProperty propertyName="BiasValue" typeName="double"/>
+        <ECProperty propertyName="Type" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CrossSectionParameterDependsOnPoints" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
+            <Class class="CrossSectionParameter"/>
+        </Source>
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="refers to N parameters">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CrossSectionParameterTargetsPointPairs" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="PairNumber" typeName="int"/>
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N parameters">
+            <Class class="CrossSectionParameter"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CrossSectionConstraint" strength="referencing">
+        <BaseClass>bis:ElementDrivesElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+            </LinkTableRelationshipMap-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double"/>
+        <ECProperty propertyName="Type" typeName="int"/>
+        <Source multiplicity="(1..*)" polymorphic="true" roleLabel="drives by N points">
+            <Class class="CrossSectionPoint"/>
+        </Source>
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="is driven by N points">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RoadCrossSection" displayLabel="Road Template">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadIntersectionLegDefinition" displayLabel="Road Template">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedRoadCrossSection" displayLabel="Deck Template">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TrackCrossSection" displayLabel="TrackCrossSectionTemplate">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedTrackCrossSection" displayLabel="Deck Template">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!-- END CrossSection Element classes -->
 </ECSchema>

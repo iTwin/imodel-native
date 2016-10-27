@@ -36,6 +36,7 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalDomain.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\Segment.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\SegmentRange.h" />
     <ClInclude Include="RoadRailPhysicalInternal.h" />
@@ -46,6 +47,7 @@
     <ClCompile Include="RoadDesignSpeed.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />
+    <ClCompile Include="RoadSegment.cpp" />
     <ClCompile Include="Segment.cpp" />
     <ClCompile Include="SegmentRange.cpp" />
   </ItemGroup>

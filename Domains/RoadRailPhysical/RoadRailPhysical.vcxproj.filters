@@ -61,6 +61,9 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\LinearReferencing.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -82,6 +85,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LinearReferencing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RoadSegment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
