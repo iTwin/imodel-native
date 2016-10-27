@@ -454,6 +454,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
     CHAR spatialDataSourceQuery[512];
     SQLINTEGER dataSize = (int)data.GetSize();
     SQLINTEGER serverId = (int)data.GetServerId();
+    if(serverId < 0)
+        serverId = SaveServer(data.GetServer());
     if(data.GetGeoCS().size() == 0)
         {
         if(data.GetCompoundType().length() > 0)
