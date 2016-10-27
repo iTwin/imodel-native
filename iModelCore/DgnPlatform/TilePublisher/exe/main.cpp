@@ -441,11 +441,12 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto const& modelSelector = spatialView->GetModelSelector();
+            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
+            auto& modelSelector = spatial->GetModelSelector();
             auto viewModels = modelSelector.GetModels();
             m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto& categorySelector = spatial->GetCategorySelector();
             auto viewCats = categorySelector.GetCategories();
             m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
@@ -517,23 +518,23 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
-        auto    viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
+        auto viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
 
-        SpatialViewDefinitionCP spatialView;
-
-        if (!viewDefinition.IsValid() || nullptr == (spatialView = viewDefinition->ToSpatialView()))
+        SpatialViewDefinitionCP spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
+        if (nullptr == spatialView)
             continue;
 
-        Json::Value     entry (Json::objectValue);
+        Json::Value  entry(Json::objectValue);
 
         if (nullptr != view.GetName())
             entry["name"] = view.GetName();
 
+        auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
         GetSpatialViewJson (entry, *spatialView, transform);
-        entry["models"] = IdSetToJson(spatialView->GetModelSelector().GetModels());
-        entry["categories"] = IdSetToJson(spatialView->GetCategorySelector().GetCategories());
+        entry["models"] = IdSetToJson(spatial->GetModelSelector().GetModels());
+        entry["categories"] = IdSetToJson(spatial->GetCategorySelector().GetCategories());
 
-        ColorDef    backgroundColor = spatialView->GetDisplayStyle().GetBackgroundColor();
+        ColorDef    backgroundColor = spatial->GetDisplayStyle().GetBackgroundColor();
         auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
         colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
         colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
