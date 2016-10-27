@@ -141,7 +141,7 @@ bool ResolvePrimitiveType(ECPropertyCP prop, PrimitiveType& type)
 
     if (prop->GetIsPrimitiveArray())
         {
-        ArrayECPropertyCP arr = prop->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP arr = prop->GetAsPrimitiveArrayProperty();
         type = arr->GetPrimitiveElementType();
         return true;
         }
@@ -415,6 +415,14 @@ ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::HasExtendedType () const
+    {
+    return this->_HasExtendedType();
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
@@ -609,8 +617,8 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     // we allow it to be overridden.
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct == arrayProperty->GetKind())
+        PrimitiveArrayECPropertyCP arrayProperty = baseProperty.GetAsPrimitiveArrayProperty();
+        if (nullptr == arrayProperty)
             return false;
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
         }
@@ -925,17 +933,6 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_IsCalculated() const
-    {
-    if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
-    else
-        return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationPtr& spec, IECInstanceP attr, ECPropertyR ecprop, PrimitiveType primitiveType)
@@ -977,28 +974,6 @@ bool PrimitiveECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP ArrayECProperty::_GetCalculatedPropertySpecification() const
-    {
-    if (ARRAYKIND_Primitive == GetKind() && m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
-
-    return m_calculatedSpec.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
-    {
-    if (ARRAYKIND_Primitive == GetKind())
-        return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
-    else
-        return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
@@ -1029,12 +1004,8 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
     if (baseProperty.GetIsPrimitive())
         return false;
         
-    if (baseProperty.GetIsArray())
-        {
-        ArrayECPropertyCP arrayProp = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct != arrayProp->GetKind())
-            return false;
-        }
+    if (baseProperty.GetIsStructArray())
+        return false;
 
     // if the struct type hasn't been set yet, we will say it can override
     if (NULL == m_structType)
@@ -1214,90 +1185,11 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
-    {
-    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
-    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
-    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
-    // Instead, compare the full-qualified class name.
-    auto baseArray = baseProperty.GetAsArrayProperty();
-    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
-        {
-        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
-        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
-            {
-            auto basePrim = baseProperty.GetAsPrimitiveProperty();
-            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
-            }
-        else
-            return false;
-        }
-    else
-        {
-        Utf8String typeName = GetTypeName();
-        return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
-        }
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ArrayECProperty::_GetTypeName () const
-    {    
-    return ECXml::GetPrimitiveTypeName (m_primitiveType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::_SetTypeName (Utf8StringCR typeName)
-    {
-    PrimitiveType primitiveType;
-    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
-    if (ECObjectsStatus::Success == status)
-        return SetPrimitiveElementType (primitiveType);
-    
-    m_originalTypeName = typeName;
-    LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
-                                    typeName.c_str(),
-                                    GetClass().GetSchema().GetName().c_str(),
-                                    GetClass().GetName().c_str(),
-                                    GetName().c_str() );
-    return ECObjectsStatus::ParseError;
-    }
-
-/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayKind ArrayECProperty::GetKind () const
     {
     return m_arrayKind;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType ArrayECProperty::GetPrimitiveElementType () const
-    {
-    return m_primitiveType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiveType)
-    {        
-    m_arrayKind = ARRAYKIND_Primitive;
-    m_primitiveType = primitiveType;
-
-    SetCachedTypeAdapter (NULL);
-    SetCachedMemberTypeAdapter (NULL);
-    _AdjustMinMaxAfterTypeChange();
-    InvalidateClassLayout();
- 
-    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1390,11 +1282,105 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
     }
 
 /*---------------------------------------------------------------------------------**//**
-@bsimethod
+* @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::HasExtendedType () const
+bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    return this->_HasExtendedType();
+    auto baseArray = baseProperty.GetAsPrimitiveArrayProperty();
+    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+        {
+        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
+            {
+            auto basePrim = baseProperty.GetAsPrimitiveProperty();
+            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
+            }
+        else
+            return false;
+        }
+    else
+        {
+        Utf8String typeName = GetTypeName();
+        return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PrimitiveArrayECProperty::_GetTypeName () const
+    {    
+    return ECXml::GetPrimitiveTypeName (m_primitiveType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
+    {
+    PrimitiveType primitiveType;
+    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
+    if (ECObjectsStatus::Success == status)
+        return SetPrimitiveElementType (primitiveType);
+    
+    m_originalTypeName = typeName;
+    LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
+                                    typeName.c_str(),
+                                    GetClass().GetSchema().GetName().c_str(),
+                                    GetClass().GetName().c_str(),
+                                    GetName().c_str() );
+    return ECObjectsStatus::ParseError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+PrimitiveType PrimitiveArrayECProperty::GetPrimitiveElementType () const
+    {
+    return m_primitiveType;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer              09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType value)
+    {
+    m_arrayKind = ARRAYKIND_Primitive;
+    m_primitiveType = value;
+
+    SetCachedTypeAdapter(NULL);
+    SetCachedMemberTypeAdapter(NULL);
+    _AdjustMinMaxAfterTypeChange();
+    InvalidateClassLayout();
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveArrayECProperty::_IsCalculated() const
+    {
+    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP PrimitiveArrayECProperty::_GetCalculatedPropertySpecification() const
+    {
+    if (m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
+
+    return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
     }
 
 //---------------------------------------------------------------------------------------

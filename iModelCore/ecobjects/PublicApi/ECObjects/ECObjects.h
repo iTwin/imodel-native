@@ -38,8 +38,9 @@ EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
-EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ExtendedTypeECProperty);
+EC_TYPEDEFS(ArrayECProperty);
+EC_TYPEDEFS(PrimitiveArrayECProperty);
 EC_TYPEDEFS(StructArrayECProperty);
 EC_TYPEDEFS(NavigationECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
@@ -488,10 +489,10 @@ enum class CustomAttributeContainerType
     AnyClass                = EntityClass | CustomAttributeClass | StructClass | RelationshipClass,
     PrimitiveProperty       = (0x0001 << 5),
     StructProperty          = (0x0001 << 6),
-    ArrayProperty           = (0x0001 << 7),
+    PrimitiveArrayProperty  = (0x0001 << 7),
     StructArrayProperty     = (0x0001 << 8),
     NavigationProperty      = (0x0001 << 9),
-    AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty | NavigationProperty,
+    AnyProperty             = PrimitiveProperty | StructProperty | PrimitiveArrayProperty | StructArrayProperty | NavigationProperty,
     SourceRelationshipConstraint    = (0x0001 << 10),
     TargetRelationshipConstraint    = (0x0001 << 11),
     AnyRelationshipConstraint       = SourceRelationshipConstraint | TargetRelationshipConstraint,

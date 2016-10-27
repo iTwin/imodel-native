@@ -49,10 +49,10 @@ struct ValueAccessorTests : ECTestFixture
         return prop;
         }
         
-    ArrayECPropertyP CreateArrayProperty(Utf8CP name)
+    PrimitiveArrayECPropertyP CreateArrayProperty(Utf8CP name)
         {
-        ArrayECPropertyP prop;
-        m_ecClass->CreateArrayProperty (prop, name);
+        PrimitiveArrayECPropertyP prop;
+        m_ecClass->CreatePrimitiveArrayProperty (prop, name);
         m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
         return prop;
         }

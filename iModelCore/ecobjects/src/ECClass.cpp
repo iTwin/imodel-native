@@ -443,7 +443,7 @@ ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind ki
     switch (kind)
         {
     case VALUEKIND_Primitive:   newProperty = new PrimitiveECProperty (*this); break;
-    case VALUEKIND_Array:       newProperty = new ArrayECProperty (*this); break;
+    case VALUEKIND_Array:       newProperty = new PrimitiveArrayECProperty (*this); break;
     case VALUEKIND_Struct:      newProperty = new StructECProperty (*this); break;
     default:                    return ECObjectsStatus::Error;
         }
@@ -662,11 +662,11 @@ bool andAddProperty
 
         destProperty = destArray;
         }
-    else if (sourceProperty->GetIsArray())
+    else if (sourceProperty->GetIsPrimitiveArray())
         {
-        ArrayECPropertyP destArray;
-        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
-        destArray = new ArrayECProperty(*this);
+        PrimitiveArrayECPropertyP destArray;
+        PrimitiveArrayECPropertyCP sourceArray = sourceProperty->GetAsPrimitiveArrayProperty();
+        destArray = new PrimitiveArrayECProperty(*this);
         destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
         destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
@@ -931,22 +931,6 @@ ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name)
-    {
-    ecProperty = new StructECProperty(*this);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
-        {
-        delete ecProperty;
-        ecProperty = NULL;
-        return status;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
     {
     ecProperty = new StructECProperty(*this);
@@ -963,11 +947,11 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Ut
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
+* @bsimethod                                    Caleb.Shafer                    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, Utf8StringCR name)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name)
     {
-    ecProperty = new ArrayECProperty(*this);
+    ecProperty = new PrimitiveArrayECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECObjectsStatus::Success)
         {
@@ -981,9 +965,9 @@ ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
     {
-    ecProperty = new ArrayECProperty(*this);
+    ecProperty = new PrimitiveArrayECProperty(*this);
     ecProperty->SetPrimitiveElementType (primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECObjectsStatus::Success)
@@ -1530,10 +1514,10 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 if (isStruct)
                     ecProperty = new StructArrayECProperty(*this);
                 else
-                    ecProperty = new ArrayECProperty(*this);
+                    ecProperty = new PrimitiveArrayECProperty(*this);
                 }
             else 
-                ecProperty = new ArrayECProperty(*this);
+                ecProperty = new PrimitiveArrayECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
@@ -2692,7 +2676,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel() const
     {
     if (Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
         {
-        LOG.infov("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+        LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
                    m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
         return ECObjectsStatus::Error;
         }

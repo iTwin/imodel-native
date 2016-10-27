@@ -1129,10 +1129,10 @@ TEST_F(ECDBufferTests, ClearArray)
     ecClass->CreatePrimitiveProperty(primProp, "Int", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty(primProp, "String");
 
-    ArrayECPropertyP arrayProp;
-    ecClass->CreateArrayProperty(arrayProp, "Ints", PRIMITIVETYPE_Integer);
-    ecClass->CreateArrayProperty(arrayProp, "Strings", PRIMITIVETYPE_String);
-    ecClass->CreateArrayProperty(arrayProp, "MoreInts", PRIMITIVETYPE_Integer);
+    PrimitiveArrayECPropertyP arrayProp;
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "Ints", PRIMITIVETYPE_Integer);
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "Strings", PRIMITIVETYPE_String);
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "MoreInts", PRIMITIVETYPE_Integer);
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue v;
@@ -1166,8 +1166,8 @@ TEST_F(ECDBufferTests, MoreClearArrayTests)
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "Test");
-    ArrayECPropertyP arrayProp;
-    ecClass->CreateArrayProperty(arrayProp, "Strings", PRIMITIVETYPE_String);
+    PrimitiveArrayECPropertyP arrayProp;
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "Strings", PRIMITIVETYPE_String);
     PrimitiveECPropertyP primProp;
     ecClass->CreatePrimitiveProperty(primProp, "Stringy", PRIMITIVETYPE_String);
 
@@ -1287,11 +1287,11 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
     ECEntityClassP classA;
     schemaA->CreateEntityClass(classA, "ClassA");
 
-    ArrayECPropertyP prop;
-    classA->CreateArrayProperty(prop, "IntArray", PRIMITIVETYPE_Integer);
-    classA->CreateArrayProperty(prop, "StringArray", PRIMITIVETYPE_String);
-    classA->CreateArrayProperty(prop, "BoolArray", PRIMITIVETYPE_Boolean);
-    classA->CreateArrayProperty(prop, "Removed", PRIMITIVETYPE_String);
+    PrimitiveArrayECPropertyP prop;
+    classA->CreatePrimitiveArrayProperty(prop, "IntArray", PRIMITIVETYPE_Integer);
+    classA->CreatePrimitiveArrayProperty(prop, "StringArray", PRIMITIVETYPE_String);
+    classA->CreatePrimitiveArrayProperty(prop, "BoolArray", PRIMITIVETYPE_Boolean);
+    classA->CreatePrimitiveArrayProperty(prop, "Removed", PRIMITIVETYPE_String);
 
     StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->AddArrayElements("IntArray", 2);
@@ -1313,10 +1313,10 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
     ECSchema::CreateSchema(schemaA2, "SchemaA", "ts", 2, 0, 0);
     ECEntityClassP classA2;
     schemaA2->CreateEntityClass(classA2, "ClassA");
-    classA2->CreateArrayProperty(prop, "IntArray", PRIMITIVETYPE_String);
-    classA2->CreateArrayProperty(prop, "StringArray", PRIMITIVETYPE_Integer);
-    classA2->CreateArrayProperty(prop, "BoolArray", PRIMITIVETYPE_Boolean);
-    classA2->CreateArrayProperty(prop, "Added", PRIMITIVETYPE_String);
+    classA2->CreatePrimitiveArrayProperty(prop, "IntArray", PRIMITIVETYPE_String);
+    classA2->CreatePrimitiveArrayProperty(prop, "StringArray", PRIMITIVETYPE_Integer);
+    classA2->CreatePrimitiveArrayProperty(prop, "BoolArray", PRIMITIVETYPE_Boolean);
+    classA2->CreatePrimitiveArrayProperty(prop, "Added", PRIMITIVETYPE_String);
 
     StandaloneECInstancePtr instanceA2 = classA2->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ(ECObjectsStatus::Success, instanceA2->CopyDataBuffer(*instanceA, true));
@@ -1403,8 +1403,8 @@ TEST_F(ECDBufferTests, ArraysAreNotNull)
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "Test");
-    ArrayECPropertyP arrayProp;
-    ecClass->CreateArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
+    PrimitiveArrayECPropertyP arrayProp;
+    ecClass->CreatePrimitiveArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
 
     StandaloneECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     bool isNull = false;

@@ -256,7 +256,7 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
         LOG.error ("AlwaysExpand custom attribute only valid for complex properties");
         return ECObjectsStatus::Error;
         }
-    else if (NULL != ecproperty.GetAsArrayProperty() && andArrayMembers)
+    else if (NULL != ecproperty.GetAsPrimitiveArrayProperty() && andArrayMembers)
         return CreateCustomAttribute (ecproperty, ALWAYS_EXPAND_CLASSNAME, CustomAttributeData ("ArrayMembers", true));
     else
         return CreateCustomAttribute (ecproperty, ALWAYS_EXPAND_CLASSNAME); // "ArrayMembers" defaults to false, and ignored for non-array properties

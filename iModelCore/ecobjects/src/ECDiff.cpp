@@ -2474,11 +2474,13 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         ArrayECPropertyP newProperty;
         if (typeName.find (":") == Utf8String::npos)
             {
+            PrimitiveArrayECPropertyP newPrimitiveProperty;
             PrimitiveType primitiveType;
             if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
                 return MergeStatus::Failed;
-            if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
+            if (mergedClass.CreatePrimitiveArrayProperty (newPrimitiveProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
+            newProperty = newPrimitiveProperty;
             }
         else
             {
@@ -2619,8 +2621,10 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
             }
         else //primitive
             {
-            if (mergeClass.CreateArrayProperty (newProperty, srcProperty->GetName(), srcProperty->GetPrimitiveElementType()) != ECObjectsStatus::Success)
+            PrimitiveArrayECPropertyP newPrimitiveProp;
+            if (mergeClass.CreatePrimitiveArrayProperty (newPrimitiveProp, srcProperty->GetName(), srcProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
+            newProperty = newPrimitiveProp;
             }
         newProperty->SetMinOccurs( srcProperty->GetMinOccurs());
         newProperty->SetMaxOccurs( srcProperty->GetMaxOccurs());

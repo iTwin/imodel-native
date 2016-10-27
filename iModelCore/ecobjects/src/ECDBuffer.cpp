@@ -848,17 +848,18 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
             ArrayKind arrayKind = arrayProp->GetKind();
             if (arrayKind == ARRAYKIND_Primitive)
                 {
+                PrimitiveArrayECPropertyCP primitiveProp = arrayProp->GetAsPrimitiveArrayProperty();
                 bool isFixedArrayCount = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs());
-                bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (arrayProp->GetPrimitiveElementType());
+                bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (primitiveProp->GetPrimitiveElementType());
                 
                 if (addingFixedSizeProps && isFixedPropertySize)
-                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                 else if (!addingFixedSizeProps && !isFixedPropertySize)
                     {
                     if (isFixedArrayCount)
-                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
@@ -2406,7 +2407,7 @@ ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isPrimitiveType (ECPropertyCR prop)
     {
-    return prop.GetIsPrimitive() || (prop.GetIsArray() && ARRAYKIND_Primitive == prop.GetAsArrayProperty()->GetKind());
+    return prop.GetIsPrimitive() || prop.GetIsPrimitiveArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3188,10 +3189,10 @@ CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecificati
     if (ECObjectsStatus::Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
         {
         PrimitiveECPropertyCP primProp;
-        ArrayECPropertyCP arrayProp;
+        PrimitiveArrayECPropertyCP arrayProp;
         if (NULL != (primProp = ecprop->GetAsPrimitiveProperty()))
             return primProp->GetCalculatedPropertySpecification();
-        else if (NULL != (arrayProp = ecprop->GetAsArrayProperty()))
+        else if (NULL != (arrayProp = ecprop->GetAsPrimitiveArrayProperty()))
             return arrayProp->GetCalculatedPropertySpecification();
         }
 

@@ -119,11 +119,11 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_FALSE (pProperty->GetIsStruct ());
         EXPECT_TRUE (pProperty->GetIsArray ());
         EXPECT_STREQ ("Struct1", pProperty->GetTypeName ().c_str ());
-        ArrayECPropertyP arrayProperty = pProperty->GetAsArrayPropertyP ();
-        EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->GetKind ());
-        EXPECT_EQ (schema->GetClassP ("Struct1"), arrayProperty->GetAsStructArrayPropertyP()->GetStructElementType ());
-        EXPECT_EQ (0, arrayProperty->GetMinOccurs ());
-        EXPECT_EQ (UINT_MAX, arrayProperty->GetMaxOccurs ());
+        StructArrayECPropertyP structArrayProperty = pProperty->GetAsStructArrayPropertyP ();
+        EXPECT_TRUE (NULL != structArrayProperty);
+        EXPECT_EQ (schema->GetClassP ("Struct1"), structArrayProperty->GetStructElementType ());
+        EXPECT_EQ (0, structArrayProperty->GetMinOccurs ());
+        EXPECT_EQ (UINT_MAX, structArrayProperty->GetMaxOccurs ());
         EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined ());
         EXPECT_STREQ ("NestedArray", pProperty->GetDisplayLabel ().c_str ());
         EXPECT_STREQ ("", pProperty->GetDescription ().c_str ());
@@ -890,8 +890,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
 
     ECEntityClassP entityClass;
     ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);
-    ArrayECPropertyP property;
-    auto status = entityClass->CreateArrayProperty(property, "QuantifiedProperty", PrimitiveType::PRIMITIVETYPE_Double);
+    PrimitiveArrayECPropertyP property;
+    auto status = entityClass->CreatePrimitiveArrayProperty(property, "QuantifiedProperty", PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_TRUE(status == ECObjectsStatus::Success);
     ASSERT_TRUE(property != nullptr);
     property->SetKindOfQuantity(kindOfQuantity);
@@ -922,7 +922,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
-    KindOfQuantityCP propertyKoq = deserializedProperty->GetAsArrayProperty()->GetKindOfQuantity();
+    KindOfQuantityCP propertyKoq = deserializedProperty->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
     ASSERT_TRUE(nullptr != propertyKoq);
     EXPECT_EQ(propertyKoq, deserializedKindOfQuantity);
     }

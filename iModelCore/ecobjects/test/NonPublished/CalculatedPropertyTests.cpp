@@ -173,7 +173,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     ECEntityClassP ecClass = NULL;
     EXPECT_EQ (ECObjectsStatus::Success, schema->CreateEntityClass (ecClass, "TestClass"));
     PrimitiveECPropertyP ecProp = NULL;
-    ArrayECPropertyP arrayProp = NULL;
+    PrimitiveArrayECPropertyP arrayProp = NULL;
     ecClass->CreatePrimitiveProperty (ecProp, "S", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, "S1", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, "S2", PRIMITIVETYPE_String);
@@ -184,7 +184,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     ecClass->CreatePrimitiveProperty (ecProp, "D1", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, "D2", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, "B", PRIMITIVETYPE_Boolean);
-    ecClass->CreateArrayProperty (arrayProp, "A", PRIMITIVETYPE_Integer);
+    ecClass->CreatePrimitiveArrayProperty (arrayProp, "A", PRIMITIVETYPE_Integer);
 
     // Apply the CalculatedECPropertySpecification
     ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitivePropertyP ();

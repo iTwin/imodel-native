@@ -674,7 +674,7 @@ private:
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
-    uint32_t                  m_maximumLength;
+    uint32_t                m_maximumLength;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -708,7 +708,10 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
-    virtual bool                        _IsPrimitiveArray() const { return false;  }
+
+    virtual bool                        _IsPrimitiveArray() const { return false; }
+    virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual PrimitiveArrayECPropertyP   _GetAsPrimitiveArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
 
     virtual bool                        _IsStructArray() const { return false; }
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -864,18 +867,20 @@ public:
     //! Returns whether this property has an extended type specified
     ECOBJECTS_EXPORT bool               HasExtendedType() const;
 
-    PrimitiveECPropertyCP  GetAsPrimitiveProperty() const       { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
-    PrimitiveECPropertyP   GetAsPrimitivePropertyP()            { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
-    ArrayECPropertyCP      GetAsArrayProperty() const           { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
-    ArrayECPropertyP       GetAsArrayPropertyP()                { return _GetAsArrayPropertyP(); } //!< Returns the property as an ArrayECProperty*
-    StructECPropertyCP     GetAsStructProperty() const          { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
-    StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
-    StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
-    StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
-    NavigationECPropertyCP GetAsNavigationProperty() const      { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
-    NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
-    ExtendedTypeECPropertyCP GetAsExtendedTypeProperty() const  { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
-    ExtendedTypeECPropertyP GetAsExtendedTypePropertyP()        { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as a ExtendedTypeECProperty*
+    ArrayECPropertyCP           GetAsArrayProperty() const              { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
+    ArrayECPropertyP            GetAsArrayPropertyP()                   { return _GetAsArrayPropertyP(); } //!< Returns the property as an ArrayECProperty*
+    PrimitiveECPropertyCP       GetAsPrimitiveProperty() const          { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
+    PrimitiveECPropertyP        GetAsPrimitivePropertyP()               { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
+    PrimitiveArrayECPropertyCP  GetAsPrimitiveArrayProperty() const     { return _GetAsPrimitiveArrayPropertyCP(); } //!< Returns the property as a const PrimtiveArrayECProperty*
+    PrimitiveArrayECPropertyP   GetAsPrimitiveArrayPropertyP()          { return _GetAsPrimitiveArrayPropertyP(); } //!< Returns the property as a PrimitiveArrayECProperty*
+    StructECPropertyCP          GetAsStructProperty() const             { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
+    StructECPropertyP           GetAsStructPropertyP()                  { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
+    StructArrayECPropertyCP     GetAsStructArrayProperty() const        { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
+    StructArrayECPropertyP      GetAsStructArrayPropertyP()             { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
+    NavigationECPropertyCP      GetAsNavigationProperty() const         { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyP       GetAsNavigationPropertyP()              { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
+    ExtendedTypeECPropertyCP    GetAsExtendedTypeProperty() const       { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
+    ExtendedTypeECPropertyP     GetAsExtendedTypePropertyP()            { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as an ExtendedTypeECProperty*
 };
 
 //=======================================================================================
@@ -984,9 +989,9 @@ protected:
 //__PUBLISH_SECTION_START__
 public:
     //! The property type.
-    //! This type must be an ECClass where IsStruct is set to true.
+    //! This type must be an ECStructClass.
     ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECStructClassCR value);
-    //! Gets the ECClass that defines the type for this property
+    //! Gets the ECStructClass that defines the type for this property
     ECOBJECTS_EXPORT ECStructClassCR    GetType() const; 
 };
 
@@ -994,7 +999,7 @@ public:
 //! The in-memory representation of an ECArrayProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ArrayECProperty : public ExtendedTypeECProperty
+struct EXPORT_VTABLE_ATTRIBUTE ArrayECProperty /*abstract*/ : public ExtendedTypeECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 friend struct ECClass;
@@ -1002,17 +1007,15 @@ friend struct ECClass;
 private:
     uint32_t                                    m_minOccurs;
     uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
-    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
-    PrimitiveType                               m_primitiveType;
     mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
 
 protected:
     ArrayKind               m_arrayKind;
 
     ArrayECProperty(ECClassCR ecClass)
-        : ExtendedTypeECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind(ARRAYKIND_Primitive),
-        m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL)
+        : ExtendedTypeECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL)
         {};
+
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
@@ -1020,16 +1023,8 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     virtual bool                        _IsArray () const override { return true;}
-    virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
-    virtual Utf8String                  _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
-    virtual bool                                _IsCalculated() const override;
-    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
-    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::ArrayProperty; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -1042,10 +1037,6 @@ public:
     //! The ArrayKind of this ECProperty
     ECOBJECTS_EXPORT ArrayKind GetKind() const;
 
-    //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
-    //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
-    ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;
     //! Sets the Minimum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(uint32_t value);
     //! Gets the Minimum number of array members.
@@ -1061,6 +1052,46 @@ public:
     uint32_t                            GetStoredMaxOccurs () const { return m_maxOccurs; }
 //__PUBLISH_SECTION_START__
     };
+
+//=======================================================================================
+//! The in-memory representation of an PrimitiveArrayECProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct PrimitiveArrayECProperty : ArrayECProperty
+{
+DEFINE_T_SUPER(ArrayECProperty)
+friend struct ECClass;
+
+private: 
+    PrimitiveType                               m_primitiveType;
+    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
+
+protected:
+    PrimitiveArrayECProperty(ECClassCR ecClass)
+        : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String)
+        {
+        m_arrayKind = ARRAYKIND_Primitive;
+        };
+
+    virtual Utf8String                  _GetTypeName() const override;
+    virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
+    virtual bool                        _IsPrimitiveArray() const override { return true; }
+    virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const override { return this; }
+    virtual PrimitiveArrayECPropertyP   _GetAsPrimitiveArrayPropertyP()        override { return this; }
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveArrayProperty; }
+
+    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
+    virtual bool                                _IsCalculated() const override;
+    virtual bool                                _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
+
+public:
+    //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
+    ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
+    //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
+    ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;
+};
+
 
 //=======================================================================================
 //! The in-memory representation of an StructArrayECProperty as defined by ECSchemaXML
@@ -1497,17 +1528,14 @@ public:
     //! If the given name is valid, creates a primitive property object with the given primitive type
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
-    //! If the given name is valid, creates a struct property object using the current class (if a StructClass) as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name);
-
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
 
-    //! If the given name is valid, creates an array property object using the current class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name);
+    //! If the given name is valid, creates an array property object using the default type of STRING
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name);
 
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);

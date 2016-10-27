@@ -2864,10 +2864,10 @@ bool                ECPropertyValue::HasChildValues () const
     // Avoid evaluating value if we can answer this by looking at the ECProperty
     // Note: performance: the accessor caches the ECProperty, since we often request it more than once
     ECPropertyCP prop = m_accessor.GetECProperty();
-    ArrayECPropertyCP arrayProp;
+    PrimitiveArrayECPropertyCP arrayProp;
     if (NULL == prop || prop->GetIsPrimitive() || prop->GetIsNavigation())
         return false;
-    else if (NULL != (arrayProp = prop->GetAsArrayProperty()) && ARRAYKIND_Primitive == arrayProp->GetKind() && -1 != m_accessor.DeepestLocationCR().GetArrayIndex())
+    else if (NULL != (arrayProp = prop->GetAsPrimitiveArrayProperty()) && -1 != m_accessor.DeepestLocationCR().GetArrayIndex())
         return false;   // this is a primitive array member, it has no child properties
     else if (prop->GetIsStruct())
         return true;    // embedded struct always has child values, ECValue always null
