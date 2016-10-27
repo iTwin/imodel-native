@@ -120,18 +120,21 @@ bool ContentConfigSerializer::Serialize(const ContentConfig&    config,
             return false;
 
         WString extendedWktStr(gcsWKT.GetCStr());
+        if (!extendedWktStr.empty())
+            {
         wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
+            extendedWktStr += WString(wktFlavor);
 
-        extendedWktStr += WString(wktFlavor);
+            sourceData.SetGCS(extendedWktStr);
+            uint32_t flagsField(0);
 
-        sourceData.SetGCS(extendedWktStr);
-        uint32_t flagsField(0);
+            SetBitsTo(flagsField, 0x1, config.GetGCSConfig().IsPrependedToExistingLocalTransform());
+            SetBitsTo(flagsField, 0x2, config.GetGCSConfig().IsExistingPreservedIfGeoreferenced());
+            SetBitsTo(flagsField, 0x4, config.GetGCSConfig().IsExistingPreservedIfLocalCS());
 
-        SetBitsTo(flagsField, 0x1, config.GetGCSConfig().IsPrependedToExistingLocalTransform());
-        SetBitsTo(flagsField, 0x2, config.GetGCSConfig().IsExistingPreservedIfGeoreferenced());
-        SetBitsTo(flagsField, 0x4, config.GetGCSConfig().IsExistingPreservedIfLocalCS());
 
-        sourceData.SetFlags(flagsField);
+            sourceData.SetFlags(flagsField);
+            }
         }
     if (config.GetTypeConfig().IsSet())
         {

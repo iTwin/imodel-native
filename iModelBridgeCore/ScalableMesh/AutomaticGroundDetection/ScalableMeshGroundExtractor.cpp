@@ -231,7 +231,7 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     }
     */
 
-static bool s_deactivateForMultiCoverage = false;
+static bool s_deactivateForMultiCoverage = true;
 
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {

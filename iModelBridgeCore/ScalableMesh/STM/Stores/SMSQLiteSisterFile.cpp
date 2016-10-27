@@ -82,6 +82,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
+            std::lock_guard<std::mutex> lock(m_featureOpen);
             if (!m_smFeatureSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
@@ -99,6 +100,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
         case SMStoreDataType::DiffSet:
             {
+            std::lock_guard<std::mutex> lock(m_clipOpen);
             if (!m_smClipSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
@@ -121,6 +123,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
         case SMStoreDataType::Skirt:
         case SMStoreDataType::Coverage:
             {
+            std::lock_guard<std::mutex> lock(m_defOpen);
             if (!m_smClipDefinitionSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
