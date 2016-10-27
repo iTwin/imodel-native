@@ -550,7 +550,13 @@ RealityPackageStatus RealityDataSerializer::_WriteTerrainGroup(BeXmlNodeR node, 
     return RealityPackageStatus::UnknownError;
     }
 
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+    {
+    return RealityPackageStatus::UnknownError;
+    }
 
 //=======================================================================================
 //                              RealityDataSerializer - Factory
