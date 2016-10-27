@@ -29,11 +29,11 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeIdSetTests::ExpectRoundTrip(BeIdSet const& ids, Utf8CP expected)
     {
-    Utf8String actual = ids.ToString();
+    Utf8String actual = ids.ToCompactString();
     EXPECT_TRUE(actual.Equals(expected)) << "Expected: " << expected << " Actual: " << actual.c_str();
     BeIdSet roundtripped;
     roundtripped.FromString(actual);
-    EXPECT_TRUE(roundtripped == ids) << " Expected: " << ids.ToString(BeIdSet::StringFormat::Readable).c_str() << " Actual: " << roundtripped.ToString(BeIdSet::StringFormat::Readable).c_str();
+    EXPECT_TRUE(roundtripped == ids) << " Expected: " << ids.ToString().c_str() << " Actual: " << roundtripped.ToString().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
