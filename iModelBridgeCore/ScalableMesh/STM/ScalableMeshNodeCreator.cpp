@@ -263,7 +263,8 @@ int64_t  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int n
 #endif
         );
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-    m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    auto texPoolId = m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    m_pDataIndex->GetMemoryPool()->RemoveItem(texPoolId, texID, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()));
     return (int64_t) texID;
     }
 
