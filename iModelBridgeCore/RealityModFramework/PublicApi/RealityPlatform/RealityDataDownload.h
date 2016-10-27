@@ -12,6 +12,8 @@
 #include <ctime>
 #include <Bentley/BeFile.h>
 #include <Bentley/bmap.h>
+#include <BeXml/BeXml.h>
+#include <Bentley/DateTime.h>
 #include "RealityPlatformAPI.h"
 
 //! Callback function to follow the download progression.
@@ -116,8 +118,7 @@ public:
     struct DownloadResult
         {
         int                     errorCode; //code returned by curl
-        //a relative measure of how much of the file was loaded = (total filesize * (% downloaded + 1%))
-        size_t                  downloadProgress; 
+        size_t                  downloadProgress; //a percentage of how much of the file was successfully downloaded
         };
 
     //results for a single file
@@ -140,6 +141,46 @@ public:
             {
             for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
                 delete (it->second);
+            }
+
+        REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
+            {
+            BeXmlWriterPtr writer = BeXmlWriter::Create();
+            BeAssert(writer.IsValid());
+            writer->SetIndentation(2);
+
+            writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
+
+            writer->WriteElementStart("RealityDataDownload DownloadReport");
+                {
+                writer->WriteAttribute("PackageId", packageId);
+                writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
+
+                for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
+                    {
+                    writer->WriteElementStart("File");
+                        {
+                        writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
+                        TransferReport* tr = it->second;
+                        writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
+                        writer->WriteAttribute("filesize", tr->filesize);
+                        writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                        for(size_t i = 0; i < tr->retries.size(); ++i)
+                            {
+                            writer->WriteElementStart("DownloadAttempt");
+                                {
+                                writer->WriteAttribute("attemptNo", i+1);
+                                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
+                                writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
+                                }
+                            writer->WriteElementEnd();
+                            }
+                        }
+                    writer->WriteElementEnd();
+                    }
+                }
+                writer->WriteElementEnd();
+                writer->ToString(report);
             }
         };
 
