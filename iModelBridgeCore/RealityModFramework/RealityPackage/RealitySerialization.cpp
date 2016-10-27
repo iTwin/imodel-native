@@ -330,7 +330,8 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
 
     // Size.
     uint64_t size;
-    pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
+    if (BeXmlStatus::BEXML_Success != pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize))
+        pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
     pDataSource->SetSize(size);
 
     // Metadata.
