@@ -20,53 +20,55 @@ struct SessionTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SessionTests::Test()
     {
-    DgnElementId sessionId[3];
-
     // insert some sample Sessions
-    for (int32_t i=0; i<_countof(sessionId); i++)
+    for (int32_t i=0; i<3; ++i)
         {
         Utf8PrintfString sessionName("Session%d", i);
         SessionPtr session = Session::Create(*m_db, sessionName.c_str());
         ASSERT_TRUE(session.IsValid());
         ASSERT_TRUE(session->Insert().IsValid());
-        sessionId[i] = session->GetElementId();
         }
 
-    EXPECT_TRUE(m_db->Sessions().GetByName("Session1").IsValid());
-    EXPECT_TRUE(!m_db->Sessions().GetCurrent().IsValid());
-    EXPECT_TRUE(m_db->Sessions().LoadCurrent("Session2").IsValid());
-    auto current = m_db->Sessions().GetCurrent();
-    EXPECT_TRUE(current.IsValid());
-    EXPECT_TRUE(current->GetName() == "Session2");
+    auto& sessions= m_db->Sessions();
+    EXPECT_TRUE(sessions.GetCurrent().GetName() == "");
+    sessions.SetCurrent("NotFound");
+    EXPECT_TRUE(sessions.GetCurrent().GetName() == "");
+
+    {
+    EXPECT_TRUE(sessions.GetByName("Session1").IsValid());
+    sessions.SetCurrent("Session2");
+    auto& current = sessions.GetCurrent();
+    EXPECT_TRUE(current.GetName() == "Session2");
 
     Json::Value val;
     val["val100"]  = 100;
     val["val200"]  = 200;
-    current->SetVariable("myval", val);
+    current.SetVariable("myval", val);
 
     Json::Value val2;
     val2["val30"]  = 30;
     val2["val40"]  = 40;
-    current->SetVariable("myval2", val2);
-    EXPECT_TRUE(current->Update().IsValid());
+    current.SetVariable("myval2", val2);
+    EXPECT_TRUE(current.Update().IsValid());
     m_db->SaveChanges();
+    }
 
-    EXPECT_TRUE(m_db->Sessions().LoadCurrent("Session1").IsValid());
-
-    current = m_db->Sessions().LoadCurrent("Session2");
+    sessions.SetCurrent("Session1");
+    EXPECT_TRUE(sessions.GetCurrent().GetName() == "Session1");
+    sessions.SetCurrent("Session2");
 
     {
-    auto& myVal = current->GetVariable("myval");
+    auto& myVal = sessions.GetCurrent().GetVariable("myval");
     EXPECT_TRUE(!myVal.isNull());
     EXPECT_TRUE(myVal["val100"].asInt() == 100);
     EXPECT_TRUE(myVal["val200"].asInt() == 200);
     }
 
-    current->RemoveVariable("myval");
+    sessions.GetCurrent().RemoveVariable("myval");
     {
-    auto& myVal = current->GetVariable("myval");
+    auto& myVal = sessions.GetCurrent().GetVariable("myval");
     EXPECT_TRUE(myVal.isNull());
-    auto& myVal2 = current->GetVariable("myval2");
+    auto& myVal2 = sessions.GetCurrent().GetVariable("myval2");
     EXPECT_TRUE(!myVal2.isNull());
     EXPECT_TRUE(myVal2["val30"].asInt() == 30);
     EXPECT_TRUE(myVal2["val40"].asInt() == 40);

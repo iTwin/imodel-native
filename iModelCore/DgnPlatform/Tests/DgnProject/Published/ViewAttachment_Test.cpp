@@ -107,7 +107,7 @@ void ViewAttachmentTest::SetUp()
     m_drawingModelId = drawing->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, CategorySelector(db,""), DisplayStyle(db,""));
+    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle(db,""));
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -184,14 +184,18 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
     viewController.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+
+    auto flags = viewController.GetViewFlags();
+    flags.SetRenderMode(Render::RenderMode::Wireframe);
+    viewController.GetViewDefinition().GetDisplayStyle().SetViewFlags(flags);
+
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
 
 //    viewController.ChangeModelDisplay(modelId, true);
 
-    ASSERT_TRUE(viewController.GetViewDefinitionR().Update().IsValid());
-    ASSERT_TRUE(viewController.GetViewDefinitionR().GetCategorySelectorR().Update().IsValid());
-    ASSERT_TRUE(viewController.GetViewDefinitionR().GetDisplayStyleR().Update().IsValid());
+    ASSERT_TRUE(viewController.GetViewDefinition().Update().IsValid());
+    ASSERT_TRUE(viewController.GetViewDefinition().GetCategorySelector().Update().IsValid());
+    ASSERT_TRUE(viewController.GetViewDefinition().GetDisplayStyle().Update().IsValid());
     }
 
 #if defined (NEEDS_WORK_TARGET_MODEL)

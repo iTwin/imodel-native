@@ -259,7 +259,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
     {
     DgnCategoryIdList ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, [CodeValue] FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY [CodeValue]");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,CodeValue FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY CodeValue");
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -460,7 +460,7 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
 
     Utf8String ecsql("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append(" WHERE [ParentId]=?");
+        ecsql.append(" WHERE ParentId=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
@@ -483,7 +483,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     size_t count = 0;
     Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append (" WHERE [ParentId]=?");
+        ecsql.append (" WHERE ParentId=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())

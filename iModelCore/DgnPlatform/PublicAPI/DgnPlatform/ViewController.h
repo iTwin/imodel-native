@@ -83,7 +83,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         struct Key : NonCopyableClass {};
 
         virtual void _Save(ViewDefinitionR view) const {}
-        virtual void _Load(ViewDefinitionCR view) {}
+        virtual void _Load(ViewDefinitionR view) {}
     };
 
 protected:
@@ -95,21 +95,19 @@ protected:
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
-    DgnClassId     m_classId;
-    DgnDbR         m_dgndb;
+    DgnDbR m_dgndb;
     ViewDefinitionPtr m_definition;
-    RotMatrix      m_defaultDeviceOrientation;
-    bool           m_defaultDeviceOrientationValid;
-    bool           m_sceneReady = false;
+    RotMatrix m_defaultDeviceOrientation;
+    bool m_defaultDeviceOrientationValid;
+    bool m_sceneReady = false;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
 protected:
     //! Construct a ViewController object.
-    //! @param definition   The view definition.
     DGNPLATFORM_EXPORT ViewController(ViewDefinitionCR definition);
 
-    virtual ~ViewController(){}
+    virtual ~ViewController() {}
     enum class FitComplete {No=0, Yes=1};
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
@@ -203,11 +201,6 @@ protected:
 
     enum class CloseMe {No=0, Yes=1};
     //! called when one or more models are deleted
-    //! Default implementation does:
-    //! - Removes deleted models from viewed model list
-    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
-    //! - Closes viewport if no viewed models remain
-    //! Override this method to change this behavior
     //! @return true to close this viewport
     virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db) {return CloseMe::No;}
 
@@ -219,8 +212,6 @@ public:
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
-
-    DgnClassId GetClassId() const {return m_classId;}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -292,47 +283,45 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
-    //! Get the ViewFlags.
+    //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 
-    //! Gets a reference to the ViewFlags.
-    Render::ViewFlags& GetViewFlagsR() {return m_definition->GetDisplayStyleR().GetViewFlagsR();}
-
-    //! Gets the DgnViewId of this view.
+    //! Gets the DgnViewId of the ViewDefinition of this view.
     DgnViewId GetViewId() const {return m_definition->GetViewId();}
 
-    //! Gets the background color used in the view.
+    //! Gets the background color in the DisplayStyle of this view.
     ColorDef GetBackgroundColor() const {return m_definition->GetDisplayStyle().GetBackgroundColor();}
 
-    //! Change the background color of the view.
+    //! Change the background color in the DisplayStyle of this view.
     //! @param[in] color The new background color
-    void SetBackgroundColor(ColorDef color) {m_definition->GetDisplayStyleR().SetBackgroundColor(color);}
+    void SetBackgroundColor(ColorDef color) {m_definition->GetDisplayStyle().SetBackgroundColor(color);}
 
-    //! Get the origin (lower, left, back) point of of the view
+    //! Get the origin (lower, left, back) point of of the ViewDefinition
     DPoint3d GetOrigin() const {return m_definition->GetOrigin();}
 
-    //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
+    //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the ViewDefinition.
     DVec3d GetDelta() const {return m_definition->GetExtents();}
 
-    //! Get the 3x3 orthonormal rotation matrix for this view.
+    //! Get the 3x3 orthonormal rotation matrix for this ViewDefinition.
     RotMatrix GetRotation() const {return m_definition->GetRotation();}
 
-    //! Change the origin (lower, left, front) point of this view.
+    //! Change the origin (lower, left, front) in the ViewDefinition of this view
     //! @param[in] viewOrg The new origin for this view.
     void SetOrigin(DPoint3dCR viewOrg) {m_definition->SetOrigin(viewOrg);}
 
-    //! Change the size of this view. The axes are in world coordinates units, aligned with the view.
+    //! Change the extents in the ViewDefinition of this view.
     //! @param[in] viewDelta the new size for the view.
     void SetDelta(DVec3dCR viewDelta) {m_definition->SetExtents(viewDelta);}
 
-    //! Change the rotation of the view.
+    //! Change the rotation in the ViewDefinition of this view.
+    //! @param[in] viewRot The new rotation matrix.
     //! @note viewRot must be orthonormal. For 2d views, only the rotation angle about the z axis is used.
     void SetRotation(RotMatrixCR viewRot){m_definition->SetRotation(viewRot);}
 
-    //! Get the center point of the view.
+    //! Get the center point from the ViewDefinition.
     DPoint3d GetCenter() const {return m_definition->GetCenter();}
 
-    //! Change whether a DgnCatetory is display in this view.
+    //! Change whether a DgnCatetory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
@@ -407,8 +396,7 @@ public:
     DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* obj) const;
     StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
 
-    ViewDefinitionCR GetViewDefinition() const {return *m_definition;}
-    ViewDefinitionR GetViewDefinitionR() {return *m_definition;}
+    ViewDefinitionR GetViewDefinition() const {return *m_definition;}
 };
 
 //=======================================================================================
@@ -637,8 +625,7 @@ protected:
     DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
 
 public:
-    SpatialViewDefinitionCR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionCR>(*m_definition);}
-    SpatialViewDefinitionR GetSpatialViewDefinitionR() {return static_cast<SpatialViewDefinitionR>(*m_definition);}
+    SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off
     //! @param modelId  The model to turn on or off.
@@ -724,8 +711,7 @@ protected:
     OrthographicViewController(OrthographicViewDefinitionCR definition) : T_Super(definition) {}
 
 public:
-    OrthographicViewDefinitionCR GetOrthographicViewDefinition() const {return static_cast<OrthographicViewDefinitionCR>(*m_definition);}
-    OrthographicViewDefinitionR GetOrthographicViewDefinitionR() {return static_cast<OrthographicViewDefinitionR>(*m_definition);}
+    OrthographicViewDefinitionR GetOrthographicViewDefinition() const {return static_cast<OrthographicViewDefinitionR>(*m_definition);}
 };
 
 //=======================================================================================
@@ -749,8 +735,7 @@ protected:
     CameraViewController(CameraViewDefinitionCR definition) : T_Super(definition) {}
 
 public:
-    CameraViewDefinitionCR GetCameraViewDefinition() const {return static_cast<CameraViewDefinitionCR>(*m_definition);}
-    CameraViewDefinitionR GetCameraViewDefinitionR() {return static_cast<CameraViewDefinitionR>(*m_definition);}
+    CameraViewDefinitionR GetCameraViewDefinition() const {return static_cast<CameraViewDefinitionR>(*m_definition);}
 
     /** @name Camera */
 /** @{ */
@@ -771,7 +756,7 @@ public:
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
     ViewportStatus LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, DVec2dCP viewDelta=nullptr, double const* frontDistance=nullptr, double const* backDistance=nullptr)
-                    {return GetCameraViewDefinitionR().LookAt(eyePoint, targetPoint, upVector, viewDelta, frontDistance, backDistance);}
+                    {return GetCameraViewDefinition().LookAt(eyePoint, targetPoint, upVector, viewDelta, frontDistance, backDistance);}
 
     //! Position the camera for this view and point it at a new target point, using a specified lens angle.
     //! @param[in] eyePoint The new location of the camera.
@@ -785,21 +770,21 @@ public:
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
     ViewportStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr)
-                    {return GetCameraViewDefinitionR().LookAtUsingLensAngle(eyePoint, targetPoint, upVector, fov, frontDistance, backDistance);}
+                    {return GetCameraViewDefinition().LookAtUsingLensAngle(eyePoint, targetPoint, upVector, fov, frontDistance, backDistance);}
 
     //! Move the camera relative to its current location by a distance in camera coordinates.
     //! @param[in] distance to move camera. Length is in world units, direction relative to current camera orientation.
     //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    ViewportStatus MoveCameraLocal(DVec3dCR distance) {return GetCameraViewDefinitionR().MoveCameraLocal(distance);}
+    ViewportStatus MoveCameraLocal(DVec3dCR distance) {return GetCameraViewDefinition().MoveCameraLocal(distance);}
 
     //! Move the camera relative to its current location by a distance in world coordinates.
     //! @param[in] distance in world units.
     //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    ViewportStatus MoveCameraWorld(DVec3dCR distance) {return GetCameraViewDefinitionR().MoveCameraWorld(distance);}
+    ViewportStatus MoveCameraWorld(DVec3dCR distance) {return GetCameraViewDefinition().MoveCameraWorld(distance);}
 
     //! Rotate the camera from its current location about an axis relative to its current orientation.
     //! @param[in] angle The angle to rotate the camera, in radians.
@@ -810,7 +795,7 @@ public:
     //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    ViewportStatus RotateCameraLocal(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinitionR().RotateCameraLocal(angle, axis, aboutPt);}
+    ViewportStatus RotateCameraLocal(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinition().RotateCameraLocal(angle, axis, aboutPt);}
 
     //! Rotate the camera from its current location about an axis in world coordinates.
     //! @param[in] angle The angle to rotate the camera, in radians.
@@ -820,7 +805,7 @@ public:
     //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    ViewportStatus RotateCameraWorld(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinitionR().RotateCameraWorld(angle, axis, aboutPt);}
+    ViewportStatus RotateCameraWorld(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinition().RotateCameraWorld(angle, axis, aboutPt);}
 
     //! Get the distance from the eyePoint to the back plane for this view.
     double GetBackDistance() const {return GetCameraViewDefinition().GetBackDistance();}
@@ -829,12 +814,12 @@ public:
     //! present in the current view.
     //! @param[in] backDistance optional, If not nullptr, the new the distance from the eyepoint to the back plane. Otherwise the distance from the
     //! current eyepoint is used.
-    void CenterEyePoint(double const* backDistance=nullptr) {GetCameraViewDefinitionR().CenterEyePoint(backDistance);}
+    void CenterEyePoint(double const* backDistance=nullptr) {GetCameraViewDefinition().CenterEyePoint(backDistance);}
 
     //! Center the focus distance of the camera halfway between the front plane and the back plane, keeping the eyepont,
     //! lens angle, rotation, back distance, and front distance unchanged.
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
-    void CenterFocusDistance() {GetCameraViewDefinitionR().CenterFocusDistance();}
+    void CenterFocusDistance() {GetCameraViewDefinition().CenterFocusDistance();}
 
     //! Get the distance from the eyePoint to the front plane for this view.
     double GetFrontDistance() const {return GetCameraViewDefinition().GetFrontDistance();}
@@ -847,7 +832,7 @@ public:
     //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraViewDefinitionR().SetLensAngle(angle);}
+    void SetLensAngle(double angle) {GetCameraViewDefinition().SetLensAngle(angle);}
 
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCameraViewDefinition().GetFocusDistance();}
@@ -855,7 +840,7 @@ public:
     //! Set the focus distance for this view.
     //! @note Changing the focus distance changes the plane on which the delta.x and delta.y values lie. So, changing focus distance
     //! without making corresponding changes to delta.x and delta.y essentially changes the lens angle, causing a "zoom" effect.
-    void SetFocusDistance(double dist) {GetCameraViewDefinitionR().SetFocusDistance(dist);}
+    void SetFocusDistance(double dist) {GetCameraViewDefinition().SetFocusDistance(dist);}
 
     //! Get the current location of the eyePoint for camera in this view.
     DPoint3dCR GetEyePoint() const {return GetCameraViewDefinition().GetEyePoint();}
@@ -864,7 +849,7 @@ public:
     //! @param[in] pt The new eyepoint.
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
-    void SetEyePoint(DPoint3dCR pt) {GetCameraViewDefinitionR().SetEyePoint(pt);}
+    void SetEyePoint(DPoint3dCR pt) {GetCameraViewDefinition().SetEyePoint(pt);}
 /** @} */
 };
 
@@ -933,10 +918,9 @@ protected:
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
 public:
-    ViewDefinition2dCR GetViewDefinition2d() const {return static_cast<ViewDefinition2dCR>(*m_definition);}
-    ViewDefinition2dR GetViewDefinition2dR() {return static_cast<ViewDefinition2dR>(*m_definition);}
+    ViewDefinition2dR GetViewDefinition2d() const {return static_cast<ViewDefinition2dR>(*m_definition);}
 
-    DgnModelId GetViewedModelId() const  {return GetViewDefinition2d().GetBaseModelId();}
+    DgnModelId GetViewedModelId() const {return GetViewDefinition2d().GetBaseModelId();}
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
 };
 
