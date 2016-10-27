@@ -1206,8 +1206,10 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 
     folly::via( &BeFolly::IOThreadPool::GetPool(), [&, leafTolerance, maxPointsPerTile]()
         {
+#if defined (BENTLEYCONFIG_PARASOLID) 
         ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
 
         double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
         bool            isLeaf = tileTolerance < leafTolerance;
