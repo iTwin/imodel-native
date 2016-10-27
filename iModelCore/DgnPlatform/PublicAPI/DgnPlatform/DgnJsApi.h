@@ -248,6 +248,12 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
         if (1 != sscanf(str.c_str(), "%" PRIu64, &m_id))
             DGNJSAPI_DGNSCRIPT_THROW("Args", str.c_str());
         }
+    static JsDgnObjectId* MakeFromString(Utf8StringCR str) 
+        {
+        JsDgnObjectId* o = new JsDgnObjectId(0);
+        o->FromString(str);
+        return o;
+        }
 };
 
 typedef JsDgnObjectId* JsDgnObjectIdP;

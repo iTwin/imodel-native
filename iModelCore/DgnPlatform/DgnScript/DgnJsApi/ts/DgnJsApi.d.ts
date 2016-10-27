@@ -396,6 +396,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          */
         FromString(str: Bentley_Utf8String): void;
 
+        static MakeFromString(str: Bentley_Utf8String): DgnObjectIdP;
+
         OnDispose(): void;
         Dispose(): void;
     }
