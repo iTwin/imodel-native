@@ -23,6 +23,8 @@
 #include "ECDbMap.h"
 #include "ClassMap.h"
 #include "PropertyMap.h"
+#include "SystemPropertyMap.h"
+#include "PropertyMapVisitor.h"
 #include "RelationshipClassMap.h"
 #include "ClassMappingInfo.h"
 #include "ClassMapPersistenceManager.h"

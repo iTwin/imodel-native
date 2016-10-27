@@ -1832,7 +1832,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
 
         //Delete DbTable entries
 
-        WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::Data);
+        GetColumnsPropertyMapVisitor columnDispatcher(PropertyMap::Kind::Data);
         propertyMap->AcceptVisitor(columnDispatcher);
         for (DbColumn const* column : columnDispatcher.GetColumns())
             {

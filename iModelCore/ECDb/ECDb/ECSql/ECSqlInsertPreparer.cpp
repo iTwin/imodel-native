@@ -324,14 +324,14 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             {
             //if not user provided ecinstanceid snippet will be appended to column names
             ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size();
-            WipECInstanceIdPropertyMap const* ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
+            ECInstanceIdPropertyMap const* ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
             if (ecInstanceIdPropMap == nullptr)
                 {
                 BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
                 }
 
-            WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+            ToSqlPropertyMapVisitor sqlDispatcher(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
             ecInstanceIdPropMap->AcceptVisitor(sqlDispatcher);
             
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlDispatcher.GetResultSet().front().GetSqlBuilder()});
@@ -363,7 +363,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter(nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
         }
 
-    if (WipColumnVerticalPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable()))
+    if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable()))
         {
         if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
             {
@@ -398,7 +398,7 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECSqlPrepareContext& 
     //               Check class id against ids of the classes in the respective constraint of the target relationship.
     //               If specified class id was not found in constraint -> InvalidECSql as user specified mismatching class id
     //               If specified class id was found, return it:
-    WipConstraintECClassIdPropertyMap const& constraintClassIdPropMap = *constraintMap.GetECClassIdPropMap();
+    ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = *constraintMap.GetECClassIdPropMap();
     switch (constraintClassIdExp.GetType())
         {
             case Exp::Type::LiteralValue:
@@ -509,7 +509,7 @@ RelationshipClassEndTableMap const& classMap
         }
 
     DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
-    WipPropertyMapSqlDispatcher sqlDispatcher(*contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);    
+    ToSqlPropertyMapVisitor sqlDispatcher(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
     for (auto const& referencedEndECInstanceIdColSnippet : sqlDispatcher.GetResultSet())
         {
         updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");

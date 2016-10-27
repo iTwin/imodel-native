@@ -27,8 +27,8 @@ StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsql
 void StructToColumnsECSqlBinder::Initialize()
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetKind() == PropertyMapKind::StructPropertyMap && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    WipStructPropertyMap const* structPropMap = static_cast<WipStructPropertyMap const*> (typeInfo.GetPropertyMap());
+    BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetKind() == PropertyMap::Kind::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
+    StructPropertyMap const* structPropMap = static_cast<StructPropertyMap const*> (typeInfo.GetPropertyMap());
 
     int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order

@@ -393,6 +393,12 @@
     <ClInclude Include="PropertyMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="SystemPropertyMap.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="PropertyMapVisitor.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -718,6 +724,12 @@
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="PropertyMap.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemPropertyMap.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="PropertyMapVisitor.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

@@ -225,7 +225,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         
         if (property->GetPropertyMap().IsSystem())
             {
-            WipSystemPropertyMap const& systemPropertyMap = static_cast<WipSystemPropertyMap const&>(property->GetPropertyMap());
+            SystemPropertyMap const& systemPropertyMap = static_cast<SystemPropertyMap const&>(property->GetPropertyMap());
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -237,7 +237,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             if (!info->m_ecinstanceIdIsUserProvided  && systemPropertyMap.IsMappedToSingleTable())
                 {
                 DbTable const* contextTable = systemPropertyMap.GetTables().front();
-                WipColumnVerticalPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(*contextTable);
+                SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(*contextTable);
                 if (vmap == nullptr)
                     {
                     BeAssert(vmap != nullptr);
@@ -255,7 +255,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                     }
                 }
             }        
-        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Data))
+        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMap::Kind::Data))
             {
             DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)
@@ -360,7 +360,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             BeAssert(false && "Updating system properties are not supported");
             return nullptr;
             }
-        else if (property->GetPropertyMap().IsBusiness())
+        else if (property->GetPropertyMap().IsData())
             {
             DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)

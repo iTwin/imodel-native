@@ -400,7 +400,7 @@ void TableMapDetail::InitPropertyColumnMaps(ClassMap const& classMap)
     {
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        WipPropertyMapTableDispatcher tablesDisp;
+        GetTablesPropertyMapVisitor tablesDisp;
         propertyMap->AcceptVisitor(tablesDisp);
         if (tablesDisp.GetTables().size() != 1 || m_dbTable->GetId() != (*tablesDisp.GetTables().begin())->GetId())
             continue;
@@ -473,9 +473,9 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
     if (propertyMap.IsSystem())
         return;
 
-    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
+    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
         {
-        WipStructPropertyMap const& structPropMap = static_cast<WipStructPropertyMap const&> (propertyMap);
+        StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : structPropMap)
             {
             AddColumnMapsForProperty(*childPropMap);
@@ -484,14 +484,14 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
         return;
         }
 
-    if (propertyMap.GetKind() == PropertyMapKind::Point2dPropertyMap || propertyMap.GetKind() == PropertyMapKind::Point3dPropertyMap)
+    if (propertyMap.GetKind() == PropertyMap::Kind::Point2d || propertyMap.GetKind() == PropertyMap::Kind::Point3d)
         {
-        WipCompoundPropertyMap const& pointPropMap = static_cast<WipCompoundPropertyMap const&> (propertyMap);
+        CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : pointPropMap)
             {
-            BeAssert(childPropMap->IsBusiness());
+            BeAssert(childPropMap->IsData());
             DataPropertyMap const* coordinatePropMap = static_cast<DataPropertyMap const*> (childPropMap);
-            WipPropertyMapColumnDispatcher columnsDisp;
+            GetColumnsPropertyMapVisitor columnsDisp;
             coordinatePropMap->AcceptVisitor(columnsDisp);
             BeAssert(columnsDisp.GetColumns().size() == 1);
             Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
@@ -502,7 +502,7 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
         return;
         }
 
-    WipPropertyMapColumnDispatcher columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp;
     propertyMap.AcceptVisitor(columnsDisp);
     BeAssert(columnsDisp.GetColumns().size() == 1);
     Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
@@ -1070,11 +1070,11 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        if (propertyMap->GetKind() == PropertyMapKind::ECClassIdPropertyMap)
+        if (propertyMap->GetKind() == PropertyMap::Kind::ECClassId)
             continue;
 
         // ignore prop maps that map to more than one table or for which the table doesn't equal the table map's one
-        WipPropertyMapTableDispatcher tablesDisp;
+        GetTablesPropertyMapVisitor tablesDisp;
         propertyMap->AcceptVisitor(tablesDisp);
         if (tablesDisp.GetTables().size() != 1)
             continue;
@@ -1093,9 +1093,9 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ChangeAffectsProperty(PropertyMap const& propertyMap) const
     {
-    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
+    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
         {
-        for (PropertyMap const* childPropMap : static_cast<WipStructPropertyMap const&> (propertyMap))
+        for (PropertyMap const* childPropMap : static_cast<StructPropertyMap const&> (propertyMap))
             {
             if (ChangeAffectsProperty(*childPropMap))
                 return true;
@@ -1104,7 +1104,7 @@ bool ChangeExtractor::ChangeAffectsProperty(PropertyMap const& propertyMap) cons
         return false;
         }
 
-    WipPropertyMapColumnDispatcher columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp;
     propertyMap.AcceptVisitor(columnsDisp);
     for (DbColumn const* column : columnsDisp.GetColumns())
         {
@@ -1130,7 +1130,7 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap) const
     if (propertyMap == nullptr)
         return -1;
 
-    WipPropertyMapColumnDispatcher columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp;
     propertyMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         return -1;
@@ -1378,14 +1378,14 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
 //---------------------------------------------------------------------------------------
 ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const
     {
-    WipConstraintECClassIdPropertyMap const* classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
+    ConstraintECClassIdPropertyMap const* classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
         {
         BeAssert(false);
         return ECClassId();
         }
 
-    WipPropertyMapColumnDispatcher columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp;
     classIdPropMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         {
@@ -1493,7 +1493,7 @@ void ChangeExtractor::RecordInstance(ClassMapCR classMap, ECInstanceId instanceI
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        WipPropertyMapTableDispatcher tablesDisp;
+        GetTablesPropertyMapVisitor tablesDisp;
         propertyMap->AcceptVisitor(tablesDisp);
         if (tablesDisp.GetTables().size() != 1 || (*tablesDisp.GetTables().begin())->GetId() != dbTable->GetId())
             continue;
@@ -1525,9 +1525,9 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
     if (propertyMap.IsSystem())
         return;
 
-    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
+    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
         {
-        for (PropertyMap const* memberPropMap : static_cast<WipStructPropertyMap const&> (propertyMap))
+        for (PropertyMap const* memberPropMap : static_cast<StructPropertyMap const&> (propertyMap))
             {
             RecordPropertyValue(instance, *memberPropMap);
             }
@@ -1535,14 +1535,14 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    if (propertyMap.GetKind() == PropertyMapKind::Point2dPropertyMap || propertyMap.GetKind() == PropertyMapKind::Point3dPropertyMap)
+    if (propertyMap.GetKind() == PropertyMap::Kind::Point2d || propertyMap.GetKind() == PropertyMap::Kind::Point3d)
         {
-        WipCompoundPropertyMap const& pointPropMap = static_cast<WipCompoundPropertyMap const&> (propertyMap);
+        CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : pointPropMap)
             {
-            BeAssert(childPropMap->IsBusiness());
+            BeAssert(childPropMap->IsData());
             DataPropertyMap const* coordinatePropMap = static_cast<DataPropertyMap const*> (childPropMap);
-            WipPropertyMapColumnDispatcher columnsDisp;
+            GetColumnsPropertyMapVisitor columnsDisp;
             coordinatePropMap->AcceptVisitor(columnsDisp);
             BeAssert(columnsDisp.GetColumns().size() == 1);
             Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
@@ -1553,7 +1553,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         }
     
     // SingleColumnPropertyMap - PrimitiveArrayPropertyMap, StructArrayJsonPropertyMap
-    WipPropertyMapColumnDispatcher columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp;
     propertyMap.AcceptVisitor(columnsDisp);
     BeAssert(columnsDisp.GetColumns().size() == 1);
     Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();

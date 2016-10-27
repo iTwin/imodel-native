@@ -78,7 +78,7 @@ struct ECSqlPrepareContext
 
                 void AddProperty(PropertyMap const& propertyMap)
                     {
-                    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, /*traverseCompoundProperties = */ true);
+                    SearchPropertyMapVisitor typeDispatcher(PropertyMap::Kind::All, /*traverseCompoundProperties = */ true);
                     propertyMap.AcceptVisitor(typeDispatcher);
                     Utf8String path;
                     for (PropertyMap const* m : typeDispatcher.ResultSet())

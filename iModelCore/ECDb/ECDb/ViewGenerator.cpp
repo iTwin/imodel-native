@@ -204,7 +204,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Reset();
     std::vector<Utf8String> values;
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::Data); //Only inlcude none-system properties
+    SearchPropertyMapVisitor typeDispatcher(PropertyMap::Kind::Data); //Only inlcude none-system properties
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeDispatcher);
     for (PropertyMap const* result: typeDispatcher.ResultSet())
         {
@@ -217,7 +217,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        WipPropertyMapColumnDispatcher baseColumnDispatcher, derivedColumnDispatcher;
+        GetColumnsPropertyMapVisitor baseColumnDispatcher, derivedColumnDispatcher;
         result->AcceptVisitor(baseColumnDispatcher);
         derivedPropertyMap->AcceptVisitor(derivedColumnDispatcher);
         if (baseColumnDispatcher.GetColumns().size() != derivedColumnDispatcher.GetColumns().size())
@@ -589,7 +589,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMap const*, PropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All, true /*traverse compound properties but compound properties themself is not included*/);
+    SearchPropertyMapVisitor typeDispatcher(PropertyMap::Kind::All, true /*traverse compound properties but compound properties themself is not included*/);
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeDispatcher);
 
     for (PropertyMap const* baseClassPropertyMap : typeDispatcher.ResultSet())
@@ -622,8 +622,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         PropertyMap const* actualPropMap = propMapPair.second;
 
         //We are not expecting 
-        BeAssert(dynamic_cast<WipCompoundPropertyMap const*>(basePropMap) == nullptr);
-        BeAssert(dynamic_cast<WipCompoundPropertyMap const*>(actualPropMap) == nullptr);
+        BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(basePropMap) == nullptr);
+        BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(actualPropMap) == nullptr);
 
 
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetAccessString().c_str()))
@@ -631,8 +631,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         DbTable const& basePropMapTable = basePropMap->GetClassMap().GetJoinedTable();
         DbTable const& actualPropMapTable = actualPropMap->GetClassMap().GetJoinedTable();
-        WipPropertyMapSqlDispatcher baseSqlDispatcher(basePropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr,false, false);
-        WipPropertyMapSqlDispatcher actualSqlDispatcher(actualPropMapTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, actualPropMapTable.GetName().c_str(), false, true);
+        ToSqlPropertyMapVisitor baseSqlDispatcher(basePropMapTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr,false, false);
+        ToSqlPropertyMapVisitor actualSqlDispatcher(actualPropMapTable, ToSqlPropertyMapVisitor::SqlTarget::Table, actualPropMapTable.GetName().c_str(), false, true);
 
         basePropMap->AcceptVisitor(baseSqlDispatcher);
         actualPropMap->AcceptVisitor(actualSqlDispatcher);
@@ -645,8 +645,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
             return ERROR;
             }
 
-        const WipPropertyMapSqlDispatcher::Result& baseResult = baseSqlDispatcher.GetResultSet().front();
-        const WipPropertyMapSqlDispatcher::Result& actualResult = actualSqlDispatcher.GetResultSet().front();
+        const ToSqlPropertyMapVisitor::Result& baseResult = baseSqlDispatcher.GetResultSet().front();
+        const ToSqlPropertyMapVisitor::Result& actualResult = actualSqlDispatcher.GetResultSet().front();
 
         if (second)
             viewSql.AppendComma();
@@ -679,7 +679,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 viewSql.Append(actualResult.GetSql());
                 }
 
-            if (!actualResult.GetPropertyMap().IsKindOf(PropertyMapKind::System))
+            if (!actualResult.GetPropertyMap().IsKindOf(PropertyMap::Kind::System))
                 {
                 if (actualResult.GetColumn().GetName() != baseResult.GetColumn().GetName()) //do not add alias if column name is same as alias.
                     viewSql.AppendSpace().Append(aliasSqlSnippet);
@@ -723,7 +723,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
         if (actualPropMap->IsSystem())
             continue;
 
-        if (DataPropertyMap const* v = dynamic_cast<WipColumnVerticalPropertyMap const*>(actualPropMap))
+        if (DataPropertyMap const* v = dynamic_cast<SingleColumnDataPropertyMap const*>(actualPropMap))
             {
             tableToJoinOn.insert(&v->GetTable());
             }
@@ -751,7 +751,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
 
 
     Utf8String where;
-    WipColumnVerticalPropertyMap const* ecClassIdPropertyMap = firstChildClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(table);
+    SingleColumnDataPropertyMap const* ecClassIdPropertyMap = firstChildClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(table);
     if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(ecClassIdPropertyMap != nullptr);
@@ -871,7 +871,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap(NativeSql
         if (SUCCESS != BuildRelationshipJoinIfAny(selectSQL, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Target, *table))
             return ERROR;
 
-        WipPropertyMapSqlDispatcher sqlDispatcher(*table, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+        ToSqlPropertyMapVisitor sqlDispatcher(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
         relationMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlDispatcher);
         
         selectSQL.Append(" WHERE ").Append(sqlDispatcher.GetResultSet().front().GetSql()).Append(" IS NOT NULL");
@@ -899,8 +899,8 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
     {
     if (classMap._RequiresJoin(endPoint))
         {
-        WipConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
-        WipConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap();
+        ConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+        ConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap();
         size_t tableCount = m_ecdb.Schemas().GetDbMap().GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
 
         if (ecclassIdPropertyMap->GetTables().size() != 1LL)
@@ -941,7 +941,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
             }
         DbTable const* primaryTable = ecInstanceIdPropertyMap->GetTables().front();
 
-        WipColumnVerticalPropertyMap const* vMap = ecInstanceIdPropertyMap->FindVerticalPropertyMap(*primaryTable);
+        SingleColumnDataPropertyMap const* vMap = ecInstanceIdPropertyMap->FindVerticalPropertyMap(*primaryTable);
         sqlBuilder.Append(primaryTable->GetName().c_str(), vMap->GetColumn().GetName().c_str());
         sqlBuilder.AppendSpace();
         }
@@ -1135,9 +1135,9 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     {
     //We only want to render propertyMap w.r.t contextTable. A endRelationship can now have more then one columns in each different table for ECInstanceId, SourceECInstanceId, TargetECInstanceId ...
     //There for we only need to render in term of context table that is chosen before this function is called. Resulting select are UNIONed.
-    WipPropertyMapSqlDispatcher sqlDispatcher(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::View, contextTable.GetName().c_str());
-    WipPropertyMapColumnDispatcher sourceECClassIdDispatcher(PropertyMapKind::ConstraintECClassIdPropertyMap, /*doNotSkipHorizontalPropertyMaps = */ true);
-    WipPropertyMapColumnDispatcher targetECClassIdDispatcher(PropertyMapKind::ConstraintECClassIdPropertyMap, /*doNotSkipHorizontalPropertyMaps = */ true);
+    ToSqlPropertyMapVisitor sqlDispatcher(contextTable, ToSqlPropertyMapVisitor::SqlTarget::View, contextTable.GetName().c_str());
+    GetColumnsPropertyMapVisitor sourceECClassIdDispatcher(PropertyMap::Kind::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
+    GetColumnsPropertyMapVisitor targetECClassIdDispatcher(PropertyMap::Kind::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
 
     relationMap.GetECInstanceIdPropertyMap()->AcceptVisitor(sqlDispatcher);
     relationMap.GetECClassIdPropertyMap()->AcceptVisitor(sqlDispatcher);
@@ -1153,10 +1153,10 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         return ERROR;
         }
 
-    WipPropertyMapSqlDispatcher::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
-    WipPropertyMapSqlDispatcher::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
-    WipPropertyMapSqlDispatcher::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
-    WipPropertyMapSqlDispatcher::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(3);
+    ToSqlPropertyMapVisitor::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
+    ToSqlPropertyMapVisitor::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
+    ToSqlPropertyMapVisitor::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
+    ToSqlPropertyMapVisitor::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(3);
 
 
     //ECInstanceId-----------------------------------------
@@ -1178,7 +1178,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     viewSql.AppendComma();
 
     //SourceECClassId--------------------------------------
-    WipConstraintECClassIdPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
+    ConstraintECClassIdPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!sourceECClassIdDispatcher.AreResultingColumnsAreVirtual())
         {
         
@@ -1223,7 +1223,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
 //static
 BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, bool endWithComma)
     {
-    WipPropertyMapSqlDispatcher sqlDispatcher(relationMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationMap.GetJoinedTable().GetName().c_str());
+    ToSqlPropertyMapVisitor sqlDispatcher(relationMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::View, relationMap.GetJoinedTable().GetName().c_str());
 
     relationMap.GetECInstanceIdPropertyMap()->AcceptVisitor(sqlDispatcher);
     relationMap.GetECClassIdPropertyMap()->AcceptVisitor(sqlDispatcher);
@@ -1238,12 +1238,12 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         return ERROR;
         }
 
-    WipPropertyMapSqlDispatcher::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
-    WipPropertyMapSqlDispatcher::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
-    WipPropertyMapSqlDispatcher::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
-    WipPropertyMapSqlDispatcher::Result const& rSourceECClassId = sqlDispatcher.GetResultSet().at(3);
-    WipPropertyMapSqlDispatcher::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(4);
-    WipPropertyMapSqlDispatcher::Result const& rTargetECClassId = sqlDispatcher.GetResultSet().at(5);
+    ToSqlPropertyMapVisitor::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
+    ToSqlPropertyMapVisitor::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
+    ToSqlPropertyMapVisitor::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
+    ToSqlPropertyMapVisitor::Result const& rSourceECClassId = sqlDispatcher.GetResultSet().at(3);
+    ToSqlPropertyMapVisitor::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(4);
+    ToSqlPropertyMapVisitor::Result const& rTargetECClassId = sqlDispatcher.GetResultSet().at(5);
 
 
     viewSql.Append("SELECT NULL ").Append(rECInstanceId.GetColumn().GetName().c_str()).AppendComma();
@@ -1280,9 +1280,9 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, WipConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, DbTable const& contextTable)
+BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, DbTable const& contextTable)
     {
-    WipPropertyMapSqlDispatcher sqlDispatherTable(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+    ToSqlPropertyMapVisitor sqlDispatherTable(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
     propMap.AcceptVisitor(sqlDispatherTable);
     if (sqlDispatherTable.GetStatus() == ERROR || sqlDispatherTable.GetResultSet().empty())
         {
@@ -1290,7 +1290,7 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
         return ERROR;
         }
 
-    WipPropertyMapSqlDispatcher::Result const& r = sqlDispatherTable.GetResultSet().front();
+    ToSqlPropertyMapVisitor::Result const& r = sqlDispatherTable.GetResultSet().front();
     if (!r.IsColumnPersisted())
         {
         bool hasAnyClass = false;
@@ -1324,7 +1324,7 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
         }
     else
         {
-        WipPropertyMapSqlDispatcher sqlDispatherView(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::View, nullptr);
+        ToSqlPropertyMapVisitor sqlDispatherView(contextTable, ToSqlPropertyMapVisitor::SqlTarget::View, nullptr);
         viewSql.Append(sqlDispatherView.GetResultSet().front().GetSql());
         }
 

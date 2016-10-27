@@ -37,7 +37,7 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            WipPropertyMapTableDispatcher tableDispatcher;
+            GetTablesPropertyMapVisitor tableDispatcher;
             propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableDispatcher);
             for (auto table : tableDispatcher.GetTables())
                 {

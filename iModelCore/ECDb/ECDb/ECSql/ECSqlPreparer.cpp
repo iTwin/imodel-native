@@ -773,7 +773,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         nativeSqlSnippet.AppendParenLeft();
 
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    WipECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    ECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
     //!WIP_CLASSID need work ToNativeSql() is used in viewgenerator and ECSql this does not allow us but to add an addition parameter to it tell from where it is called.
     //For this reason i am leaving following cases as is
     if (!classIdPropertyMap->IsMappedToSingleTable())
@@ -782,11 +782,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         return ECSqlStatus::Error;
         }
 
-    WipColumnVerticalPropertyMap const* vmap = classIdPropertyMap->FindVerticalPropertyMap(classMap.GetJoinedTable());
+    SingleColumnDataPropertyMap const* vmap = classIdPropertyMap->FindVerticalPropertyMap(classMap.GetJoinedTable());
     if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
         {
         Utf8CP classRefId = classRefExp->GetId().c_str();
-        WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, classRefId);
+        ToSqlPropertyMapVisitor sqlDispatcher(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, classRefId);
         BeAssert(sqlDispatcher.GetStatus() == SUCCESS);
         nativeSqlSnippet.Append(sqlDispatcher.GetResultSet().front().GetSql());
         }
@@ -1286,7 +1286,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     sql.Append(" ON ");
     {
-    WipECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
+    ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
     PRECONDITION(fromECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
     if (!fromECInstanceIdPropMap->IsMappedToSingleTable())
         {
@@ -1294,14 +1294,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    WipPropertyMapSqlDispatcher fromECInstanceIdSqlDispatcher(*fromECInstanceIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlDispatcher(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
     fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlDispatcher);
     sql.Append(fromECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }
 
     {
-    WipConstraintECInstanceIdPropertyMap const* fromRelatedIdPropMap = static_cast<WipConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
+    ConstraintECInstanceIdPropertyMap const* fromRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
     PRECONDITION(fromRelatedIdPropMap != nullptr, ECSqlStatus::Error);
     if (!fromRelatedIdPropMap->IsMappedToSingleTable())
         {
@@ -1309,7 +1309,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    WipPropertyMapSqlDispatcher fromRelatedIdSqlDispatcher(*fromRelatedIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor fromRelatedIdSqlDispatcher(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
     sql.Append(fromRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
 
     //RelationView To ToECClass
@@ -1322,7 +1322,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     }
 
     {
-    WipECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
+    ECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
     PRECONDITION(toECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
     if (!toECInstanceIdPropMap->IsMappedToSingleTable())
         {
@@ -1330,13 +1330,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    WipPropertyMapSqlDispatcher toECInstanceIdSqlDispatcher(*toECInstanceIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor toECInstanceIdSqlDispatcher(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
     sql.Append(toECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }
 
     {
-    WipConstraintECInstanceIdPropertyMap const* toRelatedIdPropMap = static_cast<WipConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
+    ConstraintECInstanceIdPropertyMap const* toRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
     PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::Error);
     if (!toRelatedIdPropMap->IsMappedToSingleTable())
         {
@@ -1344,7 +1344,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    WipPropertyMapSqlDispatcher toRelatedIdSqlDispatcher(*toRelatedIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor toRelatedIdSqlDispatcher(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
     sql.Append(toRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
     }
 

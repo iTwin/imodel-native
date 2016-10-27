@@ -297,7 +297,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         else
             {
             isArray = true;
-            RelationshipMultiplicityCR multiplicity = ClassMapper::GetConstraint(*navProp, WipNavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
+            RelationshipMultiplicityCR multiplicity = ClassMapper::GetConstraint(*navProp, NavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
             minOccurs = multiplicity.GetLowerLimit();
             maxOccurs = multiplicity.GetUpperLimit();
             }

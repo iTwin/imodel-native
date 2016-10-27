@@ -76,7 +76,7 @@ struct ViewGenerator
 
         BentleyStatus AppendSystemPropMaps(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, DbTable const& contextTable);
         BentleyStatus AppendSystemPropMapsToNullView(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, bool endWithComma);
-        BentleyStatus AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, WipConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECN::ECRelationshipConstraintCR constraint, DbTable const& contextTable);
+        BentleyStatus AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECN::ECRelationshipConstraintCR constraint, DbTable const& contextTable);
 
         //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
         BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMap const*, PropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);

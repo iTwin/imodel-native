@@ -52,8 +52,8 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                     auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
                         {
                         //ECInstanceId is treated separately
-                        const PropertyMapKind propMapKind = propNameExp->GetPropertyMap().GetKind();
-                        if (propMapKind != PropertyMapKind::ECInstanceIdPropertyMap && propMapKind != PropertyMapKind::ECClassIdPropertyMap)
+                        const PropertyMap::Kind propMapKind = propNameExp->GetPropertyMap().GetKind();
+                        if (propMapKind != PropertyMap::Kind::ECInstanceId && propMapKind != PropertyMap::Kind::ECClassId)
                             propNameListExp->AddPropertyNameExp(propNameExp);
                         };
 

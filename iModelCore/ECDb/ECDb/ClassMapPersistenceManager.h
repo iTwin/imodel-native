@@ -79,27 +79,5 @@ struct DbClassMapSaveContext : public NonCopyableClass
         BentleyStatus InsertPropertyMap(ECN::ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId);
     };
 
-//=======================================================================================
-// @bsiclass                                                   Affan.Khan          07/16
-// Allow to collect columns from property maps
-//+===============+===============+===============+===============+===============+======
-struct WipPropertyMapSaveDispatcher final : IPropertyMapVisitor
-    {
-    private:
-        DbClassMapSaveContext& m_context;
-        mutable BentleyStatus m_status;
-        mutable PropertyMap const* m_failedMap;
 
-    private:
-        virtual VisitorFeedback _Visit(WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual VisitorFeedback _Visit(WipCompoundPropertyMap const& propertyMap) const override;
-        virtual VisitorFeedback _Visit(WipColumnHorizontalPropertyMap const& propertyMap) const override;
-
-    public:
-        WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx);
-        ~WipPropertyMapSaveDispatcher() {}
-        BentleyStatus GetStatus() const { return m_status; }
-        PropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
-        void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

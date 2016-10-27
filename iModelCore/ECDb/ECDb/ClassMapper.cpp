@@ -46,7 +46,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
         }
 
     ecInstanceIdColumns.push_back(ecInstanceIdColumn);
-    RefCountedPtr<WipECInstanceIdPropertyMap> newProperty = WipPropertyMapFactory::CreateECInstanceIdPropertyMap(classMap, ecInstanceIdColumns);
+    RefCountedPtr<ECInstanceIdPropertyMap> newProperty = PropertyMapFactory::CreateECInstanceIdPropertyMap(classMap, ecInstanceIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
@@ -72,7 +72,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
         }
 
     ecClassIdColumns.push_back(ecClassIdColumn);
-    RefCountedPtr<WipECClassIdPropertyMap> newProperty = WipPropertyMapFactory::CreateECClassIdPropertyMap(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> newProperty = PropertyMapFactory::CreateECClassIdPropertyMap(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
@@ -87,7 +87,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECRelationshipConstraintCR ClassMapper::GetConstraint(ECN::NavigationECPropertyCR navProp, WipNavigationPropertyMap::NavigationEnd end)
+ECN::ECRelationshipConstraintCR ClassMapper::GetConstraint(ECN::NavigationECPropertyCR navProp, NavigationPropertyMap::NavigationEnd end)
     {
     ECRelationshipClassCP relClass = navProp.GetRelationshipClass();
     return GetConstraintEnd(navProp, end) == ECRelationshipEnd_Source ? relClass->GetSource() : relClass->GetTarget();
@@ -97,11 +97,11 @@ ECN::ECRelationshipConstraintCR ClassMapper::GetConstraint(ECN::NavigationECProp
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECRelationshipEnd ClassMapper::GetConstraintEnd(ECN::NavigationECPropertyCR prop, WipNavigationPropertyMap::NavigationEnd end)
+ECN::ECRelationshipEnd ClassMapper::GetConstraintEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end)
     {
     const ECRelatedInstanceDirection navPropDir = prop.GetDirection();
-    if (navPropDir == ECRelatedInstanceDirection::Forward && end == WipNavigationPropertyMap::NavigationEnd::From ||
-        navPropDir == ECRelatedInstanceDirection::Backward && end == WipNavigationPropertyMap::NavigationEnd::To)
+    if (navPropDir == ECRelatedInstanceDirection::Forward && end == NavigationPropertyMap::NavigationEnd::From ||
+        navPropDir == ECRelatedInstanceDirection::Backward && end == NavigationPropertyMap::NavigationEnd::To)
         return ECRelationshipEnd_Source;
 
     return ECRelationshipEnd_Target;
@@ -110,14 +110,14 @@ ECN::ECRelationshipEnd ClassMapper::GetConstraintEnd(ECN::NavigationECPropertyCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationECPropertyCR navProp, RelationshipClassMapCR relClassMap, WipNavigationPropertyMap::NavigationEnd end)
+RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationECPropertyCR navProp, RelationshipClassMapCR relClassMap, NavigationPropertyMap::NavigationEnd end)
     {
     return relClassMap.GetConstraintMap(GetConstraintEnd(navProp, end));
     }
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& propertyMap)
+BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& propertyMap)
     {
     if (!propertyMap.InEditMode())
         {
@@ -160,12 +160,12 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& 
 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
-    WipColumnVerticalPropertyMap const* idProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
-    WipColumnVerticalPropertyMap const* relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
+    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, *relClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
+    SingleColumnDataPropertyMap const* relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
 
     if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
         {
-        idProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
+        idProp = GetConstraintMap(*navigationProperty, *relClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
         relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
         }
 
@@ -175,7 +175,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& 
         return ERROR;
         }
 
-    return propertyMap.Setup(relECClassIdProp->GetColumn(), relClassMap->GetRelationshipClass().GetId(), idProp->GetColumn());
+    return propertyMap.Initialize(relECClassIdProp->GetColumn(), relClassMap->GetRelationshipClass().GetId(), idProp->GetColumn());
     }
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
@@ -259,7 +259,7 @@ DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
+RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
     {
     if (property.GetType() != PRIMITIVETYPE_Point2d)
         return nullptr;
@@ -312,11 +312,11 @@ RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primit
             }
         }
 
-    RefCountedPtr<WipPoint2dPropertyMap> ptr;
+    RefCountedPtr<Point2dPropertyMap> ptr;
     if (parent)
-        ptr = WipPropertyMapFactory::CreatePoint2dPropertyMap(property, *parent, *x, *y);
+        ptr = PropertyMapFactory::CreatePoint2dPropertyMap(property, *parent, *x, *y);
     else
-        ptr = WipPropertyMapFactory::CreatePoint2dPropertyMap(m_classMap, property, *x, *y);
+        ptr = PropertyMapFactory::CreatePoint2dPropertyMap(m_classMap, property, *x, *y);
 
     ptr->FinishEditing();
     return ptr;
@@ -326,7 +326,7 @@ RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primit
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
+RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent)
     {
     if (property.GetType() != PRIMITIVETYPE_Point3d)
         return nullptr;
@@ -394,11 +394,11 @@ RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primit
             return nullptr;
             }
         }
-    RefCountedPtr<WipPoint3dPropertyMap> ptr;
+    RefCountedPtr<Point3dPropertyMap> ptr;
     if (parent)
-        ptr = WipPropertyMapFactory::CreatePoint3dPropertyMap(property, *parent, *x, *y, *z);
+        ptr = PropertyMapFactory::CreatePoint3dPropertyMap(property, *parent, *x, *y, *z);
     else
-        ptr = WipPropertyMapFactory::CreatePoint3dPropertyMap(m_classMap, property, *x, *y, *z);
+        ptr = PropertyMapFactory::CreatePoint3dPropertyMap(m_classMap, property, *x, *y, *z);
 
     ptr->FinishEditing();
     return ptr;
@@ -454,11 +454,11 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
             }
         }
 
-    RefCountedPtr<WipPrimitivePropertyMap> ptr;
+    RefCountedPtr<PrimitivePropertyMap> ptr;
     if (parent)
-        ptr = WipPropertyMapFactory::CreatePrimitivePropertyMap(property, *parent, *column);
+        ptr = PropertyMapFactory::CreatePrimitivePropertyMap(property, *parent, *column);
     else
-        ptr = WipPropertyMapFactory::CreatePrimitivePropertyMap(m_classMap, property, *column);
+        ptr = PropertyMapFactory::CreatePrimitivePropertyMap(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -468,7 +468,7 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, DataPropertyMap const* parent)
+RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, DataPropertyMap const* parent)
     {
     Utf8String accessString = ComputeAccessString(property, parent);
     DbColumn const* column = nullptr;
@@ -494,11 +494,11 @@ RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProper
             }
         }
 
-    RefCountedPtr<WipPrimitiveArrayPropertyMap> ptr;
+    RefCountedPtr<PrimitiveArrayPropertyMap> ptr;
     if (parent)
-        ptr = WipPropertyMapFactory::CreatePrimitiveArrayPropertyMap(property, *parent, *column);
+        ptr = PropertyMapFactory::CreatePrimitiveArrayPropertyMap(property, *parent, *column);
     else
-        ptr = WipPropertyMapFactory::CreatePrimitiveArrayPropertyMap(m_classMap, property, *column);
+        ptr = PropertyMapFactory::CreatePrimitiveArrayPropertyMap(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -508,7 +508,7 @@ RefCountedPtr<WipPrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProper
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, DataPropertyMap const* parent)
+RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, DataPropertyMap const* parent)
     {
     //TODO: Create column or map to existing column
     Utf8String accessString = ComputeAccessString(property, parent);
@@ -535,11 +535,11 @@ RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN
             }
         }
 
-    RefCountedPtr<WipStructArrayPropertyMap> ptr;
+    RefCountedPtr<StructArrayPropertyMap> ptr;
     if (parent)
-        ptr = WipPropertyMapFactory::CreateStructArrayPropertyMap(property, *parent, *column);
+        ptr = PropertyMapFactory::CreateStructArrayPropertyMap(property, *parent, *column);
     else
-        ptr = WipPropertyMapFactory::CreateStructArrayPropertyMap(m_classMap, property, *column);
+        ptr = PropertyMapFactory::CreateStructArrayPropertyMap(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -549,10 +549,10 @@ RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipNavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::NavigationECPropertyCR property)
+RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::NavigationECPropertyCR property)
     {
     Utf8String accessString = property.GetName();
-    RefCountedPtr<WipNavigationPropertyMap> propertyMap = WipPropertyMapFactory::CreateNavigationPropertyMap(m_classMap, property);
+    RefCountedPtr<NavigationPropertyMap> propertyMap = PropertyMapFactory::CreateNavigationPropertyMap(m_classMap, property);
     if (m_loadContext)
         {
         const DbColumn *id = nullptr, *relClassId = nullptr;
@@ -574,7 +574,7 @@ RefCountedPtr<WipNavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::
 
         relClassId = columns->front();
 
-        if (propertyMap->Setup(*relClassId, property.GetRelationshipClass()->GetId(), *id) != SUCCESS)
+        if (propertyMap->Initialize(*relClassId, property.GetRelationshipClass()->GetId(), *id) != SUCCESS)
             {
             BeAssert(false);
             return nullptr;
@@ -588,13 +588,13 @@ RefCountedPtr<WipNavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent)
+RefCountedPtr<StructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent)
     {
-    RefCountedPtr<WipStructPropertyMap> structPropertyMap;
+    RefCountedPtr<StructPropertyMap> structPropertyMap;
     if (parent)
-        structPropertyMap = WipPropertyMapFactory::CreateStructPropertyMap(property, *parent);
+        structPropertyMap = PropertyMapFactory::CreateStructPropertyMap(property, *parent);
     else
-        structPropertyMap = WipPropertyMapFactory::CreateStructPropertyMap(m_classMap, property);
+        structPropertyMap = PropertyMapFactory::CreateStructPropertyMap(m_classMap, property);
 
     for (ECN::ECPropertyCP property : property.GetType().GetProperties())
         {
@@ -632,8 +632,8 @@ RefCountedPtr<WipStructPropertyMap> ClassMapper::MapStructProperty(ECN::StructEC
             }
         }
 
-    BeAssert(!structPropertyMap->empty());
-    if (structPropertyMap->empty())
+    BeAssert(!structPropertyMap->IsEmpty());
+    if (structPropertyMap->IsEmpty())
         {
         return nullptr;
         }

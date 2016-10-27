@@ -118,8 +118,10 @@
     <ClCompile Include="LightweightCache.cpp" />
     <ClCompile Include="MapStrategy.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
+    <ClCompile Include="PropertyMapVisitor.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
+    <ClCompile Include="SystemPropertyMap.cpp" />
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -221,9 +223,11 @@
     <ClInclude Include="LightweightCache.h" />
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PropertyMap.h" />
+    <ClInclude Include="PropertyMapVisitor.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
     <ClInclude Include="SqlNames.h" />
+    <ClInclude Include="SystemPropertyMap.h" />
     <ClInclude Include="ViewGenerator.h" />
   </ItemGroup>
   <ItemGroup>
