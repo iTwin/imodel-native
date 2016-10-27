@@ -1372,73 +1372,43 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
     json["categorySelector"] = view.GetCategorySelector().GetElementId().ToString();
     json["displayStyle"] = view.GetDisplayStyle().GetElementId().ToString();
 
-    DVec3d                          xVec, yVec, zVec;
-    RotMatrix                       rotation;
-    DPoint3d                        eyePoint;
+    DPoint3d viewOrigin = view.GetOrigin();
+    transform.Multiply(viewOrigin);
+    json["origin"] = PointToJson(viewOrigin);
+    
+    DVec3d viewExtents = view.GetExtents();
+    json["extents"] = PointToJson(viewExtents);
+
+    DVec3d xVec, yVec, zVec;
+    view.GetRotation().GetRows(xVec, yVec, zVec);
+    transform.MultiplyMatrixOnly(xVec);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    RotMatrix columnMajorRotation = RotMatrix::FromColumnVectors(xVec, yVec, zVec);
+    auto& rotJson = (json["rotation"] = Json::arrayValue);
+    for (size_t i = 0; i < 3; i++)
+        for (size_t j = 0; j < 3; j++)
+            rotJson.append(columnMajorRotation.form3d[i][j]);
 
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
 
-        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
-        // Simulate by pointing the camera toward the center of the viewed volume.
-        eyePoint = cameraView->GetEyePoint();
-        rotation =  cameraView->GetRotation();
+        DPoint3d eyePoint = cameraView->GetEyePoint();
+        transform.Multiply(eyePoint);
+        json["eyePoint"] = PointToJson(eyePoint);
 
-        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
-
-        rotation.Multiply(viewOrigin, cameraView->GetOrigin());
-        rotation.Multiply(viewEyePoint, eyePoint);
-
-        auto extents = cameraView->GetExtents();
-        viewTarget.x = viewOrigin.x + extents.x/2.0;
-        viewTarget.y = viewOrigin.y + extents.y/2.0;
-        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
-
-        rotation.MultiplyTranspose (target, viewTarget);
-
-        rotation.GetRows(xVec, yVec, zVec);
-        zVec.NormalizedDifference (eyePoint, target);
-
-        xVec.NormalizedCrossProduct (yVec, zVec);
-        yVec.NormalizedCrossProduct (zVec, xVec);
-
-        json["fov"]   =  2.0 * atan2 (extents.x/2.0, cameraView->GetFocusDistance());
+        json["lensAngle"] = cameraView->GetLensAngle();
+        json["focusDistance"] = cameraView->GetFocusDistance();
         }
     else
         {
+        // ###TODO: Decide whether we treat orthographic specially in Cesium, or as a camera view with a very small FOV.
+        // (Cesium does not support orthographic views directly)
+
         json["type"] = "ortho";
-
-        // Simulate orthographic with a small field of view.
-        static const    double s_orthographicFieldOfView = .01;
-        DVec3d          extents = orthographicView->GetExtents();
-        DPoint3d        backCenter;
-
-        rotation = orthographicView->GetRotation();
-        rotation.GetRows(xVec, yVec, zVec);
-
-        rotation.Multiply (backCenter, orthographicView->GetOrigin());
-        backCenter.SumOf (backCenter, extents, .5);
-        rotation.MultiplyTranspose (backCenter);
-
-        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
-
-        eyePoint.SumOf (backCenter, zVec, zDistance);
-        json["fov"] = s_orthographicFieldOfView;
         }
-
-    transform.Multiply(eyePoint);
-    transform.MultiplyMatrixOnly(yVec);
-    transform.MultiplyMatrixOnly(zVec);
-
-    yVec.Normalize();
-    zVec.Normalize();
-    zVec.Negate();      // Towards target.
-
-    // View orientation
-    json["dest"] = PointToJson(eyePoint);
-    json["dir"] = PointToJson(zVec);
-    json["up"] = PointToJson(yVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
