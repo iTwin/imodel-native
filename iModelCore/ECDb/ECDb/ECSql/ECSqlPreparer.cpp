@@ -782,13 +782,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         return ECSqlStatus::Error;
         }
 
-    SingleColumnDataPropertyMap const* vmap = classIdPropertyMap->FindVerticalPropertyMap(classMap.GetJoinedTable());
+    SingleColumnDataPropertyMap const* vmap = classIdPropertyMap->FindDataPropertyMap(classMap.GetJoinedTable());
     if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
         {
         Utf8CP classRefId = classRefExp->GetId().c_str();
-        ToSqlPropertyMapVisitor sqlDispatcher(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, classRefId);
-        BeAssert(sqlDispatcher.GetStatus() == SUCCESS);
-        nativeSqlSnippet.Append(sqlDispatcher.GetResultSet().front().GetSql());
+        ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, classRefId);
+        BeAssert(sqlVisitor.GetStatus() == SUCCESS);
+        nativeSqlSnippet.Append(sqlVisitor.GetResultSet().front().GetSql());
         }
     else
         {
@@ -1294,9 +1294,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor fromECInstanceIdSqlDispatcher(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
-    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlDispatcher);
-    sql.Append(fromECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
+    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
+    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }
 
@@ -1309,8 +1309,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor fromRelatedIdSqlDispatcher(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
-    sql.Append(fromRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
+    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSql());
 
     //RelationView To ToECClass
     sql.Append(" INNER JOIN ");
@@ -1330,8 +1330,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor toECInstanceIdSqlDispatcher(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
-    sql.Append(toECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
+    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
+    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }
 
@@ -1344,8 +1344,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlDispatcher(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
-    sql.Append(toRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
+    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSql());
     }
 
     return ECSqlStatus::Success;

@@ -255,7 +255,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     DbTable& table = currentTimeStampColumn.GetTableR();
     Utf8CP tableName = table.GetName().c_str();
-    Utf8CP instanceIdColName = idPropMap->FindVerticalPropertyMap(tableName)->GetColumn().GetName().c_str();
+    Utf8CP instanceIdColName = idPropMap->FindDataPropertyMap(tableName)->GetColumn().GetName().c_str();
     Utf8CP currentTimeStampColName = currentTimeStampColumn.GetName().c_str();
 
     Utf8String triggerName;
@@ -445,9 +445,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            GetColumnsPropertyMapVisitor columnDispatcher(GetJoinedTable());
-            propertyMap->AcceptVisitor(columnDispatcher);
-            std::vector<DbColumn const*> const& columns = columnDispatcher.GetColumns();
+            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable());
+            propertyMap->AcceptVisitor(columnVisitor);
+            std::vector<DbColumn const*> const& columns = columnVisitor.GetColumns();
             if (0 == columns.size())
                 {
                 BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
@@ -588,12 +588,12 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
         }
 
     DbClassMapSaveContext classMapSaveContext(ctx);
-    SavePropertyMapVisitor saveDispatcher(classMapSaveContext);
+    SavePropertyMapVisitor saveVisitor(classMapSaveContext);
     for (PropertyMap const* propertyMap : GetPropertyMaps())
         {
         BeAssert(GetClass().GetId() == propertyMap->GetClassMap().GetClass().GetId());
-        propertyMap->AcceptVisitor(saveDispatcher);
-        if (saveDispatcher.GetStatus() != SUCCESS)
+        propertyMap->AcceptVisitor(saveVisitor);
+        if (saveVisitor.GetStatus() != SUCCESS)
             return ERROR;
         }
 
@@ -758,8 +758,8 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
             ctx.BeginSaving(*this);
             DbClassMapSaveContext classMapContext(ctx);
-            SavePropertyMapVisitor saveDispatcher(classMapContext);
-            propMap->AcceptVisitor(saveDispatcher);
+            SavePropertyMapVisitor saveVisitor(classMapContext);
+            propMap->AcceptVisitor(saveVisitor);
             ctx.EndSaving(*this);
             }
         }

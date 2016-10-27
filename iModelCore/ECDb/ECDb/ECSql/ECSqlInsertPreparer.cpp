@@ -331,10 +331,10 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
                 return;
                 }
 
-            ToSqlPropertyMapVisitor sqlDispatcher(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
-            ecInstanceIdPropMap->AcceptVisitor(sqlDispatcher);
+            ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
+            ecInstanceIdPropMap->AcceptVisitor(sqlVisitor);
             
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlDispatcher.GetResultSet().front().GetSqlBuilder()});
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlVisitor.GetResultSet().front().GetSqlBuilder()});
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder()});
             }
         else if (ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull)
@@ -363,7 +363,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter(nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
         }
 
-    if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable()))
+    if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))
         {
         if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
             {
@@ -509,8 +509,8 @@ RelationshipClassEndTableMap const& classMap
         }
 
     DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
-    ToSqlPropertyMapVisitor sqlDispatcher(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
-    for (auto const& referencedEndECInstanceIdColSnippet : sqlDispatcher.GetResultSet())
+    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
+    for (auto const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
         {
         updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");
         }

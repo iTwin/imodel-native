@@ -32,8 +32,6 @@ struct ECClassIdPropertyMap;
 struct ConstraintECInstanceIdPropertyMap;
 struct ConstraintECClassIdPropertyMap;
 
-#define EC_ACCESSSTRING_DELIMITER "."
-
 enum class VisitorFeedback
     {
     Cancel, //! cancel traversal altogether and return
@@ -65,9 +63,9 @@ struct IPropertyMapVisitor
 struct ISupportsPropertyMapVisitor
     {
     private:
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher) const = 0;
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor) const = 0;
     public:
-        VisitorFeedback AcceptVisitor(IPropertyMapVisitor const& dispatcher) const { return _AcceptVisitor(dispatcher); }
+        VisitorFeedback AcceptVisitor(IPropertyMapVisitor const& visitor) const { return _AcceptVisitor(visitor); }
     };
 
 //=======================================================================================
@@ -83,7 +81,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         bool m_readonly;
 
     private:
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override;
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
         PropertyMapContainer(ClassMap const& classMap)
@@ -157,21 +155,21 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
         //! return full access string from root property to current property.
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
-        //! return parent propertymap if any. 
+        //! return parent property map if any. 
         PropertyMap const* GetParent() const { return m_parentPropertMap; }
-        //! return classmap that owns this property
+        //! return class map that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
-        //! return root propertymap.
+        //! return root property map.
         PropertyMap const& GetRoot() const;
         
-        //! Test if currrent property is of type system. 
+        //! Test if current property is of type system. 
         bool IsSystem() const { return Enum::Contains(Kind::System, GetKind()); }
-        //! Test if currrent property is of type business. 
+        //! Test if current property is of type business. 
         bool IsData () const { return Enum::Contains(Kind::Data, GetKind()); }
         
-        //! Test if current properyt map mapped to a specific table or not.
+        //! Test if current property map mapped to a specific table or not.
         bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
-        //! Test if current property map part of classmap tables.
+        //! Test if current property map part of class map tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         
         //! Test if property map is constructed correctly.
@@ -192,13 +190,16 @@ struct DataPropertyMap : PropertyMap
     private:
         virtual DbTable const& _GetTable() const = 0;
         virtual bool _IsMappedToTable(DbTable const& table) const override { return &GetTable() == &table; }
-    public:
+
+    protected:
         DataPropertyMap(Kind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : PropertyMap(kind, classMap, ecProperty)
             {}
         DataPropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
             : PropertyMap(kind, parentPropertyMap, ecProperty)
             {}
+
+    public:
         ~DataPropertyMap() {}
 
         DbTable const& GetTable() const { return _GetTable(); }
@@ -290,17 +291,18 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
 struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
     {
     private:
-        virtual BentleyStatus _Validate() const override;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
-    protected:
         PrimitivePropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, classMap, ecProperty, column)
             {}
         PrimitivePropertyMap(DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, parentPropertyMap, ecProperty, column)
             {}
-        virtual ~PrimitivePropertyMap() {}
+
+        virtual BentleyStatus _Validate() const override;
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
+        virtual ~PrimitivePropertyMap() {}
         static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
         static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
     };
@@ -310,20 +312,17 @@ struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
 struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     private:
+        PrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Kind::PrimitiveArray, classMap, ecProperty, column) {}
+        PrimitiveArrayPropertyMap(DataPropertyMap const& parentPropertyMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Kind::PrimitiveArray, parentPropertyMap, ecProperty, column) {}
+
         virtual BentleyStatus _Validate() const override { return SUCCESS; }
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
-    protected:
-        PrimitiveArrayPropertyMap(Kind kind, ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column)
-            : SingleColumnDataPropertyMap(kind, classMap, ecProperty, column)
-            {}
-        PrimitiveArrayPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column)
-            : SingleColumnDataPropertyMap(kind, parentPropertyMap, ecProperty, column)
-            {}
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~PrimitiveArrayPropertyMap() {}
 
-        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ECN::ArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
+        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column) { return new PrimitiveArrayPropertyMap(classMap, ecProperty, column); }
+        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ECN::ArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column) { return new PrimitiveArrayPropertyMap(parentPropertyMap, ecProperty, column); }
     };
 
 //=======================================================================================
@@ -332,20 +331,16 @@ struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
 struct StructArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     private:
-        virtual BentleyStatus _Validate() const override { return SUCCESS; }
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
+        StructArrayPropertyMap(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Kind::StructArray, classMap, ecProperty, column) {}
+        StructArrayPropertyMap(DataPropertyMap const& parentPropertyMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Kind::StructArray, parentPropertyMap, ecProperty, column) {}
 
-    protected:
-        StructArrayPropertyMap(Kind kind, ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column)
-            : SingleColumnDataPropertyMap(kind, classMap, ecProperty, column)
-            {}
-        StructArrayPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column)
-            : SingleColumnDataPropertyMap(kind, parentPropertyMap, ecProperty, column)
-            {}
+        virtual BentleyStatus _Validate() const override { return SUCCESS; }
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~StructArrayPropertyMap() {}
-        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ECN::StructArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
+        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) { return new StructArrayPropertyMap(classMap, ecProperty, column); }
+        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ECN::StructArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column) { return new StructArrayPropertyMap(parentPropertyMap, ecProperty, column); }
     };
 
 //=======================================================================================
@@ -354,20 +349,17 @@ struct StructArrayPropertyMap final : SingleColumnDataPropertyMap
 struct Point2dPropertyMap final : CompoundDataPropertyMap
     {
     private:
+        Point2dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty) : CompoundDataPropertyMap(PropertyMap::Kind::Point2d, classMap, ecProperty) {}
+        Point2dPropertyMap(DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty) : CompoundDataPropertyMap(PropertyMap::Kind::Point2d, parentPropertyMap, ecProperty) {}
+
         BentleyStatus Init(DbColumn const& x, DbColumn const& y);
+
         virtual BentleyStatus _Validate() const override;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override;
-    protected:
-        Point2dPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, classMap, ecProperty)
-            {}
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override;
 
-        Point2dPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, parentPropertyMap, ecProperty)
-            {}
-
-        virtual ~Point2dPropertyMap() {}
     public:
+        virtual ~Point2dPropertyMap() {}
+
         PrimitivePropertyMap const& GetX() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME)); }
         PrimitivePropertyMap const& GetY() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME)); }
         static RefCountedPtr<Point2dPropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y);
@@ -380,19 +372,19 @@ struct Point2dPropertyMap final : CompoundDataPropertyMap
 struct Point3dPropertyMap final : CompoundDataPropertyMap
     {
     private:
+        Point3dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : CompoundDataPropertyMap(PropertyMap::Kind::Point3d, classMap, ecProperty)
+            {}
+        Point3dPropertyMap(DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : CompoundDataPropertyMap(PropertyMap::Kind::Point3d, parentPropertyMap, ecProperty)
+            {}
+
         BentleyStatus Init(DbColumn const& x, DbColumn const& y, DbColumn const& z);
         virtual BentleyStatus _Validate() const override;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override;
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override;
 
-    protected:
-        Point3dPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, classMap, ecProperty)
-            {}
-        Point3dPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, parentPropertyMap, ecProperty)
-            {}
-        virtual ~Point3dPropertyMap() {}
     public:
+        virtual ~Point3dPropertyMap() {}
         PrimitivePropertyMap const& GetX() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME)); }
         PrimitivePropertyMap const& GetY() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME)); }
         PrimitivePropertyMap const& GetZ() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Z_PROPNAME)); }
@@ -406,22 +398,17 @@ struct Point3dPropertyMap final : CompoundDataPropertyMap
 struct StructPropertyMap final : CompoundDataPropertyMap
     {
     private:
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override;
+        StructPropertyMap(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty) : CompoundDataPropertyMap(Kind::Struct, classMap, ecProperty) {}
+        StructPropertyMap(DataPropertyMap const& parentPropertyMap, ECN::StructECPropertyCR ecProperty) : CompoundDataPropertyMap(Kind::Struct, parentPropertyMap, ecProperty) {}
 
-    protected:
-        StructPropertyMap(Kind kind, ClassMap const& classMap, ECN::StructECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, classMap, ecProperty)
-            {}
-        StructPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::StructECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, parentPropertyMap, ecProperty)
-            {}
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override;
+
     public:
         virtual ~StructPropertyMap() {}
 
-        static RefCountedPtr<StructPropertyMap> CreateInstance(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty);
-        static RefCountedPtr<StructPropertyMap> CreateInstance(ECN::StructECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap);
+        static RefCountedPtr<StructPropertyMap> CreateInstance(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty) { return new StructPropertyMap(classMap, ecProperty); }
+        static RefCountedPtr<StructPropertyMap> CreateInstance(ECN::StructECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap) { return new StructPropertyMap(parentPropertyMap, ecProperty); }
     };
-
 
 
 //=======================================================================================
@@ -435,51 +422,53 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         To
         };
 
-    struct RelECClassIdPropertyMap final : SingleColumnDataPropertyMap
-        {
-        private:
-            ECN::ECClassId m_defaultClassId;
-            virtual BentleyStatus _Validate() const override { return SUCCESS; }
-            virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return  dispatcher.Visit(*this); }
-
-        protected:
-            RelECClassIdPropertyMap(Kind kind, NavigationPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, ECN::ECClassId defaultClassId)
-                : SingleColumnDataPropertyMap(kind, parentPropertyMap, ecProperty, column), m_defaultClassId(defaultClassId)
-                {}
-        public:
-            virtual ~RelECClassIdPropertyMap() {}
-            ECN::ECClassId GetDefaultClassId() const { return m_defaultClassId; }
-            static RefCountedPtr<RelECClassIdPropertyMap> CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId);
-        };
     struct IdPropertyMap final : SingleColumnDataPropertyMap
         {
         private:
-            virtual BentleyStatus _Validate() const override { return SUCCESS; }
-            virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return  dispatcher.Visit(*this); }
-
-        protected:
-            IdPropertyMap(Kind kind, NavigationPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
-                : SingleColumnDataPropertyMap(kind, parentPropertyMap, ecProperty, column)
+            IdPropertyMap(NavigationPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+                : SingleColumnDataPropertyMap(Kind::NavigationId, parentPropertyMap, ecProperty, column)
                 {}
+            virtual BentleyStatus _Validate() const override { return SUCCESS; }
+            virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return  visitor.Visit(*this); }
+
         public:
             virtual ~IdPropertyMap() {}
             static RefCountedPtr<IdPropertyMap> CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column);
         };
 
+    struct RelECClassIdPropertyMap final : SingleColumnDataPropertyMap
+        {
+        private:
+            ECN::ECClassId m_defaultClassId;
+
+            RelECClassIdPropertyMap(NavigationPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, ECN::ECClassId defaultClassId)
+                : SingleColumnDataPropertyMap(Kind::NavigationRelECClassId, parentPropertyMap, ecProperty, column), m_defaultClassId(defaultClassId)
+                {}
+
+            virtual BentleyStatus _Validate() const override { return SUCCESS; }
+            virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return  visitor.Visit(*this); }
+
+        public:
+            virtual ~RelECClassIdPropertyMap() {}
+            ECN::ECClassId GetDefaultClassId() const { return m_defaultClassId; }
+            static RefCountedPtr<RelECClassIdPropertyMap> CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId);
+        };
+
     private:
-        virtual BentleyStatus _Validate() const override;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override;
-    protected:
-        NavigationPropertyMap(Kind kind, ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(kind, classMap, ecProperty)
+        NavigationPropertyMap(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
+            : CompoundDataPropertyMap(Kind::Navigation, classMap, ecProperty)
             {}
+
+        virtual BentleyStatus _Validate() const override;
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&)  const override;
+
     public:
         virtual ~NavigationPropertyMap() {}
 
         BentleyStatus Initialize(DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId, DbColumn const& idColumn);
         RelECClassIdPropertyMap const& GetRelECClassId() const { return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME)); }
         IdPropertyMap const& GetId() const { return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME)); };
-        static RefCountedPtr<NavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty);
+        static RefCountedPtr<NavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty) { return new NavigationPropertyMap(classMap, ecProperty); }
     };
 
 //=======================================================================================

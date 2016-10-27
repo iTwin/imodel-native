@@ -25,7 +25,7 @@ PropertyMap::PropertyMap(Kind kind, ClassMap const& classMap, ECN::ECPropertyCR 
 //---------------------------------------------------------------------------------------
 PropertyMap::PropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
     :m_kind(kind), m_ecProperty(ecProperty), m_classMap(parentPropertyMap.GetClassMap()), m_parentPropertMap(&parentPropertyMap), 
-    m_propertyAccessString(parentPropertyMap.GetAccessString() + EC_ACCESSSTRING_DELIMITER + ecProperty.GetName()), m_isInEditMode(true)
+    m_propertyAccessString(parentPropertyMap.GetAccessString() + "." + ecProperty.GetName()), m_isInEditMode(true)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -110,12 +110,12 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const
+VisitorFeedback PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
     VisitorFeedback fb = VisitorFeedback::Next;
     for (PropertyMap const* propertyMap : m_directDecendentList)
         {
-        fb = propertyMap->AcceptVisitor(dispatcher);
+        fb = propertyMap->AcceptVisitor(visitor);
         if (fb == VisitorFeedback::Cancel)
             return fb;
         }
@@ -167,12 +167,12 @@ DataPropertyMap const* CompoundDataPropertyMap::Collection::Find(Utf8CP accessSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback CompoundDataPropertyMap::AcceptChildren(IPropertyMapVisitor const&  dispatcher) const
+VisitorFeedback CompoundDataPropertyMap::AcceptChildren(IPropertyMapVisitor const&  visitor) const
     {
     VisitorFeedback fb = VisitorFeedback::Next;
     for (DataPropertyMap const* pm : *this)
         {
-        fb = pm->AcceptVisitor(dispatcher);
+        fb = pm->AcceptVisitor(visitor);
         if (fb == VisitorFeedback::Cancel)
             return fb;
         }
@@ -419,46 +419,46 @@ RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ECN::Pr
     return new PrimitivePropertyMap(parentPropertyMap, ecProperty, column);
     }
 
-//************************************PrimitiveArrayPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column)
-    {
-    return new PrimitiveArrayPropertyMap(Kind::PrimitiveArray, classMap, ecProperty, column);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstance(ECN::ArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column)
-    {
-    return new PrimitiveArrayPropertyMap(Kind::PrimitiveArray, parentPropertyMap, ecProperty, column);
-    }
-
-//************************************StructArrayPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column)
-    {
-    return new StructArrayPropertyMap(Kind::StructArray, classMap, ecProperty, column);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(ECN::StructArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column)
-    {
-    return new StructArrayPropertyMap(Kind::StructArray, parentPropertyMap, ecProperty, column);
-    }
-
 
 //************************************Point2dPropertyMap********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
+    {
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
+        {
+        BeAssert(false && "PrimitiveType must be Point2d");
+        return nullptr;
+        }
+
+    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(classMap, ecProperty);
+    if (ptr->Init(x, y) != SUCCESS)
+        return nullptr;
+
+    return ptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y)
+    {
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
+        {
+        BeAssert(false && "PrimitiveType must be Point2d");
+        return nullptr;
+        }
+
+    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(parentPropertyMap, ecProperty);
+    if (ptr->Init(x, y) != SUCCESS)
+        return nullptr;
+
+    return ptr;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
@@ -499,13 +499,13 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback Point2dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const
+VisitorFeedback Point2dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    VisitorFeedback fb = dispatcher.Visit(*this);
+    VisitorFeedback fb = visitor.Visit(*this);
     if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
         return fb;
 
-    return AcceptChildren(dispatcher);
+    return AcceptChildren(visitor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -516,45 +516,45 @@ BentleyStatus Point2dPropertyMap::_Validate() const
     return Size() == 2 && IsReadonly() ? SUCCESS : ERROR;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
-        {
-        BeAssert(false && "PrimitiveType must be Point2d");
-        return nullptr;
-        }
-
-    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(Kind::Point2d, classMap, ecProperty);
-    if (ptr->Init(x, y) != SUCCESS)
-        return nullptr;
-
-    return ptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
-        {
-        BeAssert(false && "PrimitiveType must be Point2d");
-        return nullptr;
-        }
-
-    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(Kind::Point3d, parentPropertyMap, ecProperty);
-    if (ptr->Init(x, y) != SUCCESS)
-        return nullptr;
-
-    return ptr;
-    }
 
 //************************************Point3dPropertyMap********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
+    {
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
+        {
+        BeAssert(false && "PrimitiveType must be Point3d");
+        return nullptr;
+        }
+
+    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(classMap, ecProperty);
+    if (ptr->Init(x, y, z) != SUCCESS)
+        return nullptr;
+
+    return ptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z)
+    {
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
+        {
+        BeAssert(false && "PrimitiveType must be Point3d");
+        return nullptr;
+        }
+
+    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(parentPropertyMap, ecProperty);
+    if (ptr->Init(x, y, z) != SUCCESS)
+        return nullptr;
+
+    return ptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
@@ -601,13 +601,13 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback Point3dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const
+VisitorFeedback Point3dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    VisitorFeedback fb = dispatcher.Visit(*this);
+    VisitorFeedback fb = visitor.Visit(*this);
     if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
         return fb;
 
-    return AcceptChildren(dispatcher);
+    return AcceptChildren(visitor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -618,104 +618,22 @@ BentleyStatus Point3dPropertyMap::_Validate() const
     return Size() == 3 && IsReadonly() ? SUCCESS : ERROR;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
-        {
-        BeAssert(false && "PrimitiveType must be Point3d");
-        return nullptr;
-        }
 
-    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(Kind::Point3d, classMap, ecProperty);
-    if (ptr->Init(x, y, z) != SUCCESS)
-        return nullptr;
-
-    return ptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
-        {
-        BeAssert(false && "PrimitiveType must be Point3d");
-        return nullptr;
-        }
-
-    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(Kind::Point3d, parentPropertyMap, ecProperty);
-    if (ptr->Init(x, y, z) != SUCCESS)
-        return nullptr;
-
-    return ptr;
-    }
 
 //************************************StructPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty)
-    {
-    return new StructPropertyMap(Kind::Struct, classMap, ecProperty);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback StructPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const
+VisitorFeedback StructPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    VisitorFeedback fb = dispatcher.Visit(*this);
+    VisitorFeedback fb = visitor.Visit(*this);
     if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
         return fb;
 
-    return AcceptChildren(dispatcher);
+    return AcceptChildren(visitor);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ECN::StructECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap)
-    {
-    return new StructPropertyMap(Kind::Struct, parentPropertyMap, ecProperty);
-    }
-
-//************************************NavigationPropertyMap::RelECClassIdPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationPropertyMap::RelECClassIdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId)
-    {
-    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP relECClassIdProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::RelECClassId);
-    if (relECClassIdProp == nullptr)
-        return nullptr;
-
-    return  new RelECClassIdPropertyMap(Kind::NavigationRelECClassId, parentPropertyMap, *relECClassIdProp->GetAsPrimitiveProperty(), column, defaultRelClassId);
-    }
-
-//************************************NavigationPropertyMap::IdPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static
-RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
-    {
-    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP idProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Id);
-    if (idProp == nullptr)
-        return nullptr;
-
-    return new IdPropertyMap(Kind::NavigationId, parentPropertyMap, *idProp->GetAsPrimitiveProperty(), column);
-    }
 
 
 //************************************NavigationPropertyMap********************
@@ -756,13 +674,13 @@ BentleyStatus NavigationPropertyMap::Initialize(DbColumn const& relECClassIdColu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const
+VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    VisitorFeedback fb = dispatcher.Visit(*this);
+    VisitorFeedback fb = visitor.Visit(*this);
     if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
         return fb;
 
-    return AcceptChildren(dispatcher);
+    return AcceptChildren(visitor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -776,15 +694,36 @@ BentleyStatus NavigationPropertyMap::_Validate() const
     return CompoundDataPropertyMap::_Validate();
     }
 
+
+//************************************NavigationPropertyMap::RelECClassIdPropertyMap********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<NavigationPropertyMap> NavigationPropertyMap::CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
+RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationPropertyMap::RelECClassIdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId)
     {
-    return new NavigationPropertyMap(Kind::Navigation, classMap, ecProperty);
+    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
+    ECPropertyCP relECClassIdProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::RelECClassId);
+    if (relECClassIdProp == nullptr)
+        return nullptr;
+
+    return  new RelECClassIdPropertyMap(parentPropertyMap, *relECClassIdProp->GetAsPrimitiveProperty(), column, defaultRelClassId);
     }
 
+//************************************NavigationPropertyMap::IdPropertyMap********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static
+RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
+    {
+    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
+    ECPropertyCP idProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Id);
+    if (idProp == nullptr)
+        return nullptr;
+
+    return new IdPropertyMap(parentPropertyMap, *idProp->GetAsPrimitiveProperty(), column);
+    }
 
 //************************************PropertyMapFactory********************
 //=======================================================================================
@@ -912,7 +851,7 @@ RefCountedPtr<ECClassIdPropertyMap> PropertyMapFactory::CreateECClassIdPropertyM
 //+===============+===============+===============+===============+===============+======
 RefCountedPtr<ConstraintECClassIdPropertyMap> PropertyMapFactory::CreateSourceECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
     {
-    return ConstraintECClassIdPropertyMap::CreateInstance(classMap, defaultEClassId , ConstraintECClassIdPropertyMap::ConstraintType::Source, columns);
+    return ConstraintECClassIdPropertyMap::CreateInstance(classMap, defaultEClassId , ECRelationshipEnd_Source, columns);
     }
 
 //=======================================================================================
@@ -920,7 +859,7 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> PropertyMapFactory::CreateSourceEC
 //+===============+===============+===============+===============+===============+======
 RefCountedPtr<ConstraintECClassIdPropertyMap> PropertyMapFactory::CreateTargetECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
     {
-    return ConstraintECClassIdPropertyMap::CreateInstance(classMap, defaultEClassId, ConstraintECClassIdPropertyMap::ConstraintType::Target, columns);
+    return ConstraintECClassIdPropertyMap::CreateInstance(classMap, defaultEClassId, ECRelationshipEnd_Target, columns);
 
     }
 
@@ -929,7 +868,7 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> PropertyMapFactory::CreateTargetEC
 //+===============+===============+===============+===============+===============+======
 RefCountedPtr<ConstraintECInstanceIdPropertyMap> PropertyMapFactory::CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    return ConstraintECInstanceIdPropertyMap::CreateInstance(classMap, ConstraintECInstanceIdPropertyMap::ConstraintType::Source, columns);
+    return ConstraintECInstanceIdPropertyMap::CreateInstance(classMap, ECRelationshipEnd_Source, columns);
     }
 
 //=======================================================================================
@@ -937,7 +876,7 @@ RefCountedPtr<ConstraintECInstanceIdPropertyMap> PropertyMapFactory::CreateSourc
 //+===============+===============+===============+===============+===============+======
 RefCountedPtr<ConstraintECInstanceIdPropertyMap> PropertyMapFactory::CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    return ConstraintECInstanceIdPropertyMap::CreateInstance(classMap, ConstraintECInstanceIdPropertyMap::ConstraintType::Target, columns);
+    return ConstraintECInstanceIdPropertyMap::CreateInstance(classMap, ECRelationshipEnd_Target, columns);
     }
 
 //=======================================================================================
@@ -946,7 +885,7 @@ RefCountedPtr<ConstraintECInstanceIdPropertyMap> PropertyMapFactory::CreateTarge
 RefCountedPtr<SystemPropertyMap> PropertyMapFactory::CreateCopy(SystemPropertyMap const& propertyMap, ClassMap const& newContext)
     {
     std::vector<DbColumn const*> columns;
-    for (SingleColumnDataPropertyMap const* child : propertyMap.GetVerticalPropertyMaps())
+    for (SingleColumnDataPropertyMap const* child : propertyMap.GetDataPropertyMaps())
         {
         columns.push_back(&child->GetColumn());
         }
@@ -963,7 +902,7 @@ RefCountedPtr<SystemPropertyMap> PropertyMapFactory::CreateCopy(SystemPropertyMa
 
     if (auto pm = dynamic_cast<ConstraintECInstanceIdPropertyMap const*>(&propertyMap))
         {
-        if (pm->IsSource())
+        if (pm->GetEnd() == ECRelationshipEnd_Source)
             return CreateSourceECInstanceIdPropertyMap(newContext, columns);
 
         return CreateTargetECInstanceIdPropertyMap(newContext, columns);
@@ -971,7 +910,7 @@ RefCountedPtr<SystemPropertyMap> PropertyMapFactory::CreateCopy(SystemPropertyMa
 
     if (auto pm = dynamic_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap))
         {
-        if (pm->IsSource())
+        if (pm->GetEnd() == ECRelationshipEnd_Source)
             return CreateSourceECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);
 
         return CreateTargetECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);

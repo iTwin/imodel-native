@@ -37,9 +37,9 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            GetTablesPropertyMapVisitor tableDispatcher;
-            propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableDispatcher);
-            for (auto table : tableDispatcher.GetTables())
+            GetTablesPropertyMapVisitor tableVisitor;
+            propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableVisitor);
+            for (auto table : tableVisitor.GetTables())
                 {
                 if (table->GetPersistenceType() == PersistenceType::Persisted)
                     tmp.insert(table);

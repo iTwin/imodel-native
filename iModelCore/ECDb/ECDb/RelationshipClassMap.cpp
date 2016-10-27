@@ -162,13 +162,13 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
 bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
     {
     ConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().size() != 1LL)
+    if (referencedEndClassIdPropertyMap->GetDataPropertyMaps().size() != 1LL)
         {
         BeAssert(false && "Expecting exactly one property map");
         return false;
         }
 
-    SingleColumnDataPropertyMap const* vm = static_cast<SingleColumnDataPropertyMap const*>(referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().front());
+    SingleColumnDataPropertyMap const* vm = static_cast<SingleColumnDataPropertyMap const*>(referencedEndClassIdPropertyMap->GetDataPropertyMaps().front());
     return vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables();
     }
 
@@ -270,15 +270,15 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
         return false;
         }
 
-    SingleColumnDataPropertyMap const* vm = static_cast<SingleColumnDataPropertyMap const*>(referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().front());
+    SingleColumnDataPropertyMap const* vm = static_cast<SingleColumnDataPropertyMap const*>(referencedEndClassIdPropertyMap->GetDataPropertyMaps().front());
     if (vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables())
         return true;
 
     //SELF JOIN case
     if (GetSourceECClassIdPropMap()->IsMappedToSingleTable() && GetTargetECClassIdPropMap()->IsMappedToSingleTable())
         {
-        auto source = GetSourceECClassIdPropMap()->GetVerticalPropertyMaps().front();
-        auto target = GetTargetECClassIdPropMap()->GetVerticalPropertyMaps().front();
+        auto source = GetSourceECClassIdPropMap()->GetDataPropertyMaps().front();
+        auto target = GetTargetECClassIdPropMap()->GetDataPropertyMaps().front();
 
         return  &source->GetColumn() == &target->GetColumn()
             && source->GetColumn().GetPersistenceType() == PersistenceType::Persisted;
@@ -1058,7 +1058,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     std::vector<DbColumn const*> referencedEndIdColumns;
 
-    for (SingleColumnDataPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetVerticalPropertyMaps())
+    for (SingleColumnDataPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
         if (persistenceEndTable.GetType() == DbTable::Type::Existing)
@@ -1197,15 +1197,15 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
             }
 
         std::vector<DbColumn const*> columns;
-        GetColumnsPropertyMapVisitor columnDispatcher(constraintMap->GetJoinedTable());
-        keyPropertyMap->AcceptVisitor(columnDispatcher);
-        if (columnDispatcher.GetColumns().size() != 1)
+        GetColumnsPropertyMapVisitor columnVisitor(constraintMap->GetJoinedTable());
+        keyPropertyMap->AcceptVisitor(columnVisitor);
+        if (columnVisitor.GetColumns().size() != 1)
             {
             BeAssert(false && "Key property map is expected to map to a single column.");
             return ERROR;
             }
 
-        keyPropertyColumns.insert(columnDispatcher.GetColumns().front());
+        keyPropertyColumns.insert(columnVisitor.GetColumns().front());
         }
 
     return SUCCESS;
@@ -1266,7 +1266,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     PropertyMap const* precedingPropMap = nullptr;
     PropertyMap const* succeedingPropMap = nullptr;
     bool foundNavProp = false;
-    SearchPropertyMapVisitor isSystemOrNavPropertyMapDispatcher(Enum::Or(PropertyMap::Kind::System, PropertyMap::Kind::Navigation));
+    SearchPropertyMapVisitor isSystemOrNavPropertyMapVisitor(Enum::Or(PropertyMap::Kind::System, PropertyMap::Kind::Navigation));
     for (PropertyMap const* propMap : classMap->GetPropertyMaps())
         {
         if (&propMap->GetProperty() == singleNavProperty)
@@ -1279,9 +1279,9 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             continue;
             }
 
-        isSystemOrNavPropertyMapDispatcher.Reset();
-        propMap->AcceptVisitor(isSystemOrNavPropertyMapDispatcher); //Skip system properties and navigation properties
-        if (!isSystemOrNavPropertyMapDispatcher.ResultSet().empty())
+        isSystemOrNavPropertyMapVisitor.Reset();
+        propMap->AcceptVisitor(isSystemOrNavPropertyMapVisitor); //Skip system properties and navigation properties
+        if (!isSystemOrNavPropertyMapVisitor.ResultSet().empty())
             continue;
 
         if (!foundNavProp)
@@ -1307,26 +1307,26 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
     if (!fkColInfo.CanImplyFromNavigationProperty() || fkColInfo.AppendToEnd())
         return SUCCESS;
 
-    GetColumnsPropertyMapVisitor precedingColsDispatcher(table);
+    GetColumnsPropertyMapVisitor precedingColsVisitor(table);
     PropertyMap const* precedingPropMap = fkColInfo.GetPropertyMapBeforeNavProp();
     if (precedingPropMap != nullptr)
-        precedingPropMap->AcceptVisitor(precedingColsDispatcher);
+        precedingPropMap->AcceptVisitor(precedingColsVisitor);
 
     bool isNeighborColumnPreceeding = true;
     DbColumn const* neighborColumn = nullptr;
-    if (!precedingColsDispatcher.GetColumns().empty())
-        neighborColumn = precedingColsDispatcher.GetColumns().back();
+    if (!precedingColsVisitor.GetColumns().empty())
+        neighborColumn = precedingColsVisitor.GetColumns().back();
     else
         {
 
         PropertyMap const* succeedingPropMap = fkColInfo.GetPropertyMapAfterNavProp();
-        GetColumnsPropertyMapVisitor succeedingColsDispatcher(table);
+        GetColumnsPropertyMapVisitor succeedingColsVisitor(table);
         if (succeedingPropMap != nullptr)
-            succeedingPropMap->AcceptVisitor(succeedingColsDispatcher);
+            succeedingPropMap->AcceptVisitor(succeedingColsVisitor);
 
-        if (!succeedingColsDispatcher.GetColumns().empty())
+        if (!succeedingColsVisitor.GetColumns().empty())
             {
-            neighborColumn = succeedingColsDispatcher.GetColumns()[0];
+            neighborColumn = succeedingColsVisitor.GetColumns()[0];
             isNeighborColumnPreceeding = false;
             }
         }
@@ -1407,13 +1407,13 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
 
         //Create FK from Source-Primary to LinkTable
         DbTable const* sourceTable = *relationClassMapInfo.GetSourceTables().begin();
-        DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn();
+        DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
         DbColumn const* referencedColumn = sourceTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
         //Create FK from Target-Primary to LinkTable
         DbTable const* targetTable = *relationClassMapInfo.GetTargetTables().begin();
-        fkColumn = &GetTargetECInstanceIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn();
+        fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
         referencedColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
@@ -1631,10 +1631,10 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
     
-    auto sourceECInstanceIdColumn = &GetSourceECInstanceIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn();
-    auto sourceECClassIdColumn =  GetSourceECClassIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
-    auto targetECInstanceIdColumn = &GetTargetECInstanceIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn();
-    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable()) != nullptr ? &GetTargetECClassIdPropMap()->FindVerticalPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
+    auto sourceECInstanceIdColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
+    auto sourceECClassIdColumn =  GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
+    auto targetECInstanceIdColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
+    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
 
     std::vector<DbColumn const*> columns;
     switch (spec)

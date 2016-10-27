@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//************************************WipPropertyMapColumnDispatcher********************
+//************************************GetColumnsPropertyMapVisitor********************
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
@@ -43,7 +43,7 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& pr
 
     if (m_doNotSkipSystemPropertyMaps)
         {
-        for (SingleColumnDataPropertyMap const* m : propertyMap.GetVerticalPropertyMaps())
+        for (PrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
             {
             m_columns.push_back(&m->GetColumn());
             }
@@ -52,7 +52,7 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& pr
         {
         if (m_table)
             {
-            if (SingleColumnDataPropertyMap const* m = propertyMap.FindVerticalPropertyMap(*m_table))
+            if (PrimitivePropertyMap const* m = propertyMap.FindDataPropertyMap(*m_table))
                 {
                 m_columns.push_back(&m->GetColumn());
                 }
@@ -83,7 +83,7 @@ bool ToSqlPropertyMapVisitor::IsAlienTable(DbTable const& table) const
 //+===============+===============+===============+===============+===============+======
 SingleColumnDataPropertyMap const* ToSqlPropertyMapVisitor::FindSystemPropertyMapForTable(SystemPropertyMap const& systemPropertyMap) const
     {
-    SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(m_tableFilter);
+    SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindDataPropertyMap(m_tableFilter);
     if (vmap == nullptr)
         {
         BeAssert(false && "Failed to find propertymap for filter table");
@@ -337,7 +337,7 @@ VisitorFeedback SavePropertyMapVisitor::_Visit(SystemPropertyMap const& property
     {
     const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
-    for (SingleColumnDataPropertyMap const* childMap : propertyMap.GetVerticalPropertyMaps())
+    for (SingleColumnDataPropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
         {
         if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
             {

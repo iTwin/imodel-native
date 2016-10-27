@@ -70,19 +70,19 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
         return ECSqlStatus::Error;
         }
     DbTable const* contextTable = referencedEndECClassIdPropMap->GetTables().front();
-    ToSqlPropertyMapVisitor sqlDispatcher(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
+    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
 
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
-    SearchPropertyMapVisitor typeDispatcher(PropertyMap::Kind::All);
-    classMap.GetPropertyMaps().AcceptVisitor(typeDispatcher);
-    for (PropertyMap const* propMap : typeDispatcher.ResultSet())
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Kind::All);
+    classMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
+    for (PropertyMap const* propMap : typeVisitor.ResultSet())
         {
         bool isSystem = propMap->IsSystem();
         if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
             {
-            propMap->AcceptVisitor(sqlDispatcher);           
-            ToSqlPropertyMapVisitor::Result const* r = sqlDispatcher.Find(propMap->GetAccessString().c_str());;
+            propMap->AcceptVisitor(sqlVisitor);           
+            ToSqlPropertyMapVisitor::Result const* r = sqlVisitor.Find(propMap->GetAccessString().c_str());;
             if (r == nullptr)
                 {
                 BeAssert(false);

@@ -237,7 +237,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             if (!info->m_ecinstanceIdIsUserProvided  && systemPropertyMap.IsMappedToSingleTable())
                 {
                 DbTable const* contextTable = systemPropertyMap.GetTables().front();
-                SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(*contextTable);
+                SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindDataPropertyMap(*contextTable);
                 if (vmap == nullptr)
                     {
                     BeAssert(vmap != nullptr);

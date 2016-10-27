@@ -16,12 +16,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SystemPropertyMap : PropertyMap
     {
     private:
-        bmap<Utf8CP, RefCountedPtr<PrimitivePropertyMap>, CompareIUtf8Ascii> m_vmapsPerTable;
-        std::vector<PrimitivePropertyMap const*> m_vmaps;
+        bmap<Utf8CP, RefCountedPtr<PrimitivePropertyMap>, CompareIUtf8Ascii> m_dataPropMaps;
+        std::vector<PrimitivePropertyMap const*> m_dataPropMapList;
         std::vector<DbTable const*> m_tables;
 
         virtual BentleyStatus _Validate() const override;
-
         virtual bool _IsMappedToTable(DbTable const& table) const override
             {
             for (DbTable const* t : m_tables)
@@ -35,18 +34,18 @@ struct SystemPropertyMap : PropertyMap
         SystemPropertyMap(Kind, ClassMap const&, ECN::PrimitiveECPropertyCR, std::vector<RefCountedPtr<PrimitivePropertyMap>> const&);
         SystemPropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty) : PropertyMap(kind, parentPropertyMap, ecProperty) {}
 
-        static BentleyStatus TryCreateVerticalMaps(std::vector<RefCountedPtr<PrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        static BentleyStatus TryCreateDataPropertyMaps(std::vector<RefCountedPtr<PrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
 
     public:
         virtual ~SystemPropertyMap() {}
 
-        PrimitivePropertyMap const* FindVerticalPropertyMap(Utf8CP tableName) const;
-        PrimitivePropertyMap const* FindVerticalPropertyMap(DbTable const& table) const { return FindVerticalPropertyMap(table.GetName().c_str()); }
-        std::vector<PrimitivePropertyMap const*> const& GetVerticalPropertyMaps() const { return m_vmaps; }
+        PrimitivePropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
+        PrimitivePropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
+        std::vector<PrimitivePropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
 
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
-        bool IsMappedToSingleTable() const { return GetVerticalPropertyMaps().size() == 1; }
+        bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
     };
 
 //=======================================================================================
@@ -55,12 +54,12 @@ struct SystemPropertyMap : PropertyMap
 struct ECInstanceIdPropertyMap final : SystemPropertyMap
     {
     private:
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const& dispatcher)  const override { return dispatcher.Visit(*this); }
-
-    protected:
-        ECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps)
+        ECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps)
+            : SystemPropertyMap(Kind::ECInstanceId, classMap, ecProperty, maps)
             {}
+
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~ECInstanceIdPropertyMap() {}
         static RefCountedPtr<ECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
@@ -73,12 +72,13 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
     {
     private:
         ECN::ECClassId m_defaultECClassId;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
 
-    protected:
-        ECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId)
+        ECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId)
+            : SystemPropertyMap(Kind::ECClassId, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId)
             {}
+
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~ECClassIdPropertyMap() {}
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
@@ -90,27 +90,22 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
 //+===============+===============+===============+===============+===============+======
 struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
     {
-    enum class ConstraintType
-        {
-        Source, Target
-        };
     private:
         ECN::ECClassId m_defaultECClassId;
-        ConstraintType m_constraintType;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
+        ECN::ECRelationshipEnd m_end;
 
-    protected:
-        ConstraintECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId, ConstraintType constraintType)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId), m_constraintType(constraintType)
+        ConstraintECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId, ECN::ECRelationshipEnd constraintType)
+            : SystemPropertyMap(Kind::ConstraintECClassId, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId), m_end(constraintType)
             {}
+
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~ConstraintECClassIdPropertyMap() {}
-
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
-        bool IsSource() const { return m_constraintType == ConstraintType::Source; }
-        bool IsTarget() const { return m_constraintType == ConstraintType::Target; }
-        
-        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ConstraintType constraintType, std::vector<DbColumn const*> const& columns);
+        ECN::ECRelationshipEnd GetEnd() const { return m_end; }
+
+        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);
     };
 
 //=======================================================================================
@@ -118,23 +113,20 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
 //+===============+===============+===============+===============+===============+======
 struct ConstraintECInstanceIdPropertyMap final : SystemPropertyMap
     {
-    enum class ConstraintType
-        {
-        Source, Target
-        };
     private:
-        ConstraintType m_constraintType;
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
+        ECN::ECRelationshipEnd m_end;
 
-    protected:
-        ConstraintECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ConstraintType constraintType)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps)
+        ConstraintECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECRelationshipEnd constraintType)
+            : SystemPropertyMap(Kind::ConstraintECInstanceId, classMap, ecProperty, maps)
             {}
+
+        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
+
     public:
         virtual ~ConstraintECInstanceIdPropertyMap() {}
-        bool IsSource() const { return m_constraintType == ConstraintType::Source; }
-        bool IsTarget() const { return m_constraintType == ConstraintType::Target; }
-        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, ConstraintType constraintType, std::vector<DbColumn const*> const& columns);
+        ECN::ECRelationshipEnd GetEnd() const { return m_end; }
+
+        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

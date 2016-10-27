@@ -1832,9 +1832,9 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
 
         //Delete DbTable entries
 
-        GetColumnsPropertyMapVisitor columnDispatcher(PropertyMap::Kind::Data);
-        propertyMap->AcceptVisitor(columnDispatcher);
-        for (DbColumn const* column : columnDispatcher.GetColumns())
+        GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Kind::Data);
+        propertyMap->AcceptVisitor(columnVisitor);
+        for (DbColumn const* column : columnVisitor.GetColumns())
             {
             //For shared column do not delete column itself.
             if (column->IsShared())

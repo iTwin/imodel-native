@@ -78,10 +78,10 @@ struct ECSqlPrepareContext
 
                 void AddProperty(PropertyMap const& propertyMap)
                     {
-                    SearchPropertyMapVisitor typeDispatcher(PropertyMap::Kind::All, /*traverseCompoundProperties = */ true);
-                    propertyMap.AcceptVisitor(typeDispatcher);
+                    SearchPropertyMapVisitor typeVisitor(PropertyMap::Kind::All, /*traverseCompoundProperties = */ true);
+                    propertyMap.AcceptVisitor(typeVisitor);
                     Utf8String path;
-                    for (PropertyMap const* m : typeDispatcher.ResultSet())
+                    for (PropertyMap const* m : typeVisitor.ResultSet())
                         {
                         AddProperty(m->GetAccessString().c_str());
                         }
