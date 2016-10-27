@@ -271,7 +271,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(textureGenerator.IsValid());
 
-    textureGenerator->SetPixelSize(0.10);
+    textureGenerator->SetPixelSize(0.02);
     textureGenerator->SetTextureTempDir(currentTextureDir);
 
     DRange3d covExt = DRange3d::From(m_extractionArea);
