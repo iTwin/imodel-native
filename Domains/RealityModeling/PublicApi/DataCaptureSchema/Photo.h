@@ -96,6 +96,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Photo : Dgn::SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Photo, Dgn::SpatialLocationElement);
 
 private:
+    mutable CameraElementId m_camera;//Query and cached from DgnDb or given at creation time
     int                  m_photoId;
     PoseType             m_pose;
 
@@ -103,7 +104,14 @@ private:
 
 protected:
 
-    explicit Photo(CreateParams const& params) : T_Super(params) {}
+    Photo(CreateParams const& params, CameraElementId camera=CameraElementId()) : T_Super(params), m_camera(camera) {}
+
+    static BentleyStatus InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb, PhotoElementId photoElmId, CameraElementId cameraElmId);
+    static CameraElementId QueryPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb,  PhotoElementId photoElmId);
+
+    void InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdatePhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
+    void DeletePhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -114,13 +122,13 @@ protected:
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
-    //! Called to bind the parameters when inserting a new Activity into the DgnDb. Override to save subclass properties.
+    //! Called to bind the parameters when inserting a new Photo into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! And then you @em must call T_Super::_BindInsertParams, forwarding its status.
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
 
-    //! Called to update an Activity in the DgnDb with new values. Override to update subclass properties.
+    //! Called to update a photo in the DgnDb with new values. Override to update subclass properties.
     //! @note If the update fails, the original data will be copied back into this Activity.
     //! @note If you override this method, you @em must call T_Super::_BindUpdateParams, forwarding its status.
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
@@ -132,12 +140,25 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     virtual Dgn::DgnDbStatus _OnInsert() override;
 
+    //! Called after a DgnElement was successfully inserted into the database.
+    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
+
+    //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdated.
+    virtual void _OnUpdated(Dgn::DgnElementCR original) const override;
+
+    //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
+    //! @note If you override this method, you @em must call T_Super::_OnDeleted.
+    virtual void _OnDeleted() const override;
+
+
 public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Photo)
     DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Photo)
 
     //! Create a new Photo 
-    DATACAPTURE_EXPORT static PhotoPtr Create(Dgn::SpatialModelR model);
+    DATACAPTURE_EXPORT static PhotoPtr Create(Dgn::SpatialModelR model, CameraElementId camera);
 
     //! Query for an Photo (Id) by label
     //! @return Id of the Photo or invalid Id if an Photo was not found
@@ -146,11 +167,14 @@ public:
     //! Get the id of this Photo element
     DATACAPTURE_EXPORT PhotoElementId GetId() const;
 
-    DATACAPTURE_EXPORT int         GetPhotoId() const;
-    DATACAPTURE_EXPORT PoseType    GetPose() const;
-    DATACAPTURE_EXPORT void        SetPhotoId(int val);
-    DATACAPTURE_EXPORT void        SetPose(PoseTypeCR val);
-   
+    DATACAPTURE_EXPORT int              GetPhotoId() const;
+    DATACAPTURE_EXPORT PoseType         GetPose() const;
+    DATACAPTURE_EXPORT void             SetPhotoId(int val);
+    DATACAPTURE_EXPORT void             SetPose(PoseTypeCR val);
+
+    DATACAPTURE_EXPORT CameraElementId  GetCameraId() const;
+    DATACAPTURE_EXPORT void             SetCameraId(CameraElementId val);
+
 };
 
 //=================================================================================

@@ -73,15 +73,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CLASS_Camera                                        "Camera"
 #define BDCP_CLASS_Photo                                         "Photo"
 
-// 
-// 
 // Relationships
-// #define BDCP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
-// #define BDCP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
-// 
-// 
-// Properties
-// #define BDCP_PROP_StatusAspect_Status                               "Status"
+#define BDCP_REL_PhotoIsTakenByCamera                          "PhotoIsTakenByCamera"
 
 
 //-----------------------------------------------------------------------------------------
