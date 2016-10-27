@@ -47,10 +47,10 @@
 
 #define MARKUP_CLASSNAME_MarkupExternalLink         "MarkupExternalLink"
 #define MARKUP_CLASSNAME_MarkupExternalLinkGroup    "MarkupExternalLinkGroup"
+#define MARKUP_CLASSNAME_Redline                    "Redline"
 #define MARKUP_CLASSNAME_RedlineModel               "RedlineModel"
+#define MARKUP_CLASSNAME_RedlineViewDefinition      "RedlineViewDefinition"
 #define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
-
-#define MARKUP_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
 
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
@@ -66,7 +66,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct RedlineModelHandler;
 struct SpatialRedlineModelHandler;
 
-namespace dgn_ElementHandler {struct RedlineViewDef;}
+namespace dgn_ElementHandler {struct RedlineElementHandler; struct RedlineViewDef;}
+
+namespace dgn_ModelHandler {struct Redline;}
 
 enum DgnMarkupProjectSchemaValues
     {
@@ -89,252 +91,137 @@ struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
         void _OnDgnDbOpened(DgnDbR) const override;
+        void _OnSchemaImported(DgnDbR) const override;
     public:
         MarkupDomain();
     };
 
 //=======================================================================================
-//! Information about a DgnDb that can be used to save and check on markup-project association. See DgnMarkupProject::GetAssociation
-//=======================================================================================
-struct DgnProjectAssociationData
-    {
-private:
-    Utf8String m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
-    BeSQLite::BeGuid m_guid; //! The GUID of the DgnDb.
-    uint64_t m_lastModifiedTime; //! The last-modification time of the DgnDb
-
-public:
-    DGNPLATFORM_EXPORT DgnProjectAssociationData();             //!< Construct an empty object. See DgnMarkupProject::GetAssociation
-    DGNPLATFORM_EXPORT Utf8String GetRelativeFileName() const;  //!< Get the relative path of the DgnDb that is associated with the DgnMarkupProject
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetGuid() const;                  //!< Get the GUID of the DgnDb that is associated with the DgnMarkupProject
-    DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;      //!< Get the last modified time of the DgnDb as of the time that it was associated with the DgnMarkupProject
-//__PUBLISH_SECTION_END__
-    void FromDgnProject(DgnDbCR, DgnMarkupProject const&);
-    void ToPropertiesJson(JsonValueR) const;
-    BentleyStatus FromPropertiesJson(JsonValueCR);
-//__PUBLISH_SECTION_START__
-
-    //! Reasons why markups may no longer correspond to the contents of the subject DgnDb
-    struct CheckResults
-        {
-        bool NameChanged;       //!< The name of the DgnDb has changed. This is not necessarily a problem.
-        bool GuidChanged;       //!< The DgnDb has been republished. It is not clear if the content and geometry of stored markups apply to the new version.
-        bool ContentsChanged;   //!< The contents of the DgnDb has changed since the markup project was created. This is not necessarily a problem.
-        bool UnitsChanged;      //!< The storage units of the DgnDb have changed. This probably means that physical redlines are now invalid.
-        };
-    };
-
-//=======================================================================================
-//! Information about a view in a DgnDb that can be used to save and check on redline-view association. See RedlineModel::GetAssociation
-//=======================================================================================
-struct DgnViewAssociationData : DgnProjectAssociationData
-    {
-    DEFINE_T_SUPER(DgnProjectAssociationData);
-    
-    private:
-    DgnViewId     m_viewId;
-    Json::Value   m_viewGeometry;
-
-    public:
-    DGNPLATFORM_EXPORT DgnViewAssociationData();
-
-    DGNPLATFORM_EXPORT DgnViewId GetViewId() const; //!< Get the ViewId of the view in the DgnDb that is associated with the RedlineModel
-
-    //! Re-create from serialized JSON string.
-    //! @param[in] serializedData   Serialized JSON string.
-    //! @return non-zero error status if the serialized data is invalid.
-    DGNPLATFORM_EXPORT BentleyStatus FromSerializedJson(Utf8CP serializedData);
-
-//__PUBLISH_SECTION_END__
-    BentleyStatus FromPropertiesJson(JsonValueCR);
-    void FromDgnProject(DgnDbCR, ViewControllerCR, DgnMarkupProject const&); // hide superclass version of this function
-    void ToPropertiesJson(JsonValueR) const;
-    //! Get the origin of the view in the DgnDb that is associated with the RedlineModel
-    void GetViewOrigin(DPoint3dR origin, DgnDbCR);
-//__PUBLISH_SECTION_START__
-
-    //! Reasons why markups may no longer correspond to the contents of the subject DgnDb
-    struct CheckResults : T_Super::CheckResults
-        {
-        bool ViewNotFound; //!< The view in the subject DgnDb cannot be found. This redline is probably no longer applicable.
-
-        CheckResults(DgnProjectAssociationData::CheckResults const& projResults) {memcpy(this, &projResults, sizeof(projResults)); ViewNotFound = false;}
-        };
-    };
-
-//=======================================================================================
-//! Holds "redline" graphics and other annotations, plus a raster image.
-//! 
-//! A RedlineModel stores an image which is displayed as a backdrop to the redline graphics. 
-//! See RedlineModel::StoreImageData.
-//! 
-//! A RedlineModel can be associated with a particular view of the subject DgnDb.
-//! See RedlineModel::SetAssociation and RedlineModel::GetAssociation.
-//! 
-//! A RedlineModel does not have to be associated with a view of a DgnDb. The stored image can be acquired from some external source.
-//! 
-//! See DgnMarkupProject::CreateRedlineModel, DgnMarkupProject::OpenRedlineModel, and DgnMarkupProject::FindClosestRedlineModel.
+//! Represents annotations that mark up (a picture of) something.
+//! A Redline may be (but does not have to be) associated with a view of a BIM. 
+//! You can create and store a LinkElement to record such an association if you wish.
 // @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
+struct EXPORT_VTABLE_ATTRIBUTE Redline : Document
     {
-    DGNMODEL_DECLARE_MEMBERS("RedlineModel", SheetModel);
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_Redline, Document);
+    friend struct dgn_ElementHandler::RedlineElementHandler;
 
+    Redline(CreateParams const& params) : T_Super(params) {}
 public:
-    //! Describes the format, size, and display location of the static image to be displayed as the background of a redline model.
-    struct ImageDef
-        {
-        int                 m_format;       //!< QV_BGRA_FORMAT or QV_RGBA_FORMAT
-        Point2d             m_sizeInPixels; //!< How many pixels per row (x) and per column (y) there are in the image.
-        DPoint2d            m_origin;       //!< where to display the image on the sheet (sheet coordinates)
-        DVec2d              m_size;         //!< how big the image is on the sheet (sheet coordinates)
-        bool                m_topDown;      //!< Is the image top-down? Else, bottom-up.
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_Redline)); }
 
-        DGNPLATFORM_EXPORT ImageDef();
-        void ToPropertiesJson(JsonValueR) const;
-        BentleyStatus FromPropertiesJson(JsonValueCR);
-        size_t GetPitch() const;            //!< Get the "pitch" or number of bytes per row. This is just m_size.x * GetSizeofPixelInBytes().
-        size_t GetSizeInBytes() const;      //!< Get the total size of the image in bytes. This is just m_size.x*m_size.y*GetSizeofPixelInBytes().
-        size_t GetSizeofPixelInBytes() const; //!< Get the number of bytes per pixel. That will be 4 if the image has alpha data or 3 if not.
-        bool HasAlpha() const;              //!< Check if the image has alpha data
-        bool GetIsTopDown() const;          //!< Is the image top-down? Else, bottom-up.
-        Render::Image::Format GetRenderImageFormat() const; //!< Get the format of the image
-        };
+    //! Create a Redline document element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
+    //! @param model    The model where the Redline is listed. @see DgnMarkupProject::GetRedlineListModel
+    //! @param code     The name of the redline.
+    //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
+    DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
 
-private:
-    ImageDef            m_imageDef;
-    Render::GraphicBuilderPtr  m_tileGraphic;
-    DgnViewAssociationData m_assoc;
+    static DgnCode CreateCode(Utf8StringCR value, DgnDbR db) {return NamespaceAuthority::CreateCode(MARKUP_SCHEMA(MARKUP_CLASSNAME_Redline), value, db);}
+    };
 
-    friend struct DgnMarkupProject;
-    friend struct RedlineModelHandler;
-    friend struct RedlineViewController;
+//=======================================================================================
+//! Holds a raster image of what is being marked up, plus 2d graphics and other annotations.
+//! The units of a RedlineModel are in meters. Normally, a RedlineModel will be about
+//! the size (in meters) of the screen.
+// @bsiclass                                                    Sam.Wilson      05/13
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : GraphicalModel2d
+    {
+    DGNMODEL_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineModel, GraphicalModel2d);
 
-protected:
-    void _WriteJsonProperties(Json::Value&) const override;
-    void _ReadJsonProperties(Json::Value const&) override;
+    friend struct dgn_ModelHandler::Redline;
 
-    static RedlineModelPtr Create(SheetCR sheet, Utf8CP name, DgnModelId templateModel);
-
-public:
     explicit RedlineModel(CreateParams const& params): T_Super(params) {}
-    Render::GraphicBuilderPtr GetImageGraphic(ViewContextR);
-    BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData);
-    DGNPLATFORM_EXPORT static BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
-    
-    DgnViewId GetFirstView();
-
 public:
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineModel)); }
+
+    //! Create a RedlineModel that is to contain the graphics for the specified Redline.  @note It is the caller's responsibility to call Insert on the returned model in order to make it persistent.
+    //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
+    //! @param[in] doc      The Redline element
+    //! @return a new, non-persisetnt RedlineModel object or an invalid handle if \a doc is invalid
+    DGNPLATFORM_EXPORT static RedlineModelPtr Create(DgnDbStatus* createStatus, Redline& doc); 
+
+    //! Save an image to display in this redline model.
+    //! @param source the image source 
+    //! @param origin the coordinates (in meters) of the lower left corner of the image
+    //! @param size   the size of the image (in meters)
+    DGNPLATFORM_EXPORT void StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, DVec2dCR size);
 
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;
-
-    //! Save an image as the backdrop for this redline model.
-    //! @param imageData       the image data
-    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
-    //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
-    //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageCR imageData, bool isTopDown, bool fitToX, bool compressImageProperty=true);
-
-    //! Save an image as the backdrop for this redline model.
-    //! @param source the image source 
-    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
-    //! @param fitToX If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
-    //!               If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageSourceCR source, bool isTopDown, bool fitToX);
-
-/** @name Association to DgnDb */
-/** @{ */
-    //! Create or update an association between this redline model and the specified view in the specified DgnDb.
-    //! @param dgnProject   The DgnDb that is being redlined
-    //! @param projectView  The view in the DgnDb that is being redlined
-    //! @see GetAssociation
-    DGNPLATFORM_EXPORT void SetAssociation(DgnDbR dgnProject, ViewControllerCR projectView);
-
-    //! Check that this markup project was associated with the specified DgnDb as of the last call to SetAssociation.
-    //! @param assocData    The association data passed to SetAssociation
-    //! @see SetAssociation
-    DGNPLATFORM_EXPORT void GetAssociation(DgnViewAssociationData& assocData) const;
-
-    //! Check that this redline model is still valid for the target view.
-    //! @param subjectProject   The project that was redlined.
-    //! @return A list of what's changed in the project since this markup project was created.
-    //! @see DgnMarkupProjectGroup_Association
-    DGNPLATFORM_EXPORT DgnViewAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
-/** @} */
     };
 
 //=======================================================================================
 //! Defines a view of a RedlineModel
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
+struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
     {
-    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, SheetViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, ViewDefinition2d);
     friend struct dgn_ElementHandler::RedlineViewDef;
 
     protected:
+        DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+
         //! Construct a RedlineViewDefinition from the supplied params prior to loading it
         explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) {}
 
-    public:
         //! Construct a new RedlineViewDefinition prior to inserting it
         RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) : 
                 T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
+
         //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
         static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
-    };
 
-namespace dgn_ElementHandler {
-struct RedlineViewDef : SheetViewDef
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, SheetViewDef, DGNPLATFORM_EXPORT);
+    public:
+        //! Create a new redline view definition element, prior to inserting it.  @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+        //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
+        //! @param model     The redline model to view
+        //! @param viewSize  The width and height of the view in meters.
+        //! @return a new non-persistent, redline view definition element or null if the model is invalid.
+        DGNPLATFORM_EXPORT static RedlineViewDefinitionPtr Create(DgnDbStatus* createStatus, RedlineModelR model, DVec2dCR viewSize);
     };
-};
 
 //=======================================================================================
-//! Displays a RedlineModel
+//! Displays a RedlineViewDefinition
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct RedlineViewController : SheetViewController
+struct RedlineViewController : ViewController2d
 {
-    DEFINE_T_SUPER (SheetViewController);
+    DEFINE_T_SUPER (ViewController2d);
 
 #if !defined (DOCUMENTATION_GENERATOR)
     friend struct DgnMarkupProject;
-
-private:
-    bool m_enableViewManipulation;
-    bool m_drawBorder;
 
 protected:
     virtual void _DrawView(ViewContextR) override;
 
 public:
-    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinition& rdlViewDef);
-    DGNPLATFORM_EXPORT RedlineViewController(RedlineModel&, RedlineViewDefinition& rdlViewDef);
+    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinitionR rdlViewDef);
+    DGNPLATFORM_EXPORT RedlineViewController(RedlineViewDefinition const& rdlViewDef);
     DGNPLATFORM_EXPORT ~RedlineViewController();
     
-    //! Create a new redline view in the database
-    //! @return The newly created view controller
-    //! @param[in] rdlModel the redline model to display
-    //! @param[in] templateView Identifies redline template view.
-    //! @param[out] insertStatus  Optional. Set to non-zero status if insert fails. DgnDbStatus::NotOpen if the markup project is not open, 
-    DGNPLATFORM_EXPORT static RedlineViewControllerPtr InsertView(DgnDbStatus* insertStatus, RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
     DGNPLATFORM_EXPORT void OnClose(RedlineModel& targetModel);
     DGNPLATFORM_EXPORT void OnOpen(RedlineModel& targetModel);
-
-    //! Query if sheet border should be displayed
-    DGNPLATFORM_EXPORT bool GetDrawBorder() const;
-
-    //! Specify if sheet border should be display
-    //! @param b    if true, display the border
-    DGNPLATFORM_EXPORT void SetDrawBorder(bool b);
 #endif // DOCUMENTATION_GENERATOR
 };
+
+#if !defined (DOCUMENTATION_GENERATOR)
+namespace dgn_ElementHandler {
+struct RedlineViewDef : Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, Definition, DGNPLATFORM_EXPORT);
+    };
+struct RedlineElementHandler : Document
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_Redline, Redline, RedlineElementHandler, Document, DGNPLATFORM_EXPORT);
+    };
+};
+#endif // DOCUMENTATION_GENERATOR
 
 //=======================================================================================
 //! Displays a SpatialRedlineModel in conjunction with the display of another view controller.
@@ -442,8 +329,6 @@ protected:
 public:
     explicit SpatialRedlineModel(CreateParams const& params) : T_Super(params) {}
 
-    DgnViewId GetFirstView();
-
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;
     };
@@ -494,25 +379,13 @@ private:
 private:
     DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
-    BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params);
+    BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
 
-    BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
-    void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id = 0);
     DgnDbStatus ImportMarkupSchema();
-    DocumentListModelPtr GetSheetListModel();
 
 public:
     BentleyStatus CheckIsOpen();
 
-    DgnViewId GetFirstViewOf(DgnModelId);
-
-    BentleyStatus QueryPropertyAsJson(JsonValueR json, RedlineModelProperty::ProjectProperty const&, uint64_t id=0) const;
-    void SavePropertyFromJson(RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0) const;
-
-    BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
-    void SavePropertyFromJson(DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
-
-    DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject, DgnProjectAssociationData const&);
 public:
     //! Compute the default filename for a DgnMarkupProject, based on the associated DgnDb
     //! @param[out] markupProjectName   The computed name of the DgnMarkupProject
@@ -534,94 +407,12 @@ public:
     //! @return a reference counted pointer to the newly created DgnMarkupProject. Its IsValid() method will be false if the open failed for any reason.
     DGNPLATFORM_EXPORT static DgnMarkupProjectPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnMarkupProjectParams const& params);
 
+    //! Get the model where Redline elements are normally stored
+    DGNPLATFORM_EXPORT DocumentListModelPtr GetRedlineListModel();
+
     //! Query if this project has been initialized for physical redlining.
     //! @see CreateDgnMarkupProjectParams::SetSpatialRedlining
     DGNPLATFORM_EXPORT bool IsSpatialRedlineProject() const;
-
-/** @name Association to DgnDb */
-/** @{ */
-    //! Create or update an association between this markup project and the specified DgnDb.
-    //! @see GetAssociation
-    DGNPLATFORM_EXPORT void SetAssociation(DgnDbR dgnProject);
-
-    //! Check that this markup project is associated with the specified DgnDb
-    //! @param assocData    The association data passed to SetAssociation
-    //! @see SetAssociation
-    DGNPLATFORM_EXPORT void GetAssociation(DgnProjectAssociationData& assocData) const;
-
-    //! Check that this markup project is still valid for the subject project
-    //! @param subjectProject   The project that is being redlined.
-    //! @return A list of what's changed in the project since this markup project was created.
-    //! @see DgnMarkupProjectGroup_Association
-    DGNPLATFORM_EXPORT DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
-/** @} */
-
-/** @name Redline Models */
-/** @{ */
-    //! Create a redline model of that model.
-    //! @param name             A unique identifier for the redline model.
-    //! @param templateModel    Optional. Identifies the model in this DgnMarkupProject to be used a template for the redline model. Must be a sheet model.
-    //! @param createStatus     Optional. Set to non-zero status if the creation fails.
-    //! @see OpenRedlineModel, RedlineModel::StoreImageData
-    DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel(DgnDbStatus* createStatus, Utf8CP name, DgnModelId templateModel);
-
-    //! Create a view of the redline model that is as similar as possible to the specified DgnDb view.
-    //! @param redlineModel     The redline model returned by CreateRedlineModel
-    //! @param redlineTemplateView Optional. Identifies a view in this DgnMarkupProject to be used a template for the redline model view.
-    //! @param projectViewRect  The shape of the view that is being redlined. This is used only to get the aspect ratio, so that the redline view can be shaped and aligned to match the original DgnDb as closely as possible.
-    //! @param imageViewRect    The area within the view where the background image should be displayed.
-    //! @param createStatus     Optional. Set to non-zero status if the creation of the redline view fails.
-    DGNPLATFORM_EXPORT DgnViewId CreateRedlineModelView(DgnDbStatus* createStatus, RedlineModelR redlineModel, DgnViewId redlineTemplateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
-
-    //! Find the redline model that is associated with the specified DgnDb view and whose origin is closest to specified point.
-    //! @param[in]  viewController            The view to match
-    //! @return If successful, the ID of the redline model that was based on the specified view and is closest to its origin, plus the distance of the 
-    //! redlined view from the view's origin. If there is no redline view based on the specified view, then an invalid ID is returned.
-    DGNPLATFORM_EXPORT bpair<DgnModelId,double> FindClosestRedlineModel(ViewControllerCR viewController);
-
-    //! Open an existing redline model. The model is also filled.
-    //! @param modelId  Identifies the redline model to open
-    //! @param openStatus     Optional. Set to non-zero status if the model could not be found or could not be opened.
-    //! @return a pointer to the open model or nullptr if the model could not be opened.
-    //! @see CreateRedlineModel
-    DGNPLATFORM_EXPORT RedlineModelP OpenRedlineModel(DgnDbStatus* openStatus, DgnModelId modelId);
-
-    //! Empty an existing redline model. This function may be called after viewing a redline model. It releases memory held by the redline model.
-    //! @param modelId  Identifies the redline model to empty
-    //! @see OpenRedlineModel
-    DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel(DgnModelId modelId);
-/** @} */
-
-/** @name SpatialRedline Models */
-/** @{ */
-    //! Create a physical redline model.
-    //! @param name                     A unique identifier for the physical redline model.
-    //! @param subjectViewTargetModel   The target model of the view of the subject DgnDb. The SpatialRedlineModel's units are set to match the units of subjectViewTargetModel.
-    //! @param createStatus     Optional. Set to non-zero status if the creation fails.
-    //! @return a pointer to the new model
-    //! @see OpenSpatialRedlineModel, @ref DgnMarkupProjectGroup_SpatialRedlines
-    DGNPLATFORM_EXPORT SpatialRedlineModelP CreateSpatialRedlineModel(DgnDbStatus* createStatus, Utf8CP name, SpatialModelCR subjectViewTargetModel);
-
-#if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
-    //! Create a view of the physical redline model
-    //! @param redlineModel     The physical redline model returned by CreateSpatialRedlineModel
-    //! @param dgnView          The view of the subject DgnDb
-    //! @return the ID of the new redline view
-    DGNPLATFORM_EXPORT DgnViewId CreateSpatialRedlineModelView(SpatialRedlineModelR redlineModel, SpatialViewControllerR dgnView);
-#endif
-
-    //! Open an existing physical redline model.
-    //! @param modelId  Identifies the physical redline model to open
-    //! @param openStatus     Optional. Set to non-zero status if the model could not be found or could not be opened.
-    //! @return a pointer to the open model or nullptr if the model could not be opened.
-    //! @see CreateSpatialRedlineModel
-    DGNPLATFORM_EXPORT SpatialRedlineModelP OpenSpatialRedlineModel(DgnDbStatus* openStatus, DgnModelId modelId);
-
-    //! Empty an existing physical redline model. This function may be called after viewing a model. It releases memory held by the model.
-    //! @param modelId  Identifies the physical redline model to empty
-    //! @see OpenSpatialRedlineModel
-    DGNPLATFORM_EXPORT BentleyStatus EmptySpatialRedlineModel(DgnModelId modelId);
-/** @} */
 
 };
 
@@ -748,9 +539,9 @@ struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationConte
 namespace dgn_ModelHandler
 {
 //! The ModelHandler for RedlineModel.
-struct Redline : Sheet
+struct Redline : Model
 {
-    MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet, )
+    MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Model, )
 };
 
 //! The ModelHandler for SpatialRedlineModel.
@@ -758,6 +549,7 @@ struct SpatialRedline : Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial, )
 };
+
 }
 
 END_BENTLEY_DGN_NAMESPACE

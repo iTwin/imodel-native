@@ -469,7 +469,7 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
-    PK_ENTITY_t entityTag = SolidKernelUtil::GetEntityTag(entity);
+    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity);
 
     if (0 == entityTag)
         return 0;
@@ -513,9 +513,8 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
             case PK_CLASS_swept:
                 {
                 ISolidPrimitivePtr  solidPrimitive;
-                CurveVectorPtr      uvBoundaries;
 
-                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, &uvBoundaries)).IsValid())
+                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
                     facetCount += GetFacetCount(*solidPrimitive);
                 break;
                 }

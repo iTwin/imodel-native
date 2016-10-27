@@ -690,7 +690,7 @@ PK_EDGE_t       edgeTagIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil::HasCurvedFacesOrEdges (PK_BODY_t entity)
+bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
     {
     if (!entity)
         return false;
