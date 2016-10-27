@@ -10,7 +10,9 @@
 
 #include "Render.h"
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 class TopoDS_Shape;
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -64,8 +66,6 @@ virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const = 0;
 virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
 virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
-
-//typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
 
 //=======================================================================================
 //! ISolidKernelEntity represents a boundary representation body (BRep). A BRep is
@@ -153,8 +153,6 @@ ISolidKernelEntityPtr Clone() const {return _Clone();}
 
 }; // ISolidKernelEntity
 
-//typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
-
 //=======================================================================================
 //! ISubEntity represents a topological entity that can refer to a
 //! single face, edge, or vertex of solid, sheet, or wire GeometricPrimitive.
@@ -210,17 +208,31 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 
 }; // ISubEntity
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)    
 //=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so
-//! that the entire set of Open CASCADE includes isn't required for the published api.
+//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
+//! that the entire set of solid kernel includes isn't required for the published api.
 //=======================================================================================
 struct SolidKernelUtil
 {
 DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
+}; // SolidKernelUtil
+#endif
+
+//=======================================================================================
+//! BRepUtil provides support for the creation, querying, and modification of BReps.
+//! Coordinates and distances are always supplied and returned in uors. Operations between 
+//! entities such as BRepUtil::Modify::BooleanUnion will automatically take the 
+//! individual target and tool entity transforms into account.
+//! @bsiclass                                                   Brien.Bastings  07/12
+//=======================================================================================
+struct BRepUtil
+{
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, IFacetOptionsR);
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(ISolidKernelEntityCR);
-};
+}; // BRepUtil
 
 END_BENTLEY_DGN_NAMESPACE

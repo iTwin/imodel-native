@@ -6,11 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <GeomSerialization/GeomLibsFlatBufferApi.h>
-#include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-
-using namespace flatbuffers;
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
@@ -92,6 +92,7 @@ bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
             m_uv.y             < rhs.m_uv.y);
     }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)    
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
 +===============+===============+===============+===============+===============+======*/
@@ -305,16 +306,6 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
-    {
-    TopoDS_Shape const* shape = GetShape(entity);
-    BeAssert(nullptr != shape);
-    return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
@@ -334,12 +325,14 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
     {
     return OpenCascadeEntity::CreateNewEntity(shape);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -403,4 +396,42 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, pixelSize, pixelSizeRange);
+#else
+    return nullptr;
+#endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOptionsR facetOptions)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr);
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, facetOptions);
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
+#else
+    return false;
+#endif
+    }
+

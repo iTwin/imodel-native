@@ -113,10 +113,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode, DPoint2dCR sheetSize)
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet, modelCode, sheetSize);
+    SheetModelPtr model = SheetModel::Create(sheet, modelCode);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());

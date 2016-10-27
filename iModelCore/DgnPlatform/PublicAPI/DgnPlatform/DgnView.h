@@ -680,8 +680,9 @@ public:
     //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
     //! @param[in] size Optional size (x,y) for the thumbnail. Thumbnails are usually square. Default size is 768x768 pixels.
     //! @param[in] modeOverride Optional override for the RenderMode for the thumbnail. If nullptr, use RenderMode from the DisplayStyle.
+    //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size=Point2d::From(768,768), Render::RenderMode const* modeOverride=nullptr) const;
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
 
     //! Save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
     //! @param[in] size the size (x,y) of the thumbnail.
@@ -826,7 +827,7 @@ public:
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
@@ -958,7 +959,7 @@ public:
     CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
@@ -1120,7 +1121,9 @@ public:
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
+    void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
+    void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
     };
@@ -1153,7 +1156,7 @@ public:
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
@@ -1185,7 +1188,7 @@ public:
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController() const;
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}
