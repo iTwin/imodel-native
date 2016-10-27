@@ -449,7 +449,7 @@ DbDupValue& DbDupValue::operator = (DbDupValue&& other)
     }
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
-bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
+bool     Db::IsReadonly() const {return m_dbFile->m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
@@ -589,7 +589,7 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     m_inCommit = false;
     m_allowImplicitTxns = m_settingsTableCreated = m_settingsDirty = false;
     m_dataVersion = 0;
-    memset(&m_flags, 0, sizeof(m_flags));
+    m_readonly = false;
 
     m_retry = retry ? retry : new BusyRetry();
     sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
@@ -2241,7 +2241,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
     #endif
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode) params.m_startDefaultTxn);
-    m_dbFile->m_flags.m_readonly = ((int) params.m_openMode & (int) OpenMode::Readonly)==(int)OpenMode::Readonly;
+    m_dbFile->m_readonly = ((int) params.m_openMode & (int) OpenMode::Readonly)==(int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
     if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive)

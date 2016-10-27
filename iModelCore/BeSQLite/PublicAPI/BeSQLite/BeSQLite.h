@@ -1457,9 +1457,7 @@ private:
     DbR m_db;
     DbEmbeddedFileTable(DbR db) : m_db(db) {}
 
-    //__PUBLISH_SECTION_END__
-    BeBriefcaseBasedId GetNextEmbedFileId() const;
-    //__PUBLISH_SECTION_START__
+    BeBriefcaseBasedId GetNextEmbedFileId() const; //!< @private
 
 public:
     //=======================================================================================
@@ -1840,13 +1838,13 @@ struct BusyRetry : RefCountedBase
     virtual int _OnBusy(int count) const {if (count>4) return 0; BeThreadUtilities::BeSleep(1000); return 1;}
 };
 
-#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 // Cached "briefcase local values"
+//! @private
 // @bsiclass                                                    Keith.Bentley   12/12
 //=======================================================================================
 struct CachedBLV
-    {
+{
 private:
     Utf8String   m_name;
     bool         m_isUnset;
@@ -1863,13 +1861,13 @@ public:
     bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
     void SetIsNotDirty() const;
     void Reset();
-    };
-#endif
+};
 
 //=======================================================================================
 // Cache for uint64_t BriefcaseLocalValues. This is for BLV's that are of type uint64_t and are frequently
 // accessed and/or modified. The BLVs are identified in the cache by "registering" their name are thereafter
 // accessed by index. The cache is held in memory for performance. It is automatically saved whenever a transaction is committed.
+//! @private
 // @bsiclass                                                    Krischan.Eberle     07/14
 //=======================================================================================
 struct BriefcaseLocalValueCache : NonCopyableClass
@@ -1930,8 +1928,8 @@ public:
 //! A physical Db file.
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct DbFile
-{
+struct DbFile : NonCopyableClass
+{ 
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
@@ -1942,27 +1940,22 @@ protected:
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;
 
-    bool            m_settingsTableCreated;
-    bool            m_settingsDirty;
-    bool            m_allowImplicitTxns;
-    bool            m_inCommit;
-    uint64_t        m_dataVersion; // for detecting changes from another process
-    SqlDbP          m_sqlDb;
-    BusyRetryPtr    m_retry;
+    bool m_settingsTableCreated;
+    bool m_settingsDirty;
+    bool m_allowImplicitTxns;
+    bool m_inCommit;
+    mutable bool m_readonly;
+    uint64_t m_dataVersion; // for detecting changes from another process
+    SqlDbP m_sqlDb;
+    BusyRetryPtr m_retry;
     ChangeTrackerPtr m_tracker;
-    mutable void*   m_cachedProps;
+    mutable void* m_cachedProps;
     BriefcaseLocalValueCache m_blvCache;
-    BeGuid          m_dbGuid;
-    Savepoint       m_defaultTxn;
-    BeBriefcaseId  m_briefcaseId;
-    StatementCache  m_statements;
-    DbTxns          m_txns;
-
-    mutable struct
-        {
-        bool m_readonly:1;
-        int  m_dummy:31;
-        }  m_flags;
+    BeGuid m_dbGuid;
+    Savepoint m_defaultTxn;
+    BeBriefcaseId m_briefcaseId;
+    StatementCache m_statements;
+    DbTxns m_txns;
 
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
     ~DbFile();
