@@ -11,3 +11,22 @@ DataSourceCacheUpgradeTests.Open_V20*
 
 # Pending fix on UniqueTaskHolder
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+
+CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
+CachingDataSourceTests.GetFile_CalledMultipleTimes*
+    # bim0200, NDEBUG, x64 and x86
+    # The first hung on line 751 of the test body: while (!downloadStarted);
+    # The rest seemed to randomly hang as well.
+
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+    # bim0200, NDEBUG, x64
+    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
+
+CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
+    # bim0200, NDEBUG, x86
+    # Randomly crashes, no stack printed, test output:
+    # [ RUN      ] CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
+    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'. Start tag expected, '<' not found
+    # 
+    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - line 1, position 1
+    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'
