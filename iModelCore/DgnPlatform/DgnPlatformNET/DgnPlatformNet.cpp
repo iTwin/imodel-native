@@ -55,6 +55,8 @@ ref struct      PrimitiveECProperty;
 ref struct      ECInstance;
 ref struct      Viewport;
 ref struct      ViewController;
+ref struct      DgnCategoryIdSet;
+ref struct      DgnCategory;
 
 /*=================================================================================**//**
 * Convert class
@@ -140,7 +142,7 @@ static SchemaManager^           SchemaManagerToManaged (BeSQLite::EC::ECDbSchema
 
 static DgnElementCollection^    ElementCollectionToManaged (BDGN::DgnElements*, DgnDb^);
 
-static DgnModel^                DgnModelToManaged (BDGN::DgnModelP, DgnDb^);
+static DgnModel^                DgnModelToManaged (BDGN::DgnModelP, DgnDb^, bool);
 
 static BDGN::DgnModelP          DgnModelToNative (DgnModel^);
 
@@ -179,6 +181,8 @@ static ECInstance^              ECInstanceToManaged (ECN::IECInstanceP);
 static PrimitiveECProperty^     PrimitiveECPropertyToManaged (ECN::PrimitiveECPropertyCP, System::Object^);
 
 static ViewController^          ViewControllerToManaged (BDGN::ViewControllerP, Viewport^);
+
+static DgnCategory^             DgnCategoryToManaged (BDGN::DgnCategoryP, DgnDb^);
 
 };
 
@@ -299,14 +303,28 @@ internal:
     void SetValue (uint64_t id) {m_id = id;}
 
 public:
+
+    //! default constructor
+    BeInt64Id () : m_id(0) {}
+
     //! Construct a BeInt64Id from a 64 bit value.
     BeInt64Id (uint64_t u) : m_id(u) {}
+
+    //! Construct a BeInt64Id from a 64 bit value.
+    BeInt64Id (BeInt64Id^ val) : m_id (val->m_id) {}
 
     //! Test validity.
     bool IsValid() { return Validate(); }
 
     //! Get the 64 bit value of this BeInt64Id
-    uint64_t GetValue() { BeAssert(IsValid()); return m_id; }
+    property uint64_t Value 
+        { 
+        uint64_t get ()
+            {
+            BeAssert(IsValid()); 
+            return m_id; 
+            }
+        }
 
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
     uint64_t GetValueUnchecked() { return m_id; }
@@ -330,38 +348,46 @@ public:
 public ref struct DgnModelId : BeInt64Id
     {
     // the additional methods we might want to add are those having to do with BriefcaseId.
+    DgnModelId () : BeInt64Id() {}
     DgnModelId (uint64_t u) : BeInt64Id (u) {}
     };
 
 public ref struct DgnElementId : BeInt64Id
     {
     // the additional methods we might want to add are those having to do with BriefcaseId.
+    DgnElementId () : BeInt64Id () {}
     DgnElementId (uint64_t u) : BeInt64Id (u) {}
+    DgnElementId (BeInt64Id^ val) : BeInt64Id (val) {}
     };
 
 public ref struct DgnAuthorityId : BeInt64Id
     {
     // the additional methods we might want to add are those having to do with BriefcaseId.
+    DgnAuthorityId () : BeInt64Id () {}
     DgnAuthorityId (uint64_t u) : BeInt64Id (u) {}
     };
 
 public ref struct DgnCategoryId : DgnElementId
     {
+    DgnCategoryId () : DgnElementId() {}
     DgnCategoryId (uint64_t u) : DgnElementId (u) {}
     };
 
 public ref struct DgnSubCategoryId : DgnElementId
     {
+    DgnSubCategoryId () : DgnElementId() {}
     DgnSubCategoryId (uint64_t u) : DgnElementId (u) {}
     };
 
 public ref struct DgnMaterialId : DgnElementId
     {
+    DgnMaterialId () : DgnElementId() {}
     DgnMaterialId (uint64_t u) : DgnElementId (u) {}
     };
 
 public ref struct ECClassId : BeInt64Id
     {
+    ECClassId () : BeInt64Id() {}
     ECClassId (uint64_t u) : BeInt64Id (u) {}
     };
 
@@ -671,10 +697,8 @@ public:
         buf[0] = '\0';
         auto res = fgets(buf, sizeof(buf), m_fp);
         if (nullptr == res)
-            {
-            throw gcnew DgnPlatformNETException ("Past end of File");
-            return System::String::Empty;
-            }
+            return nullptr;
+
         WString stringBuf (buf, false);
         return gcnew System::String (stringBuf.c_str());
         }
@@ -885,7 +909,7 @@ internal:
 
 public:
 
-    /// <summary> Advances the enumerator to the next NamedGroup of the collection. </summary>
+    /// <summary> Advances the enumerator to the next ECSqlValue of the collection. </summary>
     virtual bool MoveNext ()
         {
         bool retval = MoveNextInternal ();
@@ -908,7 +932,7 @@ public:
             }
         };
 
-    /// <summary> Gets the current NamedGroup in the collection. </summary>
+    /// <summary> Gets the current ECSqlValue n the collection. </summary>
     property ECSqlValue^ Current
         {
         virtual ECSqlValue^ get () = System::Collections::Generic::IEnumerator <ECSqlValue^>::Current::get
@@ -965,7 +989,10 @@ struct  PreparedECSqlStatementDeleter : public RefCountedBase
     {
     BeSQLite::EC::CachedECSqlStatement* m_statement;
 
-    PreparedECSqlStatementDeleter (BeSQLite::EC::CachedECSqlStatement* statement) : m_statement (statement) {}
+    PreparedECSqlStatementDeleter (BeSQLite::EC::CachedECSqlStatement* statement) : m_statement (statement) 
+        {
+        AddRef();
+        }
 
     ~PreparedECSqlStatementDeleter() { m_statement->Release(); }
     };
@@ -998,7 +1025,7 @@ public:
       */
     void BindId (int parameterIndex, BeInt64Id^ value)
         {
-        BENTLEY_NAMESPACE_NAME::BeInt64Id nativeValue (value->GetValue());
+        BENTLEY_NAMESPACE_NAME::BeInt64Id nativeValue (value->Value);
         m_statement->BindId (parameterIndex, nativeValue);
         }
 
@@ -1183,6 +1210,21 @@ public:
 };
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+    {
+    mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
+    mutable Utf8String                      m_issue;
+
+    void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+        {
+        m_severity = severity;
+        m_issue = message;
+        }
+    };
+
 
 /*=================================================================================**//**
 * DgnDb - managed version of Dgn::DgnDb
@@ -1226,17 +1268,60 @@ public:
             return Convert::ElementCollectionToManaged (&m_native->Elements(), this);
             }
         }
+
+    property DgnCategoryIdSet^ Categories
+        {
+        DgnCategoryIdSet^ get ();
+        }
+
+    property System::String^ FileName
+        {
+        System::String^ get ()
+            {
+            BeFileName nativeFileName = m_native->GetFileName();
+            return gcnew System::String (nativeFileName.c_str());
+            }
+        }
+
+    /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
+    DgnCategory^ GetCategory (DgnCategoryId^ categoryId)
+        {
+        BDGN::DgnCategoryCPtr nativeCategory = BDGN::DgnCategory::QueryCategory (BDGN::DgnCategoryId (categoryId->Value), *Convert::DgnDbToNative (this));
+        return Convert::DgnCategoryToManaged (const_cast <BDGN::DgnCategoryP>(nativeCategory.get()), this);
+        }
+
     /** Get a prepared ECSqlStatement for selecting rows from this DgnDb
       * @param ecsql    The body of the ECSql SELECT statement that is to be executed.
       * @return a prepared ECSql statement or null if the SQL statement is invalid.
       * @see ECClass::ECSqlName
       * @note Only SELECT statements can be prepared. If you do not specify the SELECT keyword, it will be prepended automatically.
       */
-    PreparedECSqlStatement^ GetPreparedECSqlSelectStatement (System::String^ ecsql)
+    PreparedECSqlStatement^ GetPreparedECSqlSelectStatement (System::String^ ecsqlFragment)
         {
-        pin_ptr<wchar_t const> ecsqlPinned = PtrToStringChars (ecsql);
-        Utf8String utf8Ecsql (ecsqlPinned);
-        BeSQLite::EC::CachedECSqlStatementPtr newStatement = m_native->GetPreparedECSqlStatement (utf8Ecsql.c_str());
+        // the string we got from the user.
+        pin_ptr<wchar_t const> ecsqlFragmentPinned = PtrToStringChars (ecsqlFragment);
+        Utf8String  utf8EcsqlFragment (ecsqlFragmentPinned);
+
+        // the string we are assembling.
+        Utf8String  ecsql;
+
+        if (!utf8EcsqlFragment.StartsWithI("SELECT"))
+            ecsql.append("SELECT "); // We want to prevent callers from doing INSERT, UPDATE, or DELETE. Pre-pending SELECT will guarantee a prepare error if ecsqlFragment also contains one of those keywords.
+
+        ecsql.append(utf8EcsqlFragment);
+
+        ECDbIssueListener issues;
+        m_native->AddIssueListener (issues);
+        BeSQLite::EC::CachedECSqlStatementPtr newStatement = m_native->GetPreparedECSqlStatement (ecsql.c_str());
+        m_native->RemoveIssueListener();
+        if (!newStatement.IsValid())
+            {
+            System::String^ issueString = gcnew System::String (issues.m_issue.c_str());
+            System::String^ errorMsg = System::String::Format ("{0} = {1}", ecsqlFragment, issueString);
+            throw gcnew DgnPlatformNETException (errorMsg);
+            return nullptr;
+            }
+        
         return gcnew PreparedECSqlStatement (newStatement.get());
         }
 
@@ -1274,6 +1359,7 @@ private:
     BeInt64IdSet*               m_nativeSet;
     IdSetEnumeratorImpl*        m_impl;
     T_idType                    m_currentMember;
+    System::Object^             m_owner;
 
     T_idType        GetMember()
         {
@@ -1294,7 +1380,6 @@ private:
 
     bool MoveNextInternal ()
         {
-        return false;
         if (nullptr == m_impl)
             {
             m_impl = new IdSetEnumeratorImpl (*m_nativeSet);
@@ -1306,6 +1391,7 @@ private:
             return false;
 
         ++m_impl->m_current;
+        return m_impl->m_current != endIterator;
         }
 
     void SetCurrentMember ()
@@ -1323,13 +1409,16 @@ private:
         }
 
 internal:
-    IdSetEnumerator (BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>* nativeSet)
+    IdSetEnumerator (BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>* nativeSet, System::Object^ owner)
         {
-        m_nativeSet = nativeSet;
+        m_nativeSet     = nativeSet;
+        m_owner         = owner;
+        m_impl          = nullptr;
+        m_currentMember = T_idType();
         }
 
 public:
-    /// <summary> Advances the enumerator to the next NamedGroup of the collection. </summary>
+    /// <summary> Advances the enumerator to the next T_idType in the collection. </summary>
     virtual bool MoveNext ()
         {
         bool retval = MoveNextInternal ();
@@ -1352,7 +1441,7 @@ public:
             }
         };
 
-    /// <summary> Gets the current NamedGroup in the collection. </summary>
+    /// <summary> Gets the current T_idType in the collection. </summary>
     property T_idType Current
         {
         virtual T_idType get () = System::Collections::Generic::IEnumerator <T_idType>::Current::get
@@ -1399,7 +1488,7 @@ public:
 
     virtual System::Collections::Generic::IEnumerator <T_idType>^ GetEnumerator ()
         {
-        return gcnew IdSetEnumerator<T_idType> (m_nativeSet);
+        return gcnew IdSetEnumerator<T_idType> (m_nativeSet, this);
         }
 
     ~IdSet ()
@@ -1408,7 +1497,7 @@ public:
         }
 
     !IdSet ()
-        { 
+        {
         if (nullptr != m_nativeSet)
             {
             delete m_nativeSet;
@@ -1419,20 +1508,28 @@ public:
 };
 
 
+
+
 /*=================================================================================**//**
 * Specialization of IdSet for DgnCategoryIds.
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
-public ref class DgnCategoryIdSet : IdSet <DgnCategoryId^>
+public ref struct DgnCategoryIdSet : IdSet <DgnCategoryId^>
     {
 internal:
     DgnCategoryIdSet (DgnDb^ dgnDb)
         {
         BDGN::DgnDbP            dgnDbNative = Convert::DgnDbToNative (dgnDb);
-        BDGN::DgnCategoryIdSet  categorySet = BDGN::DgnCategory::QueryCategories (*dgnDbNative);
-        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (&categorySet);
+        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (new BDGN::DgnCategoryIdSet(BDGN::DgnCategory::QueryCategories (*dgnDbNative)));
         }
     };
+
+
+// This method on DgnDb can't be inlined.
+DgnCategoryIdSet^ DgnDb::Categories::get ()
+    {
+    return gcnew DgnCategoryIdSet (this);
+    }
 
 /*=================================================================================**//**
 * AuthorityIssuedCode - managed version of BentleyApi::Dgn::DgnCode
@@ -1464,25 +1561,34 @@ internal:
 
 public:
     //! Get the value for this DgnCode
-    System::String^ GetValue()
+    property System::String^ Value
         {
-        Utf8CP value = m_native->GetValueCP();
-        WString wValue (value, true);
-        return gcnew System::String (wValue.c_str());
+        System::String^ get ()
+            {
+            Utf8CP value = m_native->GetValueCP();
+            WString wValue (value, true);
+            return gcnew System::String (wValue.c_str());
+            }
         }
 
     //! Get the namespace for this DgnCode
-    System::String^ GetNamespace()
+    property System::String^ Namespace
         {
-        Utf8StringCR nameSpace = m_native->GetNamespace();
-        WString wNameSpace (nameSpace.c_str(), true);
-        return gcnew System::String (wNameSpace.c_str());
+        System::String^ get ()
+            {
+            Utf8StringCR nameSpace = m_native->GetNamespace();
+            WString wNameSpace (nameSpace.c_str(), true);
+            return gcnew System::String (wNameSpace.c_str());
+            }
         }
 
     //! Get the DgnAuthorityId of the DgnAuthority that issued this DgnCode.
-    DgnAuthorityId^ GetAuthority()
+    property DgnAuthorityId^ Authority
         {
-        return gcnew DgnAuthorityId (m_native->GetAuthority().GetValue());
+        DgnAuthorityId^ get ()
+            {
+            return gcnew DgnAuthorityId (m_native->GetAuthority().GetValue());
+            }
         }
 
     ~AuthorityIssuedCode ()
@@ -1502,11 +1608,143 @@ public:
         }
 };
 
+
+
+struct DgnModelEnumeratorImpl
+    {
+    // we need this class only because a managed class can have only a pointer to a struct as a member, not a struct
+    BDGN::DgnModels::Iterator                   m_iterator;
+    BDGN::DgnModels::Iterator::const_iterator   m_current;
+
+    DgnModelEnumeratorImpl (BDGN::DgnModels* models) : m_iterator (models->MakeIterator()), m_current (m_iterator.begin())
+        {
+        }
+    };
+
+
+/*=================================================================================**//**
+* DgnModelEnumerator - an enumerator over an DgnModelCollection - never instantiated directly.
+* @bsiclass                                                     Barry.Bentley   10/16
++===============+===============+===============+===============+===============+======*/
+public ref struct DgnModelEnumerator : System::Collections::Generic::IEnumerator <DgnModel^>
+{
+private:
+    DgnModelEnumeratorImpl*         m_impl;
+    BDGN::DgnModels*                m_models;
+    DgnDb^                          m_dgnDb;
+
+    DgnModel^                       m_currentMember;
+
+    DgnModel^     GetMember()
+        {
+        if (NULL == m_impl)
+            return nullptr;
+
+        BDGN::DgnModels::Iterator::const_iterator   theCurrent = m_impl->m_current;
+        BDGN::DgnModels::Iterator::const_iterator   theEnd     = m_impl->m_iterator.end();
+        if (!(theCurrent != theEnd))
+            return nullptr;
+
+        // get the iterator entry.
+        BDGN::DgnModels::Iterator::Entry  entry = (*m_impl->m_current);
+
+        // create the model
+        BDGN::DgnModelPtr nativeModel = m_models->GetModel (entry.GetModelId());
+        return Convert::DgnModelToManaged (nativeModel.get(), m_dgnDb, true);
+        }
+
+    void            SetCurrentMember ()
+        {
+        m_currentMember = GetMember();
+        }
+
+    bool            MoveNextInternal ()
+        {
+        if (nullptr == m_impl)
+            {
+            // make default iterator.
+            m_impl = new DgnModelEnumeratorImpl (m_models);
+            return m_impl->m_current != m_impl->m_iterator.end();
+            }
+
+        BDGN::DgnModels::Iterator::const_iterator   endIterator = m_impl->m_iterator.end();
+        if (!(m_impl->m_current != endIterator))
+            return false;
+
+        ++m_impl->m_current;
+        return m_impl->m_current != endIterator;
+        }
+
+    void            FreeImpl()
+        {
+        if (nullptr == m_impl)
+            return;
+
+        delete m_impl;
+        m_impl = NULL;
+        }
+
+
+internal:
+    DgnModelEnumerator (BDGN::DgnModels* models, DgnDb^ dgnDb)
+        {
+        m_models        = models;
+        m_dgnDb         = dgnDb;
+        m_impl          = nullptr;
+        m_currentMember = nullptr;
+        }
+
+public:
+
+    /// <summary> Advances the enumerator to the next DgnModel in the collection. </summary>
+    virtual bool MoveNext ()
+        {
+        bool retval = MoveNextInternal ();
+        SetCurrentMember ();
+        return retval;
+        }
+
+    /// <summary> Sets the enumerator to its initial position, which is before the first DgnModel in the collection. </summary>
+    virtual void Reset ()
+        {
+        m_currentMember = nullptr;
+        FreeImpl();
+        }
+
+    property System::Object^ RawCurrent
+        {
+        virtual Object^ get() = System::Collections::IEnumerator::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    /// <summary> Gets the current DgnModel in the collection. </summary>
+    property DgnModel^ Current
+        {
+        virtual DgnModel^ get () = System::Collections::Generic::IEnumerator <DgnModel^>::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    ~DgnModelEnumerator ()
+        {
+        FreeImpl ();
+        }
+
+    !DgnModelEnumerator ()
+        {
+        FreeImpl ();
+        }
+
+};
+
 /*=================================================================================**//**
 *  DgnModelCollection - managed version of Dgn::DgnModels
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
-public ref struct DgnModelCollection
+public ref struct DgnModelCollection : System::Collections::Generic::IEnumerable <DgnModel^>
 {
     // NEEDSWORK_DgnPlatformNET_DgnModelCollection - make it implement IEnumerable <DgnModel^>
 private:
@@ -1514,13 +1752,13 @@ private:
     BDGN::DgnModels*    m_native;
 
     // keep a reference to the DgnDb so it doesn't get collected out from under us.
-    DgnDb^              m_owner;
+    DgnDb^              m_dgnDb;
 
 internal:
-    DgnModelCollection (BDGN::DgnModels* models, DgnDb^ owner)
+    DgnModelCollection (BDGN::DgnModels* models, DgnDb^ dgnDb)
         {
         m_native = models;
-        m_owner  = owner;
+        m_dgnDb  = dgnDb;
         }
 
 public:
@@ -1534,9 +1772,21 @@ public:
     /** Find or load the model identified by the specified ID. @param id The model ID. @return The loaded model or null if not found */
     DgnModel^ GetModel (DgnModelId^ modelId)
         {
-        BDGN::DgnModelPtr nativeModel = m_native->GetModel (BDGN::DgnModelId (modelId->GetValue()));
-        return Convert::DgnModelToManaged (nativeModel.get(), m_owner);
+        BDGN::DgnModelPtr nativeModel = m_native->GetModel (BDGN::DgnModelId (modelId->Value));
+        return Convert::DgnModelToManaged (nativeModel.get(), m_dgnDb, true);
         }
+
+    virtual System::Collections::IEnumerator^ RawGetEnumerator () = System::Collections::IEnumerable::GetEnumerator
+        {
+        return GetEnumerator ();
+        }
+
+    virtual System::Collections::Generic::IEnumerator <DgnModel^>^ GetEnumerator ()
+        {
+        return gcnew DgnModelEnumerator (m_native, m_dgnDb);
+        }
+
+
 };
 
 
@@ -1578,7 +1828,7 @@ public:
      */
     DgnElement^     FindElement (DgnElementId^ elementId)
         {
-        BDGN::DgnElementCP nativeElement = m_native->FindElement (BDGN::DgnElementId (elementId->GetValue()));
+        BDGN::DgnElementCP nativeElement = m_native->FindElement (BDGN::DgnElementId (elementId->Value));
         return Convert::DgnElementToManaged (const_cast <BDGN::DgnElementP>(nativeElement));
         }
 
@@ -1608,7 +1858,7 @@ public:
      */
     DgnElement^ GetElement (DgnElementId^ elementId)
         {
-        BDGN::DgnElementCPtr nativeElement = m_native->GetElement (BDGN::DgnElementId (elementId->GetValue()));
+        BDGN::DgnElementCPtr nativeElement = m_native->GetElement (BDGN::DgnElementId (elementId->Value));
         return Convert::DgnElementToManaged (const_cast <BDGN::DgnElementP>(nativeElement.get()));
         }
 };
@@ -1660,7 +1910,7 @@ public:
 
 
     /** The name of this Category */
-    property System::String^    CategoryName
+    property System::String^    Name
         {
         System::String^ get ()
             {
@@ -1682,7 +1932,7 @@ public:
     /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
     static DgnCategory^ QueryCategory (DgnCategoryId^ categoryId,  DgnNET::DgnDb^ dgnDb)
         {
-        BDGN::DgnCategoryCPtr nativeCategory = BDGN::DgnCategory::QueryCategory (BDGN::DgnCategoryId (categoryId->GetValue()), *Convert::DgnDbToNative (dgnDb));
+        BDGN::DgnCategoryCPtr nativeCategory = BDGN::DgnCategory::QueryCategory (BDGN::DgnCategoryId (categoryId->Value), *Convert::DgnDbToNative (dgnDb));
         return gcnew DgnCategory (const_cast <BDGN::DgnCategoryP>(nativeCategory.get()), dgnDb);
         }
 
@@ -1701,7 +1951,10 @@ struct  DgnElementDeleter : public RefCountedBase
     {
     BDGN::DgnElementP   m_element;
 
-    DgnElementDeleter (BDGN::DgnElementP element) : m_element (element) {}
+    DgnElementDeleter (BDGN::DgnElementP element) : m_element (element) 
+        {
+        AddRef();
+        }
 
     ~DgnElementDeleter () { m_element->Release(); }
     };
@@ -1757,7 +2010,18 @@ public:
             // NEEDSWORK_DgnPlatformNET_Model may need to worry more about returning the same managed Model object for a given nativeModel.
             BDGN::DgnModelPtr nativeModel = m_native->GetModel ();
             DgnDb^ dgnDb                  = Convert::DgnDbToManaged (&nativeModel->GetDgnDb());
-            return Convert::DgnModelToManaged (nativeModel.get(), dgnDb);
+            return Convert::DgnModelToManaged (nativeModel.get(), dgnDb, false);
+            }
+        }
+
+    /** The ModelId of the Model that contains the Element */
+    property DgnModelId^  ModelId
+        {
+        DgnModelId^ get ()
+            {
+            // NEEDSWORK_DgnPlatformNET_Model may need to worry more about returning the same managed Model object for a given nativeModel.
+            BDGN::DgnModelId nativeModelId = m_native->GetModelId ();
+            return gcnew DgnModelId (nativeModelId.GetValue());
             }
         }
 
@@ -2202,7 +2466,7 @@ public:
             throw gcnew DgnPlatformNETException (exceptionString);
             }
 
-        BDGN::DgnCategoryId         nativeCategoryId (categoryId->GetValue());
+        BDGN::DgnCategoryId         nativeCategoryId (categoryId->Value);
         BDGN::GeometrySourceP       geometrySource = geometricElementNative->ToGeometrySourceP();
         geometrySource->SetCategoryId (nativeCategoryId);
 
@@ -2219,15 +2483,33 @@ public ref struct DgnModel
 private:
     BDGN::DgnModelP     m_native;
     DgnDb^              m_dgnDb;
+    ReleaseMarshaller*  m_marshaller;
 
 internal:
-    DgnModel (BDGN::DgnModelP native, DgnDb^ dgnDb)
+    DgnModel (BDGN::DgnModelP native, DgnDb^ dgnDb, bool needRelease)
         {
         m_native = native;
         m_dgnDb  = dgnDb;
+
+        // some models we create (for example from enumerating the collection, some we just come across and don't add reference to.
+        if (needRelease)
+            {
+            m_marshaller = ReleaseMarshaller::GetMarshaller();
+            m_native->AddRef();
+            }
         }
-    
+
     BDGN::DgnModelP     GetNative() { return m_native; }
+
+
+    // called from DesktopPlatform
+    static DgnModel^    GetModel (System::IntPtr modelPointer)
+        {
+        BDGN::DgnModelP     nativeDgnModel  = (BDGN::DgnModelP) modelPointer.ToPointer();
+        DgnNET::DgnDb^      dgnDbManaged    = Convert::DgnDbToManaged (&nativeDgnModel->GetDgnDb());
+
+        return gcnew DgnModel (nativeDgnModel, dgnDbManaged, true);
+        }
 
 public:
     property DgnModelId^ ModelId
@@ -2241,7 +2523,7 @@ public:
     /** The Code of this model */
     property AuthorityIssuedCode^ Code
         {
-        AuthorityIssuedCode^    get ()
+        AuthorityIssuedCode^ get ()
             {
             return gcnew AuthorityIssuedCode (&m_native->GetCode(), this);
             }
@@ -2255,6 +2537,18 @@ public:
             return m_dgnDb;
             }
         }
+
+
+    /** The name of this model */
+    property System::String^     Name
+        {
+        System::String^ get ()
+            {
+            Utf8String nativeName = m_native->GetName();
+            return gcnew System::String (nativeName.c_str());
+            }
+        }
+
 
     /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
     static AuthorityIssuedCode^ CreateModelCode (System::String^ modelName)
@@ -2275,6 +2569,27 @@ public:
         {
         BDGN::IBriefcaseManager::Request* nativeRequest = Convert::RepositoryRequestToNative (request);
         return (DgnNET::RepositoryStatus)m_native->PopulateRequest (*nativeRequest, (BeSQLite::DbOpcode) opcode);
+        }
+
+    ~DgnModel ()
+        {
+        // see if it needs to be released.
+        if ( (nullptr == m_marshaller) || (nullptr == m_native) )
+            return;
+
+        m_native->Release();
+        m_native     = nullptr;
+        m_marshaller = nullptr;
+        }
+
+    !DgnModel ()
+        {
+        if (nullptr != m_marshaller)
+            {
+            m_marshaller->QueueEntry (m_native);
+            m_marshaller = nullptr;
+            m_native     = nullptr;
+            }
         }
 };
 
@@ -2410,7 +2725,7 @@ public:
             }
         void set (DgnCategoryId^ value)
             {
-            m_native->SetCategoryId (BDGN::DgnCategoryId (value->GetValue()));
+            m_native->SetCategoryId (BDGN::DgnCategoryId (value->Value));
             }
         }
 
@@ -2423,7 +2738,7 @@ public:
             }
         void set (DgnSubCategoryId^ value)
             {
-            m_native->SetSubCategoryId (BDGN::DgnSubCategoryId (value->GetValue()));
+            m_native->SetSubCategoryId (BDGN::DgnSubCategoryId (value->Value));
             }
         }
 
@@ -2550,7 +2865,7 @@ public:
             }
         void set (DgnMaterialId^ value)
             {
-            m_native->SetMaterialId (BDGN::DgnMaterialId (value->GetValue()));
+            m_native->SetMaterialId (BDGN::DgnMaterialId (value->Value));
             }
         }
 
@@ -2932,7 +3247,7 @@ internal:
 
     GeometryBuilder (DgnModel^ model, DgnCategoryId^ categoryId, GeometryNET::DTransform3d transform)
         {
-        BDGN::DgnCategoryId nativeCategoryId (categoryId->GetValue());
+        BDGN::DgnCategoryId nativeCategoryId (categoryId->Value);
         TransformCP nativeTransform = Convert::TransformToNative (transform);
 
         BDGN::GeometryBuilderPtr nativeGB = BDGN::GeometryBuilder::Create (*Convert::DgnModelToNative (model), nativeCategoryId, *nativeTransform);
@@ -2943,7 +3258,7 @@ internal:
 
     GeometryBuilder (DgnModel^ model, DgnCategoryId^ categoryId, GeometryNET::DPoint3d origin, GeometryNET::YawPitchRollAngles angles)
         {
-        BDGN::DgnCategoryId                         nativeCategoryId (categoryId->GetValue());
+        BDGN::DgnCategoryId                         nativeCategoryId (categoryId->Value);
         pin_ptr<GeometryNET::DPoint3d>              originPinned = &origin;
         pin_ptr<GeometryNET::YawPitchRollAngles>    anglesPinned = &angles;
 
@@ -2955,7 +3270,7 @@ internal:
 
     GeometryBuilder (DgnModel^ model, DgnCategoryId^ categoryId, GeometryNET::DPoint2d origin, double angle)
         {
-        BDGN::DgnCategoryId                         nativeCategoryId (categoryId->GetValue());
+        BDGN::DgnCategoryId                         nativeCategoryId (categoryId->Value);
         pin_ptr<GeometryNET::DPoint2d>              originPinned = &origin;
         AngleInDegrees                              degrees = AngleInDegrees::FromDegrees (angle);
 
@@ -3108,7 +3423,7 @@ public:
      */
     void    AppendSubCategoryId (DgnSubCategoryId^ subcategoryId)
         {
-        m_native->Append (BDGN::DgnSubCategoryId (subcategoryId->GetValue()));
+        m_native->Append (BDGN::DgnSubCategoryId (subcategoryId->Value));
         }
 
 #if defined (NEEDSWORK_DgnPlatformNET_Geometry)
@@ -3198,7 +3513,7 @@ public:
 };
 
 
-    /* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
+/* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
 
 enum class HitDetailType
 {
@@ -3324,13 +3639,13 @@ private:
 public:
 
     //!< Constructs a LockableId for an element
-    LockableId (DgnElementId^ id) : m_id (id->GetValue()), m_type (LockableType::Element) { }
+    LockableId (DgnElementId^ id) : m_id (id->Value), m_type (LockableType::Element) { }
 
     //!< Constructs a LockableId for a model
-    LockableId(DgnModelId^ id) : m_id (id->GetValue()), m_type (LockableType::Model) { } 
+    LockableId(DgnModelId^ id) : m_id (id->Value), m_type (LockableType::Model) { }
 
     //!< Constructs a LockableId of the specified type and ID
-    LockableId (LockableType type, uint64_t id) : m_id (id), m_type (type) { } 
+    LockableId (LockableType type, uint64_t id) : m_id (id), m_type (type) { }
 
     property BeInt64Id^ Id
         {
@@ -3393,7 +3708,7 @@ public:
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
 public value struct DgnLock
-{    
+{
 private:
     LockableId  m_id;
     LockLevel   m_level;
@@ -3410,7 +3725,7 @@ public:
         m_id    = id;
         m_level = level;
         }
-    
+
     /** The Id of the lockable object */
     property LockableId Id
         {
@@ -3657,7 +3972,7 @@ public:
         {
         ECClassCollection^ get ()
             {
-            ECN::ECBaseClassesList const& nativeBaseClasses = m_native->GetDerivedClasses();
+            ECN::ECBaseClassesList const& nativeBaseClasses = m_native->GetBaseClasses();
             return Convert::ECClassCollectionToManaged (&nativeBaseClasses, m_owner);
             }
         }
@@ -3722,11 +4037,133 @@ public:
 };
 
 
+
+struct ECClassContainerEnumeratorImpl
+    {
+    // we need this class only because a managed class can have only a pointer to a struct as a member, not a struct
+    ECN::ECClassContainerCR                 m_collection;
+    ECN::ECClassContainer::const_iterator   m_current;
+
+    ECClassContainerEnumeratorImpl (ECN::ECClassContainerCR collection) : m_collection (collection), m_current (m_collection.begin()) {}
+    };
+
+/*=================================================================================**//**
+* ECClassContainerEnumerator - an enumerator over an ECClassCollection - never instantiated directly.
+* @bsiclass                                                     Barry.Bentley   10/16
++===============+===============+===============+===============+===============+======*/
+public ref struct ECClassContainerEnumerator : System::Collections::Generic::IEnumerator <ECClass^>
+{
+private:
+    ECN::ECClassContainer const&        m_collection;
+    System::Object^                     m_owner;
+
+    ECClassContainerEnumeratorImpl*     m_impl;
+    ECClass^                            m_currentMember;
+
+    ECClass^     GetMember()
+        {
+        if (NULL == m_impl)
+            return nullptr;
+
+        ECN::ECClassContainer::const_iterator theCurrent = m_impl->m_current;
+        ECN::ECClassContainer::const_iterator theEnd     = m_impl->m_collection.end();
+        if (!(theCurrent != theEnd))
+            return nullptr;
+
+        ECN::ECClassCP native = (*m_impl->m_current);
+        return gcnew ECClass (native, m_owner);
+        }
+
+    void            SetCurrentMember ()
+        {
+        m_currentMember = GetMember();
+        }
+
+    bool            MoveNextInternal ()
+        {
+        if (nullptr == m_impl)
+            {
+            m_impl = new ECClassContainerEnumeratorImpl (m_collection);
+            return m_impl->m_current != m_impl->m_collection.end();
+            }
+
+        ECN::ECClassContainer::const_iterator endIterator = m_impl->m_collection.end();
+        if (!(m_impl->m_current != endIterator))
+            return false;
+
+        ++m_impl->m_current;
+        return m_impl->m_current != endIterator;
+        }
+
+    void            FreeImpl()
+        {
+        if (nullptr == m_impl)
+            return;
+
+        delete m_impl;
+        m_impl = NULL;
+        }
+
+
+internal:
+    ECClassContainerEnumerator (ECN::ECClassContainerCR const& collection, System::Object^ owner) : m_collection (collection)
+        {
+        m_owner         = owner;
+        m_impl          = nullptr;
+        m_currentMember = nullptr;
+        }
+
+public:
+
+    /// <summary> Advances the enumerator to the next ECClass in the collection. </summary>
+    virtual bool MoveNext ()
+        {
+        bool retval = MoveNextInternal ();
+        SetCurrentMember ();
+        return retval;
+        }
+
+    /// <summary> Sets the enumerator to its initial position, which is before the first ECClass in the collection. </summary>
+    virtual void Reset ()
+        {
+        m_currentMember = nullptr;
+        FreeImpl();
+        }
+
+    property System::Object^ RawCurrent
+        {
+        virtual Object^ get() = System::Collections::IEnumerator::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    /// <summary> Gets the current ECClass in the collection. </summary>
+    property ECClass^ Current
+        {
+        virtual ECClass^ get () = System::Collections::Generic::IEnumerator <ECClass^>::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    ~ECClassContainerEnumerator ()
+        {
+        FreeImpl ();
+        }
+
+    !ECClassContainerEnumerator ()
+        {
+        FreeImpl();
+        }
+
+};
+
 /*=================================================================================**//**
 * ECSchema - managed version of ECN::ECSchema
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
-public ref struct ECSchema 
+public ref struct ECSchema : System::Collections::Generic::IEnumerable <ECClass^>
 {
 private:
     ECN::ECSchemaCP     m_native;
@@ -3761,13 +4198,149 @@ public:
         return gcnew ECClass (ecClass, m_owner);
         }
 
+    virtual System::Collections::IEnumerator^ RawGetEnumerator () = System::Collections::IEnumerable::GetEnumerator
+        {
+        return GetEnumerator ();
+        }
+
+    virtual System::Collections::Generic::IEnumerator <ECClass^>^ GetEnumerator ()
+        {
+        return gcnew ECClassContainerEnumerator (m_native->GetClasses(), this);
+        }
+
+
 };
+
+
+struct ECSchemaEnumeratorImpl
+    {
+    // we need this class only because a managed class can have only a pointer to a struct as a member, not a struct
+    bvector<ECN::ECSchemaCP>                    m_collection;
+    bvector<ECN::ECSchemaCP>::const_iterator    m_current;
+
+    ECSchemaEnumeratorImpl (BeSQLite::EC::ECDbSchemaManager const* nativeSchemaManager) : m_collection (nativeSchemaManager->GetECSchemas()), m_current (m_collection.begin()) {}
+    };
+
+
+/*=================================================================================**//**
+* ECSchemaEnumerator - an enumerator over an ECSchemaCollection - never instantiated directly.
+* @bsiclass                                                     Barry.Bentley   10/16
++===============+===============+===============+===============+===============+======*/
+public ref struct ECSchemaEnumerator : System::Collections::Generic::IEnumerator <ECSchema^>
+{
+private:
+    BeSQLite::EC::ECDbSchemaManager const*  m_nativeSchemaManager;
+    System::Object^                         m_owner;
+
+    ECSchemaEnumeratorImpl*                 m_impl;
+    ECSchema^                               m_currentMember;
+
+    ECSchema^     GetMember()
+        {
+        if (NULL == m_impl)
+            return nullptr;
+
+        bvector<ECN::ECSchemaCP>::const_iterator theCurrent = m_impl->m_current;
+        bvector<ECN::ECSchemaCP>::const_iterator theEnd     = m_impl->m_collection.end();
+        if (!(theCurrent != theEnd))
+            return nullptr;
+
+        ECN::ECSchemaCP native = (*m_impl->m_current);
+        return gcnew ECSchema (native, m_owner);
+        }
+
+    void            SetCurrentMember ()
+        {
+        m_currentMember = GetMember();
+        }
+
+    bool            MoveNextInternal ()
+        {
+        if (nullptr == m_impl)
+            {
+            m_impl = new ECSchemaEnumeratorImpl (m_nativeSchemaManager);
+            return m_impl->m_current != m_impl->m_collection.end();
+            }
+
+        bvector<ECN::ECSchemaCP>::const_iterator endIterator = m_impl->m_collection.end();
+        if (!(m_impl->m_current != endIterator))
+            return false;
+
+        ++m_impl->m_current;
+        return m_impl->m_current != endIterator;
+        }
+
+    void            FreeImpl()
+        {
+        if (nullptr == m_impl)
+            return;
+
+        delete m_impl;
+        m_impl = NULL;
+        }
+
+
+internal:
+    ECSchemaEnumerator (BeSQLite::EC::ECDbSchemaManager const* nativeSchemaManager, System::Object^ owner)
+        {
+        m_nativeSchemaManager   = nativeSchemaManager;
+        m_owner                 = owner;
+        m_impl                  = nullptr;
+        m_currentMember         = nullptr;
+        }
+
+public:
+
+    /// <summary> Advances the enumerator to the next ECSchema in the collection. </summary>
+    virtual bool MoveNext ()
+        {
+        bool retval = MoveNextInternal ();
+        SetCurrentMember ();
+        return retval;
+        }
+
+    /// <summary> Sets the enumerator to its initial position, which is before the first ECSchema in the collection. </summary>
+    virtual void Reset ()
+        {
+        m_currentMember = nullptr;
+        FreeImpl();
+        }
+
+    property System::Object^ RawCurrent
+        {
+        virtual Object^ get() = System::Collections::IEnumerator::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    /// <summary> Gets the current ECSchema in the collection. </summary>
+    property ECSchema^ Current
+        {
+        virtual ECSchema^ get () = System::Collections::Generic::IEnumerator <ECSchema^>::Current::get
+            {
+            return m_currentMember;
+            }
+        };
+
+    ~ECSchemaEnumerator ()
+        {
+        FreeImpl ();
+        }
+
+    !ECSchemaEnumerator ()
+        {
+        FreeImpl();
+        }
+
+};
+
 
 /*=================================================================================**//**
 * SchemaManager - Provides access to ECSchemas and ECClasses with a DgnDb
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
-public ref struct SchemaManager
+public ref struct SchemaManager : System::Collections::Generic::IEnumerable <ECSchema^>
 {
 private:
     BeSQLite::EC::ECDbSchemaManager const*  m_native;
@@ -3782,7 +4355,7 @@ internal:
         }
 
 public:
-    ECClass^    GetEcClass (System::String^ schemaNameOrPrefix, System::String^ className)
+    ECClass^    GetECClass (System::String^ schemaNameOrPrefix, System::String^ className)
         {
         pin_ptr<wchar_t const>  schemaNamePinned = PtrToStringChars (schemaNameOrPrefix);
         pin_ptr<wchar_t const>  classNamePinned = PtrToStringChars (className);
@@ -3796,17 +4369,28 @@ public:
     /** Look up an ECClass by its ECClassId */
     ECClass^    GetECClassById (ECClassId^ classId)
         {
-        ECN::ECClassCP nativeClass = m_native->GetECClass (ECN::ECClassId (classId->GetValue()));
+        ECN::ECClassCP nativeClass = m_native->GetECClass (ECN::ECClassId (classId->Value));
         if (nullptr == nativeClass)
             return nullptr;
 
         return gcnew ECClass (nativeClass, m_owner);
         }
+
+    virtual System::Collections::IEnumerator^ RawGetEnumerator () = System::Collections::IEnumerable::GetEnumerator
+        {
+        return GetEnumerator ();
+        }
+
+    virtual System::Collections::Generic::IEnumerator <ECSchema^>^ GetEnumerator ()
+        {
+        return gcnew ECSchemaEnumerator (m_native, this);
+        }
+
 };
 
 
 /*=================================================================================**//**
-* ECInstance - managed version of ECN::ECInstance 
+* ECInstance - managed version of ECN::ECInstance
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
 public ref struct ECInstance
@@ -3934,35 +4518,35 @@ public:
 
     System::String^ GetName (int index)
         {
-        Utf8String name; 
+        Utf8String name;
         m_query->GetName (name, index);
         return gcnew System::String (name.c_str());
         }
 
     System::String^ GetDisplayLabel (int index)
         {
-        Utf8String displayLabel; 
+        Utf8String displayLabel;
         m_query->GetDisplayLabel (displayLabel, index);
         return gcnew System::String (displayLabel.c_str());
         }
 
     ECValue^ GetValue (int index)
         {
-        ECN::ECValue value; 
-        m_query->GetValue (value, index); 
+        ECN::ECValue value;
+        m_query->GetValue (value, index);
         return Convert::ECValueToManaged (new ECN::ECValue (value));
         }
 
     ECPropertyPrimitiveType GetPrimitiveType (int index)
         {
         ECN::PrimitiveType type = (ECN::PrimitiveType)0;
-        m_query->GetPrimitiveType (type, index); 
+        m_query->GetPrimitiveType (type, index);
         return (ECPropertyPrimitiveType) type;
         }
 
     System::String^ GetUnitName (int index)
         {
-        Utf8String unit; 
+        Utf8String unit;
         m_query->GetDisplayLabel (unit, index);
         return gcnew System::String (unit.c_str());
         }
@@ -4072,7 +4656,7 @@ public:
             return m_native->IsPrimitive();
             }
         }
-        
+
     property ECPropertyPrimitiveType ECPrimitiveType
         {
         ECPropertyPrimitiveType get ()
@@ -4142,7 +4726,7 @@ internal:
         }
 
     /** The value of this ad hoc property. */
-    property ECValue^ ValueEC 
+    property ECValue^ ValueEC
         {
         ECValue^ get ()
             {
@@ -4341,7 +4925,7 @@ internal:
 
 public:
 
-    /// <summary> Advances the enumerator to the next NamedGroup of the collection. </summary>
+    /// <summary> Advances the enumerator to the next ECClass in the collection. </summary>
     virtual bool MoveNext ()
         {
         bool retval = MoveNextInternal ();
@@ -4364,7 +4948,7 @@ public:
             }
         };
 
-    /// <summary> Gets the current NamedGroup in the collection. </summary>
+    /// <summary> Gets the current ECClass in the collection. </summary>
     property ECClass^ Current
         {
         virtual ECClass^ get () = System::Collections::Generic::IEnumerator <ECClass^>::Current::get
@@ -4395,7 +4979,7 @@ public ref struct ECClassCollection : System::Collections::Generic::IEnumerable 
 private:
     bvector<ECN::ECClassP> const*   m_native;
     System::Object^                 m_owner;
-    
+
 internal:
     ECClassCollection (bvector<ECN::ECClassP> const* native, System::Object^ owner)
         {
@@ -4524,7 +5108,7 @@ struct ECPropertyEnumeratorImpl
 
 
 /*=================================================================================**//**
-* ECPropertyEnumerator - an enumerator over an ECClassCollection - never instantiated directly.
+* ECPropertyEnumerator - an enumerator over an ECPropertyCollection - never instantiated directly.
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
 public ref struct ECPropertyEnumerator : System::Collections::Generic::IEnumerator <ECProperty^>
@@ -4591,7 +5175,7 @@ internal:
 
 public:
 
-    /// <summary> Advances the enumerator to the next NamedGroup of the collection. </summary>
+    /// <summary> Advances the enumerator to the next ECProperty in the collection. </summary>
     virtual bool MoveNext ()
         {
         bool retval = MoveNextInternal ();
@@ -4614,7 +5198,7 @@ public:
             }
         };
 
-    /// <summary> Gets the current NamedGroup in the collection. </summary>
+    /// <summary> Gets the current ECProperty in the collection. </summary>
     property ECProperty ^ Current
         {
         virtual ECProperty^ get () = System::Collections::Generic::IEnumerator <ECProperty^>::Current::get
@@ -4637,7 +5221,7 @@ public:
 
 
 /*=================================================================================**//**
-* ECClassCollection - a collection of ECClass objects.
+* ECPropertyCollection - a collection of ECProperty objects.
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
 public ref struct ECPropertyCollection : System::Collections::Generic::IEnumerable <ECProperty^>
@@ -4645,7 +5229,7 @@ public ref struct ECPropertyCollection : System::Collections::Generic::IEnumerab
 private:
     ECClass^            m_ecClass;
     System::Object^     m_owner;
-    
+
 internal:
     ECPropertyCollection (ECClass^ ecClass, System::Object^ owner)
         {
@@ -4704,7 +5288,7 @@ public:
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
 public ref struct ViewController
-{    
+{
 private:
     BDGN::ViewControllerP   m_native;
     Viewport^               m_owner;
@@ -4722,7 +5306,7 @@ public:
         DgnModel^ get ()
             {
             // NEEDSWORK - where do we get the DgnDb we should be using for the owner?
-            return gcnew DgnModel (m_native->GetTargetModel(), nullptr);
+            return gcnew DgnModel (m_native->GetTargetModel(), nullptr, false);
             }
 
         }
@@ -4733,7 +5317,6 @@ public:
 BDGN::DgnDbP            Convert::DgnDbToNative (DgnNET::DgnDb^ managed)
     {
     return managed->GetNative();
-    return nullptr;
     }
 
 ECSqlArrayValue^        Convert::ECSqlArrayValueToManaged (BeSQLite::EC::IECSqlArrayValue* native)
@@ -4766,9 +5349,9 @@ DgnElementCollection^   Convert::ElementCollectionToManaged (BDGN::DgnElements* 
     return gcnew DgnElementCollection (elements, dgnDb);
     }
 
-DgnModel^               Convert::DgnModelToManaged (BDGN::DgnModelP model, DgnDb^ dgnDb)
+DgnModel^               Convert::DgnModelToManaged (BDGN::DgnModelP model, DgnDb^ dgnDb, bool needRelease)
     {
-    return gcnew DgnModel (model, dgnDb);
+    return gcnew DgnModel (model, dgnDb, needRelease);
     }
 
 BDGN::DgnModelP         Convert::DgnModelToNative (DgnModel^ model)
@@ -4848,7 +5431,11 @@ ECClassCollection^       Convert::ECClassCollectionToManaged (bvector<ECN::ECCla
 
 ECProperty^              Convert::ECPropertyToManaged (ECN::ECPropertyCP native, System::Object^ owner)
     {
-    return gcnew ECProperty (native, owner);
+    ECN::PrimitiveECPropertyCP nativePrimitiveProperty = native->GetAsPrimitiveProperty();
+    if (nullptr != nativePrimitiveProperty)
+        return gcnew PrimitiveECProperty (nativePrimitiveProperty, owner);
+    else
+        return gcnew ECProperty (native, owner);
     }
 
 ECInstance^              Convert::ECInstanceToManaged (ECN::IECInstanceP native)
@@ -4866,6 +5453,10 @@ ViewController^         Convert::ViewControllerToManaged (BDGN::ViewControllerP 
     return gcnew ViewController (native, owner);
     }
 
+DgnCategory^             Convert::DgnCategoryToManaged (BDGN::DgnCategoryP category, DgnDb^ dgnDb)
+    {
+    return gcnew DgnCategory (category, dgnDb);
+    }
 
 }
 }
