@@ -756,7 +756,7 @@ void JsPreparedECSqlStatement::BindDRange3d(int parameterIndex, JsDRange3dP valu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void JsPreparedECSqlStatement::BindDPoint3d(int parameterIndex, JsDPoint3dP value) 
+void JsPreparedECSqlStatement::BindPoint3d(int parameterIndex, JsDPoint3dP value) 
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(nullptr != value);
     CHECK_BIND_RESULT(m_stmt->BindPoint3d(parameterIndex, value->GetCR()));
