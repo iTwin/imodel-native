@@ -521,4 +521,7 @@ struct PropertyMapFactory final
     };
 
 
+        //DbTable const* RequiresJoinTo(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+        //Utf8CP GetECClassIdPrimaryTableAlias(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
