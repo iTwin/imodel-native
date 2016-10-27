@@ -6,9 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <RealityPlatform/SpatioTemporalData.h>
+#include "StdAfx.h"
 
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <RealityPlatform/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

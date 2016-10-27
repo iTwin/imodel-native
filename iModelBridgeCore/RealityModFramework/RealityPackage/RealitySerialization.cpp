@@ -283,6 +283,11 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
         return NULL;
         }
 
+    // Streamed.
+    bool isStreamed;
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pDataSource->SetStreamed(isStreamed);
+
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
@@ -302,6 +307,26 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     Utf8String provider;
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
+
+    // Server login key.
+    Utf8String serverLoginKey;
+    pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
+    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+
+    // Server login method.
+    Utf8String serverLoginMethod;
+    pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
+    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+
+    // Server registration page.
+    Utf8String serverRegPage;
+    pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
+    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+
+    // Server organisation page.
+    Utf8String serverOrgPage;
+    pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
+    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
 
     // Size.
     uint64_t size;
@@ -377,6 +402,11 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
         return NULL;
         }
 
+    // Streamed.
+    bool isStreamed;
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pDataSource->SetStreamed(isStreamed);
+
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
@@ -396,6 +426,26 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     Utf8String provider;
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
+
+    // Server login key.
+    Utf8String serverLoginKey;
+    pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
+    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+
+    // Server login method.
+    Utf8String serverLoginMethod;
+    pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
+    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+
+    // Server registration page.
+    Utf8String serverRegPage;
+    pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
+    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+
+    // Server organisation page.
+    Utf8String serverOrgPage;
+    pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
+    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
 
     // Size.
     uint64_t size;

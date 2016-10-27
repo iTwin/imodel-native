@@ -59,6 +59,9 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     // Create source with required parameters.
     RealityDataSourceNet^ managedSource = RealityDataSourceNet::Create(managedUri, managedType);
 
+    // Streamed.
+    managedSource->SetStreamed(nativeSource.IsStreamed());
+
     // Id.
     String^ managedId = ctx.marshal_as<String^>(nativeSource.GetId().c_str());
     managedSource->SetId(managedId);
@@ -74,6 +77,22 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     // Provider.
     String^ managedProvider = ctx.marshal_as<String^>(nativeSource.GetProvider().c_str());
     managedSource->SetProvider(managedProvider);
+
+    // Server login key.
+    String^ managedServerLoginKey = ctx.marshal_as<String^>(nativeSource.GetServerLoginKey().c_str());
+    managedSource->SetServerLoginKey(managedServerLoginKey);
+
+    // Server login method.
+    String^ managedServerLoginMethod = ctx.marshal_as<String^>(nativeSource.GetServerLoginMethod().c_str());
+    managedSource->SetServerLoginMethod(managedServerLoginMethod);
+
+    // Server registration page.
+    String^ managedServerRegPage = ctx.marshal_as<String^>(nativeSource.GetServerRegistrationPage().c_str());
+    managedSource->SetServerRegistrationPage(managedServerRegPage);
+
+    // Server organisation page.
+    String^ managedServerOrgPage = ctx.marshal_as<String^>(nativeSource.GetServerOrganisationPage().c_str());
+    managedSource->SetServerOrganisationPage(managedServerOrgPage);
 
     // Size.
     uint64_t size = (uint64_t)nativeSource.GetSize();
@@ -120,6 +139,9 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     // Create source with required parameters.
     RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
 
+    // Streamed.
+    nativeSource->SetStreamed(managedSource->IsStreamed());
+
     // Id.
     Utf8String nativeId;
     BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
@@ -139,6 +161,26 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     Utf8String nativeProvider;
     BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
     nativeSource->SetProvider(nativeProvider.c_str());
+
+    // Server login key.
+    Utf8String nativeServerLoginKey;
+    BeStringUtilities::WCharToUtf8(nativeServerLoginKey, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerLoginKey()).ToPointer()));
+    nativeSource->SetServerLoginKey(nativeServerLoginKey.c_str());
+
+    // Server login method.
+    Utf8String nativeServerLoginMethod;
+    BeStringUtilities::WCharToUtf8(nativeServerLoginMethod, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerLoginMethod()).ToPointer()));
+    nativeSource->SetServerLoginMethod(nativeServerLoginMethod.c_str());
+
+    // Server registration page.
+    Utf8String nativeServerRegPage;
+    BeStringUtilities::WCharToUtf8(nativeServerRegPage, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerRegistrationPage()).ToPointer()));
+    nativeSource->SetServerRegistrationPage(nativeServerRegPage.c_str());
+
+    // Server organisation page.
+    Utf8String nativeServerOrgPage;
+    BeStringUtilities::WCharToUtf8(nativeServerOrgPage, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerOrganisationPage()).ToPointer()));
+    nativeSource->SetServerOrganisationPage(nativeServerOrgPage.c_str());
 
     // Size.
     nativeSource->SetSize(managedSource->GetSize());
@@ -320,6 +362,22 @@ void RealityDataSourceNet::SetSourceType(String^ type)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
+bool RealityDataSourceNet::IsStreamed()
+    {
+    return (*m_pSource)->IsStreamed();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetStreamed(bool isStreamed)
+    {
+    (*m_pSource)->SetStreamed(isStreamed);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
 String^ RealityDataSourceNet::GetId()
     {
     marshal_context ctx;
@@ -395,6 +453,86 @@ void RealityDataSourceNet::SetProvider(String^ provider)
     BeStringUtilities::WCharToUtf8(providerUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(provider).ToPointer()));
 
     (*m_pSource)->SetProvider(providerUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataSourceNet::GetServerLoginKey()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerLoginKey().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetServerLoginKey(String^ key)
+    {
+    Utf8String keyUtf8;
+    BeStringUtilities::WCharToUtf8(keyUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(key).ToPointer()));
+
+    (*m_pSource)->SetServerLoginKey(keyUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataSourceNet::GetServerLoginMethod()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerLoginMethod().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetServerLoginMethod(String^ method)
+    {
+    Utf8String methodUtf8;
+    BeStringUtilities::WCharToUtf8(methodUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(method).ToPointer()));
+
+    (*m_pSource)->SetServerLoginMethod(methodUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataSourceNet::GetServerRegistrationPage()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerRegistrationPage().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetServerRegistrationPage(String^ link)
+    {
+    Utf8String linkUtf8;
+    BeStringUtilities::WCharToUtf8(linkUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(link).ToPointer()));
+
+    (*m_pSource)->SetServerRegistrationPage(linkUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataSourceNet::GetServerOrganisationPage()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerOrganisationPage().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetServerOrganisationPage(String^ link)
+    {
+    Utf8String linkUtf8;
+    BeStringUtilities::WCharToUtf8(linkUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(link).ToPointer()));
+
+    (*m_pSource)->SetServerOrganisationPage(linkUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
