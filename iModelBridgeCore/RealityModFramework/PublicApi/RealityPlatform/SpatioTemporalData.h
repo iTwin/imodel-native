@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "StdAfx.h"
+//__BENTLEY_INTERNAL_ONLY__
+
 #include "RealityPlatformAPI.h"
 
 #include <Bentley/DateTime.h>
@@ -60,7 +61,7 @@ public:
     REALITYDATAPLATFORM_EXPORT const double& GetResolution() const;
 
     //! Get footprint.
-    REALITYDATAPLATFORM_EXPORT HFCPtr<HGF2DShape> GetFootprint() const;
+    REALITYDATAPLATFORM_EXPORT ImagePP::HFCPtr<ImagePP::HGF2DShape> GetFootprint() const;
 
 private:
     SpatioTemporalData(Utf8CP identifier, const DateTime& date, const double& resolution, const bvector<GeoPoint2d>& footprint);
@@ -69,7 +70,7 @@ private:
     Utf8String m_identifier;
     DateTime m_date;
     double m_resolution; 
-    HFCPtr<HGF2DShape> m_footprint;
+    ImagePP::HFCPtr<ImagePP::HGF2DShape> m_footprint;
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
