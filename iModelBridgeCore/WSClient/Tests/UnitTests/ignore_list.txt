@@ -19,14 +19,22 @@ CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # The rest seemed to randomly hang as well.
 
 BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
-    # bim0200, NDEBUG, x64
+    # bim0200, NDEBUG, x64, random
     # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
 
 CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
-    # bim0200, NDEBUG, x86
+    # bim0200, NDEBUG, x86, random
     # Randomly crashes, no stack printed, test output:
     # [ RUN      ] CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'. Start tag expected, '<' not found
     # 
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - line 1, position 1
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'
+
+CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
+    # bim0200dev, DEBUG, x64, random
+    # [ RUN      ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
+    # 2016-10-27 07:54:41,529 ERROR [0x00002790] BeAssert - F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
+    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
+    # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
+    # [  FAILED  ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (798 ms)
