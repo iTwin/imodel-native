@@ -97,14 +97,32 @@ void RealityDataSource::SetUri(UriR uri) { m_pUri = &uri; }
 Utf8StringCR RealityDataSource::GetType() const { return m_type; }
 void RealityDataSource::SetType(Utf8CP type) { m_type = type; }
 
+bool RealityDataSource::IsStreamed() const { return m_streamed; }
+void RealityDataSource::SetStreamed(bool isStreamed) { m_streamed = isStreamed; }
+
 Utf8StringCR RealityDataSource::GetId() const { return m_id; }
 void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
 
 Utf8StringCR RealityDataSource::GetCopyright() const { return m_copyright; }
 void RealityDataSource::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
 
+Utf8StringCR RealityDataSource::GetTermOfUse() const { return m_termOfUse; }
+void RealityDataSource::SetTermOfUse(Utf8CP termOfUse) { m_termOfUse = termOfUse; }
+
 Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
 void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR RealityDataSource::GetServerLoginKey() const { return m_serverLoginKey; }
+void RealityDataSource::SetServerLoginKey(Utf8CP key) { m_serverLoginKey = key; }
+
+Utf8StringCR RealityDataSource::GetServerLoginMethod() const { return m_serverLoginMethod; }
+void RealityDataSource::SetServerLoginMethod(Utf8CP method) { m_serverLoginMethod = method; }
+
+Utf8StringCR RealityDataSource::GetServerRegistrationPage() const { return m_serverRegistrationPage; }
+void RealityDataSource::SetServerRegistrationPage(Utf8CP link) { m_serverRegistrationPage = link; }
+
+Utf8StringCR RealityDataSource::GetServerOrganisationPage() const { return m_serverOrganisationPage; }
+void RealityDataSource::SetServerOrganisationPage(Utf8CP link) { m_serverOrganisationPage = link; }
 
 uint64_t RealityDataSource::GetSize() const { return m_size; }
 void RealityDataSource::SetSize(uint64_t size) { m_size = size; }
@@ -121,8 +139,8 @@ void RealityDataSource::SetGeoCS(Utf8CP geocs) { m_geocs = geocs; }
 Utf8StringCR RealityDataSource::GetNoDataValue() const { return m_nodatavalue; }
 void RealityDataSource::SetNoDataValue(Utf8CP nodatavalue) { m_nodatavalue = nodatavalue; }
 
-const bvector<Utf8String>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
-void RealityDataSource::SetSisterFiles(const bvector<Utf8String>& sisterFiles) { m_sisterFiles = sisterFiles; }
+const bvector<UriPtr>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
+void RealityDataSource::SetSisterFiles(const bvector<UriPtr>& sisterFiles) { m_sisterFiles = sisterFiles; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
@@ -140,9 +158,10 @@ RealityDataSource::RealityDataSource(UriR uri, Utf8CP type)
     BeAssert(!uri.ToString().empty());
     m_pUri = &uri;
     m_type = type;
+    m_streamed = false;
 
     m_size = 0;     // Default.
-    m_sisterFiles = bvector<Utf8String>();      // Create empty.
+    m_sisterFiles = bvector<UriPtr>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------
@@ -155,7 +174,7 @@ RealityDataSource::RealityDataSource(Utf8CP uri, Utf8CP type)
     m_type = type;
 
     m_size = 0;     // Default.
-    m_sisterFiles = bvector<Utf8String>();      // Create empty.
+    m_sisterFiles = bvector<UriPtr>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------
@@ -179,12 +198,12 @@ Utf8CP RealityDataSource::_GetElementName() const
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourcePtr WmsDataSource::Create(UriR uri)
-{
+    {
     if (uri.ToString().empty())
         return NULL;
 
     return new WmsDataSource(uri);
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -222,55 +241,6 @@ WmsDataSource::~WmsDataSource() {}
 //----------------------------------------------------------------------------------------
 Utf8CP WmsDataSource::_GetElementName() const {return PACKAGE_ELEMENT_WmsSource;}
 
-
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-/*
-RealityPackageStatus WmsDataSource::_Read(BeXmlNodeR dataSourceNode)
-    {
-    // Always read base first.
-    RealityPackageStatus status = T_Super::_Read(dataSourceNode);
-    if(RealityPackageStatus::Success != status)
-        return status;
-
-    // Create MapSettings xml fragment from xml node.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    xmlStatus = dataSourceNode.GetXmlString(m_mapSettings);
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    return status;
-    }
-*/
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-/*
-RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
-    {
-    // Always write base first.
-    RealityPackageStatus status = T_Super::_Write(dataSourceNode);
-    if(RealityPackageStatus::Success != status)
-        return status;
-
-    if (m_mapSettings.empty())
-        return RealityPackageStatus::Success;
-
-    // Create Xml Dom from string.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_mapSettings.c_str());
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    // Add root node.
-    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
-
-    return status;
-    }
-*/
 
 //=======================================================================================
 //                              OsmDataSource
@@ -325,54 +295,6 @@ OsmDataSource::~OsmDataSource() {}
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
 Utf8CP OsmDataSource::_GetElementName() const { return PACKAGE_ELEMENT_OsmSource; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-/*
-RealityPackageStatus OsmDataSource::_Read(BeXmlNodeR dataSourceNode)
-    {
-    // Always read base first.
-    RealityPackageStatus status = T_Super::_Read(dataSourceNode);
-    if (RealityPackageStatus::Success != status)
-        return status;
-
-    // Create Osm data source xml fragment from xml node.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    xmlStatus = dataSourceNode.GetXmlString(m_osmResource);
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    return status;
-    }
-*/
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-/*
-RealityPackageStatus OsmDataSource::_Write(BeXmlNodeR dataSourceNode) const
-    {
-    // Always write base first.
-    RealityPackageStatus status = T_Super::_Write(dataSourceNode);
-    if (RealityPackageStatus::Success != status)
-        return status;
-
-    if (m_osmResource.empty())
-        return RealityPackageStatus::Success;
-
-    // Create Xml Dom from string.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_osmResource.c_str());
-    if (BEXML_Success != xmlStatus)
-        return RealityPackageStatus::XmlReadError;
-
-    // Add root node.
-    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
-
-    return status;
-    }
-*/
 
 
 //=======================================================================================

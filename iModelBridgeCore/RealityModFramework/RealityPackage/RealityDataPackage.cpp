@@ -198,6 +198,9 @@ BoundingPolygonPtr BoundingPolygon::FromString(Utf8StringCR polygonStr)
 Utf8StringCR RealityDataPackage::GetOrigin() const {return m_origin;}
 void         RealityDataPackage::SetOrigin(Utf8CP origin) {m_origin = origin; }
 
+Utf8StringCR RealityDataPackage::GetRequestingApplication() const {return m_requestingApplication;}
+void         RealityDataPackage::SetRequestingApplication(Utf8CP requestingApplication) {m_requestingApplication = requestingApplication; }
+
 Utf8StringCR RealityDataPackage::GetName() const {return m_name;}
 void         RealityDataPackage::SetName(Utf8CP name) { BeAssert(!Utf8String::IsNullOrEmpty(name)); m_name = name; }
 
@@ -395,6 +398,8 @@ Utf8StringCR RealityData::GetDataId() const {return m_id;}
 void RealityData::SetDataId(Utf8CP dataId) {m_id = dataId;}
 Utf8StringCR RealityData::GetDataName() const {return m_name;}
 void RealityData::SetDataName(Utf8CP dataName) {m_name = dataName;}
+Utf8StringCR RealityData::GetDataset() const {return m_dataset;}
+void RealityData::SetDataset(Utf8CP dataset) {m_dataset = dataset;}
 size_t RealityData::GetNumSources() const {return m_Sources.size();}
 
 //----------------------------------------------------------------------------------------

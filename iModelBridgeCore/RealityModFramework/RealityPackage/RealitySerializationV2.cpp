@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined(ANDROID)
-#pragma once
+    #pragma once
 #endif
 
 #include <RealityPackage/RealityPackage.h>
@@ -39,27 +39,32 @@ RealityPackageStatus RealityDataSerializerV2::_Read(RealityDataPackageR package,
     {
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    // Package basic info.
+    // Set namespace and version.
+    xmlDom.RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
+    package.SetMajorVersion(2);
+    package.SetMinorVersion(0);
+
+    // Read basic info.
     status = ReadPackageInfo(package, xmlDom);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Imagery group.
+    // Read imagery data.
     status = ReadImageryGroup(package, xmlDom);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Model group.
+    // Read model data.
     status = ReadModelGroup(package, xmlDom);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Pinned group.
+    // Read pinned data.
     status = ReadPinnedGroup(package, xmlDom);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Terrain group.
+    // Read terrain data.
     status = ReadTerrainGroup(package, xmlDom);
     if (RealityPackageStatus::Success != status)
         return status;
@@ -70,73 +75,7 @@ RealityPackageStatus RealityDataSerializerV2::_Read(RealityDataPackageR package,
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadPackageInfo(RealityDataPackageR package, BeXmlDomR xmlDom)
-    {
-    // Namespace.
-    xmlDom.RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
-
-    // Version.
-    package.SetMajorVersion(2);
-    package.SetMinorVersion(0);
-
-    // Get root node and context.
-    BeXmlNodeP pRootNode = xmlDom.GetRootElement();
-    if (NULL == pRootNode)
-        return RealityPackageStatus::XmlReadError;
-
-    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(pRootNode);
-
-    // Origin.
-    Utf8String origin;
-    xmlDom.SelectNodeContent(origin, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Origin, pContext, BeXmlDom::NODE_BIAS_First);
-    package.SetOrigin(origin.c_str());
-
-    // Name.
-    Utf8String name;
-    xmlDom.SelectNodeContent(name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pContext, BeXmlDom::NODE_BIAS_First);
-    package.SetName(name.c_str());
-
-    // Description.
-    Utf8String description;
-    xmlDom.SelectNodeContent(description, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, pContext, BeXmlDom::NODE_BIAS_First);
-    package.SetDescription(description.c_str());
-
-    // Creation date.
-    Utf8String creationDateUTC; DateTime creationDate;
-    xmlDom.SelectNodeContent(creationDateUTC, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_CreationDate, pContext, BeXmlDom::NODE_BIAS_First);
-    if (!creationDateUTC.empty() && BentleyStatus::SUCCESS != DateTime::FromString(creationDate, creationDateUTC.c_str()))
-    return RealityPackageStatus::InvalidDateFormat; // If present, format must be valid.
-    package.SetCreationDate(creationDate);
-
-    // Copyright.
-    Utf8String copyright;
-    xmlDom.SelectNodeContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, pContext, BeXmlDom::NODE_BIAS_First);
-    package.SetCopyright(copyright.c_str());
-
-    // Id.
-    Utf8String id;
-    xmlDom.SelectNodeContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id, pContext, BeXmlDom::NODE_BIAS_First);
-    package.SetId(id.c_str());
-
-    // Bounding polygon.
-    Utf8String polygonString; BoundingPolygonPtr pPolygon;
-    xmlDom.SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pContext, BeXmlDom::NODE_BIAS_First);
-    if (!polygonString.empty() && (pPolygon = BoundingPolygon::FromString(polygonString.c_str())).IsNull())
-    return RealityPackageStatus::PolygonParsingError; // If present, format must be valid.
-
-    package.SetBoundingPolygon(*pPolygon);
-    //BeAssert(package.GetBoundingPolygon().IsValid()); // An instance is required.
-
-    // Unknown elements.
-    ReadUnknownElements(package, pRootNode->GetFirstChild());
-
-    return RealityPackageStatus::Success;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    6/2016
-//-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
     RealityPackageStatus status = RealityPackageStatus::Success;
 
@@ -165,6 +104,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -224,6 +169,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
             pImgData = ImageryData::Create(*pSources[0], corners);
             pImgData->SetDataId(id.c_str());
             pImgData->SetDataName(name.c_str());
+            pImgData->SetDataset(dataset.c_str());
             for (size_t i = 1; i < pSources.size(); ++i)
                 {
                 pImgData->AddSource(*pSources[i]);
@@ -237,6 +183,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
                 pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
                 pImgData->SetDataId(id.c_str());
                 pImgData->SetDataName(name.c_str());
+                pImgData->SetDataset(dataset.c_str());
                 start = 1;
                 }
             for (size_t i = start; i < pMultiBandSources.size(); ++i)
@@ -258,7 +205,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
     RealityPackageStatus status = RealityPackageStatus::Success;
 
@@ -287,6 +234,13 @@ RealityPackageStatus RealityDataSerializerV2::ReadModelGroup(RealityDataPackageR
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
+
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -326,7 +280,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadModelGroup(RealityDataPackageR
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
     RealityPackageStatus status = RealityPackageStatus::Success;
 
@@ -355,6 +309,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadPinnedGroup(RealityDataPackage
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -416,7 +376,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadPinnedGroup(RealityDataPackage
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
+RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
     RealityPackageStatus status = RealityPackageStatus::Success;
 
@@ -445,6 +405,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadTerrainGroup(RealityDataPackag
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -482,264 +448,6 @@ RealityPackageStatus RealityDataSerializerV2::ReadTerrainGroup(RealityDataPackag
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    8/2016
-// &&JFC TODO: Not efficient, find a better way to do this.
-//-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode)
-    {
-    // At least one unknow element was found, return.
-    if (package.HasUnknownElements())
-        return RealityPackageStatus::Success;
-
-    // Check if it is an unknown element.       
-    if (0 == pNode->NameStricmp(PACKAGE_ELEMENT_Name) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Description) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_CreationDate) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Copyright) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageId) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_BoundingPolygon) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageOrigin) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryGroup) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryData) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Corners) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerRight) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperRight) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_ModelGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_ModelData) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_PinnedGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_PinnedData) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_Position) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Area) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_TerrainGroup) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_TerrainData) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_Sources) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Source) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_Copyright) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Id) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_Provider) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Size) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_Filesize) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Metadata) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_GeoCS) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_NoDataValue) ||
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_SisterFiles) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_File) || 
-        0 == pNode->NameStricmp(PACKAGE_ELEMENT_WmsSource) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_OsmSource))
-        {
-        // Look for childs.
-        if (NULL != pNode->GetFirstChild())
-            ReadUnknownElements(package, pNode->GetFirstChild());
-
-        // Look for siblings.
-        if (NULL != pNode->GetNextSibling())
-            ReadUnknownElements(package, pNode->GetNextSibling());
-        }
-    else
-        {
-        package.SetUnknownElements(true);
-        return RealityPackageStatus::Success;
-        }
-
-    return RealityPackageStatus::Success;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    6/2016
-//-------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& status, BeXmlNodeP pSourceNode)
-    {
-    // Create data source from uri and type.
-    Utf8String uri, type;
-    if (BEXML_Success != pSourceNode->GetAttributeStringValue(uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
-        {
-        status = RealityPackageStatus::MissingSourceAttribute;
-        return NULL;
-        }
-    UriPtr pUri = Uri::Create(uri.c_str());
-    pSourceNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type);
-
-    RealityDataSourcePtr pDataSource = RealityDataSource::Create(*pUri, type.c_str());
-    if (pDataSource == NULL)
-        {
-        status = RealityPackageStatus::UnknownError;
-        return NULL;
-        }        
-
-    // Id.
-    Utf8String id;
-    pSourceNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
-    pDataSource->SetId(id.c_str());
-
-    // Copyright.
-    Utf8String copyright;
-    pSourceNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
-    pDataSource->SetCopyright(copyright.c_str());    
-
-    // Provider.
-    Utf8String provider;
-    pSourceNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
-    pDataSource->SetProvider(provider.c_str());
-
-    // Size.
-    uint64_t size;
-    pSourceNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
-    pDataSource->SetSize(size);
-
-    // Metadata.
-    Utf8String metadata;
-    pSourceNode->GetContent(metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    pDataSource->SetMetadata(metadata.c_str());
-
-    // Metadata type.
-    Utf8String metadataType;
-    BeXmlNodeP pMetadataNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    if (NULL != pMetadataNode)
-        {
-        pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
-        pDataSource->SetMetadataType(metadataType.c_str());
-        }
-
-    // GeoCS.
-    Utf8String geocs;
-    pSourceNode->GetContent(geocs, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GeoCS);
-    pDataSource->SetGeoCS(geocs.c_str());
-
-    // NoDataValue.
-    Utf8String nodatavalue;
-    pSourceNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
-    pDataSource->SetNoDataValue(nodatavalue.c_str());
-
-    // &&JFC Sister files.
-    bvector<Utf8String> sisterFiles;
-    BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
-    if (NULL != pSisterFilesNode)
-        {
-
-        BeXmlDom::IterableNodeSet fileNodes;
-        pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
-        for (BeXmlNodeP const& pFileNode : fileNodes)
-            {
-            Utf8String file;
-            pFileNode->GetContent(file);
-            sisterFiles.push_back(file);
-            }
-        if(!sisterFiles.empty())
-            pDataSource->SetSisterFiles(sisterFiles);
-        }   
-
-    return pDataSource;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    9/2016
-//-------------------------------------------------------------------------------------
-MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pSourceNode)
-    {
-    // *** Read base data source ***
-    // Create data source from uri and type.
-    Utf8String uri, type;
-    if (BEXML_Success != pSourceNode->GetAttributeStringValue(uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
-    {
-        status = RealityPackageStatus::MissingSourceAttribute;
-        return NULL;
-    }
-    UriPtr pUri = Uri::Create(uri.c_str());
-    pSourceNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type);
-
-    MultiBandSourcePtr pDataSource = MultiBandSource::Create(*pUri, type.c_str());
-    if (pDataSource == NULL)
-        {
-        status = RealityPackageStatus::UnknownError;
-        return NULL;
-        }
-
-    // Id.
-    Utf8String id;
-    pSourceNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
-    pDataSource->SetId(id.c_str());
-
-    // Copyright.
-    Utf8String copyright;
-    pSourceNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
-    pDataSource->SetCopyright(copyright.c_str());
-
-    // Provider.
-    Utf8String provider;
-    pSourceNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
-    pDataSource->SetProvider(provider.c_str());
-
-    // Size.
-    uint64_t size;
-    pSourceNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
-    pDataSource->SetSize(size);
-
-    // Metadata.
-    Utf8String metadata;
-    pSourceNode->GetContent(metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    pDataSource->SetMetadata(metadata.c_str());
-
-    // Metadata type.
-    Utf8String metadataType;
-    BeXmlNodeP pMetadataNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    if (NULL != pMetadataNode)
-        {
-        pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
-        pDataSource->SetMetadataType(metadataType.c_str());
-        }
-
-    // GeoCS.
-    Utf8String geocs;
-    pSourceNode->GetContent(geocs, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GeoCS);
-    pDataSource->SetGeoCS(geocs.c_str());
-
-    // NoDataValue.
-    Utf8String nodatavalue;
-    pSourceNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
-    pDataSource->SetNoDataValue(nodatavalue.c_str());
-
-    bvector<Utf8String> sisterFiles;
-    BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
-    if (NULL != pSisterFilesNode)
-        {
-
-        BeXmlDom::IterableNodeSet fileNodes;
-        pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
-        for (BeXmlNodeP const& pFileNode : fileNodes)
-            {
-            Utf8String file;
-            pFileNode->GetContent(file);
-            sisterFiles.push_back(file);
-            }
-        if (!sisterFiles.empty())
-            pDataSource->SetSisterFiles(sisterFiles);
-        }
-
-    // *** Read MultiBand specific data ***
-    // Red band.
-    BeXmlNodeP pRedBandNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_RedBand);
-    if (pRedBandNode != NULL)
-        {
-        RealityDataSourcePtr pRedBandSource = ReadSource(status, pRedBandNode->GetFirstChild());
-        if (pRedBandSource != NULL)
-            pDataSource->SetRedBand(*pRedBandSource);
-        }    
-
-    // Green band.
-    BeXmlNodeP pGreenBandNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GreenBand);
-    if (pGreenBandNode != NULL)
-        {
-        RealityDataSourcePtr pGreenBandSource = ReadSource(status, pGreenBandNode->GetFirstChild());
-        if (pGreenBandSource != NULL)
-            pDataSource->SetGreenBand(*pGreenBandSource);
-        }
-
-    // Blue band.
-    BeXmlNodeP pBlueBandNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BlueBand);
-    if (pBlueBandNode != NULL)
-        {
-        RealityDataSourcePtr pBlueBandSource = ReadSource(status, pBlueBandNode->GetFirstChild());
-        if (pBlueBandSource != NULL)
-            pDataSource->SetBlueBand(*pBlueBandSource);
-        }
-
-    // Panchromatic band.
-    BeXmlNodeP pPanchromaticNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PanchromaticBand);
-    if (pPanchromaticNode != NULL)
-        {
-        RealityDataSourcePtr pPanchromaticBandSource = ReadSource(status, pPanchromaticNode->GetFirstChild());
-        if (pPanchromaticBandSource != NULL)
-            pDataSource->SetPanchromaticBand(*pPanchromaticBandSource);
-        }
-    
-    return pDataSource;
-    }
-
-//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const
@@ -751,27 +459,32 @@ RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDa
     if (NULL == pRootNode)
         return RealityPackageStatus::UnknownError;
 
-    // Package basic info.
+    // Add version and namespace.
+    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.0");
+    pRootNode->AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);
+    pRootNode->AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
+
+    // Add basic info.
     status = WritePackageInfo(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Imagery group.
+    // Add imagery data.
     status = WriteImageryGroup(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Model group.
+    // Add model data.
     status = WriteModelGroup(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Pinned group.
+    // Add pinned data.
     status = WritePinnedGroup(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
 
-    // Terrain group.
+    // Add terrain data.
     status = WriteTerrainGroup(*pRootNode, package);
     if (RealityPackageStatus::Success != status)
         return status;
@@ -782,46 +495,11 @@ RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDa
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const
-    {
-    // Match the version we are persisting.
-    node.AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.0");
-
-    // Namespaces
-    node.AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);       // Set as default namespace.
-    node.AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
-
-    // Root children
-    node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
-    node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
-
-    // Optional fields, if empty don't add them to the package.
-    if (!package.GetOrigin().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
-
-    if (!package.GetDescription().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_Description, package.GetDescription().c_str());
-
-    if (!package.GetCopyright().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_Copyright, package.GetCopyright().c_str());
-
-    if (!package.GetId().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_Id, package.GetId().c_str());
-
-    if (!package.GetBoundingPolygon().ToString().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_BoundingPolygon, package.GetBoundingPolygon().ToString().c_str());
-
-    return RealityPackageStatus::Success;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    6/2016
-//-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    if (package.GetImageryGroup()[0]->GetNumSources() <= 0)
+    if (package.GetImageryGroup().empty())
         return RealityPackageStatus::Success; // No imagery data.
 
     // Group node.
@@ -831,11 +509,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
 
     // Add data to group.
     RealityDataPackage::ImageryGroup imgGroup = package.GetImageryGroup();
-#if defined(ANDROID)
     for(ImageryDataPtr pImgData : imgGroup)
-#else
-    for each (ImageryDataPtr pImgData in imgGroup)
-#endif
         {
         if (!pImgData.IsValid())
             continue;
@@ -851,47 +525,24 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
         if (!pImgData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pImgData->GetDataName().c_str());
 
+        // Dataset.
+        if (!pImgData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());      
+
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
-            {
-            // Split sources by type (source, multibandsource, etc.).
-            RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
-            Utf8String sourceName = source.GetElementName();
-            if (sourceName.Equals(PACKAGE_ELEMENT_Source))
+        if (0 != pImgData->GetNumSources())
+            { 
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pImgData->GetSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;
                     }
                 }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_WmsSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_OsmSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_MultiBandSource))
-                {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                    {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
-                    }
-                }         
-            }    
+            }
 
         // Write ImageryData specific.
         DPoint2dCP pCorners = pImgData->GetCornersCP();
@@ -915,9 +566,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+RealityPackageStatus RealityDataSerializerV2::_WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetModelGroup()[0]->GetNumSources() <= 0)
+    if (package.GetModelGroup().empty())
         return RealityPackageStatus::Success; // No model data.
 
     // Group node.
@@ -927,11 +578,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
 
     // Add data to group.
     RealityDataPackage::ModelGroup modelGroup = package.GetModelGroup();
-#if defined(ANDROID)
     for (ModelDataPtr pModelData : modelGroup)
-#else
-    for each (ModelDataPtr pModelData in modelGroup)
-#endif
         {
         if (!pModelData.IsValid())
             continue;
@@ -947,13 +594,22 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
         if (!pModelData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pModelData->GetDataName().c_str());
 
+        // Dataset.
+        if (!pModelData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pModelData->GetDataset().c_str());
+
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
+        if (0 != pModelData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pModelData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pModelData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }                    
                 }
             }
         }
@@ -964,9 +620,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetPinnedGroup()[0]->GetNumSources() <= 0)
+    if (package.GetPinnedGroup().empty())
         return RealityPackageStatus::Success; // No pinned data.
 
     // Group node.
@@ -976,11 +632,7 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
 
     // Add data to group.
     RealityDataPackage::PinnedGroup pinnedGroup = package.GetPinnedGroup();
-#if defined(ANDROID)
     for (PinnedDataPtr pPinnedData : pinnedGroup)
-#else
-    for each (PinnedDataPtr pPinnedData in pinnedGroup)
-#endif
         {
         if (!pPinnedData.IsValid())
             continue;
@@ -996,13 +648,22 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
         if (!pPinnedData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pPinnedData->GetDataName().c_str());
 
+        // Dataset.
+        if (!pPinnedData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pPinnedData->GetDataset().c_str());
+
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
+        if (0 != pPinnedData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pPinnedData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pPinnedData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }
                 }
             }
 
@@ -1018,9 +679,9 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetTerrainGroup()[0]->GetNumSources() <= 0)
+    if (package.GetTerrainGroup().empty())
         return RealityPackageStatus::Success; // No terrain data.
 
     // Group node.
@@ -1030,11 +691,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
 
     // Add data to group.
     RealityDataPackage::TerrainGroup terrainGroup = package.GetTerrainGroup();
-#if defined(ANDROID)
     for (TerrainDataPtr pTerrainData : terrainGroup)
-#else
-    for each (TerrainDataPtr pTerrainData in terrainGroup)
-#endif
         {
         if (!pTerrainData.IsValid())
             continue;
@@ -1050,13 +707,22 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
         if (!pTerrainData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pTerrainData->GetDataName().c_str());
 
+        // Dataset.
+        if (!pTerrainData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pTerrainData->GetDataset().c_str());
+
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
+        if (0 != pTerrainData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pTerrainData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }                    
                 }
             }
         }
@@ -1065,9 +731,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
     {
     // Required fields.
     UriCR uri = source.GetUri();
@@ -1075,13 +741,19 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (uri.ToString().empty() || type.empty())
         return RealityPackageStatus::MissingSourceAttribute;
 
-    BeXmlNodeP pSourceNode = node.AddEmptyElement(PACKAGE_ELEMENT_Source);
+    BeXmlNodeP pSourceNode = node.AddEmptyElement(source.GetElementName());
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.ToString().c_str());
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
 
     // Optional fields.
+    if (source.IsStreamed())
+        pSourceNode->AddAttributeBooleanValue(PACKAGE_SOURCE_ATTRIBUTE_Streamed, source.IsStreamed());
+
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
+
+    if (!source.GetTermOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
 
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
@@ -1089,11 +761,28 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetProvider().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
 
+    if (!source.GetServerLoginKey().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginKey, source.GetServerLoginKey().c_str());
+
+    if (!source.GetServerLoginMethod().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginMethod, source.GetServerLoginMethod().c_str());
+
+    if (!source.GetServerRegistrationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerRegPage, source.GetServerRegistrationPage().c_str());
+
+    if (!source.GetServerOrganisationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerOrgPage, source.GetServerOrganisationPage().c_str());
+
     if (0 != source.GetSize())
         pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
 
     if (!source.GetMetadata().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
+        {
+        BeXmlNodeP pMetadataNode = pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
+
+        if(!source.GetMetadataType().empty())
+            pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataType().c_str());
+        }
 
     if (!source.GetGeoCS().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
@@ -1101,73 +790,84 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetNoDataValue().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
 
+    if (!source.GetSisterFiles().empty())
+        {
+        BeXmlNodeP pSisterFilesNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_SisterFiles);
+
+        bvector<UriPtr> sisterFiles = source.GetSisterFiles();
+        for (UriPtr const& uri : sisterFiles)
+            {
+            pSisterFilesNode->AddElementStringValue(PACKAGE_ELEMENT_File, uri->ToString().c_str());
+            }
+        }
+
+    // Write specific source data.
+    Utf8String sourceType = source.GetElementName();
+    if (PACKAGE_ELEMENT_WmsSource == sourceType)
+        {
+        // Wms source.
+        WmsDataSourceCP pWmsSource = dynamic_cast<WmsDataSourceCP>(&source);
+
+        if (!pWmsSource->GetMapSettings().empty())
+            {
+            // Create XmlDom from string.
+            BeXmlStatus xmlStatus = BEXML_Success;
+            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pWmsSource->GetMapSettings().c_str());
+            if (BEXML_Success != xmlStatus)
+                return RealityPackageStatus::XmlReadError;
+
+            // Add node.
+            pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            }
+        }
+    else if (PACKAGE_ELEMENT_OsmSource == sourceType)
+        {
+        // Osm source.
+        OsmDataSourceCP pOsmSource = dynamic_cast<OsmDataSourceCP>(&source);
+
+        if (!pOsmSource->GetOsmResource().empty())
+            {
+            // Create XmlDom from string.
+            BeXmlStatus xmlStatus = BEXML_Success;
+            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pOsmSource->GetOsmResource().c_str());
+            if (BEXML_Success != xmlStatus)
+                return RealityPackageStatus::XmlReadError;
+
+            // Add node.
+            pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            }
+        }
+    else if (PACKAGE_ELEMENT_MultiBandSource == sourceType)
+        {
+        // MultiBand source.
+        MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+
+        if (pMultiBandSource->GetRedBand() != NULL)
+            {
+            BeXmlNodeP pRedBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_RedBand);
+            WriteSource(*pRedBandNode, *pMultiBandSource->GetRedBand());
+            }
+
+        if (pMultiBandSource->GetGreenBand() != NULL)
+            {
+            BeXmlNodeP pGreenBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_GreenBand);
+            WriteSource(*pGreenBandNode, *pMultiBandSource->GetGreenBand());
+            }
+
+        if (pMultiBandSource->GetBlueBand() != NULL)
+            {
+            BeXmlNodeP pBlueBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_BlueBand);
+            WriteSource(*pBlueBandNode, *pMultiBandSource->GetBlueBand());
+            }
+
+        if (pMultiBandSource->GetPanchromaticBand() != NULL)
+            {
+            BeXmlNodeP pPanchromaticBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_PanchromaticBand);
+            WriteSource(*pPanchromaticBandNode, *pMultiBandSource->GetPanchromaticBand());
+            }
+        }
+
     return RealityPackageStatus::Success;
     }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    9/2016
-//-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::WriteMultiBandSource(BeXmlNodeR node, MultiBandSourceCR source) const
-    {
-    // Required fields.
-    UriCR uri = source.GetUri();
-    Utf8String type = source.GetType();
-    if (uri.ToString().empty() || type.empty())
-        return RealityPackageStatus::MissingSourceAttribute;
-
-    BeXmlNodeP pSourceNode = node.AddEmptyElement(PACKAGE_ELEMENT_MultiBandSource);
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.ToString().c_str());
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
-
-    // Write basic source.
-    if (!source.GetCopyright().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
-
-    if (!source.GetId().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
-
-    if (!source.GetProvider().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
-
-    if (0 != source.GetSize())
-        pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
-
-    if (!source.GetMetadata().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
-
-    if (!source.GetGeoCS().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
-
-    if (!source.GetNoDataValue().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
-
-    // Write specific multiband source data.
-    if (source.GetRedBand() != NULL)
-        {
-        BeXmlNodeP pRedBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_RedBand);
-        WriteSource(*pRedBandNode, *source.GetRedBand());
-        }
-
-    if (source.GetGreenBand() != NULL)
-        {
-        BeXmlNodeP pGreenBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_GreenBand);
-        WriteSource(*pGreenBandNode, *source.GetGreenBand());
-        }
-
-    if (source.GetBlueBand() != NULL)
-        {
-        BeXmlNodeP pBlueBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_BlueBand);
-        WriteSource(*pBlueBandNode, *source.GetBlueBand());
-        }
-
-    if (source.GetPanchromaticBand() != NULL)
-        {
-        BeXmlNodeP pPanchromaticBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_PanchromaticBand);
-        WriteSource(*pPanchromaticBandNode, *source.GetPanchromaticBand());
-        }
-
-    return RealityPackageStatus::Success;
-    }
-
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE
