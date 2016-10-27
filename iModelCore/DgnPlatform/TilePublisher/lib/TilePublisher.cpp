@@ -1404,10 +1404,27 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
     else
         {
-        // ###TODO: Decide whether we treat orthographic specially in Cesium, or as a camera view with a very small FOV.
-        // (Cesium does not support orthographic views directly)
+        // Cesium does not support orthographic views directly - simulate using small field of view
+        json["type"] = "camera";
 
-        json["type"] = "ortho";
+        DPoint3d backCenter;
+        DVec3d x, y, z;
+        auto const& rot = view.GetRotation();
+        rot.GetRows(x, y, z);
+        rot.Multiply(backCenter, view.GetOrigin());
+        backCenter.SumOf(backCenter, viewExtents, 0.5);
+        rot.MultiplyTranspose(backCenter);
+
+        static const    double s_orthographicFieldOfView = .01;
+        double zDist = viewExtents.x / tan(s_orthographicFieldOfView / 2.0);
+
+        DPoint3d eyePoint;
+        eyePoint.SumOf(backCenter, z, zDist);
+        transform.Multiply(eyePoint);
+
+        json["eyePoint"] = PointToJson(eyePoint);
+        json["focusDistance"] = zDist;
+        json["lensAngle"] = msGeomConst_piOver2;
         }
     }
 
