@@ -521,11 +521,11 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
 
             default:
                 {
-                MSBsplineSurfacePtr bSplineSurface;
-                CurveVectorPtr      uvBoundaries;
+                MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
 
-                if (SUCCESS == PSolidUtil::FaceToBSplineSurface (bSplineSurface, uvBoundaries, faceTag))
+                if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
                     facetCount += GetFacetCount(*bSplineSurface);
+
                 break;
                 }
             }
