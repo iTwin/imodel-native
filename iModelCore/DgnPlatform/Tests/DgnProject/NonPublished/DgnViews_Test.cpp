@@ -28,9 +28,24 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void SetupTestProject()
         {
-        WString testName(TEST_NAME, true);
-        testName.AppendUtf8(".dgndb");
-        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.idgndb", testName.c_str(), Db::OpenMode::ReadWrite);
+        SetupSeedProject();
+
+        DgnModelPtr model = AddModel("A");
+        static const DgnViewSource s_viewSources[] = {DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private};
+        static const Utf8CP s_viewSourceNames[] = {"-U", "-G", "-P"};
+        static const Utf8CP s_viewDescriptions[] = {"", "generated", "hidden"};
+        // Create one new view of each source for each new model
+
+        for (auto i = 0; i < _countof(s_viewSources); i++)
+            {
+            Utf8String viewName(model->GetCode().GetValue());
+            viewName.append(s_viewSourceNames[i]);
+            ViewDefinitionCPtr view = AddView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ASSERT_TRUE(view.IsValid());
+            ASSERT_TRUE(view->GetViewId().IsValid());
+            }
+
+        m_db->SaveChanges();
         }
 
     DgnModelPtr AddModel(Utf8StringCR name)
@@ -85,10 +100,10 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    EXPECT_EQ(3, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
-    static const Utf8CP s_viewNames[] = { "Default - View 1", "Default - View 2", "Model2d Views - View 1", "Model2d Views - View 2" };
+    static const Utf8CP s_viewNames[] = { "A-U", "A-G", "A-P"};
 
     int i = 0;
     for (auto const& entry : iter)
@@ -97,7 +112,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
         i++;
         }
 
-    EXPECT_EQ(i, 4);
+    ASSERT_EQ(i, 3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,7 +166,7 @@ TEST_F(DgnViewElemTest, SetViewName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, CRUD)
     {
-    SetupTestProject();
+    SetupSeedProject();
 
     // Create a new view
     CameraViewDefinition tempView(CameraViewDefinition::CreateParams(*m_db, "TestView",
@@ -212,7 +227,7 @@ TEST_F(DgnViewElemTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, Iterate)
     {
-    SetupTestProject();
+    SetupSeedProject();
 
     DgnModelPtr models[] = { AddModel("A"), AddModel("B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };
