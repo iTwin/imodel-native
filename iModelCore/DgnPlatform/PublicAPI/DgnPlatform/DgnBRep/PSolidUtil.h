@@ -40,13 +40,18 @@ DGNPLATFORM_EXPORT static void SetFaceAttachments(ISolidKernelEntityR, IFaceMate
 
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR entity, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR entity, IFacetOptionsR);
-
 DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
 
 DGNPLATFORM_EXPORT static BentleyStatus IdFromEntity (FaceId& faceId, PK_ENTITY_t entityTag, bool useHighestId) {return ERROR;} // NEEDSWORK...
 
+DGNPLATFORM_EXPORT static BentleyStatus BodyToCurveVectors (bvector<CurveVectorPtr>& curves, ISolidKernelEntityCR entity, EdgeToCurveIdMap const* idMap = NULL);
+DGNPLATFORM_EXPORT static CurveVectorPtr WireBodyToCurveVector (ISolidKernelEntityCR entity);
+DGNPLATFORM_EXPORT static CurveVectorPtr PlanarSheetBodyToCurveVector (ISolidKernelEntityCR entity);
+
 DGNPLATFORM_EXPORT static BentleyStatus GetBodyFaces (bvector<PK_FACE_t>& faces, PK_BODY_t body);
+DGNPLATFORM_EXPORT static BentleyStatus GetBodyEdges (bvector<PK_EDGE_t>& edges, PK_BODY_t body);
+
 DGNPLATFORM_EXPORT static BentleyStatus GetCurveOfEdge (PK_CURVE_t& curveTagOut, double* startParamP, double* endParamP, bool* reversedP, PK_EDGE_t edgeTagIn);
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge (PK_BODY_t entity);
 
@@ -56,6 +61,7 @@ DGNPLATFORM_EXPORT static ISolidPrimitivePtr FaceToSolidPrimitive (PK_FACE_t fac
 DGNPLATFORM_EXPORT static StatusInt FaceToBSplineSurface (MSBsplineSurfacePtr& bSurface, CurveVectorPtr& uvBoundaries, PK_FACE_t faceTag);
 
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVAL_t interval, bool reverseDirection);
+DGNPLATFORM_EXPORT static BentleyStatus EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimitive, PK_EDGE_t edgeTag);
 
 DGNPLATFORM_EXPORT static void ExtractStartAndSweepFromInterval (double& start, double& sweep, PK_INTERVAL_t const& interval, bool reverse);
 DGNPLATFORM_EXPORT static void NormalizeBsplineCurve (MSBsplineCurveR curve);

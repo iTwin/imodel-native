@@ -1117,7 +1117,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         case ISolidKernelEntity::EntityType::Wire:
             {
             // Save wire body as CurveVector...
-            CurveVectorPtr wireGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+            CurveVectorPtr wireGeom = PSolidUtil::WireBodyToCurveVector(entity);
 
             if (wireGeom.IsValid())
                 Append(*wireGeom, OpCode::BRepCurveVector);
@@ -1128,7 +1128,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         case ISolidKernelEntity::EntityType::Sheet:
             {
             // Save sheet body that is a single planar face as CurveVector...
-            CurveVectorPtr faceGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+            CurveVectorPtr faceGeom = PSolidUtil::PlanarSheetBodyToCurveVector(entity);
 
             if (faceGeom.IsValid())
                 {
