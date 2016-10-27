@@ -6393,7 +6393,7 @@ bool                 anyWord
     else
         {
         char upperCaseConcatString[4096];
-        upperCaseConcatString[0] = '\0;
+        upperCaseConcatString[0] = '\0';
         strcpy (upperCaseConcatString, concatString);
         BeStringUtilities::Strupr (upperCaseConcatString);
 
