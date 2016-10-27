@@ -97,6 +97,9 @@ void RealityDataSource::SetUri(UriR uri) { m_pUri = &uri; }
 Utf8StringCR RealityDataSource::GetType() const { return m_type; }
 void RealityDataSource::SetType(Utf8CP type) { m_type = type; }
 
+bool RealityDataSource::IsStreamed() const { return m_streamed; }
+void RealityDataSource::SetStreamed(bool isStreamed) { m_streamed = isStreamed; }
+
 Utf8StringCR RealityDataSource::GetId() const { return m_id; }
 void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
 
@@ -108,6 +111,18 @@ void RealityDataSource::SetTermOfUse(Utf8CP termOfUse) { m_termOfUse = termOfUse
 
 Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
 void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR RealityDataSource::GetServerLoginKey() const { return m_serverLoginKey; }
+void RealityDataSource::SetServerLoginKey(Utf8CP key) { m_serverLoginKey = key; }
+
+Utf8StringCR RealityDataSource::GetServerLoginMethod() const { return m_serverLoginMethod; }
+void RealityDataSource::SetServerLoginMethod(Utf8CP method) { m_serverLoginMethod = method; }
+
+Utf8StringCR RealityDataSource::GetServerRegistrationPage() const { return m_serverRegistrationPage; }
+void RealityDataSource::SetServerRegistrationPage(Utf8CP link) { m_serverRegistrationPage = link; }
+
+Utf8StringCR RealityDataSource::GetServerOrganisationPage() const { return m_serverOrganisationPage; }
+void RealityDataSource::SetServerOrganisationPage(Utf8CP link) { m_serverOrganisationPage = link; }
 
 uint64_t RealityDataSource::GetSize() const { return m_size; }
 void RealityDataSource::SetSize(uint64_t size) { m_size = size; }
@@ -143,6 +158,7 @@ RealityDataSource::RealityDataSource(UriR uri, Utf8CP type)
     BeAssert(!uri.ToString().empty());
     m_pUri = &uri;
     m_type = type;
+    m_streamed = false;
 
     m_size = 0;     // Default.
     m_sisterFiles = bvector<UriPtr>();      // Create empty.

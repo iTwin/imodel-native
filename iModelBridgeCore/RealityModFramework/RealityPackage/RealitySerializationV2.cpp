@@ -746,6 +746,9 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Real
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
 
     // Optional fields.
+    if (source.IsStreamed())
+        pSourceNode->AddAttributeBooleanValue(PACKAGE_SOURCE_ATTRIBUTE_Streamed, source.IsStreamed());
+
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
 
@@ -758,13 +761,27 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Real
     if (!source.GetProvider().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
 
+    if (!source.GetServerLoginKey().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginKey, source.GetServerLoginKey().c_str());
+
+    if (!source.GetServerLoginMethod().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginMethod, source.GetServerLoginMethod().c_str());
+
+    if (!source.GetServerRegistrationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerRegPage, source.GetServerRegistrationPage().c_str());
+
+    if (!source.GetServerOrganisationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerOrgPage, source.GetServerOrganisationPage().c_str());
+
     if (0 != source.GetSize())
         pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
 
     if (!source.GetMetadata().empty())
         {
         BeXmlNodeP pMetadataNode = pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
-        pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataType().c_str());
+
+        if(!source.GetMetadataType().empty())
+            pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataType().c_str());
         }
 
     if (!source.GetGeoCS().empty())
