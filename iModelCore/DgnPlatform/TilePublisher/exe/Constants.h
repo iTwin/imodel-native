@@ -23,6 +23,7 @@ R"HTML(
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
+<script src="scripts/Bentley/CesiumExtensions.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimCamera.js"></script>
 <script src="scripts/Bentley/BimWidgets.js"></script>
