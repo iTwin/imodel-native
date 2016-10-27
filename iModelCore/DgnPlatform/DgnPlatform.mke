@@ -415,6 +415,14 @@ $(CoreObjs)SolidKernelUtil$(oext) :                 $(DgnBRepSrc)SolidKernelUtil
 
 $(CoreObjs)PSolidKernelManager$(oext) :             $(DgnBRepSrc)PSolidKernelManager.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
 
+$(CoreObjs)PSolidKernelEntity$(oext) :              $(DgnBRepSrc)PSolidKernelEntity.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidUtil$(oext) :                      $(DgnBRepSrc)PSolidUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidFacet$(oext) :                     $(DgnBRepSrc)PSolidFacet.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidBSpline$(oext) :                   $(DgnBRepSrc)PSolidBSpline.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
 %endif
 
 %if defined (BENTLEYCONFIG_OPENCASCADE)
