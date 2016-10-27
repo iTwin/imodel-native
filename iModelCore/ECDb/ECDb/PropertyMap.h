@@ -871,8 +871,8 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapVisitor
     private:
         Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
         bool IsAlienTable(DbTable const& table) const;
-        DbTable const* RequiresJoinTo(WipConstraintECClassIdPropertyMap const& propertyMap) const;
-        Utf8CP GetECClassIdPrimaryTableAlias(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+        //DbTable const* RequiresJoinTo(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+        //Utf8CP GetECClassIdPrimaryTableAlias(WipConstraintECClassIdPropertyMap const& propertyMap) const;
 
         WipColumnVerticalPropertyMap const* FindSystemPropertyMapForTable(WipSystemPropertyMap const& systemPropertyMap) const;
         VisitorFeedback ToNativeSql(WipColumnVerticalPropertyMap const& propertyMap) const;

@@ -1584,19 +1584,19 @@ VisitorFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdPropertyMap
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECClassIdPropertyMap const& propertyMap) const
     {
-    const DbTable *requireJoinToTable = RequiresJoinTo(propertyMap);
-    Utf8CP alias = nullptr;
-    if (requireJoinToTable != nullptr)
-        {
-        DbColumn const* ecClassId;
-        if (!requireJoinToTable->TryGetECClassIdColumn(ecClassId))
-            {
-            //ERROR;
-            }
-        if (ecClassId)
-        alias = GetECClassIdPrimaryTableAlias(propertyMap);
-        }
-    
+    //const DbTable *requireJoinToTable = RequiresJoinTo(propertyMap);
+    //Utf8CP alias = nullptr;
+    //if (requireJoinToTable != nullptr)
+    //    {
+    //    DbColumn const* ecClassId;
+    //    if (!requireJoinToTable->TryGetECClassIdColumn(ecClassId))
+    //        {
+    //        //ERROR;
+    //        }
+    //    if (ecClassId)
+    //    alias = GetECClassIdPrimaryTableAlias(propertyMap);
+    //    }
+    //
     WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
     if (vmap == nullptr)
         {
