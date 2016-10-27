@@ -264,6 +264,7 @@
     <ClCompile Include="DgnCore\DgnDbSchema.cpp" />
     <ClCompile Include="DgnCore\DgnDomain.cpp" />
     <ClCompile Include="DgnCore\DgnElement.cpp" />
+    <ClCompile Include="DgnCore\DgnElementProperties.cpp" />
     <ClCompile Include="DgnCore\DgnElements.cpp" />
     <ClCompile Include="DgnCore\DgnFont.cpp" />
     <ClCompile Include="DgnCore\DgnIModel.cpp" />
