@@ -57,44 +57,6 @@ struct DgnProjectProperty
 };
 
 //=======================================================================================
-// @bsiclass                                                    Sam.Wilson   04/13
-//=======================================================================================
-struct DgnMarkupProjectProperty
-{
-    struct Spec : DbPropSpec
-    {
-        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnMarkupProject, setting) {}
-    };
-
-    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
-
-    static ProjectProperty DgnProjectAssociationData() {return ProjectProperty("DgnProjectAssociationData");}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson   04/13
-//=======================================================================================
-struct RedlineModelProperty
-{
-    struct Spec : DbPropSpec
-    {
-        Spec(Utf8CP name, DbPropTxnMode setting, DbPropSpec::Compress compress) : DbPropSpec(name, PROPERTY_APPNAME_RedlineModel, setting, compress) {}
-    };
-
-    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name, bool compressed=true) : Spec(name, DbPropSpec::Mode::Normal, compressed? DbPropSpec::Compress::Yes: DbPropSpec::Compress::No){}};
-    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name) : Spec(name, DbPropSpec::Mode::Setting, DbPropSpec::Compress::Yes){}};
-
-    static ProjectProperty RedlineECInstanceId() {return ProjectProperty("RedlineECInstanceId");}
-    static ProjectProperty ViewId() {return ProjectProperty("ViewId");}
-    static ProjectProperty ImageData2() {return ProjectProperty("ImageData2",/*compressed*/false);}
-    static ProjectProperty ImageData() {return ProjectProperty("ImageData",/*compressed*/true);}
-    static ProjectProperty ImageDef() {return ProjectProperty("ImageDef");}
-    static ProjectProperty RDLSheetDef(){return ProjectProperty("RDLSheetDef");}
-    static ProjectProperty DgnProjectAssociationData() {return ProjectProperty("DgnProjectAssociationData");}
-};
-
-//=======================================================================================
 // @bsiclass                                                    John.Gooding    03/13
 //=======================================================================================
 struct DgnEmbeddedProjectProperty

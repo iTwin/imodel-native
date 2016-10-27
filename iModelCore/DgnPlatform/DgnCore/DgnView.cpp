@@ -1146,7 +1146,7 @@ void DisplayStyle::SetBackgroundColor(ColorDef val)
     SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
 
-OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
-CameraViewControllerPtr CameraViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
-DrawingViewControllerPtr DrawingViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
-SheetViewControllerPtr SheetViewDefinition::LoadViewController() const {auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}
+OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
+CameraViewControllerPtr CameraViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
+DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
+SheetViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}
