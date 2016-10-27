@@ -1273,8 +1273,10 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-
+#endif
+    
     m_totalTiles++;
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
