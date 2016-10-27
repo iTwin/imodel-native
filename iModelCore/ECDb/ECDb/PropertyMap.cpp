@@ -408,7 +408,7 @@ RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ClassMa
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column)
+RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, PropertyMap const& parentPropertyMap, DbColumn const& column)
     {
     if (ecProperty.GetType() == PRIMITIVETYPE_Point2d || ecProperty.GetType() == PRIMITIVETYPE_Point3d)
         {

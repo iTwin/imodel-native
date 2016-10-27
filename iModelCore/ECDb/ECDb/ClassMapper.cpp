@@ -53,7 +53,6 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
         return ERROR;
         }
 
-    newProperty->FinishEditing();
     return classMap.GetPropertyMapsR().Insert(newProperty, 0LL);
     }
 
@@ -79,7 +78,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
         return ERROR;
         }
 
-    newProperty->FinishEditing();
+
     return classMap.GetPropertyMapsR().Insert(newProperty, 1LL);
     }
 

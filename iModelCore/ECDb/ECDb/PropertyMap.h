@@ -143,7 +143,6 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
     protected:
         PropertyMap(Kind, ClassMap const&, ECN::ECPropertyCR);
         PropertyMap(Kind, PropertyMap const&, ECN::ECPropertyCR);
-        
     public:
         virtual ~PropertyMap() {}
 
@@ -276,7 +275,7 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
         SingleColumnDataPropertyMap(Kind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
             : DataPropertyMap(kind, classMap, ecProperty), m_column(column)
             {}
-        SingleColumnDataPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
+        SingleColumnDataPropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
             : DataPropertyMap(kind, parentPropertyMap, ecProperty), m_column(column)
             {}
     public:       
@@ -296,13 +295,13 @@ struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
         PrimitivePropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, classMap, ecProperty, column)
             {}
-        PrimitivePropertyMap(DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+        PrimitivePropertyMap(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, parentPropertyMap, ecProperty, column)
             {}
         virtual ~PrimitivePropertyMap() {}
     public:
         static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
+        static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, PropertyMap const& parentPropertyMap, DbColumn const& column);
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

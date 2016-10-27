@@ -32,10 +32,10 @@ struct SystemPropertyMap : PropertyMap
             }
 
     protected:
-        SystemPropertyMap(Kind, ClassMap const&, ECN::PrimitiveECPropertyCR, std::vector<RefCountedPtr<PrimitivePropertyMap>> const&);
+        SystemPropertyMap(Kind, ClassMap const&, ECN::PrimitiveECPropertyCR);
         SystemPropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty) : PropertyMap(kind, parentPropertyMap, ecProperty) {}
 
-        static BentleyStatus TryCreateVerticalMaps(std::vector<RefCountedPtr<PrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        BentleyStatus Init(std::vector<DbColumn const*> const& columns);
 
     public:
         virtual ~SystemPropertyMap() {}
@@ -47,6 +47,10 @@ struct SystemPropertyMap : PropertyMap
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetVerticalPropertyMaps().size() == 1; }
+        BentleyStatus Add(DbColumn const& column)
+            {
+
+            }
     };
 
 //=======================================================================================
@@ -58,8 +62,8 @@ struct ECInstanceIdPropertyMap final : SystemPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const& dispatcher)  const override { return dispatcher.Visit(*this); }
 
     protected:
-        ECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps)
+        ECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : SystemPropertyMap(kind, classMap, ecProperty)
             {}
     public:
         virtual ~ECInstanceIdPropertyMap() {}
@@ -76,8 +80,8 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
 
     protected:
-        ECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId)
+        ECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId)
+            : SystemPropertyMap(kind, classMap, ecProperty), m_defaultECClassId(defaultECClassId)
             {}
     public:
         virtual ~ECClassIdPropertyMap() {}
@@ -100,8 +104,8 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
 
     protected:
-        ConstraintECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId, ConstraintType constraintType)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId), m_constraintType(constraintType)
+        ConstraintECClassIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId, ConstraintType constraintType)
+            : SystemPropertyMap(kind, classMap, ecProperty), m_defaultECClassId(defaultECClassId), m_constraintType(constraintType)
             {}
     public:
         virtual ~ConstraintECClassIdPropertyMap() {}
@@ -127,8 +131,8 @@ struct ConstraintECInstanceIdPropertyMap final : SystemPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  dispatcher)  const override { return dispatcher.Visit(*this); }
 
     protected:
-        ConstraintECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps, ConstraintType constraintType)
-            : SystemPropertyMap(kind, classMap, ecProperty, maps)
+        ConstraintECInstanceIdPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ConstraintType constraintType)
+            : SystemPropertyMap(kind, classMap, ecProperty)
             {}
     public:
         virtual ~ConstraintECInstanceIdPropertyMap() {}
