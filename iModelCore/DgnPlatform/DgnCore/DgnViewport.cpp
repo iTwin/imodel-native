@@ -227,7 +227,7 @@ void DgnViewport::AlignWithRootZ()
 void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
     {
     BSIRect viewRect = GetViewRect();
-    viewController.GetViewDefinitionR().AdjustAspectRatio(viewRect.Aspect(), expandView);
+    viewController.GetViewDefinition().AdjustAspectRatio(viewRect.Aspect(), expandView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,7 +491,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             if (cameraView)
                 {
                 m_isCameraOn = true;
-                m_camera = cameraView->GetCameraViewDefinitionR().GetCameraR();
+                m_camera = cameraView->GetCameraViewDefinition().GetCameraR();
 
                 if (m_isCameraOn)
                     validateCamera(m_camera, *cameraView);
@@ -1197,7 +1197,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
         {
         bool dropGraphics = true;
 
-        if (m_viewController->GetClassId() == viewController.GetClassId())
+        if (m_viewController->GetViewDefinition().GetElementClassId() == viewController.GetViewDefinition().GetElementClassId())
             {
             ViewFlags oldFlags = m_viewController->GetViewFlags();
             ViewFlags newFlags = viewController.GetViewFlags();

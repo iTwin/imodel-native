@@ -116,15 +116,15 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::_EqualState(ViewDefinitionCR other) const
+bool ViewDefinition::_EqualState(ViewDefinitionR other) 
     {
     SaveState();
     other.SaveState();
 
-    if (!m_categorySelector->EqualState(*other.m_categorySelector))
+    if (!GetCategorySelector().EqualState(other.GetCategorySelector()))
         return false;
 
-    if (!m_displayStyle->EqualState(*other.m_displayStyle))
+    if (!GetDisplayStyle().EqualState(other.GetDisplayStyle()))
         return false;
 
     return m_details == other.m_details;
@@ -135,12 +135,13 @@ bool ViewDefinition::_EqualState(ViewDefinitionCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::SaveState() const
     {
-    if (!m_displayStyle->GetElementId().IsValid())
+    if (m_displayStyle.IsValid() && !m_displayStyle->GetElementId().IsValid())
         {
         m_displayStyle->Insert();
         m_dirty = true;
         }
-    if (!m_categorySelector->GetElementId().IsValid())
+
+    if (m_categorySelector.IsValid() && !m_categorySelector->GetElementId().IsValid())
         {
         m_categorySelector->Insert();
         m_dirty = true;
@@ -150,10 +151,51 @@ void ViewDefinition::SaveState() const
         return;
 
     ViewDefinitionR ncThis = const_cast<ViewDefinitionR>(*this);
-    ncThis.SetPropertyValue(str_DisplayStyle(), m_displayStyle->GetElementId());
-    ncThis.SetPropertyValue(str_CategorySelector(), m_categorySelector->GetElementId());
+    if (m_displayStyle.IsValid())
+        ncThis.SetPropertyValue(str_DisplayStyle(), m_displayStyle->GetElementId());
+    if (m_categorySelector.IsValid())
+        ncThis.SetPropertyValue(str_CategorySelector(), m_categorySelector->GetElementId());
+
     ncThis.SetPropertyValue(str_Details(), Json::FastWriter::ToString(m_details).c_str());
     m_dirty=false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ViewDefinition::GetCategorySelectorId() const
+    {
+    return GetPropertyValueId<DgnElementId>(str_CategorySelector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CategorySelectorR ViewDefinition::GetCategorySelector()
+    {
+    if (!m_categorySelector.IsValid())
+        m_categorySelector = getAndCopy<CategorySelector>(m_dgndb, GetCategorySelectorId());
+
+    return *m_categorySelector;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ViewDefinition::GetDisplayStyleId() const
+    {
+    return GetPropertyValueId<DgnElementId>(str_DisplayStyle());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayStyleR ViewDefinition::GetDisplayStyle()
+    {
+    if (!m_displayStyle.IsValid())
+        m_displayStyle = getAndCopy<DisplayStyle>(m_dgndb, GetDisplayStyleId());
+
+    return *m_displayStyle;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,16 +206,6 @@ DgnDbStatus ViewDefinition::_LoadFromDb()
     auto stat = T_Super::_LoadFromDb();
     if (DgnDbStatus::Success != stat)
         return stat;
-
-    // Note: every instance of a view definition must have its own copy of its member elements
-    m_categorySelector = getAndCopy<CategorySelector>(m_dgndb, GetPropertyValueId<DgnElementId>(str_CategorySelector()));
-    m_displayStyle = getAndCopy<DisplayStyle>(m_dgndb, GetPropertyValueId<DgnElementId>(str_DisplayStyle()));
-
-    if (!m_categorySelector.IsValid() || !m_displayStyle.IsValid())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
 
     Json::Reader::Parse(GetPropertyValueString(str_Details()), m_details);
     m_dirty = false;
@@ -191,11 +223,8 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
 
     T_Super::_CopyFrom(el);
 
-    BeAssert(other.m_categorySelector.IsValid());
-    BeAssert(other.m_displayStyle.IsValid());
-
-    m_categorySelector = other.m_categorySelector->MakeCopy<CategorySelector>();
-    m_displayStyle = other.m_displayStyle->MakeCopy<DisplayStyle>();
+    m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
+    m_displayStyle = other.m_displayStyle.IsValid() ? other.m_displayStyle->MakeCopy<DisplayStyle>() : nullptr;
     m_details = other.m_details;
     }
 
@@ -335,7 +364,7 @@ void ViewDefinition2d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition2d::_EqualState(ViewDefinitionCR in) const 
+bool ViewDefinition2d::_EqualState(ViewDefinitionR in) 
     {
     auto const& other= (ViewDefinition2d const&) in;
     if (m_baseModelId != other.m_baseModelId || !m_origin.IsEqual(other.m_origin) || !m_delta.IsEqual(other.m_delta) || m_rotAngle != other.m_rotAngle)
@@ -763,9 +792,9 @@ void ViewDefinition3d::SaveViewDef3d()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition3d::_EqualState(ViewDefinitionCR in) const 
+bool ViewDefinition3d::_EqualState(ViewDefinitionR in) 
     {
-    auto const& other = (ViewDefinition3d const&) in;
+    auto& other = (ViewDefinition3dR) in;
     if (!m_origin.IsEqual(other.m_origin) || !m_extents.IsEqual(other.m_extents) || !m_rotation.IsEqual(other.m_rotation))
         return false;
 
@@ -781,7 +810,6 @@ DgnDbStatus ViewDefinition3d::_LoadFromDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    BeAssert(nullptr != dynamic_cast<DisplayStyle3d*> (m_displayStyle.get()));
     m_origin = GetPropertyValueDPoint3d(str_Origin());
     m_extents = DVec3d::From(GetPropertyValueDPoint3d(str_Extents()));
     m_rotation = GetPropertyValueYpr(str_Yaw(), str_Pitch(), str_Roll()).ToRotMatrix();
@@ -862,7 +890,6 @@ Point2d ViewDefinition::GetThumbnailSize() const
     return size;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -876,6 +903,9 @@ void ViewDefinition::DeleteThumbnail() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewDefinition::UpdateModelSelectorId()
     {
+    if (!m_modelSelector.IsValid())
+        return;
+
     if (!m_modelSelector->GetElementId().IsValid())
         m_modelSelector->Insert();
 
@@ -885,15 +915,20 @@ void SpatialViewDefinition::UpdateModelSelectorId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SpatialViewDefinition::_LoadFromDb() 
+DgnElementId SpatialViewDefinition::GetModelSelectorId() const
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    return GetPropertyValueId<DgnElementId>(str_ModelSelector());
+    }
 
-    // Note: every instance of a view definition must have its own copy of its member elements
-    m_modelSelector = getAndCopy<ModelSelector>(m_dgndb, GetPropertyValueId<DgnElementId>(str_ModelSelector()));
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelSelectorR SpatialViewDefinition::GetModelSelector()
+    {
+    if (!m_modelSelector.IsValid())
+        m_modelSelector = getAndCopy<ModelSelector>(m_dgndb, GetModelSelectorId());
+
+    return *m_modelSelector;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -903,21 +938,20 @@ void SpatialViewDefinition::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
     auto other = static_cast<SpatialViewDefinitionCP>(&el);
-    BeAssert(other->m_modelSelector.IsValid());
 
-    m_modelSelector = other->m_modelSelector->MakeCopy<ModelSelector>();
+    m_modelSelector = other->m_modelSelector.IsValid() ? other->m_modelSelector->MakeCopy<ModelSelector>() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SpatialViewDefinition::_EqualState(ViewDefinitionCR in) const 
+bool SpatialViewDefinition::_EqualState(ViewDefinitionR in) 
     {
     if (!T_Super::_EqualState(in))
         return false;
 
-    auto const& other = (SpatialViewDefinition const&) in;
-    return m_modelSelector->EqualState(*other.m_modelSelector);
+    auto& other = (SpatialViewDefinition&) in;
+    return GetModelSelector().EqualState(other.GetModelSelector());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -961,12 +995,12 @@ DgnDbStatus CameraViewDefinition::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CameraViewDefinition::_EqualState(ViewDefinitionCR in) const 
+bool CameraViewDefinition::_EqualState(ViewDefinitionR in) 
     {
     if (!T_Super::_EqualState(in))
         return false;
 
-    auto const& other = (CameraViewDefinition const&) in;
+    auto& other = (CameraViewDefinition&) in;
     return m_camera.IsEqual(other.m_camera);
     }
 

@@ -1554,6 +1554,8 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
 ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
     DgnClassId classId = el.GetElementClassId();
+
+    BeDbMutexHolder _v(m_mutex);
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;
@@ -1573,11 +1575,7 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
-    BeDbMutexHolder _v(m_mutex);
-
-    /* unused - auto& classInfo = FindClassInfo(el);*/
     auto stmt = FindClassInfo(el).GetSelectStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
-
     return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }
 
@@ -1619,3 +1617,13 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
         });
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SessionR SessionManager::GetCurrent() const
+    {
+    if (!m_current.IsValid())
+        m_current = Session::Create(m_dgndb, "");
+
+    return *m_current;
+    }

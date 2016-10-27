@@ -280,7 +280,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
 
     public:
         //! Construct a new RedlineViewDefinition prior to inserting it
-        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) : 
+        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) : 
                 T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
         //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb

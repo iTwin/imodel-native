@@ -191,6 +191,7 @@ private:
 
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
+
 protected:
     DgnDbR              m_dgndb;
     DgnModelId          m_modelId;

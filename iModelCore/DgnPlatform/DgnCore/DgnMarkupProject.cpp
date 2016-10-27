@@ -1395,7 +1395,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId(), CategorySelector(*project, ""), DisplayStyle(*project));
+    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId(), *new CategorySelector(*project, ""), *new DisplayStyle(*project));
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
@@ -1409,9 +1409,9 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
         controller->SetDelta(templateSheet->GetDelta());
         controller->SetOrigin(templateSheet->GetOrigin());
-        controller->GetViewDefinitionR().GetCategorySelectorR().GetCategoriesR() = templateSheet->GetViewedCategories();
+        controller->GetViewDefinition().GetCategorySelector().GetCategoriesR() = templateSheet->GetViewedCategories();
         controller->SetRotation(templateSheet->GetRotation());
-        controller->GetViewFlagsR() = templateSheet->GetViewFlags();
+        controller->GetViewDefinition().GetDisplayStyle().SetViewFlags(templateSheet->GetViewFlags());
         }
     else
         {
@@ -1447,9 +1447,8 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         controller->SetRotation(rot);
         
         ViewFlags flags;
-        memset(&flags, 0, sizeof(flags));
-        flags.m_weights = true;
-        controller->GetViewFlagsR() = flags;
+        flags.SetShowWeights(true);
+        controller->GetViewDefinition().GetDisplayStyle().SetViewFlags(flags);
 
         for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))
             controller->ChangeCategoryDisplay(catId, true);
@@ -1467,7 +1466,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
     // We force the redline view to be adjusted now, and then we set the sheet origin and delta to match. That way, we
     // know that the redline model (and the image that we embed in it) will display in about the same location on the screen
     // as the DgnDb view. That makes for a smoother transition from DgnDb vew to redline view. 
-    auto& viewDef = controller->GetViewDefinitionR();
+    auto& viewDef = controller->GetViewDefinition();
     viewDef.AdjustAspectRatio(projectViewRect.Aspect(), true);
     viewDef.Update();
 
