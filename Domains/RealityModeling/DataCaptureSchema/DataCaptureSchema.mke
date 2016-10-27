@@ -47,6 +47,8 @@ $(o)DataCaptureDomain$(oext) : $(_MakeFilePath)DataCaptureDomain.cpp ${MultiComp
 
 $(o)Camera$(oext) : $(_MakeFilePath)Camera.cpp ${MultiCompileDepends} $(appPublicApi)Camera.h
 
+$(o)Photo$(oext) : $(_MakeFilePath)Photo.cpp ${MultiCompileDepends} $(appPublicApi)Photo.h
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------

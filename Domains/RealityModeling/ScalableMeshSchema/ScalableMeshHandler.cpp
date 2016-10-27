@@ -42,6 +42,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
     {
+    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
     return m_range;
     }
 
@@ -557,12 +558,22 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
     assert(status == SUCCESS);
 
 
-    if (s_waitQueryComplete)
+    if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
         while (!m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
+            BeThreadUtilities::BeSleep (200);
             }
         }
+
+
+        if (!m_isProgressiveDisplayOn)
+            {
+            while (!m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
+                {
+                BeThreadUtilities::BeSleep (200);
+                }
+            }
 
     bool needProgressive;
     
@@ -796,6 +807,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     {
     m_tryOpen = false;               
     m_forceRedraw = false;
+    m_isProgressiveDisplayOn = true;
 
    // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
    // appData->m_smTerrainPhysicalModelP = this;
@@ -823,7 +835,7 @@ ScalableMeshModel::~ScalableMeshModel()
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject) 
     {    
     assert(m_smPtr == nullptr);
-
+    m_path = smFilename;
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
@@ -929,6 +941,11 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
     }
 
 
+BeFileName ScalableMeshModel::GetPath()
+    {
+    return m_path;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -973,6 +990,14 @@ bool ScalableMeshModel::IsTerrain()
     {
     if (m_smPtr.get() == nullptr) return false;
     return m_smPtr->IsTerrain();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre    10/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
+    {
+    m_isProgressiveDisplayOn = isProgressiveDisplayOn;
     }
 
 //----------------------------------------------------------------------------------------

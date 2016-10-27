@@ -71,6 +71,7 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 
 // Elements
 #define BDCP_CLASS_Camera                                        "Camera"
+#define BDCP_CLASS_Photo                                         "Photo"
 
 // 
 // 
@@ -87,6 +88,7 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BDCP_CATEGORY_Camera                                         "Camera"
+#define BDCP_CATEGORY_Photo                                          "Photo"
 
 
 //-----------------------------------------------------------------------------------------
@@ -129,13 +131,20 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Define typedefs and Ptrs in the DataCapture namespace
 //-----------------------------------------------------------------------------------------
 DATACAPTURE_TYPEDEFS(Camera)
+DATACAPTURE_TYPEDEFS(ImageDimensionType)
+DATACAPTURE_TYPEDEFS(CameraDistortionType)
+DATACAPTURE_TYPEDEFS(Photo)
+DATACAPTURE_TYPEDEFS(PoseType)
+DATACAPTURE_TYPEDEFS(RotationMatrixType)
 
 
 DATACAPTURE_REFCOUNTED_PTR(Camera)
+DATACAPTURE_REFCOUNTED_PTR(Photo)
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-BEBRIEFCASEBASED_ID_SUBCLASS(CameraId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(CameraElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(PhotoElementId, Dgn::DgnElementId)
 
 /**
 @addtogroup DataCaptureGroup DataCapture
