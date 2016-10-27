@@ -665,6 +665,8 @@ void RealityDataDownload::ReportStatus(int index, void *pClient, int ErrorCode, 
     DownloadResult dr = DownloadResult();
     dr.errorCode = ErrorCode;
     dr.downloadProgress = pEntry->downloadedSizeStep;
+    if(pEntry->filesize != 0)
+        dr.downloadProgress /= pEntry->filesize;
 
     tr->retries.push_back(dr);
 
