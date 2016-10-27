@@ -133,16 +133,17 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         Kind m_kind;
         ECN::ECPropertyCR m_ecProperty;
         Utf8String m_propertyAccessString;
-        PropertyMap const* m_parentPropertMap;    
+        PropertyMap const* m_parentPropertMap;
         ClassMap const& m_classMap;
         bool m_isInEditMode;
 
         virtual BentleyStatus _Validate() const = 0;
         virtual bool _IsMappedToTable(DbTable const&) const = 0;
-       
+
     protected:
         PropertyMap(Kind, ClassMap const&, ECN::ECPropertyCR);
         PropertyMap(Kind, PropertyMap const&, ECN::ECPropertyCR);
+
     public:
         virtual ~PropertyMap() {}
 
@@ -179,6 +180,10 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
         void FinishEditing() { BeAssert(m_isInEditMode);  m_isInEditMode = false; }
+        static void OverrideAccessString(PropertyMap& map, Utf8StringCR newAccessString)
+            {
+            map.m_propertyAccessString = newAccessString;
+            }
     };
 
 //=======================================================================================

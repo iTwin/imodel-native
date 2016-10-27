@@ -97,6 +97,7 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
             return ERROR;
             }
 
+        PropertyMap::OverrideAccessString(*prop, GetAccessString());
         m_vmapsPerTable[prop->GetTable().GetName().c_str()] = prop;
         m_tables.push_back(&prop->GetTable());
         m_vmaps.push_back(prop.get());
