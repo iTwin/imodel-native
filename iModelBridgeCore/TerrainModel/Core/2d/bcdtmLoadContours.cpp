@@ -1069,7 +1069,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
                  fenceParamsP(fenceParamsP),
                  pondAppData(pondAppData),
                  loadFunctionP(loadFunctionP),
-                 userP(userP)
+                 userP(userP),
+                 m_activeThreads(0),
+                 nextCount(0)
                  {
                  numThreads = DTM_NUM_PROCESSORS;
 
