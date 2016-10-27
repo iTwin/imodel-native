@@ -867,11 +867,10 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
-    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
-    if (arrayProp == nullptr)
+    if (!property.GetIsArray())
         return false;
 
-    if (ARRAYKIND_Struct == arrayProp->GetKind())
+    if (property.GetIsStructArray())
         return JsonFromStructArray(jsonValue, ecsqlValue);
 
     return JsonFromPrimitiveArray(jsonValue, ecsqlValue, property);

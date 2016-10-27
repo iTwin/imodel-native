@@ -271,14 +271,12 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     if (isArray)
         {
         ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
-        if (nullptr != structArrayProperty)
-            structType = structArrayProperty->GetStructElementType();
-        else
-            {
-            BeAssert(nullptr != arrayProperty);
-            primitiveType = arrayProperty->GetPrimitiveElementType();
-            }
+        if (arrayProperty->GetIsStructArray())
+            structType = arrayProperty->GetAsStructArrayProperty()->GetStructElementType();
+        else if (arrayProperty->GetIsPrimitiveArray())
+            primitiveType = arrayProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+
+        BeAssert(nullptr != arrayProperty);
 
         minOccurs = arrayProperty->GetMinOccurs();
         maxOccurs = arrayProperty->GetMaxOccurs();

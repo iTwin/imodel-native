@@ -600,8 +600,8 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
 
     if (prop.GetIsArray())
         {
-        ArrayECPropertyCP arrayProp = prop.GetAsArrayProperty();
-        if (arrayProp->GetKind() == ARRAYKIND_Primitive)
+        PrimitiveArrayECPropertyCP arrayProp = prop.GetAsPrimitiveArrayProperty();
+        if (nullptr != arrayProp)
             return arrayProp->IsCalculated();
 
         StructArrayECProperty const* structArrayProp = prop.GetAsStructArrayProperty();

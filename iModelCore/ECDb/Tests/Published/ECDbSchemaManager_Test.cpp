@@ -510,13 +510,13 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
     ASSERT_STREQ("URL", prop->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
 
     prop = fooClass->GetPropertyP("Addresses");
-    ASSERT_TRUE(prop != nullptr && prop->GetAsArrayProperty() != nullptr);
+    ASSERT_TRUE(prop != nullptr && prop->GetAsPrimitiveArrayProperty() != nullptr);
     ASSERT_FALSE(prop->HasExtendedType());
 
     prop = fooClass->GetPropertyP("Favorites");
-    ASSERT_TRUE(prop != nullptr && prop->GetAsArrayProperty() != nullptr);
+    ASSERT_TRUE(prop != nullptr && prop->GetAsPrimitiveArrayProperty() != nullptr);
     ASSERT_TRUE(prop->HasExtendedType());
-    ASSERT_STREQ("URL", prop->GetAsArrayProperty()->GetExtendedTypeName().c_str());
+    ASSERT_STREQ("URL", prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str());
     }
 
 //---------------------------------------------------------------------------------------

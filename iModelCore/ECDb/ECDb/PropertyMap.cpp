@@ -36,17 +36,15 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
             }
         }
 
-    ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-
     // PropertyMapRule: primitives, primitive arrays , and structs map to 1 or more columns in the ECClass's main table
-    if (arrayProperty != nullptr)
+    if (ecProperty.GetIsArray())
         {
-        if (ARRAYKIND_Primitive == arrayProperty->GetKind())
-            return PrimitiveArrayPropertyMap::Create(ecdb, ecClass.GetId(), *arrayProperty, propertyAccessString, parentPropertyMap);
+        if (ecProperty.GetIsPrimitiveArray())
+            return PrimitiveArrayPropertyMap::Create(ecdb, ecClass.GetId(), *ecProperty.GetAsPrimitiveArrayProperty(), propertyAccessString, parentPropertyMap);
         else
             {
-            BeAssert(ARRAYKIND_Primitive != arrayProperty->GetKind());
-            return StructArrayJsonPropertyMap::Create(ecdb, ecClass.GetId(), *arrayProperty->GetAsStructArrayProperty(), propertyAccessString, parentPropertyMap);
+            BeAssert(!ecProperty.GetIsPrimitiveArray());
+            return StructArrayJsonPropertyMap::Create(ecdb, ecClass.GetId(), *ecProperty.GetAsStructArrayProperty(), propertyAccessString, parentPropertyMap);
             }
         }
 
@@ -1039,7 +1037,7 @@ PrimitiveArrayPropertyMap::PrimitiveArrayPropertyMap(ECDbCR ecdb, ECClassId owne
     : SingleColumnPropertyMap(Type::PrimitiveArray, ownerClassMapId, arrayProperty, propertyAccessString, parentPropertyMap)
     {
     BeAssert(!arrayProperty.GetIsStructArray());
-    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ecdb, arrayProperty.GetPrimitiveElementType());
+    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ecdb, arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
     BeAssert(primitiveArrayPersistenceClass != nullptr);
     m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
     }

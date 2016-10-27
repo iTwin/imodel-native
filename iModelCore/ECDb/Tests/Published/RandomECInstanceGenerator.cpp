@@ -164,7 +164,7 @@ void DefaultPropertyValueGenerator::Init()
     DateTime seed = DateTime(DateTime::Kind::Unspecified, 2000, 01, 01, 0, 0);
     if (GetProperty() && (
         (GetProperty()->GetIsPrimitive() && GetProperty()->GetAsPrimitiveProperty()->GetType() ==PRIMITIVETYPE_DateTime) || 
-        (GetProperty()->GetIsArray() && GetProperty()->GetAsArrayProperty()->GetKind() == ARRAYKIND_Primitive && GetProperty()->GetAsArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)))
+        (GetProperty()->GetIsPrimitiveArray() && GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)))
         {
         DateTimeInfo info;
         if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == ECObjectsStatus::Success)        
@@ -403,7 +403,7 @@ void RandomECInstanceGenerator::ClassValueGenerator::Init (ECClassCR ecClass, Pr
         if (property->IsCalculated())
             continue;
 
-        if (property->GetIsPrimitive() || (property->GetIsArray() && property->GetAsArrayProperty()->GetKind()==ARRAYKIND_Primitive))
+        if (property->GetIsPrimitive() || property->GetIsPrimitiveArray())
             m_generators[property] = factory->CreateInstance(property);        
         }
     }
@@ -843,52 +843,59 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
             SetPrimitiveValue (value, ecProperty->GetAsPrimitiveProperty()->GetType(), gen->GetGenerator(ecProperty));
             generatedECInstance.SetValue (ecProperty->GetName().c_str(), value);
             }
-        else if (ecProperty->GetIsArray())
+        else if (ecProperty->GetIsStructArray())
             {
-            auto arrayProperty  = ecProperty->GetAsArrayProperty();
-            if(arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
-                continue;
+            auto structArrayProperty = ecProperty->GetAsStructArrayProperty();
+            if (nullptr == structArrayProperty)
+                return BentleyStatus::ERROR;
 
             auto maxArrayEntries = (uint32_t)GetNextRandom(GetParameters().GetNumberOfArrayElementsToGenerate());
 
-            if( (arrayProperty->GetMaxOccurs() - arrayProperty->GetMinOccurs()) < maxArrayEntries)
+            if( (structArrayProperty->GetMaxOccurs() - structArrayProperty->GetMinOccurs()) < maxArrayEntries)
                 continue;
 
             generatedECInstance.AddArrayElements (ecProperty->GetName().c_str (), maxArrayEntries);
-            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+            for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                 {
-                auto structArrayProperty = ecProperty->GetAsStructArrayProperty();
-                if (nullptr == structArrayProperty)
-                return BentleyStatus::ERROR;
-                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
+                auto structInstance = structArrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
+                BeAssert(structInstance.IsValid());
+
+                auto r = SetInstanceData (*structInstance);
+                BeAssert(r == BentleyStatus::SUCCESS);
+                    value.SetStruct(structInstance.get());
+
+                auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
+                if (status != ECObjectsStatus::Success)
                     {
-                    auto structInstance = structArrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
-                    BeAssert(structInstance.IsValid());
-
-                    auto r = SetInstanceData (*structInstance);
-                    BeAssert(r == BentleyStatus::SUCCESS);
-                        value.SetStruct(structInstance.get());
-
-                    auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
-                    if (status != ECObjectsStatus::Success)
-                        {
-                        BeAssert(false);
-                        return BentleyStatus::ERROR;
-                        }
+                    BeAssert(false);
+                    return BentleyStatus::ERROR;
                     }
                 }
-            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive )
+            }
+        else if (ecProperty->GetIsPrimitiveArray())
+            {
+            auto primitiveArrayProperty = ecProperty->GetAsPrimitiveArrayProperty();
+            if (nullptr == primitiveArrayProperty)
+                return BentleyStatus::ERROR;
+
+            if (primitiveArrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
+                continue;
+
+            auto maxArrayEntries = (uint32_t) GetNextRandom(GetParameters().GetNumberOfArrayElementsToGenerate());
+
+            if ((primitiveArrayProperty->GetMaxOccurs() - primitiveArrayProperty->GetMinOccurs()) < maxArrayEntries)
+                continue;
+
+            generatedECInstance.AddArrayElements(ecProperty->GetName().c_str(), maxArrayEntries);
+
+            for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                 {
-                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
+                SetPrimitiveValue (value, primitiveArrayProperty->GetPrimitiveElementType(), gen->GetGenerator(ecProperty));
+                auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
+                if (status != ECObjectsStatus::Success)
                     {
-                    SetPrimitiveValue (value, arrayProperty->GetPrimitiveElementType(), gen->GetGenerator(ecProperty));
-                    auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
-                    if (status != ECObjectsStatus::Success)
-                        {
-                        BeAssert(false);
-                        return BentleyStatus::ERROR;
-                        }
-                    
+                    BeAssert(false);
+                    return BentleyStatus::ERROR;
                     }
                 }
             }

@@ -581,7 +581,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::PrimitiveArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) arrayProp->GetPrimitiveElementType()))
+            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) arrayProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()))
                 return ERROR;
             }
         else
@@ -809,7 +809,7 @@ BentleyStatus ECDbSchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, in
         }
     else if (prop.GetIsPrimitiveArray())
         {
-        ArrayECPropertyCP arrayProp = prop.GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP arrayProp = prop.GetAsPrimitiveArrayProperty();
         koq = arrayProp->IsKindOfQuantityDefinedLocally() ? arrayProp->GetKindOfQuantity() : nullptr;
         }
 
@@ -1117,7 +1117,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
                 {
                 koqCP = newPrimitiveProperty->GetKindOfQuantity();
                 }
-            else if (auto newPrimitivePropertyArray = newProperty.GetAsArrayProperty())
+            else if (auto newPrimitivePropertyArray = newProperty.GetAsPrimitiveArrayProperty())
                 {
                 koqCP = newPrimitivePropertyArray->GetKindOfQuantity();
                 }

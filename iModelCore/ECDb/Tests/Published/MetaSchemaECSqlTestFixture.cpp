@@ -623,7 +623,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
     {
     PrimitiveECPropertyCP primProp = expectedProp.GetAsPrimitiveProperty();
     StructECPropertyCP structProp = expectedProp.GetAsStructProperty();
-    ArrayECPropertyCP primArrayProp = expectedProp.GetIsPrimitiveArray() ? expectedProp.GetAsArrayProperty() : nullptr;
+    PrimitiveArrayECPropertyCP primArrayProp = expectedProp.GetAsPrimitiveArrayProperty();
     StructArrayECPropertyCP structArrayProp = expectedProp.GetAsStructArrayProperty();
     NavigationECPropertyCP navProp = expectedProp.GetAsNavigationProperty();
 
@@ -810,7 +810,12 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("ArrayMinOccurs"))
             {
-            ArrayECPropertyCP arrayProp = primArrayProp != nullptr ? primArrayProp : structArrayProp;
+            ArrayECPropertyCP arrayProp = nullptr;
+            if (nullptr != primArrayProp)
+                arrayProp = primArrayProp;
+            else if (nullptr != structArrayProp)
+                arrayProp = structArrayProp;
+
             if (arrayProp != nullptr)
                 ASSERT_EQ((int) arrayProp->GetMinOccurs(), val.GetInt()) << "ECPropertyDef.ArrayMinOccurs for array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
@@ -821,7 +826,12 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("ArrayMaxOccurs"))
             {
-            ArrayECPropertyCP arrayProp = primArrayProp != nullptr ? primArrayProp : structArrayProp;
+            ArrayECPropertyCP arrayProp = nullptr;
+            if (nullptr != primArrayProp)
+                arrayProp = primArrayProp;
+            else if (nullptr != structArrayProp)
+                arrayProp = structArrayProp;
+
             if (arrayProp != nullptr)
                 ASSERT_EQ((int) arrayProp->GetStoredMaxOccurs(), val.GetInt()) << "ECPropertyDef.ArrayMaxOccurs for array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else

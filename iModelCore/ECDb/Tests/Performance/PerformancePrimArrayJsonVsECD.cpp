@@ -806,8 +806,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::CreateECDClass(ECSchemaPtr& sc
     if (ECObjectsStatus::Success != schema->CreateEntityClass(ecdClassP, "PrimArrayClass"))
         return ERROR;
 
-    ArrayECPropertyP arrayProp = nullptr;
-    if (ECObjectsStatus::Success != ecdClassP->CreateArrayProperty(arrayProp, "PrimArrayClass", arrayType))
+    PrimitiveArrayECPropertyP arrayProp = nullptr;
+    if (ECObjectsStatus::Success != ecdClassP->CreatePrimitiveArrayProperty(arrayProp, "PrimArrayClass", arrayType))
         return ERROR;
 
     ecdClass = ecdClassP;

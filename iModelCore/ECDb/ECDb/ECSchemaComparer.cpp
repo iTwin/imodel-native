@@ -1390,7 +1390,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     else if (v.GetIsPrimitiveArray())
         {
         propertyChange.IsPrimitiveArray().SetValue(appendType, true);
-        auto primitivePropArray = v.GetAsArrayProperty();
+        auto primitivePropArray = v.GetAsPrimitiveArrayProperty();
         propertyChange.GetExtendedTypeName().SetValue(appendType, primitivePropArray->GetExtendedTypeName());
         if (primitivePropArray->GetKindOfQuantity())
             propertyChange.GetKindOfQuanity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());

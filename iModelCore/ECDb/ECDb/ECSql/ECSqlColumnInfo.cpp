@@ -93,9 +93,8 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType(ECPropertyCR ecProperty)
 
     if (ecProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProp = ecProperty.GetAsArrayProperty();
-        if (arrayProp->GetKind() == ARRAYKIND_Primitive)
-            return ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(arrayProp->GetPrimitiveElementType());
+        if (ecProperty.GetIsPrimitiveArray())
+            return ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(ecProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
         else
             return ECTypeDescriptor::CreateStructArrayTypeDescriptor();
         }
