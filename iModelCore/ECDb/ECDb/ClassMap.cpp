@@ -284,7 +284,7 @@ BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& c
     ECClassIdPropertyMap const* classIdPropertyMap = GetECClassIdPropertyMap();
     if (classIdPropertyMap == nullptr)
         {
-        RefCountedPtr<ECClassIdPropertyMap> ecclassIdPropertyMap = PropertyMapFactory::CreateECClassIdPropertyMap(*this, GetClass().GetId(), columns);
+        RefCountedPtr<ECClassIdPropertyMap> ecclassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns);
         if (ecclassIdPropertyMap == nullptr)
             //log and assert already done in child method
             return ERROR;
@@ -646,7 +646,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return ERROR;
 
     //Load ECInstanceId================================================
-    RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = PropertyMapFactory::CreateECInstanceIdPropertyMap(*this, *mapColumnsList);
+    RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, *mapColumnsList);
     if (ecInstanceIdPropertyMap == nullptr)
         {
         BeAssert(false && "Failed to create property map");
@@ -661,7 +661,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return ERROR;
 
     //Load ECClassId   ================================================
-    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = PropertyMapFactory::CreateECClassIdPropertyMap(*this,GetClass().GetId(), *mapColumnsList);
+    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this,GetClass().GetId(), *mapColumnsList);
     if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false && "Failed to create property map");

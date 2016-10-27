@@ -15,25 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-SystemPropertyMap::SystemPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<PrimitivePropertyMap>> const& maps)
+SystemPropertyMap::SystemPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
     : PropertyMap(kind, classMap, ecProperty)
     {
     BeAssert(ecProperty.GetType() == ECN::PrimitiveType::PRIMITIVETYPE_Long);
-
-    for (RefCountedPtr<PrimitivePropertyMap> const& map : maps)
-        {
-        if (m_dataPropMaps.find(map->GetTable().GetName().c_str()) != m_dataPropMaps.end())
-            {
-            BeAssert(false && "PropertyMap must be one per table");
-            m_dataPropMaps.clear();
-            m_dataPropMapList.clear();
-            return;
-            }
-
-        m_dataPropMaps[map->GetTable().GetName().c_str()] = map;
-        m_tables.push_back(&map->GetTable());
-        m_dataPropMapList.push_back(map.get());
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -64,21 +49,10 @@ PrimitivePropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableN
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus SystemPropertyMap::TryCreateDataPropertyMaps(std::vector<RefCountedPtr<PrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
+BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& columns)
     {
-    ECDbSchemaManagerCR schemaManger = classMap.GetDbMap().GetECDb().Schemas();
-    ECPropertyCP ecProperty = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, systemProperty);
-    if (ecProperty == nullptr)
-        {
-        BeAssert(false && "Failed to find system property");
+    if (!InEditMode())
         return ERROR;
-        }
-    PrimitiveECPropertyCP primtiveECProp = ecProperty->GetAsPrimitiveProperty();
-    if (primtiveECProp == nullptr || primtiveECProp->GetType() != PRIMITIVETYPE_Long)
-        {
-        BeAssert(false && "System property must correspond to a primitive property of type long");
-        return ERROR;
-        }
 
     if (columns.empty())
         {
@@ -89,29 +63,33 @@ BentleyStatus SystemPropertyMap::TryCreateDataPropertyMaps(std::vector<RefCounte
     bset<DbTable const*> doneList;
     for (DbColumn const* column : columns)
         {
-        if (column->GetType() != DbColumn::Type::Integer)
+        if (column->GetType() != DbColumn::Type::Integer || doneList.find(&column->GetTable()) != doneList.end())
             {
-            BeAssert(false && "System column must have type integer");
-            return ERROR;
-            }
-
-        if (doneList.find(&column->GetTable()) != doneList.end())
-            {
-            BeAssert(false && "Column must unique per table");
+            BeAssert(false && "System column must have type integer and column must be unique per table");
+            m_dataPropMaps.clear();
+            m_tables.clear();
+            m_dataPropMapList.clear();
             return ERROR;
             }
 
         doneList.insert(&column->GetTable());
-        auto prop = PrimitivePropertyMap::CreateInstance(classMap, *primtiveECProp, *column);
+        auto prop = PrimitivePropertyMap::CreateInstance(*GetProperty().GetAsPrimitiveProperty(),*this, *column);
         if (prop == nullptr)
             {
             BeAssert(false && "Failed to create property Map");
+            m_dataPropMaps.clear();
+            m_tables.clear();
+            m_dataPropMapList.clear();
             return ERROR;
             }
 
-        propertyMaps.push_back(prop);
+        PropertyMap::OverrideAccessString(*prop, GetAccessString());
+        m_dataPropMaps[prop->GetTable().GetName().c_str()] = prop;
+        m_tables.push_back(&prop->GetTable());
+        m_dataPropMapList.push_back(prop.get());
         }
-
+    
+    FinishEditing();
     return SUCCESS;
     }
 
@@ -122,12 +100,18 @@ BentleyStatus SystemPropertyMap::TryCreateDataPropertyMaps(std::vector<RefCounte
 //static 
 RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    std::vector<RefCountedPtr<PrimitivePropertyMap>> propertyMaps;
-    if (TryCreateDataPropertyMaps(propertyMaps, ECSqlSystemProperty::ECInstanceId, classMap, columns) != SUCCESS)
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemProperty::ECInstanceId);
+    if (systemProperty == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    RefCountedPtr<ECInstanceIdPropertyMap> systemPropertyMap =  new ECInstanceIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty());
+    if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
-    PrimitiveECPropertyCP systemProperty = propertyMaps.front()->GetProperty().GetAsPrimitiveProperty();
-    return new ECInstanceIdPropertyMap(classMap, *systemProperty, propertyMaps);
+    return systemPropertyMap;
     }
 
 //************************************ECClassIdPropertyMap********************
@@ -137,12 +121,18 @@ RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(C
 //static 
 RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
     {
-    std::vector<RefCountedPtr<PrimitivePropertyMap>> propertyMaps;
-    if (TryCreateDataPropertyMaps(propertyMaps, ECSqlSystemProperty::ECClassId, classMap, columns) != SUCCESS)
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemProperty::ECClassId);
+    if (systemProperty == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    RefCountedPtr<ECClassIdPropertyMap> systemPropertyMap = new ECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), defaultEClassId);
+    if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
-    PrimitiveECPropertyCP systemProperty = propertyMaps.front()->GetProperty().GetAsPrimitiveProperty();
-    return new ECClassIdPropertyMap(classMap, *systemProperty, propertyMaps, defaultEClassId);
+    return systemPropertyMap;
     }
 
 //************************************ConstraintECClassIdPropertyMap********************
@@ -152,12 +142,18 @@ RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMa
 //static 
 RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    std::vector<RefCountedPtr<PrimitivePropertyMap>> propertyMaps;
-    if (TryCreateDataPropertyMaps(propertyMaps, constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId, classMap, columns) != SUCCESS)
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
+    if (systemProperty == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    RefCountedPtr<ConstraintECClassIdPropertyMap> systemPropertyMap = new ConstraintECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), defaultEClassId, constraintType);
+    if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
-    PrimitiveECPropertyCP systemProperty = propertyMaps.front()->GetProperty().GetAsPrimitiveProperty();
-    return new ConstraintECClassIdPropertyMap(classMap, *systemProperty, propertyMaps, defaultEClassId, constraintType);
+    return systemPropertyMap;
     }
 
 //************************************ConstraintECInstanceIdPropertyMap********************
@@ -167,11 +163,17 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::Cr
 //static
 RefCountedPtr<ConstraintECInstanceIdPropertyMap> ConstraintECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    std::vector<RefCountedPtr<PrimitivePropertyMap>> propertyMaps;
-    if (TryCreateDataPropertyMaps(propertyMaps, constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId, classMap, columns) != SUCCESS)
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
+    if (systemProperty == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> systemPropertyMap = new ConstraintECInstanceIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), constraintType);
+    if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
-    PrimitiveECPropertyCP systemProperty = propertyMaps.front()->GetProperty().GetAsPrimitiveProperty();
-    return new ConstraintECInstanceIdPropertyMap(classMap, *systemProperty, propertyMaps, constraintType);
+    return systemPropertyMap;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

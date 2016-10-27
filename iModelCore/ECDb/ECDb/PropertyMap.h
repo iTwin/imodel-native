@@ -7,30 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include "ClassMappingInfo.h"
+//#include "ClassMappingInfo.h"
 #include "DbSchema.h"
 #include "ClassMap.h"
-#include "ECDbSystemSchemaHelper.h"
+//#include "ECDbSystemSchemaHelper.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct PropertyMap;
-struct DataPropertyMap;
 struct CompoundDataPropertyMap;
 struct SingleColumnDataPropertyMap;
-struct PrimitivePropertyMap;
-struct PrimitiveArrayPropertyMap;
-struct StructPropertyMap;
-struct StructArrayPropertyMap;
-struct NavigationPropertyMap;
-struct Point2dPropertyMap;
-struct Point3dPropertyMap;
-struct PropertyMapContainer;
 struct SystemPropertyMap;
-struct ECInstanceIdPropertyMap;
-struct ECClassIdPropertyMap;
-struct ConstraintECInstanceIdPropertyMap;
-struct ConstraintECClassIdPropertyMap;
 
 enum class VisitorFeedback
     {
@@ -131,17 +118,17 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         Kind m_kind;
         ECN::ECPropertyCR m_ecProperty;
         Utf8String m_propertyAccessString;
-        PropertyMap const* m_parentPropertMap;    
+        PropertyMap const* m_parentPropertMap;
         ClassMap const& m_classMap;
         bool m_isInEditMode;
 
         virtual BentleyStatus _Validate() const = 0;
         virtual bool _IsMappedToTable(DbTable const&) const = 0;
-       
+
     protected:
         PropertyMap(Kind, ClassMap const&, ECN::ECPropertyCR);
         PropertyMap(Kind, PropertyMap const&, ECN::ECPropertyCR);
-        
+
     public:
         virtual ~PropertyMap() {}
 
@@ -178,6 +165,10 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
         void FinishEditing() { BeAssert(m_isInEditMode);  m_isInEditMode = false; }
+        static void OverrideAccessString(PropertyMap& map, Utf8StringCR newAccessString)
+            {
+            map.m_propertyAccessString = newAccessString;
+            }
     };
 
 //=======================================================================================
@@ -277,7 +268,7 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
         SingleColumnDataPropertyMap(Kind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
             : DataPropertyMap(kind, classMap, ecProperty), m_column(column)
             {}
-        SingleColumnDataPropertyMap(Kind kind, DataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
+        SingleColumnDataPropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
             : DataPropertyMap(kind, parentPropertyMap, ecProperty), m_column(column)
             {}
     public:       
@@ -294,7 +285,7 @@ struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
         PrimitivePropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, classMap, ecProperty, column)
             {}
-        PrimitivePropertyMap(DataPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+        PrimitivePropertyMap(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
             : SingleColumnDataPropertyMap(Kind::Primitive, parentPropertyMap, ecProperty, column)
             {}
 
@@ -304,7 +295,7 @@ struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
     public:
         virtual ~PrimitivePropertyMap() {}
         static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
+        static RefCountedPtr<PrimitivePropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, PropertyMap const& parentPropertyMap, DbColumn const& column);
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
@@ -358,12 +349,12 @@ struct Point2dPropertyMap final : CompoundDataPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override;
 
     public:
-        virtual ~Point2dPropertyMap() {}
-
-        PrimitivePropertyMap const& GetX() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME)); }
-        PrimitivePropertyMap const& GetY() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME)); }
         static RefCountedPtr<Point2dPropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y);
         static RefCountedPtr<Point2dPropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y);
+        virtual ~Point2dPropertyMap() {}
+
+        PrimitivePropertyMap const& GetX() const;
+        PrimitivePropertyMap const& GetY() const;
     };
 
 //=======================================================================================
@@ -384,12 +375,13 @@ struct Point3dPropertyMap final : CompoundDataPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override;
 
     public:
-        virtual ~Point3dPropertyMap() {}
-        PrimitivePropertyMap const& GetX() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME)); }
-        PrimitivePropertyMap const& GetY() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME)); }
-        PrimitivePropertyMap const& GetZ() const { return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Z_PROPNAME)); }
         static RefCountedPtr<Point3dPropertyMap> CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z);
         static RefCountedPtr<Point3dPropertyMap> CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z);
+        virtual ~Point3dPropertyMap() {}
+
+        PrimitivePropertyMap const& GetX() const;
+        PrimitivePropertyMap const& GetY() const;
+        PrimitivePropertyMap const& GetZ() const;
     };
 
 //=======================================================================================
@@ -463,54 +455,28 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
+        static RefCountedPtr<NavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty) { return new NavigationPropertyMap(classMap, ecProperty); }
         virtual ~NavigationPropertyMap() {}
 
         BentleyStatus Initialize(DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId, DbColumn const& idColumn);
-        RelECClassIdPropertyMap const& GetRelECClassId() const { return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME)); }
-        IdPropertyMap const& GetId() const { return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME)); };
-        static RefCountedPtr<NavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty) { return new NavigationPropertyMap(classMap, ecProperty); }
+        RelECClassIdPropertyMap const& GetRelECClassId() const;
+        IdPropertyMap const& GetId() const;
     };
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-struct PropertyMapFactory final
+struct PropertyMapCopier
     {
     private:
-        PropertyMapFactory();
-        ~PropertyMapFactory();
+        PropertyMapCopier();
+        ~PropertyMapCopier();
 
-        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext, DataPropertyMap const* newParent);
+        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const&, ClassMap const& newContext, DataPropertyMap const* newParent);
 
     public:
-        //! Data Property Maps
-        static RefCountedPtr<PrimitivePropertyMap> CreatePrimitivePropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<PrimitivePropertyMap> CreatePrimitivePropertyMap(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
-        static RefCountedPtr<PrimitiveArrayPropertyMap> CreatePrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<PrimitiveArrayPropertyMap> CreatePrimitiveArrayPropertyMap(ECN::ArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
-        static RefCountedPtr<StructPropertyMap> CreateStructPropertyMap(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty);
-        static RefCountedPtr<StructPropertyMap> CreateStructPropertyMap(ECN::StructECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap);
-        static RefCountedPtr<StructArrayPropertyMap> CreateStructArrayPropertyMap(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column);
-        static RefCountedPtr<StructArrayPropertyMap> CreateStructArrayPropertyMap(ECN::StructArrayECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& column);
-        static RefCountedPtr<Point2dPropertyMap> CreatePoint2dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y);
-        static RefCountedPtr<Point2dPropertyMap> CreatePoint2dPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y);
-        static RefCountedPtr<Point3dPropertyMap> CreatePoint3dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z);
-        static RefCountedPtr<Point3dPropertyMap> CreatePoint3dPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z);
-        static RefCountedPtr<NavigationPropertyMap> CreateNavigationPropertyMap(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty);
-        static RefCountedPtr<ECInstanceIdPropertyMap> CreateECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ECClassIdPropertyMap> CreateECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateSourceECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateTargetECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext);
-        static RefCountedPtr<SystemPropertyMap> CreateCopy(SystemPropertyMap const& propertyMap, ClassMap const& newContext);
-        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateConstraintECClassIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const&, ClassMap const& newContext);
+        static RefCountedPtr<SystemPropertyMap> CreateCopy(SystemPropertyMap const&, ClassMap const& newContext);
     };
-
-
-        //DbTable const* RequiresJoinTo(WipConstraintECClassIdPropertyMap const& propertyMap) const;
-        //Utf8CP GetECClassIdPrimaryTableAlias(WipConstraintECClassIdPropertyMap const& propertyMap) const;
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

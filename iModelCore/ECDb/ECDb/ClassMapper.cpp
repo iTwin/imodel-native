@@ -46,14 +46,13 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
         }
 
     ecInstanceIdColumns.push_back(ecInstanceIdColumn);
-    RefCountedPtr<ECInstanceIdPropertyMap> newProperty = PropertyMapFactory::CreateECInstanceIdPropertyMap(classMap, ecInstanceIdColumns);
+    RefCountedPtr<ECInstanceIdPropertyMap> newProperty = ECInstanceIdPropertyMap::CreateInstance(classMap, ecInstanceIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
         }
 
-    newProperty->FinishEditing();
     return classMap.GetPropertyMapsR().Insert(newProperty, 0LL);
     }
 
@@ -72,14 +71,14 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
         }
 
     ecClassIdColumns.push_back(ecClassIdColumn);
-    RefCountedPtr<ECClassIdPropertyMap> newProperty = PropertyMapFactory::CreateECClassIdPropertyMap(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
         }
 
-    newProperty->FinishEditing();
+
     return classMap.GetPropertyMapsR().Insert(newProperty, 1LL);
     }
 
@@ -314,9 +313,9 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
 
     RefCountedPtr<Point2dPropertyMap> ptr;
     if (parent)
-        ptr = PropertyMapFactory::CreatePoint2dPropertyMap(property, *parent, *x, *y);
+        ptr = Point2dPropertyMap::CreateInstance(property, *parent, *x, *y);
     else
-        ptr = PropertyMapFactory::CreatePoint2dPropertyMap(m_classMap, property, *x, *y);
+        ptr = Point2dPropertyMap::CreateInstance(m_classMap, property, *x, *y);
 
     ptr->FinishEditing();
     return ptr;
@@ -396,9 +395,9 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
         }
     RefCountedPtr<Point3dPropertyMap> ptr;
     if (parent)
-        ptr = PropertyMapFactory::CreatePoint3dPropertyMap(property, *parent, *x, *y, *z);
+        ptr = Point3dPropertyMap::CreateInstance(property, *parent, *x, *y, *z);
     else
-        ptr = PropertyMapFactory::CreatePoint3dPropertyMap(m_classMap, property, *x, *y, *z);
+        ptr = Point3dPropertyMap::CreateInstance(m_classMap, property, *x, *y, *z);
 
     ptr->FinishEditing();
     return ptr;
@@ -454,11 +453,11 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
             }
         }
 
-    RefCountedPtr<PrimitivePropertyMap> ptr;
-    if (parent)
-        ptr = PropertyMapFactory::CreatePrimitivePropertyMap(property, *parent, *column);
+    RefCountedPtr<PrimitivePropertyMap> ptr = nullptr;
+    if (parent != nullptr)
+        ptr = PrimitivePropertyMap::CreateInstance(property, *parent, *column);
     else
-        ptr = PropertyMapFactory::CreatePrimitivePropertyMap(m_classMap, property, *column);
+        ptr = PrimitivePropertyMap::CreateInstance(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -496,9 +495,9 @@ RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(
 
     RefCountedPtr<PrimitiveArrayPropertyMap> ptr;
     if (parent)
-        ptr = PropertyMapFactory::CreatePrimitiveArrayPropertyMap(property, *parent, *column);
+        ptr = PrimitiveArrayPropertyMap::CreateInstance(property, *parent, *column);
     else
-        ptr = PropertyMapFactory::CreatePrimitiveArrayPropertyMap(m_classMap, property, *column);
+        ptr = PrimitiveArrayPropertyMap::CreateInstance(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -536,10 +535,10 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
         }
 
     RefCountedPtr<StructArrayPropertyMap> ptr;
-    if (parent)
-        ptr = PropertyMapFactory::CreateStructArrayPropertyMap(property, *parent, *column);
+    if (parent != nullptr)
+        ptr = StructArrayPropertyMap::CreateInstance(property, *parent, *column);
     else
-        ptr = PropertyMapFactory::CreateStructArrayPropertyMap(m_classMap, property, *column);
+        ptr = StructArrayPropertyMap::CreateInstance(m_classMap, property, *column);
 
     ptr->FinishEditing();
     return ptr;
@@ -552,7 +551,7 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
 RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::NavigationECPropertyCR property)
     {
     Utf8String accessString = property.GetName();
-    RefCountedPtr<NavigationPropertyMap> propertyMap = PropertyMapFactory::CreateNavigationPropertyMap(m_classMap, property);
+    RefCountedPtr<NavigationPropertyMap> propertyMap = NavigationPropertyMap::CreateInstance(m_classMap, property);
     if (m_loadContext)
         {
         const DbColumn *id = nullptr, *relClassId = nullptr;
@@ -590,11 +589,11 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 //static 
 RefCountedPtr<StructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent)
     {
-    RefCountedPtr<StructPropertyMap> structPropertyMap;
-    if (parent)
-        structPropertyMap = PropertyMapFactory::CreateStructPropertyMap(property, *parent);
+    RefCountedPtr<StructPropertyMap> structPropertyMap = nullptr;
+    if (parent != nullptr)
+        structPropertyMap = StructPropertyMap::CreateInstance(property, *parent);
     else
-        structPropertyMap = PropertyMapFactory::CreateStructPropertyMap(m_classMap, property);
+        structPropertyMap = StructPropertyMap::CreateInstance(m_classMap, property);
 
     for (ECN::ECPropertyCP property : property.GetType().GetProperties())
         {
