@@ -422,6 +422,34 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOptio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
+    return nullptr;
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
+    return nullptr;
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 

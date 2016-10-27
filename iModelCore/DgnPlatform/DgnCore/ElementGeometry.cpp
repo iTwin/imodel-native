@@ -1145,14 +1145,12 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
             facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
 
-#if defined (NOT_NOW)
             if (nullptr != attachments)
                 {
                 bvector<PolyfaceHeaderPtr> polyfaces;
                 bvector<GeometryParams> params;
 
-                WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
-                facetFailure = (0 == polyfaces.size());
+                BRepUtil::FacetEntity(entity, polyfaces, params, *facetOpt);
 
                 for (size_t i = 0; i < polyfaces.size(); i++)
                     {
@@ -1164,7 +1162,6 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                     }
                 }
             else
-#endif
                 {
                 PolyfaceHeaderPtr polyface = BRepUtil::FacetEntity(entity, *facetOpt);
 

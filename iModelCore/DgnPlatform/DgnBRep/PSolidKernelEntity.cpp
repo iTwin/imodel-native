@@ -33,29 +33,6 @@ virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {ret
 virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
 virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IFaceMaterialAttachmentsPtr Create (ISolidKernelEntityCR entity, Render::GeometryParamsCR baseParams)
-    {
-    int         nFaces;
-    PK_FACE_t*  faces = NULL;
-
-    if (SUCCESS != PK_BODY_ask_faces(PSolidUtil::GetEntityTag(entity), &nFaces, &faces))
-        return nullptr;
-
-    FaceMaterialAttachments* attachments = new FaceMaterialAttachments ();
-
-    attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
-    
-    PK_MEMORY_free (faces);
-
-    return attachments;
-    }
-
 }; // FaceMaterialAttachments
 
 /*=================================================================================**//**
@@ -157,7 +134,7 @@ virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) o
         return true;
         }
 
-    IFaceMaterialAttachmentsPtr attachments = FaceMaterialAttachments::Create(*this, *baseParams);
+    IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(m_entityTag, *baseParams);
 
     if (!attachments.IsValid())
         return false;
@@ -252,6 +229,14 @@ PK_ENTITY_t ExtractEntityTag()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
+    {
+    m_faceAttachments = attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/09
++---------------+---------------+---------------+---------------+---------------+------*/
 static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned = true)
     {
     if (NULTAG == entityTag)
@@ -286,6 +271,42 @@ uint32_t PSolidUtil::GetEntityTag(ISolidKernelEntityCR entity)
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
 
     return (nullptr != psEntity ? psEntity->GetEntityTag() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams)
+    {
+    int         nFaces;
+    PK_FACE_t*  faces = NULL;
+
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faces))
+        return nullptr;
+
+    FaceMaterialAttachments* attachments = new FaceMaterialAttachments();
+
+    attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
+
+    for (int iFace = 0; iFace < nFaces; iFace++)
+        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
+    
+    PK_MEMORY_free(faces);
+
+    return attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidUtil::SetFaceAttachments(ISolidKernelEntityR entity, IFaceMaterialAttachmentsP attachments)
+    {
+    PSolidKernelEntity* psEntity = dynamic_cast <PSolidKernelEntity*> (&entity);
+
+    if (nullptr == psEntity)
+        return;
+    
+    psEntity->SetFaceMaterialAttachments(attachments);
     }
 
 /*---------------------------------------------------------------------------------**//**
