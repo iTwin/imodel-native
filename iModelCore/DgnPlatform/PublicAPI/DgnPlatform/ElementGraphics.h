@@ -18,11 +18,11 @@ struct WireframeGeomUtil
 {
     DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
     DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidKernelEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
 
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
-    DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+    DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, IBRepEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 
     DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicBuilderR);
     DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicBuilderR, double zDepth);

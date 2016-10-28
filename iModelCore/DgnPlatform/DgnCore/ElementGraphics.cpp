@@ -870,7 +870,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
@@ -902,7 +902,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
     if (includeFaceIso)
         {
         Geom2dHatch_Hatcher hatcher = Geom2dHatch_Hatcher(Geom2dHatch_Intersector(1.e-10, 1.e-10), 1.e-8, 1.e-8);
-        bool isSheet = (ISolidKernelEntity::EntityType::Sheet == entity.GetEntityType());
+        bool isSheet = (IBRepEntity::EntityType::Sheet == entity.GetEntityType());
 
         for (TopExp_Explorer ex(*shape, TopAbs_FACE); ex.More(); ex.Next())
             {
@@ -928,7 +928,7 @@ protected:
 
 MSBsplineSurfaceCP      m_surface;
 ISolidPrimitiveCP       m_primitive;
-ISolidKernelEntityCP    m_entity;
+IBRepEntityCP    m_entity;
 
 bool                    m_includeEdges;
 bool                    m_includeFaceIso;
@@ -992,7 +992,7 @@ virtual void _OutputGraphics(ViewContextR context) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetBsplineSurface(MSBsplineSurfaceCR surface) {m_surface = &surface;}
 void SetSolidPrimitive(ISolidPrimitiveCR primitive) {m_primitive = &primitive;}
-void SetSolidEntity(ISolidKernelEntityCR entity) {m_entity = &entity;}
+void SetSolidEntity(IBRepEntityCR entity) {m_entity = &entity;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
@@ -1032,7 +1032,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(IBRepEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
     RuleCollector   rules(includeEdges, includeFaceIso);
 
