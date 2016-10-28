@@ -695,7 +695,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForArrayMember (ECN::ArrayECPropertyCR 
     
     if (NULL == adapter)
         {
-        DgnECTypeRegistry::BasicType type = (ARRAYKIND_Struct == arrayProperty.GetKind()) ? DgnECTypeRegistry::BasicType_StructArray : DgnECTypeRegistry::BasicTypeForPrimitive (arrayProperty.GetPrimitiveElementType());
+        DgnECTypeRegistry::BasicType type = (ARRAYKIND_Struct == arrayProperty.GetKind()) ? DgnECTypeRegistry::BasicType_StructArray : DgnECTypeRegistry::BasicTypeForPrimitive (arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
         adapter = &DgnECTypeRegistry::GetRegistry().GetBasicTypeAdapter (type);
         }
 

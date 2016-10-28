@@ -53,7 +53,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
     DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
-    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity) override;
+    DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
@@ -119,8 +119,8 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);
     DGNPLATFORM_EXPORT void ClipAndProcessPolyface(PolyfaceQueryCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
     DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
 
@@ -148,16 +148,16 @@ struct IGeometryProcessor
 {
 public:
     //! Specify how to process a geometric primitive that is not handled by it's specific _Process/_ProcessClipped call.
-    //! When returning multiple values, priority is given to the lowest value. For example, if ISolidKernelEntity is the
-    //! preferred geometry, but a Polyface is acceptable when conversion to ISolidKernelEntity isn't possible or available, 
+    //! When returning multiple values, priority is given to the lowest value. For example, if IBRepEntity is the
+    //! preferred geometry, but a Polyface is acceptable when conversion to IBRepEntity isn't possible or available, 
     //! the IGeometryProcessor can return UnhandledPreference::BRep | UnhandledPreference::Facets.
     enum class UnhandledPreference
     {
         Ignore  = 0,      //!< Don't convert an unhandled geometric primitive to any other type.
         Auto    = 1,      //!< Process as "best" available type for clipping. Use facets if no curved surfaces/edges or BRep unavailable, etc.
-        BRep    = 1 << 1, //!< Process region CurveVector, open CurveVector, ISolidPrimitive, MSBsplineSurface, and PolyfaceQuery as ISolidKernelEntity.
-        Facet   = 1 << 2, //!< Process region CurveVector, ISolidPrimitive, MSBsplineSurface, and ISolidKernelEntity as PolyfaceHeader.
-        Curve   = 1 << 3, //!< Process ISolidPrimitive, MSBsplineSurface, PolyfaceQuery, and ISolidKernelEntity as edge/face iso CurveVector. Process clipped CurveVector as open curves, drop TextString.
+        BRep    = 1 << 1, //!< Process region CurveVector, open CurveVector, ISolidPrimitive, MSBsplineSurface, and PolyfaceQuery as IBRepEntity.
+        Facet   = 1 << 2, //!< Process region CurveVector, ISolidPrimitive, MSBsplineSurface, and IBRepEntity as PolyfaceHeader.
+        Curve   = 1 << 3, //!< Process ISolidPrimitive, MSBsplineSurface, PolyfaceQuery, and IBRepEntity as edge/face iso CurveVector. Process clipped CurveVector as open curves, drop TextString.
         Box     = 1 << 4, //!< Process TextString, Raster, and Mosasic as a simple rectangle.
     };
 
@@ -199,7 +199,7 @@ virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraph
 virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
@@ -214,7 +214,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic&) {
 virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
-virtual bool _ProcessBody(ISolidKernelEntityCR, SimplifyGraphic&) {return false;}
+virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
@@ -223,7 +223,7 @@ virtual bool _ProcessCurveVectorClipped(CurveVectorCR, bool filled, SimplifyGrap
 virtual bool _ProcessSolidPrimitiveClipped(ISolidPrimitiveCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
-virtual bool _ProcessBodyClipped(ISolidKernelEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 
 //! Allow processor to output graphics to it's own process methods.

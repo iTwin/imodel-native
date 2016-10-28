@@ -2401,7 +2401,60 @@ protected:
 
 public:
     //! Creates a new Sheet in the specified InformationModel
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param model The model where the Sheet element will be inserted by the caller.
+    //! @param scale The sheet's drawing scale
+    //! @param height The sheet height (meters)
+    //! @param width The sheet width (meters)
+    //! @param code Optional. The sheet's code.
+    //! @param userLabel Optional. The sheet's user label.
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, 
+                                              DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param model The model where the Sheet element will be inserted by the caller.
+    //! @param scale The sheet's drawing scale
+    //! @param sheetTemplate The sheet template. Maybe in valid if there is no template.
+    //! @param code Optional. The sheet's code.
+    //! @param userLabel Optional. The sheet's user label.
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+
+    //! Get the drawing scale of the sheet
+    double GetScale() const {return GetPropertyValueDouble("Scale");}
+
+    //! Set the drawing scale of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
+    DgnDbStatus SetScale(double v) {return SetPropertyValue("Scale", v);}
+
+    //! Get the height of the sheet
+    double GetHeight() const {return GetPropertyValueDouble("Height");}
+
+    //! Set the height of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
+    DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);}
+
+    //! Get the width of the sheet
+    double GetWidth() const {return GetPropertyValueDouble("Width");}
+
+    //! Set the width of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
+    DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);}
+
+    //! Get the sheet template, if any.
+    //! @return an invalid ID if the sheet has no template.
+    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>("Template");}
+
+    //! Set the sheet template.
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue("Template", v);}
+
+    //! Get the sheet border, if any.
+    //! @return an invalid ID if the sheet has no border.
+    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>("Border");}
+
+    //! Set the sheet border.
+    //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue("Border", v);}
 };
 
 //=======================================================================================

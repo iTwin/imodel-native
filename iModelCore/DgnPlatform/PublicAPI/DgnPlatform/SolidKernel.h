@@ -68,15 +68,15 @@ virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
 //=======================================================================================
-//! ISolidKernelEntity represents a boundary representation body (BRep). A BRep is
+//! IBRepEntity represents a boundary representation body (BRep). A BRep is
 //! defined by it's topology and geometry. The geometry is the surfaces, curves, and points.
 //! The topology is the faces, edges, and vertices that describe how the geometry is connected.
-//! The ISolidKernelEntity is used to provide solid modeling functionality such as booleans,
+//! The IBRepEntity is used to provide solid modeling functionality such as booleans,
 //! blending, and hollowing. Typically only solids and non-planar sheet bodies are persisted
 //! as BRep elements. A wire body or planar sheet body can be efficiently represented as
 //! a CurveVector.
 //=======================================================================================
-struct ISolidKernelEntity : BentleyApi::IRefCounted
+struct IBRepEntity : BentleyApi::IRefCounted
 {
 public:
 
@@ -92,7 +92,7 @@ enum class EntityType
 protected:
 
 //! @private
-virtual bool _IsEqual(ISolidKernelEntityCR) const = 0;
+virtual bool _IsEqual(IBRepEntityCR) const = 0;
 //! @private
 virtual EntityType _GetEntityType() const = 0;
 //! @private
@@ -106,13 +106,13 @@ virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
 virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP) = 0;
 //! @private
-virtual ISolidKernelEntityPtr _Clone() const = 0;
+virtual IBRepEntityPtr _Clone() const = 0;
 
 public:
 
 //! Compare entities to see if they refer to the same body.
 //! @return true if entities are equal.
-bool IsEqual (ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
+bool IsEqual (IBRepEntityCR entity) const {return _IsEqual(entity);}
 
 //! Get the body type for this entity.
 //! @return The solid kernel entity type.
@@ -148,10 +148,10 @@ IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMa
 //! Initialize per-face color/material using the supplied GeometryParams or clear if nullptr.
 bool InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
-//! Create deep copy of this ISolidKernelEntity.
-ISolidKernelEntityPtr Clone() const {return _Clone();}
+//! Create deep copy of this IBRepEntity.
+IBRepEntityPtr Clone() const {return _Clone();}
 
-}; // ISolidKernelEntity
+}; // IBRepEntity
 
 //=======================================================================================
 //! ISubEntity represents a topological entity that can refer to a
@@ -215,9 +215,9 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 //=======================================================================================
 struct SolidKernelUtil
 {
-DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
-DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
-DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
+DGNPLATFORM_EXPORT static IBRepEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
+DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(IBRepEntityCR);
+DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
 }; // SolidKernelUtil
 #endif
 
@@ -230,11 +230,11 @@ DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
 //=======================================================================================
 struct BRepUtil
 {
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, IFacetOptionsR);
-DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static bool FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
-DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(ISolidKernelEntityCR);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
 }; // BRepUtil
 
 END_BENTLEY_DGN_NAMESPACE

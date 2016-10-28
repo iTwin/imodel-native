@@ -257,9 +257,8 @@ Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value, ECN::ECProperty
         if (!isFirstRow)
             out.append(", ");
 
-        auto arrayProperty = property->GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ECN::ArrayKind::ARRAYKIND_Primitive)
-            out.append(PrimitiveToString(*arrayElementValue, arrayProperty->GetPrimitiveElementType()));
+        if (property->GetIsPrimitiveArray())
+            out.append(PrimitiveToString(*arrayElementValue, property->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()));
         else
             out.append(StructToString(*arrayElementValue));
 

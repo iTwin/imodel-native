@@ -248,6 +248,12 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
         if (1 != sscanf(str.c_str(), "%" PRIu64, &m_id))
             DGNJSAPI_DGNSCRIPT_THROW("Args", str.c_str());
         }
+    static JsDgnObjectId* MakeFromString(Utf8StringCR str) 
+        {
+        JsDgnObjectId* o = new JsDgnObjectId(0);
+        o->FromString(str);
+        return o;
+        }
 };
 
 typedef JsDgnObjectId* JsDgnObjectIdP;
@@ -284,22 +290,24 @@ typedef JsDgnObjectIdSet* JsDgnObjectIdSetP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
+struct JsDgnCode : RefCountedBaseWithCreate
 {
     DgnCode m_code;
-    explicit JsAuthorityIssuedCode(DgnCode const& c) : m_code(c) {;}
+    explicit JsDgnCode(DgnCode const& c) : m_code(c) {;}
     bool IsValid() const {return m_code.IsValid();}
 
     Utf8String GetValue() const {return m_code.GetValue();}
     Utf8String GetNamespace() const {return m_code.GetNamespace();}
     JsDgnObjectIdP GetAuthority() {return new JsDgnObjectId(m_code.GetAuthority().GetValueUnchecked());}
 
+    static JsDgnCode* FromJson(JsDgnDbP, Utf8StringCR json);
+
     STUB_OUT_SET_METHOD(Value,Utf8String)
     STUB_OUT_SET_METHOD(Namespace,Utf8String)
     STUB_OUT_SET_METHOD(Authority,JsDgnObjectIdP)
 };
 
-typedef JsAuthorityIssuedCode* JsAuthorityIssuedCodeP;
+typedef JsDgnCode* JsDgnCodeP;
 
 struct JsECSqlArrayValue;
 
@@ -424,12 +432,13 @@ public:
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_el->GetElementId().GetValueUnchecked());
         }
-    JsAuthorityIssuedCodeP GetCode() const
+    JsDgnCodeP GetCode() const
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsAuthorityIssuedCode(m_el->GetCode());
+        return new JsDgnCode(m_el->GetCode());
         }
     JsDgnModelP GetModel();
+    JsDgnModelP GetSubModel();
     JsECClassP GetElementClass();
     int32_t Insert();
     int32_t Update();
@@ -460,8 +469,9 @@ public:
     static JsDgnElement* Create(JsDgnModelP model, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
+    STUB_OUT_SET_METHOD(SubModel, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
-    STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
+    STUB_OUT_SET_METHOD(Code,JsDgnCodeP)
     STUB_OUT_SET_METHOD(ElementClass, JsECClassP)
 };
 
@@ -604,25 +614,25 @@ struct JsDgnModel : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());
         }
-    JsAuthorityIssuedCodeP GetCode() const 
+    JsDgnCodeP GetCode() const 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsAuthorityIssuedCode(m_model->GetCode());
+        return new JsDgnCode(m_model->GetCode());
         }
     JsDgnDbP GetDgnDb() 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnDb(m_model->GetDgnDb());
         }
-    static JsAuthorityIssuedCodeP CreateModelCode(Utf8StringCR name) 
+    static JsDgnCodeP CreateModelCode(Utf8StringCR name) 
         {
-        return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));
+        return new JsDgnCode(DgnModel::CreateModelCode(name));
         }
 
     RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
-    STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
+    STUB_OUT_SET_METHOD(Code,JsDgnCodeP)
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
 };
 
@@ -658,7 +668,6 @@ struct JsDgnModels : RefCountedBaseWithCreate
 
     JsDgnModels(DgnModels& m) : m_models(m) {;}
 
-    JsDgnObjectIdP QueryModelId(JsAuthorityIssuedCodeP code) {return new JsDgnObjectId(m_models.QueryModelId(code->m_code).GetValueUnchecked());}
     JsDgnModelP GetModel(JsDgnObjectIdP mid) {auto model = m_models.GetModel(DgnModelId(mid->m_id)); return model.IsValid()? new JsDgnModel(*model): nullptr;}
 };
 
@@ -942,7 +951,7 @@ struct JsDgnElements : RefCountedBaseWithCreate
     JsDgnDbP GetDgnDb() const {return new JsDgnDb(m_elements.GetDgnDb()); }
     JsDgnElementP FindElement(JsDgnObjectIdP id) const;
     JsDgnElementP GetElement(JsDgnObjectIdP id) const;
-    JsDgnObjectIdP QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace) const;
+    JsDgnObjectIdP QueryElementIdByCode(JsDgnCodeP) const;
 
     STUB_OUT_SET_METHOD(DgnDb, JsDgnDbP)
     };
@@ -1474,7 +1483,7 @@ struct JsRepositoryRequest : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(m_db));
         m_req.Locks().Insert(*m_db->m_db, level);
         }
-    void AddCode(JsAuthorityIssuedCodeP code)
+    void AddCode(JsDgnCodeP code)
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(code));
         m_req.Codes().insert(code->m_code);

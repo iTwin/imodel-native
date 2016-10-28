@@ -434,10 +434,10 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
-        {
-        if (nullptr != geometryParams)
-            m_materialId = geometryParams->GetMaterialId();
-        }
+    {
+    if (nullptr != geometryParams)
+        m_materialId = geometryParams->GetMaterialId();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -963,7 +963,7 @@ private:
         SetFacetCount(counter.GetFacetCount(geometry));
         }
 
-    virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
+    virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     virtual bool _IsPolyface () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
 
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
@@ -980,22 +980,22 @@ public:
 struct SolidKernelTileGeometry : TileGeometry
 {
 private:
-    ISolidKernelEntityPtr   m_entity;
+    IBRepEntityPtr   m_entity;
     BeMutex                 m_mutex;
 
-    SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+    SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
         }
 
-    virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
+    virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
     virtual bool _IsPolyface() const override { return false; }
 
 public:
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         {
         return new SolidKernelTileGeometry(solid, tf, range, elemId, params, facetOptions, db);
         }
@@ -1012,7 +1012,7 @@ TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
     {
     return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, facetOptions, db);
     }
@@ -1021,7 +1021,7 @@ TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
+TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
     PolyfaceHeaderPtr polyface = m_geometry->GetAsPolyfaceHeader();
     if (polyface.IsValid())
@@ -1030,13 +1030,13 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOption
             polyface->ClearParameters(false);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return polyface;
+        return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
         }
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
 
-    CurveVectorPtr curveVector = m_geometry->GetAsCurveVector();
-    ISolidPrimitivePtr solidPrimitive = curveVector.IsNull() ? m_geometry->GetAsISolidPrimitive() : nullptr;
+    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
+    ISolidPrimitivePtr  solidPrimitive = curveVector.IsNull() ? m_geometry->GetAsISolidPrimitive() : nullptr;
     MSBsplineSurfacePtr bsplineSurface = solidPrimitive.IsNull() && curveVector.IsNull() ? m_geometry->GetAsMSBsplineSurface() : nullptr;
 
     if (curveVector.IsValid())
@@ -1050,7 +1050,7 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOption
     if (polyface.IsValid())
         polyface->Transform(GetTransform());
 
-    return polyface;
+    return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1075,51 +1075,15 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
+TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
-
-    DRange3d    entityRange = m_entity->GetEntityRange();
-    if (entityRange.IsNull())
-        return nullptr;
-
-    double              rangeDiagonal = entityRange.DiagonalDistance();
-    static double       s_minRangeRelTol = 1.0e-4;
-    double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
-    IFacetOptionsPtr    pFacetOptions;
-    
-    if (facetOptions.GetChordTolerance() < minChordTolerance)
-        {
-        pFacetOptions = facetOptions.Clone();
-        pFacetOptions->SetChordTolerance (minChordTolerance);
-        }
-    else
-        {
-        pFacetOptions = &facetOptions;
-        }
-
-
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*m_entity);
-
-
-    auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *pFacetOptions) : nullptr;
-    if (polyface.IsValid())
-        {
-        polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
-        polyface->Transform(Transform::FromProduct(GetTransform(), m_entity->GetEntityTransform()));
-        }
-
-
-    return polyface;
-#elif defined (BENTLEYCONFIG_PARASOLID)    
+#if defined (BENTLEYCONFIG_PARASOLID)    
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
-        return nullptr;
+        return TileGeometry::T_TilePolyfaces();;
 
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
@@ -1136,26 +1100,53 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         pFacetOptions = &facetOptions;
         }
 
-    auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
-    
-    if (polyface.IsValid() && !GetTransform().IsIdentity())
-        polyface->Transform (GetTransform());
+    TileGeometry::T_TilePolyfaces   tilePolyfaces;
 
-    return polyface;
+    if (nullptr != m_entity->GetFaceMaterialAttachments())
+        {
+        bvector<PolyfaceHeaderPtr>      polyfaces;
+        bvector<GeometryParams>         params;
+
+        BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions);
+
+        for (size_t i=0; i<polyfaces.size(); i++)
+            {
+            auto&                       polyface = polyfaces[i];
+
+            if (polyface->HasFacets())
+                {
+                TileDisplayParamsPtr        displayParams = TileDisplayParams::Create (GetDisplayParams()->GetFillColor(), params[i]);
+
+                tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, polyface));
+                }
+            }
+
+        }
+    else
+        {
+        auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
+    
+        if (polyface.IsValid() && polyface->HasFacets())
+            tilePolyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+
+        }
+    if (!GetTransform().IsIdentity())
+        for (auto& tilePolyface : tilePolyfaces)
+            tilePolyface.m_polyface->Transform (GetTransform());
+
+    return tilePolyfaces;
+
 #else
-    return nullptr;
+    return TileGeometry::T_TilePolyfaces();
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode normalMode)
+TileGeometry::T_TilePolyfaces TileGeometry::GetPolyfaces(double chordTolerance, NormalMode normalMode)
     {
-    auto facetOptions = CreateFacetOptions(chordTolerance, normalMode);
-    auto polyface = _GetPolyface(*facetOptions);
-
-    return polyface.IsValid() && 0 != polyface->GetPointCount() ? polyface : nullptr;
+    return _GetPolyfaces (*CreateFacetOptions(chordTolerance, normalMode));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1566,11 +1557,11 @@ private:
     virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
     virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
     virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
-    virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
+    virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
+    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
     TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
@@ -1736,19 +1727,18 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
+bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
-    ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
-    DRange3d range = clone->GetEntityRange();
+    IBRepEntityPtr   clone = const_cast<IBRepEntityP>(&solid);
+    DRange3d                range = clone->GetEntityRange();
 
-    Transform localTo3mx = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    Transform solidTo3mx = Transform::FromProduct(localTo3mx, clone->GetEntityTransform());
+    Transform localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
 
-    solidTo3mx.Multiply(range, range);
+    localToTile.Multiply(range, range);
 
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
 
-    AddElementGeometry(*TileGeometry::Create(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, *m_targetFacetOptions, m_dgndb));
 
     return true;
     }
@@ -1827,9 +1817,9 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
     static const double s_facetAreaToleranceRatio = .1;
     static const size_t s_decimatePolyfacePointCount = 100;
 
-    double tolerance = GetTolerance();
-    double vertexTolerance = tolerance * s_vertexToleranceRatio;
-    double facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
+    double          tolerance = GetTolerance();
+    double          vertexTolerance = tolerance * s_vertexToleranceRatio;
+    double          facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
 
     // Convert to meshes
     MeshBuilderMap  builderMap;
@@ -1838,52 +1828,69 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
 
     for (auto& geom : m_geometries)
         {
-        DRange3dCR geomRange = geom->GetTileRange();
-        double rangePixels = geomRange.DiagonalDistance() / tolerance;
+        DRange3dCR  geomRange = geom->GetTileRange();
+        double      rangePixels = geomRange.DiagonalDistance() / tolerance;
+
         if (rangePixels < s_minRangeBoxSize)
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
-        CurveVectorPtr strokes = geom->GetStrokedCurve(tolerance);
-        PolyfaceHeaderPtr polyface = geom->GetPolyface(tolerance, normalMode);
-        if (strokes.IsNull() && polyface.IsNull())
-            continue;
+        auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
+        bool        isContained = geomRange.IsContained(myTileRange);
+        bool        maxGeometryCountExceeded = (++geometryCount > s_maxGeometryIdCount);
 
-        TileDisplayParamsPtr displayParams = geom->GetDisplayParams();
-        MeshBuilderKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
-
-        TileMeshBuilderPtr meshBuilder;
-        auto found = builderMap.find(key);
-        if (builderMap.end() != found)
-            meshBuilder = found->second;
-        else
-            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
-
-        bool isContained = geomRange.IsContained(myTileRange);
-
-        ++geometryCount;
-        bool maxGeometryCountExceeded = geometryCount > s_maxGeometryIdCount;
-
-        if (polyface.IsValid())
+        for (auto& tilePolyface : polyfaces)
             {
-            // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
-            // A polyface with many points is likely a tesselation from an outside source.
-            bool        doDecimate  = !m_isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels);
+            TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
+            PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
 
-            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+            if (0 == polyface->GetPointCount())
+                continue;
+
+            MeshBuilderKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+
+            TileMeshBuilderPtr meshBuilder;
+            auto found = builderMap.find(key);
+            if (builderMap.end() != found)
+                meshBuilder = found->second;
+            else
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
+
+            if (polyface.IsValid())
                 {
-                if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-                    {
-                    BeInt64Id elemId;
-                    if (!maxGeometryCountExceeded)
-                        elemId = geom->GetEntityId();
+                // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
+                // A polyface with many points is likely a tesselation from an outside source.
+                bool        doDecimate  = !m_isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels);
 
-                    meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doDecimate, twoSidedTriangles);
+                for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+                    {
+                    if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+                        {
+                        BeInt64Id elemId;
+                        if (!maxGeometryCountExceeded)
+                            elemId = geom->GetEntityId();
+
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doDecimate, twoSidedTriangles);
+                        }
                     }
                 }
             }
-
-        if (doPolylines && strokes.IsValid())
+        if (doPolylines)
             {
+            CurveVectorPtr          strokes = geom->GetStrokedCurve(tolerance);
+
+            if (!strokes.IsValid())
+                continue;
+
+            TileDisplayParamsPtr    displayParams = geom->GetDisplayParams();
+            MeshBuilderKey key(*displayParams, false, false);
+
+            TileMeshBuilderPtr meshBuilder;
+            auto found = builderMap.find(key);
+            if (builderMap.end() != found)
+                meshBuilder = found->second;
+            else
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
+
             for (auto& curvePrimitive : *strokes)
                 {
                 bvector<DPoint3d> const* lineString = curvePrimitive->GetLineStringCP ();
@@ -1895,7 +1902,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                     }
 
                 BeInt64Id elemId;
-                if (!maxGeometryCountExceeded)
+                if (geometryCount < s_maxGeometryIdCount)
                     elemId = geom->GetEntityId();
 
                 meshBuilder->AddPolyline (*lineString, elemId, rangePixels < s_decimateThresholdPixels);

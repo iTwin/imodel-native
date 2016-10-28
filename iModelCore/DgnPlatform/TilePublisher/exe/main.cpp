@@ -441,11 +441,12 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto const& modelSelector = spatialView->GetModelSelector();
+            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
+            auto& modelSelector = spatial->GetModelSelector();
             auto viewModels = modelSelector.GetModels();
             m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto& categorySelector = spatial->GetCategorySelector();
             auto viewCats = categorySelector.GetCategories();
             m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
@@ -498,63 +499,10 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     tilesetUrl.append(1, '/');
     tilesetUrl.append(rootNameUtf8);
     tilesetUrl.append(".json");
+
     json["tilesetUrl"] = tilesetUrl;
-    json["name"] = rootNameUtf8;
 
-    // Geolocation
-    bool geoLocated = !m_tileToEcef.IsIdentity();
-    if (geoLocated)
-        {
-        DPoint3d    groundEcefPoint;
-
-        transform.Multiply (groundEcefPoint, groundPoint);
-        json["geolocated"] = true;
-        json["groundPoint"] = PointToJson(groundEcefPoint);
-        }
-
-    auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
-    bset<DgnViewId> publishedViews;
-
-    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
-        {
-        auto    viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
-
-        SpatialViewDefinitionCP spatialView;
-
-        if (!viewDefinition.IsValid() || nullptr == (spatialView = viewDefinition->ToSpatialView()))
-            continue;
-
-        Json::Value     entry (Json::objectValue);
-
-        if (nullptr != view.GetName())
-            entry["name"] = view.GetName();
-
-        GetSpatialViewJson (entry, *spatialView, transform);
-        entry["models"] = IdSetToJson(spatialView->GetModelSelector().GetModels());
-        entry["categories"] = IdSetToJson(spatialView->GetCategorySelector().GetCategories());
-
-        ColorDef    backgroundColor = spatialView->GetDisplayStyle().GetBackgroundColor();
-        auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
-        colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
-        colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
-        colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
-
-        publishedViews.insert (view.GetId());
-        viewsJson[view.GetId().ToString()] = entry;
-        }
-
-    if (m_allModels.empty())
-        return Status::NoGeometry;
-
-    json["models"] = GetModelsJson (m_allModels);
-    json["categories"] = GetCategoriesJson (m_allCategories);
-
-    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
-        json["defaultView"] = publishedViews.begin()->ToString();
-    else
-        json["defaultView"] = GetViewController().GetViewId().ToString();
-    
-    return Status::Success; 
+    return GetViewsetJson(json, transform, groundPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
