@@ -63,10 +63,10 @@ WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eT
 WSObjectsResult StubWSObjectsResultNotModified(Utf8StringCR skipToken = "");
 WSObjectsResult StubWSObjectsResultInvalidInstances();
 
-WSFileResponse StubWSFileResponse(BeFileNameCR filePath, Utf8StringCR eTag = "");
+WSFileResponse StubWSFileResponse(BeFileNameCR filePath = StubFile(), Utf8StringCR eTag = "");
 WSFileResponse StubWSFileResponseNotModified();
 
-WSFileResult StubWSFileResult(BeFileNameCR filePath, Utf8StringCR eTag = "");
+WSFileResult StubWSFileResult(BeFileNameCR filePath = StubFile(), Utf8StringCR eTag = "");
 WSFileResult StubWSFileResultNotModified();
 
 WSInfoResult StubWSInfoResult(BeVersion webApiVersion = BeVersion(2, 0));
