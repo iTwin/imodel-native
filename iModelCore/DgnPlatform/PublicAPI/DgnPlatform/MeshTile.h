@@ -93,11 +93,13 @@ private:
 
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
+    TileDisplayParams (uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor (fillColor), m_materialId (geometryParams.GetMaterialId()) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
     static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
     static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
+    static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
 
     bool operator<(TileDisplayParams const& rhs) const;
 
@@ -277,11 +279,22 @@ public:
 struct TileGeometry : RefCountedBase
 {
     enum class NormalMode
-    {
+        {
         Never,              //!< Never generate normals
         Always,             //!< Always generate normals
         CurvedSurfacesOnly, //!< Generate normals only for curved surfaces
-    };
+        };
+
+    struct TilePolyface
+        {
+        TileDisplayParamsPtr    m_displayParams;
+        PolyfaceHeaderPtr       m_polyface;
+
+            
+        TilePolyface (TileDisplayParamsR displayParams, PolyfaceHeaderPtr& polyface) : m_displayParams (&displayParams), m_polyface (polyface) { }
+        };
+    typedef bvector<TilePolyface>   T_TilePolyfaces;
+
 private:
     TileDisplayParamsPtr    m_params;
     Transform               m_transform;
@@ -292,10 +305,11 @@ private:
     bool                    m_isCurved;
     bool                    m_hasTexture;
 
+
 protected:
     TileGeometry(TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
 
-    virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
+    virtual T_TilePolyfaces _GetPolyfaces (IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
     virtual bool _IsPolyface() const = 0;
 
@@ -313,7 +327,7 @@ public:
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
-    PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
+    T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
     bool IsPolyface() const { return _IsPolyface(); }
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
