@@ -27,6 +27,7 @@ enum class ExternalFileInfoRootFolderId
 //! Correct mapping to EC should be checked with CacheEnvironment::GetRootFolderId()
 enum class FileCache
     {
+    Auto = -1, //! Use location that was already set or Temporary otherwise
     Persistent = static_cast<int>(ExternalFileInfoRootFolderId::LocalState),
     Temporary = static_cast<int>(ExternalFileInfoRootFolderId::Temporary),
     External = static_cast<int>(ExternalFileInfoRootFolderId::Documents)

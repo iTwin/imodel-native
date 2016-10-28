@@ -1310,12 +1310,12 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir)
+BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache location, BeFileNameCR externalRelativeDir)
     {
     //! TODO: consider removing FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativeDir) ||
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, location, &externalRelativeDir) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;

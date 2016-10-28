@@ -207,6 +207,8 @@ BeFileName FileStorage::GetAbsoluteFilePath(FileCache location, BeFileNameCR rel
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache location, BeFileNameCP externalRelativeDir)
     {
+    location = info.GetNewLocation(location);
+
     if (FileCache::External == location && nullptr == externalRelativeDir ||
         FileCache::External != location && nullptr != externalRelativeDir && !externalRelativeDir->empty())
         {
@@ -234,6 +236,8 @@ BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache locati
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::CacheFile(FileInfo& info, BeFileNameCR filePath, Utf8CP cacheTag, FileCache location, bool copyFile)
     {
+    location = info.GetNewLocation(location);
+
     LOG.infov(L"Caching file: %ls", filePath.c_str());
 
     if (SUCCESS != StoreFile(info, filePath, location, nullptr, copyFile))
