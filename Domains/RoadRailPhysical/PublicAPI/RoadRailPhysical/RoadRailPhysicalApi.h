@@ -64,7 +64,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // ECClass names
 //-----------------------------------------------------------------------------------------
 
+// Models
+#define BRRP_CLASS_CrossSectionBreakDownModel                       "CrossSectionBreakDownModel"
+#define BRRP_CLASS_CrossSectionDefinitionModel                      "CrossSectionDefinitionModel"
+
+
 // Elements
+#define BRRP_CLASS_CrossSectionElement                              "CrossSectionElement"
 #define BRRP_CLASS_IntersectionElement                              "IntersectionElement"
 #define BRRP_CLASS_ElevatedRoadIntersection                         "ElevatedRoadIntersection"
 #define BRRP_CLASS_ElevatedRoadIntersectionSegment                  "ElevatedRoadIntersectionSegment"
@@ -73,6 +79,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_IntersectionSegmentElement                       "IntersectionSegmentElement"
 #define BRRP_CLASS_RailRange                                        "RailRange"
 #define BRRP_CLASS_RegularSegmentElement                            "RegularSegmentElement"
+#define BRRP_CLASS_RoadCrossSection                                 "RoadCrossSection"
 #define BRRP_CLASS_RoadDesignSpeed                                  "RoadDesignSpeed"
 #define BRRP_CLASS_RoadIntersection                                 "RoadIntersection"
 #define BRRP_CLASS_RoadIntersectionSegment                          "RoadIntersectionSegment"
@@ -107,7 +114,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Authority names
 //-----------------------------------------------------------------------------------------
-//#define BRRP_AUTHORITY_Alignment                                    "Alignment"
+#define BRRP_AUTHORITY_RoadCrossSection                             "RoadCrossSection"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
@@ -120,12 +127,18 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
-#define DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(__name__) \
+#define DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(__name__) \
     ROADRAILPHYSICAL_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
-    ROADRAILPHYSICAL_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); } \
-    ROADRAILPHYSICAL_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ >(*this, stat); } \
+    ROADRAILPHYSICAL_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); }
+
+#define DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(__name__) \
     ROADRAILPHYSICAL_EXPORT        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ >(*this, stat); }   
 
+#define DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(__name__) \
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
+    ROADRAILPHYSICAL_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ >(*this, stat); }
+    
 
 //-----------------------------------------------------------------------------------------
 // Define standard typedefs (P, CP, R, CR) in the RoadRailPhysical namespace
@@ -152,6 +165,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the RoadRailPhysical namespace
 //-----------------------------------------------------------------------------------------
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionBreakDownModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(IntersectionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(IntersectionSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularSegmentElement)
@@ -163,6 +179,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TransitionSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadCrossSection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RailRange)
@@ -181,5 +198,6 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadTransitionSegment)
 #include "LinearReferencing.h"
 #include "RoadDesignSpeed.h"
 #include "SegmentRange.h"
+#include "CrossSection.h"
 #include "Segment.h"
 #include "RoadSegment.h"

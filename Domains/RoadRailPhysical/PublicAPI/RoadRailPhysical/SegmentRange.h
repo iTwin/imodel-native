@@ -35,6 +35,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentRangeElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(SegmentRangeElement)
 
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryAlignmentId() const;
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetAlignment(SegmentRangeElementCR segmentRange, RoadRailAlignment::AlignmentCP alignment);

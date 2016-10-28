@@ -33,6 +33,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(SegmentElement)
 }; // SegmentElement
 
 //=======================================================================================
@@ -53,7 +54,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RegularSegmentElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RegularSegmentElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(RegularSegmentElement)
 }; // RegularSegmentElement
 
 //=======================================================================================
@@ -73,7 +74,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TransitionSegmentElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TransitionSegmentElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TransitionSegmentElement)
 }; // TransitionSegmentElement
 
 //=======================================================================================
@@ -93,6 +94,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(IntersectionSegmentElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(IntersectionSegmentElement)
 }; // IntersectionSegmentElement
 
 //=======================================================================================
@@ -111,6 +113,7 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(IntersectionElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(IntersectionElement)
 }; // IntersectionElement
 
 

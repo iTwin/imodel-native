@@ -14,6 +14,11 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
     {
+    RegisterHandler(CrossSectionBreakDownModelHandler::GetHandler());
+    RegisterHandler(CrossSectionDefinitionModelHandler::GetHandler());
+    RegisterHandler(CrossSectionElementHandler::GetHandler());
+    RegisterHandler(RoadCrossSectionHandler::GetHandler());
+
     RegisterHandler(SegmentRangeElementHandler::GetHandler());
     RegisterHandler(SegmentElementHandler::GetHandler());
     RegisterHandler(RegularSegmentElementHandler::GetHandler());
@@ -45,6 +50,14 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     DgnCategory trackCategory(DgnCategory::CreateParams(dgndb, BRRP_CATEGORY_Track, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
     trackCategory.Insert(DgnSubCategory::Appearance());
     BeAssert(trackCategory.GetCategoryId().IsValid());
+
+    auto authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadCrossSection, dgndb);
+    BeAssert(authorityPtr.IsValid());
+    if (authorityPtr.IsValid())
+        {
+        authorityPtr->Insert();
+        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

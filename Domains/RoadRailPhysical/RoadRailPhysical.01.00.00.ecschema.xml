@@ -438,19 +438,19 @@
     <ECEntityClass typeName="CrossSectionDefinitionModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="CrossSectionTemplateModel">
+    <ECEntityClass typeName="CrossSectionBreakDownModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="CrossSectionElement" modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Guid" typeName="string"/>
         <ECProperty propertyName="Origin" typeName="point2d"/>
@@ -539,7 +539,7 @@
     <ECEntityClass typeName="RoadCrossSection" displayLabel="Road Template">
         <BaseClass>CrossSectionElement</BaseClass>
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RoadIntersectionLegDefinition" displayLabel="Road Template">
@@ -561,6 +561,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ElevatedTrackCrossSection" displayLabel="Deck Template">
+        <BaseClass>CrossSectionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionTemplate" displayLabel="Road Template">
         <BaseClass>CrossSectionElement</BaseClass>
         <ECCustomAttributes>
             <!--ClassHasHandler xmlns="dgn.02.00"/-->
