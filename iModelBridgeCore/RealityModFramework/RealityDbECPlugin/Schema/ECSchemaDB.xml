@@ -2019,6 +2019,8 @@
         <ECProperty propertyName="OSM" typeName="boolean" />
     </ECClass>
 
+	<ECClass typeName="DownloadReport" isDomainClass="true" />
+	
     <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">
         <ECProperty propertyName="Polygon" typeName="string" />
         <ECProperty propertyName="MostRecent" typeName="boolean" />

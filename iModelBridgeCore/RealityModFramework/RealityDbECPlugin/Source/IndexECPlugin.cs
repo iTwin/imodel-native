@@ -129,7 +129,8 @@ namespace IndexECPlugin.Source
 #endif
 .SetQuerySupport((EnumerableBasedQueryHandler) ExecuteQuery)
                 .SetOperationSupport<RetrieveBackingFileOperation>(FileRetrievalOperation)
-                .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
+                .SetOperationSupport<InsertOperation>(ExecuteInsertOperation)
+                .SetOperationSupport<UpdateOperation>(ExecuteUpdateOperation);
 
             IndexPolicyHandler.InitializeHandlers(builder);
             }
@@ -185,13 +186,29 @@ namespace IndexECPlugin.Source
                     {
                     Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
 
-                    if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage") )
+                    if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) )
                         {
-                        IECInstance packageInstance = searchClass.Class.CreateInstance();
-                        ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
-                        packageInstance.InstanceId = exp.RightSideString;
-                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, ConnectionString);
-                        return new List<IECInstance> { packageInstance };
+                        switch ( searchClass.Class.Name )
+                            {
+                            case "PreparedPackage":
+                                IECInstance packageInstance = searchClass.Class.CreateInstance();
+                                ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
+                                packageInstance.InstanceId = exp.RightSideString;
+                                PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, ConnectionString);
+                                return new List<IECInstance> { packageInstance };
+
+                            case "DownloadReport":
+
+                                IECInstance DownloadReportInstance = searchClass.Class.CreateInstance();
+                                ECInstanceIdExpression exp2 = query.WhereClause[0] as ECInstanceIdExpression;
+                                DownloadReportInstance.InstanceId = exp2.RightSideString;
+                                DRStreamRetrievalController.SetStreamRetrieval(DownloadReportInstance, ConnectionString);
+                                return new List<IECInstance> { DownloadReportInstance };
+                            default:
+                                //We continue
+                                break;
+                            }
+
                         }
 
                     IECQueryProvider helper;
@@ -394,13 +411,9 @@ namespace IndexECPlugin.Source
                             packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0, requestor, requestorVersion);
                             return;
                             
-                    //case "AutomaticRequest":
-                    //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
-                    //    return;
-
                     default:
-                        Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
-                        throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+                            Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
+                            throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
                     }
                 }
             catch ( Exception e )
@@ -417,6 +430,58 @@ namespace IndexECPlugin.Source
                 }
 
             }
+
+
+        internal void ExecuteUpdateOperation
+        (
+            OperationModule sender,
+            RepositoryConnection connection,
+            UpdateOperation operation,
+            IECInstance instance,
+            string comments,
+            WriteModifiers writeModifiers,
+            IExtendedParameters extendedParameters
+        )
+            {
+            string className = instance.ClassDefinition.Name;
+
+            try
+                {
+                switch ( className )
+                    {
+                    case "DownloadReport":
+                        StreamBackedDescriptor streamBackedDescriptor;
+                        try
+                            {
+                            streamBackedDescriptor = StreamBackedDescriptorAccessor.GetFrom(instance);
+                            }
+                        catch (System.Collections.Generic.KeyNotFoundException)
+                            {
+                            throw new UserFriendlyException("A download report insertion must contain a file");
+                            }
+
+                        DownloadReportHelper.InsertInDatabase(streamBackedDescriptor.Stream, instance.InstanceId, ConnectionString);
+                        return;
+
+                    default:
+                        Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
+                        throw new Bentley.Exceptions.UserFriendlyException("The only update operation permitted is a DownloadReport instance update.");
+                    }
+                }
+            catch ( Exception e )
+                {
+                Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}. Stack trace : {2}", e.Message, instance.InstanceId, e.StackTrace));
+                if ( e is UserFriendlyException )
+                    {
+                    throw;
+                    }
+                else
+                    {
+                    throw new Exception("Internal Error.");
+                    }
+                }
+            }
+
 
         private ConnectionFormatFieldInfo[] GetConnectionFormat (ConnectionModule sender,
                                                                 ECSession session,
