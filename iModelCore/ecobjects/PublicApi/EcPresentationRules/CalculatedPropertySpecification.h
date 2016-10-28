@@ -15,7 +15,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* Specification for specifying single property that should not be displayed.
+* Specification for specifying single property that is Calculated.
 * @bsiclass                                     Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CalculatedPropertiesSpecification
@@ -27,8 +27,8 @@ struct CalculatedPropertiesSpecification
 
     public:
         CalculatedPropertiesSpecification() {}
-        CalculatedPropertiesSpecification(Utf8String label, int priority)
-            : m_label(label), m_priority(priority)
+        CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value)
+            : m_label(label), m_priority(priority), m_value(value)
             {}
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
