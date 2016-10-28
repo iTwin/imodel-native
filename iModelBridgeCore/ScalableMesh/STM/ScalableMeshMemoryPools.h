@@ -32,7 +32,7 @@ template <typename POINT> class ScalableMeshMemoryPools
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {    
-    m_genericPoolSize = 2000000000;                 
+    m_genericPoolSize = 20000000000;                 
     m_genericPool = SMMemoryPool::GetInstance();
     bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
     assert(result == true);
