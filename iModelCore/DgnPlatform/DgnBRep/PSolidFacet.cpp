@@ -484,7 +484,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidFacetTopologyTable::PSolidFacetTopologyTable (ISolidKernelEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
+PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
     {
     FacetEntity (in, pixelSize, pixelSizeRange);
     }
@@ -492,7 +492,7 @@ PSolidFacetTopologyTable::PSolidFacetTopologyTable (ISolidKernelEntityCR in, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidFacetTopologyTable::PSolidFacetTopologyTable (ISolidKernelEntityCR in, IFacetOptionsR options)
+PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOptionsR options)
     {
     FacetEntity (in, options);
     }
@@ -1099,7 +1099,7 @@ void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
+void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
     {
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(in);
     Transform   entityTransform = in.GetEntityTransform();
@@ -1236,7 +1236,7 @@ void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, IFacetOptionsR facetOptions)
+void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
     {
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(in);
     Transform   entityTransform = in.GetEntityTransform();
@@ -1328,7 +1328,7 @@ void            PSolidFacetTopologyTable::FacetEntity (ISolidKernelEntityCR in, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PSolidFacetTopologyTable* CreateNewFacetTable (ISolidKernelEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
+static PSolidFacetTopologyTable* CreateNewFacetTable (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
     {
     return new PSolidFacetTopologyTable (in, pixelSize, pixelSizeRange);
     }
@@ -1336,7 +1336,7 @@ static PSolidFacetTopologyTable* CreateNewFacetTable (ISolidKernelEntityCR in, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PSolidFacetTopologyTable* CreateNewFacetTable (ISolidKernelEntityCR in, IFacetOptionsR options)
+static PSolidFacetTopologyTable* CreateNewFacetTable (IBRepEntityCR in, IFacetOptionsR options)
     {
     return new PSolidFacetTopologyTable (in, options);
     }
@@ -1346,7 +1346,7 @@ static PSolidFacetTopologyTable* CreateNewFacetTable (ISolidKernelEntityCR in, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr PSolidUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+PolyfaceHeaderPtr PSolidUtil::FacetEntity(IBRepEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
     IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize, pixelSizeRange);
 
@@ -1359,7 +1359,7 @@ PolyfaceHeaderPtr PSolidUtil::FacetEntity(ISolidKernelEntityCR entity, double pi
     if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*mesh, *facetTopo, *facetOptions))
         return nullptr;
 
-    mesh->SetTwoSided(ISolidKernelEntity::EntityType::Solid != entity.GetEntityType());
+    mesh->SetTwoSided(IBRepEntity::EntityType::Solid != entity.GetEntityType());
     mesh->Transform(entity.GetEntityTransform());
 
     return mesh;
@@ -1368,7 +1368,7 @@ PolyfaceHeaderPtr PSolidUtil::FacetEntity(ISolidKernelEntityCR entity, double pi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr PSolidUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOptionsR facetOptions)
+PolyfaceHeaderPtr PSolidUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR facetOptions)
     {
     IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, facetOptions);
 
@@ -1380,9 +1380,85 @@ PolyfaceHeaderPtr PSolidUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOpt
     if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*mesh, *facetTopo, facetOptions))
         return nullptr;
 
-    mesh->SetTwoSided(ISolidKernelEntity::EntityType::Solid != entity.GetEntityType());
+    mesh->SetTwoSided(IBRepEntity::EntityType::Solid != entity.GetEntityType());
     mesh->Transform(entity.GetEntityTransform());
 
     return mesh;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions, IFacetTopologyTable& facetTopo)
+    {
+    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity.GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
+    T_FaceAttachmentsVec const& faceAttachmentsVec = entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
+    bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
+    bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        {
+        FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second.second);
+        bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
+
+        if (found == uniqueFaceAttachments.end())
+            {
+            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+            Render::GeometryParams faceParams;
+
+            faceAttachment.ToGeometryParams(faceParams);
+            params.push_back(faceParams);
+            polyfaces.push_back(polyface);
+            faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
+            }
+        else
+            {
+            faceToPolyfaces[curr->first] = found->second;
+            }
+        }
+
+    if (SUCCESS != IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, facetTopo, facetOptions))
+        return false;
+
+    for (size_t i=0; i<polyfaces.size(); i++)
+        {
+        polyfaces[i]->SetTwoSided(IBRepEntity::EntityType::Solid != entity.GetEntityType());
+        polyfaces[i]->Transform(entity.GetEntityTransform());
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
+    {
+    if (nullptr == entity.GetFaceMaterialAttachments())
+        return false; // No reason to call this method when there aren't attachments...can't return params...
+
+    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, pixelSize, pixelSizeRange);
+
+    if (!facetTopo->_IsTableValid())
+        return false;
+
+    IFacetOptionsPtr  facetOptions = IFacetOptions::Create(); // Doesn't matter...
+
+    return facetTableToPolyfaces(entity, polyfaces, params, *facetOptions, *facetTopo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions)
+    {
+    if (nullptr == entity.GetFaceMaterialAttachments())
+        return false; // No reason to call this method when there aren't attachments...can't return params...
+
+    IFacetTopologyTablePtr facetTopo = PSolidFacetTopologyTable::CreateNewFacetTable(entity, facetOptions);
+
+    if (!facetTopo->_IsTableValid())
+        return false;
+
+    return facetTableToPolyfaces(entity, polyfaces, params, facetOptions, *facetTopo);
+    }

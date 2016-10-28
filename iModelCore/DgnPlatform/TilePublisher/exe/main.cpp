@@ -441,11 +441,12 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto const& modelSelector = spatialView->GetModelSelector();
+            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
+            auto& modelSelector = spatial->GetModelSelector();
             auto viewModels = modelSelector.GetModels();
             m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto& categorySelector = spatial->GetCategorySelector();
             auto viewCats = categorySelector.GetCategories();
             m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
@@ -502,6 +503,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     json["tilesetUrl"] = tilesetUrl;
 
     return GetViewsetJson(json, transform, groundPoint);
+        auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
     }
 
 /*---------------------------------------------------------------------------------**//**

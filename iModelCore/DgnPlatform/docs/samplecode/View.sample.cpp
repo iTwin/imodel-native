@@ -52,7 +52,7 @@ DisplayStyleCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, CategorySelectorCR catSel, ModelSelectorCR modSel, DisplayStyle3dCR dstyle)
+DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, CategorySelectorR catSel, ModelSelectorR modSel, DisplayStyle3dR dstyle)
     {
     // Construct the ViewDefinition
     // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.

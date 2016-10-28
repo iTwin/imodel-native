@@ -48,7 +48,7 @@ struct NullContext : ViewContext
         void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
         void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
         void _AddTriMesh(TriMeshArgs const& args)  override {}
-        void _AddBody(ISolidKernelEntityCR) override {}
+        void _AddBody(IBRepEntityCR) override {}
         void _AddTextString(TextStringCR text) override {}
         void _AddTextString2d(TextStringCR text, double zDepth) override {}
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}

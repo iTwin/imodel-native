@@ -87,10 +87,22 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, code, label);
+    SheetPtr sheet = Sheet::Create(model, scale, height, width, code, label);
+    EXPECT_TRUE(sheet.IsValid());
+    EXPECT_TRUE(sheet->Insert().IsValid());
+    return sheet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SheetPtr sheet = Sheet::Create(model, scale, templateId, code, label);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -176,10 +188,10 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
-    viewController->GetViewDefinitionR().LookAtVolume(db.Units().GetProjectExtents());
+    viewController->GetViewDefinition().LookAtVolume(db.Units().GetProjectExtents());
 
     DgnDbStatus stat;
-    viewController->GetViewDefinitionR().Update(&stat);
+    viewController->GetViewDefinition().Update(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat);
     }
 
@@ -258,8 +270,8 @@ void addAllCategories(DgnDbR db, CategorySelectorR selector)
 DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewDescr)
     {
     auto& db = model.GetDgnDb();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), CategorySelector(db,""), DisplayStyle(db,""));
-    addAllCategories(db, viewDef->GetCategorySelectorR());
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    addAllCategories(db, viewDef->GetCategorySelector());
     viewDef->Insert();
     return viewDef;
     }
@@ -270,8 +282,8 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
 DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
     {
     auto& db = model.GetDgnDb();
-    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), CategorySelector(db,""), DisplayStyle3d(db,""), ModelSelector(db,""));
-    addAllCategories(db, viewDef.GetCategorySelectorR());
+    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
+    addAllCategories(db, viewDef.GetCategorySelector());
     viewDef.Insert();
     return viewDef.GetViewId();
     }

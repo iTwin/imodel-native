@@ -191,19 +191,19 @@ private:
 
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
-protected:
-    DgnDbR              m_dgndb;
-    DgnModelId          m_modelId;
-    DgnClassId          m_classId;
-    DgnElementId        m_modeledElementId;
-    BeSQLite::BeGuid    m_federationGuid;
-    DgnCode             m_code;
-    bool                m_inGuiList;
-    bool                m_isTemplate;
 
+protected:
+    DgnDbR m_dgndb;
+    DgnModelId m_modelId;
+    DgnClassId m_classId;
+    DgnElementId m_modeledElementId;
+    BeSQLite::BeGuid m_federationGuid;
+    DgnCode m_code;
+    bool m_inGuiList;
+    bool m_isTemplate;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
-    mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
+    mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
