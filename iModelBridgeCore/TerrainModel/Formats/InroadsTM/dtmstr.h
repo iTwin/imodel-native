@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmstr.h                                        aec        10-Apr-1990     */
@@ -323,7 +323,7 @@ typedef struct CIVdtmsrf
         byte flg;                          /* bit field flags                     */
         byte pad[3];                       /* padding                             */
         long ntinstk;                      /* tin stack counter                   */
-        long *tinstk;                      /* tin stack                           */
+        struct CIVdtmtin* *tinstk;                      /* tin stack                           */
         void *ptrIndexTableP;              /* used to keep ptr/index table alive  */
         void *indexPtrTableP;              /* used to keep index/ptr table alive  */
         CMapStringToPtr *ftrGUIDMapP;      /* hash table of feature GUID's        */

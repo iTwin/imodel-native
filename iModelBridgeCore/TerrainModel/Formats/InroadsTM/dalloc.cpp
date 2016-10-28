@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dalloc.c                                            tmi	10-Apr-1990   */
@@ -101,7 +101,7 @@ int aecDTM_deallocateTriangleStack /* <= TRUE of error             */
   if ( srfP->ntinstk > 0L )
       free ( srfP->tinstk );
   srfP->ntinstk = 0L;
-  srfP->tinstk = (long *)0;
+  srfP->tinstk = nullptr;
 
   return ( sts );
 }
