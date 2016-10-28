@@ -1015,7 +1015,7 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
     StatusInt     ixwStatus;
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType = arrayProperty.GetPrimitiveElementType();
+        PrimitiveType   memberType = arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
         Utf8CP          typeString = GetPrimitiveTypeString(memberType);
         for (uint32_t index = 0; index < nElements; index++)
             {
