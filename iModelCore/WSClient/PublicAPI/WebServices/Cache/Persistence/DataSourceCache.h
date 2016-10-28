@@ -132,7 +132,7 @@ struct DataSourceCache : public IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) override;
 
-        WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) override;
+        WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation = FileCache::Auto) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Reading cached data

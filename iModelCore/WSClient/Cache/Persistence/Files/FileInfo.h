@@ -54,8 +54,11 @@ struct FileInfo : public ChangeInfo
         //! Get relative path for the file
         BeFileName GetRelativePath() const;
 
-        //! Set cache location
-        FileCache GetLocation(FileCache defaultLocation = FileCache::Temporary) const;
+        //! Get file cache location
+        FileCache GetLocation(FileCache defaultLocation = FileCache::Auto) const;
+
+        //! Get specific new location for file based on requested - for example FileCache::Auto
+        FileCache GetNewLocation(FileCache requestedLocation) const;
 
         //! Return cache tag if file is found on disk
         Utf8String GetFileCacheTag() const;

@@ -4717,7 +4717,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_CachePartialInstancesRejectsInstan
     EXPECT_THAT(result.GetValue(), IsEmpty());
     }
 
-TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_DownloadsAndCachesFile)
+TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_DownloadsAndCachesFileToSetupAutoLocation)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
@@ -4744,7 +4744,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
         SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
-    EXPECT_CALL(*cache, CacheFile(objectId, _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheFile(objectId, _, FileCache::Auto)).WillOnce(Return(SUCCESS));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 

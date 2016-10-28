@@ -55,8 +55,7 @@ m_cacheAccessThread(cacheAccessThread),
 m_cancellationToken(SimpleCancellationToken::Create()),
 m_temporaryDir(temporaryDir),
 m_fileDownloadManager(new FileDownloadManager(*this))
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
@@ -1080,7 +1079,7 @@ BeFileName CachingDataSource::GetMetaSchemaPath()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                  
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCacheFiles
 (
@@ -1091,11 +1090,11 @@ ICancellationTokenPtr ct
 )
     {
     auto task = std::make_shared<DownloadFilesTask>(
-        shared_from_this(), 
+        shared_from_this(),
         m_fileDownloadManager,
-        std::move(filesToDownload), 
-        fileCacheLocation, 
-        std::move(onProgress), 
+        std::move(filesToDownload),
+        fileCacheLocation,
+        std::move(onProgress),
         ct);
 
     m_cacheAccessThread->Push(task);
@@ -1137,7 +1136,6 @@ ICancellationTokenPtr ct
             }
 
         auto txn = StartCacheTransaction();
-        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId, FileCache::Temporary);
 
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
@@ -1164,12 +1162,8 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        DownloadAndCacheFiles(
-            filesToDownload,
-            cacheLocation,
-            onProgress,
-            ct)
-        ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
+        DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, ct)
+            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
             {
             if (!result.IsSuccess())
                 {
@@ -1187,13 +1181,13 @@ ICancellationTokenPtr ct
                 }
             });
         })
-        ->Then<FileResult>([=]
+            ->Then<FileResult>([=]
             {
             return *finalResult;
             });
     }
 
-/*--------------------------------------------------------------------------------------+   
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::CacheFiles
@@ -1252,10 +1246,10 @@ ICancellationTokenPtr ct
             *finalResult = result;
             });
         })
-        ->Then<BatchResult>([=]
-        {
-        return *finalResult;
-        });
+            ->Then<BatchResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1346,7 +1340,7 @@ SyncOptions options
         std::move(onProgress),
         ct
         );
-        
+
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {

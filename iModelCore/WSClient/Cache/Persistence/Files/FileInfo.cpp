@@ -132,11 +132,25 @@ void FileInfo::SetFileCacheTag(Utf8StringCR tag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileCache FileInfo::GetLocation(FileCache defaultLocation) const
     {
-    JsonValueCR idJson = m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder];
-    if (!idJson.isInt())
-        return defaultLocation;
+    JsonValueCR locationJson = m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder];
+    if (locationJson.isInt())
+        return static_cast<FileCache>(locationJson.asInt());
 
-    return static_cast<FileCache>(idJson.asInt());
+    if (FileCache::Auto == defaultLocation)
+        return FileCache::Temporary;
+
+    return defaultLocation;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+FileCache FileInfo::GetNewLocation(FileCache requestedLocation) const
+    {
+    if (FileCache::Auto == requestedLocation)
+        return GetLocation();
+
+    return requestedLocation;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -168,7 +182,7 @@ void FileInfo::SetFileCacheDate(DateTimeCR utcDate)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                 
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime FileInfo::GetFileUpdateDate() const
     {
@@ -176,7 +190,7 @@ DateTime FileInfo::GetFileUpdateDate() const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                              
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FileInfo::SetFileUpdateDate(DateTimeCR utcDate)
     {

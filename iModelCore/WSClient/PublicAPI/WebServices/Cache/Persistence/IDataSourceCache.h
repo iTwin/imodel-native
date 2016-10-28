@@ -193,7 +193,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
-        virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) = 0;
+        //! Cache file
+        //! @param objectId - object to cache file for
+        //! @param fileResult
+        //! @param cacheLocation - file location to use
+        virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation = FileCache::Auto) = 0;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Reading cached data
@@ -408,7 +412,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Returns FileCache location that is setup for given object
         //! @param objectId
         //! @param defaultLocation - return value if object has no file cache location set
-        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
+        virtual FileCache GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
