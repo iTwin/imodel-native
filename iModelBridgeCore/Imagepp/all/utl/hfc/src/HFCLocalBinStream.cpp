@@ -541,12 +541,12 @@ bool HFCLocalBinStream::SetEOF()
 //---------------------------------------------------------------------------
 WString HFCLocalBinStream::CookFilenameWithLongNameTagW() const
     {
-#if defined (BENTLEY_WIN32) 
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)      
     // TR 276264: Add support to filename longer than MAX_PATH
     //            Need to use unicode version and prepend "\\?\"
-    if (m_Filename.size() >= MAX_PATH - 2)
+    if (m_Filename.size() >= MAX_PATH - 2 && !m_Filename.StartsWith(L"\\\\?\\"))
         {
-        WString longFilename(L"\\\\\?\\");
+        WString longFilename(L"\\\\?\\");
         longFilename += m_Filename;
         return longFilename;
         }

@@ -160,17 +160,24 @@ HFCURL::~HFCURL()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HFCURL* HFCURL::CreateFrom(const BeFileName& pi_beFilename)
     {
-    Utf8String name(pi_beFilename.GetName());
-
-    HFCURL* pURL = HFCURL::Instanciate(name);
+    HFCURL* pURL = HFCURL::Instanciate(pi_beFilename.GetNameUtf8());
     if(pURL == NULL)
         {
         WString InputFixed;
         if (BeFileNameStatus::Success == BeFileName::FixPathName(InputFixed, pi_beFilename.GetName()))
             {
+            Utf8String fixedName(InputFixed.c_str()); 
+            
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)            
+            // Do no want the windows extended path prefix in our URL since the '\\?' is going to be parsed as a host. 
+            // The prefix is going to be re-added at a later time when actually access the file via BeFile.
+            if (fixedName.StartsWith("\\\\?\\"))
+                fixedName.Assign(InputFixed.substr(strlen("\\\\?\\")).c_str());
+#endif                
+            
             Utf8String newUrl("file://");
-            newUrl += Utf8String(InputFixed);
-            pURL = HFCURL::Instanciate(newUrl.c_str());
+            newUrl += fixedName;
+            pURL = HFCURL::Instanciate(newUrl);
             }
         }
 
