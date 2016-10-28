@@ -1870,7 +1870,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
         <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
         <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
         <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
@@ -1880,6 +1879,7 @@
     </ECEntityClass>
     <!-- A view of an area defined in the bim's coordinate system. -->
     <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract">
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
         <BaseClass>ViewDefinition3d</BaseClass>
     </ECEntityClass>
     <!-- A spatial view that shows a perspective projection -->
