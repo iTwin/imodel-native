@@ -45,6 +45,7 @@ PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController c
     if (nullptr == settings)
         {
         settings = new PointCloudViewSettings;
+        settings->_Load(spatial.GetViewDefinition());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -183,6 +184,7 @@ PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(Spa
     if (nullptr == settings)
         {
         settings = new PointCloudClassificationSettings;
+        settings->_Load(spatial.GetViewDefinition());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
