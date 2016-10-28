@@ -134,31 +134,6 @@ public:
     //! is not of type ::PRIMITIVETYPE_DateTime. 
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
-    //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by
-    //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
-    //! is assigned to the schema.
-    //! @remarks A system schema is a schema used and managed internally by the software.
-    //! @param[in] schema Schema to check
-    //! @return true, if @p schema is a system schema. false, otherwise
-    ECOBJECTS_EXPORT static bool IsSystemSchema (ECSchemaCR schema);
-
-    //! Indicates whether the specified schema is a so-called @b dynamic schema by
-    //! checking whether the @b %DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
-    //! is assigned to the schema.
-    //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
-    //! @param[in] schema Schema to check
-    //! @return true, if @p schema is a dynamic schema. false, otherwise
-    ECOBJECTS_EXPORT static bool IsDynamicSchema (ECSchemaCR schema);
-
-    //! Marks a schema as @b dynamic schema by adding the custom attribute @b DynamicSchema from the standard schema @b 
-    //! Bentley_Standard_CustomAttributes to it.
-    //! If the standard schema is not yet referenced, an error will be returned.
-    //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
-    //! @param[in] schema Schema to mark as dynamic
-    //! @param[in] isDynamicSchema true, if this schema should be marked as dynamic schema. false, otherwise.
-    //! @return A status code indicating success or error
-    ECOBJECTS_EXPORT static ECObjectsStatus SetIsDynamicSchema (ECSchemaR schema, bool isDynamicSchema);
-
     //! Returns the specified CustomAttribute ECClass
     //! @param[in] attributeName The name of the CustomAttribute ECClass
     //! @return An ECClassCP, if the attribute is found.  NULL otherwise.
@@ -173,6 +148,7 @@ public:
 struct ECDbSchemaMap;
 struct ECDbClassMap;
 struct ShareColumns;
+struct DbIndexList;
 struct ECDbPropertyMap;
 struct ECDbLinkTableRelationshipMap;
 struct ECDbForeignKeyRelationshipMap;
@@ -211,6 +187,12 @@ public:
     //! @param[in] ecClass ECClass to retrieve the custom attribute from.
     //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool HasJoinedTablePerDirectSubclass(ECClassCR ecClass);
+
+    //! Tries to retrieve the DbIndexList custom attribute from the specified ECClass.
+    //! @param[out] dbIndexList Retrieved property map
+    //! @param[in] ecClass ECClass to retrieve the custom attribute from.
+    //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetDbIndexList(DbIndexList& dbIndexList, ECClassCR ecClass);
 
     //! Tries to retrieve the PropertyMap custom attribute from the specified ECProperty.
     //! @param[out] propertyMap Retrieved property map
@@ -265,40 +247,6 @@ struct ECDbClassMap
     {
 friend struct ECDbMapCustomAttributeHelper;
 
-public:
-    //=======================================================================================    
-    //! DbIndex is a convenience wrapper around the DbIndex struct in the ECDbMap ECSchema
-    //! that simplifies reading the values of that struct
-    //! @bsiclass
-    //=======================================================================================    
-    struct DbIndex
-        {
-    friend struct ECDbClassMap;
-
-    private:
-        Utf8String m_name;
-        bool m_isUnique;
-        Utf8String m_whereClause;
-        bvector<Utf8String> m_properties;
-
-        DbIndex(Utf8CP name, bool isUnique = false, Utf8CP whereClause = nullptr) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
-        void AddProperty(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
-
-    public:
-        //! Gets the index name.
-        //! @return Index name or nullptr if not set (This indicates that the name of the index should be auto-generated)
-        Utf8CP GetName() const { return m_name.c_str(); }
-        //! Gets a value indicating whether the index is a unique index or not.
-        //! @return true if the index is a unique index. false otherwise
-        bool IsUnique() const { return m_isUnique; }
-        //! Gets the where clause if the index a partial index.
-        //! @return Where clause or nullptr if the index is not partial
-        Utf8CP GetWhereClause() const { return m_whereClause.c_str(); }
-        //! Gets the list of property names on which the index is to be defined.
-        //! @return Properties on which the index is defined.
-        bvector<Utf8String> const& GetProperties() const { return m_properties; }
-        };
-
 private:
     ECClassCP m_class;
     IECInstanceCP m_ca;
@@ -323,10 +271,6 @@ public:
     //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column. It remains unchanged, if the ECInstanceIdColumn property wasn't set in the ClassMap.
     //! @return ECOBJECTSTATUS_Success if ECInstanceIdColumn was set or unset in the ClassMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const;
-    //! Tries to get the value of the Indexes property from the ClassMap.
-    //! @param[out] indexes List of DbIndexes as defined in the ClassMap. Is empty, if no indexes were defined in the ClassMap.
-    //! @return SUCCESS if Indexes property is set or unset in ClassMap. Error codes if Indexes property has invalid values
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetIndexes(bvector<DbIndex>& indexes) const;
     };
 
 //=======================================================================================    
@@ -365,6 +309,65 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const;
     };
 
+//=======================================================================================    
+//! DbIndexList is a convenience wrapper around the DbIndexList custom attribute in the ECDbMap ECSchema
+//! @bsiclass
+//=======================================================================================    
+struct DbIndexList
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    public:
+        //=======================================================================================    
+        //! DbIndex is a convenience wrapper around the DbIndex struct in the ECDbMap ECSchema
+        //! that simplifies reading the values of that struct
+        //! @bsiclass
+        //=======================================================================================    
+        struct DbIndex
+            {
+            friend struct DbIndexList;
+
+            private:
+                Utf8String m_name;
+                bool m_isUnique;
+                Utf8String m_whereClause;
+                bvector<Utf8String> m_properties;
+
+                DbIndex(Utf8CP name, bool isUnique = false, Utf8CP whereClause = nullptr) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
+                void AddProperty(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
+
+            public:
+                //! Gets the index name.
+                //! @return Index name or nullptr if not set (This indicates that the name of the index should be auto-generated)
+                Utf8CP GetName() const { return m_name.c_str(); }
+                //! Gets a value indicating whether the index is a unique index or not.
+                //! @return true if the index is a unique index. false otherwise
+                bool IsUnique() const { return m_isUnique; }
+                //! Gets the where clause if the index a partial index.
+                //! @return Where clause or nullptr if the index is not partial
+                Utf8CP GetWhereClause() const { return m_whereClause.c_str(); }
+                //! Gets the list of property names on which the index is to be defined.
+                //! @return Properties on which the index is defined.
+                bvector<Utf8String> const& GetProperties() const { return m_properties; }
+            };
+
+    private:
+        ECClassCP m_class;
+        IECInstanceCP m_ca;
+
+        DbIndexList(ECClassCR, IECInstanceCP ca);
+
+    public:
+        DbIndexList() : m_class(nullptr), m_ca(nullptr) {}
+
+        //! @return true if the ClassMap CA exists on the ECClass, false if it doesn't exist on the ECClass.
+        bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
+
+        //! Get the value of the Indexes property from the DbIndexList.
+        //! @param[out] indexes List of DbIndexes as defined in the DbIndexList.
+        //! @return SUCCESS or Error codes if Indexes property has invalid values
+        ECOBJECTS_EXPORT ECObjectsStatus GetIndexes(bvector<DbIndex>& indexes) const;
+    };
 
 //=======================================================================================    
 //! ECDbPropertyMap is a convenience wrapper around the PropertyMap custom attribute that simplifies
@@ -480,13 +483,6 @@ public:
     //! wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
-
-    //! Tries to get the value of the CreateIndex property from the ForeignKeyRelationshipMap.
-    //! @param[out] createIndexFlag true, if an index should be created on the foreign key column(s)
-    //!             false if no index should be created.
-    //!             @p createIndexFlag remains unchanged, if the CreateIndex property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if CreateIndex was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateIndex(bool& createIndexFlag) const;
 
     //! Tries to get the value of the ForeignKeyColumn property from the ForeignKeyRelationshipMap.
     //! @param[out] foreignKeyColumnName Name of column to which ForeignKeyColumn is mapped to. 

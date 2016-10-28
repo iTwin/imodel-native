@@ -121,6 +121,108 @@ TEST_F(SchemaValidationTests, TestAliases)
     EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias is empty";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaValidationTests, TestClassConstraintDelayedValidation)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='abstract'></ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid()) << "The schema should have successfully been read from the xml string.";
+
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should stay a 3.0 schema and not be upgraded to a 3.1 schema.";
+
+    // Attempt to validate the schema, should remain a 3.0 schema
+    EXPECT_TRUE(schema->Validate());
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should still not be a 3.1 schema after the validation is ran.";
+
+    // Update the schema to now be a validate 3.1 schema
+    ECClassCP baseClass = schema->GetClassCP("B");
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("C")->AddBaseClass(*baseClass)) << "Adding a base class to C to make the relationship constraints valid.";
+
+    schema->Validate();
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should now be a 3.1 schema.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should have been read as a 3.0 schema. It fails validation.";
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+
+    EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(UINT_MAX, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("ARelB")->GetRelationshipClassP()->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne())) << "Fixing the Source multiplicity to not violate the narrowing rule.";
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("ARelB")->GetRelationshipClassP()->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany())) << "Fixing the Target multiplicity to not violate the narrowing rule.";
+
+    EXPECT_TRUE(schema->Validate());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "Since the validation passed, the schema should not be an EC3.1 schema.";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
-
-

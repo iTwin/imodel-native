@@ -713,14 +713,14 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         if (!prop->GetIsPrimitive())
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s is not a primitive property but the base property from class %s is.",
-                       currentClass->GetName().c_str(), propName, rootClass->GetName().c_str());
+                       currentClass->GetFullName(), propName, rootClass->GetFullName());
             return ECObjectsStatus::DataTypeMismatch;
             }
 
         if (ECObjectsStatus::Success != (status = Merge(prop, &sdInfo, enumeration)))
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s has a StandardValues attribute that does not match the base property from class %s.",
-                       currentClass->GetName().c_str(), propName, rootClass->GetName().c_str());
+                       currentClass->GetFullName(), propName, rootClass->GetFullName());
             return status;
             }
         }
@@ -738,8 +738,8 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
             status = primitive->SetType(*enumeration);
         else if (primitive->GetEnumeration() != enumeration)
             {
-            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as it's type but it is not the same as the type '%s' from the base property in class %s",
-                       currentClass->GetName().c_str(), propName, primitive->GetEnumeration()->GetName().c_str(), enumeration->GetName().c_str(), rootClass->GetName().c_str());
+            LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s",
+                       currentClass->GetFullName(), propName, primitive->GetEnumeration()->GetFullName().c_str(), enumeration->GetFullName().c_str(), rootClass->GetFullName());
             return ECObjectsStatus::DataTypeMismatch;
             }
 

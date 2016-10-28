@@ -577,17 +577,17 @@ bool            ECValue::IsBoolean () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECValue::IsPoint2D () const 
+bool            ECValue::IsPoint2d () const 
     { 
-    return m_primitiveType == PRIMITIVETYPE_Point2D; 
+    return m_primitiveType == PRIMITIVETYPE_Point2d; 
     }
                                        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECValue::IsPoint3D () const 
+bool            ECValue::IsPoint3d () const 
     { 
-    return m_primitiveType == PRIMITIVETYPE_Point3D; 
+    return m_primitiveType == PRIMITIVETYPE_Point3d; 
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -708,8 +708,8 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Integer:
         case PRIMITIVETYPE_Long:
         case PRIMITIVETYPE_Double:
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point3d:
         case PRIMITIVETYPE_DateTime:
         case PRIMITIVETYPE_IGeometry:
             break;
@@ -868,7 +868,7 @@ ECValue::ECValue (double doubleVal)
 ECValue::ECValue (DPoint2dCR point2d)
     {
     ConstructUninitialized();
-    SetPoint2D (point2d);
+    SetPoint2d (point2d);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -877,7 +877,7 @@ ECValue::ECValue (DPoint2dCR point2d)
 ECValue::ECValue (DPoint3dCR point3d)
     {
     ConstructUninitialized();
-    SetPoint3D (point3d);
+    SetPoint3d (point3d);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1227,10 +1227,10 @@ Utf8String ECValue::DateTimeMetadataToString () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d          ECValue::GetPoint2D() const
+DPoint2d          ECValue::GetPoint2d() const
     {
     DPoint2d badValue = {0.0,0.0};
-    PRECONDITION (IsPoint2D() && "Tried to get Point2D value from an ECN::ECValue that is not a Point2D.", badValue);
+    PRECONDITION (IsPoint2d() && "Tried to get Point2d value from an ECN::ECValue that is not a Point2d.", badValue);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
     return m_dPoint2d;
     };
@@ -1238,11 +1238,11 @@ DPoint2d          ECValue::GetPoint2D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       ECValue::SetPoint2D (DPoint2dCR value)
+BentleyStatus       ECValue::SetPoint2d (DPoint2dCR value)
     {
     Clear();
     SetIsNull (false);
-    m_primitiveType  = PRIMITIVETYPE_Point2D;
+    m_primitiveType  = PRIMITIVETYPE_Point2d;
     m_dPoint2d       = value;
     
     return SUCCESS;
@@ -1251,11 +1251,11 @@ BentleyStatus       ECValue::SetPoint2D (DPoint2dCR value)
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d          ECValue::GetPoint3D() const
+DPoint3d          ECValue::GetPoint3d() const
     {
     DPoint3d badValue = {0.0,0.0,0.0};
 
-    PRECONDITION (IsPoint3D() && "Tried to get Point3D value from an ECN::ECValue that is not a Point3D.", badValue);
+    PRECONDITION (IsPoint3d() && "Tried to get Point3d value from an ECN::ECValue that is not a Point3d.", badValue);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
     return m_dPoint3d;
     };
@@ -1263,11 +1263,11 @@ DPoint3d          ECValue::GetPoint3D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
+BentleyStatus       ECValue::SetPoint3d (DPoint3dCR value)
     {
     Clear();
     SetIsNull (false);
-    m_primitiveType  = PRIMITIVETYPE_Point3D;
+    m_primitiveType  = PRIMITIVETYPE_Point3d;
     m_dPoint3d       = value;
     
     return SUCCESS;
@@ -1571,15 +1571,15 @@ bool    ECValue::ConvertPrimitiveToString (Utf8StringR str) const
     case PRIMITIVETYPE_Long:
         str.Sprintf ("%lld", GetLong());
         break;
-    case PRIMITIVETYPE_Point2D:
+    case PRIMITIVETYPE_Point2d:
         {
-        DPoint2d pt = GetPoint2D();
+        DPoint2d pt = GetPoint2d();
         str.Sprintf ("%.17g,%.17g", pt.x, pt.y);
         }
         break;
-    case PRIMITIVETYPE_Point3D:
+    case PRIMITIVETYPE_Point3d:
         {
-        DPoint3d pt = GetPoint3D();
+        DPoint3d pt = GetPoint3d();
         str.Sprintf ("%.17g,%.17g,%.17g", pt.x, pt.y, pt.z);
         }
         break;
@@ -1639,10 +1639,10 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (Utf8StringR expr) const
     case PRIMITIVETYPE_Double:      expr = formatDouble (GetDouble()); return true;
     case PRIMITIVETYPE_Integer:     expr.Sprintf ("%d", GetInteger()); return true;
     case PRIMITIVETYPE_Long:        expr.Sprintf ("%lld", GetLong()); return true;
-    case PRIMITIVETYPE_Point2D:     expr.Sprintf ("{%s,%s}", formatDouble (GetPoint2D().x).c_str(), formatDouble (GetPoint2D().y).c_str()); return true;
-    case PRIMITIVETYPE_Point3D:
+    case PRIMITIVETYPE_Point2d:     expr.Sprintf ("{%s,%s}", formatDouble (GetPoint2d().x).c_str(), formatDouble (GetPoint2d().y).c_str()); return true;
+    case PRIMITIVETYPE_Point3d:
         {
-        DPoint3d pt = GetPoint3D();
+        DPoint3d pt = GetPoint3d();
         expr.Sprintf ("{%s,%s,%s}", formatDouble(pt.x).c_str(), formatDouble(pt.y).c_str(), formatDouble(pt.z).c_str());
         }
         return true;
@@ -1737,20 +1737,20 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
             return false;
         }
         break;
-    case PRIMITIVETYPE_Point2D:
+    case PRIMITIVETYPE_Point2d:
         {
         DPoint2d pt;
         if (2 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lg,%lg", &pt.x, &pt.y))
-            SetPoint2D (pt);
+            SetPoint2d (pt);
         else
             return false;
         }
         break;
-    case PRIMITIVETYPE_Point3D:
+    case PRIMITIVETYPE_Point3d:
         {
         DPoint3d pt;
         if (3 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
-            SetPoint3D (pt);
+            SetPoint3d (pt);
         else
             return false;
         }
@@ -1896,17 +1896,17 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         SetBoolean (b);
         }
         return true;
-    case PRIMITIVETYPE_Point3D:
-        if (PRIMITIVETYPE_Point2D == curType)
+    case PRIMITIVETYPE_Point3d:
+        if (PRIMITIVETYPE_Point2d == curType)
             {
-            SetPoint3D (DPoint3d::FromXYZ (GetPoint2D().x, GetPoint2D().y, 0.0));
+            SetPoint3d (DPoint3d::FromXYZ (GetPoint2d().x, GetPoint2d().y, 0.0));
             return true;
             }
         return false;
-    case PRIMITIVETYPE_Point2D:
-        if (PRIMITIVETYPE_Point3D == curType)
+    case PRIMITIVETYPE_Point2d:
+        if (PRIMITIVETYPE_Point3d == curType)
             {
-            SetPoint2D (DPoint2d::From (GetPoint3D().x, GetPoint3D().y));
+            SetPoint2d (DPoint2d::From (GetPoint3d().x, GetPoint3d().y));
             return true;
             }
         return false;
@@ -1959,11 +1959,11 @@ bool              ECValue::Equals (ECValueCR v) const
         }
     if (IsDouble())
         return DoubleOps::AlmostEqual (GetDouble(), v.GetDouble());
-    if (IsPoint3D ())
-        return DPoint3dOps::AlmostEqual (GetPoint3D (), v.GetPoint3D ());
+    if (IsPoint3d ())
+        return DPoint3dOps::AlmostEqual (GetPoint3d (), v.GetPoint3d ());
 
-    if (IsPoint2D())
-         return DPoint2dOps::AlmostEqual (GetPoint2D (), v.GetPoint2D ());
+    if (IsPoint2d())
+         return DPoint2dOps::AlmostEqual (GetPoint2d (), v.GetPoint2d ());
 
     size_t primitiveValueSize = (size_t) GetFixedPrimitiveValueSize (GetPrimitiveType());
     //&m_boolean points to the first memory address of the union (as does every other union member)
@@ -2029,9 +2029,9 @@ uint32_t        ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype
             return sizeof(double);
         case PRIMITIVETYPE_Boolean:
             return sizeof(bool); 
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             return 2 * sizeof(double);
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             return 3 * sizeof(double);
         case PRIMITIVETYPE_DateTime:
             return sizeof(int64_t); //ticks
@@ -2864,10 +2864,10 @@ bool                ECPropertyValue::HasChildValues () const
     // Avoid evaluating value if we can answer this by looking at the ECProperty
     // Note: performance: the accessor caches the ECProperty, since we often request it more than once
     ECPropertyCP prop = m_accessor.GetECProperty();
-    ArrayECPropertyCP arrayProp;
+    PrimitiveArrayECPropertyCP arrayProp;
     if (NULL == prop || prop->GetIsPrimitive() || prop->GetIsNavigation())
         return false;
-    else if (NULL != (arrayProp = prop->GetAsArrayProperty()) && ARRAYKIND_Primitive == arrayProp->GetKind() && -1 != m_accessor.DeepestLocationCR().GetArrayIndex())
+    else if (NULL != (arrayProp = prop->GetAsPrimitiveArrayProperty()) && -1 != m_accessor.DeepestLocationCR().GetArrayIndex())
         return false;   // this is a primitive array member, it has no child properties
     else if (prop->GetIsStruct())
         return true;    // embedded struct always has child values, ECValue always null
@@ -3905,8 +3905,8 @@ enum class PrimitiveTypeCode
     DateTime,
     Boolean,
     Binary,
-    Point2D,
-    Point3D
+    Point2d,
+    Point3d
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -3922,8 +3922,8 @@ bool AdhocPropertyMetadata::PrimitiveTypeForCode (PrimitiveType& type, int32_t c
         case (int32_t)PrimitiveTypeCode::Double:     type = PRIMITIVETYPE_Double; return true;
         case (int32_t)PrimitiveTypeCode::DateTime:   type = PRIMITIVETYPE_DateTime; return true;
         case (int32_t)PrimitiveTypeCode::Boolean:    type = PRIMITIVETYPE_Boolean; return true;
-        case (int32_t)PrimitiveTypeCode::Point2D:    type = PRIMITIVETYPE_Point2D; return true;
-        case (int32_t)PrimitiveTypeCode::Point3D:    type = PRIMITIVETYPE_Point3D; return true;
+        case (int32_t)PrimitiveTypeCode::Point2d:    type = PRIMITIVETYPE_Point2d; return true;
+        case (int32_t)PrimitiveTypeCode::Point3d:    type = PRIMITIVETYPE_Point3d; return true;
         default:                            return false;
         }
     }
@@ -3941,8 +3941,8 @@ bool AdhocPropertyMetadata::CodeForPrimitiveType (int32_t& code, PrimitiveType t
         case PRIMITIVETYPE_Double:      code = static_cast<int32_t> (PrimitiveTypeCode::Double); return true;
         case PRIMITIVETYPE_DateTime:    code = static_cast<int32_t> (PrimitiveTypeCode::DateTime); return true;
         case PRIMITIVETYPE_Boolean:     code = static_cast<int32_t> (PrimitiveTypeCode::Boolean); return true;
-        case PRIMITIVETYPE_Point2D:     code = static_cast<int32_t> (PrimitiveTypeCode::Point2D); return true;
-        case PRIMITIVETYPE_Point3D:     code = static_cast<int32_t> (PrimitiveTypeCode::Point3D); return true;
+        case PRIMITIVETYPE_Point2d:     code = static_cast<int32_t> (PrimitiveTypeCode::Point2d); return true;
+        case PRIMITIVETYPE_Point3d:     code = static_cast<int32_t> (PrimitiveTypeCode::Point3d); return true;
         default:                        return false;
         }
     }

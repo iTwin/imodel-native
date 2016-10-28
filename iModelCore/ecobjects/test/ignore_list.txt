@@ -65,8 +65,5 @@ AdhocPropertyTest.AddPropertyWithOptionalMetadata
     # DgnDb0601, x64, NDEBUG, PRG
     # <build output no longer provides failure details, and cannot access log files in PRG>
 
-# Temporarily removed relationship validation
-ECRelationshipTests.TestRelationshipMultiplicityConstraint
-SchemaDeserializationConversionTest.TestMultiplicityConstraint
-SchemaDeserializationConversionTest.TestRoleLabelAttribute
-SchemaDeserializationTest.ExpectFailureWhenRoleLabelNotFoundOrEmpty
+#SchemaConverter doesn't support string enums correctly
+StandardValueToEnumConversionTest.CAConversionTest

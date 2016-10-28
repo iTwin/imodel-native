@@ -60,14 +60,14 @@ struct ExtendedTypeTests : ECTestFixture
         if (ecProperty->GetIsPrimitive())
             {
             PrimitiveECPropertyP primitiveProperty = ecProperty->GetAsPrimitivePropertyP();
-            EXPECT_FALSE(primitiveProperty == nullptr) << contextMessage << "Property " + extendedTypeName + " is not an PrimitiveECProperty.";
+            EXPECT_FALSE(primitiveProperty == nullptr) << contextMessage << "Property " + extendedTypeName + " is not a PrimitiveECProperty.";
 
             extendedTypeName = primitiveProperty->GetExtendedTypeName();
             }
         else if (ecProperty->GetIsPrimitiveArray())
             {
-            ArrayECPropertyP arrayProperty = ecProperty->GetAsArrayPropertyP();
-            EXPECT_FALSE(arrayProperty == nullptr) << contextMessage << "Property " + extendedTypeName + " is not an ArrayECProperty.";
+            PrimitiveArrayECPropertyP arrayProperty = ecProperty->GetAsPrimitiveArrayPropertyP();
+            EXPECT_FALSE(arrayProperty == nullptr) << contextMessage << "Property " + extendedTypeName + " is not a PrimitiveArrayECProperty.";
 
             extendedTypeName = arrayProperty->GetExtendedTypeName();
             }
@@ -87,7 +87,7 @@ struct ExtendedTypeTests : ECTestFixture
             }
         else if (ecProperty->GetIsPrimitiveArray())
             {
-            extendedTypeName = ecProperty->GetAsArrayProperty()->GetExtendedTypeName();
+            extendedTypeName = ecProperty->GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
             }
         else
             FAIL() << "Property " << propertyName << " is not a primitive or primitive array property";
@@ -182,8 +182,8 @@ TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
         FAIL() << "Couldn't set the ExtendedTypeName on property knownExtendedType";
         }
 
-    ArrayECPropertyP arrayPropertyPtr;
-    classPtr->CreateArrayProperty(arrayPropertyPtr, "arrayExtendedType", PrimitiveType::PRIMITIVETYPE_Integer);
+    PrimitiveArrayECPropertyP arrayPropertyPtr;
+    classPtr->CreatePrimitiveArrayProperty(arrayPropertyPtr, "arrayExtendedType", PrimitiveType::PRIMITIVETYPE_Integer);
     if (ECObjectsStatus::Success != arrayPropertyPtr->SetExtendedTypeName("banana"))
         {
         FAIL() << "Couldn't set the ExtendedTypeName on property arrayExtendedType";
@@ -229,8 +229,8 @@ TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
     classPtr->CreatePrimitiveProperty(colorPropertyPtr, "colorProperty", PrimitiveType::PRIMITIVETYPE_Integer);
     PrimitiveECPropertyP resetPropertyPtr;
     classPtr->CreatePrimitiveProperty(resetPropertyPtr, "resetProperty", PrimitiveType::PRIMITIVETYPE_Integer);
-    ArrayECPropertyP arrayPropertyPtr;
-    classPtr->CreateArrayProperty(arrayPropertyPtr, "arrayProperty", PrimitiveType::PRIMITIVETYPE_Integer);
+    PrimitiveArrayECPropertyP arrayPropertyPtr;
+    classPtr->CreatePrimitiveArrayProperty(arrayPropertyPtr, "arrayProperty", PrimitiveType::PRIMITIVETYPE_Integer);
 
     VerifyExtendedTypeSet(colorPropertyPtr, "color", false, false);
     VerifyExtendedTypeOnProperty("color", "colorProperty", classPtr, "Verify color extended type after set.  ");
@@ -248,8 +248,8 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     testSchema->CreateEntityClass(baseClass, "BaseClass");
     PrimitiveECPropertyP extendedProperty;
     baseClass->CreatePrimitiveProperty(extendedProperty, "Extended", PrimitiveType::PRIMITIVETYPE_Double);
-    ArrayECPropertyP extendedArrayProperty;
-    baseClass->CreateArrayProperty(extendedArrayProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    PrimitiveArrayECPropertyP extendedArrayProperty;
+    baseClass->CreatePrimitiveArrayProperty(extendedArrayProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
     PrimitiveECPropertyP extendedInDerivedProperty;
     baseClass->CreatePrimitiveProperty(extendedInDerivedProperty, "ExtendedLater", PrimitiveType::PRIMITIVETYPE_Binary);
     
@@ -267,8 +267,8 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     VerifyExtendedTypeOnProperty("Banana", "Extended", derivedClass1, "Override created after type set.  ");
     
     // Verify that property override added before extended type set is extended
-    ArrayECPropertyP extendedArrayOverrideProperty;
-    derivedClass1->CreateArrayProperty(extendedArrayOverrideProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    PrimitiveArrayECPropertyP extendedArrayOverrideProperty;
+    derivedClass1->CreatePrimitiveArrayProperty(extendedArrayOverrideProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
     VerifyExtendedTypeSet(extendedArrayProperty, "Pear", false, false);
     VerifyExtendedTypeOnProperty("Pear", "ExtendedArray", derivedClass1, "Override created before type set.  ");
 
@@ -286,14 +286,14 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     ECEntityClassP derivedClass2;
     testSchema->CreateEntityClass(derivedClass2, "DerivedClass2");
     derivedClass2->AddBaseClass(*derivedClass1);
-    ArrayECPropertyP extendedArrayOverride2;
-    derivedClass2->CreateArrayProperty(extendedArrayOverride2, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    PrimitiveArrayECPropertyP extendedArrayOverride2;
+    derivedClass2->CreatePrimitiveArrayProperty(extendedArrayOverride2, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
 
     ECEntityClassP derivedClass3;
     testSchema->CreateEntityClass(derivedClass3, "DerivedClass3");
     derivedClass3->AddBaseClass(*derivedClass2);
-    ArrayECPropertyP extendedArrayOverride3;
-    derivedClass3->CreateArrayProperty(extendedArrayOverride3, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    PrimitiveArrayECPropertyP extendedArrayOverride3;
+    derivedClass3->CreatePrimitiveArrayProperty(extendedArrayOverride3, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
 
     VerifyExtendedTypeSet(extendedArrayOverride2, "SubPear", false, false);
     VerifyExtendedTypeOnProperty("SubPear", "ExtendedArray", derivedClass3);

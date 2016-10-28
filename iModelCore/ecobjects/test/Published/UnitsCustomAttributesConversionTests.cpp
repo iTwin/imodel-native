@@ -83,7 +83,7 @@ struct UnitsCustomAttributesConversionTests : ECTestFixture
 void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8CP customAttributeName, Utf8CP customAttributeInMemory = "")
     {
     Utf8String schemaXmlString;
-    ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, 3, 0))
+    ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, ECVersion::V3_0))
            << "Cannot serialize the schema";
 
     ASSERT_NE(Utf8String::npos, schemaXmlString.find(customAttributeName));
@@ -103,7 +103,7 @@ void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8C
 void SerializeAndCheck(ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames)
     {
     Utf8String schemaXmlString;
-    ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, 3, 0))
+    ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, ECVersion::V3_0))
            << "Cannot serialize the schema";
     
     for (auto customAttributeName: customAttributeNames)

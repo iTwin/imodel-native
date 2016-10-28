@@ -220,9 +220,9 @@ Utf8StringCR ECEnumeration::GetInvariantDescription () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (ecXmlVersionMajor < 3)
+    if (ecXmlVersion < ECVersion::V3_0)
         { //Enumerations will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
         }

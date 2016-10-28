@@ -38,8 +38,9 @@ EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
-EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ExtendedTypeECProperty);
+EC_TYPEDEFS(ArrayECProperty);
+EC_TYPEDEFS(PrimitiveArrayECProperty);
 EC_TYPEDEFS(StructArrayECProperty);
 EC_TYPEDEFS(NavigationECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
@@ -168,6 +169,7 @@ enum class ECObjectsStatus
     RelationshipConstraintsNotCompatible,
     CaseCollision,
     CustomAttributeContainerTypesNotCompatible,
+    InvalidECVersion
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -261,6 +263,17 @@ enum class SupplementedSchemaStatus
     IECRelationship_Not_Allowed,
     SchemaMergeException,
     SupplementalClassHasBaseClass,
+    };
+
+//=======================================================================================
+//! Represents all of the valid EC Specification Versions.
+//=======================================================================================
+enum class ECVersion
+    {
+    V2_0 = (0x02 << 16),
+    V3_0 = (0x03 << 16),
+    V3_1 = (0x03 << 16 | 0x01),
+    Latest = V3_1
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,8 +386,8 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Double                    = 0x401,
     PRIMITIVETYPE_Integer                   = 0x501,
     PRIMITIVETYPE_Long                      = 0x601,
-    PRIMITIVETYPE_Point2D                   = 0x701,
-    PRIMITIVETYPE_Point3D                   = 0x801,
+    PRIMITIVETYPE_Point2d                   = 0x701,
+    PRIMITIVETYPE_Point3d                   = 0x801,
     PRIMITIVETYPE_String                    = 0x901,
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
@@ -476,10 +489,10 @@ enum class CustomAttributeContainerType
     AnyClass                = EntityClass | CustomAttributeClass | StructClass | RelationshipClass,
     PrimitiveProperty       = (0x0001 << 5),
     StructProperty          = (0x0001 << 6),
-    ArrayProperty           = (0x0001 << 7),
+    PrimitiveArrayProperty  = (0x0001 << 7),
     StructArrayProperty     = (0x0001 << 8),
     NavigationProperty      = (0x0001 << 9),
-    AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty | NavigationProperty,
+    AnyProperty             = PrimitiveProperty | StructProperty | PrimitiveArrayProperty | StructArrayProperty | NavigationProperty,
     SourceRelationshipConstraint    = (0x0001 << 10),
     TargetRelationshipConstraint    = (0x0001 << 11),
     AnyRelationshipConstraint       = SourceRelationshipConstraint | TargetRelationshipConstraint,

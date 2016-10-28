@@ -53,10 +53,10 @@ TEST_F(PerformancePropertiesTest, AddArrayElements)
     ECEntityClassP classA;
     schemaA->CreateEntityClass (classA, "ClassA");
 
-    ArrayECPropertyP prop;
-    classA->CreateArrayProperty (prop, "IntArray", PRIMITIVETYPE_Integer);
-    classA->CreateArrayProperty (prop, "StringArray", PRIMITIVETYPE_String);
-    classA->CreateArrayProperty (prop, "BoolArray", PRIMITIVETYPE_Boolean);
+    PrimitiveArrayECPropertyP prop;
+    classA->CreatePrimitiveArrayProperty (prop, "IntArray", PRIMITIVETYPE_Integer);
+    classA->CreatePrimitiveArrayProperty (prop, "StringArray", PRIMITIVETYPE_String);
+    classA->CreatePrimitiveArrayProperty (prop, "BoolArray", PRIMITIVETYPE_Boolean);
 
     ECStructClassP struct1;
     schemaA->CreateStructClass (struct1, "Struct");

@@ -79,8 +79,8 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         case PRIMITIVETYPE_Long:
         case PRIMITIVETYPE_Double:
         case PRIMITIVETYPE_Boolean:
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point3d:
         case PRIMITIVETYPE_DateTime: 
             return true;
         case PRIMITIVETYPE_String:
@@ -848,17 +848,18 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
             ArrayKind arrayKind = arrayProp->GetKind();
             if (arrayKind == ARRAYKIND_Primitive)
                 {
+                PrimitiveArrayECPropertyCP primitiveProp = arrayProp->GetAsPrimitiveArrayProperty();
                 bool isFixedArrayCount = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs());
-                bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (arrayProp->GetPrimitiveElementType());
+                bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (primitiveProp->GetPrimitiveElementType());
                 
                 if (addingFixedSizeProps && isFixedPropertySize)
-                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                 else if (!addingFixedSizeProps && !isFixedPropertySize)
                     {
                     if (isFixedArrayCount)
-                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), property->GetIsReadOnly(), arrayProp->IsCalculated());
+                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveProp->GetPrimitiveElementType()), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
@@ -2261,15 +2262,6 @@ ECObjectsStatus     ECDBuffer::Compress()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDBuffer::ECDBuffer (bool allowWritingDirectlyToInstanceMemory) :
-    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory),
-    m_allPropertiesCalculated (false)
-    {
-    }
-        
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::ShiftValueData(Byte * propertyData, uint32_t bytesAllocated, PropertyLayoutCR propertyLayout, int32_t shiftBy)
@@ -2301,7 +2293,7 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(Byte * propertyData, uint32_t by
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     uint32_t sizeOfSecondaryOffsetsToShift = (uint32_t)(((Byte*)pLast - (Byte*)pCurrent) + sizeof (SecondaryOffset));
-    if (m_allowWritingDirectlyToInstanceMemory)
+    if (_AllowWritingDirectlyToInstanceMemory())
         {
         for (SecondaryOffset * pSecondaryOffset = pCurrent; 
              pSecondaryOffset < pLast && 0 != *pSecondaryOffset;  // stop when we hit a zero
@@ -2415,7 +2407,7 @@ ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isPrimitiveType (ECPropertyCR prop)
     {
-    return prop.GetIsPrimitive() || (prop.GetIsArray() && ARRAYKIND_Primitive == prop.GetAsArrayProperty()->GetKind());
+    return prop.GetIsPrimitive() || prop.GetIsPrimitiveArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2677,18 +2669,18 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 v.SetBoolean (value);
                 break;
                 } 
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 {
                 DPoint2d value;
                 memcpy (&value, pValue, sizeof(value));
-                v.SetPoint2D (value);
+                v.SetPoint2d (value);
                 break;
                 }       
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 {
                 DPoint3d value;
                 memcpy (&value, pValue, sizeof(value));
-                v.SetPoint3D (value);
+                v.SetPoint3d (value);
                 break;
                 }       
             case PRIMITIVETYPE_DateTime:
@@ -2718,7 +2710,7 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
             }
         }
 
-    if (ECObjectsStatus::Success == status && propertyLayout.HoldsCalculatedProperty() && !m_allPropertiesCalculated)
+    if (ECObjectsStatus::Success == status && propertyLayout.HoldsCalculatedProperty() && !_AreAllPropertiesCalculated())
         status = EvaluateCalculatedProperty (propertyLayout, v, useIndex, index);
 
     return status;
@@ -3046,12 +3038,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             result = ModifyData (valueP, &value, sizeof(value));
             }       
             break;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {
-            if (!v.IsPoint2D ())
+            if (!v.IsPoint2d ())
                 return ECObjectsStatus::DataTypeMismatch;
 
-            DPoint2d value = v.GetPoint2D();
+            DPoint2d value = v.GetPoint2d();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECObjectsStatus::PropertyValueMatchesNoChange;
@@ -3059,12 +3051,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             result = ModifyData (valueP, &value, sizeof(value));
             }       
             break;
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            if (!v.IsPoint3D ())
+            if (!v.IsPoint3d ())
                 return ECObjectsStatus::DataTypeMismatch;
 
-            DPoint3d value = v.GetPoint3D();
+            DPoint3d value = v.GetPoint3d();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECObjectsStatus::PropertyValueMatchesNoChange;
@@ -3197,10 +3189,10 @@ CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecificati
     if (ECObjectsStatus::Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
         {
         PrimitiveECPropertyCP primProp;
-        ArrayECPropertyCP arrayProp;
+        PrimitiveArrayECPropertyCP arrayProp;
         if (NULL != (primProp = ecprop->GetAsPrimitiveProperty()))
             return primProp->GetCalculatedPropertySpecification();
-        else if (NULL != (arrayProp = ecprop->GetAsArrayProperty()))
+        else if (NULL != (arrayProp = ecprop->GetAsPrimitiveArrayProperty()))
             return arrayProp->GetCalculatedPropertySpecification();
         }
 
@@ -3239,7 +3231,7 @@ ECObjectsStatus ECDBuffer::_SetCalculatedValueToMemory (ECValueCR v, PropertyLay
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::ModifyData (Byte const* data, void const* newData, size_t len)
     {
-    if (m_allowWritingDirectlyToInstanceMemory)
+    if (_AllowWritingDirectlyToInstanceMemory())
         {
         memcpy (const_cast<Byte*> (data), newData, len);
         return ECObjectsStatus::Success;
@@ -3253,7 +3245,7 @@ ECObjectsStatus ECDBuffer::ModifyData (Byte const* data, void const* newData, si
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::ModifyData (uint32_t const* data, uint32_t newData)
     {
-    if (m_allowWritingDirectlyToInstanceMemory)
+    if (_AllowWritingDirectlyToInstanceMemory())
         {
         *const_cast<uint32_t*> (data) = newData;
         return ECObjectsStatus::Success;
@@ -3267,7 +3259,7 @@ ECObjectsStatus ECDBuffer::ModifyData (uint32_t const* data, uint32_t newData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::MoveData (Byte* to, Byte const* from, size_t len)
     {
-    if (m_allowWritingDirectlyToInstanceMemory)
+    if (_AllowWritingDirectlyToInstanceMemory())
         {
         memmove (to, from, len);
         return ECObjectsStatus::Success;
@@ -3549,9 +3541,9 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
      
     uint32_t insertedSecondaryOffsetByteCount = m_resizeElementCount * m_elementSizeInFixedSection;       
     SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount);
-    ScopedWriteBuffer writeBuffer (insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset)), m_instance.m_allowWritingDirectlyToInstanceMemory, pSecondaryOffset);
+    ScopedWriteBuffer writeBuffer (insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset)), m_instance._AllowWritingDirectlyToInstanceMemory(), pSecondaryOffset);
     pWriteBuffer = writeBuffer.GetData();
-    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+    if (!m_instance._AllowWritingDirectlyToInstanceMemory())
         sizeOfWriteBuffer = insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset));
         
     // initialize inserted secondary offsets
@@ -3566,7 +3558,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
         DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_instance.GetPropertyValueSize (m_propertyLayout));
         }
         
-    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+    if (!m_instance._AllowWritingDirectlyToInstanceMemory())
         {
         Byte const* modifyP = m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount;
         status = m_instance.ModifyData (modifyP, pWriteBuffer, sizeOfWriteBuffer);            
@@ -3612,7 +3604,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
     if (m_elementTypeIsFixedSize)
         return status;
     
-    ScopedWriteBuffer writeBuffer (byteCountToSet, m_instance.m_allowWritingDirectlyToInstanceMemory, pSecondaryOffset);
+    ScopedWriteBuffer writeBuffer (byteCountToSet, m_instance._AllowWritingDirectlyToInstanceMemory(), pSecondaryOffset);
     Byte * pWriteBuffer = writeBuffer.GetData();
      
     // update shifted secondary offsets        
@@ -3624,7 +3616,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
         DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_postSecondaryOffsetOfResizeIndex);
         }
         
-    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+    if (!m_instance._AllowWritingDirectlyToInstanceMemory())
         {
         status = m_instance.ModifyData ((Byte*)pSecondaryOffset, pWriteBuffer, byteCountToSet);
         //DEBUG_EXPECT (modifyOffset >= m_postHeaderByteCount);
@@ -3643,9 +3635,9 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
     {
     // write the new array header (updated count & null flags)      
     ECObjectsStatus status = ECObjectsStatus::Success;
-    ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance.m_allowWritingDirectlyToInstanceMemory, (Byte*)(m_propertyData + m_arrayOffset));
+    ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance._AllowWritingDirectlyToInstanceMemory(), (Byte*)(m_propertyData + m_arrayOffset));
     Byte * pWriteBuffer = writeBuffer.GetData();
-    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+    if (!m_instance._AllowWritingDirectlyToInstanceMemory())
         memcpy (pWriteBuffer, m_propertyData + m_arrayOffset, m_preHeaderByteCount);
 
     *((uint32_t*)pWriteBuffer) = m_postAllocatedArrayCount;
@@ -3687,7 +3679,7 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
         if (0 == (*pNullflagsCurrent & nullflagsBitmask))
             *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit        
         }
-    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+    if (!m_instance._AllowWritingDirectlyToInstanceMemory())
         {
         status = m_instance.ModifyData (m_propertyData + m_arrayOffset, pWriteBuffer, m_postHeaderByteCount);
         if (ECObjectsStatus::Success != status)
@@ -4070,11 +4062,12 @@ void ECDBufferScope::Init (ECDBufferCP buffer)
     m_buffer = buffer;
     if (m_buffer != nullptr)
         {
-        m_initialState = m_buffer->m_allPropertiesCalculated;
+        m_initialState = m_buffer->_AreAllPropertiesCalculated();
         if (!m_initialState)
             {
+            // eww.
             const_cast<ECDBufferR>(*m_buffer).EvaluateAllCalculatedProperties ();
-            m_buffer->m_allPropertiesCalculated = true;
+            const_cast<ECDBufferR>(*m_buffer)._SetAllPropertiesCalculated(true);
             }
         }
     }
@@ -4085,7 +4078,7 @@ void ECDBufferScope::Init (ECDBufferCP buffer)
 ECDBufferScope::~ECDBufferScope()
     {
     if (nullptr != m_buffer)
-        m_buffer->m_allPropertiesCalculated = m_initialState;
+        const_cast<ECDBufferR>(*m_buffer)._SetAllPropertiesCalculated(m_initialState);
     }
 
 /*---------------------------------------------------------------------------------**//**

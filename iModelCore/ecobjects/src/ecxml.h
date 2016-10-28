@@ -83,6 +83,7 @@
 #define     MULTIPLICITY_ATTRIBUTE              "multiplicity"
 #define     ROLELABEL_ATTRIBUTE                 "roleLabel"
 #define     POLYMORPHIC_ATTRIBUTE               "polymorphic"
+#define     ABSTRACTCONSTRAINT_ATTRIBUTE        "abstractConstraint"
 #define     CONSTRAINTCLASSNAME_ATTRIBUTE       "class"
 #define     KEYPROPERTYNAME_ATTRIBUTE           "name"
 #define     ENUMERATOR_VALUE_ATTRIBUTE          "value"

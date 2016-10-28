@@ -77,6 +77,8 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
+    bool                    m_allowWritingDirectlyToInstanceMemory;
+    bool                    m_allPropertiesCalculated;
     uint16_t                m_usageBitmask;  // currently only used to round trip Partially Loaded and Hidden flags
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
@@ -121,6 +123,10 @@ protected:
 
                      virtual IECInstanceP       _GetAsIECInstance () const = 0;
 //    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const override;
+
+    virtual bool _AllowWritingDirectlyToInstanceMemory() const override { return m_allowWritingDirectlyToInstanceMemory; }
+    virtual bool _AreAllPropertiesCalculated() const override { return m_allPropertiesCalculated; }
+    virtual void _SetAllPropertiesCalculated(bool allCalculated) override { m_allPropertiesCalculated = allCalculated; }
 
     ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 public:
@@ -287,6 +293,8 @@ protected:
     virtual uint32_t                    _GetParentPropertyIndex (uint32_t childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
+
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     //! Creates a StandaloneECEnabler for the specified ECClass

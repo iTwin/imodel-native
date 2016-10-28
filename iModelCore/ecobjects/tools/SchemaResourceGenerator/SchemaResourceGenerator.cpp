@@ -618,7 +618,7 @@ static bool WriteSchema(Options const& options)
     //Write output file
     s_logger->infov("Writing output file %s", outFile.GetNameUtf8().c_str());
     s_logger->infov("Wrote %d resources.", currentIndex);
-    if (schema->WriteToXmlFile(outFile.GetName(), 3) != SchemaWriteStatus::Success)
+    if (schema->WriteToXmlFile(outFile.GetName()) != SchemaWriteStatus::Success)
         {
         s_logger->error("Failed to serialize schema.");
         return false;
@@ -649,7 +649,9 @@ int main(int argc, char** argv)
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-    ECSchemaReadContext::Initialize(exeDirectory);
+    BeFileName assetsDirectory(exeDirectory);
+    assetsDirectory.AppendToPath(L"Assets");
+    ECSchemaReadContext::Initialize(assetsDirectory);
 #endif
 
     Options options;

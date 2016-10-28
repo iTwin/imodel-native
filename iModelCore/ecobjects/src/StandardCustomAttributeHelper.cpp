@@ -10,8 +10,6 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define BSCA_SCHEMA_NAME "Bentley_Standard_CustomAttributes"
-#define SYSTEMSCHEMA_CA_NAME "SystemSchema"
-#define DYNAMICSCHEMA_CA_NAME "DynamicSchema"
 
 #define ECDBMAP_SCHEMA_NAME "ECDbMap"
 
@@ -168,14 +166,14 @@ StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
 
     ECClassP metaDataClass = m_schema->GetClassP(s_supplementalMetaDataAccessor);
     StandaloneECEnablerPtr enabler;
-    if (NULL != metaDataClass)
+    if (nullptr != metaDataClass)
         enabler = metaDataClass->GetDefaultStandaloneEnabler();
 
     m_enablers.Insert(s_supplementalMetaDataAccessor, enabler);
 
     ECClassP provenanceClass = m_schema->GetClassP(s_supplementalProvenanceAccessor);
     StandaloneECEnablerPtr provenanceEnabler;
-    if (NULL != provenanceClass)
+    if (nullptr != provenanceClass)
         provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
     m_enablers.Insert(s_supplementalProvenanceAccessor, provenanceEnabler);
 
@@ -246,56 +244,6 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
 ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     return DateTimeInfoAccessor::GetFrom(dateTimeInfo, dateTimeProperty);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool StandardCustomAttributeHelper::IsSystemSchema(ECSchemaCR schema)
-    {
-    return schema.IsDefined(BSCA_SCHEMA_NAME, SYSTEMSCHEMA_CA_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool StandardCustomAttributeHelper::IsDynamicSchema(ECSchemaCR schema)
-    {
-    return schema.IsDefined(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan    02/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema(ECSchemaR schema, bool isDynamic)
-    {
-    const bool isDynamicExistingValue = IsDynamicSchema(schema);
-    if (isDynamic)
-        {
-        if (isDynamicExistingValue)
-            return ECObjectsStatus::Success;
-
-        SchemaNameClassNamePair dynamicSchemaClassId(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME);
-        ECClassP dynamicSchemaClass = schema.GetReferencedSchemas().FindClassP(dynamicSchemaClassId);
-        //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
-        if (dynamicSchemaClass == nullptr)
-            return ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound;
-
-        IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        return schema.SetCustomAttribute(*dynamicSchemaInstance);
-        }
-
-    if (!isDynamicExistingValue)
-        return ECObjectsStatus::Success;
-
-    if (schema.RemoveCustomAttribute(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME))
-        return ECObjectsStatus::Success;
-
-    return ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,6 +336,20 @@ bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumns& shareColumns
 bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECClassCR ecClass)
     {
     return ecClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "JoinedTablePerDirectSubclass") != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   10 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexList& dbIndexList, ECClassCR ecClass)
+    {
+    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMA_NAME, "DbIndexList");
+    if (ca == nullptr)
+        return false;
+
+    dbIndexList = DbIndexList(ecClass, ca);
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -504,10 +466,18 @@ ECObjectsStatus ECDbClassMap::TryGetECInstanceIdColumn(Utf8String& ecInstanceIdC
     return CustomAttributeReader::TryGetTrimmedValue(ecInstanceIdColumnName, *m_ca, "ECInstanceIdColumn");
     }
 
+//*****************************************************************
+//DbIndexList
+//*****************************************************************
 //---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
+//@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
+DbIndexList::DbIndexList(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   10 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus DbIndexList::GetIndexes(bvector<DbIndex>& indices) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
@@ -516,7 +486,7 @@ ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
     ECObjectsStatus stat = m_ca->GetEnablerR().GetPropertyIndex(propIx, "Indexes");
     if (ECObjectsStatus::Success != stat)
         {
-        LOG.errorv("Failed to get property index for property 'Indexes' of custom attribute '%s' on ECClass '%s'.",
+        LOG.errorv("Failed to get property index for property 'List' of custom attribute '%s' on ECClass '%s'.",
                    m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
         return stat;
         }
@@ -529,7 +499,11 @@ ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
     indices.clear();
     const uint32_t indexCount = indexesVal.IsNull() ? 0 : indexesVal.GetArrayInfo().GetCount();
     if (indexCount == 0)
-        return ECObjectsStatus::Success;
+        {
+        LOG.errorv("Failed to read %s custom attribute' on ECClass '%s'. Its property 'Indexes' must be defined and at contain at least one 'DbIndex' element.",
+                   m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+        return ECObjectsStatus::Error;
+        }
 
     for (uint32_t i = 0; i < indexCount; i++)
         {
@@ -785,18 +759,6 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyColumn(Utf8String
 
     return CustomAttributeReader::TryGetTrimmedValue(foreignKeyColumnName, *m_ca, "ForeignKeyColumn");
     }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetCreateIndex(bool& createIndexFlag) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetBooleanValue(createIndexFlag, *m_ca, "CreateIndex");
-    }
-
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015

@@ -1036,12 +1036,12 @@ public:
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateNullLiteral();
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (int64_t ticks);
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2DLiteral (DPoint2dCR value);
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3DLiteral (DPoint3dCR value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2dLiteral (DPoint2dCR value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3dLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
-    static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
-    static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);
-    static NodePtr          CreateComparison(ExpressionToken   tokenID, NodeR left, NodeR right);
+    static NodePtr          CreateArithmetic(ExpressionToken  tokenId, NodeR left, NodeR right);
+    static NodePtr          CreateShift (ExpressionToken tokenId, NodeR left, NodeR right);
+    static NodePtr          CreateComparison(ExpressionToken   tokenId, NodeR left, NodeR right);
     static NodePtr          CreateBitWise(ExpressionToken   op, NodeR left, NodeR right);
     static NodePtr          CreateLogical(ExpressionToken   op, NodeR left, NodeR right);
     static NodePtr          CreateAssignment(NodeR left, NodeR rightSide, ExpressionToken   assignmentSubtype);

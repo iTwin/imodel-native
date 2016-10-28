@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ValueTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -89,15 +89,15 @@ TEST_F(ValueTests, StringToECValue)
     EXPECT_EQ (value.GetLong(), 9876543210L);
     
     EXPECT_EQ (value.SetUtf8CP("123.456,456.789"), SUCCESS);
-    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point2D));
-    EXPECT_TRUE (value.IsPoint2D());
-    DPoint2d point2dOut = value.GetPoint2D();
+    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point2d));
+    EXPECT_TRUE (value.IsPoint2d());
+    DPoint2d point2dOut = value.GetPoint2d();
     EXPECT_EQ (0, memcmp(&point2d, &point2dOut, sizeof(point2d)));
     
     EXPECT_EQ (value.SetUtf8CP("1.2,-3.4,5.6"), SUCCESS);
-    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point3D));
-    EXPECT_TRUE (value.IsPoint3D());
-    DPoint3d point3dOut = value.GetPoint3D();
+    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point3d));
+    EXPECT_TRUE (value.IsPoint3d());
+    DPoint3d point3dOut = value.GetPoint3d();
     EXPECT_EQ (0, memcmp(&point3d, &point3dOut, sizeof(point3d)));
     }
     

@@ -31,6 +31,7 @@ struct SchemaComparisonTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
+struct SchemaVersionTest : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   03/13
@@ -89,8 +90,8 @@ TEST_F(SchemaTest, ExpectReadOnly)
     ASSERT_TRUE(enumeration != nullptr);
 
     //Add Property of Array type to structClass
-    ArrayECPropertyP MyArrayProp;
-    structClass->CreateArrayProperty(MyArrayProp, "ArrayProperty");
+    PrimitiveArrayECPropertyP MyArrayProp;
+    structClass->CreatePrimitiveArrayProperty(MyArrayProp, "ArrayProperty");
     ASSERT_TRUE(MyArrayProp != NULL);
 
     //Create customAttributeClass
@@ -431,7 +432,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base.xml").c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
-    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), 3);
+    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     WString ecSchemaXmlString;
@@ -525,15 +526,15 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     PrimitiveECPropertyP primitiveProperty7;
     entityClass->CreatePrimitiveProperty(primitiveProperty7, "Primitive7", PrimitiveType::PRIMITIVETYPE_Long);
     PrimitiveECPropertyP primitiveProperty8;
-    entityClass->CreatePrimitiveProperty(primitiveProperty8, "Primitive8", PrimitiveType::PRIMITIVETYPE_Point2D);
+    entityClass->CreatePrimitiveProperty(primitiveProperty8, "Primitive8", PrimitiveType::PRIMITIVETYPE_Point2d);
     PrimitiveECPropertyP primitiveProperty9;
-    entityClass->CreatePrimitiveProperty(primitiveProperty9, "Primitive9", PrimitiveType::PRIMITIVETYPE_Point3D);
+    entityClass->CreatePrimitiveProperty(primitiveProperty9, "Primitive9", PrimitiveType::PRIMITIVETYPE_Point3d);
     PrimitiveECPropertyP primitiveProperty10;
     entityClass->CreatePrimitiveProperty(primitiveProperty10, "Primitive10", PrimitiveType::PRIMITIVETYPE_String);
     PrimitiveECPropertyP calculatedProperty;
     entityClass->CreatePrimitiveProperty(calculatedProperty, "Calculated", PrimitiveType::PRIMITIVETYPE_String);
-    ArrayECPropertyP arrayProperty;
-    entityClass->CreateArrayProperty(arrayProperty, "Array", PrimitiveType::PRIMITIVETYPE_Long);
+    PrimitiveArrayECPropertyP arrayProperty;
+    entityClass->CreatePrimitiveArrayProperty(arrayProperty, "Array", PrimitiveType::PRIMITIVETYPE_Long);
 
     ECClassCP calcSpecClass = standardCASchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr calcSpecAttr = calcSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -620,10 +621,10 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
     legacyFullSchemaName.append(L".ecschema.xml");
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), 3);
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
-    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), 2);
+    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), ECVersion::V2_0);
     EXPECT_EQ(SchemaWriteStatus::Success, status3);
     }
 
@@ -886,17 +887,15 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
 
-    ArrayECPropertyP primitiveArrayProp;
+    PrimitiveArrayECPropertyP primitiveArrayProp;
 
-    class1->CreateStructProperty(structProp, "StructMember");
+    class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
 
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
     primitiveArrayProp->SetMinOccurs(1);
     primitiveArrayProp->SetMaxOccurs(10);
-
-    structProp->SetType(*structClass);
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     class1->RemoveProperty("StructMember");
@@ -1072,17 +1071,18 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 
     EXPECT_TRUE(structClass->IsStructClass());
 
+    relatedClass->AddBaseClass(*baseClass);
+
     PrimitiveECPropertyP stringProp;
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
-    ArrayECPropertyP primitiveArrayProp;
+    PrimitiveArrayECPropertyP primitiveArrayProp;
 
     class1->CreatePrimitiveProperty(stringProp, "StringMember");
-    class1->CreateStructProperty(structProp, "StructMember");
+    class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray");
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray");
 
-    structProp->SetType(*structClass);
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
     primitiveArrayProp->SetMinOccurs(1);
     primitiveArrayProp->SetMaxOccurs(10);
@@ -1130,8 +1130,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreatePrimitiveProperty(doubleProperty, "DoubleProp");
     class1->CreatePrimitiveProperty(integerProperty, "IntProp");
     class1->CreatePrimitiveProperty(longProperty, "LongProp");
-    class1->CreatePrimitiveProperty(point2DProperty, "Point2DProp");
-    class1->CreatePrimitiveProperty(point3DProperty, "Point3DProp");
+    class1->CreatePrimitiveProperty(point2DProperty, "Point2dProp");
+    class1->CreatePrimitiveProperty(point3DProperty, "Point3dProp");
 
     EXPECT_EQ(ECObjectsStatus::ParseError, binaryProperty->SetTypeName("fake"));
 
@@ -1150,8 +1150,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point2d == point2DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point3d == point3DProperty->GetType());
 
     class1->CreatePrimitiveProperty(binaryProperty, "BinaryProp2", PRIMITIVETYPE_Binary);
     class1->CreatePrimitiveProperty(booleanProperty, "BooleanProp2", PRIMITIVETYPE_Boolean);
@@ -1159,8 +1159,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreatePrimitiveProperty(doubleProperty, "DoubleProp2", PRIMITIVETYPE_Double);
     class1->CreatePrimitiveProperty(integerProperty, "IntProp2", PRIMITIVETYPE_Integer);
     class1->CreatePrimitiveProperty(longProperty, "LongProp2", PRIMITIVETYPE_Long);
-    class1->CreatePrimitiveProperty(point2DProperty, "Point2DProp2", PRIMITIVETYPE_Point2D);
-    class1->CreatePrimitiveProperty(point3DProperty, "Point3DProp2", PRIMITIVETYPE_Point3D);
+    class1->CreatePrimitiveProperty(point2DProperty, "Point2dProp2", PRIMITIVETYPE_Point2d);
+    class1->CreatePrimitiveProperty(point3DProperty, "Point3dProp2", PRIMITIVETYPE_Point3d);
 
     EXPECT_TRUE(PRIMITIVETYPE_Binary == binaryProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Boolean == booleanProperty->GetType());
@@ -1168,12 +1168,12 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point2d == point2DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point3d == point3DProperty->GetType());
 
     class1->CreateStructProperty(structProp, "StructMember2", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray2", structClass);
-    class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray2", PRIMITIVETYPE_Integer);
+    class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray2", PRIMITIVETYPE_Integer);
     EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->GetKind());
     EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->GetKind());
     EXPECT_EQ(0, strcmp(structProp->GetType().GetName().c_str(), "StructClass"));
@@ -1207,6 +1207,10 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
     relationshipClass->GetTarget().AddClass(*relatedClass);
     EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
+
+    relationshipClass->GetTarget().SetAbstractConstraint(*baseClass);
+    EXPECT_EQ(baseClass->GetName().c_str(), relationshipClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+
     relationshipClass->GetTarget().AddClass(*class2);
     EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
 
@@ -1481,14 +1485,14 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     PrimitiveECPropertyP baseIntProp;
     PrimitiveECPropertyP baseDoubleProp;
     StructECPropertyP baseStructProp;
-    ArrayECPropertyP baseStringArrayProperty;
+    PrimitiveArrayECPropertyP baseStringArrayProperty;
     StructArrayECPropertyP baseStructArrayProp;
 
     baseClass1->CreatePrimitiveProperty(baseStringProp, "StringProperty", PRIMITIVETYPE_String);
     baseClass1->CreatePrimitiveProperty(baseIntProp, "IntegerProperty", PRIMITIVETYPE_Integer);
     baseClass1->CreatePrimitiveProperty(baseDoubleProp, "DoubleProperty", PRIMITIVETYPE_Double);
     baseClass1->CreateStructProperty(baseStructProp, "StructProperty", *structClass);
-    baseClass1->CreateArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
     baseClass1->CreateStructArrayProperty(baseStructArrayProp, "StructArrayProperty", structClass);
 
     PrimitiveECPropertyP longProperty = NULL;
@@ -1518,38 +1522,33 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     {
     // Structs overriding primitives
     DISABLE_ASSERTS
-        EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "IntegerProperty"));
+        EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "IntegerProperty", *structClass2));
     }
 
     // Structs overriding structs
-    // If we don't specify a struct type for the new property, then it should succeed
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(structProperty, "StructProperty"));
-    class1->RemoveProperty("StructProperty");
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructProperty", *structClass2));
 
     // Structs overriding arrays
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StringArrayProperty"));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StringArrayProperty", *structClass));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty"));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty", *structClass));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "StructArrayProperty", *structClass2));
 
-    ArrayECPropertyP stringArrayProperty;
-    ArrayECPropertyP stringArrayProperty2;
+    PrimitiveArrayECPropertyP stringArrayProperty;
+    PrimitiveArrayECPropertyP stringArrayProperty2;
     StructArrayECPropertyP structArrayProperty;
     // Arrays overriding primitives
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, "IntegerProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, "StringProperty", PRIMITIVETYPE_String));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty2, "StringProperty"));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "IntegerProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "StringProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty2, "StringProperty"));
 
     // Arrays overriding structs
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass2));
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass));
 
-    ArrayECPropertyP intArrayProperty;
+    PrimitiveArrayECPropertyP intArrayProperty;
     // Arrays overriding arrays
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateArrayProperty(intArrayProperty, "StringArrayProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateArrayProperty(stringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(intArrayProperty, "StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String));
     class1->RemoveProperty("StringArrayProperty");
     }
 
@@ -1942,23 +1941,23 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
     schema->CreateEntityClass(child, "child");
 
     PrimitiveECPropertyP baseIntProp;
-    ArrayECPropertyP baseIntArrayProperty;
-    ArrayECPropertyP baseStringArrayProperty;
-    ArrayECPropertyP baseBoolArrayProperty;
+    PrimitiveArrayECPropertyP baseIntArrayProperty;
+    PrimitiveArrayECPropertyP baseStringArrayProperty;
+    PrimitiveArrayECPropertyP baseBoolArrayProperty;
 
     base->CreatePrimitiveProperty(baseIntProp, "IntegerProperty", PRIMITIVETYPE_Integer);
-    base->CreateArrayProperty(baseIntArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Integer);
-    base->CreateArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
-    base->CreateArrayProperty(baseBoolArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Boolean);
+    base->CreatePrimitiveArrayProperty(baseIntArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Integer);
+    base->CreatePrimitiveArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
+    base->CreatePrimitiveArrayProperty(baseBoolArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Boolean);
 
     PrimitiveECPropertyP childIntProperty;
-    ArrayECPropertyP childIntArrayProperty;
-    ArrayECPropertyP childStringArrayProperty;
-    ArrayECPropertyP childBoolArrayProperty;
+    PrimitiveArrayECPropertyP childIntArrayProperty;
+    PrimitiveArrayECPropertyP childStringArrayProperty;
+    PrimitiveArrayECPropertyP childBoolArrayProperty;
 
     child->AddBaseClass(*base);
     // Override an integer property with an array of ints
-    ECObjectsStatus status = child->CreateArrayProperty(childIntArrayProperty, "IntegerProperty", PRIMITIVETYPE_Integer);
+    ECObjectsStatus status = child->CreatePrimitiveArrayProperty(childIntArrayProperty, "IntegerProperty", PRIMITIVETYPE_Integer);
     if (allowOverriding)
         {
         ASSERT_EQ(ECObjectsStatus::Success, status);
@@ -1968,7 +1967,7 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
         ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an integer property with an array of strings
-    status = child->CreateArrayProperty(childStringArrayProperty, "IntegerProperty", PRIMITIVETYPE_String);
+    status = child->CreatePrimitiveArrayProperty(childStringArrayProperty, "IntegerProperty", PRIMITIVETYPE_String);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an integer array with an integer
@@ -1986,11 +1985,11 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an array of boolean with an array of integers
-    status = child->CreateArrayProperty(childIntArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Integer);
+    status = child->CreatePrimitiveArrayProperty(childIntArrayProperty, "BoolArrayProperty", PRIMITIVETYPE_Integer);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     // Override an array of integers with an array of boolean
-    status = child->CreateArrayProperty(childBoolArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Boolean);
+    status = child->CreatePrimitiveArrayProperty(childBoolArrayProperty, "IntArrayProperty", PRIMITIVETYPE_Boolean);
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
 
     }
@@ -2416,7 +2415,7 @@ TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn-testingonly.02.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), 2, 0, false);
+    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), ECVersion::V2_0, false);
     EXPECT_EQ(SchemaWriteStatus::Success, statusW);
 
     Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml"));
@@ -2439,16 +2438,18 @@ TEST_F(SchemaTest, CreateDynamicSchema)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext->AddSchemaLocater(*schemaLocater);
 
-    SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
+    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
     ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
+    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema;
 
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
     schema->AddReferencedSchema(*standardCASchema);
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetIsDynamicSchema(true));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
+    
 
     ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
     ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
@@ -2678,6 +2679,117 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+// This test was to illustrate a problem with the ECDiff tool.  However, we decided to not to make the fix on this branch.  The tool has been rewritten on bim0200.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+//TEST(SchemaDiffTests, RightNotLeft)
+//    {
+//    Utf8CP leftXml = 
+//        "<?xml version='1.0' encoding='utf-8'?>"
+//
+//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
+//        "    </ECClass>"
+//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
+//        "        <BaseClass>NAMED_ITEM</BaseClass>"
+//        "    </ECClass>"
+//        "</ECSchema>";
+//
+//    Utf8CP rightXml = 
+//        "<?xml version='1.0' encoding='utf-8'?>"
+//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
+//        "    </ECClass>"
+//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
+//        "        <BaseClass>NAMED_ITEM</BaseClass>"
+//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Tag Number\" />"
+//        "    </ECClass>"
+//        "</ECSchema>";
+//
+//    ECSchemaReadContextPtr leftSchemaContext = ECSchemaReadContext::CreateContext();
+//    ECSchemaReadContextPtr rightSchemaContext = ECSchemaReadContext::CreateContext();
+//    ECSchemaPtr leftSchema, rightSchema;
+//    ECSchema::ReadFromXmlString(leftSchema, leftXml, *leftSchemaContext);
+//    ECSchema::ReadFromXmlString(rightSchema, rightXml, *rightSchemaContext);
+//    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
+//    ASSERT_TRUE(diff.IsValid());
+//
+//    ECSchemaPtr mergedSchema;
+//    MergeStatus status = diff->Merge(mergedSchema, CONFLICTRULE_TakeLeft);
+//    ASSERT_EQ(status, MergeStatus::Success);
+//    ASSERT_TRUE(mergedSchema.IsValid());
+//
+//    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, CreateECVersionTest)
+    {
+    ECVersion ecVersion;
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 0, 0)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 9, 9)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion, 2, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V2_0, ecVersion) << "The ECVersion should have been set to 2.0.";
+    EXPECT_STREQ("2.0", ECSchema::GetECVersionString(ecVersion)) << "The string should be in the major.minor for the provided ECVersion.";
+
+    ECVersion ecVersion3;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion3, 3, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_0, ecVersion3) << "The ECVersion should have been set to 3.0.";
+    EXPECT_STREQ("3.0", ECSchema::GetECVersionString(ecVersion3)) << "The string should be in the major.minor for the provided ECVersion.";
+
+    ECVersion ecVersion31;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion31, 3, 1)) << "Creating a 3.1 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_1, ecVersion31) << "The ECVersion should have been set to 3.1.";
+    EXPECT_STREQ("3.1", ECSchema::GetECVersionString(ecVersion31)) << "The string should be in the major.minor for the provided ECVersion.";
+
+    EXPECT_EQ(ECVersion::Latest, ecVersion31) << "ECVersion Latest should be equal to 3.1, therefore the comparsion should succeed.";
+
+    EXPECT_STREQ("3.1", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.1, therefore the string of it should be equal to 3.1.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
+    {
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The default schema ECVersion should be EC3.1 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The default schema ECVersion should be the latest so this should validate to true.";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as the Latest version which is EC3.1 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as the Latest version so this should validate to true.";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_1);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as an EC3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.1 schema so Latest should return true.";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_0);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema was created as an EC3.0 schema.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.0 schema so it is not the latest";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V2_0)) << "The schema was created as an EC2.0 schema.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC2.0 schema so it is not the latest";
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

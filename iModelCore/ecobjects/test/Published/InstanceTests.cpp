@@ -68,10 +68,10 @@ struct InstanceTests : ECTestFixture
         return prop;
         }
 
-    ArrayECPropertyP CreateArrayProperty (Utf8CP name)
+    PrimitiveArrayECPropertyP CreateArrayProperty (Utf8CP name)
         {
-        ArrayECPropertyP prop;
-        m_ecClass->CreateArrayProperty (prop, name);
+        PrimitiveArrayECPropertyP prop;
+        m_ecClass->CreatePrimitiveArrayProperty (prop, name);
         m_ecClass->GetDefaultStandaloneEnabler ()->GetPropertyIndex (propIndex, name);
         return prop;
         }
@@ -114,14 +114,14 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks ());
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StartPoint"));
-    EXPECT_EQ (1.1, ecValue.GetPoint3D ().x);
-    EXPECT_EQ (2.2, ecValue.GetPoint3D ().y);
-    EXPECT_EQ (3.3, ecValue.GetPoint3D ().z);
+    EXPECT_EQ (1.1, ecValue.GetPoint3d ().x);
+    EXPECT_EQ (2.2, ecValue.GetPoint3d ().y);
+    EXPECT_EQ (3.3, ecValue.GetPoint3d ().z);
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "EndPoint"));
-    EXPECT_EQ (4.4, ecValue.GetPoint3D ().x);
-    EXPECT_EQ (7.7, ecValue.GetPoint3D ().y);
-    EXPECT_EQ (6.6, ecValue.GetPoint3D ().z);
+    EXPECT_EQ (4.4, ecValue.GetPoint3d ().x);
+    EXPECT_EQ (7.7, ecValue.GetPoint3d ().y);
+    EXPECT_EQ (6.6, ecValue.GetPoint3d ().z);
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1BoolMember"));
     EXPECT_FALSE (ecValue.GetBoolean ());
@@ -159,9 +159,9 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     for (uint32_t index = 0; index < _countof (expectedPoints); index++)
         {
         EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "PointArray", index));
-        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D ().x);
-        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D ().y);
-        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D ().z);
+        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3d ().x);
+        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3d ().y);
+        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3d ().z);
         }
 
     for (uint32_t index = 0; index < 300; index++)

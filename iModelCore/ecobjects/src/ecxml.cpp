@@ -44,9 +44,9 @@ Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
             return ECXML_TYPENAME_INTEGER;
         case PRIMITIVETYPE_Long:
             return ECXML_TYPENAME_LONG;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             return ECXML_TYPENAME_POINT2D;
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             return ECXML_TYPENAME_POINT3D;
         case PRIMITIVETYPE_String:
             return ECXML_TYPENAME_STRING;
@@ -78,9 +78,9 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8Str
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT2D))
-        primitiveType = PRIMITIVETYPE_Point2D;
+        primitiveType = PRIMITIVETYPE_Point2d;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT3D))
-        primitiveType = PRIMITIVETYPE_Point3D;
+        primitiveType = PRIMITIVETYPE_Point3d;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_DATETIME))
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_BINARY))
@@ -341,7 +341,7 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
         SetOrAppendValue(str, "PrimitiveProperty");
     if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
         SetOrAppendValue(str, "StructProperty");
-    if (TestValue(CustomAttributeContainerType::ArrayProperty, containerType))
+    if (TestValue(CustomAttributeContainerType::PrimitiveArrayProperty, containerType))
         SetOrAppendValue(str, "ArrayProperty");
     if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
         SetOrAppendValue(str, "StructArrayProperty");
@@ -399,7 +399,7 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
         else if (typeToken.EqualsI("StructProperty"))
             containerType = containerType | CustomAttributeContainerType::StructProperty;
         else if (typeToken.EqualsI("ArrayProperty"))
-            containerType = containerType | CustomAttributeContainerType::ArrayProperty;
+            containerType = containerType | CustomAttributeContainerType::PrimitiveArrayProperty;
         else if (typeToken.EqualsI("StructArrayProperty"))
             containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
         else if (typeToken.EqualsI("NavigationProperty"))

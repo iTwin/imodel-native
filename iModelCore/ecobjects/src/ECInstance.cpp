@@ -1205,13 +1205,13 @@ ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, Utf8CP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint2d (IECInstanceCR instance, DPoint2d & value, Utf8CP managedPropertyAccessor)
     {
     ECValue v;
 
     ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECObjectsStatus::Success)
-        value = v.GetPoint2D();
+        value = v.GetPoint2d();
         
     return status;
     }
@@ -1219,13 +1219,13 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, Utf8CP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint3d (IECInstanceCR instance, DPoint3d & value, Utf8CP managedPropertyAccessor)
     {
     ECValue v;
 
     ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECObjectsStatus::Success)
-        value = v.GetPoint3D();
+        value = v.GetPoint3d();
         
     return status;
     }
@@ -1432,7 +1432,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, Utf8CP managedPropertyAccessor, DPoint2dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint2dValue  (IECInstanceR instance, Utf8CP managedPropertyAccessor, DPoint2dCR value)
     {
     ECValue v(value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
@@ -1441,7 +1441,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, Utf8CP managedPropertyAccessor, DPoint3dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint3dValue  (IECInstanceR instance, Utf8CP managedPropertyAccessor, DPoint3dCR value)
     {
     ECValue v(value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
@@ -1542,13 +1542,13 @@ ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint2d (IECInstanceCR instance, DPoint2d & value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
     ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
     if (status == ECObjectsStatus::Success)
-        value = v.GetPoint2D();
+        value = v.GetPoint2d();
         
     return status;
     }
@@ -1556,13 +1556,13 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint3d (IECInstanceCR instance, DPoint3d & value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
     ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
     if (status == ECObjectsStatus::Success)
-        value = v.GetPoint3D();
+        value = v.GetPoint3d();
         
     return status;
     }
@@ -1654,7 +1654,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint2dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint2dValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint2dCR value)
     {
     ECValue v(value);
     return  instance.SetValueUsingAccessor (accessor, v);
@@ -1663,7 +1663,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint3dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint3dValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint3dCR value)
     {
     ECValue v(value);
     return  instance.SetValueUsingAccessor (accessor, v);
@@ -2480,10 +2480,10 @@ static Utf8CP                   GetPrimitiveTypeString (PrimitiveType primitiveT
         case PRIMITIVETYPE_Long:
             return "long";
 
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             return "point2d";
 
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             return "point3d";
 
         case PRIMITIVETYPE_String:
@@ -2887,12 +2887,13 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     ArrayKind   arrayKind = arrayProperty->GetKind();
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType = arrayProperty->GetPrimitiveElementType();
-        PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType(*arrayProperty);
+        PrimitiveArrayECPropertyCP primitiveArray = arrayProperty->GetAsPrimitiveArrayProperty();
+        PrimitiveType   memberType = primitiveArray->GetPrimitiveElementType();
+        PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType(*primitiveArray);
 
         bool            isFixedSizeArray = false;
 
-        if (arrayProperty->GetMinOccurs() == arrayProperty->GetMaxOccurs())
+        if (primitiveArray->GetMinOccurs() == primitiveArray->GetMaxOccurs())
             isFixedSizeArray = true;
 
         InstanceReadStatus status = ReadPrimitiveArrayValues(ecInstance, accessString, memberType, serializedMemberType, isFixedSizeArray, propertyValueNode);
@@ -3188,7 +3189,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             break;
             }
 
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {
             double x, y;
             BeXmlStatus status = primitiveValueNode.GetContentDPoint2dValue (x, y);
@@ -3204,11 +3205,11 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             DPoint2d point2d;
             point2d.x = x;
             point2d.y = y;
-            ecValue.SetPoint2D (point2d);
+            ecValue.SetPoint2d (point2d);
             break;
             }
 
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
             double x, y, z;
             BeXmlStatus status = primitiveValueNode.GetContentDPoint3dValue (x, y, z);
@@ -3225,7 +3226,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             point3d.x = x;
             point3d.y = y;
             point3d.z = z;
-            ecValue.SetPoint3D (point3d);
+            ecValue.SetPoint3d (point3d);
             break;
             }
 
@@ -3731,16 +3732,16 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             break;
             }
 
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {
-            DPoint2d    point2d = ecValue.GetPoint2D();
+            DPoint2d    point2d = ecValue.GetPoint2d();
             BeStringUtilities::Snprintf (outString, "%.17g,%.17g", point2d.x, point2d.y);
             break;
             }
 
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            DPoint3d    point3d = ecValue.GetPoint3D();
+            DPoint3d    point3d = ecValue.GetPoint3d();
             BeStringUtilities::Snprintf (outString, "%.17g,%.17g,%.17g", point3d.x, point3d.y, point3d.z);
             break;
             }
@@ -3789,7 +3790,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        InstanceWriteStatus status = WritePrimitiveArray(ecInstance, accessString, nElements, arrayProperty.GetPrimitiveElementType());
+        InstanceWriteStatus status = WritePrimitiveArray(ecInstance, accessString, nElements, arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
         if (InstanceWriteStatus::Success != status)
             return status;
         }

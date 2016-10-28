@@ -74,14 +74,14 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "StartPoint"));
-    EXPECT_EQ (1.1, ecValue.GetPoint3D().x) << "Incorrect x value for StartPoint";
-    EXPECT_EQ (2.2, ecValue.GetPoint3D().y) << "Incorrect y value for StartPoint";
-    EXPECT_EQ (3.3, ecValue.GetPoint3D().z) << "Incorrect z value for StartPoint";
+    EXPECT_EQ (1.1, ecValue.GetPoint3d().x) << "Incorrect x value for StartPoint";
+    EXPECT_EQ (2.2, ecValue.GetPoint3d().y) << "Incorrect y value for StartPoint";
+    EXPECT_EQ (3.3, ecValue.GetPoint3d().z) << "Incorrect z value for StartPoint";
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "EndPoint"));
-    EXPECT_EQ (4.4, ecValue.GetPoint3D().x) << "Incorrect x value for EndPoint";
-    EXPECT_EQ (7.7, ecValue.GetPoint3D().y) << "Incorrect y value for EndPoint";
-    EXPECT_EQ (6.6, ecValue.GetPoint3D().z) << "Incorrect z value for EndPoint";
+    EXPECT_EQ (4.4, ecValue.GetPoint3d().x) << "Incorrect x value for EndPoint";
+    EXPECT_EQ (7.7, ecValue.GetPoint3d().y) << "Incorrect y value for EndPoint";
+    EXPECT_EQ (6.6, ecValue.GetPoint3d().z) << "Incorrect z value for EndPoint";
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1BoolMember"));
     EXPECT_FALSE (ecValue.GetBoolean()) << "Wrong value for Struct1BoolMember";
@@ -119,9 +119,9 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
         EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "PointArray", index));
-        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x) << "Wrong value for PointArray x";
-        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y) << "Wrong value for PointArray y";
-        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z) << "Wrong value for PointArray z";
+        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3d().x) << "Wrong value for PointArray x";
+        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3d().y) << "Wrong value for PointArray y";
+        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3d().z) << "Wrong value for PointArray z";
         }
 
     for (uint32_t index=0; index < 300; index++)
@@ -284,14 +284,14 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point2DArray",0));
-    EXPECT_EQ (0, ecValue.GetPoint2D().x);
-    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point2dArray",0));
+    EXPECT_EQ (0, ecValue.GetPoint2d().x);
+    EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point3DArray",0));
-    EXPECT_EQ (0, ecValue.GetPoint3D().x);
-    EXPECT_EQ (1, ecValue.GetPoint3D().y);
-    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point3dArray",0));
+    EXPECT_EQ (0, ecValue.GetPoint3d().x);
+    EXPECT_EQ (1, ecValue.GetPoint3d().y);
+    EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.StringArray",0));
     EXPECT_STREQ (ecValue.GetString(), "Test");
@@ -314,14 +314,14 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",0));
-    EXPECT_EQ (0, ecValue.GetPoint2D().x);
-    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2dArray",0));
+    EXPECT_EQ (0, ecValue.GetPoint2d().x);
+    EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",0));
-    EXPECT_EQ (0, ecValue.GetPoint3D().x);
-    EXPECT_EQ (1, ecValue.GetPoint3D().y);
-    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3dArray",0));
+    EXPECT_EQ (0, ecValue.GetPoint3d().x);
+    EXPECT_EQ (1, ecValue.GetPoint3d().y);
+    EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
     EXPECT_STREQ (ecValue.GetString(), "");
@@ -351,14 +351,14 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "LongMember"));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point2DMember"));
-    EXPECT_EQ (0, ecValue.GetPoint2D().x);
-    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point2dMember"));
+    EXPECT_EQ (0, ecValue.GetPoint2d().x);
+    EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point3DMember"));
-    EXPECT_EQ (0, ecValue.GetPoint3D().x);
-    EXPECT_EQ (1, ecValue.GetPoint3D().y);
-    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point3dMember"));
+    EXPECT_EQ (0, ecValue.GetPoint3d().x);
+    EXPECT_EQ (1, ecValue.GetPoint3d().y);
+    EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
     EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "StringMember"));
     EXPECT_STREQ (ecValue.GetString(), "Test");
@@ -420,15 +420,15 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",0));
     EXPECT_TRUE (ecValue.IsNull());
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",1));
-    EXPECT_EQ (0, ecValue.GetPoint2D().x);
-    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+    EXPECT_EQ (0, ecValue.GetPoint2d().x);
+    EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",0));
     EXPECT_TRUE (ecValue.IsNull());
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",1));
-    EXPECT_EQ (0, ecValue.GetPoint3D().x);
-    EXPECT_EQ (1, ecValue.GetPoint3D().y);
-    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+    EXPECT_EQ (0, ecValue.GetPoint3d().x);
+    EXPECT_EQ (1, ecValue.GetPoint3d().y);
+    EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
     EXPECT_STREQ (ecValue.GetUtf8CP(), "");

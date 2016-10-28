@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 	<!-- This schema is modified for testing, don't use it anywhere else -->
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
@@ -22,7 +23,7 @@
         <!-- abstract - interface adopted by Elements which have geometry. 
              NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>False</IsUnique>
@@ -31,7 +32,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
@@ -192,7 +193,7 @@
 		</ECEntityClass>
     <ECEntityClass typeName="CodedEntity" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>True</IsUnique>
@@ -203,7 +204,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
     </ECEntityClass>
@@ -398,6 +399,12 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                <PropertyName>LastMod</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
@@ -423,11 +430,7 @@
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
-            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <PropertyName>LastMod</PropertyName>
-            </ClassHasCurrentTimeStampProperty>
+            </DbIndexList>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="ModelId" typeName="long">
@@ -458,7 +461,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -848,18 +851,20 @@
                 <!-- All subclasses of ElementExternalKey will share the same table -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <!-- Only one ExternalKey per Authority per Element -->
                             <string>ElementId</string>
                             <string>AuthorityId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <!-- Index for looking up Element by ExternalKey -->
-                        <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>AuthorityId</string>
@@ -867,10 +872,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
-            <ShareColumns xmlns="ECDbMap.02.00">
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="AuthorityId" typeName="long">
             <!-- Foreign key relationship to Authority that controls the ExternalKey -->

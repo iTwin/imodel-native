@@ -141,7 +141,7 @@ bool ResolvePrimitiveType(ECPropertyCP prop, PrimitiveType& type)
 
     if (prop->GetIsPrimitiveArray())
         {
-        ArrayECPropertyCP arr = prop->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP arr = prop->GetAsPrimitiveArrayProperty();
         type = arr->GetPrimitiveElementType();
         return true;
         }
@@ -415,6 +415,14 @@ ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::HasExtendedType () const
+    {
+    return this->_HasExtendedType();
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
@@ -491,15 +499,15 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
+    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -516,7 +524,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains("GeometryNET"))
             xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
         else
-            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersionMajor).c_str());
+            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersion).c_str());
         }
 
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
@@ -587,14 +595,14 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                    Stefan.Apfel   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(attributes, ecXmlVersionMajor);
+    auto status = WriteExtendedTypeAndKindOfQuantityXml(attributes, ecXmlVersion);
     if (status != SchemaWriteStatus::Success)
         return status;
 
-    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &attributes);
+    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -609,12 +617,14 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     // we allow it to be overridden.
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct == arrayProperty->GetKind())
+        PrimitiveArrayECPropertyCP arrayProperty = baseProperty.GetAsPrimitiveArrayProperty();
+        if (nullptr == arrayProperty)
             return false;
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
         }
     else if (baseProperty.GetIsStruct())
+        return false;
+    else if (baseProperty.GetIsNavigation())
         return false;
     else
         {
@@ -635,9 +645,9 @@ Utf8String PrimitiveECProperty::_GetTypeName () const
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
     }
 
-Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersionMajor) const
+Utf8String PrimitiveECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) const
     {
-    if (ecXmlVersionMajor <= 2 && m_enumeration != nullptr)
+    if (ecXmlVersion <= ECVersion::V2_0 && m_enumeration != nullptr)
         return m_enumeration->GetTypeName();
 
     return GetTypeName();
@@ -882,14 +892,14 @@ SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(Be
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, int ecXmlVersionMajor) const
+SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const
     {
     if (this->ExtendedTypeLocallyDefined())
         {
         attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
         }
 
-    if (ecXmlVersionMajor >= 3 && IsKindOfQuantityDefinedLocally())
+    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally())
         {
         auto kindOfQuantity = GetKindOfQuantity();
         if (kindOfQuantity != nullptr)
@@ -920,17 +930,6 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
         m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetType());
 
     return m_calculatedSpec.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_IsCalculated() const
-    {
-    if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
-    else
-        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -975,28 +974,6 @@ bool PrimitiveECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP ArrayECProperty::_GetCalculatedPropertySpecification() const
-    {
-    if (ARRAYKIND_Primitive == GetKind() && m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
-
-    return m_calculatedSpec.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
-    {
-    if (ARRAYKIND_Primitive == GetKind())
-        return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
-    else
-        return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
@@ -1014,9 +991,9 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersionMajor);
+    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1027,12 +1004,8 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
     if (baseProperty.GetIsPrimitive())
         return false;
         
-    if (baseProperty.GetIsArray())
-        {
-        ArrayECPropertyCP arrayProp = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct != arrayProp->GetKind())
-            return false;
-        }
+    if (baseProperty.GetIsStructArray())
+        return false;
 
     // if the struct type hasn't been set yet, we will say it can override
     if (NULL == m_structType)
@@ -1174,7 +1147,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     char    valueString[128];
@@ -1194,76 +1167,21 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
     Utf8CP elementName = EC_ARRAYPROPERTY_ELEMENT;
     if (m_arrayKind == ARRAYKIND_Struct)
         {
-        if (2 == ecXmlVersionMajor)
+        if (ECVersion::V2_0 == ecXmlVersion)
             additionalAttributes.push_back(make_bpair(IS_STRUCT_ATTRIBUTE, "true"));
         else
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(additionalAttributes, ecXmlVersionMajor);
+    auto status = WriteExtendedTypeAndKindOfQuantityXml(additionalAttributes, ecXmlVersion);
     if (status != SchemaWriteStatus::Success)
         return status;
 
-    status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
+    status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
-    {
-    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
-    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
-    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
-    // Instead, compare the full-qualified class name.
-    auto baseArray = baseProperty.GetAsArrayProperty();
-    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
-        {
-        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
-        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
-            {
-            auto basePrim = baseProperty.GetAsPrimitiveProperty();
-            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
-            }
-        else
-            return false;
-        }
-    else
-        {
-        Utf8String typeName = GetTypeName();
-        return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
-        }
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ArrayECProperty::_GetTypeName () const
-    {    
-    return ECXml::GetPrimitiveTypeName (m_primitiveType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::_SetTypeName (Utf8StringCR typeName)
-    {
-    PrimitiveType primitiveType;
-    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
-    if (ECObjectsStatus::Success == status)
-        return SetPrimitiveElementType (primitiveType);
-    
-    m_originalTypeName = typeName;
-    LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
-                                    typeName.c_str(),
-                                    GetClass().GetSchema().GetName().c_str(),
-                                    GetClass().GetName().c_str(),
-                                    GetName().c_str() );
-    return ECObjectsStatus::ParseError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1272,30 +1190,6 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (Utf8StringCR typeName)
 ArrayKind ArrayECProperty::GetKind () const
     {
     return m_arrayKind;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType ArrayECProperty::GetPrimitiveElementType () const
-    {
-    return m_primitiveType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiveType)
-    {        
-    m_arrayKind = ARRAYKIND_Primitive;
-    m_primitiveType = primitiveType;
-
-    SetCachedTypeAdapter (NULL);
-    SetCachedMemberTypeAdapter (NULL);
-    _AdjustMinMaxAfterTypeChange();
-    InvalidateClassLayout();
- 
-    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1388,11 +1282,105 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
     }
 
 /*---------------------------------------------------------------------------------**//**
-@bsimethod
+* @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::HasExtendedType () const
+bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    return this->_HasExtendedType();
+    auto baseArray = baseProperty.GetAsPrimitiveArrayProperty();
+    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+        {
+        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
+            {
+            auto basePrim = baseProperty.GetAsPrimitiveProperty();
+            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
+            }
+        else
+            return false;
+        }
+    else
+        {
+        Utf8String typeName = GetTypeName();
+        return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PrimitiveArrayECProperty::_GetTypeName () const
+    {    
+    return ECXml::GetPrimitiveTypeName (m_primitiveType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
+    {
+    PrimitiveType primitiveType;
+    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
+    if (ECObjectsStatus::Success == status)
+        return SetPrimitiveElementType (primitiveType);
+    
+    m_originalTypeName = typeName;
+    LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
+                                    typeName.c_str(),
+                                    GetClass().GetSchema().GetName().c_str(),
+                                    GetClass().GetName().c_str(),
+                                    GetName().c_str() );
+    return ECObjectsStatus::ParseError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+PrimitiveType PrimitiveArrayECProperty::GetPrimitiveElementType () const
+    {
+    return m_primitiveType;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer              09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType value)
+    {
+    m_arrayKind = ARRAYKIND_Primitive;
+    m_primitiveType = value;
+
+    SetCachedTypeAdapter(NULL);
+    SetCachedMemberTypeAdapter(NULL);
+    _AdjustMinMaxAfterTypeChange();
+    InvalidateClassLayout();
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveArrayECProperty::_IsCalculated() const
+    {
+    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP PrimitiveArrayECProperty::_GetCalculatedPropertySpecification() const
+    {
+    if (m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
+
+    return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1605,16 +1593,16 @@ SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
 
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
     additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_direction)));
 
-    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes, false);
+    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
     }
 
 //---------------------------------------------------------------------------------------

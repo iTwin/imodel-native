@@ -493,9 +493,6 @@ struct ECDBuffer
     friend  struct ArrayResizer;
     friend  struct ECDBufferScope;
 private:
-    mutable bool        m_allowWritingDirectlyToInstanceMemory;
-    mutable bool        m_allPropertiesCalculated;
-
     uint32_t            GetOffsetToPropertyData() const;
 
     //! Returns the offset of the property value relative to the start of the instance data.
@@ -566,12 +563,7 @@ protected:
     ECOBJECTS_EXPORT ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
 
 
-    //! Constructor used by subclasses
-    //! @param allowWritingDirectlyToInstanceMemory     If true, ECDBuffer is allowed to memset, memmove, and poke at the
-    //!                                                 memory directly, e.g. for StandaloneECIntance.
-    //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
-    ECOBJECTS_EXPORT            ECDBuffer (bool allowWritingDirectlyToInstanceMemory);
-                     void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
+    ECDBuffer() { }
 
     //! Obtains the current primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
@@ -653,6 +645,10 @@ protected:
     virtual ECObjectsStatus     _SetIsPersistentlyReadOnly (bool readOnly) { return ECObjectsStatus::OperationNotSupported; }
     virtual bool                _IsHidden() const { return false; }
     virtual ECObjectsStatus     _SetIsHidden (bool hidden) { return ECObjectsStatus::OperationNotSupported; }
+
+    virtual bool _AllowWritingDirectlyToInstanceMemory() const = 0;
+    virtual bool _AreAllPropertiesCalculated() const = 0;
+    virtual void _SetAllPropertiesCalculated(bool allCalculated) = 0;
 
     // Helper for implementations of calculated property methods above
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;

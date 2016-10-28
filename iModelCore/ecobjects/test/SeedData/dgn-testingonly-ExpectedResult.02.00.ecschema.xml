@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
@@ -18,8 +19,7 @@
         <!-- abstract - interface adopted by Elements which have geometry. 
              NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy/>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>False</IsUnique>
@@ -28,7 +28,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="CategoryId" typeName="long"/>
@@ -181,8 +181,7 @@
     </ECClass>
     <ECClass typeName="CodedEntity" isStruct="false" isCustomAttributeClass="false" isDomainClass="false">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy/>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>True</IsUnique>
@@ -193,7 +192,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
     </ECClass>
@@ -384,6 +383,12 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                <PropertyName>LastMod</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
@@ -409,11 +414,7 @@
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
-            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.13">
-                <PropertyName>LastMod</PropertyName>
-            </ClassHasCurrentTimeStampProperty>
+            </DbIndexList>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="ModelId" typeName="long">
@@ -441,7 +442,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -805,6 +806,11 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <IsUnique>True</IsUnique>
@@ -821,10 +827,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
-            <ShareColumns xmlns="ECDbMap.02.00">
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="AuthorityId" typeName="long">
             <ECCustomAttributes>

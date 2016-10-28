@@ -502,15 +502,15 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     {
     ECSchemaPtr             schema;
     ECEntityClassP                ecclass;
-    PrimitiveECPropertyP    primProp;
-    ArrayECPropertyP        arrayProp;
-    PrimitiveECPropertyP    pointProp;
+    PrimitiveECPropertyP        primProp;
+    PrimitiveArrayECPropertyP   arrayProp;
+    PrimitiveECPropertyP        pointProp;
 
     ECSchema::CreateSchema (schema, "TestSchema", "ts", 1, 0, 2);
     schema->CreateEntityClass (ecclass, "TestClass");
     ecclass->CreatePrimitiveProperty (primProp, "PrimitiveProperty", PRIMITIVETYPE_String);
-    ecclass->CreateArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
-    ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3D);
+    ecclass->CreatePrimitiveArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
+    ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3d);
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
 
@@ -768,7 +768,7 @@ TEST_F(CustomAttributeTest, ContainerTypeSerialization)
     EXPECT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToNotSet->GetContainerType()));
 
     Utf8String serializedStr;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, 3, 0);
+    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, ECVersion::V3_0);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
     }
 

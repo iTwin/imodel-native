@@ -41,8 +41,7 @@ struct SchemaXmlWriter
         BeXmlWriterR m_xmlWriter;
         ECSchemaCR m_ecSchema;
         ECSchemaWriteContext m_context;
-        int m_ecXmlVersionMajor;
-        int m_ecXmlVersionMinor;
+        ECVersion m_ecXmlVersion;
 
     protected:
         SchemaWriteStatus                   WriteSchemaReferences ();
@@ -53,7 +52,7 @@ struct SchemaXmlWriter
         SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
 
     public:
-        SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0);
+        SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0);
         virtual SchemaWriteStatus Serialize(bool utf16 = false);
     };
 

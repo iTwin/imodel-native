@@ -979,8 +979,8 @@ ECSchemaPtr ExpressionRemappingTest::CreateSchema (bool rename)
 
     ecClass->CreatePrimitiveProperty (primProp, GetName ("string", rename), PRIMITIVETYPE_String);
 
-    ArrayECPropertyP arrayProp;
-    ecClass->CreateArrayProperty (arrayProp, GetName ("doubles", rename), PRIMITIVETYPE_Double);
+    PrimitiveArrayECPropertyP arrayProp;
+    ecClass->CreatePrimitiveArrayProperty (arrayProp, GetName ("doubles", rename), PRIMITIVETYPE_Double);
     
     StructArrayECPropertyP structArrayProp;
     ecClass->CreateStructArrayProperty (structArrayProp, GetName ("structs", rename), structClass);

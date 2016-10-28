@@ -33,9 +33,15 @@ private:
 
     static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
-    static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR, Json::Value const&, ECN::PrimitiveType);
 
 public:
+    //! Populates an ECValue given a Json value and a PrimitiveType
+    //! @param[out] value to populate
+    //! @param[in] json Json value
+    //! @param[in] type primitive value type
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
+
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&);
 
     //! Converts the specified Byte array to a Json value
@@ -56,25 +62,25 @@ public:
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point2DToJson(Json::Value& json, DPoint2d pt);
+    ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(Json::Value& json, DPoint2d pt);
     //! Converts the specified Json value to a DPoint2d
     //! The Json value must hold the point as Json object with keys "x" and "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d& pt, Json::Value const& json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, Json::Value const& json);
     //! Converts the specified DPoint3d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point3DToJson(Json::Value& json, DPoint3d pt);
+    ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(Json::Value& json, DPoint3d pt);
     //! Converts the specified Json value to a DPoint3d
     //! The Json value must hold the point as Json object with keys "x", "y" and "z"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3D(DPoint3d& pt, Json::Value const& json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3d(DPoint3d& pt, Json::Value const& json);
     };
 
 /*=================================================================================**//**
@@ -129,28 +135,47 @@ public:
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point2DToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified Json value to a DPoint2d
     //! The Json value must hold the point as Json object with keys "x" and "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d& pt, RapidJsonValueCR json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json);
     //! Converts the specified DPoint3d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point3DToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified Json value to a DPoint3d
     //! The Json value must hold the point as Json object with keys "x", "y" and "z"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3D(DPoint3d& pt, RapidJsonValueCR json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json);
 
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue);
     };
+
+/*=================================================================================**//**
+* JsonEcInstanceWriter - creates Json object from ECInstance
+* @bsiclass                                                     Bill.Steinbock  02/2016
++===============+===============+===============+===============+===============+======*/
+struct JsonEcInstanceWriter
+    {
+    private:
+        static Utf8CP        GetPrimitiveTypeString(ECN::PrimitiveType primitiveType);
+        static void          AppendAccessString(Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName);
+        static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType);
+        static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    public:
+        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        ECOBJECTS_EXPORT static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
+    };
+
 
 END_BENTLEY_ECOBJECT_NAMESPACE

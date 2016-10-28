@@ -13,6 +13,8 @@ using namespace std;
 #define ID_VERSION_MAJOR "VersionMajor"
 #define ID_VERSION_WRITE "VersionWrite"
 #define ID_VERSION_MINOR "VersionMinor"
+#define ID_EC_VERSION_MAJOR "ECVersionMajor"
+#define ID_EC_VERSION_MINOR "ECVersionMinor"
 #define ID_CLASSES "Classes"
 #define ID_REFERENCES "References"
 #define ID_IS_CUSTOMATTRIBUTE_CLASS "IsCustomAttributeClass"
@@ -46,6 +48,8 @@ using namespace std;
 #define ID_ALIAS "Alias"
 #define ID_IS_ABSTRACT "IsAbstract"
 #define ID_IS_SEALED "IsSealed"
+#define ID_ABSTRACT_CONSTRAINT "AbstractConstraint"
+#define ID_EC_VERSION "ECVersion"
     
 
 /*---------------------------------------------------------------------------------**//**
@@ -791,6 +795,8 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::VersionMajor: return ID_VERSION_MAJOR;
         case DiffNodeId::VersionWrite: return ID_VERSION_WRITE;
         case DiffNodeId::VersionMinor:return ID_VERSION_MINOR;
+        case DiffNodeId::ECVersionMajor: return ID_EC_VERSION_MAJOR;
+        case DiffNodeId::ECVersionMinor: return ID_EC_VERSION_MINOR;
         case DiffNodeId::ConstraintClasses: 
         case DiffNodeId::Classes: 
             return ID_CLASSES;
@@ -822,6 +828,8 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::Alias: return ID_ALIAS;
         case DiffNodeId::IsAbstract: return ID_IS_ABSTRACT;
         case DiffNodeId::IsSealed: return ID_IS_SEALED;
+        case DiffNodeId::AbstractConstraint: return ID_ABSTRACT_CONSTRAINT;
+        case DiffNodeId::ECVersion: return ID_EC_VERSION;
         }
     return NULL;
     }
@@ -841,6 +849,9 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
 
     if (left.GetVersionMinor() != right.GetVersionMinor())
         diff->Add (DiffNodeId::VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
+
+    if (left.GetECVersion() != right.GetECVersion())
+        diff->Add(DiffNodeId::ECVersion)->SetValue(ECSchema::GetECVersionString(left.GetECVersion()), ECSchema::GetECVersionString(right.GetECVersion()));
 
     if (!left.GetDisplayLabel().Equals(right.GetDisplayLabel()))
         diff->Add (DiffNodeId::DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
@@ -1127,6 +1138,9 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
+    if (left.GetAbstractConstraint()->GetFullName() != right.GetAbstractConstraint()->GetFullName())
+        diff->Add(DiffNodeId::AbstractConstraint)->SetValue(left.GetAbstractConstraint()->GetFullName(), right.GetAbstractConstraint()->GetFullName());
+
     DiffCustomAttributes (*diff, left, right);
     bvector<ECRelationshipConstraintCP> constraints;
     constraints.push_back (&left);
@@ -1207,6 +1221,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
     diff->Add (DiffNodeId::Multiplicity)->GetValue(direction).SetValue (relationshipConstraint.GetMultiplicity().ToString());
     diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
     diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
+    diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
     if (!relationshipConstraint.GetClasses().empty())
@@ -1554,17 +1569,17 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
             n.GetValue (direction).SetValue (v.GetInteger()); break;
         case PRIMITIVETYPE_Long:
             n.GetValue (direction).SetValue (v.GetLong()); break;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {              
-            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
-            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2d().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2d().y); 
             break;
             }
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
-            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
-            n.Add ("z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().y); 
+            n.Add ("z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().z); 
             break;
             }
         case PRIMITIVETYPE_String:
@@ -1615,10 +1630,10 @@ bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType,
         primitiveType = PRIMITIVETYPE_Integer;
     else if (primtiveTypeValue.CompareToI ("Long") == 0)
         primitiveType = PRIMITIVETYPE_Long;
-    else if (primtiveTypeValue.CompareToI ("Point2D") == 0)
-        primitiveType = PRIMITIVETYPE_Point2D;
-    else if (primtiveTypeValue.CompareToI ("Point3D") == 0)
-        primitiveType = PRIMITIVETYPE_Point3D;
+    else if (primtiveTypeValue.CompareToI ("Point2d") == 0)
+        primitiveType = PRIMITIVETYPE_Point2d;
+    else if (primtiveTypeValue.CompareToI ("Point3d") == 0)
+        primitiveType = PRIMITIVETYPE_Point3d;
     else
         return false;
     return true;
@@ -1833,6 +1848,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     uint32_t versionMajor;
     uint32_t versionWrite;
     uint32_t versionMinor;
+    ECVersion ecVersion;
 
     ECDiffValueP v;
     ECDiffNodeR r = *m_diff.GetRoot();
@@ -1861,8 +1877,18 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         versionMinor = GetDefault().GetVersionMinor();
 
+    if ((v = GetMergeValue(r, DiffNodeId::ECVersion)) != NULL)
+        {
+        uint32_t ecVersionMajor, ecVersionMinor;
+        sscanf(v->GetValueString().c_str(), "%d.%d", &ecVersionMajor, &ecVersionMinor);
+        if (ECObjectsStatus::Success != ECSchema::CreateECVersion(ecVersion, ecVersionMajor, ecVersionMinor))
+            return MergeStatus::ErrorCreatingMergeSchema;
+        }
+    else
+        ecVersion = GetDefault().GetECVersion();
+
     //Create Merge schema 
-    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
         return MergeStatus::ErrorCreatingMergeSchema;
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
@@ -2189,6 +2215,12 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         if (defaultContraint)
             mergedConstraint.SetIsPolymorphic (defaultContraint->GetIsPolymorphic());
 
+    if ((v = GetMergeValue(diff, DiffNodeId::AbstractConstraint)) != NULL)
+        mergedConstraint.SetAbstractConstraint(v->GetValueString());
+    else
+        if (defaultContraint)
+            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
+
     set<Utf8String> constraintClasses;
     if (defaultContraint)
         for(const auto constraintClass: defaultContraint->GetConstraintClasses())
@@ -2442,11 +2474,13 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         ArrayECPropertyP newProperty;
         if (typeName.find (":") == Utf8String::npos)
             {
+            PrimitiveArrayECPropertyP newPrimitiveProperty;
             PrimitiveType primitiveType;
             if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
                 return MergeStatus::Failed;
-            if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
+            if (mergedClass.CreatePrimitiveArrayProperty (newPrimitiveProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
+            newProperty = newPrimitiveProperty;
             }
         else
             {
@@ -2587,8 +2621,10 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
             }
         else //primitive
             {
-            if (mergeClass.CreateArrayProperty (newProperty, srcProperty->GetName(), srcProperty->GetPrimitiveElementType()) != ECObjectsStatus::Success)
+            PrimitiveArrayECPropertyP newPrimitiveProp;
+            if (mergeClass.CreatePrimitiveArrayProperty (newPrimitiveProp, srcProperty->GetName(), srcProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
+            newProperty = newPrimitiveProp;
             }
         newProperty->SetMinOccurs( srcProperty->GetMinOccurs());
         newProperty->SetMaxOccurs( srcProperty->GetMaxOccurs());
@@ -2774,6 +2810,14 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
     status = AppendCustomAttributesToMerge (mergedRelationshipClassConstraint, defaultRelationshipClassConstraint);
     if (status != MergeStatus::Success)
         return status;
+
+    ECClassCP resolvedAbstractConstraint = ResolveClass(defaultRelationshipClassConstraint.GetAbstractConstraint()->GetFullName());
+    BeAssert(resolvedAbstractConstraint != NULL);
+    if (resolvedAbstractConstraint == NULL)
+        return MergeStatus::ErrorClassNotFound;
+    if (nullptr == resolvedAbstractConstraint->GetEntityClassCP())
+        return MergeStatus::ErrorClassTypeMismatch;
+    mergedRelationshipClassConstraint.SetAbstractConstraint(*resolvedAbstractConstraint->GetEntityClassCP());
 
     for(auto constraintClass: defaultRelationshipClassConstraint.GetConstraintClasses())
         {

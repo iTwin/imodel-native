@@ -313,8 +313,8 @@ public:
     static ResolvedTypeNodePtr      CreateDouble (double v)         { return new LiteralNode (ECValue (v)); }
     static ResolvedTypeNodePtr      CreateLong (::int64_t v)        { return new LiteralNode (ECValue (v)); }
     static ResolvedTypeNodePtr      CreateBoolean (bool v)          { return new LiteralNode (ECValue (v)); }
-    static ResolvedTypeNodePtr      CreatePoint3D (DPoint3dCR v)    { return new LiteralNode (ECValue (v)); }
-    static ResolvedTypeNodePtr      CreatePoint2D (DPoint2dCR v)    { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreatePoint3d (DPoint3dCR v)    { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreatePoint2d (DPoint2dCR v)    { return new LiteralNode (ECValue (v)); }
     static ResolvedTypeNodePtr      CreateNull()                    { return new LiteralNode(); }
     static ResolvedTypeNodePtr      CreateDateTime (::int64_t ticks)
         {

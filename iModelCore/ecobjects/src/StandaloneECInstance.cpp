@@ -18,9 +18,7 @@ const uint32_t BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (Byte * data, uint32_t size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        ECDBuffer (allowWritingDirectlyToInstanceMemory),
-        m_bytesAllocated(size)
+MemoryECInstanceBase::MemoryECInstanceBase (Byte * data, uint32_t size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) : m_bytesAllocated(size), m_allowWritingDirectlyToInstanceMemory(allowWritingDirectlyToInstanceMemory), m_allPropertiesCalculated(false)
     {
     m_data = data;
     m_structInstances = NULL;
@@ -34,9 +32,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (Byte * data, uint32_t size, ClassLay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const* parentInstance) :
-        ECDBuffer (allowWritingDirectlyToInstanceMemory),
-        m_bytesAllocated(0)
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const* parentInstance) : m_bytesAllocated(0), m_allowWritingDirectlyToInstanceMemory(allowWritingDirectlyToInstanceMemory), m_allPropertiesCalculated(false)
     {
     m_structInstances = NULL;
     m_data = NULL;
