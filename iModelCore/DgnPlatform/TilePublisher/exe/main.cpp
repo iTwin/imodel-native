@@ -503,7 +503,6 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     json["tilesetUrl"] = tilesetUrl;
 
     return GetViewsetJson(json, transform, groundPoint);
-        auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
     }
 
 /*---------------------------------------------------------------------------------**//**

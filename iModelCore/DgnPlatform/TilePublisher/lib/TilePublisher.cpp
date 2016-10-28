@@ -1368,9 +1368,9 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
 
     json["name"] = view.GetName();
-    json["modelSelector"] = view.GetModelSelector().GetElementId().ToString();
-    json["categorySelector"] = view.GetCategorySelector().GetElementId().ToString();
-    json["displayStyle"] = view.GetDisplayStyle().GetElementId().ToString();
+    json["modelSelector"] = view.GetModelSelectorId().ToString();
+    json["categorySelector"] = view.GetCategorySelectorId().ToString();
+    json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
     DPoint3d viewOrigin = view.GetOrigin();
     transform.Multiply(viewOrigin);
@@ -1458,9 +1458,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 
         Json::Value entry(Json::objectValue);
 
-        allModelSelectors.insert(spatialView->GetModelSelector().GetElementId());
-        allCategorySelectors.insert(spatialView->GetCategorySelector().GetElementId());
-        allDisplayStyles.insert(spatialView->GetDisplayStyle().GetElementId());
+        allModelSelectors.insert(spatialView->GetModelSelectorId());
+        allCategorySelectors.insert(spatialView->GetCategorySelectorId());
+        allDisplayStyles.insert(spatialView->GetDisplayStyleId());
 
         GetSpatialViewJson(entry, *spatialView, transform);
         viewsJson[view.GetId().ToString()] = entry;
