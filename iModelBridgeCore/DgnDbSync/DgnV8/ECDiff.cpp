@@ -1138,7 +1138,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
-    if (left.GetAbstractConstraint()->GetFullName() != right.GetAbstractConstraint()->GetFullName())
+    if (nullptr != left.GetAbstractConstraint() && nullptr != right.GetAbstractConstraint() && left.GetAbstractConstraint()->GetFullName() != right.GetAbstractConstraint()->GetFullName())
         diff->Add(DiffNodeId::AbstractConstraint)->SetValue(left.GetAbstractConstraint()->GetFullName(), right.GetAbstractConstraint()->GetFullName());
 
     DiffCustomAttributes (*diff, left, right);
@@ -2811,13 +2811,17 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
     if (status != MergeStatus::Success)
         return status;
 
-    ECClassCP resolvedAbstractConstraint = ResolveClass(defaultRelationshipClassConstraint.GetAbstractConstraint()->GetFullName());
-    BeAssert(resolvedAbstractConstraint != NULL);
-    if (resolvedAbstractConstraint == NULL)
-        return MergeStatus::ErrorClassNotFound;
-    if (nullptr == resolvedAbstractConstraint->GetEntityClassCP())
-        return MergeStatus::ErrorClassTypeMismatch;
-    mergedRelationshipClassConstraint.SetAbstractConstraint(*resolvedAbstractConstraint->GetEntityClassCP());
+    ECClassCP abstractConstraint = defaultRelationshipClassConstraint.GetAbstractConstraint();
+    if (nullptr != abstractConstraint)
+        {
+        ECClassCP resolvedAbstractConstraint = ResolveClass(abstractConstraint->GetFullName());
+        BeAssert(resolvedAbstractConstraint != NULL);
+        if (resolvedAbstractConstraint == NULL)
+            return MergeStatus::ErrorClassNotFound;
+        if (nullptr == resolvedAbstractConstraint->GetEntityClassCP())
+            return MergeStatus::ErrorClassTypeMismatch;
+        mergedRelationshipClassConstraint.SetAbstractConstraint(*resolvedAbstractConstraint->GetEntityClassCP());
+        }
 
     for(auto constraintClass: defaultRelationshipClassConstraint.GetConstraintClasses())
         {
