@@ -10,69 +10,67 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
-    {
-    DgnDbPtr db2;
-    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(sourceName, destName), mode);
-    if (!db2.IsValid())
-        return nullptr;
-    if (importDummySchemaFirst)
-        DgnPlatformTestDomain::ImportDummySchema(*db2);
-    DgnPlatformTestDomain::ImportSchema(*db2);
-    return db2;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
 struct DgnModelTests : public DgnDbTestFixture
-{
+    {
     DgnModelPtr m_model;
-    
+
     void LoadModel(Utf8CP name)
         {
-        DgnModels& modelTable =  m_db->Models();
+        DgnModels& modelTable = m_db->Models();
         DgnModelId id = modelTable.QueryModelId(DgnModel::CreateModelCode(name));
-        m_model =  modelTable.GetModel(id);
+        m_model = modelTable.GetModel(id);
         if (m_model.IsValid())
             m_model->FillModel();
         }
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Majd.Uddin   04/12
-//=======================================================================================
-struct TestModelProperties
-{
-public:
-    DgnModelId      tmId;
-    WString         tmName;
-
-    void SetTestModelProperties(WString Name)
-    {
-        tmName = Name;
     };
-    void IsEqual(TestModelProperties Model)
-    {
-        EXPECT_STREQ(tmName.c_str(), Model.tmName.c_str()) << "Names don't match";
-    };
-};
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     08/13
+// @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
+void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool expectSuccess)
+    {
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
+
+    DgnElementPtr gelem;
+    if (is3d)
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
+    else
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0))));
+
+    if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP())) // Won't catch 2d/3d mismatch from just GeometrySource as we don't know a DgnModel...
+        {
+        ASSERT_FALSE(expectSuccess);
+        return;
+        }
+
+    DgnElementCPtr newElem = db.Elements().Insert(*gelem);
+    ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, GetGraphicElements)
     {
-    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetGraphicElements.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    //Insert new Model
+    DgnModelPtr model = InsertPhysicalModel("Splines");
+    EXPECT_TRUE(model != nullptr);
+    //Insert Element
+    InsertElement(*m_db, model->GetModelId(), true, true);
+
     LoadModel("Splines");
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
-    ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
+    ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
     for (auto const& elm : *m_model)
         {
@@ -82,31 +80,43 @@ TEST_F(DgnModelTests, GetGraphicElements)
     EXPECT_EQ(graphicElementCount, count);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     08/13
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, GetName)
     {
-    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetName.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    //Insert new Model
+    DgnModelPtr model = InsertPhysicalModel("Splines");
+    EXPECT_TRUE(model != nullptr);
+    //Insert Element
+    InsertElement(*m_db, model->GetModelId(), true, true);
+
     LoadModel("Splines");
     Utf8String name = m_model->GetCode().GetValue();
-    EXPECT_TRUE(name.CompareTo("Splines")==0);
+    EXPECT_TRUE(name.CompareTo("Splines") == 0);
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
-        " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
+                       " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
     PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(newName));
     DgnModelId id = m_db->Models().QueryModelId(DgnModel::CreateModelCode(newName));
     ASSERT_TRUE(id.IsValid());
-    m_model = m_db->Models().GetModel (id);
+    m_model = m_db->Models().GetModel(id);
     Utf8String nameToVerify = m_model->GetCode().GetValue();
-    EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str())==0);
+    EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str()) == 0);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, EmptyList)
     {
-    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"EmptyList.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    //Insert new Model
+    DgnModelPtr model = InsertPhysicalModel("Splines");
+    EXPECT_TRUE(model != nullptr);
+    //Insert Element
+    InsertElement(*m_db, model->GetModelId(), true, true);
+
     LoadModel("Splines");
     ASSERT_TRUE(0 != m_model->GetElements().size());
     m_model->EmptyModel();
@@ -115,21 +125,28 @@ TEST_F(DgnModelTests, EmptyList)
     m_model->FillModel();
     ASSERT_TRUE(0 != m_model->GetElements().size());
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad Hassan                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, GetRange)
     {
-    SetupWithPrePublishedFile(L"ModelRangeTest.ibim", L"GetRange.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    //Insert new Model
+    DgnModelPtr model = InsertPhysicalModel("RangeTest");
+    EXPECT_TRUE(model != nullptr);
+    //Insert Element
+    InsertElement(*m_db, model->GetModelId(), true, true);
+
     LoadModel("RangeTest");
 
     AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
-    DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
-    DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
-    AxisAlignedBox3d box(low,high);
+    DPoint3d low; low.Init(0.00000000000000000, -0.00050000000000000001, -0.00050000000000000001);
+    DPoint3d high; high.Init(1.00000000000000000, 0.00050000000000000001, 0.00050000000000000001);
+    AxisAlignedBox3d box(low, high);
 
-    EXPECT_TRUE(box.IsEqual(range,.00000001));
+    EXPECT_TRUE(box.IsEqual(range, .00000001));
     }
 
 //---------------------------------------------------------------------------------------
@@ -162,32 +179,6 @@ static int countSheetModels(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool expectSuccess)
-    {
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
-
-    DgnElementPtr gelem;
-    if (is3d)
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
-    else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
-
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
-    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
-
-    if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP())) // Won't catch 2d/3d mismatch from just GeometrySource as we don't know a DgnModel...
-        {
-        ASSERT_FALSE(expectSuccess);
-        return;
-        }
-
-    DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
     SetupSeedProject();
@@ -195,9 +186,9 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     static Utf8CP s_sheetModel1Name = "SheetModel1";
     static Utf8CP s_sheetModel1NameUPPER = "SHEETMODEL1";
     static Utf8CP s_sheetModel2Name = "SheetModel2";
-    
+
     BeFileName dbFileName;
-    
+
     if (true)
         {
         DgnDbPtr db = m_db;
@@ -246,7 +237,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         sheet1 = nullptr;
         sheet2 = nullptr;
 
-        dbFileName = db->GetFileName();   
+        dbFileName = db->GetFileName();
         db->SaveChanges();
         db->CloseDb();
         }
@@ -271,7 +262,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_EQ(1, countSheetModels(*db));
         db->SaveChanges();
         db->CloseDb();
-        }        
+        }
 
     if (true)
         {
@@ -292,7 +283,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, DictionaryModel)
+TEST_F(DgnModelTests, ImportDictionaryModel)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
@@ -320,10 +311,26 @@ TEST_F(DgnModelTests, DictionaryModel)
     EXPECT_TRUE(partitionForCopy.IsValid());
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc, *partitionForCopy).IsNull());
 
+    Utf8CP dbFilePath = db.GetDbFileName();
+    WString fileName;
+    BeStringUtilities::Utf8ToWChar(fileName, dbFilePath);
+
+    BeFileName fullOutputFileName;
+    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
+    fullOutputFileName.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
+    fullOutputFileName.AppendToPath(L"ImportDictionaryModelcc.dgndb");
+
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(fileName.c_str(), fullOutputFileName));
+
+    DbResult result = BE_SQLITE_OK;
+    DgnDb::OpenMode mode = DgnDb::OpenMode::ReadWrite;
+    DgnDbPtr dbcopy = DgnDb::OpenDgnDb(&result, fullOutputFileName, DgnDb::OpenParams(mode));
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(dbcopy.IsValid());
+
     // The dictionary model cannot be imported
-    DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
-    DgnImportContext importer(db, *db2);
-    DefinitionPartitionCPtr partitionForImport = DefinitionPartition::CreateAndInsert(*db2->Elements().GetRootSubject(), "PartitionForImport");
+    DgnImportContext importer(db, *dbcopy);
+    DefinitionPartitionCPtr partitionForImport = DefinitionPartition::CreateAndInsert(*dbcopy->Elements().GetRootSubject(), "PartitionForImport");
     EXPECT_TRUE(partitionForImport.IsValid());
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer, *partitionForImport).IsNull());
     }
@@ -331,58 +338,58 @@ TEST_F(DgnModelTests, DictionaryModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnModelTests, ModelsIterator)
+TEST_F(DgnModelTests, ModelsIterator)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
     //Inserts models
     PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    db.SaveChanges ("changeSet1");
+    db.SaveChanges("changeSet1");
 
     PhysicalModelPtr m2 = InsertPhysicalModel("Model2");
     PhysicalModelPtr m3 = InsertPhysicalModel("Model3");
-    db.SaveChanges ("changeSet1");
+    db.SaveChanges("changeSet1");
 
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model3")).IsValid ());
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
 
-    DgnModelId m1id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1"));
-    DgnModelId m2id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2"));
-    DgnModelId m3id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model3"));
+    DgnModelId m1id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model1"));
+    DgnModelId m2id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model2"));
+    DgnModelId m3id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model3"));
 
     DgnCode m1_code;
-    BentleyStatus ModelName = db.Models ().GetModelCode (m1_code, m1id);
-    EXPECT_EQ (0, ModelName);
+    BentleyStatus ModelName = db.Models().GetModelCode(m1_code, m1id);
+    EXPECT_EQ(0, ModelName);
 
-    DgnModels& models = db.Models ();
-    DgnModels::Iterator iter = models.MakeIterator ();
+    DgnModels& models = db.Models();
+    DgnModels::Iterator iter = models.MakeIterator();
     int i = 0;
     for (auto const& entry : iter)
         {
-        if (entry.GetModelId () == m1id)
+        if (entry.GetModelId() == m1id)
             {
-            EXPECT_EQ (m1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
-            EXPECT_STREQ ("Model1", entry.GetCodeValue ());
-            EXPECT_EQ (true, entry.GetInGuiList ());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
-            i++;
-            }
-        else if (entry.GetModelId () == m2id)
-            {
-            EXPECT_EQ (m2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
-            EXPECT_STREQ ("Model2", entry.GetCodeValue ());
+            EXPECT_EQ(m1->GetClassId().GetValue(), entry.GetClassId().GetValue());
+            EXPECT_STREQ("Model1", entry.GetCodeValue());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
-        else if (entry.GetModelId () == m3id)
+        else if (entry.GetModelId() == m2id)
             {
-            EXPECT_EQ (m3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
-            EXPECT_STREQ ("Model3", entry.GetCodeValue ());
+            EXPECT_EQ(m2->GetClassId().GetValue(), entry.GetClassId().GetValue());
+            EXPECT_STREQ("Model2", entry.GetCodeValue());
+            EXPECT_EQ(true, entry.GetInGuiList());
+            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
+            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
+            i++;
+            }
+        else if (entry.GetModelId() == m3id)
+            {
+            EXPECT_EQ(m3->GetClassId().GetValue(), entry.GetClassId().GetValue());;
+            EXPECT_STREQ("Model3", entry.GetCodeValue());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -396,7 +403,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnModelTests, AbandonChanges)
+TEST_F(DgnModelTests, AbandonChanges)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
@@ -404,19 +411,19 @@ TEST_F (DgnModelTests, AbandonChanges)
     //Inserts a model
     PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
     EXPECT_TRUE(m1.IsValid());
-    db.SaveChanges ("changeSet1");
+    db.SaveChanges("changeSet1");
 
-    EXPECT_TRUE (db.Models().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid());
-    m1->Delete ();
-    EXPECT_FALSE (db.Models().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid());
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
+    m1->Delete();
+    EXPECT_FALSE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
 
     PhysicalModelPtr model2 = InsertPhysicalModel("Model2");
 
     //Model 1 should be back. Model 2 shouldnt be in the db anymore.
-    DbResult rzlt = db.AbandonChanges ();
-    EXPECT_TRUE (rzlt == 0);
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-    EXPECT_FALSE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
+    DbResult rzlt = db.AbandonChanges();
+    EXPECT_TRUE(rzlt == 0);
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
+    EXPECT_FALSE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +432,7 @@ TEST_F (DgnModelTests, AbandonChanges)
 struct TestAppData : DgnModel::AppData
     {
     bool isFilled;
-    virtual DropMe _OnFilled (DgnModelCR model) override
+    virtual DropMe _OnFilled(DgnModelCR model) override
         {
         isFilled = true;
         return DropMe::No;
@@ -436,36 +443,7 @@ struct TestAppData : DgnModel::AppData
 //! Test for adding AppData on a model.
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnModelTests, AddAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    m1->Insert ();
-    EXPECT_TRUE (m1 != nullptr);
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-
-    // Add Appdata
-    static DgnModel::AppData::Key key;
-    TestAppData *AppData = new TestAppData ();
-    m1->AddAppData (key, AppData);
-    m1->FillModel ();
-    EXPECT_TRUE (AppData->isFilled);
-    EXPECT_TRUE (m1->FindAppData (key) != nullptr);
-
-   // Add appdata again with same key
-    //TestAppData *AppData2 = new TestAppData();
-    //m1->AddAppData(key, AppData2);
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for dropping AppData from a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnModelTests, DropAppData)
+TEST_F(DgnModelTests, AddAppData)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
@@ -473,23 +451,51 @@ TEST_F (DgnModelTests, DropAppData)
     //Inserts a model
     PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
     m1->Insert();
-    EXPECT_TRUE (m1 != nullptr);
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE(m1 != nullptr);
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
+
+    // Add Appdata
+    static DgnModel::AppData::Key key;
+    TestAppData *AppData = new TestAppData();
+    m1->AddAppData(key, AppData);
+    m1->FillModel();
+    EXPECT_TRUE(AppData->isFilled);
+    EXPECT_TRUE(m1->FindAppData(key) != nullptr);
+
+    // Add appdata again with same key
+     //TestAppData *AppData2 = new TestAppData();
+     //m1->AddAppData(key, AppData2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+//! Test for dropping AppData from a model.
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, DropAppData)
+    {
+    SetupSeedProject();
+    DgnDbR db = GetDgnDb();
+
+    //Inserts a model
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    m1->Insert();
+    EXPECT_TRUE(m1 != nullptr);
+    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
 
     static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData ();
-    m1->AddAppData (m_key, m_AppData);
-    m1->FillModel ();
-    EXPECT_TRUE (m_AppData->isFilled);
-    StatusInt status = m1->DropAppData (m_key);
-    EXPECT_TRUE (status == 0);
-    EXPECT_TRUE (m1->FindAppData (m_key) == nullptr);
+    TestAppData *m_AppData = new TestAppData();
+    m1->AddAppData(m_key, m_AppData);
+    m1->FillModel();
+    EXPECT_TRUE(m_AppData->isFilled);
+    StatusInt status = m1->DropAppData(m_key);
+    EXPECT_TRUE(status == 0);
+    EXPECT_TRUE(m1->FindAppData(m_key) == nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnModelTests, ReplaceInvalidCharacter)
+TEST_F(DgnModelTests, ReplaceInvalidCharacter)
     {
     SetupSeedProject();
 
@@ -497,12 +503,12 @@ TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     Utf8CP InvalidChar = "*";
     Utf8Char replace = ' ';
 
-    bool check = DgnDbTable::IsValidName (name, InvalidChar);
-    EXPECT_FALSE (check);
-    DgnDbTable::ReplaceInvalidCharacters (name, InvalidChar, replace);
-    EXPECT_EQ ("Invalid Name", (Utf8String)name);
-    check = DgnDbTable::IsValidName (name, InvalidChar);
-    EXPECT_TRUE (check);
+    bool check = DgnDbTable::IsValidName(name, InvalidChar);
+    EXPECT_FALSE(check);
+    DgnDbTable::ReplaceInvalidCharacters(name, InvalidChar, replace);
+    EXPECT_EQ("Invalid Name", (Utf8String) name);
+    check = DgnDbTable::IsValidName(name, InvalidChar);
+    EXPECT_TRUE(check);
     }
 
 /*---------------------------------------------------------------------------------**//**
