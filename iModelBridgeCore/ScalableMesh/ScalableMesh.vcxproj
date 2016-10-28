@@ -415,6 +415,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTime.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshURL.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Allocation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Definitions.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Exceptions.h" />
@@ -449,6 +450,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="STM\ISMDataStore.h" />
     <ClInclude Include="STM\ISMDataStore.hpp" />
+    <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
@@ -632,6 +634,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
+    <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
@@ -712,6 +715,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
+    <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>

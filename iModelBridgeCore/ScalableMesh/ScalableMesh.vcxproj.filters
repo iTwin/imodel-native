@@ -987,6 +987,9 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

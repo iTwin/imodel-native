@@ -300,6 +300,10 @@ $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMes
 
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 
 #-----------------------------------------------------------------------
 #   Build Stores

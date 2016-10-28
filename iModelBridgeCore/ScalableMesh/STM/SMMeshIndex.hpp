@@ -1299,7 +1299,7 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
         }
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(clipExtent), ExtentOp<EXTENT>::GetYMin(clipExtent), ExtentOp<EXTENT>::GetZMin(clipExtent),
                                         ExtentOp<EXTENT>::GetXMax(clipExtent), ExtentOp<EXTENT>::GetYMax(clipExtent), ExtentOp<EXTENT>::GetZMax(clipExtent));
-    if (IsClosedFeature(type))
+    if (IsClosedFeature(type) || IsClosedPolygon(origPoints))
         {
         DPoint3d origins[6];
         DVec3d normals[6];
@@ -1908,10 +1908,10 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                 indexes.push_back((int32_t)pointsPtr->size()-1);
                 }
            /* if (m_featureDefinitions.capacity() < m_featureDefinitions.size() +1) for(auto& def : m_featureDefinitions) if(!def.Discarded()) def.Discard();
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
+           */ RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
             linearFeaturesPtr->push_back((int)indexes.size()+1);
             linearFeaturesPtr->push_back((int32_t)type);
-            linearFeaturesPtr->push_back(&indexes[0], indexes.size());*/
+            linearFeaturesPtr->push_back(&indexes[0], indexes.size());
             }
         else
             {
@@ -1941,6 +1941,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
         if (s_inEditing)
             {
             InvalidateFilteringMeshing();
+            m_delayedDataPropagation = false; 
             }
         if (m_DelayedSplitRequested)
             SplitNode(GetDefaultSplitPosition());
@@ -3614,7 +3615,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HGF2DExtent minExt, maxExt;
     sourceRasterP->GetPixelSizeRange(minExt, maxExt);
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
-    if (/*m_nodeHeader.m_level <= 6 && */IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& GetNbPoints() > 0*/)
+    if (IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& GetNbPoints() > 0*/)
         SplitNodeBasedOnImageRes();
     byte* pixelBufferPRGBA = new byte[textureWidthInPixels * textureHeightInPixels * 4];
     pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, textureWidthInPixels * textureHeightInPixels * 4);
@@ -3770,7 +3771,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
         uvCoords->clear();
-        PushUV(/*texId + 1,*/ &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
+        PushUV( &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
         uvIndexes->clear();
         PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());        

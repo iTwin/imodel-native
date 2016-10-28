@@ -95,6 +95,11 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
         dtmType == DTMFeatureType::DrapeVoid;
     }
 
+inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
+    {
+    return !vec.empty() && (vec.front() == vec.back());
+    }
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >

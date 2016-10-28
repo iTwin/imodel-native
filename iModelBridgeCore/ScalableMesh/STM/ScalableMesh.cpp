@@ -2176,7 +2176,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
 
         assert(status == SUCCESS);    
                 
-        Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain";
+        Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain.3sm";
         StatusInt openStatus;
         SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
         if (openStatus && smSQLiteFile != nullptr)
