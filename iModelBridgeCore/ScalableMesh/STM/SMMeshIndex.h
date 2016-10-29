@@ -497,6 +497,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         auto displayTexDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        m_textureIds.insert(texID);  
         ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
         assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
         smCachedDisplayData->AddConsumer(this);
@@ -591,8 +592,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {                                
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
-        }    
-        
+        }   
+
+    void RemoveMultiTextureData();        
+            
     SMMemoryPoolPtr GetMemoryPool() const
         {
         return SMMemoryPool::GetInstance();
@@ -730,6 +733,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_featurePoolItemId;
         mutable SMMemoryPoolItemId m_dtmPoolItemId;
         mutable SMMemoryPoolItemId m_displayMeshPoolItemId;
+        mutable bset<uint64_t>     m_textureIds;
+        
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
 

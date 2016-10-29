@@ -472,15 +472,8 @@ private:
             {                         
             //meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(visibleNode, loadTexture, clipVisibilities);
             ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));                
-            
-            bvector<SmCachedDisplayTexture*> nodeTex;
-            bvector<uint64_t> texIDs;
-            meshNode->GetCachedTextures(nodeTex, texIDs);
-            bool areTexMissing = false;
-            for (auto& cachedTex : nodeTex)
-                if (cachedTex == nullptr)areTexMissing = true;
-            if (nodeTex.empty()) areTexMissing = true;
-            if (meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities) || (loadTexture == (areTexMissing)))
+                                    
+            if (meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips();
@@ -1128,14 +1121,8 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         }
          
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));    
-    bvector<SmCachedDisplayTexture*> nodeTex;
-    bvector<uint64_t> texIDs;
-    meshNodePtr->GetCachedTextures(nodeTex, texIDs);
-    bool areTexMissing = false;
-    for (auto& cachedTex : nodeTex)
-        if (cachedTex == nullptr)areTexMissing = true;
-    if (nodeTex.empty()) areTexMissing = true;
-    if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || (loadTexture == (areTexMissing) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
+    
+    if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {        
         FindOverview(lowerResOverviewNodes, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities);
         }
@@ -1243,14 +1230,8 @@ class NewQueryStartingNodeProcessor
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
-                bvector<SmCachedDisplayTexture*> nodeTex;
-                bvector<uint64_t> texIDs;
-                meshNodePtr->GetCachedTextures(nodeTex, texIDs);
-                bool areTexMissing = false;
-                for (auto& cachedTex : nodeTex)
-                    if (cachedTex == nullptr)areTexMissing = true;
-                if (nodeTex.empty()) areTexMissing = true;
-                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || (m_newQuery->m_loadTexture == (areTexMissing) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+              
+                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {            
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
@@ -1265,15 +1246,8 @@ class NewQueryStartingNodeProcessor
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd]));
-                bvector<SmCachedDisplayTexture*> nodeTex;
-                bvector<uint64_t> texIDs;
-                meshNodePtr->GetCachedTextures(nodeTex, texIDs);
-                bool areTexMissing = false;
-                for (auto& cachedTex : nodeTex)
-                    if (cachedTex == nullptr )areTexMissing = true;
-                if (nodeTex.empty()) areTexMissing = true;
-                
-                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || (m_newQuery->m_loadTexture == (areTexMissing) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                              
+                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
                                         

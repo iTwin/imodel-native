@@ -278,6 +278,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
        
         GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
         m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+        RemoveMultiTextureData();
         }
                 
     HINVARIANTS;
@@ -395,6 +397,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
         m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
+        RemoveMultiTextureData();
         }
 
     __super::Discard();
@@ -995,6 +998,31 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV
     assert(result);
     //assert(m_nodeHeader.m_uvsIndicesID.size() == 0);
     m_nodeHeader.m_uvsIndicesID.push_back(GetBlockID());
+    }
+
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveMultiTextureData() 
+    {
+
+    for (auto textureId : m_textureIds)
+        {                    
+        SMMemoryPoolItemId displayTexturePoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(textureId);
+
+        if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            {
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTexture(textureId);
+            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
+
+        displayTexturePoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(textureId);
+
+        if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            {
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTextureData(textureId);
+            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
+            }                                                
+        }
+
+    m_textureIds.clear();
     }
 
 //=======================================================================================
@@ -3474,6 +3502,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
     return poolMemVectorItemPtr;          
     }  
 
+//NEEDS_WORK_MST : Should use only the GetTexturePtr() with a texture id passed in parameter instead. 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr()
     {
     #if 0
@@ -3534,8 +3563,10 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
         texPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        m_textureIds.insert(texID);  
         ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
         assert(texPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        
         poolMemBlobItemPtr = storedMemoryPoolVector.get();
         }
 
