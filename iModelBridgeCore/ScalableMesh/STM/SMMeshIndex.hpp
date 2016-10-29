@@ -374,8 +374,17 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            {
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
-        m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
+        else
+            {
+            auto tex = GetSingleDisplayTexture();
+            if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
+            }
+
+
 
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -3467,6 +3476,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr()
     {
+    #if 0
     RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
 
     if (!IsTextured())
@@ -3495,6 +3505,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
         }
 
     return poolMemBlobItemPtr;
+#endif
+    return GetTexturePtr(m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID);
     }
 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr(uint64_t texID)

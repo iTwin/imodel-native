@@ -26,6 +26,9 @@
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include "SharedTextureManager.h"
+#include "SmCachedDisplayData.h"
+#include "ScalableMeshQuery.h"
+
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -438,7 +441,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
         return true;
         }
-
+#if 0
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> AddDisplayData(SmCachedDisplayData* smCachedDisplayData)
         {                        
         assert(smCachedDisplayData != 0);        
@@ -455,6 +458,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
         return customGenericBlobItemPtr;
         }    
+#endif  
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> AddDisplayMesh(SmCachedDisplayMeshData* smCachedDisplayData, size_t sizeToReserve)
         {
@@ -475,6 +479,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return customGenericBlobItemPtr;
         }
 
+
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SmCachedDisplayTextureData* smCachedDisplayData, uint64_t texID)
         {
         assert(smCachedDisplayData != 0);
@@ -494,9 +499,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         auto displayTexDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
         ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
         assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        smCachedDisplayData->AddConsumer(this);
         return customGenericBlobItemPtr;
         }
-    
+
+#if 0
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
         {        
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
@@ -504,7 +511,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
             
         return cachedDisplayDataItemPtr;
-        }    
+        }  
+#endif
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> GetDisplayMeshes()
         {
@@ -519,6 +527,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
         SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }
@@ -528,6 +537,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         uint64_t texID = GetSingleTextureID();
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
         SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }

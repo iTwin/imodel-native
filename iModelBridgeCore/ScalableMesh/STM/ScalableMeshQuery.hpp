@@ -1932,6 +1932,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                         displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
                         }
                     }
+                const_cast<SmCachedDisplayTextureData*>(displayTextureDataPtr->GetData())->AddConsumer(meshNode);
                 m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
                 }
             }
@@ -1948,6 +1949,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                     memcpy(&width, texPtr->GetData(), sizeof(int));
                     memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
                     SmCachedDisplayTexture* cachedDisplayTexture;
+
                     displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
                                                                  width,
                                                                  height,
@@ -1965,6 +1967,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                 else assert(false);
 
                 }
+            const_cast<SmCachedDisplayTextureData*>(displayTextureDataPtr->GetData())->AddConsumer(meshNode);
             m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
 #ifdef WIP_MESH_IMPORT
             }
@@ -2025,22 +2028,6 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             if (loadTexture && meshNode->IsTextured())
                 {
                 //NEEDS_WORK_SM : Don't keep texture in memory.
-                /* IScalableMeshTexturePtr smTexturePtr(GetTexture());
-
-                 if (smTexturePtr.IsValid())
-                 {
-                 BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
-                 smTexturePtr->GetDimension().x,
-                 smTexturePtr->GetDimension().y,
-                 false,
-                 QV_RGB_FORMAT,
-                 smTexturePtr->GetData());
-
-                 //Estimate which seems to give good result.
-                 qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
-
-                 assert(status == SUCCESS);
-                 }*/
                 if (!IsHeaderLoaded()) LoadNodeHeader();
                 texLoaded = GetOrLoadAllTextureData(displayCacheManagerPtr);
                 }
@@ -2228,8 +2215,10 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                             newIndices.push_back(newIndex);
                             newPoints.push_back(toLoadPoints[pointInd]);
                             FloatXY uv = toLoadUv[uvInd];
-                            //assert(uv.x <= 1.f && uv.x >= 0.f);
-                            //assert(uv.y <= 1.f && uv.y >= 0.f);
+#ifndef WIP_MESH_IMPORT
+                            assert(uv.x <= 1.f && uv.x >= 0.f);
+                            assert(uv.y <= 1.f && uv.y >= 0.f);
+#endif
                             newUVs.push_back({ uv.x, uv.y <= 1.f ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
                             }
                         else
@@ -2252,7 +2241,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 SmCachedDisplayMesh* cachedDisplayMesh = 0;
 
-                if (s_deactivateTexture || !texLoaded)
+                if (s_deactivateTexture || !meshNode->IsTextured())
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
                                                                                      finalPointNb,
@@ -2286,11 +2275,10 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 SmCachedDisplayMeshData* displayMeshData(new SmCachedDisplayMeshData(cachedDisplayMesh,
                     displayCacheManagerPtr,
                     textureID,
-                    texLoaded && !s_deactivateTexture && toLoadUvCount > 0 && textureIDs[part / 2].first,
+                    !s_deactivateTexture && meshNode->IsTextured() && textureIDs[part / 2].first,
                     qvMemorySizeEstimate,
                     appliedClips));
 
-                //m_cachedDisplayData = meshNode->AddDisplayData(displayData);
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve);
                 else m_cachedDisplayMeshData->push_back(*displayMeshData);

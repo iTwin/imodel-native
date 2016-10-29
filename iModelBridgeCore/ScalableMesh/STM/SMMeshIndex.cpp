@@ -335,3 +335,36 @@ void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bve
         uvPart[i].y = (uvPart[i].y - range.low.y) / range.YLength();
         }
     }
+
+ SmCachedDisplayTextureData::~SmCachedDisplayTextureData()
+    {
+    if (m_cachedDisplayTexture != 0)
+        {
+        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture);
+        assert(status == SUCCESS);
+
+        for (auto& consumer : m_consumers)
+            {
+            consumer->RemoveDisplayMesh();
+            }
+        }
+    }
+
+void SmCachedDisplayTextureData::AddConsumer(SMMeshIndexNode<DPoint3d, DRange3d>* node)
+    {
+    std::lock_guard<std::mutex> lock(m_lockForConsumers);
+    for (auto& existingNode : m_consumers)
+        if (node == existingNode) return;
+    m_consumers.push_back(node);
+    }
+
+void SmCachedDisplayTextureData::RemoveConsumer(const SMMeshIndexNode<DPoint3d, DRange3d>* node)
+    {
+    std::lock_guard<std::mutex> lock(m_lockForConsumers);
+    bvector<SMMeshIndexNode<DPoint3d, DRange3d>*>::iterator toRemove = m_consumers.end();
+    for (auto it = m_consumers.begin(); it != m_consumers.end(); ++it)
+        {
+        if (node == *it) toRemove = it;
+        }
+    if (toRemove != m_consumers.end()) m_consumers.erase(toRemove);
+    }
