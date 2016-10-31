@@ -1349,9 +1349,9 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     // schemas index class by name so publicly name can not be reset
-    ECObjectsStatus                     SetName (Utf8StringCR name);
+    ECObjectsStatus SetName (Utf8StringCR name);
 
-    virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode);
+    virtual SchemaReadStatus _ReadXmlAttributes (BeXmlNodeR classNode);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
@@ -1361,31 +1361,31 @@ protected:
     //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties);
 
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
-    SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
-    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
+    SchemaReadStatus _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
+    SchemaReadStatus _ReadPropertyFromXmlAndAddToClass(ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
 
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+    virtual SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
-    virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
+    virtual ECClassType _GetClassType() const { return ECClassType::Entity;} // default type
 
-    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
-    virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
+    virtual ECRelationshipClassCP _GetRelationshipClassCP () const { return NULL; } // used to avoid dynamic_cast
+    virtual ECRelationshipClassP _GetRelationshipClassP () { return NULL; } // used to avoid dynamic_cast
 
-    virtual ECEntityClassCP             _GetEntityClassCP () const { return nullptr; }  // used to avoid dynamic_cast
-    virtual ECEntityClassP              _GetEntityClassP ()        { return nullptr; }  // used to avoid dynamic_cast
+    virtual ECEntityClassCP _GetEntityClassCP () const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECEntityClassP _GetEntityClassP () { return nullptr; } // used to avoid dynamic_cast
 
-    virtual ECStructClassCP             _GetStructClassCP() const { return nullptr; } // used to avoid dynamic_cast
-    virtual ECStructClassP              _GetStructClassP()        { return nullptr; } // used to avoid dynamic_cast
+    virtual ECStructClassCP _GetStructClassCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECStructClassP _GetStructClassP() { return nullptr; } // used to avoid dynamic_cast
 
-    virtual ECCustomAttributeClassCP    _GetCustomAttributeClassCP() const { return nullptr; } // used to avoid dynamic_cast
-    virtual ECCustomAttributeClassP     _GetCustomAttributeClassP()        { return nullptr; } // used to avoid dynamic_cast
+    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() { return nullptr; } // used to avoid dynamic_cast
 
-    void                                InvalidateDefaultStandaloneEnabler() const;
+    void InvalidateDefaultStandaloneEnabler() const;
 public:
     ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (uint32_t index) const;
     ECOBJECTS_EXPORT ECPropertyP            GetBaseClassPropertyP (Utf8CP name) const;
@@ -1400,24 +1400,24 @@ public:
 
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    ECOBJECTS_EXPORT ECClassId             GetId() const;
+    ECOBJECTS_EXPORT ECClassId GetId() const;
     //! Returns the StandaloneECEnabler for this class
-    ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
+    ECOBJECTS_EXPORT StandaloneECEnablerP GetDefaultStandaloneEnabler() const;
 
     //! The type of derived ECClass this is
-    ECOBJECTS_EXPORT ECClassType           GetClassType() const;
+    ECOBJECTS_EXPORT ECClassType GetClassType() const;
 
     //! Is the class an entity class
-    bool                                   IsEntityClass() const { return ECClassType::Entity == GetClassType(); }
+    bool IsEntityClass() const { return ECClassType::Entity == GetClassType(); }
 
     //! Is the class a struct class
-    bool                                   IsStructClass() const { return ECClassType::Struct == GetClassType();}
+    bool IsStructClass() const { return ECClassType::Struct == GetClassType();}
 
     //! Is the class a custom attribute class
-    bool                                   IsCustomAttributeClass() const { return ECClassType::CustomAttribute == GetClassType(); }
+    bool IsCustomAttributeClass() const { return ECClassType::CustomAttribute == GetClassType(); }
 
     //! Is the class a relationship class
-    bool                                   IsRelationshipClass() const { return ECClassType::Relationship == GetClassType(); }
+    bool IsRelationshipClass() const { return ECClassType::Relationship == GetClassType(); }
 
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
@@ -1445,17 +1445,17 @@ public:
     ECOBJECTS_EXPORT void SetClassModifier(ECClassModifier modifier);
 
     //! The ECSchema that this class is defined in
-    ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
+    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
     // schemas index class by name so publicly name can not be reset
     //! The name of this ECClass
-    ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetName() const;
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
-    ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
+    ECOBJECTS_EXPORT Utf8CP GetFullName() const;
     //! Formats the class name for use in an ECSQL statement. ([{SchemaName}].[{ClassName}])
     //! @remarks The pointer will remain valid as long as the ECClass exists.
-    ECOBJECTS_EXPORT Utf8StringCR       GetECSqlName() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
     //! Whether the display label is explicitly defined or not
-    ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
     //! Returns an iterable of all the ECProperties defined on this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const;
     //! Returns the number of ECProperties in this class
@@ -1466,17 +1466,17 @@ public:
     ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;
 
     //! Sets the description of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR value);
     //! Gets the description of this ECClass.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
     //! Gets the invariant description for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
     //! Sets the display label of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value);
     //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
-    ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
     //! Gets the invariant display label for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
@@ -1507,20 +1507,20 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
     
     //! Returns whether there are any base classes for this class
-    ECOBJECTS_EXPORT bool            HasBaseClasses() const;
+    ECOBJECTS_EXPORT bool HasBaseClasses() const;
     //! Returns whether there are any derived classes for this class
-    bool                             HasDerivedClasses() const { return m_derivedClasses.size() > 0; }
+    bool HasDerivedClasses() const { return m_derivedClasses.size() > 0; }
 
     //! Removes a base class.
     ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
 
     //! Returns true if the class is the type specified or derived from it.
-    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
+    ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
 
     //! Returns true if the class name  is of the type specified or derived from it.
-    ECOBJECTS_EXPORT bool            Is(Utf8CP name) const;
+    ECOBJECTS_EXPORT bool Is(Utf8CP name) const;
     //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
-    ECOBJECTS_EXPORT bool            Is (Utf8CP schemaName, Utf8CP className) const;
+    ECOBJECTS_EXPORT bool Is(Utf8CP schemaName, Utf8CP className) const;
 
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name);
@@ -1553,7 +1553,7 @@ public:
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -1561,7 +1561,7 @@ public:
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (Utf8StringCR name, bool includeBaseClasses=true) const;
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (Utf8StringCR name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -1569,7 +1569,7 @@ public:
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (Utf8CP name, bool includeBaseClasses=true) const;
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (Utf8CP name, bool includeBaseClasses=true) const;
     
     //! Get the property that stores the instance label for the class.
     //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
@@ -1601,7 +1601,7 @@ public:
     //! Given two ECClass's, checks to see if they are equal by name
     //! @param[in]  currentBaseClass    The source class to check against
     //! @param[in]  arg                 The target to compare to (this parameter must be an ECClassP)
-    ECOBJECTS_EXPORT static bool    ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
+    ECOBJECTS_EXPORT static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
 }; // ECClass
 
 //=======================================================================================
