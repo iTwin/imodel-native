@@ -1,3 +1,7 @@
+Success
+BadArg
+Success
+Success
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnCategory.cpp $
@@ -50,57 +54,6 @@ void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Scope), static_cast<int32_t>(m_data.m_scope));
     stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_data.m_rank));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(CAT_PROP_Descr, name))
-        {
-        value.SetUtf8CP(GetDescription());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(CAT_PROP_Rank, name))
-        {
-        value.SetInteger(static_cast<int32_t>(m_data.m_rank));
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(CAT_PROP_Scope, name))
-        {
-        value.SetInteger(static_cast<int32_t>(m_data.m_scope));
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-
-    if (0 == strcmp(CAT_PROP_Descr, name))
-        {
-        SetDescription(value.GetUtf8CP());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(CAT_PROP_Rank, name))
-        {
-        m_data.m_rank = static_cast<Rank>(value.GetInteger());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(CAT_PROP_Scope, name))
-        {
-        m_data.m_scope = static_cast<Scope>(value.GetInteger());
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -842,7 +795,95 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElement::CreateParams dgn_ElementHandler::SubCategory::_InitCreateParams(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* stat)
+DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
     {
-    return DgnSubCategory::CreateParamsFromECInstance(db, properties, stat);
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+    auto params = DgnSubCategory::CreateParamsFromECInstance(inStat, db, properties);
+    if (!params.IsValid())
+        return nullptr;
+    auto ele = new DgnSubCategory(params);
+    if (nullptr == ele)
+        {
+        BeAssert(false && "when would a handler fail to construct an element?");
+        return nullptr;
+        }
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
+    stat = ele->_SetPropertyValues(properties, filter);
+    return (DgnDbStatus::Success == stat) ? ele : nullptr;
+    }
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct CategoryElementPropertyAccessors
+    {
+    struct
+        {
+        ECSqlClassInfo::T_ElementPropGet  descr, scope, rank;
+        } get;
+    struct
+        {
+        ECSqlClassInfo::T_ElementPropSet  descr, scope, rank;
+        } set;
+    };
+
+static std::once_flag s_categoryAccessorsFlag;
+static CategoryElementPropertyAccessors s_categryAccessors; 
+
+void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    std::call_once(s_categoryAccessorsFlag, [] ()
+        {
+        s_categryAccessors.get.descr = [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnCategory& el = (DgnCategory&) elIn;
+            value.SetUtf8CP(el.GetDescription());
+            return DgnDbStatus::Success;
+            };
+
+        s_categryAccessors.set.descr = [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnCategory& el = (DgnCategory&) elIn;
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            };
+
+        s_categryAccessors.get.rank = [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnCategory& el = (DgnCategory&) elIn;
+            value.SetInteger(static_cast<int32_t>(el.GetRank()));
+            return DgnDbStatus::Success;
+            };
+        s_categryAccessors.set.rank = [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsInteger())
+                return DgnDbStatus::BadArg;
+            DgnCategory& el = (DgnCategory&) elIn;
+            el.SetRank(static_cast<DgnCategory::Rank>(value.GetInteger()));
+            return DgnDbStatus::Success;
+            };
+
+        s_categryAccessors.get.scope = [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnCategory& el = (DgnCategory&) elIn;
+            value.SetInteger(static_cast<int32_t>(el.GetScope()));
+            return DgnDbStatus::Success;
+            };
+        s_categryAccessors.set.scope = [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsInteger())
+                return DgnDbStatus::BadArg;
+            DgnCategory& el = (DgnCategory&) elIn;
+            el.SetScope(static_cast<DgnCategory::Scope>(value.GetInteger()));
+            return DgnDbStatus::Success;
+            };
+        });
+
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Descr, s_categryAccessors.get.descr, s_categryAccessors.set.descr);
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Rank, s_categryAccessors.get.rank, s_categryAccessors.set.rank);
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Scope, s_categryAccessors.get.scope, s_categryAccessors.set.scope);
     }
