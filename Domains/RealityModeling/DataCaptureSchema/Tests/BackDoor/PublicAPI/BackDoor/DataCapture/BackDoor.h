@@ -8,6 +8,8 @@
 #pragma once
 
 #include "DataCaptureTests.h"
+#include "DataCaptureTestDomain.h"
+#include "DataCaptureTestFixture.h"
 
 BEGIN_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE
 

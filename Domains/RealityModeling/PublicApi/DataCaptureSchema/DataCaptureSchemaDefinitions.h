@@ -51,7 +51,7 @@
 #define END_BENTLEY_DATACAPTURE_NAMESPACE          } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_DATACAPTURE        using namespace BENTLEY_NAMESPACE_NAME::DataCapture;
 
-// create the Bentley.ConceptCivil namespace
+// create the Bentley.DataCapture namespace
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 END_BENTLEY_DATACAPTURE_NAMESPACE
 
@@ -73,15 +73,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CLASS_Camera                                        "Camera"
 #define BDCP_CLASS_Photo                                         "Photo"
 
-// 
-// 
 // Relationships
-// #define BDCP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
-// #define BDCP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
-// 
-// 
-// Properties
-// #define BDCP_PROP_StatusAspect_Status                               "Status"
+#define BDCP_REL_PhotoIsTakenByCamera                          "PhotoIsTakenByCamera"
 
 
 //-----------------------------------------------------------------------------------------
