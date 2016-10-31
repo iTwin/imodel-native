@@ -120,7 +120,7 @@ namespace IndexECPlugin.Source.Helpers
                 string[] coords = outerShellPoints[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if ( coords.Length != 2 )
                     {
-                    throw new ArgumentException("Invalid WKT polygon : {0}");
+                    throw new ArgumentException("Invalid WKT polygon");
                     }
 
                 resultString += "[" + coords[0] + "," + coords[1] + "]";

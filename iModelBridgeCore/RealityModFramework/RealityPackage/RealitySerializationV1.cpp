@@ -464,7 +464,7 @@ RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, Real
         return RealityPackageStatus::MissingSourceAttribute;
 
     BeXmlNodeP pSourceNode = node.AddEmptyElement(PACKAGE_ELEMENT_Source);
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.ToString().c_str());
+    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.GetSource().c_str());
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
 
     // Optional fields.

@@ -157,7 +157,7 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                 }
             else
                 {
-                throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
+                throw new NotImplementedException("The download of the thumbnail not in http or ftp is not implemented yet.");
                 }
             }
 

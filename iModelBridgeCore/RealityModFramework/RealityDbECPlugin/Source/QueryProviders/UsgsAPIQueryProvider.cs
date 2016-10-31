@@ -1024,7 +1024,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( thumbnailURI == null )
                 {
-                throw new OperationFailedException("We have encountered a problem processing the order for the thumbnail of ID " + sourceID);
+                throw new OperationFailedException("We have encountered a problem processing the order for a thumbnail.");
                 }
 
             //The next part enables downloading the thumbnail
@@ -1723,7 +1723,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             else
                 {
-                throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
+                throw new NotImplementedException("The download of the thumbnail not in http or ftp is not implemented yet.");
                 }
             }
 
