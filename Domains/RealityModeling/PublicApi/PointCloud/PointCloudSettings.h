@@ -106,7 +106,7 @@ public:
     void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
 
     void _Save(ViewDefinitionR) const override;
-    void _Load(ViewDefinitionCR) override;
+    void _Load(ViewDefinitionR) override;
 
     POINTCLOUD_EXPORT static PointCloudViewSettings& FromView(SpatialViewController const&);
 };
@@ -171,7 +171,7 @@ public:
     void SetUnclassVisible(bool unclassVisible) { m_unclassVisible = unclassVisible; }
 
     void _Save(ViewDefinitionR) const override;
-    void _Load(ViewDefinitionCR) override;
+    void _Load(ViewDefinitionR) override;
     POINTCLOUD_EXPORT static PointCloudClassificationSettings& FromView(SpatialViewController const&);
 };
 

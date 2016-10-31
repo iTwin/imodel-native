@@ -45,6 +45,7 @@ PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController c
     if (nullptr == settings)
         {
         settings = new PointCloudViewSettings;
+        settings->_Load(spatial.GetViewDefinition());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -109,7 +110,7 @@ bool PointCloudViewSettings::AreSetToDefault() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::_Load(ViewDefinitionCR view)
+void PointCloudViewSettings::_Load(ViewDefinitionR view)
     {
     JsonValueCR val = view.GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
 
@@ -146,7 +147,7 @@ void PointCloudViewSettings::_Save(ViewDefinitionR view) const
     // Only save point cloud view settings if they're not set to default values
     if (AreSetToDefault())
         {
-        view.GetDisplayStyleR().RemoveStyle(VIEW_SETTING_PointCloud);
+        view.GetDisplayStyle().RemoveStyle(VIEW_SETTING_PointCloud);
         return;
         }
 
@@ -170,7 +171,7 @@ void PointCloudViewSettings::_Save(ViewDefinitionR view) const
     val[SETTINGPOINTCLOUD_displayStyleName]     = m_displayStyleName.c_str();
     val[SETTINGPOINTCLOUD_displayStyleIndex]    = m_displayStyleIndex;
 
-    view.GetDisplayStyleR().SetStyle(VIEW_SETTING_PointCloud, val);
+    view.GetDisplayStyle().SetStyle(VIEW_SETTING_PointCloud, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,6 +184,7 @@ PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(Spa
     if (nullptr == settings)
         {
         settings = new PointCloudClassificationSettings;
+        settings->_Load(spatial.GetViewDefinition());
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -269,7 +271,7 @@ bool PointCloudClassificationSettings::operator==(PointCloudClassificationSettin
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         7/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudClassificationSettings::_Load(ViewDefinitionCR view)
+void PointCloudClassificationSettings::_Load(ViewDefinitionR view)
     {
     JsonValueCR inValue = view.GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloudClassif);
 
@@ -300,7 +302,7 @@ void PointCloudClassificationSettings::_Save(ViewDefinitionR view) const
     {
     if (AreSetToDefault())
         {
-        view.GetDisplayStyleR().RemoveStyle(VIEW_SETTING_PointCloudClassif);
+        view.GetDisplayStyle().RemoveStyle(VIEW_SETTING_PointCloudClassif);
         return;
         }
 
@@ -320,5 +322,5 @@ void PointCloudClassificationSettings::_Save(ViewDefinitionR view) const
     outValue[SETTINGCLASSIF_unclassColor] = m_unclassColor.GetValue();
     outValue[SETTINGCLASSIF_unclassVisible] = m_unclassVisible;
 
-    view.GetDisplayStyleR().SetStyle(VIEW_SETTING_PointCloudClassif, outValue);
+    view.GetDisplayStyle().SetStyle(VIEW_SETTING_PointCloudClassif, outValue);
     }
