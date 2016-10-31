@@ -2349,7 +2349,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     { 
     bool valid = true;
-    if (ECObjectsStatus::Success != ValidateRoleLabel())
+    if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         valid = false;
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
         valid = false;
@@ -2672,10 +2672,19 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel() const
+ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
     {
     if (Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
         {
+        if (resolveIssues && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
+            {
+            m_roleLabel = m_relClass->GetInvariantDisplayLabel();
+            if (!m_isSource)
+                m_roleLabel += " (Reversed)";
+
+            return ECObjectsStatus::Success;
+            }
+
         LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
                    m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
         return ECObjectsStatus::Error;
@@ -2820,8 +2829,6 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
     if (IsRoleLabelDefinedLocally())
-        xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
-    else if (!IsRoleLabelDefined() && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
         xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
@@ -3215,15 +3222,6 @@ Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     Utf8String roleLabel = _GetInvariantRoleLabel();
     if (!Utf8String::IsNullOrEmpty(roleLabel.c_str()))
         return roleLabel;
-
-    if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-        {
-        roleLabel = m_relClass->GetInvariantDisplayLabel();
-        if (!m_isSource)
-            roleLabel += " (Reversed)";
-
-        return roleLabel;
-        }
 
     return m_roleLabel;
     }

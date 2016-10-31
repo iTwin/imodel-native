@@ -2186,7 +2186,7 @@ private:
     ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
     ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
     ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
-    ECObjectsStatus             ValidateRoleLabel() const;
+    ECObjectsStatus             ValidateRoleLabel(bool resolveIssues = false);
     ECObjectsStatus             ValidateClassConstraint() const;
     ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
