@@ -333,10 +333,23 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 #endif
 
 #ifdef _MSC_VER
-    #define PUSH_MSVC_IGNORE(ERROR_TO_IGNORE) __pragma(warning(push))\
-__pragma(warning(disable:ERROR_TO_IGNORE))
-    #define POP_MSVC_IGNORE __pragma(warning(pop))
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
+        __pragma(warning(push))\
+        __pragma(warning(disable:ERRORS_TO_IGNORE))
+    
+    #define POP_MSVC_IGNORE\
+        __pragma(warning(pop))
+    
+    #if defined(BSI_MSVC_ANALYZE)
+        #include <codeanalysis/warnings.h>
+        #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
+        #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
+    #else
+        #define PUSH_MSVC_IGNORE_ANALYZE
+        #define POP_MSVC_IGNORE_ANALYZE
+    #endif
 #else
-    #define PUSH_MSVC_IGNORE(ERROR_TO_IGNORE)
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
     #define POP_MSVC_IGNORE
+    #define PUSH_MSVC_IGNORE_ANALYZE
 #endif
