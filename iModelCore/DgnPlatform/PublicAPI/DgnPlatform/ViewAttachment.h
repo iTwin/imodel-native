@@ -80,15 +80,12 @@ public:
 private:
     Data    m_data;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
-
 protected:
     Data const& GetData() const {return m_data;}
     Data& GetData() {return m_data;}
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;

@@ -39,35 +39,12 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::BindParams(ECSqlStatement& statement)
+void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(statement, forInsert);
     statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxLow), m_bbox.low);
     statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxHigh), m_bbox.high);
-    return m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_BindInsertParams(ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindInsertParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return BindParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return BindParams(statement);
+    m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
     }
 
 //---------------------------------------------------------------------------------------

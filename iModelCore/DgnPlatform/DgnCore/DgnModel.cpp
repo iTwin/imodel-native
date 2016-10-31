@@ -659,28 +659,29 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
     {
+    if (forInsert == ForInsert::Yes)
+        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
+
     if (!m_code.IsValid())
         {
         BeAssert(false);
-        return DgnDbStatus::InvalidName;
+        return;
         }
 
-    if (m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(MODEL_PROP_CodeValue))))
-        return DgnDbStatus::BadArg;
+    if (m_code.IsEmpty())
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_CodeValue));
+    else
+        statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
-        return DgnDbStatus::BadArg;
-
-    if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(MODEL_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
-        return DgnDbStatus::BadArg;
+    statement.BindId(statement.GetParameterIndex(MODEL_PROP_CodeAuthorityId), m_code.GetAuthority());
+    statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (!m_modeledElementId.IsValid())
         {
         BeAssert(false);
-        return DgnDbStatus::BadElement;
+        return ;
         }
 
     statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
@@ -702,25 +703,6 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
         }
     else
         statement.BindNull(statement.GetParameterIndex(MODEL_PROP_Properties));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_BindInsertParams(ECSqlStatement& statement)
-    {
-    statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    return BindInsertAndUpdateParams(statement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -736,9 +718,7 @@ DgnDbStatus DgnModel::Update()
     if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
-    status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success != status)
-        return status;
+    _BindWriteParams(*stmt, ForInsert::No);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_DONE != result)
@@ -1258,12 +1238,7 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::WriteError;
         }
     
-    status = _BindInsertParams(*stmt);
-    if (DgnDbStatus::Success != status)
-        {
-        m_modelId = DgnModelId();
-        return status;
-        }
+    _BindWriteParams(*stmt, ForInsert::Yes);
         
     DbResult stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)

@@ -212,9 +212,9 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 namespace dgn_ElementHandler {
-struct RedlineViewDef : Definition
+struct RedlineViewDef : ViewElementHandler::View2d
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, Definition, DGNPLATFORM_EXPORT);
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, ViewElementHandler::View2d, DGNPLATFORM_EXPORT);
     };
 struct RedlineElementHandler : Document
     {
@@ -446,12 +446,9 @@ public:
 private:
     DgnElementId m_linkedElementId;
 
-    Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
-
 protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
