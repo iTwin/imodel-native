@@ -39,19 +39,17 @@ private:
     mutable bool                m_multiChunkGeomStream = false;
 
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus WriteGeometryStream();
 
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override final { return GeometryPartAuthority::GetGeometryPartAuthorityId() == auth.GetAuthorityId(); }
-    virtual DgnCode _GenerateDefaultCode() const override final { return GeometryPartAuthority::CreateEmptyCode(); }
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override final { return GeometryPartAuthority::GetGeometryPartAuthorityId() == auth.GetAuthorityId(); }
+    DgnCode _GenerateDefaultCode() const override final { return GeometryPartAuthority::CreateEmptyCode(); }
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
 protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...

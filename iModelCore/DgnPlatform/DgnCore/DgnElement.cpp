@@ -885,71 +885,39 @@ void DgnElement::_OnReversedAdd() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
+void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
     if (!m_code.IsValid())
         {
         BeAssert(false && "Code is missing");
-        return DgnDbStatus::InvalidName;
+        return;
         }
 
-    if (m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue))))
-        return DgnDbStatus::BadArg;
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
-        {
-        BeAssert(false && "INSERT or UPDATE statement must include CodeValue property");
-        return DgnDbStatus::BadArg;
-        }
+    if (m_code.IsEmpty())
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue));
+    else
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
-    if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
-        {
-        BeAssert(false && "INSERT or UPDATE statement must include CodeAuthority and CodeNamespace properties");
-        return DgnDbStatus::BadArg;
-        }
+    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority());
+    statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
-    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId))
-        {
-        BeAssert(false && "INSERT or UPDATE statement must include ParentId property");
-        return DgnDbStatus::BadArg;
-        }
+    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId);
 
-    ECSqlStatus bindStatus;
     if (m_federationGuid.IsValid())
-        bindStatus = statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
+        statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
     else
-        bindStatus = statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid));
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid));
 
-    if (ECSqlStatus::Success != bindStatus)
-        {
-        BeAssert(false && "INSERT or UPDATE statement must include FederationGuid property");
-        return DgnDbStatus::BadArg;
-        }
+    if (forInsert != ForInsert::Yes)
+        return;
 
-    if (!isForUpdate)
-        {
-        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId) ||
-            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId))
-            {
-            BeAssert(false && "INSERT statement must include ECInstanceId and ModelId properties");
-            return DgnDbStatus::BadArg;
-            }
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
-    {
-    return BindParams(statement, false);
+    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId);
+    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -961,9 +929,7 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (statement.IsNull())
         return DgnDbStatus::WriteError;
 
-    auto status = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success != status)
-        return status;
+    _BindWriteParams(*statement, ForInsert::Yes);
  
     auto stmtResult = statement->Step();
     if (BE_SQLITE_DONE != stmtResult)
@@ -976,7 +942,7 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (PropState::Dirty == m_flags.m_propState)
         {
         ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
-        status = ec.UpdateProperties();
+        auto status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
             BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
@@ -984,18 +950,7 @@ DgnDbStatus DgnElement::_InsertInDb()
             }
         }
 
-    if (m_userProperties)
-        status = SaveUserProperties();
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    return BindParams(statement, true);
+    return m_userProperties ? SaveUserProperties() : DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1007,9 +962,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
-    DgnDbStatus status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success != status)
-        return status;
+    _BindWriteParams(*stmt, ForInsert::No);
 
     auto stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
@@ -1025,7 +978,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (PropState::Dirty == m_flags.m_propState)
         {
         ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
-        status = ec.UpdateProperties();
+        auto status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
             BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
@@ -1033,10 +986,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
             }
         }
 
-    if (m_userProperties)
-        status = SaveUserProperties();
-
-    return status;
+    return m_userProperties ? SaveUserProperties() : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2391,38 +2341,19 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     return ECInstanceKey(classId, stmt->GetValueId<ECInstanceId>(0));
     }
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/16
-//=======================================================================================
-struct ElementCustomHandledPropertyAccessors
-    {
-    struct {
-        ECSqlClassInfo::T_ElementPropGet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
-            modelId, parentId, userLabel, lastMod;
-        } get;
-    struct {
-        ECSqlClassInfo::T_ElementPropSet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
-            modelId, parentId, userLabel, lastMod;
-        } set;
-
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    static std::once_flag s_accessorsFlag;
-    static ElementCustomHandledPropertyAccessors s_accessors;
-    std::call_once(s_accessorsFlag, []()
-        {
-        s_accessors.get.federationGuid = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetBinary((Byte*)&el.m_federationGuid, sizeof(el.m_federationGuid));
             return DgnDbStatus::Success;
-            };
+            },
 
-        s_accessors.set.federationGuid = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsBinary())
                 return DgnDbStatus::BadArg;
@@ -2434,149 +2365,125 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             memcpy(&guid, p, sz);
             el.SetFederationGuid(guid);
             return DgnDbStatus::Success;
-            };
-        
-        s_accessors.get.codeValue = [](ECValueR value, DgnElementCR el)
+            });
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue,
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetUtf8CP(el.GetCode().GetValue().c_str());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.codeValue = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
             DgnCode newCode(existingCode.GetAuthority(), value.ToString(), existingCode.GetNamespace());
             return el.SetCode(newCode);
-            };
-        
-        s_accessors.get.codeNamespace = [](ECValueR value, DgnElementCR el)
+            });
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeNamespace,
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetUtf8CP(el.GetCode().GetNamespace().c_str());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.codeNamespace = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
             DgnCode newCode(existingCode.GetAuthority(), existingCode.GetValue(), value.ToString());
             return el.SetCode(newCode);
-            };
+            });
         
-        s_accessors.get.codeAuthorityId = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthorityId, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetLong(el.GetCode().GetAuthority().GetValueUnchecked());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.codeAuthorityId = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsLong())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
             DgnCode newCode(DgnAuthorityId((uint64_t)value.GetLong()), existingCode.GetValue(), existingCode.GetNamespace());
             return el.SetCode(newCode);
-            };
+            });
         
-        s_accessors.get.modelId = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ModelId, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetLong(el.GetModelId().GetValueUnchecked());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.modelId = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly;
-            };
+            });
         
-        s_accessors.get.parentId = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ParentId, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetLong(el.GetParentId().GetValueUnchecked());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.parentId = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsLong())
                 return DgnDbStatus::BadArg;
             return el.SetParentId(DgnElementId((uint64_t)value.GetLong()));
-            };
+            });
         
-        s_accessors.get.userLabel = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetUtf8CP(el.GetUserLabel());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.userLabel = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             el.SetUserLabel(value.ToString().c_str());
             return DgnDbStatus::Success;
-            };
+            });
         
-        s_accessors.get.lastMod = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetDateTime(el.QueryTimeStamp());
             return DgnDbStatus::Success;
-            };
+            },
         
-        s_accessors.set.lastMod = [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR value)
             {
             return DgnDbStatus::ReadOnly;
-            };
-        });
-
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, s_accessors.get.federationGuid, s_accessors.set.federationGuid);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue, s_accessors.get.codeValue, s_accessors.set.codeValue);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeNamespace, s_accessors.get.codeNamespace, s_accessors.set.codeNamespace);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthorityId, s_accessors.get.codeAuthorityId, s_accessors.set.codeAuthorityId);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ModelId, s_accessors.get.modelId, s_accessors.set.modelId);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ParentId, s_accessors.get.parentId, s_accessors.set.parentId);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, s_accessors.get.userLabel, s_accessors.set.userLabel);
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, s_accessors.get.lastMod, s_accessors.set.lastMod);
+            });
     }
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/16
-//=======================================================================================
-struct GeometricElementPropertyAccessors
-    {
-    struct {
-        ECSqlClassInfo::T_ElementPropGet  geomStream;
-        } get;
-    struct {
-        ECSqlClassInfo::T_ElementPropSet  geomStream;
-        } set;
-    };
-
-static std::once_flag s_geomaccessorsFlag;
-static GeometricElementPropertyAccessors s_geomaccessors;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    std::call_once(s_geomaccessorsFlag, []() {
-      
-        s_geomaccessors.get.geomStream = [](ECValueR, DgnElementCR)
+    params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, 
+        [](ECValueR, DgnElementCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
-            };
+            },
 
-        s_geomaccessors.set.geomStream = [](DgnElementR, ECValueCR)
+        [](DgnElementR, ECValueCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryBuilder
-            };
-
-        });
-
-    params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, s_geomaccessors.get.geomStream, s_geomaccessors.set.geomStream);
+            });
     }
 
 //=======================================================================================
@@ -3441,15 +3348,6 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
-    {
-    // See ElementAutoHandledPropertiesECInstanceAdapter for where we read auto-handled properties
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3471,30 +3369,14 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
+void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
-    return m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
+    m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3715,8 +3597,10 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::BindParams(ECSqlStatement& stmt)
+void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     if (!m_placement.IsValid())
         {
         stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
@@ -3731,8 +3615,6 @@ DgnDbStatus GeometricElement2d::BindParams(ECSqlStatement& stmt)
         stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
         stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
-
-    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3745,28 +3627,12 @@ DgnDbStatus GeometricElement2d::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
+void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
 
     if (!m_placement.IsValid())
@@ -3787,8 +3653,6 @@ DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
         stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
         stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
-
-    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3798,24 +3662,6 @@ DgnDbStatus GeometricElement3d::_OnInsert()
     {
     // GeometricElement3ds can only reside in 3D models
     return GetModel()->Is3dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto stat = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == stat ? BindParams(stmt) : stat;
     }
 
 /*---------------------------------------------------------------------------------**//**

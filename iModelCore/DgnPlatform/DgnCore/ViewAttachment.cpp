@@ -23,30 +23,11 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::BindParams(ECSqlStatement& stmt)
+void ViewAttachment::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(PROP_ViewId), GetViewId())
-        || ECSqlStatus::Success != stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale()))
-        return DgnDbStatus::BadArg;
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindId(stmt.GetParameterIndex(PROP_ViewId), GetViewId());
+    stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale());
     }
 
 /*---------------------------------------------------------------------------------**//**

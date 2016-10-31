@@ -363,19 +363,6 @@ using namespace EnvironmentJson;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle3d::_LoadFromDb() 
-    {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    LoadStyle3d();
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::_CopyFrom(DgnElementCR el) 
     {
     T_Super::_CopyFrom(el);
@@ -386,8 +373,10 @@ void DisplayStyle3d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::LoadStyle3d()
+void DisplayStyle3d::_Load()
     {
+    T_Super::_Load();
+
     JsonValueCR env = GetStyle(str_Environment());
     
     JsonValueCR ground = env[str_Ground()];
@@ -413,8 +402,10 @@ void DisplayStyle3d::LoadStyle3d()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::SaveStyle3d() 
+void DisplayStyle3d::_Save() 
     {
+    T_Super::_Save();
+
     Json::Value env;
     Json::Value ground;
     ground[str_Display()] = m_environment.m_groundPlane.m_enabled;
