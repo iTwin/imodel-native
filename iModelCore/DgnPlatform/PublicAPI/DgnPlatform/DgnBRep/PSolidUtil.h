@@ -143,7 +143,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CreateSheetBodyFromTrimmedSurface (PK_EN
 //DGNPLATFORM_EXPORT static BentleyStatus CreateSheetBodyFromTrimmedSurface (PK_ENTITY_t* bodyTagP, PK_ENTITY_t** spaceCurveEntitiesPP, PK_ENTITY_t** uvCurveEntitiesPP, int preferSpaceCurvesFlag, double** trimPP, int boundCount, PK_ENTITY_t surfaceTag, double tolerance, int adaptive);
 DGNPLATFORM_EXPORT static BentleyStatus CreateBodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);
 
-//DGNPLATFORM_EXPORT static BentleyStatus BodyFromGPA (PK_BODY_t* bodyTag, PK_VERTEX_t* startVertexP, GPArrayCP gpa, TransformCR gpaToBodyTransform, bool cap);
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromGPA (PK_BODY_t* bodyTag, PK_VERTEX_t* startVertexP, GPArrayCP gpa, TransformCR gpaToBodyTransform, bool cap);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR profile, TransformCR curveToBodyTransform, bool coverClosed = true, EdgeToCurveIdMap* idMap = NULL);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface (PK_BODY_t& bodyTag, PolyfaceQueryCR polyface, TransformCR dgnToSolid);
 //DGNPLATFORM_EXPORT static BentleyStatus BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);
@@ -223,8 +223,8 @@ DGNPLATFORM_EXPORT static void GetTransforms (TransformR solidToUor, TransformR 
 //DGNPLATFORM_EXPORT static boolAreBodiesEqual (PK_BODY_t body1Tag, PK_BODY_t body2Tag, double tolerance, TransformCP deltaTransform1To2);
 //DGNPLATFORM_EXPORT static BentleyStatusCreateBodyFromFence (PK_BODY_t& bodyTag, bool& outside, FenceParamsR fp, PK_BODY_t entityTag, TransformCR entityTransform);
 
-DGNPLATFORM_EXPORT static void ConvertSolidBodyToSheet (PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector (bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transformToDgn);
+DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
 
 //DGNPLATFORM_EXPORT static BentleyStatus SweepBodyVector (PK_BODY_t bodyTag, BentleyApi::DVec3dCR direction, double distance);
 //DGNPLATFORM_EXPORT static BentleyStatus SweepBodyAxis (PK_BODY_t bodyTag, BentleyApi::DVec3dCR revolveAxis, BentleyApi::DPoint3dCR center, double sweep);
@@ -233,6 +233,7 @@ DGNPLATFORM_EXPORT static BentleyStatus Boolean (PK_BODY_t** ppResultBodies, int
 //DGNPLATFORM_EXPORT static BentleyStatus CopyBody (PK_BODY_t* outputBody, PK_BODY_t inputBody);
 //DGNPLATFORM_EXPORT static BentleyStatus TransformBody (PK_BODY_t body, TransformCR transform);
 //DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody (bvector<PK_BODY_t>& bodies, PK_BODY_t body);
+DGNPLATFORM_EXPORT static void ConvertSolidBodyToSheet (PK_BODY_t body);
 //DGNPLATFORM_EXPORT static BentleyStatus CheckBody (PK_BODY_t body, bool checkGeometry, bool checkTopology, bool checkSize);
 //DGNPLATFORM_EXPORT static BentleyStatus MassProperties (double* amount, double* periphery, BentleyApi::DPoint3dP centroid, double inertia[3][3], PK_BODY_t bodyTag, TransformCP transform, double tolerance);
 

@@ -9,6 +9,8 @@
 #include <DgnPlatform/DgnRscFontStructures.h>
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 /*=================================================================================**//**
@@ -674,10 +676,10 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
         {
         if (isAutoClipPref)
             {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
+#if defined (BENTLEYCONFIG_PARASOLID)
             bvector<CurveVectorPtr> insideCurves;
 
-            if (false)//SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+            if (SUCCESS == PSolidUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
                 {
                 for (CurveVectorPtr tmpCurves : insideCurves)
                     m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
@@ -696,9 +698,9 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                 }
 #endif
             }
-        else if (!doClipping || geom.IsAnyRegionType()) // _ClipBody doesn't support wire bodies...
+        else if (!doClipping || geom.IsAnyRegionType()) // ClipBody doesn't support wire bodies...
             {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
+#if defined (BENTLEYCONFIG_PARASOLID)
             IBRepEntityPtr entityPtr;
 
             if (SUCCESS == PSolidGeom::BodyFromCurveVector(entityPtr, geom))
@@ -712,7 +714,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                 bool clipped;
                 bvector<IBRepEntityPtr> clippedBodies;
 
-                if (false)//SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                     {
                     for (IBRepEntityPtr entityOut : clippedBodies)
                         m_processor._ProcessBody(*entityOut, *this);
