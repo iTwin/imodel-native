@@ -1815,7 +1815,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
     static const double s_vertexToleranceRatio    = .1;
     static const double s_decimateThresholdPixels = 50.0;
     static const double s_facetAreaToleranceRatio = .1;
-    static const size_t s_decimatePolyfacePointCount = 100;
+    static const size_t s_vertexClusterPolyfacePointCount = 100;
 
     double          tolerance = GetTolerance();
     double          vertexTolerance = tolerance * s_vertexToleranceRatio;
@@ -1859,7 +1859,8 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate  = !m_isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels);
+                bool        doDecimate          = !m_isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_vertexClusterPolyfacePointCount);
+                bool        doVertexCluster     = rangePixels < s_vertexClusterThresholdPixels);
 
                 for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                     {
@@ -1905,7 +1906,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 if (geometryCount < s_maxGeometryIdCount)
                     elemId = geom->GetEntityId();
 
-                meshBuilder->AddPolyline (*lineString, elemId, rangePixels < s_decimateThresholdPixels);
+                meshBuilder->AddPolyline (*lineString, elemId, rangePixels < s_vertexClusterThresholdPixels);
                 }
             }
         }
