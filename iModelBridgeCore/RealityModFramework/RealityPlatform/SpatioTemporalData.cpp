@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "StdAfx.h"
+#include <RealityPlatform/SpatioTemporalData.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/SpatioTemporalData.h>
