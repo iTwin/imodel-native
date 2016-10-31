@@ -89,13 +89,14 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   </NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py-p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection  -c
+BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection   -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>

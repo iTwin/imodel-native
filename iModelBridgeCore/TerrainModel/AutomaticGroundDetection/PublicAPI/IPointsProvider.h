@@ -187,6 +187,7 @@ struct IPointsProviderCreator : public RefCountedBase
     {
     protected : 
 
+
         virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) = 0;
 
         virtual IPointsProviderPtr _CreatePointProvider() = 0;
@@ -200,7 +201,7 @@ struct IPointsProviderCreator : public RefCountedBase
 
         IPointsProviderPtr CreatePointProvider();
 
-        void               GetAvailableRange(DRange3d& availableRange);
+        GROUND_DETECTION_EXPORT void GetAvailableRange(DRange3d& availableRange);
     };
 
 

@@ -259,7 +259,7 @@ long BcDtmProvider::_ComputeTriangulation()
 
     BeAssert(status == DTM_SUCCESS);
 
-    m_pMesh = BcDTMMesh::Create(meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
+    m_pMesh = BcDTMMesh::Create(meshPtsP, numMeshPts, meshFacesP, numMeshFaces * 3);
 
     if (!meshPtsP)
         delete[] meshPtsP;

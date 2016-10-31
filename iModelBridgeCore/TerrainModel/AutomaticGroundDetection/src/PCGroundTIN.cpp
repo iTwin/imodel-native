@@ -568,7 +568,7 @@ bool PCGroundTriangle::IsAcceptedFromCuttingOffEdgeCriteria(DPoint3d const& poin
     double v2M = v2.Magnitude();
 
     DPoint3d closesNodePt[3];
-    short    closesNodePtCount =0;
+    short    closesNodePtCount = 0;
 
     if ((v0M == v1M) && (v0M == v2M))
         {
