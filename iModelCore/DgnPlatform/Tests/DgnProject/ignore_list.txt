@@ -146,12 +146,3 @@ CsvFileTests.GetRowAndMaxColumnCount
 
 CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 
-#TFS613849 notifed Paul
-SingleBriefcaseLocksTest.AcquireLocks
-SingleBriefcaseLocksTest.RelinquishLocks
-DoubleBriefcaseTest.Contention
-DoubleBriefcaseTest.ReformulateRequest
-DoubleBriefcaseTest.DemoteLocks
-DoubleBriefcaseTest.StandaloneBriefcase
-ExtractLocksTest.UsedLocks
-CodesManagerTest.ReserveQueryRelinquish

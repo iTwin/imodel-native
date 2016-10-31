@@ -1019,13 +1019,38 @@ public:
 
         if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
             {
-            TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+            BeFileName name(db->GetFileName());
             db->ChangeBriefcaseId(bcId);
+            db->SaveChanges();
+            db->CloseDb();
+            DbResult result = BE_SQLITE_OK;
+            db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             }
 
         _OnSetupDb(*db);
 
         return db;
+        }
+
+    void SetupMasterFile(bool andClearTxns=true)
+        {
+        SetupSeedProject();
+        if (andClearTxns)
+            ClearRevisions(*m_db);
+        }
+
+    void ClearRevisions(DgnDbR db)
+        {
+        // Ensure the seed file doesn't contain any changes pending for a revision
+        if (!db.IsMasterCopy())
+            {
+            DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
+            if (rev.IsValid())
+                {
+                db.Revisions().FinishCreateRevision();
+                db.SaveChanges();
+                }
+            }
         }
 };
 
@@ -1213,7 +1238,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
 
     void SetUp()
         {
-        SetupSeedProject();
+        SetupMasterFile();
         }
 
     SingleBriefcaseLocksTest() : m_bcId(2) { }
@@ -1509,13 +1534,14 @@ struct DoubleBriefcaseTest : LocksManagerTest
 
     void SetUp()
         {
-        SetupSeedProject();
+        SetupMasterFile(false);
         CreateElement(*m_defaultModelP, false);
         CreateElement(*m_defaultModelP, false);
         DgnModelPtr modelA2d0 = CreateModel("Model2d", *m_db);
         CreateElement(*modelA2d0.get(), false);
         CreateElement(*modelA2d0.get(), false);
         m_db->SaveChanges();
+        ClearRevisions(*m_db);
         }
 
     void SetupDbs(uint32_t baseBcId=2)
@@ -1966,6 +1992,7 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     DgnDbR brief  = *m_dbB; // standalone briefcase
 
     EXPECT_TRUE(master.IsMasterCopy());
+    EXPECT_FALSE(master.Txns().IsUndoPossible());
 
     // Locks unconditionally granted for both...
     ExpectLevel(master, LockLevel::Exclusive);
@@ -2266,7 +2293,7 @@ struct CodesManagerTest : RepositoryManagerTest
 {
     void SetUp()
         {
-        SetupSeedProject();
+        SetupMasterFile();
         }
 
     static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
