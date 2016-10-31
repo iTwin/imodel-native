@@ -19,16 +19,16 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //! @bsiclass                          Spencer.Mason                            10/2016
 //=====================================================================================
 class RealityConversionTestFixture : public testing::Test
-{
-public:
+    {
+    public:
     
-};
+    };
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToSpatialEntityData)
-{
+    {
     Utf8CP jsonString = "{\n \"instances\": [ \n{\n \"instanceId\": \"14812\",\n \"schemaName\" : \"RealityModeling\",\n \"className\" : \"SpatialEntityWithDetailsView\",\n \"properties\" : {\n \"Id\": \"14812\",\n \"Footprint\" : \"{ \\\"points\\\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \\\"coordinate_system\\\" : \\\"4326\\\" }\",\n \"Name\" : \"N38W093\",\n \"Description\" : null,\n \"ContactInformation\" : null,\n \"Keywords\" : null,\n \"Legal\" : \"Data available from the U.S. Geological Survey\",\n  \"ProcessingDescription\" : null,\n \"DataSourceType\" : \"hgt\",\n \"AccuracyResolutionDensity\" : null,\n \"Date\" : \"2005-07-05T00:00:00\",\n \"Classification\" : \"Terrain\",\n \"FileSize\" : \"7066\",\n \"SpatialDataSourceId\" : \"14812\",\n \"ResolutionInMeters\" : \"24.2x30.922\",\n \"DataProvider\" : \"USGS\",\n \"DataProviderName\" : \"USGS\",\n \"ThumbnailURL\" : null,\n \"MetadataURL\" : null,\n \"RawMetadataURL\" : null,\n \"RawMetadataFormat\" : null,\n \"SubAPI\" : null\n },\n \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\"\n }\n ]\n }";
 
     bvector<SpatialEntityDataPtr> spatialVector = bvector<SpatialEntityDataPtr>();
@@ -53,5 +53,5 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntityData)
     footprint.push_back(DPoint2d::From(-93, 39));
     footprint.push_back(DPoint2d::From(-92, 39));
     ASSERT_EQ(spatialData->GetFootprint(), footprint);
-}
+    }
 
