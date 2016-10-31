@@ -29,14 +29,14 @@ DgnDbStatus viewControllerEdit(DgnViewportR viewport, DgnModelId newModel, DgnCa
     // There are ViewController functions to set the view geometry. 
     // In this example, we set up the view to look at the entire project.
     // Note that this example applies only to a spatial view.
-    controller.GetViewDefinitionR().LookAtVolume(controller.GetDgnDb().Units().GetProjectExtents());
+    controller.GetViewDefinition().LookAtVolume(controller.GetDgnDb().Units().GetProjectExtents());
     
     // If this is a camera view, then you can also use specialized Camera functions
     CameraViewControllerP cameraController = controller.ToCameraViewP();
     if (nullptr == cameraController)
         return DgnDbStatus::BadRequest;
 
-    auto& cameraDef = cameraController->GetCameraViewDefinitionR();
+    auto& cameraDef = cameraController->GetCameraViewDefinition();
     DVec3d offset = DVec3d::From(0, 0, 1); // Move the camera in 1 meter
     ViewportStatus status = cameraDef.MoveCameraLocal(offset);
     if (ViewportStatus::Success != status)

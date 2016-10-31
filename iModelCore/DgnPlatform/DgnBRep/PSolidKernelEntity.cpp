@@ -33,35 +33,12 @@ virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {ret
 virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
 virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IFaceMaterialAttachmentsPtr Create (ISolidKernelEntityCR entity, Render::GeometryParamsCR baseParams)
-    {
-    int         nFaces;
-    PK_FACE_t*  faces = NULL;
-
-    if (SUCCESS != PK_BODY_ask_faces(PSolidUtil::GetEntityTag(entity), &nFaces, &faces))
-        return nullptr;
-
-    FaceMaterialAttachments* attachments = new FaceMaterialAttachments ();
-
-    attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
-    
-    PK_MEMORY_free (faces);
-
-    return attachments;
-    }
-
 }; // FaceMaterialAttachments
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  04/09
 +===============+===============+===============+===============+===============+======*/
-struct PSolidKernelEntity : public RefCounted <ISolidKernelEntity>
+struct PSolidKernelEntity : public RefCounted <IBRepEntity>
 {
 private:
 
@@ -88,16 +65,16 @@ EntityType _GetEntityType() const
     switch (bodyType)
         {
         case PK_BODY_type_solid_c:
-            return ISolidKernelEntity::EntityType::Solid;
+            return IBRepEntity::EntityType::Solid;
 
         case PK_BODY_type_sheet_c:
-            return ISolidKernelEntity::EntityType::Sheet;
+            return IBRepEntity::EntityType::Sheet;
 
         case PK_BODY_type_wire_c:
-            return ISolidKernelEntity::EntityType::Wire;
+            return IBRepEntity::EntityType::Wire;
 
         default:
-            return ISolidKernelEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Minimal;
         }
     }
 
@@ -121,7 +98,7 @@ DRange3d _GetEntityRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual(ISolidKernelEntityCR entity) const override
+virtual bool _IsEqual(IBRepEntityCR entity) const override
     {
     PSolidKernelEntity const* psEntity;
 
@@ -157,7 +134,7 @@ virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) o
         return true;
         }
 
-    IFaceMaterialAttachmentsPtr attachments = FaceMaterialAttachments::Create(*this, *baseParams);
+    IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(m_entityTag, *baseParams);
 
     if (!attachments.IsValid())
         return false;
@@ -170,7 +147,7 @@ virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ISolidKernelEntityPtr _Clone() const override
+virtual IBRepEntityPtr _Clone() const override
     {
     PK_ENTITY_t entityTag = PK_ENTITY_null;
 
@@ -252,6 +229,14 @@ PK_ENTITY_t ExtractEntityTag()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
+    {
+    m_faceAttachments = attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/09
++---------------+---------------+---------------+---------------+---------------+------*/
 static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned = true)
     {
     if (NULTAG == entityTag)
@@ -265,7 +250,7 @@ static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntityPtr PSolidUtil::CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned)
+IBRepEntityPtr PSolidUtil::CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned)
     {
     return PSolidKernelEntity::CreateNewEntity(entityTag, entityTransform, owned);
     }
@@ -273,7 +258,7 @@ ISolidKernelEntityPtr PSolidUtil::CreateNewEntity(uint32_t entityTag, TransformC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntityPtr PSolidUtil::InstanceEntity(ISolidKernelEntityCR entity)
+IBRepEntityPtr PSolidUtil::InstanceEntity(IBRepEntityCR entity)
     {
     return PSolidKernelEntity::CreateNewEntity(PSolidUtil::GetEntityTag(entity), entity.GetEntityTransform(), false);
     }
@@ -281,11 +266,47 @@ ISolidKernelEntityPtr PSolidUtil::InstanceEntity(ISolidKernelEntityCR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t PSolidUtil::GetEntityTag(ISolidKernelEntityCR entity)
+uint32_t PSolidUtil::GetEntityTag(IBRepEntityCR entity)
     {
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
 
     return (nullptr != psEntity ? psEntity->GetEntityTag() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams)
+    {
+    int         nFaces;
+    PK_FACE_t*  faces = NULL;
+
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faces))
+        return nullptr;
+
+    FaceMaterialAttachments* attachments = new FaceMaterialAttachments();
+
+    attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
+
+    for (int iFace = 0; iFace < nFaces; iFace++)
+        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
+    
+    PK_MEMORY_free(faces);
+
+    return attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidUtil::SetFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachmentsP attachments)
+    {
+    PSolidKernelEntity* psEntity = dynamic_cast <PSolidKernelEntity*> (&entity);
+
+    if (nullptr == psEntity)
+        return;
+    
+    psEntity->SetFaceMaterialAttachments(attachments);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,9 +428,9 @@ PK_MEMORY_block_t*  pBuffer                 // => input buffer
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidUtil::SaveEntityToMemory
 (
-uint8_t**               ppBuffer,
-size_t&                 bufferSize,
-ISolidKernelEntityCR    entity
+uint8_t**       ppBuffer,
+size_t&         bufferSize,
+IBRepEntityCR   entity
 )
     {
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
@@ -434,10 +455,10 @@ ISolidKernelEntityCR    entity
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidUtil::RestoreEntityFromMemory
 (
-ISolidKernelEntityPtr&  entityOut,
-uint8_t const*          buffer,
-size_t                  bufferSize,
-TransformCR             transform
+IBRepEntityPtr& entityOut,
+uint8_t const*  buffer,
+size_t          bufferSize,
+TransformCR     transform
 )
     {
     PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...

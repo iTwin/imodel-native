@@ -2090,3 +2090,70 @@ TEST_F(DgnElementTests, DemoArrayProblem)
     DgnElementCPtr inserted = dgnElement->Insert(&stat);
     ASSERT_TRUE(inserted != nullptr);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(DgnElementTests, AutoHandleViewDefinition)
+    {
+    SetupSeedProject();
+
+    Utf8CP json =
+        "{"
+        "\"$ECClassId\" : \"198\","
+        "\"$ECClassKey\" : \"BisCore.CameraViewDefinition\","
+        "\"$ECClassLabel\" : \"CameraViewDefinition\","
+        "\"$ECInstanceId\" : \"502\","
+        "\"$ECInstanceLabel\" : \"CameraViewDefinition\","
+        "\"CodeAuthorityId\" : \"4\","
+        "\"CodeNamespace\" : \"ViewDefinition\","
+        "\"CodeValue\" : \"Default - View 1\","
+        "\"Descr\" : \"\","
+        "\"Extents\" : {"
+            "\"x\" : 85.413445258737553,"
+            "\"y\" : 76.125601109667528,"
+            "\"z\" : 112.79558108349732"
+        "},"
+        "\"EyePoint\" : {"
+            "\"x\" : 293.99476935528162,"
+            "\"y\" : 69.335060236322079,"
+            "\"z\" : 68.339134990346963"
+        "},"
+        "\"FocusDistance\" : 100.61073354297713,"
+        "\"LensAngle\" : 0.80285145591739238,"
+        "\"ModelId\" : \"16\","
+        "\"Origin\" : {"
+            "\"x\" : 338.90639657040640,"
+            "\"y\" : 174.64311379840612,"
+            "\"z\" : -53.387925168591018"
+        "},"
+        "\"ParentId\" : null,"
+        "\"Pitch\" : -35.264389682754654,"
+        "\"Roll\" : -45.000000000000007,"
+        "\"Source\" : 2,"
+        "\"UserLabel\" : null,"
+        "\"UserProperties\" : null,"
+        "\"Yaw\" : 29.999999999999986"
+    "}";
+
+    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass("BisCore", "CameraViewDefinition");
+    ASSERT_TRUE(nullptr != viewDefClass);
+    ECN::IECInstancePtr ecInstance = viewDefClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+    ASSERT_TRUE(ecInstance.IsValid());
+    
+    Json::Value jsonInput;
+    ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
+    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput));
+
+    DgnDbStatus stat;
+    DgnElementPtr dgnElement = m_db->Elements().CreateElement(&stat, *ecInstance);
+    DgnElementCPtr inserted = dgnElement->Insert(&stat);
+    ASSERT_TRUE(inserted != nullptr);
+    m_db->Schemas().CreateECClassViewsInDb();
+    m_db->SaveChanges();
+
+    CameraViewDefinitionCPtr camera = m_db->Elements().Get<CameraViewDefinition>(inserted->GetElementId());
+    ASSERT_TRUE(camera.IsValid());
+    DPoint3d eyepoint = camera->GetEyePoint();
+    ASSERT_EQ(293.99476935528162, eyepoint.x);
+    }

@@ -480,7 +480,7 @@ void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nul
     DRange3d volumeRange;
     GetRange (volumeRange);
 
-    viewport.GetViewControllerR().GetViewDefinitionR().LookAtVolume(volumeRange, aspectRatio, margin);
+    viewport.GetViewController().GetViewDefinition().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
 END_BENTLEY_DGN_NAMESPACE

@@ -36,11 +36,10 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     WString seedFileName;
     seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedFilePath(L"D:\\temp\\perf\\bim02\\ElementApiInsertElement4_50000.ibim");
-    /*BeTest::GetHost().GetOutputRoot(seedFilePath);
+    BeFileName seedFilePath;
+    BeTest::GetHost().GetOutputRoot(seedFilePath);
     seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
-    */
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());

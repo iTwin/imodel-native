@@ -375,7 +375,7 @@ public:
 * There are 3 basic reasons why you would want to make a copy of an element, and there is a function for each one:
 *   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
 *   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It remaps any IDs stored in the element or its aspects.
-*   3. DgnElement::CopyForEdit and DgnElement::MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
+*   3. DgnElement::CopyFoerEdit and DgnElement::MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
 *
 * When making a copy of an element within the same DgnDb but a different model, set up an instance of DgnElement::CreateParams that specifies the target model
 * and pass that when you call Clone.
@@ -385,7 +385,7 @@ public:
 /** 
 * @addtogroup ElementCopyVirtualFunctions DgnElement Copy and Importing - Virtual Functions
 *
-* A DgnElement subclass will normally override a few virtual functions in order to support @ref ElementCopying.
+* A DgnElement subclass will normally override a few virtual functions to support @ref ElementCopying.
 *
 * <h2>Virtual Member Functions</h2>
 * DgnElement defines several virtual functions that control copying and importing.
@@ -473,7 +473,7 @@ public:
 *
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
-* Beyond that, in order to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
+* Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
 * the DgnElement::_SetPropertyValue method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 * Note that _CopyFrom does <em>not</em> always call _SetPropertyValue on each copied property. If the element subclass needs to validate 
 * specific auto-handled properties even during copying, then it must <em>also</em> override _CopyFrom, call the superclass method to do the copying,
@@ -483,9 +483,9 @@ public:
 * In rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
 * That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
 * This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
-* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams in order to load and store
+* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams to load and store
 * the custom-handled properties. The subclass must also override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide name-based get/set support for its custom-handled properties.
-* Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods in order to support copying and importing of its custom-handled properties.
+* Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
 * @note A class that has custom-handled properties must override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide access to those properties, even if it also define special custom access methods for them.
 * 
@@ -711,12 +711,12 @@ public:
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
 
-        //! The subclass must override this method in order to insert an empty instance into the Db and associate it with the host element.
+        //! The subclass must override this method to insert an empty instance into the Db and associate it with the host element.
         //! @param el   The host element
         //! @note The caller will call _UpdateProperties immediately after calling this method.
         virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
 
-        //! The subclass must override this method in order to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
+        //! The subclass must override this method to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
         //! @param el   The host element
         virtual DgnDbStatus _DeleteInstance(DgnElementCR el) = 0;
 
@@ -898,18 +898,17 @@ protected:
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
-    enum PropState // must fit in 3 bits
-        {
+    enum PropState // must fit in 2 bits
+    {
         Unknown = 0,
         NotFound = 1,
         InBuffer = 2,
         Dirty = 3       // (implies InBuffer)
-        };
+    };
 
     mutable BeAtomic<uint32_t> m_refCount;
     mutable Flags m_flags;
-    mutable uint32_t m_ecPropertyDataSize; // *** WIP_AUTO_HANDLED_PROPERTIES - we could merge this into Flags, if we were willing to limit the max size of property data
-    // Add any future int32 here
+    mutable uint32_t m_ecPropertyDataSize;
     mutable Byte* m_ecPropertyData;
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
@@ -922,14 +921,12 @@ protected:
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();}
-    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}
+    virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;} //!< @private
 
-    void SetPersistent(bool val) const {m_flags.m_persistent = val;}
-    void InvalidateElementId() {m_elementId = DgnElementId();}
-    void InvalidateCode() {m_code = DgnCode();}
-#endif
+    void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
+    void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
+    void InvalidateCode() {m_code = DgnCode();} //!< @private
     
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
@@ -937,82 +934,6 @@ protected:
     void CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
-
-    //! Return the value of a DateTime ECProperty by name
-    //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a DPoint3d ECProperty by name
-    //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a DPoint2d ECProperty by name
-    //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a boolean ECProperty by name
-    //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a double ECProperty by name
-    //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a integer ECProperty by name
-    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of a UInt64 ECProperty by name
-    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
-    //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Return the value of an ECNavigationProperty by name
-    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
-        {
-        return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
-        }
-
-    //! Return the value of a string ECProperty by name
-    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
-
-    //! Get the 3 property values that back a YPR
-    DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
-
-    //! Set a DateTime ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
-    //! Set a DPoint3d ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set a DPoint2d ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set a boolean ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set a double ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set an integer ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set an ECNavigationProperty by name
-    //! @note Passing an invalid ID will cause a null value to be set.
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set a string ECProperty by name
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-    //! Set the three property values that back a YPR
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
     //! Invoked when loading an element from the database, to allow subclasses to extract their custom-handled property values
     //! from the SELECT statement. The parameters are those which are marked in the schema with the CustomHandledProperty CustomAttribute.
@@ -1265,10 +1186,10 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
-    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
-    //! @param[in]      request  Request to populate
-    //! @param[in]      opcode   The operation to be performed
-    //! @param[in]      original If DbOpcode::Update, the persistent state of this element; otherwise, nullptr.
+    //! Disclose any locks which must be acquired and/or codes which must be reserved to perform the specified operation on this element.
+    //! @param[in] request Request to populate
+    //! @param[in] opcode The operation to be performed
+    //! @param[in] original If DbOpcode::Update, the persistent state of this element; otherwise, nullptr.
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
@@ -1529,7 +1450,7 @@ public:
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
 
-    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
+    //! Disclose any locks which must be acquired and/or codes which must be reserved to perform the specified operation on this element.
     //! @param[in] request Request to populate
     //! @param[in] opcode The operation to be performed
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
@@ -1559,6 +1480,82 @@ public:
     //! @return non-zero error status if accessString does not identify a property.
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyIndex(uint32_t& index, Utf8CP accessString);
 
+    //! Return the value of a DateTime ECProperty by name
+    //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a DPoint3d ECProperty by name
+    //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a DPoint2d ECProperty by name
+    //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a boolean ECProperty by name
+    //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a double ECProperty by name
+    //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a integer ECProperty by name
+    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of a UInt64 ECProperty by name
+    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
+    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Return the value of an ECNavigationProperty by name
+    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
+        {
+        return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
+        }
+
+    //! Return the value of a string ECProperty by name
+    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+
+    //! Get the 3 property values that back a YPR
+    DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
+
+    //! Set a DateTime ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
+    //! Set a DPoint3d ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set a DPoint2d ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set a boolean ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set a double ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set an integer ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set an ECNavigationProperty by name
+    //! @note Passing an invalid ID will cause a null value to be set.
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set a string ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    //! Set the three property values that back a YPR
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
+
     //! Get the value of a property. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param accessString The access string that identifies the property. @see GetPropertyIndex
@@ -1582,7 +1579,7 @@ public:
         }
 
     //! Set the value of a property. 
-    //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
+    //! @note This function does not write to the bim. The caller must call Update to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param accessString The access string that identifies the property. @see GetPropertyIndex
@@ -1595,7 +1592,7 @@ public:
         }
 
     //! Set the value of a property. 
-    //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
+    //! @note This function does not write to the bim. The caller must call Update to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param propIndex The index of the property. @see GetPropertyIndex
@@ -2404,7 +2401,60 @@ protected:
 
 public:
     //! Creates a new Sheet in the specified InformationModel
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param model The model where the Sheet element will be inserted by the caller.
+    //! @param scale The sheet's drawing scale
+    //! @param height The sheet height (meters)
+    //! @param width The sheet width (meters)
+    //! @param code Optional. The sheet's code.
+    //! @param userLabel Optional. The sheet's user label.
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, 
+                                              DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param model The model where the Sheet element will be inserted by the caller.
+    //! @param scale The sheet's drawing scale
+    //! @param sheetTemplate The sheet template. Maybe in valid if there is no template.
+    //! @param code Optional. The sheet's code.
+    //! @param userLabel Optional. The sheet's user label.
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+
+    //! Get the drawing scale of the sheet
+    double GetScale() const {return GetPropertyValueDouble("Scale");}
+
+    //! Set the drawing scale of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
+    DgnDbStatus SetScale(double v) {return SetPropertyValue("Scale", v);}
+
+    //! Get the height of the sheet
+    double GetHeight() const {return GetPropertyValueDouble("Height");}
+
+    //! Set the height of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
+    DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);}
+
+    //! Get the width of the sheet
+    double GetWidth() const {return GetPropertyValueDouble("Width");}
+
+    //! Set the width of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
+    DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);}
+
+    //! Get the sheet template, if any.
+    //! @return an invalid ID if the sheet has no template.
+    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>("Template");}
+
+    //! Set the sheet template.
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue("Template", v);}
+
+    //! Get the sheet border, if any.
+    //! @return an invalid ID if the sheet has no border.
+    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>("Border");}
+
+    //! Set the sheet border.
+    //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue("Border", v);}
 };
 
 //=======================================================================================

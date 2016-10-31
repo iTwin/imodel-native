@@ -347,7 +347,7 @@ size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
         case GeometricPrimitive::GeometryType::SolidPrimitive:      return GetFacetCount(*geom.GetAsISolidPrimitive());
         case GeometricPrimitive::GeometryType::BsplineSurface:      return GetFacetCount(*geom.GetAsMSBsplineSurface());
         case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:   return GetFacetCount(*geom.GetAsISolidKernelEntity());
+        case GeometricPrimitive::GeometryType::BRepEntity:   return GetFacetCount(*geom.GetAsIBRepEntity());
         case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
         default:                                                    BeAssert(false); return 0;
         }
@@ -462,7 +462,7 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
+size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     auto shape = SolidKernelUtil::GetShape(entity);
@@ -521,11 +521,11 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
 
             default:
                 {
-                MSBsplineSurfacePtr bSplineSurface;
-                CurveVectorPtr      uvBoundaries;
+                MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
 
-                if (SUCCESS == PSolidUtil::FaceToBSplineSurface (bSplineSurface, uvBoundaries, faceTag))
+                if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
                     facetCount += GetFacetCount(*bSplineSurface);
+
                 break;
                 }
             }
