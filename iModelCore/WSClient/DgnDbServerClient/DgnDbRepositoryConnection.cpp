@@ -446,7 +446,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
 #if defined (ENABLE_BIM_CRASH_TESTS)
                 DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterUploadServerFile);
 #endif
-                if (!uploadResult.IsSuccess())
+                if (!uploadResult.IsSuccess() && DgnDbServerError::Id::MissingRequiredProperties != uploadResult.GetError().GetId())
                     {
                     finalResult->SetError(uploadResult.GetError());
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadResult.GetError().GetMessage().c_str());
