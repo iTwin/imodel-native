@@ -519,9 +519,9 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR source, SetPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
     {
-    auto params = DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
+    auto params = DgnElement::InitCreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
         return nullptr;
 

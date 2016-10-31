@@ -419,7 +419,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     protected:
-        virtual DgnElementPtr _CreateNewElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR) override;
+        virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat) override;
 
     };
 }

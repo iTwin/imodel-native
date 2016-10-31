@@ -2486,21 +2486,6 @@ void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params
             });
     }
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/16
-//=======================================================================================
-struct GeometricElement3dPropertyAccessors
-    {
-    struct {
-        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex;
-        ECSqlClassInfo::T_ElementPropGet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
-        } get;
-    struct {
-        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex;
-        ECSqlClassInfo::T_ElementPropSet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
-        } set;
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2508,57 +2493,47 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    static std::once_flag s_accessorsFlag;
-    static GeometricElement3dPropertyAccessors s_accessors;
-    std::call_once(s_accessorsFlag, []()
-        {
-#define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                           \
-            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
-            Placement3dCR plc = el.GetPlacement();                                       \
-            value.SetDouble(EXPR);                                                       \
-            return DgnDbStatus::Success;                                                 \
-            }
-#define GETGEOMPLCPROPPT3(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                          \
-            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
-            Placement3dCR plc = el.GetPlacement();                                       \
-            value.SetPoint3d(EXPR);                                                      \
-            return DgnDbStatus::Success;                                                 \
-            }
-#define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
-            {                                                                          \
-            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
-            Placement3d plc = el.GetPlacement();                                         \
-            EXPR;                                                                        \
-            return el.SetPlacement(plc);                                                 \
-            }
+#define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
+#define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
+#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3d plc = el.GetPlacement(); EXPR; return el.SetPlacement(plc);}
 
-        GETGEOMPLCPROPDBL(yaw,      plc.GetAngles().GetYaw().Degrees());
-        GETGEOMPLCPROPDBL(pitch,    plc.GetAngles().GetPitch().Degrees());
-        GETGEOMPLCPROPDBL(roll,     plc.GetAngles().GetRoll().Degrees());
-        GETGEOMPLCPROPPT3(origin,   plc.GetOrigin());
-        GETGEOMPLCPROPPT3(bboxLow,  plc.GetElementBox().low);
-        GETGEOMPLCPROPPT3(bboxHigh, plc.GetElementBox().high);
-        SETGEOMPLCPROP(yaw,         plc.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble())));
-        SETGEOMPLCPROP(pitch,       plc.GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble())));
-        SETGEOMPLCPROP(roll,        plc.GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble())));
-        SETGEOMPLCPROP(origin,      plc.GetOriginR() = value.GetPoint3d());
-        SETGEOMPLCPROP(bboxLow,     plc.GetElementBoxR().low = value.GetPoint3d());
-        SETGEOMPLCPROP(bboxHigh,    plc.GetElementBoxR().high = value.GetPoint3d());
+    params.RegisterPropertyAccessors(layout, GEOM3_Yaw, 
+        GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
+        SETGEOMPLCPROP(plc.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()))));
+
+    params.RegisterPropertyAccessors(layout, GEOM3_Pitch,
+        GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
+        SETGEOMPLCPROP(plc.GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble()))));
+
+    params.RegisterPropertyAccessors(layout, GEOM3_Roll, 
+        GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
+        SETGEOMPLCPROP(plc.GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()))));
+
+    params.RegisterPropertyAccessors(layout, GEOM_Origin, 
+        GETGEOMPLCPROPPT3(plc.GetOrigin()),
+        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint3d()));
+
+    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
+        GETGEOMPLCPROPPT3(plc.GetElementBox().low),
+        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint3d()));
+
+    params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
+        GETGEOMPLCPROPPT3(plc.GetElementBox().high),
+        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint3d()));
 
 #undef GETGEOMPLCPROPDBL
 #undef GETGEOMPLCPROPPT3
 #undef SETGEOMPLCPROP
 
-        s_accessors.get.categoryId = [](ECValueR value, DgnElementCR elIn)
+    params.RegisterPropertyAccessors(layout, GEOM_Category, 
+        [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3d& el = (GeometricElement3d&)elIn;
             value.SetLong(el.GetCategoryId().GetValueUnchecked());
             return DgnDbStatus::Success;
-            };
+            },
 
-        s_accessors.set.categoryId = [](DgnElementR elIn, ECValueCR value)
+        [](DgnElementR elIn, ECValueCR value)
             {
             if (value.IsNull())
                 {
@@ -2567,47 +2542,22 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
                 }
             GeometricElement3d& el = (GeometricElement3d&)elIn;
             return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
-            };
+            });
 
-        s_accessors.get.inSpatialIndex = [](ECValueR value, DgnElementCR el)
+    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 
+        [](ECValueR value, DgnElementCR el)
             {
             value.SetBoolean(!el.GetModel()->IsTemplate());
             return DgnDbStatus::Success;
-            };
+            },
 
-        s_accessors.set.inSpatialIndex = [](DgnElementR, ECValueCR)
+        [](DgnElementR, ECValueCR)
             {
             return DgnDbStatus::ReadOnly;
-            };
-
-        });
-
-    params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
-    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, s_accessors.get.inSpatialIndex, s_accessors.set.inSpatialIndex);
-    params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
-    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, s_accessors.get.bboxLow, s_accessors.set.bboxLow);
-    params.RegisterPropertyAccessors(layout, GEOM_Box_High, s_accessors.get.bboxHigh, s_accessors.set.bboxHigh);
-    params.RegisterPropertyAccessors(layout, GEOM3_Yaw, s_accessors.get.yaw, s_accessors.set.yaw);
-    params.RegisterPropertyAccessors(layout, GEOM3_Pitch, s_accessors.get.pitch, s_accessors.set.pitch);
-    params.RegisterPropertyAccessors(layout, GEOM3_Roll, s_accessors.get.roll, s_accessors.set.roll);
+            });
 
     GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/16
-//=======================================================================================
-struct GeometricElement2dPropertyAccessors
-    {
-    struct {
-        ECSqlClassInfo::T_ElementPropGet  categoryId;
-        ECSqlClassInfo::T_ElementPropGet  origin, rotation, bboxLow, bboxHigh;
-        } get;
-    struct {
-        ECSqlClassInfo::T_ElementPropSet  categoryId;
-        ECSqlClassInfo::T_ElementPropSet  origin, rotation, bboxLow, bboxHigh;
-        } set;
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
@@ -2616,25 +2566,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    static std::once_flag s_accessorsFlag;
-    static GeometricElement2dPropertyAccessors s_accessors;
-    std::call_once(s_accessorsFlag, []()
-        {
-#define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+#define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn)\
             {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
-#define GETGEOMPLCPROPPT2(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+#define GETGEOMPLCPROPPT2(EXPR) [](ECValueR value, DgnElementCR elIn)\
             {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
-#define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
+#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value)\
             {                                                                            \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2d plc = el.GetPlacement();                                         \
@@ -2642,27 +2588,30 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetPlacement(plc);                                                 \
             }
 
-        GETGEOMPLCPROPDBL(rotation, plc.GetAngle().Degrees());
-        GETGEOMPLCPROPPT2(origin,   plc.GetOrigin());
-        GETGEOMPLCPROPPT2(bboxLow,  plc.GetElementBox().low);
-        GETGEOMPLCPROPPT2(bboxHigh, plc.GetElementBox().high);
-        SETGEOMPLCPROP(rotation,    plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble()));
-        SETGEOMPLCPROP(origin,      plc.GetOriginR() = value.GetPoint2d());
-        SETGEOMPLCPROP(bboxLow,     plc.GetElementBoxR().low = value.GetPoint2d());
-        SETGEOMPLCPROP(bboxHigh,    plc.GetElementBoxR().high = value.GetPoint2d());
+    params.RegisterPropertyAccessors(layout, GEOM_Origin, 
+        GETGEOMPLCPROPPT2(plc.GetOrigin()),
+        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint2d()));
 
-#undef GETGEOMPLCPROPDBL
-#undef GETGEOMPLCPROPPT2
-#undef SETGEOMPLCPROP
+    params.RegisterPropertyAccessors(layout, GEOM2_Rotation, 
+        GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
+        SETGEOMPLCPROP(plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
 
-        s_accessors.get.categoryId = [](ECValueR value, DgnElementCR elIn)
+    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
+        GETGEOMPLCPROPPT2(plc.GetElementBox().low),
+        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint2d()));
+
+    params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
+        GETGEOMPLCPROPPT2(plc.GetElementBox().high),
+        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint2d()));
+
+    params.RegisterPropertyAccessors(layout, GEOM_Category, 
+        [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2d& el = (GeometricElement2d&)elIn;
             value.SetLong(el.GetCategoryId().GetValueUnchecked());
             return DgnDbStatus::Success;
-            };
-
-        s_accessors.set.categoryId = [](DgnElementR elIn, ECValueCR value)
+            },
+        [](DgnElementR elIn, ECValueCR value)
             {
             if (value.IsNull())
                 {
@@ -2671,15 +2620,7 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
                 }
             GeometricElement2d& el = (GeometricElement2d&)elIn;
             return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
-            };
-
-        });
-
-    params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
-    params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
-    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, s_accessors.get.bboxLow, s_accessors.set.bboxLow);
-    params.RegisterPropertyAccessors(layout, GEOM_Box_High, s_accessors.get.bboxHigh, s_accessors.set.bboxHigh);
-    params.RegisterPropertyAccessors(layout, GEOM2_Rotation, s_accessors.get.rotation, s_accessors.set.rotation);
+            });
 
     GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
