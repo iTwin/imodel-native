@@ -2193,7 +2193,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenAbstractConstraintInherited)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     }
-    
     }
 
 //---------------------------------------------------------------------------------------

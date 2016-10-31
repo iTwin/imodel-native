@@ -1219,7 +1219,15 @@ bool ECClass::IsSingularlyDerivedFrom(ECClassCR baseClass) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
+ECObjectsStatus ECClass::RemoveBaseClass(ECClassCR baseClass)
+    {
+    return _RemoveBaseClass(baseClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::_RemoveBaseClass (ECClassCR baseClass)
     {
     bool baseClassRemoved = false;
 
@@ -2305,8 +2313,9 @@ RelationshipMultiplicityCR RelationshipMultiplicity::OneMany
 ECRelationshipConstraint::ECRelationshipConstraint
 (
 ECRelationshipClassP relationshipClass, 
-bool isSource
-) :m_constraintClasses(relationshipClass), m_isSource(isSource)
+bool isSource,
+bool verify
+) :m_constraintClasses(relationshipClass), m_isSource(isSource), m_verify(verify)
     {
     m_relClass = relationshipClass;
     m_multiplicity = &s_zeroOneMultiplicity;
@@ -2349,17 +2358,22 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     { 
     bool valid = true;
-    if (ECObjectsStatus::Success != ValidateRoleLabel())
+    if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         valid = false;
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
         valid = false;
     if (ECObjectsStatus::Success != ValidateAbstractConstraint(resolveIssues))
+        {
         // Need to stop validation if abstract constraint fails, since it will change the error messages from the class constraint validation.
-        return false;
+        m_verified = false;
+        return m_verified;
+        }
     if (ECObjectsStatus::Success != ValidateClassConstraint())
         valid = false;
     
-    return valid;
+    m_verified = valid;
+
+    return m_verified;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2370,16 +2384,12 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
         ECEntityClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
-        // WIP: This check needs to be removed once the implementation is done in ECDb since there should always be an abstract constraint
-        if (baseAbstractConstraint != nullptr && GetAbstractConstraint() != nullptr)
+        if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
             {
-            if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
-                {
-                LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not nor derived from the abstract constraint class '%s' as specified in Class '%s'",
-                           GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                           baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
-                return ECObjectsStatus::BaseClassUnacceptable;
-                }
+            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not nor derived from the abstract constraint class '%s' as specified in Class '%s'",
+                        GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                        baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
+            return ECObjectsStatus::BaseClassUnacceptable;
             }
 
         ECEntityClassCR baseConstraintClass = baseConstraint.GetConstraintClasses()[0]->GetClass();
@@ -2672,10 +2682,19 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel() const
+ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
     {
     if (Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
         {
+        if (resolveIssues && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
+            {
+            m_roleLabel = m_relClass->GetInvariantDisplayLabel();
+            if (!m_isSource)
+                m_roleLabel += " (Reversed)";
+
+            return ECObjectsStatus::Success;
+            }
+
         LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
                    m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
         return ECObjectsStatus::Error;
@@ -2820,8 +2839,6 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
     if (IsRoleLabelDefinedLocally())
-        xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
-    else if (!IsRoleLabelDefined() && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
         xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
@@ -2854,7 +2871,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8StringCR value)
     {
-    return _SetAbstractConstraint(value, true);
+    return _SetAbstractConstraint(value, m_verify);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2910,9 +2927,12 @@ ECObjectsStatus ECRelationshipConstraint::_SetAbstractConstraint(Utf8StringCR va
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint)
     {
-    ECObjectsStatus status = ValidateAbstractConstraint(&abstractConstraint);
-    if (ECObjectsStatus::Success != status)
-        return status;
+    if (m_verify)
+        {
+        ECObjectsStatus status = ValidateAbstractConstraint(&abstractConstraint);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
 
     m_abstractConstraint = &abstractConstraint;
     return ECObjectsStatus::Success;
@@ -2974,15 +2994,21 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
-    // WIP: Currently commented out until ECDb implements the use of the abstract constraint. It makes loading an ECRelationshipClass from the db fail
-    //if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
-    //    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
-    ECObjectsStatus validationStatus = _ValidateClassConstraint(ecClass);
-    if (validationStatus != ECObjectsStatus::Success)
+    if (m_verify)
         {
-        return validationStatus;
+        if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+
+        ECObjectsStatus validationStatus = _ValidateClassConstraint(ecClass);
+        if (validationStatus != ECObjectsStatus::Success)
+            {
+            return validationStatus;
+            }
+
+        m_verified = true;
         }
+    else
+        m_verified = false;
 
     return  m_constraintClasses.Add(classConstraint, ecClass);
     }
@@ -3107,9 +3133,14 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplic
     uint32_t lowerLimit = multiplicity.GetLowerLimit();
     uint32_t upperLimit = multiplicity.GetUpperLimit();
 
-    ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
-    if (validationStatus != ECObjectsStatus::Success)
-        return validationStatus;
+    if (m_verify)
+        {
+        ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+        if (validationStatus != ECObjectsStatus::Success)
+            return validationStatus;
+        }
+    else
+        m_verified = false;
 
     return SetMultiplicity(lowerLimit, upperLimit);
     }
@@ -3141,7 +3172,7 @@ ECObjectsStatus ECRelationshipConstraint::_SetMultiplicity(Utf8CP multiplicity, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (Utf8CP multiplicity)
     {   
-    return _SetMultiplicity(multiplicity, true);
+    return _SetMultiplicity(multiplicity, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3215,15 +3246,6 @@ Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     Utf8String roleLabel = _GetInvariantRoleLabel();
     if (!Utf8String::IsNullOrEmpty(roleLabel.c_str()))
         return roleLabel;
-
-    if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-        {
-        roleLabel = m_relClass->GetInvariantDisplayLabel();
-        if (!m_isSource)
-            roleLabel += " (Reversed)";
-
-        return roleLabel;
-        }
 
     return m_roleLabel;
     }
@@ -3336,10 +3358,10 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECEntityClass (schema), m_strength( StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
+ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema, bool verify) : ECEntityClass (schema), m_strength( StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
     {
-    m_source = new ECRelationshipConstraint(this, true);
-    m_target = new ECRelationshipConstraint(this, false);
+    m_source = new ECRelationshipConstraint(this, true, verify);
+    m_target = new ECRelationshipConstraint(this, false, verify);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3554,9 +3576,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    if (baseClass.IsRelationshipClass())
+    if (baseClass.IsRelationshipClass() && GetSchema().IsECVersion(ECVersion::V3_1))
         {
-        if (validate && GetSchema().IsECVersion(ECVersion::V3_1))
+        if (validate)
             {
             // Get the relationship base class and compare it's strength and direction
             ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
@@ -3565,31 +3587,51 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
                 {
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
+            
+            m_verified = false;
 
-            ECObjectsStatus status;
-            if (ECObjectsStatus::Success != (status = GetSource()._ValidateBaseConstraint(relationshipBaseClass->GetSource())) ||
-                ECObjectsStatus::Success != (status = GetTarget()._ValidateBaseConstraint(relationshipBaseClass->GetTarget())))
-                return status;
-
-            if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == -1)
+            if (m_verify)
                 {
-			    LOG.errorv("Multiplicity Violation: The Source Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-				            GetSource().GetMultiplicity().GetLowerLimit(), GetSource().GetMultiplicity().GetUpperLimit(), GetFullName(), 
-                            relationshipBaseClass->GetFullName(), relationshipBaseClass->GetSource().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetSource().GetMultiplicity().GetUpperLimit());
-			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-                }
+                ECObjectsStatus status;
+                if (ECObjectsStatus::Success != (status = GetSource()._ValidateBaseConstraint(relationshipBaseClass->GetSource())) ||
+                    ECObjectsStatus::Success != (status = GetTarget()._ValidateBaseConstraint(relationshipBaseClass->GetTarget())))
+                    return status;
 
-            if (RelationshipMultiplicity::Compare(GetTarget().GetMultiplicity(), relationshipBaseClass->GetTarget().GetMultiplicity()) == -1)
-                {
-			    LOG.errorv("Multiplicity Violation: The Target Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-				            GetTarget().GetMultiplicity().GetLowerLimit(), GetTarget().GetMultiplicity().GetUpperLimit(), GetFullName(), 
-                            relationshipBaseClass->GetFullName(), relationshipBaseClass->GetTarget().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetTarget().GetMultiplicity().GetUpperLimit());
-			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                m_verified = true;
                 }
             }
         }
 
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipClass::_RemoveBaseClass(ECClassCR baseClass)
+    {
+    m_verified = false;
+    return ECClass::_RemoveBaseClass(baseClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipClass::Verify()
+    {
+    m_verified = IsValid(false);
+    return m_verified;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipClass::GetIsVerified()
+    {
+    if (!m_source->m_verified || !m_target->m_verified)
+        m_verified = false;
+
+    return m_verified;
     }
 
 //---------------------------------------------------------------------------------------

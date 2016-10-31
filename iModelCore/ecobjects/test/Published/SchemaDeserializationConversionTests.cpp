@@ -254,8 +254,7 @@ TEST_F(SchemaDeserializationConversionTest, TestPolymorphicAttribute)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
+    {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
@@ -271,13 +270,19 @@ TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
         "</ECSchema>";
 
     ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("ARelB", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("ARelB (Reversed)", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
 
+    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
+    }
+    {
     Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
@@ -293,12 +298,18 @@ TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
         "</ECSchema>";
 
     ECSchemaPtr schema2;
-    status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema2.IsValid());
     ASSERT_TRUE(schema2->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("ARelB", schema2->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("ARelB (Reversed)", schema2->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+
+    ECRelationshipClassCP relClass = schema2->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -306,8 +317,7 @@ TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationConversionTest, TestInheritedRoleLabelAttribute)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
+    {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
@@ -335,12 +345,20 @@ TEST_F(SchemaDeserializationConversionTest, TestInheritedRoleLabelAttribute)
         "</ECSchema>";
 
     ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("testSource", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("testTarget", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+
+    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefined());
+    EXPECT_FALSE(relClass->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testSource", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefined());
+    EXPECT_FALSE(relClass->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testTarget", relClass->GetTarget().GetRoleLabel().c_str());
+    }
     }
 
 //---------------------------------------------------------------------------------------
