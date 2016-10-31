@@ -1813,9 +1813,9 @@ void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, b
 TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
     {
     static const double s_vertexToleranceRatio    = .1;
-    static const double s_decimateThresholdPixels = 50.0;
+    static const double s_vertexClusterThresholdPixels = 50.0;
     static const double s_facetAreaToleranceRatio = .1;
-    static const size_t s_vertexClusterPolyfacePointCount = 100;
+    static const size_t s_decimatePolyfacePointCount = 100;
 
     double          tolerance = GetTolerance();
     double          vertexTolerance = tolerance * s_vertexToleranceRatio;
@@ -1859,8 +1859,11 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate          = !m_isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_vertexClusterPolyfacePointCount);
-                bool        doVertexCluster     = rangePixels < s_vertexClusterThresholdPixels);
+                bool        doDecimate          = !m_isLeaf && geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                bool        doVertexCluster     = !doDecimate && rangePixels < s_vertexClusterThresholdPixels;
+
+                if (doDecimate)
+                    polyface->DecimateByEdgeCollapse (tolerance, 0.0);
 
                 for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                     {
@@ -1870,7 +1873,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                         if (!maxGeometryCountExceeded)
                             elemId = geom->GetEntityId();
 
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doDecimate, twoSidedTriangles);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles);
                         }
                     }
                 }
