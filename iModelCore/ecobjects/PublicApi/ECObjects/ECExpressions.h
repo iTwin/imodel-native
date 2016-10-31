@@ -416,6 +416,8 @@ protected:
     virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
     virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
 
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 10000; }
+
 public:
     Utf8CP                          GetName() const { return m_name.c_str(); }
 
