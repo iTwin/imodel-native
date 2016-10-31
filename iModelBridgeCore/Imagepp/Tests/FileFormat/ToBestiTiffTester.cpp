@@ -21,7 +21,7 @@
 #include <Imagepp/all/h/HRFiTiffFile.h>
 #include <Bentley/BeDirectoryIterator.h>
 
-
+#include <Imagepp/all/h/HUTLandSat8ToRGBA.h>
 
 USING_NAMESPACE_IMAGEPP
 //#ifdef USE_GTEST        // TEST_P only available when using gtest.
@@ -57,7 +57,7 @@ class ExportiTiffTester : public ExporterTestFixture<::testing::TestWithParam< s
                 if (actualName.IsDirectory() ||
                     actualName.ContainsI(L"thumb.db") ||                // Ignore windows thumbnail.
                     actualName.ContainsI(L"NITF\\ISO Profile 1 Test Code Streams\\J2K") ||  // Tested as part of NITF.
-                    actualName.ContainsI(L"\\PSS\\")                   // Skip PSS for now.
+                    actualName.ContainsI(L"\\PSS\\")                   // Skip PSS, another test is running on it.
                     )
                     continue;
 
@@ -102,22 +102,30 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         //Verify that the Rasterfile created is valid
         ASSERT_FALSE(nullptr == pRasterFileSource);
 
-#if 1   // Old base line was created with file to file and that will copy extra meta data information. we need them to compare with old baseline.
-        std::unique_ptr<HUTImportFromFileExportToFile> exporter(new HUTImportFromFileExportToFile(GetWorld()));
-        exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
-        exporter->SetImportRasterFile(pRasterFileSource);
+        std::unique_ptr<HRFImportExport> exporter;
 
-#else        
-        HFCPtr<HGF2DCoordSys> pLogical = GetWorld()->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
-        HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&GetPool(), pRasterFileSource, 0, pLogical);
-        ASSERT_TRUE(pStore != nullptr);
-        HFCPtr<HRARaster> pRaster = pStore->LoadRaster();
-        ASSERT_TRUE(pRaster != nullptr);
+        // File to File most of the time.
+        if (!sourceFileName.GetNameUtf8().ContainsI("landsat8_panchromatic") )
+            {
+            exporter.reset(new HUTImportFromFileExportToFile(GetWorld()));
+            exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
+            static_cast<HUTImportFromFileExportToFile*>(exporter.get())->SetImportRasterFile(pRasterFileSource);
+            }
+        else  // landsat8 filter
+            {      
+            HFCPtr<HGF2DCoordSys> pLogical = GetWorld()->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
+            HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&GetPool(), pRasterFileSource, 0, pLogical);
+            ASSERT_TRUE(pStore != nullptr);
+            HFCPtr<HRARaster> pRaster = pStore->LoadRaster();
+            ASSERT_TRUE(pRaster != nullptr);
 
-        std::unique_ptr<HUTImportFromRasterExportToFile> exporter(new HUTImportFromRasterExportToFile(pRaster, *pRaster->GetEffectiveShape(), GetWorld()));
-        exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
+            double nodata = 0.0;    // 0,0,0 --> transparency
+            pRaster = HUTLandSat8ToRGBA(pRaster, pRasterFileSource, 0, &nodata, 0.01, false);
 
-#endif
+            exporter.reset(new HUTImportFromRasterExportToFile(pRaster, *pRaster->GetEffectiveShape(), GetWorld()));
+            exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
+            }
+
         auto& config = ImagePPTestConfig::GetConfig();
 
         // Use BestMatchSelectedValues for exportation
