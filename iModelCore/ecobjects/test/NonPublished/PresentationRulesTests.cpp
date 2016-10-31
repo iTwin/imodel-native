@@ -262,20 +262,22 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
         {
         ++contentRulesCount;
         if (1 == contentRulesCount)
-            ValidateContentRule(**iter, ""/*default*/, 1000/*default*/, false/*default*/);
-        else
             {
-            ValidateContentRule(**iter, "ParentNode.IsClassNode", 97, true);
+            ValidateContentRule(**iter, ""/*default*/, 1000/*default*/, false/*default*/);
 
             CalculatedPropertiesSpecificationP specification1 = (*iter)->GetSpecifications()[0]->GetCalculatedProperties()[0];
-            EXPECT_EQ("Label1", specification1->GetLabel());
+			EXPECT_EQ("Label1", specification1->GetLabel());
             EXPECT_EQ(1000, specification1->GetPriority());
             EXPECT_EQ("\"Value1\"", specification1->GetValue());
-
+            
             CalculatedPropertiesSpecificationP specification2 = (*iter)->GetSpecifications()[0]->GetCalculatedProperties()[1];
             EXPECT_EQ("Label2", specification2->GetLabel());
             EXPECT_EQ(2000, specification2->GetPriority());
             EXPECT_EQ("\"Value2\"", specification2->GetValue());
+            }
+        else
+            {
+            ValidateContentRule(**iter, "ParentNode.IsClassNode", 97, true);
             }
         }
     EXPECT_EQ(2, contentRulesCount);
