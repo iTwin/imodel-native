@@ -95,6 +95,23 @@ struct NativeSqlBuilder
         std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings() const { return m_parameterIndexMappings; }
 
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
+        static NativeSqlBuilder Union(List const& list)
+            {
+            BeAssert(!list.empty());
+            NativeSqlBuilder unionView;
+            bool first = true;
+            for (NativeSqlBuilder const& sql : list)
+                {
+                if (first)
+                    first = false;
+                else
+                    unionView.Append(" UNION ");
+
+                unionView.Append(sql);
+                }
+
+            return unionView;
+            }
     };
 
 

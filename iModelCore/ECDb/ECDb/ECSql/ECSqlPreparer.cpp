@@ -1310,6 +1310,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
     sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSql());
 
     //RelationView To ToECClass
@@ -1331,6 +1332,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
+    toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
     sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
     sql.Append(" = ");
     }
@@ -1345,6 +1347,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
     sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSql());
     }
 

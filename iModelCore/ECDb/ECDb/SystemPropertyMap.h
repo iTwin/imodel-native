@@ -42,7 +42,15 @@ struct SystemPropertyMap : PropertyMap
         PrimitivePropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
         PrimitivePropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
         std::vector<PrimitivePropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
+        //! Is there atleast one instance where this property is persisted to db
+        bool IsPersistedInDb() const
+            {
+            for (PrimitivePropertyMap const* prop : m_dataPropMapList)
+                if (prop->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+                    return true;
 
+            return false;
+            }
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
@@ -108,7 +116,7 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
         virtual ~ConstraintECClassIdPropertyMap() {}
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
-
+     
         static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);
     };
 

@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlPrepareContext;
+struct ConstraintECClassIdJoinInfo;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
@@ -82,7 +83,14 @@ struct ViewGenerator
         BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMap const*, PropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);
 
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
-        BentleyStatus RenderRelationshipClassEndTableMap(RelationshipClassEndTableMap const& rel);
+
+        /*NEW API*/
+
+        void RecordPropertyMapIfRequried(PropertyMap const& accessString);
+        BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
+        BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo) ;
+        BentleyStatus RendNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+        /*-----*/
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view
@@ -99,4 +107,31 @@ struct ViewGenerator
         static BentleyStatus DropECClassViews(ECDbCR);
     };
 
+
+struct ConstraintECClassIdJoinInfo : NonCopyableClass
+    {
+    typedef std::unique_ptr<ConstraintECClassIdJoinInfo> Ptr;
+    private:
+        DbColumn const& m_primaryECInstanceId;
+        DbColumn const& m_primaryECClassId;
+        DbColumn const& m_forignECInstanceId;
+        ConstraintECClassIdPropertyMap const& m_propertyMap;
+        Utf8CP GetSqlTableAlias()const;
+        Utf8CP GetSqlECClassIdColumnAlias()const;
+        ConstraintECClassIdJoinInfo(ConstraintECClassIdPropertyMap const& propertyMap, DbColumn const& primaryECInstanceId, DbColumn const& primaryECClassId, DbColumn const& forignECClassId)
+            : m_primaryECInstanceId(primaryECInstanceId), m_primaryECClassId(primaryECClassId), m_forignECInstanceId(forignECClassId), m_propertyMap(propertyMap)
+            {}
+  
+
+    public:
+        ConstraintECClassIdPropertyMap const& GetConstraintECClassId() const { return m_propertyMap; }
+        DbColumn const& GetPrimaryECInstanceIdColumn() const { return m_primaryECClassId; }
+        DbColumn const& GetPrimaryECClassIdColumn() const { return m_primaryECClassId; }
+        DbColumn const& GetForignECInstanceIdColumn() const { return m_forignECInstanceId; }
+        NativeSqlBuilder GetNativeConstraintECClassIdSQL(bool appendAlias) const;
+        ~ConstraintECClassIdJoinInfo() {}
+        NativeSqlBuilder GetNativeJoinSQL() const;
+        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap);
+        static Ptr Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable);
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE
