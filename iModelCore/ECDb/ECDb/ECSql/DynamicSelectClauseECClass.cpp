@@ -256,8 +256,8 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
             {
-            ArrayECPropertyP arrayProp = nullptr;
-            if (ECObjectsStatus::Success != GetClassR().CreateArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
+            PrimitiveArrayECPropertyP arrayProp = nullptr;
+            if (ECObjectsStatus::Success != GetClassR().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
 
             generatedProperty = arrayProp;

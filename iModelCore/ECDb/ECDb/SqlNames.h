@@ -109,7 +109,7 @@ static_assert((int) ECN::CustomAttributeContainerType::Any == 4095 &&
 (int) ECN::CustomAttributeContainerType::AnyClass == 30 &&
 (int) ECN::CustomAttributeContainerType::AnyProperty == 992 &&
 (int) ECN::CustomAttributeContainerType::AnyRelationshipConstraint == 3072 &&
-(int) ECN::CustomAttributeContainerType::ArrayProperty == 128 &&
+(int) ECN::CustomAttributeContainerType::PrimitiveArrayProperty == 128 &&
 (int) ECN::CustomAttributeContainerType::CustomAttributeClass == 4 &&
 (int) ECN::CustomAttributeContainerType::EntityClass == 2 &&
 (int) ECN::CustomAttributeContainerType::NavigationProperty == 512 &&

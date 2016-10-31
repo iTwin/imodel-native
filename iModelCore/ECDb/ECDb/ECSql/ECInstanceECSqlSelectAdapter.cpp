@@ -253,8 +253,6 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
         }
     else if (prop->GetIsArray())
         {
-        auto arrayProperty = prop->GetAsArrayProperty();
-        auto structArrayProperty = prop->GetAsStructArrayProperty();
         IECSqlArrayValue const& arrayValue = value.GetArray();
         int arrayLength = arrayValue.GetArrayLength();
         if (arrayLength <= 0)
@@ -264,14 +262,14 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
         int arrayIndex = 0;
         for (IECSqlValue const* arrayElementValue : arrayValue)
             {
-            if (nullptr != structArrayProperty)
+            if (prop->GetIsStructArray())
                 {
-                if (SUCCESS != SetStructArrayElement(ecVal, *structArrayProperty->GetStructElementType(), *arrayElementValue))
+                if (SUCCESS != SetStructArrayElement(ecVal, *prop->GetAsStructArrayProperty()->GetStructElementType(), *arrayElementValue))
                     return ERROR;
                 }
-            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+            else if (prop->GetIsPrimitiveArray())
                 {
-                if (SUCCESS != SetPrimitiveValue(ecVal, arrayProperty->GetPrimitiveElementType(), *arrayElementValue))
+                if (SUCCESS != SetPrimitiveValue(ecVal, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType(), *arrayElementValue))
                     return ERROR;
                 }
 

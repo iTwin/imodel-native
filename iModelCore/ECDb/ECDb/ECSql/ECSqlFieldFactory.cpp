@@ -188,10 +188,9 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberField(std::unique_ptr<ECSqlFiel
 
     if (structMemberProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = structMemberProperty.GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
+        if (structMemberProperty.GetIsPrimitiveArray())
             {
-            PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
+            PrimitiveType primitiveType = structMemberProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
             return CreatePrimitiveArrayField(memberField, sqlColumnIndex, ctx, columnInfo, primitiveType);
             }
 

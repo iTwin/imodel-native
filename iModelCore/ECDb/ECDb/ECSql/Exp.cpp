@@ -482,9 +482,7 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
             }
         else if (property->GetIsArray())
             {
-            auto arrayProperty = property->GetAsArrayProperty();
-            auto structArrayProperty = property->GetAsStructArrayProperty();
-            if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+            if (property->GetIsPrimitiveArray())
                 {
                 if (!isLeafEntry)
                     {
@@ -494,9 +492,9 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
                     return ERROR;
                     }
                 }
-            else if (nullptr != structArrayProperty)
+            else if (property->GetIsStructArray())
                 {
-                cursorClass = structArrayProperty->GetStructElementType();
+                cursorClass = property->GetAsStructArrayProperty()->GetStructElementType();
                 }
             }
         }

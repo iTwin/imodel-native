@@ -936,7 +936,7 @@ void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, Populat
         else if (!skipArrays && ecProperty->GetIsArray())
             {
             ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
-            if (arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
+            if (arrayProperty->GetIsPrimitiveArray() && arrayProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
                 continue;
 
             uint32_t arrayCount = MAX_ARRAY_TEST_ENTRIES;
@@ -946,7 +946,7 @@ void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, Populat
                 arrayCount = arrayProperty->GetMaxOccurs();
 
             ecInstance->AddArrayElements(ecProperty->GetName().c_str(), arrayCount);
-            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+            if (arrayProperty->GetIsStructArray())
                 {
                 StructArrayECPropertyCP structArrayProperty = ecProperty->GetAsStructArrayProperty();
                 for (uint32_t i = 0; i < arrayCount; i++)
@@ -955,11 +955,12 @@ void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, Populat
                     ecInstance->SetValue(ecProperty->GetName().c_str(), value, i);
                     }
                 }
-            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+            else if (arrayProperty->GetIsPrimitiveArray())
                 {
+                PrimitiveArrayECPropertyCP primitiveArrayProperty = ecProperty->GetAsPrimitiveArrayProperty();
                 for (uint32_t i = 0; i < arrayCount; i++)
                     {
-                    populatePrimitiveValueCallback(value, arrayProperty->GetPrimitiveElementType(), ecProperty);
+                    populatePrimitiveValueCallback(value, primitiveArrayProperty->GetPrimitiveElementType(), ecProperty);
                     ecInstance->SetValue(ecProperty->GetName().c_str(), value, i);
                     }
                 }

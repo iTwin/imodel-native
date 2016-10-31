@@ -245,15 +245,10 @@ bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
     {
     for (ECPropertyCP prop : ecclass.GetProperties())
         {
-        ArrayECPropertyCP arrayProp = prop->GetAsArrayProperty();
+        StructArrayECPropertyCP arrayProp = prop->GetAsStructArrayProperty();
         if (arrayProp != nullptr)
-            { 
-            if (ARRAYKIND_Struct == arrayProp->GetKind())
-                return true;
+            return true;
 
-            continue;
-            }
-       
         StructECPropertyCP structProp = prop->GetAsStructProperty();
         if (structProp != nullptr)
             {

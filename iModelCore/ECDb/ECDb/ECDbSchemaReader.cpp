@@ -996,8 +996,8 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 PrimitiveType primType = (PrimitiveType) rowInfo.m_primType;
 
-                ArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty(arrayProp, rowInfo.m_name, primType))
+                PrimitiveArrayECPropertyP arrayProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, primType))
                     return ERROR;
 
                 if (!rowInfo.m_extendedTypeName.empty())
