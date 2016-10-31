@@ -199,9 +199,14 @@ IScalableMeshCreator::~IScalableMeshCreator ()
     }
 
 
-StatusInt IScalableMeshCreator::Create (bool isSingleFile)
+StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
     {
-    return m_implP->CreateScalableMesh(isSingleFile);
+    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
+    }
+
+void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
+    {
+    return m_implP->SetBaseExtraFilesPath(path);
     }
 
 
@@ -493,7 +498,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     }
 
 
-int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
+int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
     {    
     int status = BSIERROR;
     return status;
@@ -570,6 +575,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false,
                                        pMesher2_5d,
                                        pMesher3d);
+
+        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+        dataStore->SetProjectFilesPath(projectFilesPath);
 
         pDataIndex->SetGenerating(true);        
         }           
@@ -734,6 +742,10 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     }
 
 
+void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
+    {
+    m_baseExtraFilesPath = path;
+    }
 
 
 StatusInt IScalableMeshCreator::Impl::Load()

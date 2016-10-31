@@ -190,7 +190,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     if (m_database->IsDbOpen())
         m_database->CloseDb();
 
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(/*openReadOnly ? READONLY:*/ READWRITE));
+    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
     if (result == BE_SQLITE_SCHEMA)
         {
@@ -743,7 +743,7 @@ uint64_t SMSQLiteFile::GetLastNodeId()
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMPoint ORDER BY NodeId DESC LIMIT 1");
+    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMNodeHeader ORDER BY NodeId DESC LIMIT 1");
     stmt->Step();
     auto numResults = stmt->GetColumnCount();
 
@@ -1499,8 +1499,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         CachedStatementPtr stmtSequence;
         bvector<ImportCommandData> sequenceData;
         m_database->GetCachedStatement(stmtSequence, "SELECT SourceLayer, TargetLayer, SourceType, TargetType FROM SMImportSequences WHERE SourceID=? ORDER BY CommandPosition ASC");
-        stmt->BindInt64(1, sourceData.GetSourceID());
-        while (stmt->Step() == BE_SQLITE_ROW)
+        stmtSequence->BindInt64(1, sourceData.GetSourceID());
+        while (stmtSequence->Step() == BE_SQLITE_ROW)
             {
             ImportCommandData data;
             if (!stmt->IsColumnNull(0))

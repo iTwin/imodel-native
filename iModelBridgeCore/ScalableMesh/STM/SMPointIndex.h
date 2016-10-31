@@ -256,7 +256,7 @@ public:
     /**----------------------------------------------------------------------------
     Invalidate the filtering and meshing that could have been done in a node.
     -----------------------------------------------------------------------------*/
-    bool InvalidateFilteringMeshing(bool becauseDataRemoved = false);
+    virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false);
 
     /**----------------------------------------------------------------------------
     Invalidate the filtering in all filtered ancestor nodes.
@@ -1688,6 +1688,10 @@ public:
         return true;
         };
 
+    virtual ISMPointIndexFilter* Clone()
+        {
+        return nullptr;
+        }
     };
 
 

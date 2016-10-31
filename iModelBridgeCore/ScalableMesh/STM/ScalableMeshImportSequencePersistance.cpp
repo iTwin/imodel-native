@@ -232,8 +232,8 @@ for (auto& command : data)
         return false;
     if (command.sourceLayerSet) commandP->SetSourceLayer(command.sourceLayerID);
     if (command.targetLayerSet) commandP->SetTargetLayer(command.targetLayerID);
-    if (command.sourceTypeSet) commandP->SetSourceType(*LoadType(command.sourceTypeID));
-    if (command.targetTypeSet) commandP->SetTargetType(*LoadType(command.targetTypeID));
+    if (command.sourceTypeSet && LoadType(command.sourceTypeID) != nullptr) commandP->SetSourceType(*LoadType(command.sourceTypeID));
+    if (command.targetTypeSet && LoadType(command.targetTypeID) != nullptr) commandP->SetTargetType(*LoadType(command.targetTypeID));
     sequence.push_back(*commandP);
     }
 

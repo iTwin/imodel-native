@@ -120,18 +120,21 @@ bool ContentConfigSerializer::Serialize(const ContentConfig&    config,
             return false;
 
         WString extendedWktStr(gcsWKT.GetCStr());
+        if (!extendedWktStr.empty())
+            {
         wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
+            extendedWktStr += WString(wktFlavor);
 
-        extendedWktStr += WString(wktFlavor);
+            sourceData.SetGCS(extendedWktStr);
+            uint32_t flagsField(0);
 
-        sourceData.SetGCS(extendedWktStr);
-        uint32_t flagsField(0);
+            SetBitsTo(flagsField, 0x1, config.GetGCSConfig().IsPrependedToExistingLocalTransform());
+            SetBitsTo(flagsField, 0x2, config.GetGCSConfig().IsExistingPreservedIfGeoreferenced());
+            SetBitsTo(flagsField, 0x4, config.GetGCSConfig().IsExistingPreservedIfLocalCS());
 
-        SetBitsTo(flagsField, 0x1, config.GetGCSConfig().IsPrependedToExistingLocalTransform());
-        SetBitsTo(flagsField, 0x2, config.GetGCSConfig().IsExistingPreservedIfGeoreferenced());
-        SetBitsTo(flagsField, 0x4, config.GetGCSConfig().IsExistingPreservedIfLocalCS());
 
-        sourceData.SetFlags(flagsField);
+            sourceData.SetFlags(flagsField);
+            }
         }
     if (config.GetTypeConfig().IsSet())
         {
@@ -157,16 +160,21 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     config.SetScalableMeshConfig(ScalableMeshConfig(sourceData.GetScalableMeshData()));
     WString gcsWKT = sourceData.GetGCS();
 
-    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
+    ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor::WktFlavor_Oracle9;
+    if (!gcsWKT.empty())
+        fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
 
-    bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
-    assert(result == true);
+    if (!gcsWKT.empty())
+        {
+        bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+        assert(result == true);
+        }
 
     GCS gcs(GCS::GetNull());
     SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
-    gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
+    if (!gcsWKT.empty()) gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
 
     if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return false;

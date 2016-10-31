@@ -1024,7 +1024,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
     bvector<bvector<DPoint3d>> coverages;
     IScalableMeshPtr targetedMesh = m_scmPtr;
     m_scmPtr->GetAllCoverages(coverages);
-    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+    if (!coverages.empty() && m_type!= DTMAnalysisType::RawDataOnly) targetedMesh = m_scmPtr->GetTerrainSM();
 
     if (m_type == DTMAnalysisType::Fast)
         {
