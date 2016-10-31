@@ -70,7 +70,7 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                         if ( reader.Read() == false )
                             {
                             Log.Logger.error("There is no package named " + Instance.InstanceId);
-                            throw new InstanceDoesNotExistException("There is no package named " + Instance.InstanceId);
+                            throw new InstanceDoesNotExistException("There is no such package.");
                             }
 
                         creationTime = reader.GetDateTime(0);

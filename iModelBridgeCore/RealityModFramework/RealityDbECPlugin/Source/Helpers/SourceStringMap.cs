@@ -42,7 +42,7 @@ namespace IndexECPlugin.Source.Helpers
                 case "all":
                     return DataSource.All;
                 default:
-                    throw new NotImplementedException(String.Format("The source {0} is not mapped yet", sourceStr));
+                    throw new NotImplementedException("This source is not mapped yet.");
                 }
             }
         public static string GetAllSourceStrings ()
