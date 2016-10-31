@@ -131,3 +131,14 @@ CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 
 TextAnnotationTest.BasicCrud2d # WIP_VIEW_DEFINITION
 TextAnnotationTest.BasicCrud3d # After merge
+
+# WIP_MERGE_Hassan
+SingleBriefcaseLocksTest.AcquireLocks
+SingleBriefcaseLocksTest.RelinquishLocks
+SingleBriefcaseLocksTest.LocallyCreatedObjects
+SingleBriefcaseLocksTest.DisconnectedWorkflow
+ExtractLocksTest.UsedLocks
+CodesManagerTest.ReserveQueryRelinquish
+CodesManagerTest.AutoReserveCodes
+CodesManagerTest.CodesInRevisions
+CodesManagerTest.BatchReserveAndInsert

@@ -19,6 +19,8 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#ifdef WIP_MERGE_Hassan
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -41,7 +43,7 @@ struct DgnViewElemTest : public DgnDbTestFixture
             {
             Utf8String viewName(model->GetCode().GetValue());
             viewName.append(s_viewSourceNames[i]);
-            ViewDefinitionCPtr view = AddView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ViewDefinitionCPtr view = AddSpatialView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
             ASSERT_TRUE(view->GetViewId().IsValid());
             }
@@ -51,7 +53,7 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     DgnModelPtr AddModel(Utf8StringCR name)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+        DgnClassId classId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
         DgnModel::CreateParams params(*m_db, classId, DgnModel::CreateModelCode(name));
         DgnModelPtr model = new SpatialModel(params);
         EXPECT_EQ(DgnDbStatus::Success, model->Insert());
@@ -326,3 +328,5 @@ TEST_F(DgnViewElemTest, Iterate)
     EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*m_db));
     ExpectViews(IterOpts(), { "B-U", "B-G", "B-P" });
     }
+
+#endif

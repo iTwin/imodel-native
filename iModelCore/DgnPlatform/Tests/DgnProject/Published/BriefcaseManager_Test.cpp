@@ -1069,7 +1069,11 @@ public:
         return DgnDbStatus::Success == status ? model : nullptr;
         }
 };
+
+#ifdef WIP_MERGE_Hassan
 DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             08/2016
 //---------------------------------------------------------------------------------------
@@ -1489,6 +1493,8 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
         ExpectLevel(*newElem, LockLevel::Exclusive);
         }
     }
+
+#ifdef WIP_MERGE_Hassan
 
 /*---------------------------------------------------------------------------------**//**
 * Simulate two briefcases operating against the same master DgnDb.
@@ -2181,6 +2187,8 @@ TEST_F (FastQueryTest, CacheCodes)
     req.Codes().insert(code3);  // available
     ExpectResponsesEqual(req, dbB);
     }
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
