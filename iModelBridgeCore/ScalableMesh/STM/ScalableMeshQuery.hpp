@@ -2101,9 +2101,11 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     toLoadNbFaceIndexes = nbFaceIndices;
 
                     //NEEDS_WORK_SM : Could generate them starting at 0.
+                    // Indices from Cesium datasets start at 0.
+                    int offset = meshNode->IsFromCesium() ? 0 : 1;
                     for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                         {
-                        toLoadFaceIndexes[ind] = indicesP[ind] - 1;
+                        toLoadFaceIndexes[ind] = indicesP[ind] - offset;
                         }
 
                     if (nbUvs > 0)
@@ -2138,10 +2140,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 if (texLoaded&& toLoadUvCount > 0 && textureIDs[part / 2].first)
                     {
+                    int offset = meshNode->IsFromCesium() ? 0 : 1;
+
                     for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
                         {
                         int32_t pointInd = toLoadFaceIndexes[faceInd];
-                        int32_t uvInd = toLoadUvIndex[faceInd] - 1; // For UVs, we haven't yet made the indices zero-based
+                        int32_t uvInd = toLoadUvIndex[faceInd] - offset; // For UVs, we haven't yet made the indices zero-based, except for Cesium datasets
                         // When we encounter the point/UV pair for the first time, we create a new element in the new point and UV arrays
                         // Otherwise, we retrieve the index of the point/UV pair from the map
                         PointUVIndexPair p(pointInd, uvInd);

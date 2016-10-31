@@ -168,9 +168,10 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureD
     return true;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(SMStoreDataType::UvCoords, nodeHeader, m_smSQLiteFile);
+    assert(dataType == SMStoreDataType::UvCoords);
+    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
     return true;    
     }
 
@@ -185,6 +186,12 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTri
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     dataStore = new SMSQLiteNodeDataStore<TileMesh, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
+    return true;
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMSQLiteNodeDataStore<Cesium3DTilesBase, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
     return true;
     }
 

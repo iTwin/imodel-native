@@ -175,6 +175,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     readSize = buffer.size;
     (void)size;
 
+    if (!response_header.data.empty()) response_header.data.clear();
     return DataSourceStatus();
     }
 
@@ -364,12 +365,12 @@ DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::cr
     {
     CURL* curl = curl_easy_init();
 
-    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-    //curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
-    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
-    //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
-    //curl_easy_setopt(curl_handle, CURLOPT_STDERR, std::cout);
+    //curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // Only for proxy servers
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl, CURLOPT_STDERR, std::cout);
     CURLHandle* curl_handle = new CURLHandle(curl);
     if (Manager<DataSourceAccountCURL::CURLHandle>::create(name, curl_handle) == NULL)
         {

@@ -20,6 +20,7 @@ extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
 extern bool s_stream_from_azure_using_curl;
+extern bool s_stream_using_cesium_3d_tiles_format;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
@@ -62,8 +63,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         HFCPtr<SMNodeGroup> GetGroup(HPMBlockID blockID);
             
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
-            
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
+
+        void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const;
 
     private :
 
@@ -87,7 +89,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
 
-        void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);   
+        void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block) const;
                    
         //Inherited from ISMDataStore
         virtual uint64_t GetNextID() const override;
@@ -114,7 +116,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) override;
 
-        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) override;
 
         
 
@@ -123,6 +125,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
         {
@@ -135,50 +139,76 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
 
 // Helper point block data structure
-struct StreamingDataBlock : public bvector<uint8_t> 
+struct StreamingDataBlock : public bvector<uint8_t>
     {
 
-public:
+    public:
 
-    bool IsLoading();
-    
-    bool IsLoaded();
+        bool IsLoading();
 
-    void LockAndWait();
-            
-    void SetLoading();
+        bool IsLoaded();
 
-    DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
-        
-    void Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize = uint64_t(-1));
-        
-    void UnLoad();
-            
-    void SetLoaded();
-        
-    void SetID(const uint64_t& pi_ID);
-        
-    uint64_t GetID();
+        void LockAndWait();
 
-    void SetDataSourceURL(const DataSourceURL& pi_DataSource);
+        void SetLoading();
 
-    void SetDataSourcePrefix(const std::wstring& prefix);
-        
-    void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
-        
-protected:
+        DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
 
-    DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
+        void Load(DataSourceAccount *dataSourceAccount, SMStoreDataType dataType, uint64_t dataSize = uint64_t(-1));
 
-protected:
+        void UnLoad();
 
-    bool m_pIsLoading = false;
-    bool m_pIsLoaded = false;
-    uint64_t m_pID = -1;
-    DataSourceURL m_pDataSourceURL;
-    std::wstring m_pPrefix = L"p_";
-    condition_variable m_pDataBlockCV;
-    mutex m_pDataBlockMutex;
+        void SetLoaded();
+
+        void SetID(const uint64_t& pi_ID);
+
+        uint64_t GetID();
+
+        void SetDataSourceURL(const DataSourceURL& pi_DataSource);
+
+        void SetDataSourcePrefix(const std::wstring& prefix);
+
+        void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
+
+        DPoint3d* GetPoints();
+        int32_t*  GetIndices();
+        DPoint2d* GetUVs();
+        Byte*     GetTexture();
+
+        uint32_t GetNumberOfPoints();
+        uint32_t GetNumberOfIndices();
+        uint32_t GetNumberOfUvs();
+        uint32_t GetTextureSize();
+
+    protected:
+
+        DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
+
+    protected:
+
+        bool m_pIsLoading = false;
+        bool m_pIsLoaded = false;
+        uint64_t m_pID = -1;
+        DataSourceURL m_pDataSourceURL;
+        std::wstring m_pPrefix = L"p_";
+        condition_variable m_pDataBlockCV;
+        mutex m_pDataBlockMutex;
+
+    private:
+        struct Cesium3DTilesData : Cesium3DTilesBase
+            {
+            uint32_t numPoints;
+            uint32_t numIndices;
+            uint32_t numUvs;
+            uint32_t textureSize;
+            uint32_t pointOffset;
+            uint32_t indiceOffset;
+            uint32_t uvOffset;
+            uint32_t textureOffset;
+            };
+        Cesium3DTilesData m_tileData;
+
+        void ParseCesium3DTilesData(const Byte*, const size_t&);
     };
 
 template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
@@ -211,7 +241,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         DataSourceURL                 m_dataSourceURL;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        typedef std::map<ISMStore::NodeID, StreamingDataBlock*> DataCache;
+        typedef std::map<ISMStore::NodeID, std::unique_ptr<StreamingDataBlock>> DataCache;
         mutable DataCache m_dataCache;
         mutable std::mutex m_dataCacheMutex;
 

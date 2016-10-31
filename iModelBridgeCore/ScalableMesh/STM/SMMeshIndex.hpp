@@ -384,7 +384,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
 
                 if (node->m_pSubNodeNoSplit->GetBlockID().IsValid())
                     {
-                    node->m_nodeHeader.m_childrenExtents[node->m_pSubNodeNoSplit->GetBlockID().m_integerID] = node->m_pSubNodeNoSplit->GetNodeExtent();
+                    auto childExtent = node->m_pSubNodeNoSplit->m_nodeHeader.m_contentExtentDefined && !node->m_pSubNodeNoSplit->m_nodeHeader.m_contentExtent.IsNull() ? node->m_pSubNodeNoSplit->GetContentExtent() : node->m_pSubNodeNoSplit->GetNodeExtent();
+                    node->m_nodeHeader.m_childrenExtents[node->m_pSubNodeNoSplit->GetBlockID().m_integerID] = childExtent;
                     }
                 }
             else
@@ -397,15 +398,16 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
                             child->Load();
                         if (child->m_nodeHeader.m_nodeCount > 0 && child->GetBlockID().IsValid())
                             {
-                            node->m_nodeHeader.m_childrenExtents[child->GetBlockID().m_integerID] = child->GetNodeExtent();
+                            auto childExtent = child->m_nodeHeader.m_contentExtentDefined && !child->m_nodeHeader.m_contentExtent.IsNull() ? child->GetContentExtent() : child->GetNodeExtent();
+                            node->m_nodeHeader.m_childrenExtents[child->GetBlockID().m_integerID] = childExtent;
                             }
                         }
                     }
                 }
 
-            // Store header
-            pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
             }
+        // Store header
+        pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 #else
         assert(false && "Make this compile on Vancouver!");
 #endif
@@ -3186,24 +3188,18 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
     {    
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;        
 
-    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
-        {                          
-        ISMInt32DataStorePtr faceIndDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader, SMStoreDataType::TriPtIndices);
-        assert(result == true);      
-
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(
-    #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex)
-#else
- SMStoredMemoryPoolVectorItem<int32_t>::CreateItem(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex)
-#endif 
- );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-        }        
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triIndicesPoolItemId, SMStoreDataType::TriPtIndices, GetBlockID());
+        }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        // In the cesium format, indices are packaged with the points
+        m_triIndicesPoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<int32_t>(poolMemVectorItemPtr, SMStoreDataType::TriPtIndices);
+        assert(result == true);
+        }
 
     return poolMemVectorItemPtr;
 
@@ -3242,23 +3238,14 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
     if (!IsTextured())
         return poolMemVectorItemPtr;
             
-    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex))
-        {  
-        ISMInt32DataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::TriUvIndices);
-        assert(result == true);        
-               
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(
-       #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex)
-        #else
-        SMStoredMemoryPoolVectorItem<int32_t>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex)
-        #endif
-        );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_triUvIndicesPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-        assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triUvIndicesPoolItemId, SMStoreDataType::TriUvIndices, GetBlockID());
+        }
+    else
+        {
+        // In the Cesium format, UV indices are the same as mesh indices
+        poolMemVectorItemPtr = GetPtsIndicePtr();
         }
 
     return poolMemVectorItemPtr;          
@@ -3271,27 +3258,22 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    int64_t texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
               
-    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
-        {      
-        ISMTextureDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-        assert(result == true);  
-
-        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
- #ifndef VANCOUVER_API
-            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
- #else
-            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
- #endif
-        );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemBlobItemPtr = storedMemoryPoolVector.get();            
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::Texture, texID);
+        assert(poolMemBlobItemPtr.IsValid());
         }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, texID).get();
+        // In the cesium format, textures are packaged with the points
+        m_texturePoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::Texture);
+        assert(result == true);
+        }
+
 
     return poolMemBlobItemPtr;
     }
@@ -3305,26 +3287,10 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 
     SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, texPoolItemId, texID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
-        {
-        ISMTextureDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-        assert(result == true);
+    poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, GetBlockID());
+    assert(poolMemBlobItemPtr.IsValid());
 
-        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
-#else
-            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
-#endif
-            );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        texPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
-        assert(texPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemBlobItemPtr = storedMemoryPoolVector.get();
-        }
+    ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
 
     return poolMemBlobItemPtr;
     }
@@ -3336,27 +3302,10 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    int64_t texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
 
-    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::TextureCompressed, (uint64_t)m_SMIndex))
-        {
-        ISMTextureDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::TextureCompressed);
-        assert(result == true);
-
-        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::TextureCompressed, (uint64_t)m_SMIndex)
-#else
-            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
-#endif
-            );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemBlobItemPtr = storedMemoryPoolVector.get();
-        }
+    poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+    assert(poolMemBlobItemPtr.IsValid());
 
     return poolMemBlobItemPtr;
     }

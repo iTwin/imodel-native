@@ -224,6 +224,8 @@ template <class EXTENT> class SMIndexMasterHeader
         size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
         bool                    m_isTerrain;
         HPMBlockID              m_rootNodeBlockID;
+        bool                    m_isCesiumFormat = false;
+        bool                    m_isStreamingFormat = false;
 
         SMIndexMasterHeader<EXTENT>& operator=(const SQLiteIndexHeader& indexHeader);
         
@@ -263,9 +265,9 @@ template <class EXTENT> class SMIndexNodeHeaderBase
         bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
         uint64_t    m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
         bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-        bool        m_isTextured;               // Indicates if the node contains Texture or not
+        bool        m_isTextured;                // Indicates if the node contains Texture or not
 
-        map<size_t, EXTENT> m_childrenExtents; // Only used and required by Cesium 3D tile format
+        map<size_t, EXTENT> m_childrenExtents;   // Only used and required by Cesium 3D tile format
 
 
 

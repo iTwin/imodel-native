@@ -3948,26 +3948,18 @@ template<class POINT, class EXTENT> const HFCPtr<SMPointIndexNode<POINT, EXTENT>
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>> SMPointIndexNode<POINT, EXTENT>::GetPointsPtr(bool loadPts)
     {  
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
-                    
-    if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex) && loadPts)
-        {                          
-        ISM3DPtDataStorePtr pointDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader, SMStoreDataType::Points);
-        assert(result == true);        
+    if (!loadPts) return poolMemVectorItemPtr;
 
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-        new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex)
-#else
-        SMStoredMemoryPoolVectorItem<POINT>::CreateItem(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex)
-#endif
-        );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-        assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemVectorItemPtr = GetMemoryPoolItem<ISM3DPtDataStorePtr, POINT, SMMemoryPoolVectorItem<POINT>, SMStoredMemoryPoolVectorItem<POINT>>(m_pointsPoolItemId, SMStoreDataType::Points, GetBlockID(), loadPts);
         }
-
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID(), loadPts).get();
+        bool result = poolMemMultiItemsPtr->GetItem<POINT>(poolMemVectorItemPtr, SMStoreDataType::Points);
+        assert(result == true);
+        }
     return poolMemVectorItemPtr;
 
 #if 0 
@@ -6561,6 +6553,12 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePo
     pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     }
 
+template<class POINT, class EXTENT>
+inline bool SMPointIndexNode<POINT, EXTENT>::IsFromCesium() const
+    {
+    return m_SMIndex->IsFromCesium();
+    }
+
 /**----------------------------------------------------------------------------
 This method saves the node for streaming.
 
@@ -8540,6 +8538,14 @@ void SMPointIndex<POINT, EXTENT>::SetSingleFile(bool singleFile)
 
     m_indexHeader.m_singleFile = singleFile;
 }
+
+template<class POINT, class EXTENT>
+bool SMPointIndex<POINT, EXTENT>::IsFromCesium() const
+    {
+    HINVARIANTS;
+
+    return(m_indexHeader.m_isCesiumFormat);
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10

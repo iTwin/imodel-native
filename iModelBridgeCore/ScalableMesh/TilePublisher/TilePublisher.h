@@ -91,12 +91,12 @@ struct  ScalableMeshTileNode : BentleyApi::Dgn::ModelTileNode
                 //memcpy(myImage.GetDataP(), textureP->GetData(), textureP->GetDimension().x* textureP->GetDimension().y * 3);
                 //Image image(textureP->GetDimension().x, textureP->GetDimension().y, std::move(myImage), Image::Format::Rgb);
                 //ImageSource jpgTex(image, ImageSource::Format::Jpeg, 100);
-                {
-                FILE*               file = fopen(("d:\\tmp\\texture_" + std::to_string(child->GetNodeId()) + ".jpg").c_str(), "w");
-
-                fwrite(jpgTex.GetByteStream().GetData(), 1, jpgTex.GetByteStream().size(), file);
-                fclose(file);
-                }
+                //{
+                //FILE*               file = fopen(("d:\\tmp\\texture_" + std::to_string(child->GetNodeId()) + ".jpg").c_str(), "w");
+                //
+                //fwrite(jpgTex.GetByteStream().GetData(), 1, jpgTex.GetByteStream().size(), file);
+                //fclose(file);
+                //}
                 TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
                 displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
                 }

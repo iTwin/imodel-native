@@ -260,6 +260,8 @@ public:
 
     bool IsTextured() const;
 
+    bool IsFromCesium() const;
+
     /*
     Recursively set nodes as balanced or not.
     */
@@ -1112,6 +1114,59 @@ protected:
             return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
+        template<class DataStoreType, class PoolItemType, class MemoryPoolItemType, class StoredMemoryPoolType>
+        RefCountedPtr<MemoryPoolItemType> GetMemoryPoolItem(SMMemoryPoolItemId& poolItemID, SMStoreDataType dataType, HPMBlockID blockID, bool loadData = true)
+            {
+            RefCountedPtr<MemoryPoolItemType> poolItemPtr;
+            //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+            if (!SMMemoryPool::GetInstance()->GetItem<PoolItemType>(poolItemPtr, poolItemID, blockID.m_integerID, dataType, (uint64_t)m_SMIndex) && loadData)
+                {
+                DataStoreType dataStore;
+                bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(dataStore, &m_nodeHeader, dataType);
+                assert(result == true);
+
+                RefCountedPtr<StoredMemoryPoolType> storedMemoryPool(
+#ifndef VANCOUVER_API
+                    new StoredMemoryPoolType(blockID.m_integerID, dataStore, dataType, (uint64_t)m_SMIndex)
+#else
+                    StoredMemoryPoolType::CreateItem(blockID.m_integerID, dataStore, dataType, (uint64_t)m_SMIndex)
+#endif
+                    );
+                SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPool.get());
+                poolItemID = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+                assert(poolItemID != SMMemoryPool::s_UndefinedPoolItemId);
+                poolItemPtr = storedMemoryPool.get();
+                }
+            return poolItemPtr;
+            }
+
+        template<class DataStoreType, class PoolItemType, class MemoryPoolItemType, class StoredMemoryPoolType>
+        RefCountedPtr<MemoryPoolItemType> GetMemoryPoolMultiItem(SMMemoryPoolItemId& poolItemID, SMStoreDataType dataType, HPMBlockID blockID, bool loadData = true)
+            {
+            RefCountedPtr<MemoryPoolItemType> poolItemPtr;
+            //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+            if (!SMMemoryPool::GetInstance()->GetItem(poolItemPtr, poolItemID, blockID.m_integerID, dataType, (uint64_t)m_SMIndex) && loadData)
+                {
+                DataStoreType dataStore;
+                bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(dataStore, &m_nodeHeader);
+                assert(result == true);
+
+                RefCountedPtr<SMStoredMemoryPoolMultiItems<PoolItemType>> storedMemoryPool(
+#ifndef VANCOUVER_API
+                    new SMStoredMemoryPoolMultiItems<PoolItemType>(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
+#else
+                    SMStoredMemoryPoolMultiItems<TileMesh>::CreateItem(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
+#endif
+                    );
+                SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPool.get());
+                poolItemID = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+                assert(poolItemID != SMMemoryPool::s_UndefinedPoolItemId);
+                poolItemPtr = storedMemoryPool.get();
+                }
+            return poolItemPtr;
+            }
+
+
         //Should be accessed using GetParentNode.        
         bool m_isParentNodeSet;
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pParentNode;      // Parent node      
@@ -1357,6 +1412,8 @@ public:
 
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
+
+    bool IsFromCesium() const;
 
     void SetIsTerrain(bool isTerrain)
         {

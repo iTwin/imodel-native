@@ -449,6 +449,8 @@ private:
 public:
     static TileMeshPtr Create(TileDisplayParamsPtr& params) { return new TileMesh(params); }
 
+    //TileMesh() : TileMesh(nullptr) {}
+
     DRange3d GetTriangleRange(TriangleCR triangle) const;
     DVec3d GetTriangleNormal(TriangleCR triangle) const;
     bool HasNonPlanarNormals() const;

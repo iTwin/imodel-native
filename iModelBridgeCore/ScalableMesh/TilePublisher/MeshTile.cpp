@@ -899,7 +899,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId mate
     AddTriangle(newTriangle);
     ++m_triangleIndex;
 
-    if (true/*visitor.GetTwoSided()*/ && duplicateTwoSidedTriangles)
+    if (false/*visitor.GetTwoSided()*/ && duplicateTwoSidedTriangles)
         {
         Triangle dupTriangle(false);
         for (size_t i = 0; i < 3; i++)

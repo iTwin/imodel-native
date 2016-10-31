@@ -37,7 +37,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
-        m_pathToHeaders = L"headers";
+        m_pathToHeaders = s_stream_using_cesium_3d_tiles_format ? L"data" : L"headers";
 
         if (m_use_node_header_grouping && m_use_virtual_grouping)
             {
@@ -77,6 +77,22 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         // Create an account on the file service streaming
         if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalCURLAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountLocalFile);
+        }
+    else if (s_stream_from_disk && s_stream_using_cesium_3d_tiles_format)
+        {
+        DataSourceAccount                       *   accountLocalFile;
+        DataSourceService                       *   serviceLocalFile;
+
+        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the file service streaming
+        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
@@ -379,6 +395,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
             indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+            indexHeader->m_isCesiumFormat = masterHeader.isMember("fileFormat") && masterHeader["fileFormat"].asString() == "Cesium3DTiles";
 /* Needed?
             if (masterHeader.isMember("singleFile"))
                 {
@@ -516,11 +533,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     // compute node tolerance (for the geometric error)
     bool useContentExtent = header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume () > 0*/;
     DRange3d cesiumRange = useContentExtent ? header->m_contentExtent : header->m_nodeExtent;
-    DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
-    if (!useContentExtent) diagonal.SetComponent(0.0, 2);
 
+    // Different attempts to compute the Cesium 3D tiles "geometric error" value:
+    //DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
+    //if (!useContentExtent) diagonal.SetComponent(0.0, 2);
     //double tolerance = cesiumRange.Volume() / max<int64_t>((int64_t)header->m_nodeCount, 100000);
-    double tolerance = diagonal.Magnitude() / 1000;
+    //double tolerance = diagonal.Magnitude() / 1000;
+
+    // But looking at other Cesium 3D tiles datasets (Marseille, Orlando) the computed tolerance seem to be something like this
+    // and seems to work reasonably well as long as the bounding volume tightly fits the data :
+    double tolerance = 16 / pow(2, header->m_level); // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
 
     assert(tolerance > 0);
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
@@ -532,44 +554,31 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
     auto& rootTile = tile["root"];
     rootTile["refine"] = "replace";
-    rootTile["geometricError"] = tolerance; // SM_NEEDS_WORK : what value should this be?
+    rootTile["geometricError"] = tolerance;
     TilePublisher::WriteBoundingVolume(rootTile, cesiumRange);
 
     if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
         {
         rootTile["content"]["url"] = Utf8String((std::to_string(blockID.m_integerID) + ".b3dm").c_str());
-        //TilePublisher::WriteBoundingVolume(rootTile["content"], header->m_contentExtent);
+        //TilePublisher::WriteBoundingVolume(rootTile["content"], header->m_contentExtent); // not required
         }
 
     Json::Value children(Json::arrayValue);
-    if (header->m_SubNodeNoSplitID.IsValid())
+    for (auto& childExtent : header->m_childrenExtents)
         {
         Json::Value child;
-        child["geometricError"] = 1.E+06;
-        child["refine"] = "replace";
-        child["content"]["url"] = Utf8String(("n_" + std::to_string(header->m_SubNodeNoSplitID.m_integerID) + ".json").c_str());
-        TilePublisher::WriteBoundingVolume(child, header->m_childrenExtents.at(header->m_SubNodeNoSplitID.m_integerID));
+        child["content"]["url"] = Utf8String(("n_" + std::to_string(childExtent.first) + ".json").c_str());
+        TilePublisher::WriteBoundingVolume(child, childExtent.second);
         children.append(child);
-        }
-    else
-        {
-        for (auto childID : header->m_apSubNodeID)
-            {
-            if (childID.IsValid() && header->m_childrenExtents.find(childID.m_integerID) != header->m_childrenExtents.end())
-                {
-                Json::Value child;
-                child["geometricError"] = 1.E+06;
-                child["refine"] = "replace";
-                child["content"]["url"] = Utf8String(("n_" + std::to_string(childID.m_integerID) + ".json").c_str());
-                TilePublisher::WriteBoundingVolume(child, header->m_childrenExtents.at(childID.m_integerID));
-                children.append(child);
-                }
-            }
         }
     rootTile["children"] = children;
 
 
     // SM_NEEDS_WORK : Get scalable mesh required properties
+    Json::Value smHeader;
+    this->SerializeHeaderToJSON(header, blockID, smHeader);
+
+    rootTile["SMHeader"] = smHeader;
 
     auto utf8Node = Json::FastWriter().write(tile);
     po_pBinaryData.reset(new Byte[utf8Node.size()]);
@@ -577,7 +586,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     po_pDataSize = (uint32_t)utf8Node.size();
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block) const
     {
     block["id"] = ConvertBlockID(blockID);
     block["resolution"] = (ISMStore::NodeID)header->m_level;
@@ -806,6 +815,25 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         header->m_id = blockID;
         //group->removeNodeData(blockID.m_integerID);
         }
+    else if (s_stream_using_cesium_3d_tiles_format)
+        {
+        uint64_t headerSize = 0;
+        std::unique_ptr<Byte> headerData = nullptr;
+        this->GetNodeHeaderBinary(blockID, headerData, headerSize);
+        if (!headerData && headerSize == 0) return 1;
+
+        Json::Reader    reader;
+        Json::Value     cesiumHeader;
+        reader.parse(reinterpret_cast<char *>(headerData.get()), reinterpret_cast<char *>(&(headerData.get()[headerSize])), cesiumHeader);
+
+        if (!(cesiumHeader.isMember("root") && cesiumHeader["root"].isMember("SMHeader")))
+            {
+            assert(false); // error reading Master Header
+            return 0;
+            }
+
+        this->ReadNodeHeaderFromJSON(header, cesiumHeader["root"]["SMHeader"]);
+        }
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
@@ -913,6 +941,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     header->m_ptsIndiceID.resize(1);
     header->m_ptsIndiceID[0] = idx;
 
+    /* Texture */
     if (header->m_isTextured)
         {
         header->m_textureID = ISMStore::GetNullNodeID();
@@ -999,6 +1028,110 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     assert(dataIndex == maxCountData);
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
+    {
+    header->m_level = nodeHeader["resolution"].asUInt();
+    header->m_filtered = nodeHeader["filtered"].asBool();
+    header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
+    header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
+    header->m_isTextured = nodeHeader["areTextured"].asBool();
+    header->m_IsBranched = nodeHeader["isBranched"].asBool();
+    header->m_SplitTreshold = nodeHeader["splitThreshold"].asUInt();
+    header->m_totalCount = nodeHeader["totalCount"].asUInt();
+    header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+    header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
+    header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
+    header->m_graphID = nodeHeader["graphID"].asUInt();
+    header->m_uvID = nodeHeader["uvID"].asUInt();
+
+    uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+    header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
+
+    auto& nodeExtent = nodeHeader["nodeExtent"];
+    assert(nodeExtent.isObject());
+    ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
+    ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
+    ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
+    ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
+    ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
+    ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
+
+    header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
+    if (header->m_contentExtentDefined)
+        {
+        auto& contentExtent = nodeHeader["contentExtent"];
+        assert(contentExtent.isObject());
+        ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
+        ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
+        ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
+        ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
+        ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
+        ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
+        }
+
+    auto& indices = nodeHeader["indiceID"];
+    assert(indices.isArray() && indices.size() <= 1);
+
+    uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+
+    if (header->m_isTextured)
+        {
+        header->m_textureID = HPMBlockID();
+        header->m_ptsIndiceID.resize(2);
+        header->m_ptsIndiceID[1] = (int)idx;
+        header->m_ptsIndiceID[0] = HPMBlockID();
+        header->m_nbTextures = 1;
+        header->m_uvsIndicesID.resize(1);
+        header->m_uvsIndicesID[0] = idx;
+        }
+
+    header->m_numberOfMeshComponents = (size_t)nodeHeader["numberOfMeshComponents"].asUInt();
+    if (header->m_numberOfMeshComponents > 0)
+        {
+        auto& meshComponents = nodeHeader["meshComponents"];
+        assert(meshComponents.isArray());
+        header->m_meshComponents = new int[header->m_numberOfMeshComponents];
+        for (size_t i = 0; i < (size_t)header->m_numberOfMeshComponents; i++)
+            {
+            header->m_meshComponents[i] = meshComponents[(Json::ArrayIndex)i].asInt();
+            }
+        }
+
+    auto& clipSets = nodeHeader["clipSetsID"];
+    assert(clipSets.isArray());
+    if (clipSets.size() > 0)
+        {
+        header->m_clipSetsID.resize(clipSets.size());
+        for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
+        }
+
+    auto& children = nodeHeader["children"];
+    assert(children.isArray());
+    if (!header->m_IsLeaf && children.size() > 0)
+        {
+        header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
+        for (auto& child : children)
+            {
+            auto childInd = child["index"].asUInt();
+            auto nodeId = child["id"].asUInt();
+            header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+            }
+        header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+        }
+
+    auto& neighbors = nodeHeader["neighbors"];
+    assert(neighbors.isArray());
+    if (neighbors.size() > 0)
+        {
+        for (auto& neighbor : neighbors)
+            {
+            assert(neighbor.isObject());
+            auto nodePos = neighbor["nodePos"].asUInt();
+            auto nodeId = neighbor["nodeId"].asUInt();
+            header->m_apNeighborNodeID[nodePos].push_back(nodeId);
+            }
+        }
+    }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
     {
@@ -1008,7 +1141,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     DataSource::DataSize                           readSize;
 
     DataSourceURL    dataSourceURL(m_pathToHeaders);
-    dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin");
+    std::wstring extension = s_stream_using_cesium_3d_tiles_format ? L".json" : L".bin";
+    dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + extension);
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -1064,7 +1198,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::Coverage)
         {
         SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
         assert(sqlFilePtr.IsValid());
@@ -1095,9 +1229,10 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextu
     return true;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {    
-    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, SMStoreDataType::UvCoords, nodeHeader);
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
+    {
+    assert(dataType == SMStoreDataType::UvCoords);
+    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader);
 
     return true;    
     }
@@ -1116,6 +1251,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     dataStore = new SMStreamingNodeDataStore<TileMesh, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
+    return true;
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
     return true;
     }
 
@@ -1202,10 +1343,10 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
     {            
-    for (auto it = m_dataCache.begin(); it != m_dataCache.end(); ++it)
-        {
-        delete it->second;
-        }
+    //for (auto it = m_dataCache.begin(); it != m_dataCache.end(); ++it)
+    //    {
+    //    delete it->second;
+    //    }
     m_dataCache.clear();
     }
 
@@ -1282,22 +1423,45 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    if (m_dataType == SMStoreDataType::Points)
-        return m_nodeHeader->m_nodeCount;
-    else
-    if (m_dataType == SMStoreDataType::TriPtIndices)
-        return m_nodeHeader->m_nbFaceIndexes;    
-    else       
-    if (IsValidID(blockID))
-        return this->GetBlock(blockID).size() / sizeof(DATATYPE);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles); // consider using another function signature of GetBlockDataCount which takes into account the store data type
 
-    return 0;   
+    return GetBlockDataCount(blockID, m_dataType);
     }
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
     {
-    assert(!"Invalid call");
-    return 0;
+    size_t count = 0;
+    switch (dataType)
+        {
+        case SMStoreDataType::Points : 
+            {
+            //count = m_nodeHeader->m_nodeCount;
+            count = this->GetBlock(blockID).GetNumberOfPoints();
+            break;
+            }
+        case SMStoreDataType::TriPtIndices :
+            {
+            //count = m_nodeHeader->m_nbFaceIndexes;
+            count = this->GetBlock(blockID).GetNumberOfIndices();
+            break;
+            }
+        case SMStoreDataType::UvCoords:
+            {
+            count = this->GetBlock(blockID).GetNumberOfUvs();
+            break;
+            }
+        case SMStoreDataType::Texture:
+            {
+            count = this->GetBlock(blockID).GetTextureSize();
+            break;
+            }
+        default:
+            {
+            count = this->GetBlock(blockID).size() / sizeof(DATATYPE);
+            break;
+            }
+        }
+    return count;
     }
 
 template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
@@ -1330,10 +1494,24 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
     auto& block = this->GetBlock(blockID);
-    auto blockSize = block.size();
-    assert(block.size() <= maxCountData * sizeof(DATATYPE));
-    memmove(DataTypeArray, block.data(), block.size());
+    if (m_dataType != SMStoreDataType::Cesium3DTiles)
+        {
+        assert(block.size() <= maxCountData * sizeof(DATATYPE));
+        memmove(DataTypeArray, block.data(), block.size());
 
+        }
+    else
+        {
+        Cesium3DTilesBase* pData = (Cesium3DTilesBase*)(DataTypeArray);
+        assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0 && pData->m_uvData != 0 && pData->m_textureData != 0);
+        assert(maxCountData >= block.GetNumberOfPoints() * sizeof(DPoint3d) + block.GetNumberOfUvs() * sizeof(DPoint2d) + block.GetNumberOfIndices() * sizeof(int32_t) + block.GetTextureSize());
+        memmove(pData->m_textureData, block.GetTexture(), block.GetTextureSize());
+        memmove(pData->m_uvData, block.GetUVs(), block.GetNumberOfUvs() * sizeof(DPoint2d));
+        memmove(pData->m_pointData, block.GetPoints(), block.GetNumberOfPoints() * sizeof(DPoint3d));
+        memmove(pData->m_indicesData, block.GetIndices(), block.GetNumberOfIndices() * sizeof(int32_t));
+        }
+    auto blockSize = block.size();
+    // Data now resides in the pool, no longer need to keep it in the store
     m_dataCacheMutex.lock();
     block.UnLoad();
     m_dataCache.erase(block.GetID());
@@ -1351,20 +1529,19 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     {
     // std::map [] operator is not thread safe while inserting new elements
     m_dataCacheMutex.lock();
-    StreamingDataBlock* block = m_dataCache[blockID.m_integerID];
-    if (!block) block = new StreamingDataBlock();
-    m_dataCacheMutex.unlock();
-    assert((block->GetID() != uint64_t(-1) ? block->GetID() == blockID.m_integerID : true));
-    if (!block->IsLoaded())
+    auto& block = m_dataCache[blockID.m_integerID];
+    if (!block)
         {
-        auto blockSize = m_nodeHeader->GetBlockSize((short)m_dataType);
-        //assert(blockSize != uint64_t(-1));
+        block.reset(new StreamingDataBlock());
         block->SetID(blockID.m_integerID);
         block->SetDataSourceURL(m_dataSourceURL);
-        block->Load(m_dataSourceAccount, blockSize);
         }
+    m_dataCacheMutex.unlock();
     assert(block->GetID() == blockID.m_integerID);
+
+    block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
     assert(block->IsLoaded() && !block->empty());
+
     return *block;
     }
 
@@ -1407,31 +1584,34 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     return dataSource;
     }
     
-void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dataSizeKnown)
+void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, SMStoreDataType dataType, uint64_t dataSizeKnown)
     {
-    if (!IsLoaded())
-        {
-        if (IsLoading())
-            {
-                LockAndWait();
-            }
-        else
-            {
-                std::unique_ptr<DataSource::Buffer[]> dest;
-                auto readSize = this->LoadDataBlock(dataSourceAccount, dest, dataSizeKnown);
-                if (readSize > 0)
-                {
-                    m_pIsLoaded = true;
+    if (IsLoaded()) return;
 
-                    uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
-                    //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
-                    uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
-                    DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+    if (IsLoading())
+        {
+        LockAndWait();
+        }
+    else
+        {
+        std::unique_ptr<DataSource::Buffer[]> dest;
+        auto readSize = this->LoadDataBlock(dataSourceAccount, dest, dataSizeKnown);
+        assert(readSize > 0); // something went wrong loading streaming data block
+        if (readSize > 0)
+            {
+            m_pIsLoaded = true;
+
+            if (dataType != SMStoreDataType::Cesium3DTiles)
+                {
+                uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+                //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
+                uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
+                DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
                 }
-                else
-                    {
-                    assert(false); // something went wrong loading streaming data block
-                    }
+            else
+                {
+                this->ParseCesium3DTilesData(dest.get(), readSize);
+                }
             }
         }
     }
@@ -1485,13 +1665,57 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
 
+inline DPoint3d * StreamingDataBlock::GetPoints()
+    {
+    return reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
+    }
+
+inline int32_t * StreamingDataBlock::GetIndices()
+    {
+    return reinterpret_cast<int32_t *>(this->data() + m_tileData.indiceOffset);
+    }
+
+inline DPoint2d * StreamingDataBlock::GetUVs()
+    {
+    return reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+    }
+
+inline Byte * StreamingDataBlock::GetTexture()
+    {
+    return reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
+    }
+
+inline uint32_t StreamingDataBlock::GetNumberOfPoints()
+    {
+    return m_tileData.numPoints;
+    }
+
+inline uint32_t StreamingDataBlock::GetNumberOfIndices()
+    {
+    return m_tileData.numIndices;
+    }
+
+inline uint32_t StreamingDataBlock::GetNumberOfUvs()
+    {
+    return m_tileData.numUvs;
+    }
+
+inline uint32_t StreamingDataBlock::GetTextureSize()
+    {
+    return m_tileData.textureSize;
+    }
+
 inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown)
     {
     DataSource                                *  dataSource;
     DataSource::DataSize                         readSize;
 
     DataSourceURL    dataSourceURL(m_pDataSourceURL);
-    dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + L".bin");
+    if (s_stream_using_cesium_3d_tiles_format)
+        dataSourceURL.append(std::to_wstring(m_pID) + L".b3dm");
+    else
+        dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + L".bin");
+
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -1515,11 +1739,183 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     return readSize;
     }
 
+inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, const size_t& cesiumDataSize)
+    {
+    Json::Reader    reader;
+    Json::Value     cesiumBatchTableHeader;
+    // We copy the batch file and clear data from the block so we can re-fill it with exactly the data we need
+    //bvector<uint8_t> batchFile(*this);
+    //this->clear();
+    auto batchTable = cesiumData;
+    uint32_t batchTableHeaderSize = *(uint32_t*)(batchTable + 3 * sizeof(uint32_t));
+    uint32_t batchTableBinarySize = *(uint32_t*)(batchTable + 4 * sizeof(uint32_t));
+    uint32_t batchHeaderLength = 24;
+    uint32_t gltfHeaderLength = 20;
+    uint32_t gltfOffset = batchHeaderLength + batchTableHeaderSize + batchTableBinarySize;
+    uint32_t gltfJsonStartOffset = gltfOffset + gltfHeaderLength;
+    uint32_t gltfJsonHeaderSize = *(uint32_t*)(batchTable + gltfOffset + 3 * sizeof(uint32_t));
+    uint32_t gltfBinaryStartOffset = gltfJsonStartOffset + gltfJsonHeaderSize;
+
+    const char* beginGLTFJsonHeader = reinterpret_cast<const char *>(batchTable + gltfJsonStartOffset);
+    const char* endGLTFJsonHeader = reinterpret_cast<const char *>(&(beginGLTFJsonHeader[gltfJsonHeaderSize]));
+    reader.parse(beginGLTFJsonHeader, endGLTFJsonHeader, cesiumBatchTableHeader);
+
+    // Cesium accessors to data are taken from the gltf Json header : scene->nodes->meshes->primitives->attributes->{POSITION, TEXCOORD, indices, material}
+    auto sceneName = cesiumBatchTableHeader["scene"].asString();
+    auto& scenes = cesiumBatchTableHeader["scenes"];
+    assert(scenes.size() == 1); // should contain only one scene
+    auto& nodes = scenes[sceneName]["nodes"];
+    assert(nodes.size() == 1); // should contain only one node
+    auto nodeName = nodes[0].asString();
+    auto& meshes = cesiumBatchTableHeader["nodes"][nodeName]["meshes"];
+    assert(meshes.size() == 1); // should contain only one mesh
+    auto meshName = meshes[0].asString();
+    auto& primitives = cesiumBatchTableHeader["meshes"][meshName]["primitives"];
+    assert(primitives.size() == 1); // should contain only one primitive
+    auto indiceAccName = primitives[0]["indices"].asString();
+    auto textureAccName = primitives[0]["material"].asString();
+    auto& attributes = primitives[0]["attributes"];
+    auto pointAccName = attributes["POSITION"].asString();
+    auto uvAccName = attributes["TEXCOORD_0"].asString();
+
+    auto& accessors = cesiumBatchTableHeader["accessors"];
+    auto& indiceAccessor = accessors[indiceAccName];
+    auto& pointAccessor = accessors[pointAccName];
+    auto& uvAccessor = accessors[uvAccName];
+    auto indiceBufferName = indiceAccessor["bufferView"].asString();
+    auto pointBufferName = pointAccessor["bufferView"].asString();
+    auto points_are_quantized = pointAccessor.isMember("extensions") && pointAccessor["extensions"].isMember("WEB3D_quantized_attributes");
+    auto uvBufferName = uvAccessor["bufferView"].asString();
+    auto uvs_are_quantized = uvAccessor.isMember("extensions") && uvAccessor["extensions"].isMember("WEB3D_quantized_attributes");
+
+    auto textureName = cesiumBatchTableHeader["materials"][textureAccName]["values"]["tex"].asString();
+    auto imageSourceName = cesiumBatchTableHeader["textures"][textureName]["source"].asString();
+    auto imageSourceBufferName = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["bufferView"].asString();
+    auto imageHeight = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["height"].asUInt();
+    auto imageWidth = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["width"].asUInt();
+
+    struct buffer_object_pointer
+        {
+        uint32_t count;
+        uint32_t byte_size;
+        uint32_t offset;
+        };
+    auto& bufferViews = cesiumBatchTableHeader["bufferViews"];
+    auto& indiceBV = bufferViews[indiceBufferName];
+    auto& pointBV = bufferViews[pointBufferName];
+    auto& uvBV = bufferViews[uvBufferName];
+    auto& textureBV = bufferViews[imageSourceBufferName];
+
+    buffer_object_pointer indice_buffer_pointer = { indiceAccessor["count"].asUInt(), indiceBV["byteLength"].asUInt(), indiceBV["byteOffset"].asUInt() };
+    buffer_object_pointer point_buffer_pointer = { pointAccessor["count"].asUInt(), pointBV["byteLength"].asUInt(), pointBV["byteOffset"].asUInt() };
+    buffer_object_pointer uv_buffer_pointer = { uvAccessor["count"].asUInt(), uvBV["byteLength"].asUInt(), uvBV["byteOffset"].asUInt() };
+    buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
+
+    m_tileData.numPoints = point_buffer_pointer.count / 3;
+    m_tileData.numIndices = indice_buffer_pointer.count;
+    m_tileData.numUvs = uv_buffer_pointer.count / 2;
+    m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
+
+    this->resize(m_tileData.numIndices*sizeof(int32_t) + m_tileData.numPoints*sizeof(DPoint3d) + m_tileData.numUvs*sizeof(DPoint2d) + m_tileData.textureSize);
+    auto buffer = batchTable + gltfBinaryStartOffset;
+    m_tileData.m_indicesData = reinterpret_cast<int32_t *>(this->data());
+    m_tileData.indiceOffset = 0;
+    if (indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint16_t))
+        {
+        auto indice_array = (int16_t*)(buffer + indice_buffer_pointer.offset);
+        for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
+            {
+            m_tileData.m_indicesData[i] = (int32_t)indice_array[i];
+            }
+        }
+    else
+        {
+        memcpy(m_tileData.m_indicesData, buffer + indice_buffer_pointer.offset, indice_buffer_pointer.count * sizeof(int32_t));
+        }
+    m_tileData.m_uvIndicesData = m_tileData.m_indicesData;
+
+    m_tileData.pointOffset = indice_buffer_pointer.count*sizeof(int32_t);
+    m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
+    if (points_are_quantized)
+        {
+        auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
+        // decode matrix is stored as column major
+
+        const DPoint3d scale = DPoint3d::From(decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble());
+        const DPoint3d translate = DPoint3d::From(decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble());
+        
+        auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
+        for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+            {
+            m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5) + translate.z);
+            }
+
+        }
+    else
+        {
+        auto point_array = (float*)(buffer + point_buffer_pointer.offset);
+        for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+            {
+            m_tileData.m_pointData[i] = DPoint3d::From((double)point_array[3*i], (double)point_array[3*i+1], (double)point_array[3*i+2]);
+            }
+        }
+
+    m_tileData.uvOffset = m_tileData.pointOffset + m_tileData.numPoints*sizeof(DPoint3d);
+    m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+    if (uvs_are_quantized)
+        {
+        auto& decodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
+        // decode matrix is stored as column major
+
+        const DPoint2d scale = DPoint2d::From(decodeMatrixJson[0].asDouble(), decodeMatrixJson[4].asDouble());
+        const DPoint2d translate = DPoint2d::From(decodeMatrixJson[6].asDouble(), decodeMatrixJson[7].asDouble());
+
+        auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
+        for (uint32_t i = 0; i < m_tileData.numUvs; i++)
+            {
+            m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5) + translate.y));
+            }
+
+        }
+    else
+        {
+        auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
+        for (uint32_t i = 0; i < m_tileData.numUvs; i++)
+            {
+            m_tileData.m_uvData[i] = DPoint2d::From((double)uv_array[2 * i], (double)uv_array[2 * i + 1]);
+            }
+        }
+
+    m_tileData.textureOffset = m_tileData.uvOffset + m_tileData.numUvs*sizeof(DPoint2d);
+    m_tileData.m_textureData = reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
+    memcpy(m_tileData.m_textureData, &imageWidth, sizeof(uint32_t));
+    memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
+    memset(m_tileData.m_textureData + 2 * sizeof(uint32_t), 0, sizeof(uint32_t));
+
+    // Decompress texture
+    try {
+        auto texture_jpeg = (Byte*)(buffer + texture_buffer_pointer.offset);
+        auto codec = new HCDCodecIJG(imageWidth, imageHeight, 3 * 8);// 3 * 8 bits per pixels (rgb)
+        codec->SetQuality(70);
+        codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+        HFCPtr<HCDCodec> pCodec = codec;
+        auto textureSize = (uint32_t)(imageWidth*imageHeight*3);
+        const size_t uncompressedDataSize = pCodec->DecompressSubset(texture_jpeg, texture_buffer_pointer.byte_size, m_tileData.m_textureData + 3 * sizeof(uint32_t), textureSize);
+        assert(textureSize == uncompressedDataSize);
+        }
+    catch (const std::exception& e)
+        {
+        assert(!"There is an error decompressing texture");
+        std::wcout << L"Error: " << e.what() << std::endl;
+        }
+
+    }
+
 template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
     m_dataCacheMutex.lock();
-    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache[blockID.m_integerID]);
+    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache[blockID.m_integerID].get());
     if (!texture) texture = new StreamingTextureBlock();
     m_dataCacheMutex.unlock();
     assert((texture->GetID() != uint64_t(-1) ? texture->GetID() == blockID.m_integerID : true));
@@ -1622,7 +2018,7 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
     m_dataCacheMutex.lock();
     auto textureID = texture.GetID();
-    delete m_dataCache[textureID];
+    //delete m_dataCache[textureID];
     m_dataCache.erase(textureID);
     m_dataCacheMutex.unlock();
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
