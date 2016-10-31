@@ -142,6 +142,38 @@ bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_BODY_t PSolidUtil::GetBodyForEntity (PK_ENTITY_t entityTag)
+    {
+    PK_BODY_t   bodyTag = PK_ENTITY_null;
+    PK_CLASS_t  entityClass = 0;
+
+    PK_ENTITY_ask_class (entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_edge:
+            PK_EDGE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_face:
+            PK_FACE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_vertex:
+            PK_VERTEX_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_body:
+            bodyTag = entityTag;
+            break;
+        }
+
+    return bodyTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static CurveVector::BoundaryType getBoundaryType (CurveVectorCR curveVector)

@@ -667,3 +667,31 @@ BentleyStatus PSolidGeom::BodyFromPolyface(PK_BODY_t& bodyTag, PolyfaceQueryCR p
     
     return status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromPolyface (IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
+    {
+    if (meshData.GetPointCount () < 3)
+        return ERROR;
+
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    Transform   solidToDgn, dgnToSolid;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, meshData.GetPointCP());
+
+    PK_BODY_t   bodyTag;
+
+    if (SUCCESS != PSolidGeom::BodyFromPolyface (bodyTag, meshData, dgnToSolid))
+        return ERROR;
+
+    if (nodeId)
+        PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+    entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+    return SUCCESS;
+    }
+
