@@ -26,6 +26,39 @@ struct DgnViewElemTest : public DgnDbTestFixture
 {
     typedef ViewDefinition::Iterator Iter;
     typedef Iter::Options IterOpts;
+
+    void SetupTestProject()
+        {
+        SetupSeedProject();
+
+        DgnModelPtr model = AddModel("A");
+        static const DgnViewSource s_viewSources[] = {DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private};
+        static const Utf8CP s_viewSourceNames[] = {"-U", "-G", "-P"};
+        static const Utf8CP s_viewDescriptions[] = {"", "generated", "hidden"};
+        // Create one new view of each source for each new model
+
+        for (auto i = 0; i < _countof(s_viewSources); i++)
+            {
+            Utf8String viewName(model->GetCode().GetValue());
+            viewName.append(s_viewSourceNames[i]);
+            ViewDefinitionCPtr view = AddView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ASSERT_TRUE(view.IsValid());
+            ASSERT_TRUE(view->GetViewId().IsValid());
+            }
+
+        m_db->SaveChanges();
+        }
+
+    DgnModelPtr AddModel(Utf8StringCR name)
+        {
+        DgnClassId classId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+        DgnModel::CreateParams params(*m_db, classId, DgnModel::CreateModelCode(name));
+        DgnModelPtr model = new SpatialModel(params);
+        EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+
+        return model;
+        }
+        
     template<typename T> ViewDefinitionCPtr AddSpatialView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
         T view(*m_db, name, *new CategorySelector(*m_db, ""), *new DisplayStyle3d(*m_db, ""), *new ModelSelector(*m_db, ""));
@@ -85,10 +118,10 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    EXPECT_EQ(3, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
-    static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
+    static const Utf8CP s_viewNames[] = { "A-U", "A-G", "A-P"};
 
     int i = 0;
     for (auto const& entry : iter)
@@ -97,7 +130,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
         i++;
         }
 
-    EXPECT_EQ(i, 4);
+    ASSERT_EQ(i, 3);
     }
 
 /*---------------------------------------------------------------------------------**//**
