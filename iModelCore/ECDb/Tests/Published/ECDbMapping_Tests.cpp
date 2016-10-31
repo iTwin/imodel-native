@@ -9098,18 +9098,24 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_TRUE(prim != nullptr);
 
     oneFooHasOneGoo->GetSource().AddClass(*foo);
+    oneFooHasOneGoo->GetSource().SetRoleLabel("OneFooHasOneGoo");
     oneFooHasOneGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneFooHasOneGoo->GetTarget().AddClass(*goo);
+    oneFooHasOneGoo->GetTarget().SetRoleLabel("OneFooHasOneGoo (Reversed)");
     oneFooHasOneGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
     oneFooHasManyGoo->GetSource().AddClass(*foo);
+    oneFooHasManyGoo->GetSource().SetRoleLabel("OneFooHasManyGoo");
     oneFooHasManyGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneFooHasManyGoo->GetTarget().AddClass(*goo);
+    oneFooHasManyGoo->GetTarget().SetRoleLabel("OneFooHasManyGoo (Reversed)");
     oneFooHasManyGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     manyFooHasManyGoo->GetSource().AddClass(*foo);
+    manyFooHasManyGoo->GetSource().SetRoleLabel("ManyFooHasManyGoo");
     manyFooHasManyGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     manyFooHasManyGoo->GetTarget().AddClass(*goo);
+    manyFooHasManyGoo->GetTarget().SetRoleLabel("ManyFooHasManyGoo (Reversed)");
     manyFooHasManyGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
     BackDoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
 
