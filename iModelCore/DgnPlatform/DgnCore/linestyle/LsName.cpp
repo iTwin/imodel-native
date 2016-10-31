@@ -67,7 +67,7 @@ virtual void _OutputGraphics(ViewContext& viewContext) override
     Render::GraphicParams   defaultParams;
     LineStyleContext lsContext(*graphic, defaultParams, &viewContext);
 
-    m_component._StrokeLineString(*graphic, lsContext, m_lsSymb, m_points, 2, false);
+    m_component._StrokeLineString(lsContext, m_lsSymb, m_points, 2, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -304,7 +304,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);
     LineStyleContext lsContext(*graphic, elemMatSymb, &context);
-    m_component->_StrokeLineString(*graphic, lsContext, m_lsSymb, m_points, 2, false);
+    m_component->_StrokeLineString(lsContext, m_lsSymb, m_points, 2, false);
     graphic->Close();
 
     return graphic;
