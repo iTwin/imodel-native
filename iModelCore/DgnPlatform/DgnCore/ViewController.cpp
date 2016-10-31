@@ -1701,7 +1701,12 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController2d::_DrawView(ViewContextR context)
     {
-    context.VisitDgnModel(GetViewedModel());
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return;
+    if (!model->IsFilled())
+        model->FillModel();
+    context.VisitDgnModel(model);
     }
 
 /*---------------------------------------------------------------------------------**//**
