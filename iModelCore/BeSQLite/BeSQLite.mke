@@ -62,6 +62,11 @@ CCompFpOpts=precise
 
     # Disables all warnings (and implicitly warnings as errors)
     LLVMCommonCompOpts + -w
+%elif (" " != $[@findstring VS, $(BUILD_TOOLSET)])
+    # This is the one piece of this library that is third party... need to opt-out of static security analysis.
+    # Cannot just set IS_THIRD_PARTY_LIBRARY because it must be controlled half-way through this file.
+    OriginalMsvcCCompOpts =% $(CCompOpts)
+    CCompOpts + -analyze-
 %endif
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
@@ -69,6 +74,8 @@ $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir
 
 %if $(BUILD_TOOLSET) == "APPLE_CLANG"
     LLVMCommonCompOpts =% $(OriginalLLVMCommonCompOpts)
+%elif (" " != $[@findstring VS, $(BUILD_TOOLSET)])
+    CCompOpts =% $(OriginalMsvcCCompOpts)
 %endif
 
 objs + $(o)SQLite$(oext)
