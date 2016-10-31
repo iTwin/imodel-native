@@ -1134,7 +1134,7 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, EC
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, Utf8StringCR name)
+ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, Utf8StringCR name, bool verify)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1146,7 +1146,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
-    pClass = new ECRelationshipClass(*this);
+    pClass = new ECRelationshipClass(*this, verify);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECObjectsStatus::Success != status)
         {

@@ -1344,6 +1344,7 @@ protected:
 
     ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
+    virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass);
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -2167,6 +2168,9 @@ private:
     bool                        m_isSource;
     ECEntityClassCP             m_abstractConstraint;
 
+    bool                        m_verify;
+    bool                        m_verified;
+
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
     ECObjectsStatus             _SetMultiplicity(Utf8CP multiplicity, bool validate = false);
 
@@ -2182,7 +2186,7 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
-    bool                        IsValid(bool resolveIssues) ;
+    bool                        IsValid(bool resolveIssues);
     ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
     ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
     ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
@@ -2197,7 +2201,7 @@ protected:
     virtual CustomAttributeContainerType _GetContainerType() const override { return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint; }
 
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource); // WIP_CEM... should not be public... create a factory method
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify); // WIP_CEM... should not be public... create a factory method
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -2313,10 +2317,13 @@ private:
     ECRelationshipConstraintP      m_target;
     ECRelationshipConstraintP      m_source;
 
+    bool                           m_verify;
+    bool                           m_verified;
+
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema);
+    ECRelationshipClass (ECSchemaCR schema, bool verify = true);
     virtual ~ECRelationshipClass ();
 
     ECObjectsStatus                     SetStrength (Utf8CP strength);
@@ -2336,6 +2343,7 @@ protected:
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
+    virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
 
 //__PUBLISH_SECTION_START__
@@ -2360,6 +2368,11 @@ public:
     ECOBJECTS_EXPORT bool                       GetIsExplicit() const;
     //! Returns true if the constraint is ordered.  This is determined by seeing if the custom attribute signifying a Ordered relationship is defined
     ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+
+    //! Verifies the relationship
+    ECOBJECTS_EXPORT bool                       Verify();
+    //! Returns true if the relationship is verified.
+    ECOBJECTS_EXPORT bool                       GetIsVerified();
 
 }; // ECRelationshipClass
 
@@ -3339,8 +3352,11 @@ public:
     //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
     //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
     //! @param[in]  name    Name of the class to create
+    //! @param[in]  verify  If true the relationship class will be verified during all in-memory operations. Default is true. 
+    //!                     If not verified either the Validate method on the ECSchema or Verify method on the ECRelationshipClass 
+    //!                     must be called in order to insure the schema is valid. It is not recommended to set this to false.
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name, bool verify = true);
 
     //! Creates a new KindOfQuantity and adds it to the schema.
     //! @param[out] kindOfQuantity If successful, will contain a new KindOfQuantity object

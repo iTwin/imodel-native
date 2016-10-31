@@ -275,8 +275,12 @@ TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("ARelB", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("ARelB (Reversed)", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+
+    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
     }
     {
     Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
@@ -299,36 +303,12 @@ TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema2.IsValid());
     ASSERT_TRUE(schema2->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("ARelB", schema2->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("ARelB (Reversed)", schema2->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
-    }
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
-        "   <ECClass typeName='B' isDomainClass='true'></ECClass>"
-        "   <ECRelationshipClass typeName='ARelB' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <Source cardinality='(1,1)' polymorphic='True' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
-
-    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relClass = schema2->GetClassCP("ARelB")->GetRelationshipClassCP();
     EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_EQ("ARelB", relClass->GetSource().GetRoleLabel());
+    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
     EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_EQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel());
+    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
     }
     }
 
@@ -370,8 +350,14 @@ TEST_F(SchemaDeserializationConversionTest, TestInheritedRoleLabelAttribute)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
-    ASSERT_STREQ("testSource", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("testTarget", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+
+    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefined());
+    EXPECT_FALSE(relClass->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testSource", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefined());
+    EXPECT_FALSE(relClass->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testTarget", relClass->GetTarget().GetRoleLabel().c_str());
     }
     }
 

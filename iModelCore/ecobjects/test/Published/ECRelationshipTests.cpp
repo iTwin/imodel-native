@@ -727,7 +727,9 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     relationClass->SetClassModifier(ECClassModifier::Abstract);
     relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetSource().SetRoleLabel("ARelB");
     relationClass->GetTarget().AddClass(*entityClassC);
+    relationClass->GetTarget().SetRoleLabel("ARelB (Reversed)");
 
     EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefinedLocally()) << "The Source Constraint's Abstract Constraint should not be locally defined since there is only one .";
     EXPECT_TRUE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicity set therefore should return true.";
@@ -736,8 +738,7 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicity set since therefore should return true.";
     EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
-    // WIP: Commnent out until ECDb implements abstractConstraint because we avoid this check.
-    //EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
     entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
@@ -784,8 +785,10 @@ TEST_F(ECRelationshipTests, TestInheritedAbstractConstraint)
     relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     relationClass->SetClassModifier(ECClassModifier::Abstract);
     relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetSource().SetRoleLabel("BaseRelationship");
     relationClass->GetTarget().SetAbstractConstraint(*commonBaseClass);
     relationClass->GetTarget().AddClass(*entityClassB);
+    relationClass->GetTarget().SetRoleLabel("BaseRelationship (Reversed)");
 
     ECRelationshipClassP relationClass2;
     ecSchema->CreateRelationshipClass(relationClass2, "DerivedRelationship");
@@ -822,12 +825,76 @@ TEST_F(ECRelationshipTests, TestInheritedAbstractConstraint)
     EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
 
     relationClass3->GetTarget().AddClass(*entityClassC);
-    EXPECT_EQ(1, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";;
+    EXPECT_EQ(1, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";
     relationClass3->GetTarget().AddClass(*entityClassD);
     EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 2 when EntityClassD.";
 
     relationClass3->GetTarget().AddClass(*unrelatedClass);
     EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The UnrelatedClass should not be added to the constraint since it violates the abstract constraint.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipTests, TestRelationshipDelayedValidation)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECRelationshipClassP baseRelationClass;
+    ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass", false);
+    ASSERT_FALSE(baseRelationClass->GetIsVerified()) << "A newly created relationship should not be verified.";
+    ASSERT_FALSE(ecSchema->Validate()) << "The schema fail to validate since the relationship is invalid.";
+    
+    baseRelationClass->SetStrength(StrengthType::Referencing);
+    baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
+    ASSERT_FALSE(baseRelationClass->Verify()) << "The relationship with invalid constraints should fail to verify.";
+    ASSERT_FALSE(baseRelationClass->GetIsVerified()) << "A relationship with invalid Source and Target constraints should not be verified.";
+
+    baseRelationClass->GetSource().SetRoleLabel("Source");
+    baseRelationClass->GetTarget().SetRoleLabel("Target");
+    ASSERT_TRUE(baseRelationClass->Verify());
+    ASSERT_TRUE(baseRelationClass->GetIsVerified()) << "Now that the Source and Target constraints are fully defined the class should verify.";
+    ASSERT_TRUE(ecSchema->Validate()) << "The schema should now validate as an EC3.1 schema since the relationship is now verified.";
+    ASSERT_TRUE(ecSchema->IsECVersion(ECVersion::V3_1)) << "The schema should now be an EC3.1 schema.";
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "relClass", false);
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*baseRelationClass));
+    EXPECT_TRUE(relationClass->Verify()) << "Most attributes that are required on a relationship can be inherited so when the base class is added it should be valid.";
+    EXPECT_TRUE(relationClass->GetIsVerified());
+
+    relationClass->RemoveBaseClass(*baseRelationClass);
+    EXPECT_FALSE(relationClass->GetIsVerified()) << "The base class which made this relationship valid has been removed. The relationship should now not be valid";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipTests, TestRelationshipSerialization)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECRelationshipClassP baseRelationClass;
+    ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass", false);
+    baseRelationClass->SetStrength(StrengthType::Referencing);
+    baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
+    EXPECT_FALSE(baseRelationClass->Verify()) << "The relationship with invalid constraints should fail to verify.";
+    EXPECT_FALSE(baseRelationClass->GetIsVerified()) << "A relationship with invalid Source and Target constraints should not be verified.";
+
+    Utf8String serializedSchemaXml;
+    EXPECT_EQ(SchemaWriteStatus::Success, ecSchema->WriteToXmlString(serializedSchemaXml)) << "Even though the schema is invalid because of a bad relationship it should serialize.";
+
+    ECSchemaPtr roundTripSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
