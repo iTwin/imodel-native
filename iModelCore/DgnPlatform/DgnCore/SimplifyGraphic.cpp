@@ -672,9 +672,19 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
         if (isAutoClipPref)
             {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+            bvector<CurveVectorPtr> insideCurves;
+
+            if (false)//SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+                {
+                for (CurveVectorPtr tmpCurves : insideCurves)
+                    m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
+
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
             bvector<CurveVectorPtr> insideCurves;
 
             if (SUCCESS == OCBRep::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
@@ -684,9 +694,36 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 
                 return;
                 }
+#endif
             }
         else if (!doClipping || geom.IsAnyRegionType()) // _ClipBody doesn't support wire bodies...
             {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+            IBRepEntityPtr entityPtr;
+
+            if (SUCCESS == PSolidGeom::BodyFromCurveVector(entityPtr, geom))
+                {
+                if (!doClipping)
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    return;
+                    }
+
+                bool clipped;
+                bvector<IBRepEntityPtr> clippedBodies;
+
+                if (false)//SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                    {
+                    for (IBRepEntityPtr entityOut : clippedBodies)
+                        m_processor._ProcessBody(*entityOut, *this);
+                    }
+                else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
             TopoDS_Shape shape;
 
             if (SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, geom))
@@ -716,8 +753,8 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                     }
                 return;
                 }
-            }
 #endif
+            }
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
         }
