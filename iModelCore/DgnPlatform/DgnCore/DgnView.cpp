@@ -673,7 +673,7 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
 DgnDbStatus ModelSelector::_OnDelete() const
     {
     // Delete all 3d views that are based on on this selector
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition3d") " WHERE ModelSelector=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("SpatialViewDefinition") " WHERE ModelSelector=?");
     statement->BindId(1, GetElementId());
     if (BE_SQLITE_ROW == statement->Step())
         {
