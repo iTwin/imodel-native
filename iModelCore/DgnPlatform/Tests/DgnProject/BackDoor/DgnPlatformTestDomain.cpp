@@ -218,22 +218,12 @@ DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    if (DgnDbStatus::Success == status)
-        BindParams(stmt);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::BindParams(ECSqlStatement& stmt) const
+void TestElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty1), m_intProps[0]);
     stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty2), m_intProps[1]);
@@ -247,18 +237,6 @@ void TestElement::BindParams(ECSqlStatement& stmt) const
     stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
     stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
     stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    if (DgnDbStatus::Success == status)
-        BindParams(stmt);
-
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

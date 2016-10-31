@@ -253,8 +253,6 @@ DgnDbStatus ElementECInstanceAdapter::CopyPropertiesFrom(ECValuesCollectionCR so
         {
         ECPropertyValue const& prop = *it;
 
-        printf ("%s=%s\n", prop.GetValueAccessor().GetDebugAccessString().c_str(), prop.GetValue().ToString().c_str());
-
         if (filter._ExcludeProperty(prop))
             continue;
 
@@ -418,7 +416,7 @@ void DgnElement::Dump(Utf8StringR str, ComparePropertyFilter const& filter) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElements::CreateElement(DgnDbStatus* inStat, ECN::IECInstanceCR properties)
+DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* inStat) const
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
@@ -431,13 +429,13 @@ DgnElementPtr DgnElements::CreateElement(DgnDbStatus* inStat, ECN::IECInstanceCR
         return nullptr;
         }
 
-    return handler->_CreateNewElement(inStat, GetDgnDb(), properties);
+    return handler->_CreateNewElement(GetDgnDb(), properties, inStat);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
@@ -446,13 +444,13 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_ModelId) || v.IsNull())
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
         mid = DgnModelId((uint64_t)v.GetLong());
         if (!mid.IsValid())
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
         }
@@ -469,14 +467,14 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthorityId) || v.IsNull())
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
         DgnAuthorityId id((uint64_t) v.GetLong());
 
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
         Utf8String codeName(v.GetUtf8CP());
@@ -484,7 +482,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeValue) || (v.IsNull() && !Utf8String::IsNullOrEmpty(codeName.c_str())) ||
             (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::InvalidName;
             return CreateParams(db, DgnModelId(), classId);
             }
 
@@ -499,7 +497,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
         uint64_t idvalue;
         if (BSISUCCESS != BeStringUtilities::ParseUInt64(idvalue, ecinstanceid.c_str()))
             {
-            stat = DgnDbStatus::BadArg;
+            stat = DgnDbStatus::InvalidId;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
         params.SetElementId(DgnElementId(idvalue));
@@ -518,49 +516,26 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR source, SetPropert
     return ecThis.CopyPropertiesFrom(srcValues, filter);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnElement::CreateParams dgn_ElementHandler::Element::_InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
-    {
-    return DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
     {
-    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
-    auto params = _InitCreateParams(inStat, db, properties);
+    auto params = DgnElement::InitCreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
         return nullptr;
+
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
     auto ele = _CreateInstance(params);
     if (nullptr == ele)
         {
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    printf ("--------------------------Input ECInstance-------------------------------\n");
     DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
     stat = ele->_SetPropertyValues(properties, filter);
 
-    printf ("--------------------------Element ECDBuffer-------------------------------\n");
-    ElementAutoHandledPropertiesECInstanceAdapter ecd(*ele, true);
-//    ScopedDataAccessor accs(ecd);
-//    printf ("%s\n", accs.DumpData().c_str());
-    ECValuesCollection ecdValues(ecd);
-    for (ECValuesCollection::const_iterator it=ecdValues.begin(); it != ecdValues.end(); ++it)
-        {
-        ECPropertyValue const& prop = *it;
-        printf ("%s=%s\n", prop.GetValueAccessor().GetDebugAccessString().c_str(), prop.GetValue().ToString().c_str());
-        auto const& loc = prop.GetValueAccessor().DeepestLocationCR();
-        ECValue v;
-        ecd.GetValue(v, loc.GetPropertyIndex());
-        printf ("%s=%s\n", prop.GetValueAccessor().GetAccessString(), v.ToString().c_str());
-        }
-
-    return (DgnDbStatus::Success == stat)? ele: nullptr;
+    return (DgnDbStatus::Success == stat) ? ele : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,7 +650,6 @@ void ElementAutoHandledPropertiesECInstanceAdapter::AllocateBuffer(size_t size)
 
     m_element.m_ecPropertyDataSize = size;
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
-    memset (m_element.m_ecPropertyData, 0xec, size);
     InitializeMemory(_GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
 
     if (m_element.IsPersistent())

@@ -274,6 +274,9 @@
     <ClCompile Include="DgnDbTestUtils\DgnDbTestUtils.cpp">
       <Filter>UnitTests</Filter>
     </ClCompile>
+    <ClCompile Include="Published\CreateFromInstance_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

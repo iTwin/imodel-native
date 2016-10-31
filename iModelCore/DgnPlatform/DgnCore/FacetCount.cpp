@@ -501,7 +501,7 @@ size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
                 {
                 CurveVectorPtr  curveVector;
 
-                if ((curveVector = PSolidUtil::PlanarFaceToCurveVector (faceTag)).IsValid())
+                if ((curveVector = PSolidGeom::PlanarFaceToCurveVector (faceTag)).IsValid())
                     facetCount += GetFacetCount(*curveVector);
                 break;
                 }
@@ -514,7 +514,7 @@ size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
                 {
                 ISolidPrimitivePtr  solidPrimitive;
 
-                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
+                if ((solidPrimitive = PSolidGeom::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
                     facetCount += GetFacetCount(*solidPrimitive);
                 break;
                 }
@@ -523,7 +523,7 @@ size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
                 {
                 MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
 
-                if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
+                if (SUCCESS == PSolidGeom::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
                     facetCount += GetFacetCount(*bSplineSurface);
 
                 break;

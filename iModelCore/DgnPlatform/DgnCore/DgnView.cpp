@@ -12,16 +12,20 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler
+namespace ViewElementHandler
 {
-    HANDLER_DEFINE_MEMBERS(DrawingViewDef);
-    HANDLER_DEFINE_MEMBERS(SheetViewDef);
-    HANDLER_DEFINE_MEMBERS(OrthographicViewDef);
-    HANDLER_DEFINE_MEMBERS(CameraViewDef);
-    HANDLER_DEFINE_MEMBERS(ModelSelectorDef);
-    HANDLER_DEFINE_MEMBERS(CategorySelectorDef);
-    HANDLER_DEFINE_MEMBERS(DisplayStyleDef);
-    HANDLER_DEFINE_MEMBERS(DisplayStyle3dDef);
+    HANDLER_DEFINE_MEMBERS(View);
+    HANDLER_DEFINE_MEMBERS(View3d);
+    HANDLER_DEFINE_MEMBERS(View2d);
+    HANDLER_DEFINE_MEMBERS(DrawingView);
+    HANDLER_DEFINE_MEMBERS(SheetView);
+    HANDLER_DEFINE_MEMBERS(SpatialView);
+    HANDLER_DEFINE_MEMBERS(OrthographicView);
+    HANDLER_DEFINE_MEMBERS(CameraView);
+    HANDLER_DEFINE_MEMBERS(ViewModels);
+    HANDLER_DEFINE_MEMBERS(ViewCategories);
+    HANDLER_DEFINE_MEMBERS(ViewDisplayStyle);
+    HANDLER_DEFINE_MEMBERS(ViewDisplayStyle3d);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -45,14 +49,14 @@ namespace ViewProperties
     static Utf8CP str_Extents() {return "Extents";}
     static Utf8CP str_RotationAngle() {return "RotationAngle";}
     static Utf8CP str_Yaw() {return "Yaw";}
-    static Utf8CP str_Pitch() {return "Pitch";}           
-    static Utf8CP str_Roll() {return "Roll";}           
-    static Utf8CP str_AspectSkew() {return "AspectSkew";}           
-    static Utf8CP str_Width() {return "width";}           
-    static Utf8CP str_Height() {return "height";}           
-    static Utf8CP str_Format() {return "format";}           
-    static Utf8CP str_Jpeg() {return "jpeg";}           
-    static Utf8CP str_Png() {return "png";}           
+    static Utf8CP str_Pitch() {return "Pitch";}
+    static Utf8CP str_Roll() {return "Roll";}
+    static Utf8CP str_AspectSkew() {return "AspectSkew";}
+    static Utf8CP str_Width() {return "width";}
+    static Utf8CP str_Height() {return "height";}
+    static Utf8CP str_Format() {return "format";}
+    static Utf8CP str_Jpeg() {return "jpeg";}
+    static Utf8CP str_Png() {return "png";}
 };
 
 using namespace ViewProperties;
@@ -116,10 +120,13 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::_EqualState(ViewDefinitionR other) 
+bool ViewDefinition::_EqualState(ViewDefinitionR other)
     {
-    SaveState();
-    other.SaveState();
+    if (m_categorySelectorId != other.m_categorySelectorId)
+        return false;
+
+    if (m_displayStyleId != other.m_displayStyleId)
+        return false;
 
     if (!GetCategorySelector().EqualState(other.GetCategorySelector()))
         return false;
@@ -127,45 +134,53 @@ bool ViewDefinition::_EqualState(ViewDefinitionR other)
     if (!GetDisplayStyle().EqualState(other.GetDisplayStyle()))
         return false;
 
-    return m_details == other.m_details;
+    return ToDetailJson() == other.ToDetailJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::SaveState() const
+DgnDbStatus ViewDefinition::_OnInsert()
     {
-    if (m_displayStyle.IsValid() && !m_displayStyle->GetElementId().IsValid())
+    if (!GetDisplayStyle().GetElementId().IsValid())
         {
         m_displayStyle->Insert();
-        m_dirty = true;
+        m_displayStyleId = m_displayStyle->GetElementId();
         }
 
-    if (m_categorySelector.IsValid() && !m_categorySelector->GetElementId().IsValid())
+    if (!GetCategorySelector().GetElementId().IsValid())
         {
         m_categorySelector->Insert();
-        m_dirty = true;
+        m_categorySelectorId = m_categorySelector->GetElementId();
         }
 
-    if (!m_dirty)
-        return;
-
-    ViewDefinitionR ncThis = const_cast<ViewDefinitionR>(*this);
-    if (m_displayStyle.IsValid())
-        ncThis.SetPropertyValue(str_DisplayStyle(), m_displayStyle->GetElementId());
-    if (m_categorySelector.IsValid())
-        ncThis.SetPropertyValue(str_CategorySelector(), m_categorySelector->GetElementId());
-
-    ncThis.SetPropertyValue(str_Details(), Json::FastWriter::ToString(m_details).c_str());
-    m_dirty=false;
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ViewDefinition::GetCategorySelectorId() const
+void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    return GetPropertyValueId<DgnElementId>(str_CategorySelector());
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    BeAssert(GetDisplayStyleId().IsValid());
+    BeAssert(GetCategorySelectorId().IsValid());
+    auto stat = stmt.BindId(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindId(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindText(stmt.GetParameterIndex(str_Details()), ToDetailJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    BeAssert(ECSqlStatus::Success == stat);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ViewDefinition::ToDetailJson()
+    {
+    _Save();
+    return Json::FastWriter::ToString(m_details);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,14 +197,6 @@ CategorySelectorR ViewDefinition::GetCategorySelector()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ViewDefinition::GetDisplayStyleId() const
-    {
-    return GetPropertyValueId<DgnElementId>(str_DisplayStyle());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DisplayStyleR ViewDefinition::GetDisplayStyle()
     {
     if (!m_displayStyle.IsValid())
@@ -201,14 +208,17 @@ DisplayStyleR ViewDefinition::GetDisplayStyle()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_LoadFromDb() 
+DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    Json::Reader::Parse(GetPropertyValueString(str_Details()), m_details);
-    m_dirty = false;
+    m_displayStyleId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
+    m_categorySelectorId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
+
+    Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(str_Details())), m_details);
+    _Load();
 
     return DgnDbStatus::Success;
     }
@@ -216,13 +226,13 @@ DgnDbStatus ViewDefinition::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_CopyFrom(DgnElementCR el) 
+void ViewDefinition::_CopyFrom(DgnElementCR el)
     {
-    auto& other = static_cast<ViewDefinitionCR>(el);
-    other.SaveState();
-
     T_Super::_CopyFrom(el);
 
+    auto& other = static_cast<ViewDefinitionCR>(el);
+    m_categorySelectorId = other.m_categorySelectorId;
+    m_displayStyleId = other.m_displayStyleId;
     m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
     m_displayStyle = other.m_displayStyle.IsValid() ? other.m_displayStyle->MakeCopy<DisplayStyle>() : nullptr;
     m_details = other.m_details;
@@ -323,35 +333,37 @@ void ViewDefinition2d::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::SaveViewDef2d()
+void ViewDefinition2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    SetPropertyValue(str_BaseModel(), m_baseModelId);
-    SetPropertyValue(str_Origin(), m_origin);
-    SetPropertyValue(str_Extents(), m_delta);
-    SetPropertyValue(str_RotationAngle(), Angle::FromRadians(m_rotAngle).Degrees());
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    auto stat = stmt.BindPoint2d(stmt.GetParameterIndex(str_Origin()), m_origin);
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindPoint2d(stmt.GetParameterIndex(str_Extents()), m_delta);
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_RotationAngle()), Angle::FromRadians(m_rotAngle).Degrees());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindId(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId);
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition2d::_LoadFromDb() 
+DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    m_origin  = stmt.GetValuePoint2d(params.GetSelectIndex(str_Origin()));
+    m_delta   = DVec2d::From(stmt.GetValuePoint2d(params.GetSelectIndex(str_Extents())));
+    m_rotAngle = Angle::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(str_RotationAngle()))).Radians();
+    m_baseModelId = stmt.GetValueId<DgnModelId>(params.GetSelectIndex(str_BaseModel()));
 
-    m_baseModelId = GetPropertyValueId<DgnModelId>(str_BaseModel());
-    m_origin = GetPropertyValueDPoint2d(str_Origin());
-    m_delta = DVec2d::From(GetPropertyValueDPoint2d(str_Extents()));
-    m_rotAngle = Angle::FromDegrees(GetPropertyValueDouble(str_RotationAngle())).Radians();
-
-    return DgnDbStatus::Success;
+    return T_Super::_ReadSelectParams(stmt, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_CopyFrom(DgnElementCR el) 
+void ViewDefinition2d::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
     auto const& other = (ViewDefinition2d const&) el;
@@ -364,7 +376,7 @@ void ViewDefinition2d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition2d::_EqualState(ViewDefinitionR in) 
+bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
     {
     auto const& other= (ViewDefinition2d const&) in;
     if (m_baseModelId != other.m_baseModelId || !m_origin.IsEqual(other.m_origin) || !m_delta.IsEqual(other.m_delta) || m_rotAngle != other.m_rotAngle)
@@ -442,7 +454,7 @@ static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Option
         BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Private));
         str.append(PROPNAME_Source "=").append(buf);
         }
-    
+
     str.append(1, ')');
 #endif
     }
@@ -488,7 +500,7 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
 size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
     {
     static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA("ViewDefinition");
-    
+
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
     if (!opts.IsEmpty())
@@ -528,11 +540,11 @@ bool ViewDefinition::Entry::IsSheetView() const {return isEntryOfClass<SheetView
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_CopyFrom(DgnElementCR in) 
+void CategorySelector::_CopyFrom(DgnElementCR in)
     {
     T_Super::_CopyFrom(in);
     auto const& other = (CategorySelector const&) in;
-    m_categories = other.m_categories; 
+    m_categories = other.m_categories;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -550,7 +562,7 @@ DgnDbStatus CategorySelector::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CategorySelector::EqualState(CategorySelectorCR other) const 
+bool CategorySelector::EqualState(CategorySelectorCR other) const
     {
     return m_categories == other.m_categories;
     }
@@ -563,7 +575,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     auto status = T_Super::_OnUpdate(el);
     if (DgnDbStatus::Success != status)
         return status;
-    
+
     auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)");
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
@@ -574,7 +586,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::WriteCategories() 
+DgnDbStatus CategorySelector::WriteCategories()
     {
     if (!GetElementId().IsValid())
         {
@@ -602,7 +614,7 @@ DgnDbStatus CategorySelector::WriteCategories()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_LoadFromDb() 
+DgnDbStatus CategorySelector::_LoadFromDb()
     {
     auto stat = T_Super::_LoadFromDb();
     if (stat  != DgnDbStatus::Success)
@@ -673,7 +685,7 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
 DgnDbStatus ModelSelector::_OnDelete() const
     {
     // Delete all 3d views that are based on on this selector
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition3d") " WHERE ModelSelector=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("SpatialViewDefinition") " WHERE ModelSelector=?");
     statement->BindId(1, GetElementId());
     if (BE_SQLITE_ROW == statement->Step())
         {
@@ -687,12 +699,12 @@ DgnDbStatus ModelSelector::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_CopyFrom(DgnElementCR rhsElement) 
+void ModelSelector::_CopyFrom(DgnElementCR rhsElement)
     {
     T_Super::_CopyFrom(rhsElement);
 
     auto const& rhs = (ModelSelector const&)rhsElement;
-    m_models = rhs.m_models; 
+    m_models = rhs.m_models;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,7 +727,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     auto status = T_Super::_OnUpdate(el);
     if (DgnDbStatus::Success != status)
         return status;
-    
+
     auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)");
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
@@ -726,7 +738,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::WriteModels() 
+DgnDbStatus ModelSelector::WriteModels()
     {
     if (!GetElementId().IsValid())
         {
@@ -753,7 +765,7 @@ DgnDbStatus ModelSelector::WriteModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_LoadFromDb() 
+DgnDbStatus ModelSelector::_LoadFromDb()
     {
     auto stat = T_Super::_LoadFromDb();
     if (DgnDbStatus::Success != stat)
@@ -779,20 +791,25 @@ DgnDbStatus ModelSelector::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::SaveViewDef3d()
+void ViewDefinition3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    SetPropertyValue(str_Origin(), m_origin);
-    SetPropertyValue(str_Extents(), m_extents);
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    stmt.BindPoint3d(stmt.GetParameterIndex(str_Origin()), m_origin);
+    stmt.BindPoint3d(stmt.GetParameterIndex(str_Extents()), m_extents);
 
     YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, m_rotation);
-    SetPropertyValueYpr(angles, str_Yaw(), str_Pitch(), str_Roll());
+
+    stmt.BindDouble(stmt.GetParameterIndex(str_Yaw()), angles.GetYaw().Degrees());
+    stmt.BindDouble(stmt.GetParameterIndex(str_Pitch()), angles.GetPitch().Degrees());
+    stmt.BindDouble(stmt.GetParameterIndex(str_Roll()), angles.GetRoll().Degrees());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition3d::_EqualState(ViewDefinitionR in) 
+bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
     {
     auto& other = (ViewDefinition3dR) in;
     if (!m_origin.IsEqual(other.m_origin) || !m_extents.IsEqual(other.m_extents) || !m_rotation.IsEqual(other.m_rotation))
@@ -804,16 +821,17 @@ bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition3d::_LoadFromDb() 
+DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    m_origin  = stmt.GetValuePoint3d(params.GetSelectIndex(str_Origin()));
+    m_extents = DVec3d::From(stmt.GetValuePoint3d(params.GetSelectIndex(str_Extents())));
 
-    m_origin = GetPropertyValueDPoint3d(str_Origin());
-    m_extents = DVec3d::From(GetPropertyValueDPoint3d(str_Extents()));
-    m_rotation = GetPropertyValueYpr(str_Yaw(), str_Pitch(), str_Roll()).ToRotMatrix();
-    return DgnDbStatus::Success;
+    double yaw   = stmt.GetValueDouble(params.GetSelectIndex(str_Yaw())),
+           pitch = stmt.GetValueDouble(params.GetSelectIndex(str_Pitch())),
+           roll  = stmt.GetValueDouble(params.GetSelectIndex(str_Roll()));
+
+    m_rotation = YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)).ToRotMatrix();
+    return T_Super::_ReadSelectParams(stmt, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -901,23 +919,15 @@ void ViewDefinition::DeleteThumbnail() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewDefinition::UpdateModelSelectorId()
+DgnDbStatus SpatialViewDefinition::_OnInsert()
     {
-    if (!m_modelSelector.IsValid())
-        return;
-
-    if (!m_modelSelector->GetElementId().IsValid())
+    if (!GetModelSelector().GetElementId().IsValid())
+        {
         m_modelSelector->Insert();
+        m_modelSelectorId = m_modelSelector->GetElementId();
+        }
 
-    SetPropertyValue(str_ModelSelector(), m_modelSelector->GetElementId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId SpatialViewDefinition::GetModelSelectorId() const
-    {
-    return GetPropertyValueId<DgnElementId>(str_ModelSelector());
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -934,34 +944,62 @@ ModelSelectorR SpatialViewDefinition::GetModelSelector()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewDefinition::_CopyFrom(DgnElementCR el) 
+void SpatialViewDefinition::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
-    auto other = static_cast<SpatialViewDefinitionCP>(&el);
+    auto& other = static_cast<SpatialViewDefinitionCR>(el);
 
-    m_modelSelector = other->m_modelSelector.IsValid() ? other->m_modelSelector->MakeCopy<ModelSelector>() : nullptr;
+    m_modelSelectorId = other.m_modelSelectorId;
+    m_modelSelector = other.m_modelSelector.IsValid() ? other.m_modelSelector->MakeCopy<ModelSelector>() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SpatialViewDefinition::_EqualState(ViewDefinitionR in) 
+bool SpatialViewDefinition::_EqualState(ViewDefinitionR in)
     {
     if (!T_Super::_EqualState(in))
         return false;
 
     auto& other = (SpatialViewDefinition&) in;
+    if (m_modelSelectorId != other.m_modelSelectorId)
+        return false;
+
     return GetModelSelector().EqualState(other.GetModelSelector());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::SaveCamera()
+void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    SetPropertyValue(str_EyePoint(), GetEyePoint());
-    SetPropertyValue(str_LensAngle(), GetLensAngle());
-    SetPropertyValue(str_FocusDistance(), GetFocusDistance());
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    BeAssert(GetModelSelectorId().IsValid());
+    stmt.BindId(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
+    {
+    m_modelSelectorId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_ModelSelector()));
+    return T_Super::_ReadSelectParams(stmt, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -977,25 +1015,23 @@ void CameraViewDefinition::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraViewDefinition::_LoadFromDb() 
+DgnDbStatus CameraViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    m_camera.SetLensAngle(GetPropertyValueDouble(str_LensAngle()));
-    m_camera.SetFocusDistance(GetPropertyValueDouble(str_FocusDistance()));
-    m_camera.SetEyePoint(GetPropertyValueDPoint3d(str_EyePoint()));
-    m_camera.ValidateLens();
-    
-    VerifyFocusPlane();
-    return stat;
+    m_camera.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
+    m_camera.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
+    m_camera.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CameraViewDefinition::_EqualState(ViewDefinitionR in) 
+bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
     {
     if (!T_Super::_EqualState(in))
         return false;
@@ -1044,7 +1080,6 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     if (!id.IsValid())
         return;
 
-    m_dirty = true;
     auto result = m_subCategoryOverrides.Insert(id, ovr);
     if (!result.second)
         result.first->second = ovr; // we already had this override; change it.
@@ -1080,7 +1115,6 @@ DgnSubCategory::Appearance DisplayStyle::GetSubCategoryAppearance(DgnSubCategory
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
     {
-    m_dirty = true;
     m_subCategoryOverrides.erase(id);
     LoadSubCategory(id);
     }
@@ -1088,13 +1122,45 @@ void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle::_LoadFromDb() 
+void DisplayStyle::_CopyFrom(DgnElementCR el)
     {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    auto& other = static_cast<DisplayStyleCR>(el);
 
-    Json::Reader::Parse(GetPropertyValueString(str_Styles()), m_styles);
+    m_styles = other.m_styles;
+    m_viewFlags = other.m_viewFlags;
+    m_subCategories = other.m_subCategories;
+    m_subCategoryOverrides = other.m_subCategoryOverrides;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindText(stmt.GetParameterIndex(str_Styles()), ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DisplayStyle::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(str_Styles())), m_styles);
+    _Load();
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::_Load()
+    {
     m_viewFlags.FromJson(GetStyle(str_ViewFlags()));
 
     JsonValueCR overrides = GetStyle(str_SubCategoryOverrides());
@@ -1109,40 +1175,28 @@ DgnDbStatus DisplayStyle::_LoadFromDb()
             }
         OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
-
-    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::_CopyFrom(DgnElementCR el) 
+Utf8String DisplayStyle::ToJson() const
     {
-    auto& other = static_cast<DisplayStyleCR>(el);
-    other.SaveStyles();
-    T_Super::_CopyFrom(el);
-
-    m_styles = other.m_styles;
-    m_viewFlags = other.m_viewFlags;
-    m_subCategories = other.m_subCategories;
-    m_subCategoryOverrides = other.m_subCategoryOverrides;
-    m_dirty = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::SaveStyles() const
-    {
-    if (!m_dirty)
-        return;
-
     auto& ncThis = const_cast<DisplayStyleR>(*this);
-    ncThis.SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
+    ncThis._Save();
+    return Json::FastWriter::ToString(m_styles);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::_Save()
+    {
+    SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
 
     if (m_subCategoryOverrides.empty())
         {
-        ncThis.RemoveStyle(str_SubCategoryOverrides());
+        RemoveStyle(str_SubCategoryOverrides());
         }
     else
         {
@@ -1153,14 +1207,11 @@ void DisplayStyle::SaveStyles() const
             ovrJson[i][str_SubCategory()] = it.first.GetValue();
             it.second.ToJson(ovrJson[i++]);
             }
-        ncThis.SetStyle(str_SubCategoryOverrides(), ovrJson);
+        SetStyle(str_SubCategoryOverrides(), ovrJson);
         }
 
     if (ColorDef::Black() == GetBackgroundColor())
-        ncThis.RemoveStyle(str_BackgroundColor());
-
-    ncThis.SetPropertyValue(str_Styles(), Json::FastWriter::ToString(m_styles).c_str());
-    m_dirty = false;
+        RemoveStyle(str_BackgroundColor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1175,10 +1226,326 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::SetBackgroundColor(ColorDef val) 
+void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
     SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
+
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+namespace ViewElementHandler
+{
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, str_DisplayStyle(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
+            value.SetLong(viewDef.GetDisplayStyleId().GetValue());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+
+            DgnElementId id((uint64_t) value.GetLong());
+            auto style = el.GetDgnDb().Elements().Get<Dgn::DisplayStyle>(id);
+            if (!style.IsValid())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            viewDef.SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_CategorySelector(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
+            value.SetLong(viewDef.GetCategorySelectorId().GetValue());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+
+            DgnElementId id((uint64_t) value.GetLong());
+            auto cats = el.GetDgnDb().Elements().Get<Dgn::CategorySelector>(id);
+            if (!cats.IsValid())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            viewDef.SetCategorySelector(*cats->MakeCopy<Dgn::CategorySelector>());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Details(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            value.SetUtf8CP(viewDef.ToDetailJson().c_str());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsUtf8())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            Json::Reader::Parse(value.GetUtf8CP(), viewDef.m_details);
+            viewDef._Load();
+            return DgnDbStatus::Success;
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    #define GET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); value.SetDouble(EXPR); return DgnDbStatus::Success;
+    #define GET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; value.SetPoint3d(EXPR); return DgnDbStatus::Success;
+    #define SET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; EXPR; return DgnDbStatus::Success;
+    #define SET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); EXPR; viewDef.SetRotation(angles.ToRotMatrix()); return DgnDbStatus::Success;
+
+    params.RegisterPropertyAccessors(layout, str_Origin(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_POINT(viewDef.GetOrigin());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_POINT(viewDef.SetOrigin(value.GetPoint3d()));
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Extents(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_POINT(viewDef.GetExtents());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_POINT(viewDef.SetExtents(DVec3d::From(value.GetPoint3d())));
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Yaw(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_DOUBLE(angles.GetYaw().Degrees());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_DOUBLE(angles.SetYaw(AngleInDegrees::FromDegrees(value.GetDouble())));
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Pitch(),
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_DOUBLE(angles.GetPitch().Degrees());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_DOUBLE(angles.SetPitch(AngleInDegrees::FromDegrees(value.GetDouble())));
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Roll(),
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_DOUBLE(angles.GetRoll().Degrees());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    #define GET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; value.SetPoint2d(EXPR); return DgnDbStatus::Success;
+    #define SET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; EXPR; return DgnDbStatus::Success;
+
+    params.RegisterPropertyAccessors(layout, str_BaseModel(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
+            value.SetLong(viewDef.GetBaseModelId().GetValue());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinition2d& viewDef = (ViewDefinition2d&)el;
+            viewDef.m_baseModelId = DgnModelId((uint64_t) value.GetLong());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_RotationAngle(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
+            value.SetLong(Angle::FromRadians(viewDef.GetRotAngle()).Degrees());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsDouble())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinition2d& viewDef = (ViewDefinition2d&)el;
+            viewDef.SetRotAngle(Angle::FromDegrees(value.GetDouble()).Radians());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Origin(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_POINT2d(viewDef.GetOrigin2d());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_POINT2d(viewDef.SetOrigin2d(value.GetPoint2d()));
+            });
+
+    params.RegisterPropertyAccessors(layout, str_Extents(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            GET_POINT2d(viewDef.GetDelta2d());
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            SET_POINT2d(viewDef.SetDelta2d(DVec2d::From(value.GetPoint2d())));
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, str_ModelSelector(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            SpatialViewDefinitionCR viewDef = (SpatialViewDefinitionCR)el;
+            value.SetLong(viewDef.GetModelSelectorId().GetValue());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            DgnElementId id((uint64_t) value.GetLong());
+            auto modelSel = el.GetDgnDb().Elements().Get<ModelSelector>(id);
+            if (!modelSel.IsValid())
+                return DgnDbStatus::BadArg;
+
+            SpatialViewDefinitionR viewDef = (SpatialViewDefinitionR)el;
+            viewDef.SetModelSelector(*modelSel->MakeCopy<ModelSelector>());
+            return DgnDbStatus::Success;
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
+            value.SetPoint3d(viewDef.GetEyePoint());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsPoint3d())
+                return DgnDbStatus::BadArg;
+
+            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
+            viewDef.SetEyePoint(value.GetPoint3d());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
+            value.SetLong(viewDef.GetLensAngle());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsDouble())
+                return DgnDbStatus::BadArg;
+
+            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
+            viewDef.SetLensAngle(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
+            value.SetLong(viewDef.GetFocusDistance());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsDouble())
+                return DgnDbStatus::BadArg;
+
+            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
+            viewDef.SetFocusDistance(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDisplayStyle::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+    params.RegisterPropertyAccessors(layout, str_Styles(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            DisplayStyleCR style = (DisplayStyleCR) el;
+            value.SetUtf8CP(style.ToJson().c_str());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsUtf8())
+                return DgnDbStatus::BadArg;
+
+            DisplayStyleR style = (DisplayStyleR) el;
+            Json::Reader::Parse(value.GetUtf8CP(), style.m_styles);
+            style._Load();
+            return DgnDbStatus::Success;
+            });
+    }
+
+}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
 CameraViewControllerPtr CameraViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}

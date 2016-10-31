@@ -8,10 +8,12 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
+static const double TOLERANCE_CircleAxisRatio = 1.0E-8;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr PSolidUtil::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVAL_t interval, bool reverseDirection)
+ICurvePrimitivePtr PSolidGeom::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVAL_t interval, bool reverseDirection)
     {
     PK_CLASS_t  curveClass;
 
@@ -84,7 +86,7 @@ ICurvePrimitivePtr PSolidUtil::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVA
             {
             MSBsplineCurve  bCurve;
 
-            if (SUCCESS != PSolidUtil::CreateMSBsplineCurveFromCurve (bCurve, curve, interval, reverseDirection))
+            if (SUCCESS != PSolidGeom::CreateMSBsplineCurveFromCurve (bCurve, curve, interval, reverseDirection))
                 return NULL;
 
             ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateBsplineCurve (bCurve);
@@ -99,7 +101,7 @@ ICurvePrimitivePtr PSolidUtil::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimitive, PK_EDGE_t edgeTag)
+BentleyStatus   PSolidGeom::EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimitive, PK_EDGE_t edgeTag)
     {
     PK_CURVE_t      curveTag = 0;
     PK_LOGICAL_t    orientation;
@@ -109,7 +111,7 @@ BentleyStatus   PSolidUtil::EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimi
         SUCCESS != PK_EDGE_find_interval (edgeTag, &interval))
         return ERROR;
 
-    curvePrimitive = PSolidUtil::GetAsCurvePrimitive (curveTag, interval, !orientation);
+    curvePrimitive = PSolidGeom::GetAsCurvePrimitive (curveTag, interval, !orientation);
     
     return curvePrimitive.IsValid() ? SUCCESS : ERROR;
     }
@@ -149,11 +151,11 @@ static CurveVectorPtr planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurv
 
         if (SUCCESS == PK_FIN_ask_oriented_curve (fins[iFin], &curveTag, &orientation) &&
             SUCCESS == PK_FIN_find_interval (fins[iFin], &interval))
-            primitive = PSolidUtil::GetAsCurvePrimitive (curveTag, interval, !orientation);
+            primitive = PSolidGeom::GetAsCurvePrimitive (curveTag, interval, !orientation);
         else if (SUCCESS == PK_FIN_is_positive (fins[iFin], &isPositiveFin) &&
                  SUCCESS == PK_EDGE_ask_oriented_curve (edgeTag, &curveTag, &orientation) &&
                  SUCCESS == PK_EDGE_find_interval (edgeTag, &interval))
-            primitive = PSolidUtil::GetAsCurvePrimitive (curveTag, interval, orientation != isPositiveFin);
+            primitive = PSolidGeom::GetAsCurvePrimitive (curveTag, interval, orientation != isPositiveFin);
 
         if (!primitive.IsValid ())
             continue;
@@ -162,7 +164,7 @@ static CurveVectorPtr planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurv
             {
             FaceId  faceId;
 
-            if (SUCCESS == PSolidUtil::IdFromEntity (faceId, edgeTag, true))
+            if (SUCCESS == PSolidTopoId::IdFromEntity (faceId, edgeTag, true))
                 {
                 EdgeToCurveIdMap::const_iterator found = idMap->find (faceId.nodeId);
 
@@ -182,7 +184,7 @@ static CurveVectorPtr planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr PSolidUtil::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurveIdMap const* idMap)
+CurveVectorPtr PSolidGeom::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurveIdMap const* idMap)
     {
     PK_SURF_t       surfaceTag;
     PK_CLASS_t      surfaceClass;
@@ -236,7 +238,7 @@ CurveVectorPtr PSolidUtil::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  PSolidUtil::PlanarSheetBodyToCurveVector (IBRepEntityCR entity)
+CurveVectorPtr  PSolidGeom::PlanarSheetBodyToCurveVector (IBRepEntityCR entity)
     {
     PK_ENTITY_t     entityTag = PSolidUtil::GetEntityTag (entity);
     PK_BODY_type_t  bodyType;
@@ -256,7 +258,7 @@ CurveVectorPtr  PSolidUtil::PlanarSheetBodyToCurveVector (IBRepEntityCR entity)
     if (SUCCESS != PK_BODY_ask_first_face (entityTag, &faceTag) || PK_ENTITY_null == faceTag)
         return NULL;
 
-    CurveVectorPtr  curves = PlanarFaceToCurveVector (faceTag);
+    CurveVectorPtr  curves = PSolidGeom::PlanarFaceToCurveVector (faceTag);
 
     if (!curves.IsValid ())
         return NULL;
@@ -586,7 +588,7 @@ static ISolidPrimitivePtr solidPrimitiveFromSweptFace (PK_FACE_t face, PK_UVBOX_
 
     CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
 
-    baseCurve->push_back (PSolidUtil::GetAsCurvePrimitive (sfSwept.curve, interval, false));
+    baseCurve->push_back (PSolidGeom::GetAsCurvePrimitive (sfSwept.curve, interval, false));
 
     // Adjust location of base profile to start param...
     if (fabs (startSweepParam) > 1.0e-12)
@@ -608,7 +610,7 @@ static ISolidPrimitivePtr solidPrimitiveFromSweptFace (PK_FACE_t face, PK_UVBOX_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidPrimitivePtr PSolidUtil::FaceToSolidPrimitive(PK_FACE_t faceTag, CurveVectorPtr* uvBoundaries)
+ISolidPrimitivePtr PSolidGeom::FaceToSolidPrimitive(PK_FACE_t faceTag, CurveVectorPtr* uvBoundaries)
     {
     PK_LOGICAL_t    isBox;
     PK_UVBOX_t      uvBox;
@@ -652,7 +654,7 @@ static void addEdgeToCurveVector (CurveVectorR curveVector, PK_EDGE_t edgeTag)
     {
     ICurvePrimitivePtr  primitive;
 
-    if (SUCCESS != PSolidUtil::EdgeToCurvePrimitive (primitive, edgeTag))
+    if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive (primitive, edgeTag))
         return;
 
     DPoint3d    startPt, endPt;
@@ -754,7 +756,7 @@ static void getOrderedEdges (PK_EDGE_t* edges, int nEdges)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves, IBRepEntityCR entity, EdgeToCurveIdMap const* idMap)
+BentleyStatus   PSolidGeom::BodyToCurveVectors (bvector<CurveVectorPtr>& curves, IBRepEntityCR entity, EdgeToCurveIdMap const* idMap)
     {
     int         nFaces = 0;
     PK_FACE_t*  faces = NULL;
@@ -763,7 +765,7 @@ BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves,
 
     for (int i=0; i<nFaces; i++)
         {
-        CurveVectorPtr  curveVector = PSolidUtil::PlanarFaceToCurveVector (faces[i], idMap);
+        CurveVectorPtr  curveVector = PSolidGeom::PlanarFaceToCurveVector (faces[i], idMap);
 
         if (curveVector.IsValid () && curveVector->size () > 0)
             {
@@ -825,7 +827,7 @@ BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  PSolidUtil::WireBodyToCurveVector (IBRepEntityCR entity)
+CurveVectorPtr  PSolidGeom::WireBodyToCurveVector (IBRepEntityCR entity)
     {
     PK_BODY_type_t  bodyType;
 
@@ -854,6 +856,689 @@ CurveVectorPtr  PSolidUtil::WireBodyToCurveVector (IBRepEntityCR entity)
     return curveVector;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus triangulatedBodyFromNonPlanarPolygon (PK_BODY_t& bodyTag, CurveVectorCR curves, TransformCR uorToBodyTransform)
+    {
+    if (!curves.IsAnyRegionType ())
+        return ERROR;
+
+    if (curves.ContainsNonLinearPrimitive ())
+        return ERROR;
+
+    Transform                   localToWorld, worldToLocal;
+    DRange3d                    range;
+
+    if (curves.IsPlanar (localToWorld, worldToLocal, range))
+        return ERROR;
+
+    IFacetOptionsPtr            facetOptions = IFacetOptions::Create ();
+    IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::Create (*facetOptions);
+
+    builder->AddRegion(curves);
+
+    return PSolidGeom::BodyFromPolyface (bodyTag, builder->GetClientMeshR(), uorToBodyTransform);
+    }
+
+// Default values for gap closure options ...
+static double s_defaultEqualPointTolerance = 1.0e-10;   // should be "like" PSD resabs
+                                                        // BUT ... it seems to be good to make this SMALLER so that 
+                                                        //     we call in "move the endpoints" machinery to REALLY close the gaps instead of
+                                                        //     just hoping we "really" understand what PSD will close up.
+static double s_defaultMaxDirectAdjust     = 1.0e-4;    // gaps this large can be closed by just moving endpoints (i.e. without gap segment).
+                                                        // (And this adjustemnt can be away from the curve direction)
+static double s_defaultMaxAdjustAlongCurve = 1.0e-3;    // motion along the curve by this much is permitted.
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   06/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int pki_make_minimal_body(int* pBodyOut)
+    {
+    PK_POINT_t      point;
+    PK_POINT_sf_t   pointSF;
+
+    memset (&pointSF, 0, sizeof (pointSF));
+    PK_POINT_create (&pointSF, &point);
+
+    return PK_POINT_make_minimum_body (point, pBodyOut);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int pki_scribe_curve_on_body
+(
+int             *pEdgeTagOut,           /* <= (optional) output edge tag (in body) created  */
+int             bodyTagInOut,           /* <=> body tag on which to scribe  */
+int             curveTagIn,             /* => input curve to scribe  */
+double          *startParamInP,         /* => input start parameter on curve (or NULL for start)   */
+double          *endParamInP            /* => input end parameter on curve (or NULL for end)  */
+)
+    {
+    int             failureCode, numNewEdge = 0, numNewFace = 0;
+    PK_EDGE_t       *pNewEdges = NULL;
+    PK_FACE_t       *pNewFaces = NULL;
+    PK_INTERVAL_t   bounds;
+
+    PK_CURVE_ask_interval (curveTagIn, &bounds);
+
+    if (NULL != startParamInP)
+        bounds.value[0] = *startParamInP;
+
+    if (NULL != endParamInP)
+        bounds.value[1] = *endParamInP;
+
+    failureCode = PK_BODY_imprint_curve (bodyTagInOut, curveTagIn, bounds, &numNewEdge, &pNewEdges, &numNewFace, &pNewFaces);
+
+    if (NULL != pNewEdges && numNewEdge >= 1)
+        {
+        if (NULL != pEdgeTagOut)
+            *pEdgeTagOut = *pNewEdges;
+        }
+    else
+        {
+        /* Ignore "point-like" segments */
+        if (failureCode == PK_ERROR_curve_too_short)
+            failureCode = SUCCESS;
+        else
+            failureCode = failureCode ? failureCode : ERROR;
+        }
+
+    PK_MEMORY_free (pNewEdges);
+    PK_MEMORY_free (pNewFaces);
+
+    return failureCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_cover_face_with_surface(int faceTagIn)
+    {
+    PK_LOGICAL_t        localCheckFlag = PK_LOGICAL_false;
+    PK_local_check_t    localCheckStatus;
+
+    return PK_FACE_attach_surf_fitting (faceTagIn, localCheckFlag, &localCheckStatus);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::CoverWires (PK_BODY_t body)
+    {
+    int         numFace = 0, *faces = NULL;
+
+    if (SUCCESS != PK_BODY_ask_faces (body, &numFace, &faces))
+        return ERROR;
+
+    for (int i=0; i < numFace; i++)
+        pki_cover_face_with_surface (faces[i]);
+
+    PK_MEMORY_free (faces);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::ImprintSegment (PK_BODY_t body, PK_EDGE_t* edge, DPoint3dCP segment)
+    {
+    if (segment[0].IsEqual (segment[1]))
+        return SUCCESS; // Nothing to do.
+
+    PK_LINE_t       line;
+    PK_LINE_sf_t    sfLine;
+
+    sfLine.basis_set.location.coord[0] = segment[0].x;
+    sfLine.basis_set.location.coord[1] = segment[0].y;
+    sfLine.basis_set.location.coord[2] = segment[0].z;
+
+    double      length = ((DVec3d *) &sfLine.basis_set.axis)->NormalizedDifference (segment[1], segment[0]);
+    int         nNewEdges, nNewFaces;
+
+    if (SUCCESS != PK_LINE_create (&sfLine, &line))
+        return ERROR;
+
+    PK_INTERVAL_t   bounds;
+
+    bounds.value[0] = 0.0;
+    bounds.value[1] = length;
+
+    PK_EDGE_t*      edges = NULL;
+    StatusInt       status;
+
+    if (SUCCESS == (status = PK_BODY_imprint_curve (body, line, bounds, &nNewEdges, &edges, &nNewFaces, NULL)) && nNewEdges > 0)
+        *edge = edges[0];
+
+    PK_MEMORY_free (edges);
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Nick.Shulga     04/97
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_make_ellipse_curve_from_standard_data
+(
+int             *pCurveTagOut,          /* <= output curve tag created  */
+DPoint3d        *pLocation,
+DPoint3d        *p_zAxis,
+DPoint3d        *p_refDirection,
+double          majorAxis,
+double          minorAxis
+)
+    {
+    /* this function uses arguments similar to Parasolid standard form.  */
+    /* the same data happens to be used in STEP.  */
+    if (pCurveTagOut && pLocation && p_zAxis && p_refDirection && majorAxis > 0 && minorAxis > 0)
+        {
+        int     failureCode = ERROR;
+
+        if (DoubleOps::WithinTolerance(minorAxis, majorAxis, 1e-08))
+            {
+            /* create circle  */
+            PK_CIRCLE_sf_t circleCurve;
+
+            circleCurve.basis_set.location.coord[0] = pLocation->x;
+            circleCurve.basis_set.location.coord[1] = pLocation->y;
+            circleCurve.basis_set.location.coord[2] = pLocation->z;
+
+            circleCurve.basis_set.ref_direction.coord[0] = p_refDirection->x;
+            circleCurve.basis_set.ref_direction.coord[1] = p_refDirection->y;
+            circleCurve.basis_set.ref_direction.coord[2] = p_refDirection->z;
+
+            circleCurve.basis_set.axis.coord[0] = p_zAxis->x;
+            circleCurve.basis_set.axis.coord[1] = p_zAxis->y;
+            circleCurve.basis_set.axis.coord[2] = p_zAxis->z;
+
+            circleCurve.radius = majorAxis;
+
+            failureCode = PK_CIRCLE_create (&circleCurve, pCurveTagOut);
+            }
+        else
+            {
+            /* create ellipse  */
+            PK_ELLIPSE_sf_t ellipseCurve;
+
+            ellipseCurve.basis_set.location.coord[0] = pLocation->x;
+            ellipseCurve.basis_set.location.coord[1] = pLocation->y;
+            ellipseCurve.basis_set.location.coord[2] = pLocation->z;
+
+            ellipseCurve.basis_set.axis.coord[0] = p_zAxis->x;
+            ellipseCurve.basis_set.axis.coord[1] = p_zAxis->y;
+            ellipseCurve.basis_set.axis.coord[2] = p_zAxis->z;
+
+            /* If major axis is less than minor axis - swap because parasolid doesnt handle it */
+            if (majorAxis < minorAxis)
+                {
+                DPoint3d    majorAxisVec;
+
+                ellipseCurve.R1 = minorAxis;
+                ellipseCurve.R2 = majorAxis;
+
+                /* cross z and ref direction for majorAxis Vec */
+                majorAxisVec.CrossProduct (*p_zAxis, *p_refDirection);
+                ellipseCurve.basis_set.ref_direction.coord[0] = majorAxisVec.x;
+                ellipseCurve.basis_set.ref_direction.coord[1] = majorAxisVec.y;
+                ellipseCurve.basis_set.ref_direction.coord[2] = majorAxisVec.z;
+                }
+            else
+                {
+                ellipseCurve.R1 = majorAxis;
+                ellipseCurve.R2 = minorAxis;
+
+                ellipseCurve.basis_set.ref_direction.coord[0] = p_refDirection->x;
+                ellipseCurve.basis_set.ref_direction.coord[1] = p_refDirection->y;
+                ellipseCurve.basis_set.ref_direction.coord[2] = p_refDirection->z;
+                }
+
+            failureCode = PK_ELLIPSE_create (&ellipseCurve, pCurveTagOut);
+            }
+
+        return failureCode;
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::MakeEllipseCurve (PK_CURVE_t* curve, double* startParam, double* endParam, DPoint3dP center, RotMatrixP rMatrix, double x1, double x2, double startAngle, double sweepAngle)
+    {
+    double      radiusRatio;
+    DVec3d      normal;
+    DVec3d      majorAxisVec;
+    double      r1, r2;
+
+    rMatrix->GetColumn(normal,  2);
+    rMatrix->GetColumn(majorAxisVec,  0);
+
+    r1 = x1;
+    r2 = x2;
+
+    radiusRatio = x1 ? x2 / x1 : 0.0;
+
+    if (fabs (1.0 - radiusRatio) < TOLERANCE_CircleAxisRatio)
+        {
+        x2 = x1;
+        radiusRatio = 1.0;
+        }
+
+    /* Correct parametrization to "theta" angles */
+    if (sweepAngle != msGeomConst_2pi)
+        {
+        *startParam = startAngle;
+        *endParam   = startAngle + sweepAngle;
+        }
+    else
+        {
+        *startParam = 0.0;
+        *endParam   = sweepAngle;
+        }
+
+    if (sweepAngle < 0.0)
+        {
+        *startParam = - *startParam;
+        *endParam   = - *endParam;
+
+        normal.Scale (normal,  -1.0);
+        }
+
+    if (*startParam > *endParam)
+        *endParam += msGeomConst_2pi;
+
+    /* If Major axis is less than minor axis swap because Parasolid cant handle it */
+    if (x2 > x1)
+        {
+        *startParam -= msGeomConst_piOver2;
+        *endParam   -= msGeomConst_piOver2;
+        }
+
+    return (BentleyStatus) pki_make_ellipse_curve_from_standard_data (curve, center, &normal, &majorAxisVec, r1, r2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR curves, TransformCR uorToBodyTransform, bool coverClosed, EdgeToCurveIdMap* idMap)
+    {
+    if (1 > curves.size ())
+        return ERROR;
+
+    StatusInt   status = SUCCESS;
+
+    if (curves.IsUnionRegion ())
+        {
+        bvector<PK_BODY_t> regions;
+
+        bodyTag = PK_ENTITY_null;
+
+        for (ICurvePrimitivePtr curve: curves)
+            {
+            if (curve.IsNull ())
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType ())
+                {
+                BeAssert (false && "Unexpected entry in union region.");
+
+                return ERROR; // Each loop must be a child curve bvector (a closed loop or parity region)...
+                }
+
+            CurveVector const* childCurves = curve->GetChildCurveVectorCP ();
+
+            PK_BODY_t   childBodyTag = PK_ENTITY_null;
+
+            if (SUCCESS != (status = bodyFromCurveVector (childBodyTag, startVertexP, *childCurves, uorToBodyTransform, coverClosed, idMap)))
+                break;
+
+            if (PK_ENTITY_null == bodyTag)
+                bodyTag = childBodyTag;
+            else
+                regions.push_back (childBodyTag);
+            }
+
+        if (SUCCESS == status && regions.size () > 0)
+            status = PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, &regions[0], (int) regions.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
+
+        if (SUCCESS != status)
+            {
+            PK_ENTITY_delete (1, &bodyTag);
+            PK_ENTITY_delete ((int) regions.size (), &regions[0]);
+            }
+        }
+    else if (curves.IsParityRegion ())
+        {
+        bvector<PK_BODY_t> holes;
+
+        bodyTag = PK_ENTITY_null;
+
+        for (ICurvePrimitivePtr curve: curves)
+            {
+            if (curve.IsNull ())
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType ())
+                {
+                BeAssert (false && "Unexpected entry in parity region.");
+
+                return ERROR; // Each loop must be a child curve bvector (a closed loop)...
+                }
+
+            CurveVector const* childCurves = curve->GetChildCurveVectorCP ();
+
+            PK_BODY_t   childBodyTag = PK_ENTITY_null;
+
+            if (SUCCESS != (status = bodyFromCurveVector (childBodyTag, startVertexP, *childCurves, uorToBodyTransform, coverClosed, idMap)))
+                break;
+
+            if (CurveVector::BOUNDARY_TYPE_Outer == childCurves->GetBoundaryType ())
+                {
+                BeAssert (PK_ENTITY_null == bodyTag && "Parity region should have a single outer loop");
+                bodyTag = childBodyTag;
+                }
+            else
+                {
+                holes.push_back (childBodyTag);
+                }
+            }
+
+        if (SUCCESS == status && holes.size () > 0)
+            status = PSolidUtil::Boolean (NULL, NULL, coverClosed ? PK_boolean_subtract : PK_boolean_unite, !coverClosed, bodyTag, &holes[0], (int) holes.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
+
+        if (SUCCESS != status)
+            {
+            PK_ENTITY_delete (1, &bodyTag);
+            PK_ENTITY_delete ((int) holes.size (), &holes[0]);
+            }
+        }
+    else
+        {
+        pki_make_minimal_body (&bodyTag);
+
+        PK_VERTEX_t     startVertex;
+
+        if (NULL == startVertexP)
+            startVertexP = &startVertex;
+
+        *startVertexP = PK_ENTITY_null;
+
+        PK_EDGE_t   edgeTag = PK_ENTITY_null;
+
+        unsigned long   id = 1;
+        
+        if (NULL != idMap)
+            {
+            for (EdgeToCurveIdMap::iterator curr = idMap->begin(); curr != idMap->end(); curr++)
+                if (curr->first >= id)
+                    id = curr->first;
+            }
+
+        // NOTE: Scribe curves in reverse order to match SS3 behavior (required for entity id assignment)...        
+        for (size_t iCurve = curves.size (); iCurve > 0; --iCurve)
+            {
+            ICurvePrimitivePtr  curve = curves.at (iCurve-1);
+
+            if (!curve.IsValid ())
+                continue;
+
+            switch (curve->GetCurvePrimitiveType ())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    {
+                    curve = ICurvePrimitive::CreateLineString (&curve->GetLineCP ()->point[0], 2);
+
+                    // FALL THROUGH...
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    {
+                    bvector<DPoint3d> points = *curve->GetLineStringCP ();
+
+                    uorToBodyTransform.Multiply (&points.front (), (int) points.size ());
+
+                    static double   s_minimumSegmentLength = 1.0E-7;
+
+                    // NOTE: Scribe segments in reverse order to match SS3 behavior (required for entity id assignment)...
+                    for (size_t j = points.size ()-1; j > 0 && SUCCESS == status; --j)
+                        {
+                        DSegment3d  segment = DSegment3d::From (points[j-1], points[j]);
+
+                        if (segment.Length () <= s_minimumSegmentLength)
+                            {
+                            // Make sure that the last (closure) point is used and that interior small segments are consolidated...
+                            points[j-1] = points[j];
+                            continue;
+                            }
+
+                        if (SUCCESS != (status = PSolidUtil::ImprintSegment (bodyTag, &edgeTag, segment.point)))
+                            break;
+                        }
+                    break;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    DEllipse3d      ellipse = *curve->GetArcCP ();
+                    double          r0, r1, theta0, sweep;
+                    DPoint3d        center;
+                    RotMatrix       rMatrix;
+
+                    uorToBodyTransform.Multiply (ellipse, ellipse);
+                    ellipse.GetScaledRotMatrix (center, rMatrix, r0, r1, theta0, sweep);
+
+                    PK_CURVE_t      curveTag = 0;
+                    double          startParam, endParam;
+
+                    if (SUCCESS == (status = PSolidUtil::MakeEllipseCurve (&curveTag, &startParam, &endParam, &center, &rMatrix, r0, r1, theta0, sweep)))
+                        status = pki_scribe_curve_on_body (&edgeTag, bodyTag, curveTag, &startParam, &endParam);
+
+                    if (startVertexP != &startVertex && PK_ENTITY_null == *startVertexP && ellipse.IsFullEllipse ())
+                        {
+                        PK_VERTEX_t     newVertex;
+                        PK_EDGE_t       newEdge;
+
+                        PK_EDGE_split_at_param (edgeTag, 0.0, &newVertex, &newEdge);
+                        }
+                        
+                    break;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+                    {
+                    MSBsplineCurveCP  bcurve = curve->GetProxyBsplineCurveCP ();
+                    MSBsplineCurve    curve;
+
+                    curve.CopyTransformed (*bcurve, uorToBodyTransform);
+
+                    PK_CURVE_t      curveTag = 0;
+
+                    if (SUCCESS == (status = PSolidGeom::CreateCurveFromMSBsplineCurve (&curveTag, curve)))
+                        status = pki_scribe_curve_on_body (&edgeTag, bodyTag, curveTag, NULL, NULL);
+
+                    if (SUCCESS != status)
+                        {
+                        PSolidUtil::NormalizeBsplineCurve (curve);
+
+                        if (SUCCESS == (status = PSolidGeom::CreateCurveFromMSBsplineCurve (&curveTag, curve)))
+                            status = pki_scribe_curve_on_body (&edgeTag, bodyTag, curveTag, NULL, NULL);
+                        }
+
+                    curve.ReleaseMem ();
+                    break;
+                    }
+
+                default:
+                    {
+                    BeAssert (false && "Unexpected entry in CurveVector.");
+                    break;
+                    }
+                }
+
+            if (SUCCESS != status)
+                break;
+
+            if (NULL != idMap && NULL != curve->GetId())
+                {
+                PSolidTopoId::AttachEntityId (edgeTag, id, 0);
+                (*idMap)[id++] = curve->GetId();
+                }
+            }
+
+        if (SUCCESS == status)
+            {
+            if (PK_ENTITY_null != edgeTag)
+                {
+                PK_VERTEX_t  vertices[2];
+
+                PK_EDGE_ask_vertices (edgeTag, vertices);
+                *startVertexP = vertices[0];
+                }
+
+            if (coverClosed && curves.IsClosedPath ())
+                {
+                // TR#270092 - Cover sometimes creates bad bodies with cone rather than planar surfaces that cause "hangs" when queried?!?
+                status = ((SUCCESS == PSolidUtil::CoverWires (bodyTag) && PSolidUtil::HasOnlyPlanarFaces (bodyTag)) ? SUCCESS : ERROR);
+                }
+            else
+                {
+                PK_FACE_t   faceTag;
+
+                // Make sure physically closed open profiles are returned as wire boides
+                if (SUCCESS == PK_BODY_ask_first_face (bodyTag, &faceTag) && PK_ENTITY_null != faceTag)
+                    PK_FACE_delete_from_sheet_body (faceTag);
+                }
+
+            }
+
+        if (SUCCESS != status)
+            PK_ENTITY_delete (1, &bodyTag);
+        }
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidGeom::BodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR rawCurves, TransformCR uorToBodyTransform, bool coverClosed, EdgeToCurveIdMap* idMap)
+    {
+    if (1 > rawCurves.size ())
+        return ERROR;
+
+    double          a = uorToBodyTransform.ColumnXMagnitude ();
+    double          b;
+
+    DoubleOps::SafeDivide (b, 1.0, a, 1.0);
+
+    double          uorEqualPoint = s_defaultEqualPointTolerance * b;
+    double          uorDirectAdjust = s_defaultMaxDirectAdjust * b;
+    double          uorAlongCurveAdust = s_defaultMaxAdjustAlongCurve * b;
+    CurveGapOptions options (uorEqualPoint, uorDirectAdjust, uorAlongCurveAdust);
+    CurveVectorPtr  curvesNoGaps = rawCurves.CloneWithGapsClosed (options);
+    CurveVectorCP   curves = curvesNoGaps.get ();
+    double          resolvedGap = curvesNoGaps->MaxGapWithinPath ();
+
+    if (resolvedGap > uorEqualPoint)
+        curves = &rawCurves;
+
+    if (coverClosed && NULL == startVertexP && SUCCESS == triangulatedBodyFromNonPlanarPolygon (bodyTag, *curves, uorToBodyTransform))
+        return SUCCESS;
+
+    if (coverClosed && curves->IsClosedPath ())
+        {
+        switch (curves->HasSingleCurvePrimitive ())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+                {
+                Transform   localToWorld, worldToLocal;
+
+                if (!curves->GetAnyFrenetFrame (localToWorld) || !worldToLocal.InverseOf (localToWorld))
+                    break;
+
+                DRange3d    localRange;
+
+                if (!curves->GetRange (localRange, worldToLocal))
+                    break;
+
+                double  planarTolerance = (localRange.low.DistanceXY (localRange.high)) * 1.0e-3;
+
+                if (fabs (localRange.high.z - localRange.low.z) > planarTolerance)
+                    coverClosed = false; // Don't flatten or try to cover REALLY non-planar closed bcurves...
+                break;
+                }
+            }
+        }
+
+    Transform   compositeTransform = uorToBodyTransform;
+    double      area;
+    DVec3d      normal;
+    DPoint3d    centroid;
+
+    if (coverClosed && curves->IsAnyRegionType () && curves->CentroidNormalArea (centroid, normal, area))
+        {
+        Transform   flattenTransform;
+
+        flattenTransform.InitFromProjectionToPlane (centroid,normal);
+        compositeTransform.InitProduct (compositeTransform, flattenTransform);
+        }
+
+    return bodyFromCurveVector (bodyTag, startVertexP, *curves, compositeTransform, coverClosed, idMap);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidUtil::GetTransforms(TransformR solidToUor, TransformR uorToSolid, DPoint3dCP origin, double solidScale)
+    {
+    solidToUor.InitIdentity();
+
+    if (nullptr != origin)
+        solidToUor.SetTranslation(*origin);
+
+    solidToUor.ScaleMatrixColumns(solidToUor, solidScale, solidScale, solidScale);
+    uorToSolid.InverseOf(solidToUor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveVectorCR curveVector, TransformCP curveToDgn, uint32_t nodeId, EdgeToCurveIdMap* idMap)
+    {
+    DPoint3d    startPt;
+
+    if (!curveVector.GetStartPoint (startPt))
+        return ERROR;
+
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    Transform   solidToDgn, dgnToSolid, curveToBody, bodyToCurve;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid);
+
+    curveToBody = (NULL == curveToDgn) ? dgnToSolid : Transform::FromProduct (dgnToSolid, *curveToDgn);
+    curveToBody.TranslateInLocalCoordinates (curveToBody, -startPt.x, -startPt.y, -startPt.z);
+    bodyToCurve.InverseOf (curveToBody);
+
+    PK_BODY_t   bodyTag;
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, curveVector, curveToBody, true, idMap))
+        return ERROR;
+    
+    if (nodeId)
+        PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+    entityOut = PSolidUtil::CreateNewEntity(bodyTag, bodyToCurve);
+
+    return SUCCESS;
+    }
 
 
 

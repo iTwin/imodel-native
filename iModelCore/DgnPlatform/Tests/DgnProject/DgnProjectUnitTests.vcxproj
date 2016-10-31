@@ -85,6 +85,7 @@
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
+    <ClCompile Include="Published\CreateFromInstance_Test.cpp" />
     <ClCompile Include="Published\DateTimeformat_test.cpp" />
     <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
