@@ -180,8 +180,11 @@ struct  MRMeshFileName : Utf8String
     void AppendToPath(Utf8StringCR pathToAdd);
     bool IsUrl() const;
     bool IsS3MXUrl() const;
+    bool IsAzureBlobRedirectUrl() const;					//YII RealityData Services
     bool IsAbsolutePath() const;
     Utf8String GetFileNameWithoutExtension() const;
+    bool ConvertS3MXUrlToAzureRedirectionRequestURL();		//YII RealityData Services
+    Utf8String MRMeshFileName::GetS3MXPath() const;			//YII RealityData Services
 
 private:
     bool ParseUrl(Utf8StringP protocol, Utf8StringP server, Utf8StringP remainder) const;
@@ -189,6 +192,8 @@ private:
 
     bool BuildWSGUrl(Utf8StringCR protocol, Utf8StringCR server, Utf8StringCR version, Utf8StringCR repositoryName, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR objectId, bool contentFlag);
     bool AppendToS3MXFileName(Utf8StringCR additionalPath);
+    bool AppendToAzureBlobRedirectFileName(Utf8StringCR additionalPath);	//YII RealityData Services
+
     void StripOutFileName();
 
 };  // MRMeshFileName
@@ -298,6 +303,7 @@ struct  MRMeshUtil
     static void                 DisplayNodeFailureWarning (WCharCP fileName) { BeAssert(false); };
     static BeFileName           ConstructNodeName (std::string const& childName, BeFileNameCP parentName);
     static BentleyStatus        ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP fileName, Utf8StringCP authToken);
+    static BentleyStatus        GetAzureBlobRedirectionForWSGRequest(std::string child, std::string& finalChildName); //YII RealityData Services
     static void                 GetMemoryStatistics (size_t& memoryLoad, size_t& total, size_t& available);
     static double               CalculateResolutionRatio ();
     static BentleyStatus        ParseTileId(std::string const& name, uint32_t& tileX, uint32_t& tileY);

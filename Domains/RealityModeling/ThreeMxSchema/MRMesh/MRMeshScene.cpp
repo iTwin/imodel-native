@@ -48,7 +48,16 @@ ThreeMxScenePtr   MRMeshScene::Create (S3SceneInfo const& sceneInfo, WCharCP fil
         {
         MRMeshNodePtr       childNode = MRMeshNode::Create ();
 
-        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead (*childNode, MRMeshUtil::ConstructNodeName (*child, &scenePath)))
+//YII RealityData Services
+        std::string finalChildName = *child;
+        // If child is a S3MX Url, we may be able to use redirection to AzureBlob.
+        MRMeshFileName childPath((*child).c_str());
+        if (childPath.IsS3MXUrl())
+            {
+            MRMeshUtil::GetAzureBlobRedirectionForWSGRequest(*child, finalChildName);
+            }
+
+        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead (*childNode, MRMeshUtil::ConstructNodeName (finalChildName, &scenePath)))
             return nullptr;
 
         childNode->LoadUntilDisplayable ();
