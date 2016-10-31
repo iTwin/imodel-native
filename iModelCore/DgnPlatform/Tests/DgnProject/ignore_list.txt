@@ -133,3 +133,5 @@ CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 
 TextAnnotationTest.BasicCrud2d # WIP_VIEW_DEFINITION
 TextAnnotationTest.BasicCrud3d # After merge
+
+CreateFromInstanceTests.Category # Demoing a problem with autohandled properties
