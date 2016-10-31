@@ -90,7 +90,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     PolyfaceHeaderPtr getAsPolyFace = elmGeom5->GetAsPolyfaceHeader();
     EXPECT_TRUE(getAsPolyFace.IsValid());
 
-    // ISolidKernelEntityPtr
+    // IBRepEntityPtr
     //
 
     // TextString

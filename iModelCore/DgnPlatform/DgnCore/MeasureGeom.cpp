@@ -674,7 +674,7 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
+bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -728,7 +728,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -773,7 +773,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
+bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
@@ -813,17 +813,17 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
+bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
         case AccumulateLengths:
             {
-            if (ISolidKernelEntity::EntityType::Solid == entity.GetEntityType ())
+            if (IBRepEntity::EntityType::Solid == entity.GetEntityType ())
                 {
                 return true; // Not valid type for operation...
                 }
-            else if (ISolidKernelEntity::EntityType::Sheet == entity.GetEntityType ())
+            else if (IBRepEntity::EntityType::Sheet == entity.GetEntityType ())
                 {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
                 TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
@@ -838,7 +838,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 
         case AccumulateVolumes:
             {
-            if (ISolidKernelEntity::EntityType::Solid != entity.GetEntityType ())
+            if (IBRepEntity::EntityType::Solid != entity.GetEntityType ())
                 return true; // Not valid type for operation...
 
             return DoAccumulateVolumes (entity, graphic);
@@ -846,7 +846,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 
         default:
             {
-            if (ISolidKernelEntity::EntityType::Wire == entity.GetEntityType ())
+            if (IBRepEntity::EntityType::Wire == entity.GetEntityType ())
                 return true; // Not valid type for operation...
 
             return DoAccumulateAreas (entity, graphic);
@@ -903,9 +903,9 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
             break;
             }
 
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:
+        case GeometricPrimitive::GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr geom = m_geomPrimitive->GetAsISolidKernelEntity();
+            IBRepEntityPtr geom = m_geomPrimitive->GetAsIBRepEntity();
             builder->AddBody(*geom);
             break;
             }

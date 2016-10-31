@@ -236,7 +236,7 @@ CurveVectorPtr PSolidUtil::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  PSolidUtil::PlanarSheetBodyToCurveVector (ISolidKernelEntityCR entity)
+CurveVectorPtr  PSolidUtil::PlanarSheetBodyToCurveVector (IBRepEntityCR entity)
     {
     PK_ENTITY_t     entityTag = PSolidUtil::GetEntityTag (entity);
     PK_BODY_type_t  bodyType;
@@ -754,7 +754,7 @@ static void getOrderedEdges (PK_EDGE_t* edges, int nEdges)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves, ISolidKernelEntityCR entity, EdgeToCurveIdMap const* idMap)
+BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves, IBRepEntityCR entity, EdgeToCurveIdMap const* idMap)
     {
     int         nFaces = 0;
     PK_FACE_t*  faces = NULL;
@@ -825,7 +825,7 @@ BentleyStatus   PSolidUtil::BodyToCurveVectors (bvector<CurveVectorPtr>& curves,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  PSolidUtil::WireBodyToCurveVector (ISolidKernelEntityCR entity)
+CurveVectorPtr  PSolidUtil::WireBodyToCurveVector (IBRepEntityCR entity)
     {
     PK_BODY_type_t  bodyType;
 

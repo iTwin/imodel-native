@@ -88,7 +88,7 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
     PolyfaceHeaderPtr mesh = faceBuilder->GetClientMeshPtr();
     EXPECT_TRUE(builder->Append(*mesh));
 
-    // ISolidKernelEntityPtr
+    // IBRepEntityPtr
     //
 
     // TextString

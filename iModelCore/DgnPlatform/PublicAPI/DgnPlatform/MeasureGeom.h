@@ -66,14 +66,14 @@ virtual IFacetOptionsP _GetFacetOptionsP() override;
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
 virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
 virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
 virtual bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
 virtual bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;
 virtual bool _ProcessSurface (MSBsplineSurfaceCR, SimplifyGraphic&) override;
 virtual bool _ProcessPolyface (PolyfaceQueryCR, bool isFilled, SimplifyGraphic&) override;
-virtual bool _ProcessBody (ISolidKernelEntityCR, SimplifyGraphic&) override;
+virtual bool _ProcessBody (IBRepEntityCR, SimplifyGraphic&) override;
 
 virtual void _OutputGraphics (ViewContextR context) override;
 
@@ -83,17 +83,17 @@ void AccumulateLengthSums (double lengthB, DPoint3dCR centroidB, DPoint3dCR mome
 void AccumulateLengthSums (DMatrix4dCR products);
 
 bool DoAccumulateLengths (CurveVectorCR, SimplifyGraphic& graphic);
-bool DoAccumulateLengths (ISolidKernelEntityCR, SimplifyGraphic& graphic);
+bool DoAccumulateLengths (IBRepEntityCR, SimplifyGraphic& graphic);
 
 bool DoAccumulateAreas (CurveVectorCR, SimplifyGraphic& graphic);
 bool DoAccumulateAreas (ISolidPrimitiveCR, SimplifyGraphic& graphic);
 bool DoAccumulateAreas (MSBsplineSurfaceCR, SimplifyGraphic& graphic);
 bool DoAccumulateAreas (PolyfaceQueryCR, SimplifyGraphic& graphic);
-bool DoAccumulateAreas (ISolidKernelEntityCR, SimplifyGraphic& graphic);
+bool DoAccumulateAreas (IBRepEntityCR, SimplifyGraphic& graphic);
 
 bool DoAccumulateVolumes (ISolidPrimitiveCR, SimplifyGraphic& graphic);
 bool DoAccumulateVolumes (PolyfaceQueryCR, SimplifyGraphic& graphic);
-bool DoAccumulateVolumes (ISolidKernelEntityCR, SimplifyGraphic& graphic);
+bool DoAccumulateVolumes (IBRepEntityCR, SimplifyGraphic& graphic);
 
 void GetOutputTransform (TransformR transform, SimplifyGraphic const& graphic);
 bool GetPreFlattenTransform (TransformR flattenTransform, SimplifyGraphic const& graphic);

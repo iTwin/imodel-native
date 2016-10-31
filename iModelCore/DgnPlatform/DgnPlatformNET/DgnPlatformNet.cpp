@@ -1920,6 +1920,9 @@ public:
             }
         };
 
+    property bool IsUser    { bool get () { return m_native->IsUserCategory(); } }
+    property bool IsSystem  { bool get () { return m_native->IsSystemCategory(); } }
+
     /** Look up the ID of the Category with the specified name. @param name The name to look up. @param db The DgnDb that contains the Category. @return The ID of the Category if found */
     static DgnCategoryId^ QueryCategoryId (System::String^ name, DgnNET::DgnDb^ dgnDb)
         {
@@ -2549,6 +2552,17 @@ public:
             }
         }
 
+    property bool IsGeometricModel      { bool get () { return m_native->IsGeometricModel();    } }
+    property bool IsSpatialModel        { bool get () { return m_native->IsSpatialModel();      } }      
+    property bool IsPhysicalModel       { bool get () { return m_native->IsPhysicalModel();     } }     
+    property bool Is2dModel             { bool get () { return m_native->Is2dModel();           } }           
+    property bool Is3dModel             { bool get () { return m_native->Is3dModel();           } }           
+    property bool IsRoleModel           { bool get () { return m_native->IsRoleModel();         } }         
+    property bool IsInformationModel    { bool get () { return m_native->IsInformationModel();  } }  
+    property bool IsDefinitionModel     { bool get () { return m_native->IsDefinitionModel();   } }   
+    property bool IsSheetModel          { bool get () { return m_native->IsSheetModel();        } }        
+    property bool IsDictionaryModel     { bool get () { return m_native->IsDictionaryModel();   } }   
+
 
     /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
     static AuthorityIssuedCode^ CreateModelCode (System::String^ modelName)
@@ -2606,17 +2620,6 @@ private:
     [SRI::FieldOffset(3)]System::Byte     m_alpha;
 
 internal:
-        /**
-         * Construct a new ColorDef
-         * @param red   The red value. 0-255.
-         * @param green   The green value. 0-255.
-         * @param blue   The blue value. 0-255.
-         * @param alpha   The alpha value. 0-255.
-         */
-    ColorDef (byte red, byte green, byte blue, byte alpha) : m_red (red), m_green (green), m_blue (blue), m_alpha (alpha)
-        {
-        }
-
     ColorDef (BDGN::ColorDefCR native)
         {
         m_red   = native.GetRed();
@@ -2626,6 +2629,18 @@ internal:
         }
 
 public:
+    /**
+     * Construct a new ColorDef
+     * @param red   The red value. 0-255.
+     * @param green   The green value. 0-255.
+     * @param blue   The blue value. 0-255.
+     * @param alpha   The alpha value. 0-255.
+     */
+    ColorDef (byte red, byte green, byte blue, byte alpha) : m_red (red), m_green (green), m_blue (blue), m_alpha (alpha)
+        {
+        }
+
+
     property System::Byte Red
         {
         System::Byte get ()
@@ -2679,7 +2694,7 @@ public:
 
 
     /** Projection of BentleyApi::Dgn::Render::FillDisplay */
-enum class FillDisplay
+public enum class FillDisplay
     {
     Never       = BDGNR::FillDisplay::Never,
     ByView      = BDGNR::FillDisplay::ByView,
@@ -2689,7 +2704,7 @@ enum class FillDisplay
 
 
     /** Projection of BentleyApi::Dgn::Render::DgnGeometryClass */
-enum class DgnGeometryClass
+public enum class DgnGeometryClass
     {
     Primary      = BDGNR::DgnGeometryClass::Primary,
     Construction = BDGNR::DgnGeometryClass::Construction,
@@ -3426,22 +3441,71 @@ public:
         m_native->Append (BDGN::DgnSubCategoryId (subcategoryId->Value));
         }
 
-#if defined (NEEDSWORK_DgnPlatformNET_Geometry)
     /**
      * Append a geometry of some kind
      * @param geometry  The geometry
      */
     void    AppendGeometry (GeometryNET::AnyGeometry^ geometry)
         {
-        if (geometry->GetCurveVectorPtr().IsValid())
-            m_native->Append(*geometry->GetCurveVectorPtr());
-        else if (geometry->GetICurvePrimitivePtr().IsValid())
-            m_native->Append(*geometry->GetICurvePrimitivePtr());
-        else if (geometry->GetISolidPrimitivePtr().IsValid())
-            m_native->Append(*geometry->GetISolidPrimitivePtr());
+        GeometryNET::CurveVector^ curveVector;
+        if (nullptr != (curveVector = dynamic_cast <GeometryNET::CurveVector^>(geometry)))
+            {
+            System::IntPtr nativeIntPtr = GeometryNET::CurveVector::DereferenceToNative (curveVector, false);
+            CurveVectorP nativeCV = (CurveVectorP) nativeIntPtr.ToPointer();
+            m_native->Append (*nativeCV);
+            return;
+            }
+        
+        GeometryNET::SolidPrimitive^ solidPrimitive;
+        if (nullptr != (solidPrimitive = dynamic_cast <GeometryNET::SolidPrimitive^>(geometry)))
+            {
+            System::IntPtr nativeIntPtr = GeometryNET::SolidPrimitive::DereferenceToNative (solidPrimitive, false);
+            ISolidPrimitiveP nativeSP = (ISolidPrimitiveP) nativeIntPtr.ToPointer();
+            m_native->Append (*nativeSP);
+            return;
+            }
+        
+        GeometryNET::CurvePrimitive^ curvePrimitive;
+        if (nullptr != (curvePrimitive = dynamic_cast <GeometryNET::CurvePrimitive^>(geometry)))
+            {
+            System::IntPtr nativeIntPtr = GeometryNET::CurvePrimitive::DereferenceToNative (curvePrimitive, false);
+            ICurvePrimitiveP nativeCP = (ICurvePrimitiveP) nativeIntPtr.ToPointer();
+            m_native->Append (*nativeCP);
+            return;
+            }
+        
+        GeometryNET::PolyfaceHeader^ polyfaceHeader;
+        if (nullptr != (polyfaceHeader = dynamic_cast <GeometryNET::PolyfaceHeader^>(geometry)))
+            {
+            System::IntPtr nativeIntPtr = GeometryNET::PolyfaceHeader::DereferenceToNative (polyfaceHeader, false);
+            PolyfaceHeaderP nativePFH = (PolyfaceHeaderP) nativeIntPtr.ToPointer();
+            m_native->Append (*nativePFH);
+            return;
+            }
+
+        GeometryNET::MSBsplineSurface^ bsplineSurface;
+        if (nullptr != (bsplineSurface = dynamic_cast <GeometryNET::MSBsplineSurface^>(geometry)))
+            {
+            System::IntPtr nativeIntPtr = GeometryNET::MSBsplineSurface::DereferenceToNative (bsplineSurface, false);
+            MSBsplineSurfaceP nativeBSS = (MSBsplineSurfaceP) nativeIntPtr.ToPointer();
+            m_native->Append (*nativeBSS);
+            return;
+            }
+
+        // wasn't any of those geometry types.
+        BeAssert (false);
+        }
+
+    void    AppendGeometry (GeometryNET::MSBsplineCurve^ bsplineCurve)
+        {
+        System::IntPtr nativeIntPtr = GeometryNET::MSBsplineCurve::DereferenceToNative (bsplineCurve, false);
+        MSBsplineCurveP nativeBSC = (MSBsplineCurveP) nativeIntPtr.ToPointer();
+        ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateBsplineCurve (*nativeBSC);
+        m_native->Append (*curvePrimitive.get());
         }
 
 
+#if defined (NEEDSWORK_DgnPlatformNET_Geometry)
     /**
      * Append the geometry from a GeometryNode.
      * @remark All leaf geometry is transformed to the node's root coordinates and saved as separate geometry items.
@@ -3478,6 +3542,13 @@ public:
         return m_native->Finish (*nativeSource);
         }
 
+    int     Finish (GeometricElement3d^ element)
+        {
+        BDGN::DgnElementP           nativeElement       = element->GetNative();
+        BDGN::GeometrySourceP       nativeSource        = nativeElement->ToGeometrySourceP();
+        return m_native->Finish (*nativeSource);
+        }
+
     /**
      * Copy the geometry in this builder to a DgnGeometryPart.
      * @param part  The DgnGeometryPart
@@ -3488,6 +3559,7 @@ public:
         BDGN::DgnGeometryPartP nativePart = part->GetNative();
         return m_native->Finish (*nativePart);
         }
+
 
     ~GeometryBuilder ()
         {
