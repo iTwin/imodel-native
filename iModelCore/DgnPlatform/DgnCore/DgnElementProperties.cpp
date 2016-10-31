@@ -253,8 +253,6 @@ DgnDbStatus ElementECInstanceAdapter::CopyPropertiesFrom(ECValuesCollectionCR so
         {
         ECPropertyValue const& prop = *it;
 
-        printf ("%s=%s\n", prop.GetValueAccessor().GetDebugAccessString().c_str(), prop.GetValue().ToString().c_str());
-
         if (filter._ExcludeProperty(prop))
             continue;
 
@@ -533,24 +531,8 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    printf ("--------------------------Input ECInstance-------------------------------\n");
     DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
     stat = ele->_SetPropertyValues(properties, filter);
-
-    printf ("--------------------------Element ECDBuffer-------------------------------\n");
-    ElementAutoHandledPropertiesECInstanceAdapter ecd(*ele, true);
-//    ScopedDataAccessor accs(ecd);
-//    printf ("%s\n", accs.DumpData().c_str());
-    ECValuesCollection ecdValues(ecd);
-    for (ECValuesCollection::const_iterator it=ecdValues.begin(); it != ecdValues.end(); ++it)
-        {
-        ECPropertyValue const& prop = *it;
-        printf ("%s=%s\n", prop.GetValueAccessor().GetDebugAccessString().c_str(), prop.GetValue().ToString().c_str());
-        auto const& loc = prop.GetValueAccessor().DeepestLocationCR();
-        ECValue v;
-        ecd.GetValue(v, loc.GetPropertyIndex());
-        printf ("%s=%s\n", prop.GetValueAccessor().GetAccessString(), v.ToString().c_str());
-        }
 
     return (DgnDbStatus::Success == stat)? ele: nullptr;
     }
@@ -667,7 +649,6 @@ void ElementAutoHandledPropertiesECInstanceAdapter::AllocateBuffer(size_t size)
 
     m_element.m_ecPropertyDataSize = size;
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
-    memset (m_element.m_ecPropertyData, 0xec, size);
     InitializeMemory(_GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
 
     if (m_element.IsPersistent())
