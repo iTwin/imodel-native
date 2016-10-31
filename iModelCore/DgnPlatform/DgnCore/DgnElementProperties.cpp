@@ -518,21 +518,13 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR source, SetPropert
     return ecThis.CopyPropertiesFrom(srcValues, filter);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnElement::CreateParams dgn_ElementHandler::Element::_InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
-    {
-    return DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
-    auto params = _InitCreateParams(inStat, db, properties);
+    auto params = DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
     if (!params.IsValid())
         return nullptr;
     auto ele = _CreateInstance(params);
