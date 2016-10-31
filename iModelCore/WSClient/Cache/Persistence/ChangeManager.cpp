@@ -136,6 +136,9 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
     if (nullptr == relClass)
         return nullptr;
 
+    relClass->GetSource().SetRoleLabel(relClassName);
+    relClass->GetTarget().SetRoleLabel(relClassName + " (Reversed)");
+
     if (ECObjectsStatus::Success != relClass->GetSource().AddClass(*parentClass->GetEntityClassCP()) ||
         ECObjectsStatus::Success != relClass->GetTarget().AddClass(*childClass->GetEntityClassCP()))
         return nullptr;
