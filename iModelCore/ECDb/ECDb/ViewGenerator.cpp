@@ -1516,7 +1516,7 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSQL() const
         .AppendDot()
         .AppendEscaped(m_primaryECInstanceId.GetName().c_str())
         .Append(BooleanSqlOperator::EqualTo)
-        .AppendEscaped(m_forignECInstanceId.GetTable().GetName().c_str());
+        .AppendEscaped(m_forignECInstanceId.GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_forignECInstanceId.GetName().c_str());
 
     return sql;
     }
