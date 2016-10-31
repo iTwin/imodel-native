@@ -1010,7 +1010,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
         if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
             {
             ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTexture(textureId);
-            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             }
 
         displayTexturePoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(textureId);
@@ -1018,7 +1018,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
         if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
             {
             ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTextureData(textureId);
-            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
+            GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::Texture, (uint64_t)m_SMIndex);            
             }                                                
         }
 
