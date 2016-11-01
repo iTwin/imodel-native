@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+ProductRoot = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/
+
+$(BuildContext)Delivery/UnitTests/Documents : ${UNIT_TESTS_DOCUMENTS_DIR}
+    $(LinkFirstDepToFirstTargetAsDirectory)

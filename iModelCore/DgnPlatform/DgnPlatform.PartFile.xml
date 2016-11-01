@@ -139,6 +139,13 @@
         </Bindings>
     </Part>
 
+    <Part Name="RawDgnClientSdkUnitTestData" BentleyBuildMakeFile="Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke" BentleyBuildMakeOptions="-dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnClientSdkUnitTestData/">
+        <RequiredRepository>DgnClientSdkUnitTestData</RequiredRepository>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
+        </Bindings>
+    </Part>
+
     <!-- ********************************************************************************************** -->
     <!-- All DgnPlatform-related Unit tests -->
     <!-- These tests are linked into various test products. -->
@@ -147,6 +154,7 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
