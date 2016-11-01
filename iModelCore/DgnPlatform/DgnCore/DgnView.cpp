@@ -1238,7 +1238,7 @@ namespace ViewElementHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
@@ -1308,7 +1308,7 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
@@ -1371,7 +1371,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
@@ -1436,7 +1436,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
@@ -1463,7 +1463,7 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
@@ -1522,7 +1522,7 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDisplayStyle::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+void ViewDisplayStyle::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
     params.RegisterPropertyAccessors(layout, str_Styles(), 

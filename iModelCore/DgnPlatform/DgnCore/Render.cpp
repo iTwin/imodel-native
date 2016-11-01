@@ -530,6 +530,13 @@ GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) con
     return m_builder->_CreateSubGraphic(subToGraphic);
     }
 
+#ifdef FRAMERATE_DEBUG
+#   define FRAMERATE_DEBUG_PRINTF DEBUG_PRINTF
+#   define FRAMERATE_WARN_PRINTF WARN_PRINTF
+#else
+#   define FRAMERATE_DEBUG_PRINTF 
+#   define FRAMERATE_WARN_PRINTF 
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -555,7 +562,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
 
     static const double FINE_ELEMENT_RES = 1 / 16.0; 
 
-    DEBUG_PRINTF("[%d] frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", target.GetId(), frameRateGoal, smallestRangeDrawn, successPct);
+    FRAMERATE_DEBUG_PRINTF("[%d] frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", target.GetId(), frameRateGoal, smallestRangeDrawn, successPct);
 
     static volatile double s_longTermSuccessRate = 0.80;
 
@@ -563,7 +570,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
         {
         // After a long string of successes, reset the stats. Otherwise, we won't notice when aborts start happening again.
         Reset();
-        DEBUG_PRINTF("Reset stats");
+        FRAMERATE_DEBUG_PRINTF("Reset stats");
         return frameRateGoal;
         }
 
@@ -578,7 +585,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
         if (frameRateGoal > target.GetMinimumFrameRate())
             {
             --frameRateGoal;
-            WARN_PRINTF("ABORTS TOO MUCH => -frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+            FRAMERATE_WARN_PRINTF("ABORTS TOO MUCH => -frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
             }
 
         return frameRateGoal;
@@ -598,7 +605,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
             if (frameRateGoal < FRAME_RATE_MAX)
                 {
                 ++frameRateGoal;
-                WARN_PRINTF("SUCCESS @ FINE => +frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+                FRAMERATE_WARN_PRINTF("SUCCESS @ FINE => +frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
                 }
             }
         }
