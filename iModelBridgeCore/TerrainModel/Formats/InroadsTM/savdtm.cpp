@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* savdtm.c                                            tmi    24-Apr-1990     */
@@ -14,7 +14,6 @@
 #include "stdafx.h"
 #include "timestamputils.h"
 #include "filfnc.h"
-
 
 /*----------------------------------------------------------------------------*/
 /* Constants and macros                                                       */
@@ -54,7 +53,7 @@ static int aecDTM_saveComponentMembers(struct CIVdtmsrf *,FILE *);
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_save
  DESC: Saves a surface to a .DTM file.
@@ -67,7 +66,7 @@ static int aecDTM_saveComponentMembers(struct CIVdtmsrf *,FILE *);
 int aecDTM_save            /* <= TRUE if error                     */
 (
   struct CIVdtmsrf *srfP,             /* => surface to save                   */
-  wchar_t *fileNameP,                 /* => file name to save to              */
+  WCharCP fileNameP,                 /* => file name to save to              */
   unsigned long version               /* => version to save (0 = latest)      */
 )
 {
@@ -88,7 +87,7 @@ int aecDTM_save            /* <= TRUE if error                     */
     {
       aecTicker_initialize();
 
-      if ( ( sts = aecDTM_saveOpen ( fileNameP, srfP->version, srfP->codePage, &handleP ) ) == SUCCESS )
+      if ((sts = aecDTM_saveOpen(const_cast<WCharP>(fileNameP), srfP->version, srfP->codePage, &handleP)) == SUCCESS)
       {
         aecDTM_countSurfacePoints ( &npnt, srfP );
         aecDTM_countSurfaceFeatures ( &nftr, srfP );
@@ -147,7 +146,7 @@ int aecDTM_save            /* <= TRUE if error                     */
 
       if ( handleP ) fclose ( handleP );
 
-      if ( sts != SUCCESS ) aecOutput_setMessage ( sts, fileNameP );
+      if ( sts != SUCCESS ) aecOutput_setMessage ( sts, const_cast<WCharP>(fileNameP) );
 
       if ( sts == SUCCESS )
         aecDTM_saveFileHistory ( srfP );
@@ -169,7 +168,7 @@ static int aecDTM_saveFileHistory( struct CIVdtmsrf *srfP )
     return( SUCCESS );
 }
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveOpen
  DESC: Opens up the .DTM file for binary write access.
@@ -195,8 +194,8 @@ static int aecDTM_saveOpen
   if ( ( *handlePP = _wfopen ( fil, L"w+b" ) ) == (FILE *)0 )                     /* DO_NOT_TRANSLATE */
   {
         DWORD props = GetFileAttributes(fil);
-	    DWORD chk = (FILE_ATTRIBUTE_READONLY & props);
-	    if(chk == FILE_ATTRIBUTE_READONLY) // That means it is read-only.
+        DWORD chk = (FILE_ATTRIBUTE_READONLY & props);
+        if(chk == FILE_ATTRIBUTE_READONLY) // That means it is read-only.
             return (sts = DTM_M_FILREADONLY);
         else
             return ( sts = DTM_M_OPFILF );
@@ -217,7 +216,7 @@ static int aecDTM_saveOpen
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveGUID
  DESC: Saves the surface GUID to the .DTM file.
@@ -245,7 +244,7 @@ static int aecDTM_saveGUID
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveName
  DESC: Saves the name and description section of the .DTM file.
@@ -300,7 +299,7 @@ static int aecDTM_saveName
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_savePreferenceName
  DESC: Saves the surface preference name to the .DTM file.
@@ -341,7 +340,7 @@ static int aecDTM_savePreferenceName
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: XSectionSymbologyName
  DESC: Saves the surface symbology name to be used in cross sections
@@ -382,7 +381,7 @@ static int aecDTM_saveXSectionSymbologyName
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveProfileSymbologyName
  DESC: Saves the profile symbology name to the .DTM file.
@@ -423,7 +422,7 @@ static int aecDTM_saveProfileSymbologyName
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveProfileOffsets
  DESC: Saves the profile offset properites.
@@ -469,7 +468,7 @@ static int aecDTM_saveProfileOffsets
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveRevision
  DESC: Saves the surface last revision aurthor and date to the .DTM file.
@@ -516,7 +515,7 @@ static int aecDTM_saveRevision
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveParameters
  DESC: Saves the parameters section of the .DTM file.
@@ -568,7 +567,7 @@ static int aecDTM_saveParameters
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveFiles
  DESC: Saves the data file headers in from the .DTM file.
@@ -646,7 +645,7 @@ static int aecDTM_saveFiles
 }
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_savePoints
  DESC: Saves the points in from the .DTM file.
@@ -699,7 +698,7 @@ static int aecDTM_savePoints
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveRangePoints
  DESC: Saves the range points in from the .DTM file.
@@ -724,14 +723,14 @@ static int aecDTM_saveRangePoints
       pnt = *p;
 
       if ( fwrite ( &pnt, CIVdtmpntSize, 1, handleP ) != 1 )
-	sts = DTM_M_WRFILF;
+    sts = DTM_M_WRFILF;
     }
 
   return ( sts );
 }
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveTriangles
  DESC: Saves the triangles in from the .DTM file.
@@ -787,7 +786,7 @@ static int aecDTM_saveTriangles
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveFeatures
  DESC: Saves the features to the .DTM file.
@@ -890,7 +889,7 @@ static int aecDTM_saveFeatures
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveFeatureStyles
  DESC: Saves the feature styles to the .DTM file.
@@ -943,7 +942,7 @@ static int aecDTM_saveFeatureStyles
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveFeaturePayItems
  DESC: Saves the feature styles to the .DTM file.
@@ -996,7 +995,7 @@ static int aecDTM_saveFeaturePayItems
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveCorridors
  DESC: Saves the corridors to the .DTM file.
@@ -1034,7 +1033,7 @@ static int aecDTM_saveCorridors
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveComponents
  DESC: Saves the components to the .DTM file.
@@ -1096,7 +1095,7 @@ static int aecDTM_saveComponents
 
 
 
-
+ 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveComponentMembers
  DESC: Saves the component members to the .DTM file.

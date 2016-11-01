@@ -13,6 +13,7 @@
 #include <TerrainModel\TerrainModel.h>
 #include <TerrainModel\Formats\Inroads.h>
 #include <TerrainModel\Formats\InroadsImporter.h>
+#include <TerrainModel\Formats\InroadsExporter.h>
 #include <TerrainModel\Formats\LandXMLImporter.h>
 #include <TerrainModel\Formats\LandXMLExporter.h>
 #include <TerrainModel\Formats\LidarImporter.h>

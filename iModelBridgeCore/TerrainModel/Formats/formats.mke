@@ -3,7 +3,7 @@
 #     $Source: Formats/formats.mke $
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
-#       $Date: 2012/11/15 20:19:18 $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #     $Author: Daryl.Holmwood $
 #
 #   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
@@ -31,6 +31,7 @@ $(basedir)PublicAPI\Formats.h \
 $(basedir)PublicAPI\Esri.h \
 $(basedir)PublicAPI\Inroads.h \
 $(basedir)PublicAPI\InroadsImporter.h \
+$(basedir)PublicAPI\InroadsExporter.h \
 $(basedir)PublicAPI\LandXMLImporter.h \
 $(basedir)PublicAPI\LandXMLExporter.h \
 $(basedir)PublicAPI\Lidar.h \
@@ -79,7 +80,7 @@ $(o)LandXMLExporter$(oext) : $(baseDir)LandXMLExporter.cpp $(DependsOnHeaders) $
 
 $(o)bcdtmMX$(oext) : $(baseDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-#$(o)bcdtminroads$(oext) : $(baseDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtminroads$(oext) : $(baseDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcdtmEsri$(oext) : $(baseDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
@@ -94,6 +95,8 @@ $(o)TerrainImporter$(oext) : $(baseDir)TerrainImporter.cpp $(DependsOnHeaders) $
 $(o)TerrainExporter$(oext) : $(baseDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)InroadsImporter$(oext) : $(baseDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)InroadsExporter$(oext) : $(baseDir)InroadsExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)LidarImporter$(oext) : $(baseDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 

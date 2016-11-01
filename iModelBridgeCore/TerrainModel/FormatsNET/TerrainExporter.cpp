@@ -2,12 +2,13 @@
 |
 |     $Source: FormatsNET/TerrainExporter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
 #include "LandXML.h"
+#include "Inroads.h"
 
 BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 
