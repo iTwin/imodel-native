@@ -140,9 +140,9 @@ DGNPLATFORM_EXPORT static BentleyStatus BodyFromGPA(PK_BODY_t* bodyTag, PK_VERTE
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR profile, TransformCR curveToBodyTransform, bool coverClosed = true, EdgeToCurveIdMap* idMap = NULL);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(PK_BODY_t& bodyTag, PolyfaceQueryCR polyface, TransformCR dgnToSolid);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromMSBsplineSurface(PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromCone(PK_BODY_t& bodyTag, RotMatrixCR rMatrix, BentleyApi::DPoint3dCR topCenter, BentleyApi::DPoint3dCR bottomCenter, double topRadius, double bottomRadius, bool capped, uint32_t nodeId);
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromCone(PK_BODY_t& bodyTag, RotMatrixCR rMatrix, DPoint3dCR topCenter, DPoint3dCR bottomCenter, double topRadius, double bottomRadius, bool capped, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides);
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(PK_BODY_t& bodyTag, PK_BODY_t profileTag, PK_BODY_t pathTag, PK_VERTEX_t pathVertex, bool alignParallel, bool selfRepair, BentleyApi::DVec3dCP lockDirection, double const* twistAngle, double const* scale, BentleyApi::DPoint3dCP scalePoint);
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(PK_BODY_t& bodyTag, PK_BODY_t profileTag, PK_BODY_t pathTag, PK_VERTEX_t pathVertex, bool alignParallel, bool selfRepair, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint);
 
 DGNPLATFORM_EXPORT static CurveVectorPtr FaceToUVCurveVector(PK_FACE_t faceTag, PK_UVBOX_t* uvBox, bool splineParameterization);
 DGNPLATFORM_EXPORT static CurveVectorPtr PlanarFaceToCurveVector(PK_FACE_t face, EdgeToCurveIdMap const* idMap = nullptr);
@@ -160,7 +160,7 @@ DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive(IBRepEntityPtr& o
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface(IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet,DVec3dCP lockDirection, double const* twistAngle, double const* scale, BentleyApi::DPoint3dCP scalePoint, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet,DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 
 }; // PSolidGeom
 
@@ -202,10 +202,10 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(PK_BODY_t entityTag);
 DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(PK_BODY_t entityTag);
 DGNPLATFORM_EXPORT static bool IsSmoothEdge(PK_ENTITY_t edgeTag);
  
-DGNPLATFORM_EXPORT static BentleyStatus GetPlanarFaceData (DPoint3dP point, BentleyApi::DVec3dP normal, PK_FACE_t entityTag);
+DGNPLATFORM_EXPORT static BentleyStatus GetPlanarFaceData (DPoint3dP point, DVec3dP normal, PK_FACE_t entityTag);
 DGNPLATFORM_EXPORT static BentleyStatus CoverWires(PK_BODY_t bodyTag);
-DGNPLATFORM_EXPORT static BentleyStatus ImprintSegment(PK_BODY_t bodyTag, PK_EDGE_t* edgeTag, BentleyApi::DPoint3dCP segment);
-DGNPLATFORM_EXPORT static BentleyStatus MakeEllipseCurve(PK_CURVE_t* curveTag, double* startParam, double* endParam, BentleyApi::DPoint3dP center, RotMatrixP rMatrix, double x1, double x2, double startAngle, double sweepAngle);
+DGNPLATFORM_EXPORT static BentleyStatus ImprintSegment(PK_BODY_t bodyTag, PK_EDGE_t* edgeTag, DPoint3dCP segment);
+DGNPLATFORM_EXPORT static BentleyStatus MakeEllipseCurve(PK_CURVE_t* curveTag, double* startParam, double* endParam, DPoint3dP center, RotMatrixP rMatrix, double x1, double x2, double startAngle, double sweepAngle);
 DGNPLATFORM_EXPORT static void ExtractStartAndSweepFromInterval(double& start, double& sweep, PK_INTERVAL_t const& interval, bool reverse);
 DGNPLATFORM_EXPORT static double CalculateToleranceFromMinCurvature(PK_CURVE_t curveTag, PK_INTERVAL_t* intervalP);
 DGNPLATFORM_EXPORT static void NormalizeBsplineCurve(MSBsplineCurveR curve);
@@ -222,15 +222,15 @@ DGNPLATFORM_EXPORT static bool AreBodiesEqual(PK_BODY_t body1Tag, PK_BODY_t body
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transformToDgn);
 DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
 
-DGNPLATFORM_EXPORT static BentleyStatus SweepBodyVector(PK_BODY_t bodyTag, BentleyApi::DVec3dCR direction, double distance);
-DGNPLATFORM_EXPORT static BentleyStatus SweepBodyAxis(PK_BODY_t bodyTag, BentleyApi::DVec3dCR revolveAxis, BentleyApi::DPoint3dCR center, double sweep);
+DGNPLATFORM_EXPORT static BentleyStatus SweepBodyVector(PK_BODY_t bodyTag, DVec3dCR direction, double distance);
+DGNPLATFORM_EXPORT static BentleyStatus SweepBodyAxis(PK_BODY_t bodyTag, DVec3dCR revolveAxis, DPoint3dCR center, double sweep);
 
 DGNPLATFORM_EXPORT static BentleyStatus Boolean(PK_BODY_t** ppResultBodies, int* pNumResultBodies, PK_boolean_function_t boolOpIn, bool generalTopology, PK_BODY_t blankBodyIn, PK_BODY_t* pToolBodies, int numToolBodiesIn, PKIBooleanOptionEnum booleanOptions);
 DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<PK_BODY_t>& bodies, PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus TransformBody(PK_BODY_t body, TransformCR transform);
 
 DGNPLATFORM_EXPORT static BentleyStatus CheckBody(PK_BODY_t body, bool checkGeometry, bool checkTopology, bool checkSize);
-DGNPLATFORM_EXPORT static BentleyStatus MassProperties(double* amount, double* periphery, BentleyApi::DPoint3dP centroid, double inertia[3][3], PK_BODY_t bodyTag, TransformCP transform, double tolerance);
+DGNPLATFORM_EXPORT static BentleyStatus MassProperties(double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], PK_BODY_t bodyTag, TransformCP transform, double tolerance);
 
 DGNPLATFORM_EXPORT static BentleyStatus DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool assignNodeIds = true);
 
