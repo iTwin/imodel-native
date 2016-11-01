@@ -7622,6 +7622,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_needsBalancing = balanced;
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_terrainDepth = (size_t)-1;
+    m_indexHeader.m_resolution = 0.0f;
     m_isGenerating = true;
     // If a store is provided ...
     if (m_dataStore != NULL)

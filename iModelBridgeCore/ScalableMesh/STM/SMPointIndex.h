@@ -1384,6 +1384,12 @@ public:
         }
 
 
+    void SetDataResolution(float resolution)
+        {
+        m_indexHeader.m_resolution = resolution;
+        m_indexHeaderDirty = true;
+        }
+
     /**----------------------------------------------------------------------------
     Changes an unbalanced index to a balanced index. If the index is already balanced
     nothing will occur otherwise the balancing will immediately be performed.

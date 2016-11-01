@@ -20,6 +20,7 @@ template<class EXTENT> SMIndexMasterHeader<EXTENT>& SMIndexMasterHeader<EXTENT>:
     m_SplitTreshold = indexHeader.m_SplitTreshold;
     m_textured = indexHeader.m_textured;
     m_isTerrain = indexHeader.m_isTerrain;
+    m_resolution = indexHeader.m_resolution;
     return *this;
     }
 
@@ -38,6 +39,7 @@ template<class EXTENT> SMIndexMasterHeader<EXTENT>::operator SQLiteIndexHeader()
     header.m_SplitTreshold = m_SplitTreshold;
     header.m_textured = m_textured;
     header.m_isTerrain = m_isTerrain;
+    header.m_resolution = m_resolution;
     return header;
     }
 
@@ -92,7 +94,8 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::op
             if (id != SQLiteNodeHeader::NO_NODEID)
                 m_apNeighborNodeID[i].push_back(HPMBlockID(id));
         }
-
+    m_geometricResolution = nodeHeader.m_geometricResolution;
+    m_textureResolution = nodeHeader.m_textureResolution;
     return *this;
     }
 
@@ -137,6 +140,8 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::operator SQLiteNodeHeader()
         header.m_apNeighborNodeID[i].resize(m_apNeighborNodeID[i].size());
         for (auto& id : m_apNeighborNodeID[i]) header.m_apNeighborNodeID[i][&id - &m_apNeighborNodeID[i].front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         }
+    header.m_geometricResolution = m_geometricResolution;
+    header.m_textureResolution = m_textureResolution;
     return header;
     }
 

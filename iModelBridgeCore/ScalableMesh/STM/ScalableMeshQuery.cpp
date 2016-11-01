@@ -2571,6 +2571,11 @@ StatusInt  IScalableMeshNodeEdit::SetContentExtent(DRange3d& extent)
     return _SetContentExtent(extent);
     }
 
+StatusInt  IScalableMeshNodeEdit::SetResolution(float geometricResolution, float textureResolution)
+    {
+    return _SetResolution(geometricResolution, textureResolution);
+    }
+
 /*=========================IScalableMeshCachedDisplayNode===============================*/
 StatusInt IScalableMeshCachedDisplayNode::GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const
     {

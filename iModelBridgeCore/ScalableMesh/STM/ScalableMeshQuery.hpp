@@ -2837,6 +2837,15 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetContentExtent(
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetArePoints3d(bool arePoints3d)
     {
     m_node->m_nodeHeader.m_arePoints3d = arePoints3d;
+    m_node->SetDirty(true);
+    return BSISUCCESS;
+    }
+
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetResolution(float geometricResolution, float textureResolution)
+    {
+    m_node->m_nodeHeader.m_geometricResolution = geometricResolution;
+    m_node->m_nodeHeader.m_textureResolution = textureResolution;
+    m_node->SetDirty(true);
     return BSISUCCESS;
     }
 
