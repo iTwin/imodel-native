@@ -40,37 +40,11 @@ public:
         EXPECT_TRUE(placement.IsValid());
         return placement;
         }
-    static ViewAttachment::Data MakeData(DgnViewId viewId, double ox, double oy, double dx, double dy, double s)
-        {
-        return ViewAttachment::Data(viewId, s);
-        }
-    ViewAttachment::CreateParams MakeParams(ViewAttachment::Data const& data, DgnModelId mid, DgnCategoryId cat, Placement2dCR placement=Placement2d())
-        {
-        return ViewAttachment::CreateParams(GetDgnDb(), mid, ViewAttachment::QueryClassId(GetDgnDb()), cat, data, placement);
-        }
-    ViewAttachmentCPtr InsertAttachment(ViewAttachment::CreateParams const& params)
-        {
-        ViewAttachment attachment(params);
-        return attachment.Insert();
-        }
-    ViewAttachmentCPtr UpdateAttachment(ViewAttachmentCR in, ViewAttachment::Data const& data)
-        {
-        auto pAttach = in.MakeCopy<ViewAttachment>();
-        pAttach->SetViewScale(data.m_scale);
-        return pAttach->Update();
-        }
-
     void ExpectEqualPoints(DPoint3dCR a, DPoint3dCR b)
         {
         EXPECT_EQ(a.x, b.x);
         EXPECT_EQ(a.y, b.y);
         EXPECT_EQ(a.z, b.z);
-        }
-
-    void ExpectData(ViewAttachmentCR attach, ViewAttachment::Data const& data)
-        {
-        EXPECT_EQ(attach.GetViewId(), data.m_viewId);
-        EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
 
     DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
@@ -198,7 +172,6 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     ASSERT_TRUE(viewController.GetViewDefinition().GetDisplayStyle().Update().IsValid());
     }
 
-#if defined (NEEDS_WORK_TARGET_MODEL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -206,31 +179,41 @@ TEST_F(ViewAttachmentTest, CRUD)
     {
     auto& db = GetDgnDb();
 
+    Placement2d placement = MakePlacement();
+
     // Test some invalid CreateParams
-
     // Invalid view id
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(DgnViewId(),0,0,1,1,1), m_sheetModelId, m_attachmentCatId, MakePlacement())));
+    {
+    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, DgnViewId(), m_attachmentCatId, placement);
+    EXPECT_INVALID(attachment.Insert());
+    }
     // Invalid category
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_sheetModelId, DgnCategoryId(), MakePlacement())));
+    {
+    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, DgnCategoryId(), placement);
+    EXPECT_INVALID(attachment.Insert());
+    }
     // Not a sheet model
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_drawingModelId, m_attachmentCatId, MakePlacement())));
-    // Negative scale
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,-1), m_sheetModelId, m_attachmentCatId, MakePlacement())));
+    {
+    ViewAttachment attachment(GetDgnDb(), m_drawingModelId, m_viewId, m_attachmentCatId, placement);
+    EXPECT_INVALID(attachment.Insert());
+    }
 
-    // Create a valid view attachment
-    auto data = MakeData(m_viewId, -5.0, 2.5, 1.0, 0.5, 3.0);
-    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetModelId, m_attachmentCatId, MakePlacement()));
-    EXPECT_TRUE(cpAttach.IsValid());
+    // Create a valid attachment attachment
+    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
+    auto cpAttach = GetDgnDb().Elements().Insert(attachment);
+    ASSERT_TRUE(cpAttach.IsValid());
 
     // Confirm data as expected
-    ExpectData(*cpAttach, data);
+    EXPECT_EQ(m_viewId, cpAttach->GetViewId());
+    EXPECT_TRUE(placement.GetOrigin().IsEqual(cpAttach->GetPlacement().GetOrigin()));
 
     // Modify
-    data.m_scale *= 2;
-    cpAttach = UpdateAttachment(*cpAttach, data);
-    ExpectData(*cpAttach, data);
+    placement.GetOriginR().Add(DVec2d::From(0,1));
+    attachment.SetPlacement(placement);
+    cpAttach = GetDgnDb().Elements().Update(attachment);
+    EXPECT_TRUE(placement.GetOrigin().IsEqual(cpAttach->GetPlacement().GetOrigin()));
 
-    // Deleting the view definition deletes attachments which reference it
+    // Deleting the attachment definition deletes attachments which reference it
     DgnElementId attachId = cpAttach->GetElementId();
     EXPECT_TRUE(db.Elements().GetElement(attachId).IsValid());
 
@@ -256,18 +239,16 @@ TEST_F(ViewAttachmentTest, Geom)
     AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
 
     // Create an attachment
-    static const double scale = 2.0;
-    ViewAttachment::Data data(m_viewId, scale);
-    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetModelId, m_attachmentCatId, MakePlacement()));
+    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, MakePlacement());
+    auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
-    EXPECT_EQ(DgnDbStatus::Success, pAttach->GenerateGeomStream());
-    cpAttach = pAttach->Update();
-    EXPECT_TRUE(cpAttach.IsValid());
 
-    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, CategorySelector(db,""), DisplayStyle(db,""));
+    DisplayStyle noStyle(db,"");
+    CategorySelector noCats(db,"");
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, noCats, noStyle);
     sheetView.Insert();
 
     SheetViewControllerPtr viewController = sheetView.LoadViewController();
@@ -275,5 +256,3 @@ TEST_F(ViewAttachmentTest, Geom)
 
     db.SaveChanges();
     }
-#endif
-

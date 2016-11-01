@@ -1325,23 +1325,13 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewAttachment">
-        <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
-        <ECProperty propertyName="Scale" typeName="double">
-            <!-- Should have IsNullable=False but shared table... -->
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
     </ECEntityClass>
+
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">

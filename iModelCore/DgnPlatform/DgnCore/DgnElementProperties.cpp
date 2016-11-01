@@ -1441,3 +1441,24 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, Pr
     return m_accessors->second(m_element, value);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer)
+    {
+    for (auto prop : AutoHandledPropertiesCollection(*GetElementClass(), GetDgnDb(), ECSqlClassParams::StatementType::All, false))
+        {
+        if (!prop->GetIsNavigation())
+            continue;
+
+        ECValue v;
+        GetPropertyValue(v, prop->GetName().c_str());
+        if (v.IsNull())
+            continue;
+
+        DgnElementId id((uint64_t)v.GetLong());
+        id = importer.FindElementId(id);
+        if (id.IsValid())
+            SetPropertyValue(prop->GetName().c_str(), v);
+        }
+    }
