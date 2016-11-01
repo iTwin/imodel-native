@@ -925,6 +925,12 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         {
 
         }
+#ifdef VANCOUVER_API
+        static SMMemoryPoolGenericVectorItem<DataType>* CreateItem(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMMemoryPoolGenericVectorItem<DataType>(nbItems, nodeId, dataType, smId);
+            }
+#endif
 
     virtual ~SMMemoryPoolGenericVectorItem()
         {

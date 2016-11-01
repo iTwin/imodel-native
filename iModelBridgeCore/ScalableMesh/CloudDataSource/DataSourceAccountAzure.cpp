@@ -190,7 +190,7 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
         readSize = p;
 
         stream.close().wait();
-		
+        
         pcb.getn(dest, size)
             .then([&readSize,size](size_t nBytes) -> pplx::task<void>
             {

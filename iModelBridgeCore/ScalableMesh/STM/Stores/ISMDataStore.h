@@ -46,7 +46,7 @@ enum class SMStoreDataType
     Skirt,     
     ClipDefinition,     
     //Not persisted data type
-    Display,
+    Display, //NEEDS_WORK_SM : Replace by displaymesh and displaytexture, Need to be removed.
     //Not persisted data type
     BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.

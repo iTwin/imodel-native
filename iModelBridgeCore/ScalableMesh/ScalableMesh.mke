@@ -23,7 +23,7 @@ DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 dirToSearch=$(BuildContext)VendorAPI/CGAL
 %include cincapnd.mki
 
-dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
 
 #----------------------------------------------------------------------
@@ -50,7 +50,7 @@ always:
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
 #Uncomment this to allow generating design meshes
-CCompOpts + -DWIP_MESH_IMPORT
+#CCompOpts + -DWIP_MESH_IMPORT
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -84,7 +84,8 @@ CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
+#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -302,6 +303,14 @@ $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompil
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
+$(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h ${MultiCompileDepends}
+
+$(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
@@ -337,6 +346,10 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 #$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
+
+$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -469,7 +482,9 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)ECObjects.lib \
-    $(ContextSubpartsLibs)BePointCloud.lib
+    $(ContextSubpartsLibs)BePointCloud.lib \
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+    
 
 %include $(sharedMki)LinkLibrary.mki
 

@@ -684,9 +684,6 @@
     <ClInclude Include="STM\ScalableMeshDraping.h">
       <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h">
-      <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshLib.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
@@ -977,6 +974,21 @@
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteFeatureFile.h">
       <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h">
+      <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
+      <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1409,6 +1421,15 @@
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>

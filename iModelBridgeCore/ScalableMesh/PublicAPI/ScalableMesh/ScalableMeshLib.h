@@ -11,6 +11,7 @@
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshAdmin.h"
+#include <ScalableMesh/IScalableMesh.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -30,6 +31,8 @@ public:
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
             WsgTokenAdmin*                m_wsgTokenAdmin;
             SSLCertificateAdmin*          m_sslCertificateAdmin;
+
+            bmap<WString, IScalableMesh*>* m_smPaths;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
@@ -57,6 +60,10 @@ public:
         //! This method should be called on thread termination.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
         BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
+
+        IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
+        void             RemoveRegisteredScalableMesh(const WString& path);
+        void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 
     //! Must be called once per Host before calling any method in ScalableTerrainModel. Applications can have more than one Host. 

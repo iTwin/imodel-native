@@ -5,8 +5,13 @@
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
+template <class POINT, class EXTENT> class SMMeshIndexNode;
+
+
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#if 0
 struct SmCachedDisplayData
     {
     private:
@@ -67,6 +72,7 @@ struct SmCachedDisplayData
             return m_appliedClips;
             }
     };
+#endif
 
 struct SmCachedDisplayMeshData
     {
@@ -128,6 +134,11 @@ struct SmCachedDisplayMeshData
             textureID = m_textureID;
             return true;
             }
+
+        IScalableMeshDisplayCacheManager* GetDisplayCacheManager() const
+            {
+            return m_displayCacheManagerPtr.get();
+            }
     };
 
 struct SmCachedDisplayTextureData
@@ -138,6 +149,8 @@ struct SmCachedDisplayTextureData
         uint64_t m_textureID;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         size_t                              m_memorySize;
+        bvector<SMMeshIndexNode<DPoint3d, DRange3d>*> m_consumers;
+        std::mutex m_lockForConsumers;
 
 
     public:
@@ -152,15 +165,11 @@ struct SmCachedDisplayTextureData
             m_displayCacheManagerPtr = displayCacheManagerPtr;
             m_memorySize = memorySize;
             }
+        virtual ~SmCachedDisplayTextureData();
 
-        virtual ~SmCachedDisplayTextureData()
-            {
-            if (m_cachedDisplayTexture != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture);
-                assert(status == SUCCESS);
-                }
-            }
+        void AddConsumer(SMMeshIndexNode<DPoint3d, DRange3d>* node);
+
+        void RemoveConsumer(const SMMeshIndexNode<DPoint3d, DRange3d>* node);
 
         size_t GetMemorySize() const
             {
@@ -175,6 +184,11 @@ struct SmCachedDisplayTextureData
         SmCachedDisplayTexture* GetCachedDisplayTexture() const
             {
             return m_cachedDisplayTexture;
+            }
+
+        IScalableMeshDisplayCacheManager* GetDisplayCacheManager() const
+            {
+            return m_displayCacheManagerPtr.get();
             }
     };
 

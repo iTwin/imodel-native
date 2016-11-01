@@ -8,8 +8,14 @@
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
+BUILD_USING_VS2013=1
+VANCOUVER=1
+OPTIMIZE_FOR_SPEED=1
+
 %include  mdl.mki
+%include $(baseDir)mki/ScalableMeshPolicy.mki
 %include $(baseDir)CloudDataSource/CloudDataSourcePolicy.mki
+
 
 CCompOpts + $(PublicApiIncludes)
 CCompOpts + $(VendorApiIncludes)
@@ -37,7 +43,7 @@ always:
 SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
 
 always:
-	@CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
+    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
 
 CCompOpts + -DUNICODE -D__CLOUD_DATA_SOURCE_BUILD__
 
@@ -104,6 +110,8 @@ $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepend
 
 %include MultiCppCompileGo.mki
 
+certDir             = $(bsiCerts)
+
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
@@ -116,7 +124,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
-	$(ContextSubpartsLibs)BeOpenSSL.lib \
+    $(ContextSubpartsLibs)BeOpenSSL.lib \
     $(ContextSubpartsLibs)wastorage.lib
 
 #--------------------------------------------------------------------------------------

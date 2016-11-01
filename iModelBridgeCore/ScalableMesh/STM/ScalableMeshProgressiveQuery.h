@@ -86,13 +86,14 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
     private:  
 
         bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_overviewNodes;
+        bvector<IScalableMesh*>                              m_smOverviews;
         mutable std::vector<RequestedQuery>                   m_requestedQueries;        
        // IScalableMeshPtr                                      m_scalableMeshPtr;
         IScalableMeshDisplayCacheManagerPtr                   m_displayCacheManagerPtr;
         bset<uint64_t>                                        m_activeClips;
 
         void UpdatePreloadOverview();
-        void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node);        
+        void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh);        
         void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
     protected:                                        
@@ -122,6 +123,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         virtual BentleyStatus _StopQuery(int queryId) override; 
 
         virtual bool          _IsQueryComplete(int queryId) override; 
+
+        virtual void _ClearOverviews(IScalableMesh* scalableMeshP) override;
 
         virtual void _InitScalableMesh(IScalableMeshPtr& scalableMeshPtr) override;
         

@@ -52,6 +52,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
     #include <ImagePP\all\h\HRFMapboxFile.h>
 #endif
 
+#include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
+#include <ImagePP\all\h\HRFUtility.h>
+
+
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
@@ -187,6 +191,7 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
 IScalableMeshSourceCreator::Impl::~Impl()
     {
 m_sources.UnregisterEditListener(*this);
+
     }
 
 DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* filePath)
@@ -202,7 +207,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
     }
 
 
-int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
+int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
     {
     int status = BSISUCCESS;
 
@@ -227,7 +232,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
         if (0 < m_sources.GetCount() &&
-            BSISUCCESS != SyncWithSources())
+            BSISUCCESS != SyncWithSources(restrictLevelForPropagation))
             return BSIERROR;
 
 
@@ -348,7 +353,7 @@ void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
-
+    bool restrictLevelForPropagation
     )
     {
     using namespace ISMStore;
@@ -462,7 +467,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
-    if (!PolygonOps::IsConvex(m_filterPolygon))
+    if (m_filterPolygon.size() > 0 && !PolygonOps::IsConvex(m_filterPolygon))
         {
             pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
         }
@@ -500,10 +505,17 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
         return BSISUCCESS;
         }
-
-    // Balance data             
-    if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
-        return BSIERROR;
+    if (!restrictLevelForPropagation)
+        {
+        // Balance data             
+        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
+            return BSIERROR;
+        }
+    else if (!s_inEditing)
+        {
+        size_t endLevel = pDataIndex->GetMaxFilledLevel();
+        pDataIndex->PropagateDataDownImmediately((int)endLevel);
+        }
 
 #ifdef SCALABLE_MESH_ATP
     s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -618,6 +630,12 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->ValidateIs3dDataStates(source2_5dRanges, source3dRanges);
         }
 #endif
+
+    if (restrictLevelForPropagation)
+        {
+        pDataIndex->PropagateFullMeshDown();
+        }
+
     ImportRasterSourcesTo(pDataIndex);
     ApplyEditsFromSources(pDataIndex);
 
@@ -633,6 +651,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
         }
 #endif
+    pDataIndex->Store();
+    m_smSQLitePtr->CommitAll();
 
     pDataIndex = 0;
 
@@ -814,6 +834,8 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
             {
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
             }
+
+        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);        
                                                                                                                             
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,

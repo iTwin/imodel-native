@@ -396,16 +396,21 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
     {
     protected:
         virtual bool _ShouldLoadTexture() const = 0;
+        virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
 
         virtual void _SetLoadTexture(bool loadTexture) = 0;
+        virtual void _SetLoadIndices(bool loadIndices) = 0;        
         virtual void _SetLoadGraph(bool loadGraph) = 0;
 
     public:
+        
         BENTLEY_SM_EXPORT bool ShouldLoadTexture() const;
+        BENTLEY_SM_EXPORT bool ShouldLoadIndices() const;
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
 
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
+        BENTLEY_SM_EXPORT void SetLoadIndices(bool loadIndices);
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();
@@ -470,6 +475,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual bool _HasClip(uint64_t id) const = 0;
 
         virtual bool _IsClippingUpToDate() const = 0;
+
+        virtual bool _IsDataUpToDate() const = 0;
+
+        virtual void _UpdateData() = 0;
 
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
 
@@ -544,6 +553,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool IsClippingUpToDate() const;
 
+        BENTLEY_SM_EXPORT bool IsDataUpToDate() const;
+
+        BENTLEY_SM_EXPORT void UpdateData();
+
         BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
 
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
@@ -587,14 +600,16 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     protected:
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) = 0;
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID) = 0;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetContentExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetArePoints3d(bool arePoints3d) = 0;
-        virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling) = 0;
+        virtual StatusInt _AddTextures(bvector<Byte>& data) = 0;
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
         BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID = -1);
-        BENTLEY_SM_EXPORT StatusInt AddTextures(bvector<Byte>& data, bool sibling = false);
+        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID = -1);
+        BENTLEY_SM_EXPORT StatusInt AddTextures(bvector<Byte>& data);
         BENTLEY_SM_EXPORT StatusInt SetNodeExtent(DRange3d& extent);
         BENTLEY_SM_EXPORT StatusInt SetContentExtent(DRange3d& extent);
         BENTLEY_SM_EXPORT StatusInt SetArePoints3d(bool arePoints3d);
@@ -613,10 +628,14 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         virtual size_t _GetLevel() = 0;
 
+        virtual bool  _GetUseAllResolutions() = 0;
+
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
 
         virtual void _SetLevel(size_t depth) = 0;
+
+        virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -625,10 +644,14 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT size_t GetLevel();
 
+        BENTLEY_SM_EXPORT bool GetUseAllResolutions();
+
         BENTLEY_SM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
         BENTLEY_SM_EXPORT void SetLevel(size_t depth);
+
+        BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
     };
 
 
@@ -727,6 +750,10 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
                            const DPoint3d*                               pQueryExtentPts,
                            int                                           nbQueryExtentPts,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodesPtr,
+                           ClipVectorCP                                        queryExtent3d,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
         
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -741,6 +768,11 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
          BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,    
                                      const DPoint3d*                              pQueryExtentPts,
                                      int                                          nbQueryExtentPts,
+                                     const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+
+
+         BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,
+                                     ClipVectorCP                                        queryExtent3d,
                                      const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
     };
 

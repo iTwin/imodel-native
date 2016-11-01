@@ -471,14 +471,26 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
         }
 
 
-    bool isVisible = GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
+    bool isVisible = m_extent3d != nullptr || GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
 
+    if (m_extent3d != nullptr)
+        {
+        double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
+        double tolerance = maxDimension / cos(PI / 4);
+
+        DPoint3d center;
+
+        center.Init(ExtentOp<EXTENT>::GetXMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()) / 2,
+                    ExtentOp<EXTENT>::GetYMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetHeight(node->GetContentExtent()) / 2,
+                    ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2);
+        isVisible = m_extent3d->PointInside(center, tolerance);
+        }
 
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {
         // If this is the appropriate level or it is a higher level and progressive is set.
         if (
-            m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
+            m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
             if (node->m_nodeHeader.m_nbFaceIndexes > 0)
@@ -836,7 +848,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
 //NEEDS_WORK_SM Cleanup
 static bool s_useNew3dLODQuery = true;
-static bool s_useXrowForCamOn = true;
+static bool s_useXrowForCamOn = false;
 static bool s_useClipVectorForVisibility = true;
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
@@ -885,7 +897,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
             //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
             double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
-            double tolerance = maxDimension / cos(PI / 4);
+            double tolerance =  sqrt(2)* maxDimension / cos(PI / 4);
 
             DPoint3d center;
 
@@ -905,12 +917,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             }
 
         bool finalNode = false;
-
+        bool shouldAddNode = true;
         // Check if coordinate falls inside node extent
         //NEEDS_WORK_SM : The incorrect one is use, probably need to change the UI accordingly or use the parent data with limited region.
         if (s_useNew3dLODQuery /*&& (m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0)*/)
             {
-            finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix);
+            finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix, shouldAddNode);
             }
         else
             {
@@ -928,7 +940,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 {         
                 //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
                 static bool s_clipMesh = true;
-                                
+                if (shouldAddNode)
                 meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 /*
                 if (s_clipMesh == true)
@@ -1035,7 +1047,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
         //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
         double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
-        double tolerance = maxDimension / cos(PI / 4);
+        double tolerance =  maxDimension / cos(PI / 4);
 
         DPoint3d center;
 
@@ -1055,12 +1067,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         }
 
     bool finalNode = false;
-
+    bool shouldAddNode = true;
     // Check if coordinate falls inside node extent
     //NEEDS_WORK_SM : The incorrect one is use, probably need to change the UI accordingly or use the parent data with limited region.
     if (s_useNew3dLODQuery /*&& (m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0)*/)
         {
-        finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix);
+        finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix, shouldAddNode);
         }
     else
         {
@@ -1078,7 +1090,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             {         
             //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
             static bool s_clipMesh = true;                                
-            foundNodes.AddNode(node);
+            if (shouldAddNode) foundNodes.AddNode(node);
             /*
             if (s_clipMesh == true)
                 { 
@@ -1141,15 +1153,11 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
                                                                                                                size_t                                     numSubNodes) 
     {    
     assert(queryNodeOrder.size() == 0);
-
+	
     DMatrix4d rootToViewMatrix; 
 
-    bsiDMatrix4d_initAffineRows(&rootToViewMatrix, 
-                                (DPoint3d*)&m_rootToViewMatrix[0], 
-                                (DPoint3d*)&m_rootToViewMatrix[1], 
-                                (DPoint3d*)&m_rootToViewMatrix[2],
-                                (DPoint3d*)&m_rootToViewMatrix[3]);
-
+	memcpy(&rootToViewMatrix.coff, m_rootToViewMatrix, sizeof(double) * 16);                
+    
     struct OrderInfo
         {
         double m_zScreen;
@@ -1161,16 +1169,15 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
     for (size_t nodeInd = 0; nodeInd < numSubNodes; nodeInd++)
         {
         if (subNodes[nodeInd] == nullptr) continue;
-        DPoint4d center;
+        DPoint3d center;
         center.x = (ExtentOp<EXTENT>::GetXMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetXMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
         center.y = (ExtentOp<EXTENT>::GetYMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetYMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
-        center.z = (ExtentOp<EXTENT>::GetZMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetZMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
-        center.w = 1;
+        center.z = (ExtentOp<EXTENT>::GetZMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetZMin(subNodes[nodeInd]->GetNodeExtent())) / 2;        
                 
-        DPoint4d outPoint;
+        DPoint3d outPoint;
 
-        bsiDMatrix4d_multiply4dPoints(&rootToViewMatrix, &outPoint, &center, 1);
-
+		rootToViewMatrix.MultiplyAndRenormalize(outPoint, center);
+        
         OrderInfo orderInfo;
         orderInfo.m_zScreen = outPoint.z;
         orderInfo.m_nodeInd = nodeInd;
@@ -1198,7 +1205,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     if (!node->IsLoaded())
         node->Load();
  
-    size_t nbOfPointsInTile = node->GetNbObjects();                    
+    size_t nbOfPointsInTile = node->GetNbObjects();     
+		
 
     //Return always true for the root node so that something is displayed at the screen.
     /*NEEDS_WORK_SM : Not required? 
@@ -1209,7 +1217,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     else
     */
     if (nbOfPointsInTile > 0)
-        {        
+        {        		
+
         double                  rootToViewScale;
         int                     nbPoints = 8;
         HArrayAutoPtr<DPoint3d> facePts(new DPoint3d[nbPoints]);                
@@ -1343,9 +1352,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return IsCorrect;    
     }
 
+static bool s_useSplit = true;
+
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                                                   const EXTENT&                           pi_visibleExtent,                                                                                                                                  
-                                                                                                                                  double                                  pi_RootToViewMatrix[][4]) const
+                                                                                                                                  double                                  pi_RootToViewMatrix[][4],
+                                                                                                                                  bool& shouldAddNode ) const
     {    
     bool IsCorrect = false;
     if (!node->IsLoaded())
@@ -1363,7 +1375,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     else
     */
     if (nbOfPointsInTile > 0)
-        {        
+        {      
+
+		if (s_useSplit)
+			{
+			nbOfPointsInTile = node->GetSplitTreshold();
+			}
+
         //double                  rootToViewScale;
         int                     nbPoints = 8;
         HArrayAutoPtr<DPoint3d> facePts(new DPoint3d[nbPoints]);                
@@ -1408,10 +1426,17 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         double distance = centerInView.DistanceXY(edgeInView) * 2;
         double area = distance * distance;
 
-        double screenPixelsPerPoint = area / nbOfPointsInTile; 
-        IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;                                                       
-
-       
+		
+		/*if ((m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0) && (centerInView.z > 0 || edgeInView.z > 0))
+			{
+			IsCorrect = true;
+			}
+		else*/
+			{
+			double screenPixelsPerPoint = area / nbOfPointsInTile;
+			IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+			}
+						       
     #ifdef ACTIVATE_NODE_QUERY_TRACING
 
         if (m_pTracingXMLFile != 0)
@@ -1586,7 +1611,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
                                                                                                             size_t numSubNodes,
                                                                                                             vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
     {
-    EXTENT ext = (node->GetLevel() == m_requestedLevel || node->IsLeaf()) ? node->m_nodeHeader.m_contentExtent : node->m_nodeHeader.m_nodeExtent;
+    EXTENT ext = /*(node->GetLevel() == m_requestedLevel || node->IsLeaf()) ?*/ node->m_nodeHeader.m_contentExtent; /*: node->m_nodeHeader.m_nodeExtent;*/
     DRange3d range = DRange3d::From(DPoint3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext)),
                                     DPoint3d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext)));
     DSegment3d segment;

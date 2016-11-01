@@ -156,7 +156,14 @@ public:
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMPointIndexNode<POINT, EXTENT>(uint64_t nodeId,
+                                    size_t pi_SplitTreshold,
+                                    const EXTENT& pi_rExtent,
+                                    const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
     
+
+
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode,
@@ -185,7 +192,8 @@ public:
         {
         return false;
         }
-        
+       
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -196,6 +204,8 @@ public:
             bool IsDirty() const;
 
     virtual void SetDirty(bool dirty); 
+
+    size_t GetMaxFilledLevel();
                 
     /**----------------------------------------------------------------------------
     Sets the parent node ..
@@ -246,7 +256,7 @@ public:
     /**----------------------------------------------------------------------------
     Invalidate the filtering and meshing that could have been done in a node.
     -----------------------------------------------------------------------------*/
-    bool InvalidateFilteringMeshing(bool becauseDataRemoved = false);
+    virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false);
 
     /**----------------------------------------------------------------------------
     Invalidate the filtering in all filtered ancestor nodes.
@@ -316,6 +326,8 @@ public:
     nodes have no neighbor node below them.
     -----------------------------------------------------------------------------*/
     virtual void        MoveDownNodes(double moveDownDistance);
+
+    virtual void        PushPointsToBottomNodes();
 
     /**----------------------------------------------------------------------------
     Returns the depth level of a node in the index
@@ -486,7 +498,7 @@ public:
      This method provoques the propagation of data down immediately.
      It overloads the base class method to indicate that filtering needs to be performed.
     -----------------------------------------------------------------------------*/
-    virtual void PropagateDataDownImmediately(bool propagateRecursively = true);
+    virtual void PropagateDataDownImmediately(bool propagateRecursively = true, int targetLevel = -1);
 
 
     virtual void OnPropagateDataDown() {};
@@ -658,7 +670,7 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SplitNode(POINT splitPosition, bool propagateSplit = true);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
     
     void SortSubNodes();
 
@@ -730,7 +742,9 @@ public:
                                           vector<size_t>& neighborSubNodeIndexes,
                                           size_t          neighborSubNodeNeighborInd);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;    
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;    
+
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
     void ValidateNeighborsOfChildren();
     bool NeighborsFillParentExtent();
@@ -1345,6 +1359,7 @@ public:
     /*
     This method is used as a factory to create the right type of node.
     */
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
@@ -1398,7 +1413,11 @@ public:
     data down may result in new node splitting as a result of split treshold being
     attained.
     -----------------------------------------------------------------------------*/
-    virtual void PropagateDataDownImmediately();
+    virtual void PropagateDataDownImmediately(int targetLevel = -1);
+
+    void PushPointsToBottomNodes();
+
+    size_t GetMaxFilledLevel();
 
     /**----------------------------------------------------------------------------
     Indicates if the node is part of a balanced index
@@ -1447,7 +1466,9 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetDepth() const;
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
+
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
     size_t              GetTerrainDepth() const;
 
@@ -1466,6 +1487,8 @@ public:
 
    -----------------------------------------------------------------------------*/        
     HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();       
+
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
       
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent. This extent is the node extent
@@ -1726,6 +1749,10 @@ public:
         return true;
         };
 
+    virtual ISMPointIndexFilter* Clone()
+        {
+        return nullptr;
+        }
     };
 
 

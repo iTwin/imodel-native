@@ -2117,6 +2117,11 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     return _GetLevel();
     }
 
+bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
+    {
+    return _GetUseAllResolutions();
+    }
+
 void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
@@ -2126,6 +2131,11 @@ void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates
 void IScalableMeshMeshQueryParams::SetLevel(size_t depth)
     {
     _SetLevel(depth);
+    }
+
+void IScalableMeshMeshQueryParams::SetUseAllResolutions(bool useAllResolutions)
+    {
+    _SetUseAllResolutions(useAllResolutions);
     }
 
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
@@ -2223,6 +2233,12 @@ int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                
     return _Query(meshNodes, pQueryExtentPts, nbQueryExtentPts, scmQueryParamsPtr);
     }
 
+int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                      meshNodes,
+                                  ClipVectorCP                                       queryExtent3d,
+                                  const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const
+    {
+    return _Query(meshNodes, queryExtent3d, scmQueryParamsPtr);
+    }
 
 static bool s_passNormal = false;
 
@@ -2265,10 +2281,14 @@ IScalableMeshNodePlaneQueryParamsPtr IScalableMeshNodePlaneQueryParams::CreatePa
     return IScalableMeshNodePlaneQueryParamsPtr(new ScalableMeshNodePlaneQueryParams());
     }
 
-
 bool IScalableMeshMeshFlags::ShouldLoadTexture() const
     {
     return _ShouldLoadTexture();
+    }
+
+bool IScalableMeshMeshFlags::ShouldLoadIndices() const
+    {
+    return _ShouldLoadIndices();
     }
 
 bool IScalableMeshMeshFlags::ShouldLoadGraph() const
@@ -2279,6 +2299,11 @@ bool IScalableMeshMeshFlags::ShouldLoadGraph() const
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
     _SetLoadTexture(loadTexture);
+    }
+
+void IScalableMeshMeshFlags::SetLoadIndices(bool loadIndices) 
+    {
+    _SetLoadIndices(loadIndices);
     }
 
 void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph) 
@@ -2304,9 +2329,19 @@ bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
     return m_loadTexture;
     }
 
+bool ScalableMeshMeshFlags::_ShouldLoadIndices() const
+    {
+    return m_loadIndices;
+    }
+
 bool ScalableMeshMeshFlags::_ShouldLoadGraph() const
     {
     return m_loadGraph;
+    }
+
+void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
+    {
+    m_loadIndices = loadIndices;
     }
 
 void ScalableMeshMeshFlags::_SetLoadTexture(bool loadTexture)
@@ -2332,6 +2367,16 @@ BcDTMPtr IScalableMeshNode::GetBcDTM() const
 bool IScalableMeshNode::ArePointsFullResolution() const
     {
     return _ArePointsFullResolution();
+    }
+
+bool IScalableMeshNode::IsDataUpToDate() const
+    {
+    return _IsDataUpToDate();
+    }
+
+void IScalableMeshNode::UpdateData() 
+    {
+    return _UpdateData();
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
@@ -2513,9 +2558,15 @@ StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bv
     return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID);
     }
 
-StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data, bool sibling)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
     {
-    return _AddTextures(data, sibling);
+    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID);
+    }
+
+
+StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data)
+    {
+    return _AddTextures(data);
     }
 
 StatusInt  IScalableMeshNodeEdit::SetNodeExtent(DRange3d& extent)
@@ -2548,6 +2599,7 @@ StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVect
     {
     return _GetDisplayClipVectors(clipVectors);
     }
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */

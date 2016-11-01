@@ -145,7 +145,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\src\DgnPlatform\DgnCore\;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ScalableMesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BePointCloud\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\RealityModeling\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDbSync\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI\DgnPlatform\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh   </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -286,6 +286,8 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="AutomaticGroundDetection\PointCloudEditGroundDetection.h" />
     <ClInclude Include="AutomaticGroundDetection\PointCloudQuadTree.h" />
     <ClInclude Include="AutomaticGroundDetection\PointCloudSisterFileManager.h" />
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h" />
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h" />
     <ClInclude Include="AutomaticGroundDetection\TileLoaderQueue.h" />
     <ClInclude Include="GeoCoords\GCSWktParsing.h" />
     <ClInclude Include="GeoCoords\StdCpp.h" />
@@ -320,7 +322,6 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="Import\TypeConversionFilterFactory.h" />
     <ClInclude Include="PrivateAPI\STMInternal\Foundations\FoundationsPrivateTools.h" />
     <ClInclude Include="PrivateAPI\STMInternal\Foundations\PrivateStringTools.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.hpp" />
     <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Definitions.h" />
@@ -395,6 +396,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshPolicy.h" />
@@ -410,8 +412,10 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceVisitor.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTime.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshURL.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Allocation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Definitions.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\Exceptions.h" />
@@ -446,6 +450,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="STM\ISMDataStore.h" />
     <ClInclude Include="STM\ISMDataStore.hpp" />
+    <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
@@ -569,6 +574,8 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="AutomaticGroundDetection\PointCloudEditGroundDetection.cpp" />
     <ClCompile Include="AutomaticGroundDetection\PointCloudQuadTree.cpp" />
     <ClCompile Include="AutomaticGroundDetection\PointCloudSisterFileManager.cpp" />
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp" />
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp" />
     <ClCompile Include="AutomaticGroundDetection\TileLoaderQueue.cpp" />
     <ClCompile Include="Foundations\Errors.cpp" />
     <ClCompile Include="Foundations\PrivateStringTools.cpp" />
@@ -627,8 +634,10 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
+    <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
+    <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />
     <ClCompile Include="STM\SMMemoryPool.cpp" />
@@ -706,6 +715,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
+    <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>

@@ -12,8 +12,9 @@
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
-
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
+#include <ScalableMesh/IScalableMeshEdit.h>
 #undef static_assert
 
 #ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
@@ -55,6 +56,7 @@ enum DTMAnalysisType
     {
     Precise =0,
     Fast,
+    RawDataOnly,
     Qty
     };
 
@@ -113,6 +115,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                      const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
+
+        virtual IScalableMeshEditPtr    _GetMeshEditInterface() const = 0;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
@@ -179,13 +183,15 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
+        virtual Utf8String                         _GetEditFilesBasePath() = 0;
+
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
 
-        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
+        virtual BentleyStatus                      _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
 
-        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
+        virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
          
@@ -235,6 +241,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
+        BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type = DTMAnalysisType::Precise);
@@ -247,6 +255,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
 
         BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
+
+        BENTLEY_SM_EXPORT Utf8String              GetEditFilesBasePath();
 
         BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
 
@@ -300,9 +310,9 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
-        BENTLEY_SM_EXPORT IScalableMeshPtr                   GetTerrainSM();
+        BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
-        BENTLEY_SM_EXPORT BentleyStatus                   CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id);
+        BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id);
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 
@@ -326,9 +336,11 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                 bool                    openReadOnly,
                                                                 bool                    openShareable);
 
+#ifdef SCALABLE_MESH_ATP
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
+#endif
 
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);

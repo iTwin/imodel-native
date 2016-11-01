@@ -19,11 +19,16 @@
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+#include "Edits\EditOperation.h"
+
 #include "SMMemoryPool.h"
 #include "Stores\SMSQLiteStore.h"
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include "SharedTextureManager.h"
+#include "SmCachedDisplayData.h"
+#include "ScalableMeshQuery.h"
+
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -93,6 +98,11 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
         dtmType == DTMFeatureType::DrapeVoid;
     }
 
+inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
+    {
+    return !vec.empty() && (vec.front() == vec.back());
+    }
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
@@ -105,6 +115,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     SMMeshIndexNode(size_t pi_SplitTreshold,
                                      const EXTENT& pi_rExtent,
                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
     
     SMMeshIndexNode(size_t pi_SplitTreshold,
                                      const EXTENT& pi_rExtent,
@@ -112,6 +127,18 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                      bool IsUnsplitSubLevel);
 
     SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    SMMeshIndex<POINT, EXTENT>* meshIndex,
+                    ISMPointIndexFilter<POINT, EXTENT>* filter,
+                    bool balanced,
+                    bool textured,
+                    bool propagateDataDown,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
+                    CreatedNodeMap*                      createdNodeMap);
 
     SMMeshIndexNode(size_t pi_SplitTreshold,
                         const EXTENT& pi_rExtent,                                                
@@ -139,6 +166,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void Init();
     
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -152,6 +180,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual void Load() const override;
 
     virtual void Unload() override;
+
+    virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false) override;
 
     virtual bool IsGraphLoaded() const;
 
@@ -247,9 +277,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void SplitNodeBasedOnImageRes();
     void SplitMeshForChildNodes();
 
+    void PropagateFullMeshDown(size_t depth);
+
     void UpdateNodeFromBcDTM();
 
-    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode);
+    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode, bool shouldCopyData=true, bool use2d = false);
 
 #ifdef WIP_MESH_IMPORT
     void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
@@ -294,6 +326,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 
     void  BuildSkirts();
+
+    void CreateSkirtsForMatchingTerrain();
+
+    SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
+
+    void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
 
     bool HasClip(uint64_t clipId);
 
@@ -403,7 +441,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
         return true;
         }
-
+#if 0
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> AddDisplayData(SmCachedDisplayData* smCachedDisplayData)
         {                        
         assert(smCachedDisplayData != 0);        
@@ -420,6 +458,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
         return customGenericBlobItemPtr;
         }    
+#endif  
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> AddDisplayMesh(SmCachedDisplayMeshData* smCachedDisplayData, size_t sizeToReserve)
         {
@@ -440,24 +479,32 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return customGenericBlobItemPtr;
         }
 
+
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SmCachedDisplayTextureData* smCachedDisplayData, uint64_t texID)
         {
         assert(smCachedDisplayData != 0);
+
+       /* SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            GetMemoryPool()->RemoveItem(displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);*/
 
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> customGenericBlobItemPtr(
 #ifndef VANCOUVER_API            
             new SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
 #else
-            SMMemoryPoolGenericBlobItem<SmCachedDisplayMeshData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+            SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         auto displayTexDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        m_textureIds.insert(texID);  
         ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
         assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        smCachedDisplayData->AddConsumer(this);
         return customGenericBlobItemPtr;
         }
-    
+
+#if 0
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
         {        
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
@@ -465,7 +512,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
             
         return cachedDisplayDataItemPtr;
-        }    
+        }  
+#endif
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> GetDisplayMeshes()
         {
@@ -480,6 +528,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
         SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }
@@ -489,6 +538,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         uint64_t texID = GetSingleTextureID();
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
         SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }
@@ -542,8 +592,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {                                
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
-        }    
-        
+        }   
+
+    void RemoveMultiTextureData();        
+            
     SMMemoryPoolPtr GetMemoryPool() const
         {
         return SMMemoryPool::GetInstance();
@@ -561,6 +613,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 #endif       
    
 
+    void RemoveWithin(ClipVectorCP boundariesToRemoveWithin);
+
+    void UpdateData();
+
+    void AddEdit(RefCountedPtr<EditOperation>& editDef);
 
 
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
@@ -672,6 +729,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_featurePoolItemId;
         mutable SMMemoryPoolItemId m_dtmPoolItemId;
         mutable SMMemoryPoolItemId m_displayMeshPoolItemId;
+        mutable bset<uint64_t>     m_textureIds;
+        
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
 
@@ -680,12 +739,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         HFCPtr<ClipRegistry> m_clipRegistry;
         mutable std::mutex m_headerMutex;
 
+
+        bvector<RefCountedPtr<EditOperation>> m_remainingUnappliedEdits;
+
 #ifdef WIP_MESH_IMPORT
         public: //NEEDS_WORK: make private
         bvector<int> m_meshParts;
         bvector<Utf8String> m_meshMetadata;
         bool m_existingMesh;
 #endif 
+
     };
 
 
@@ -740,6 +803,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
 #endif
 
+        void PropagateFullMeshDown();
+
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
@@ -749,6 +814,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+
+        int                 RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes);
 #ifdef ACTIVATE_TEXTURE_DUMP
         void                DumpAllNodeTextures()
             {
@@ -758,13 +825,23 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager* TextureManager() { return &m_texMgr; }
 
+        SMMeshIndex<POINT, EXTENT>* CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore);
+
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
+        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 
         bool m_isInsertingClips;
+
+        void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
+        SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
+
+        void SetSMTerrainMesh(IScalableMesh* terrainP);
+        IScalableMesh* GetSMTerrainMesh();
+
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -780,6 +857,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
+        bvector < RefCountedPtr<EditOperation> > m_edits;
+
+        SMMeshIndex<POINT, EXTENT>* m_smTerrain;
+        IScalableMesh* m_smTerrainMesh;
 
     };
 

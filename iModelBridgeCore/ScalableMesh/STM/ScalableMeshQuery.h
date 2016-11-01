@@ -712,6 +712,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         virtual size_t _GetLevel() override { return 0; }
         virtual void _SetLevel(size_t depth) override {};
+        virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
+        virtual bool _GetUseAllResolutions() override { return false; };
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -811,6 +813,8 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         size_t m_depth;
+        bool m_useAllResolutions;
+
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -826,9 +830,19 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             return m_depth;
             }
 
+        virtual bool _GetUseAllResolutions() override
+            {
+            return m_useAllResolutions;
+            }
+
         virtual void _SetLevel(size_t depth) override
             {
             m_depth = depth;
+            }
+
+        virtual void _SetUseAllResolutions(bool useAllResolutions) override
+            {
+            m_useAllResolutions = useAllResolutions;
             }
 
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
@@ -842,6 +856,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         ScalableMeshMeshQueryParams()
             {
             m_depth = (size_t)-1;
+            m_useAllResolutions = false;
             }
 
         virtual ~ScalableMeshMeshQueryParams()
@@ -873,6 +888,10 @@ template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScala
         virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
                            const DPoint3d*                               pQueryExtentPts,
                            int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           ClipVectorCP                                       queryExtent3d,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
                            
     public :
@@ -908,6 +927,10 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
                            int                                           nbQueryExtentPts,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
 
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           ClipVectorCP                                       queryExtent3d,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
     public:
 
         ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
@@ -936,6 +959,10 @@ template <class POINT> class ScalableMeshContextMeshQuery : public ScalableMeshV
         virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
                            const DPoint3d*                               pQueryExtentPts,
                            int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           ClipVectorCP                                       queryExtent3d,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
 
     public:
@@ -976,6 +1003,10 @@ template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalabl
         virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
                            const DPoint3d*                               pQueryExtentPts,
                            int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           ClipVectorCP                                       queryExtent3d,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
 
 
@@ -1034,6 +1065,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             {
             return m_level;
             }
+
 
         virtual void _SetUseUnboundedRay(bool useUnboundedRay) override
             {
@@ -1118,6 +1150,8 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
 
         virtual size_t _GetLevel() override { return 0; }
         virtual void _SetLevel(size_t depth) override {};
+        virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
+        virtual bool _GetUseAllResolutions() override { return false; };
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
@@ -1171,6 +1205,10 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
                            int                                           nbQueryExtentPts,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
 
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           ClipVectorCP                                       queryExtent3d,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
     public:
 
         ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
@@ -1182,13 +1220,17 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
     {
     protected:
 
+        //NEEDS_WORK_SM : Load graph required since removed from file?
         bool m_loadGraph;
+        bool m_loadIndices;
         bool m_loadTexture;
 
         virtual bool _ShouldLoadTexture() const override;
+        virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
 
         virtual void _SetLoadTexture(bool loadTexture) override;
+        virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
 
     public:
@@ -1196,6 +1238,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             {
             m_loadGraph = false;
             m_loadTexture = false;
+            m_loadIndices = true;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
@@ -1207,7 +1250,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
+        bool ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1260,6 +1303,10 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual bool _HasClip(uint64_t clip) const override;
 
         virtual bool _IsClippingUpToDate() const override;
+
+        virtual bool _IsDataUpToDate() const override;
+
+        virtual void _UpdateData() override;
 
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const override;
 
@@ -1334,6 +1381,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const override {return ERROR;}
 
+
             static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture) 
                 {
                 return new ScalableMeshCachedMeshNode(nodePtr, loadTexture);
@@ -1350,6 +1398,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;
+
 
 
     protected:         
@@ -1412,6 +1461,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
             bool IsLoaded() const;
+            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;
                 
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
@@ -1453,7 +1503,9 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
         // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
-        virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
+        virtual StatusInt _AddTextures(bvector<Byte>& data) override;
+
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) override;
         

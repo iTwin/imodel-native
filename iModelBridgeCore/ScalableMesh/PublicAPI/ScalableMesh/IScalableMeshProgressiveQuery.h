@@ -88,6 +88,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         virtual bool          _IsQueryComplete(int queryId) = 0; 
 
+        virtual void _ClearOverviews(IScalableMesh* scalableMeshP) = 0;
+
         virtual void _InitScalableMesh(IScalableMeshPtr& scalableMeshPtr) = 0;
         
     /*__PUBLISH_SECTION_START__*/
@@ -119,6 +121,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
 
         BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
+
+        BENTLEY_SM_EXPORT void ClearOverviews(IScalableMesh* scalableMeshP);
     };
 
 

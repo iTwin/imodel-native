@@ -26,6 +26,7 @@
 using namespace std;
 
 #include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
 #include <ScalableMesh/IScalableMeshATP.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshSources.h>
@@ -306,7 +307,77 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     }
 
-void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    BeXmlStatus status;
+    WString smFileName;
+    status = pTestNode->GetAttributeStringValue(smFileName, "smFileName");
+
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : smFileName attribute not found\r\n");
+        return;
+        }
+    
+    StatusInt openStatus;
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr scalableMeshPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), false, false, openStatus));
+    
+    if (scalableMeshPtr == 0)
+        {
+        printf("ERROR : cannot open 3SM file\r\n");
+        return;
+        }
+                                
+    clock_t t = clock();            
+    IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(scalableMeshPtr));        
+    
+    StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed();                    
+
+    if (statusGround != SUCCESS)
+        return;
+    
+    
+    t = clock() - t;
+    /*
+    double delay = (double)t / CLOCKS_PER_SEC;
+    double minutes = delay / 60.0;
+    double hours = minutes / 60.0;    
+    */
+    /*
+            fwprintf(pResultFile,
+                     L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                     stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
+                     (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
+                     acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
+                     nTimeToCreateSeeds,
+                     nTimeToEstimateParams,
+                     nTimeToFilterGround,
+                     GetGroundDetectionDuration(),                             
+                     GetGroundDetectionDuration() / minutes * 100,
+                     (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
+                     IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
+                     minutes, hours,
+                     GetGroundDetectionDuration(),
+                     IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
+                     IScalableMeshSourceCreator::GetLastBalancingDuration(),
+                     IScalableMeshSourceCreator::GetLastMeshingDuration(),
+                     IScalableMeshSourceCreator::GetLastFilteringDuration(),
+                     IScalableMeshSourceCreator::GetLastStitchingDuration(),
+                     result.c_str());
+                     
+            }
+        else
+            {
+            fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0.0, L"ERROR");
+            }
+            */
+        fflush(pResultFile);            
+    }
+
+    void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString stmFileName;

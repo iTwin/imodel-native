@@ -68,8 +68,8 @@ DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
 DLM_NO_IMPLIB               = 1
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
-DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CONTEXT_LOCATION        = $(BuildContext)/Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)/Delivery/
 
 # Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
 IppGraLibsLib           = $(libprefix)IppGraLibs$(libext)
