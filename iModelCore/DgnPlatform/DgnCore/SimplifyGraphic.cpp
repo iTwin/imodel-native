@@ -837,10 +837,10 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_PARASOLID_X)
-        ISolidKernelEntityPtr entityPtr;
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, geom))
+        if (SUCCESS == PSolidGeom::BodyFromSolidPrimitive(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -849,11 +849,11 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
                 }
 
             bool clipped;
-            bvector<ISolidKernelEntityPtr> clippedBodies;
+            bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
-                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
                 }
             else if (!m_processor._ProcessSolidPrimitive(geom, *this))
@@ -985,10 +985,10 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_PARASOLID_X)
-        ISolidKernelEntityPtr entityPtr;
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, geom))
+        if (SUCCESS == PSolidGeom::BodyFromBSurface(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -997,11 +997,11 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
                 }
 
             bool clipped;
-            bvector<ISolidKernelEntityPtr> clippedBodies;
+            bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
-                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
                 }
             else if (!m_processor._ProcessSurface(geom, *this))

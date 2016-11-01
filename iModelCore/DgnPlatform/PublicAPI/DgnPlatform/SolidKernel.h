@@ -234,6 +234,42 @@ DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOpt
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
+
+//! Support for modification of bodies.
+struct Modify
+    {
+    //! Modify the target body by intersecting with one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools A list of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanIntersect (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Modify the target body by subtracting one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanSubtract (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Modify the target body by uniting with one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanUnion (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Sew the given set of sheet bodies together by joining those that share edges in common.
+    //! @param[out] sewn The new bodies produced by sewing.
+    //! @param[out] unsewn The bodies that were not able to be sewn.
+    //! @param[in,out] tools The array of sheet bodies. (invalidated after sew).
+    //! @param[in] nTools Count of tool bodies.
+    //! @param[in] gapWidthBound Defines a limit on the width of the gap between sheet body edges that will be allowed to remain.
+    //! @param[in] nIterations To request repeated sew attempts that automatically increase gap up to limit set by gapWidthBound.
+    //! @return SUCCESS if some bodies were able to be sewn together.
+    DGNPLATFORM_EXPORT static BentleyStatus SewBodies (bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
+    };
+
 }; // BRepUtil
 
 END_BENTLEY_DGN_NAMESPACE

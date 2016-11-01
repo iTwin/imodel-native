@@ -2436,7 +2436,7 @@ int             *pGeomTagIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidGeom::CreateBodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface)
+BentleyStatus   PSolidGeom::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface)
     {
     PK_BSURF_t          surfaceTag;
     MSBsplineSurfacePtr tmpSurface = MSBsplineSurface::CreatePtr ();
@@ -2603,3 +2603,45 @@ StatusInt PSolidGeom::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveV
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromBSurface (IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+    {
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    DPoint3d    firstPole;
+
+    if (surface.rational)
+        bsputil_unWeightPoles (&firstPole, surface.poles, surface.weights, 1);
+    else
+        firstPole = surface.poles[0];
+
+    Transform   solidToDgn, dgnToSolid;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &firstPole);
+
+    MSBsplineSurface    tmpSurface;
+
+    if (SUCCESS != tmpSurface.CopyFrom (surface))
+        return ERROR;
+
+    PK_BODY_t   bodyTag;
+
+    if (SUCCESS != tmpSurface.TransformSurface (&dgnToSolid) ||
+        SUCCESS != PSolidGeom::BodyFromMSBsplineSurface (bodyTag, tmpSurface))
+        {
+        tmpSurface.ReleaseMem ();
+
+        return ERROR;
+        }
+
+    tmpSurface.ReleaseMem ();
+
+    if (nodeId)
+        PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+    entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+    return SUCCESS;
+    }

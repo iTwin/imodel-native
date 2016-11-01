@@ -833,6 +833,205 @@ BentleyStatus   PSolidTopoId::IncrementNodeIdAttributes (PK_BODY_t bodyTag, int3
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopoId::AssignConeFaceIds (PK_BODY_t bodyTag, uint32_t nodeId)
+    {
+    int         faceInd, numFace=0, *pFaceTagArray = NULL;
+
+    PK_BODY_ask_faces (bodyTag, &numFace, &pFaceTagArray);
+
+    for (faceInd = 0; faceInd < numFace; faceInd++)
+        {
+        int             currSurfaceTag;
+        PK_CLASS_t      surfaceClass;
+        PK_LOGICAL_t    faceSense;
+
+        if (SUCCESS == PK_FACE_ask_oriented_surf (pFaceTagArray[faceInd], &currSurfaceTag, &faceSense) &&
+            SUCCESS == PK_ENTITY_ask_class (currSurfaceTag, &surfaceClass))
+            {
+            int     currFaceId = KRN_INVALID_FACE_ID;
+
+            if (surfaceClass == PK_CLASS_plane)
+                {
+                PK_PLANE_sf_t   currPlaneStruct;
+
+                if (SUCCESS == PK_PLANE_ask (currSurfaceTag, &currPlaneStruct))
+                    {
+                    PK_VECTOR1_t    *pFaceNormal = &currPlaneStruct.basis_set.axis;
+
+                    if (faceSense != PK_LOGICAL_true)
+                        {
+                        pFaceNormal->coord[0] *= -1.0;
+                        pFaceNormal->coord[1] *= -1.0;
+                        pFaceNormal->coord[2] *= -1.0;
+                        }
+
+                    if (DoubleOps::WithinTolerance (pFaceNormal->coord[0], 0.0, 1e-08) &&
+                        DoubleOps::WithinTolerance (pFaceNormal->coord[1], 0.0, 1e-08) &&
+                        DoubleOps::WithinTolerance (pFaceNormal->coord[2], 1.0, 1e-08))
+                        {
+                        currFaceId = KRN_CONE_TOP_FACE_ID;
+                        }
+                    else
+                        {
+                        currFaceId = KRN_CONE_BOTTOM_FACE_ID;
+                        }
+                    }
+                }
+            else
+                {
+                currFaceId = KRN_CONE_LATERAL_FACE_ID;
+                }
+
+            PSolidTopoId::AttachEntityId (pFaceTagArray[faceInd], nodeId, currFaceId);
+            }
+        }
+
+    if (numFace)
+        PK_MEMORY_free (pFaceTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopoId::AssignSlabFaceIds (PK_BODY_t bodyTag, uint32_t nodeId)
+    {
+    int         faceInd, numFace=0, *pFaceTagArray = NULL;
+
+    PK_BODY_ask_faces (bodyTag, &numFace, &pFaceTagArray);
+
+    for (faceInd = 0; faceInd < numFace; faceInd++)
+        {
+        int             currSurfaceTag;
+        PK_LOGICAL_t    faceSense;
+        PK_PLANE_sf_t   currPlaneStruct;
+
+        if (SUCCESS == PK_FACE_ask_oriented_surf (pFaceTagArray[faceInd], &currSurfaceTag, &faceSense) &&
+            SUCCESS == PK_PLANE_ask (currSurfaceTag, &currPlaneStruct))
+            {
+            int             currFaceId = KRN_INVALID_FACE_ID;
+            PK_VECTOR1_t    *pFaceNormal = &currPlaneStruct.basis_set.axis;
+
+            if (faceSense != PK_LOGICAL_true)
+                {
+                pFaceNormal->coord[0] *= -1.0;
+                pFaceNormal->coord[1] *= -1.0;
+                pFaceNormal->coord[2] *= -1.0;
+                }
+
+            if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 0.0, 1e-08) &&
+                DoubleOps::WithinTolerance(pFaceNormal->coord[1], 0.0, 1e-08) &&
+                DoubleOps::WithinTolerance(pFaceNormal->coord[2], -1.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_TOP_FACE_ID;
+                }
+            else if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[1], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[2], 1.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_BOTTOM_FACE_ID;
+                }
+            else if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[1], -1.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[2], 0.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_FRONT_FACE_ID;
+                }
+            else if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 1.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[1], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[2], 0.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_LEFT_FACE_ID;
+                }
+            else if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[1], 1.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[2], 0.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_BACK_FACE_ID;
+                }
+            else if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], -1.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[1], 0.0, 1e-08) &&
+                     DoubleOps::WithinTolerance(pFaceNormal->coord[2], 0.0, 1e-08))
+                {
+                currFaceId = KRN_SLAB_RIGHT_FACE_ID;
+                }
+
+            PSolidTopoId::AttachEntityId (pFaceTagArray[faceInd], nodeId, currFaceId);
+            }
+        }
+
+    if (numFace)
+        PK_MEMORY_free (pFaceTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopoId::AssignTorusFaceIds (PK_BODY_t bodyTag, uint32_t nodeId)
+    {
+    int         faceInd, numFace=0, *pFaceTagArray = NULL;
+
+    PK_BODY_ask_faces (bodyTag, &numFace, &pFaceTagArray);
+
+    for (faceInd = 0; faceInd < numFace; faceInd++)
+        {
+        int             currSurfaceTag;
+        PK_CLASS_t      surfaceClass;
+        PK_LOGICAL_t    faceSense;
+
+        if (SUCCESS == PK_FACE_ask_oriented_surf (pFaceTagArray[faceInd], &currSurfaceTag, &faceSense) &&
+            SUCCESS == PK_ENTITY_ask_class (currSurfaceTag, &surfaceClass))
+            {
+            int     currFaceId = KRN_INVALID_FACE_ID;
+
+            if (surfaceClass == PK_CLASS_plane)
+                {
+                PK_PLANE_sf_t   currPlaneStruct;
+
+                if (SUCCESS == PK_PLANE_ask (currSurfaceTag, &currPlaneStruct))
+                    {
+                    PK_VECTOR1_t    *pFaceNormal = &currPlaneStruct.basis_set.axis;
+
+                    if (faceSense != PK_LOGICAL_true)
+                        {
+                        pFaceNormal->coord[0] *= -1.0;
+                        pFaceNormal->coord[1] *= -1.0;
+                        pFaceNormal->coord[2] *= -1.0;
+                        }
+
+                    if (DoubleOps::WithinTolerance(pFaceNormal->coord[0], 0.0, 1e-08) &&
+                        DoubleOps::WithinTolerance(pFaceNormal->coord[1], -1.0, 1e-08) &&
+                        DoubleOps::WithinTolerance(pFaceNormal->coord[2], 0.0, 1e-08))
+                        {
+                        currFaceId = KRN_TORUS_ENDCAP1_FACE_ID;
+                        }
+                    else
+                        {
+                        currFaceId = KRN_TORUS_ENDCAP2_FACE_ID;
+                        }
+                    }
+                }
+            else
+                {
+                currFaceId = KRN_TORUS_FACE_ID;
+                }
+
+            PSolidTopoId::AttachEntityId (pFaceTagArray[faceInd], nodeId, currFaceId);
+            }
+        }
+
+    if (numFace)
+        PK_MEMORY_free (pFaceTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t nodeId)
@@ -945,6 +1144,26 @@ BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t no
         }
 
     return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        PSolidTopoId::AssignSweptProfileLateralIds (int nLaterals, int* baseArray, int* laterals)
+    {
+    FaceId      faceId;
+
+    memset (&faceId, 0, sizeof (FaceId));
+
+    for (int i=0; i < nLaterals; i++)
+        {
+        if (SUCCESS != PSolidTopoId::IdFromEntity (faceId, baseArray[i], true))
+            continue;
+
+        PSolidTopoId::AttachEntityId (laterals[i], faceId.nodeId, faceId.entityId);
+        }
+
+    return faceId.nodeId;
     }
 
 /*---------------------------------------------------------------------------------**//**

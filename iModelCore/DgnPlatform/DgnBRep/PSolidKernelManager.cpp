@@ -2378,67 +2378,14 @@ int*            pFailureCodeOut     // <= outputs failure code if error, else 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   06/96
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int      pki_start_modeler
-(
-void
-)
+static int pki_start_modeler()
     {
     if (s_parasolidInitialized)
         return SUCCESS;
 
-    int                     failureCode;
-    WString                 debugFileName;
-#if defined (DEBUG)
-    WString                 journalFileName;
-#endif
-    PK_CLASS_t              entityIdOwnerTypes[] = { PK_CLASS_face, PK_CLASS_edge };
-    PK_ATTRIB_field_t       entityIdFieldTypes[] = { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          entityIdAttribDefStruct;
-    PK_ATTDEF_t             entityIdAttribDefTag;
+    PK_SESSION_frustrum_t sessionFrustrum;
 
-    PK_CLASS_t              modifiedFaceIdOwnerTypes[] = { PK_CLASS_face };
-    PK_ATTRIB_field_t       modifiedFaceIdFieldTypes[] = { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          modifiedFaceIdAttribDefStruct;
-    PK_ATTDEF_t             modifiedFaceIdAttribDefTag;
-
-    PK_CLASS_t              userDataOwnerTypes[] = { PK_CLASS_body, PK_CLASS_region, PK_CLASS_shell,
-                                                     PK_CLASS_face, PK_CLASS_loop, PK_CLASS_edge, PK_CLASS_vertex};
-    PK_ATTRIB_field_t       userDataFieldTypes[] = { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          userDataAttribDefStruct;
-    PK_ATTDEF_t             userDataAttribDefTag;
-
-    PK_CLASS_t              faceMaterialOwnerTypes[] = { PK_CLASS_face };
-    PK_ATTRIB_field_t       faceMaterialFieldTypes[] =  { PK_ATTRIB_field_string_c };
-    PK_ATTDEF_sf_t          faceMaterialAttribDefStruct;
-    PK_ATTDEF_t             faceMaterialAttribDefTag;
-
-    PK_CLASS_t              deformOwnerTypes[] = { PK_CLASS_edge, PK_CLASS_vertex };
-    PK_ATTRIB_field_t       deformFieldTypes[] =  { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          deformAttribDefStruct;
-    PK_ATTDEF_t             deformAttribDefTag;
-
-    PK_CLASS_t              bodyIsolinesOwnerTypes[] = { PK_CLASS_body };
-    PK_ATTRIB_field_t       bodyIsolinesFieldTypes[] =  { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          bodyIsolinesAttribDefStruct;
-    PK_ATTDEF_t             bodyIsolinesAttribDefTag;
-
-    PK_CLASS_t              bodyAdfNameOwnerTypes[] = { PK_CLASS_body };
-    PK_ATTRIB_field_t       bodyAdfNameFieldTypes[] = { PK_ATTRIB_field_string_c };
-    PK_ATTDEF_sf_t          bodyAdfNameAttribDefStruct;
-    PK_ATTDEF_t             bodyAdfNameAttribDefTag;
-
-    PK_CLASS_t              bodyAdfGUIDOwnerTypes[] = { PK_CLASS_body };
-    PK_ATTRIB_field_t       bodyAdfGUIDFieldTypes[] = { PK_ATTRIB_field_integer_c };
-    PK_ATTDEF_sf_t          bodyAdfGUIDAttribDefStruct;
-    PK_ATTDEF_t             bodyAdfGUIDAttribDefTag;
-
-    PK_MEMORY_frustrum_t    memoryFunctions;
-    PK_SESSION_frustrum_t   sessionFrustrum;
-    PK_SESSION_start_o_t    sessionOptions;
-
-    PK_SESSION_set_unicode (PK_LOGICAL_true); // Required for R20 parasolid/acis interop...
-
-    PK_SESSION_frustrum_o_m (sessionFrustrum);  /* Initializes "sessionFrustrum" */
+    PK_SESSION_frustrum_o_m (sessionFrustrum);
 
     sessionFrustrum.fstart = pki_FSTART;
     sessionFrustrum.fstop  = pki_FSTOP;
@@ -2456,7 +2403,7 @@ void
     sessionFrustrum.fftell = pki_FFTELL;
 
 #if defined (GO_OUTPUT_REQUIRED)
-    sessionFrustrum.gosgmt = pki_GOSGMT; // <- This is used to create face-iso in Connect...but it's yucky and not thread safe...
+    sessionFrustrum.gosgmt = pki_GOSGMT; // <- This is used to create face-iso (and hiddne line?) in Connect...but it's yucky and not thread safe...
     sessionFrustrum.goopsg = pki_GOOPSG;
     sessionFrustrum.goclsg = pki_GOCLSG;
     sessionFrustrum.gopixl = pki_GOPIXL;
@@ -2467,31 +2414,37 @@ void
     PK_SESSION_register_frustrum (&sessionFrustrum);
 
 #if defined (PARTITION_ROLLBACK_REQUIRED)
-    // Start partitioned rollback
-    pki_partitionRollbackStart (NULL);   // Use a temporary file
+    pki_partitionRollbackStart (NULL); // Start partitioned rollback using a temporary file
 #endif
+
+    int failureCode;
+    PK_SESSION_start_o_t sessionOptions;
 
     PK_SESSION_start_o_m (sessionOptions);
 
     if (SUCCESS != (failureCode = PK_SESSION_start (&sessionOptions)))
         return failureCode;
 
-    /* Setup General Body (Off) */
-    PK_SESSION_set_general_topology (PK_LOGICAL_false);
-
-    /* Setup Geometry Self-Intersection Checks (Off) */
-    PK_SESSION_set_check_self_int (PK_LOGICAL_false);
+    PK_SESSION_set_unicode (PK_LOGICAL_true); // Required for R20 parasolid/acis interop...
+    PK_SESSION_set_general_topology (PK_LOGICAL_false); // Setup General Body (Off)
+    PK_SESSION_set_check_self_int (PK_LOGICAL_false); // Setup Geometry Self-Intersection Checks (Off)
 
     pki_mark_start ();
 
-    /* register memory alloc/free functions */
-    memoryFunctions.alloc_fn = malloc;
-    memoryFunctions.free_fn  = free;
+    PK_MEMORY_frustrum_t memoryFunctions;
 
-    if (SUCCESS != (failureCode = PK_MEMORY_register_callbacks (memoryFunctions)))
+    memoryFunctions.alloc_fn = malloc;
+    memoryFunctions.free_fn = free;
+
+    if (SUCCESS != (failureCode = PK_MEMORY_register_callbacks (memoryFunctions))) // register memory alloc/free functions
         return failureCode;
 
     /* Create face-id attribute definition */
+    PK_CLASS_t          entityIdOwnerTypes[] = { PK_CLASS_face, PK_CLASS_edge };
+    PK_ATTRIB_field_t   entityIdFieldTypes[] = { PK_ATTRIB_field_integer_c };
+    PK_ATTDEF_sf_t      entityIdAttribDefStruct;
+    PK_ATTDEF_t         entityIdAttribDefTag;
+
     entityIdAttribDefStruct.name          = PKI_ENTITY_ID_ATTRIB_NAME;
     entityIdAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
     entityIdAttribDefStruct.n_owner_types = sizeof (entityIdOwnerTypes) / sizeof (entityIdOwnerTypes[0]);
@@ -2499,19 +2452,14 @@ void
     entityIdAttribDefStruct.n_fields      = sizeof (entityIdFieldTypes) / sizeof (entityIdFieldTypes[0]);
     entityIdAttribDefStruct.field_types   = entityIdFieldTypes;
 
-    failureCode = PK_ATTDEF_create (&entityIdAttribDefStruct, &entityIdAttribDefTag);
-
-    /* Create face-id brep attribute definition */
-    modifiedFaceIdAttribDefStruct.name           = PKI_FACE_UNCHANGED_ATTRIB_NAME;
-    modifiedFaceIdAttribDefStruct.attdef_class   = PK_ATTDEF_class_05_c;
-    modifiedFaceIdAttribDefStruct.n_owner_types  = sizeof (modifiedFaceIdOwnerTypes) / sizeof (modifiedFaceIdOwnerTypes[0]);
-    modifiedFaceIdAttribDefStruct.owner_types    = modifiedFaceIdOwnerTypes;
-    modifiedFaceIdAttribDefStruct.n_fields       = sizeof (modifiedFaceIdFieldTypes) / sizeof (modifiedFaceIdFieldTypes[0]);
-    modifiedFaceIdAttribDefStruct.field_types    = modifiedFaceIdFieldTypes;
-
-    failureCode = PK_ATTDEF_create (&modifiedFaceIdAttribDefStruct, &modifiedFaceIdAttribDefTag);
+    PK_ATTDEF_create (&entityIdAttribDefStruct, &entityIdAttribDefTag);
 
     /* Create userdata attribute definition */
+    PK_CLASS_t          userDataOwnerTypes[] = { PK_CLASS_body, PK_CLASS_region, PK_CLASS_shell, PK_CLASS_face, PK_CLASS_loop, PK_CLASS_edge, PK_CLASS_vertex};
+    PK_ATTRIB_field_t   userDataFieldTypes[] = { PK_ATTRIB_field_integer_c };
+    PK_ATTDEF_sf_t      userDataAttribDefStruct;
+    PK_ATTDEF_t         userDataAttribDefTag;
+
     userDataAttribDefStruct.name            = PKI_USERDATA_ATTRIB_NAME;
     userDataAttribDefStruct.attdef_class    = PK_ATTDEF_class_06_c;
     userDataAttribDefStruct.n_owner_types   = sizeof(userDataOwnerTypes) / sizeof(userDataOwnerTypes[0]);
@@ -2519,7 +2467,7 @@ void
     userDataAttribDefStruct.n_fields        = sizeof(userDataFieldTypes) / sizeof(userDataFieldTypes[0]);
     userDataAttribDefStruct.field_types     = userDataFieldTypes;
 
-    failureCode = PK_ATTDEF_create(&userDataAttribDefStruct, &userDataAttribDefTag);
+    PK_ATTDEF_create(&userDataAttribDefStruct, &userDataAttribDefTag);
 
     // Enable concurrent facetting...
     static char facetFuncStr[] = "PK_TOPOL_facet_2";

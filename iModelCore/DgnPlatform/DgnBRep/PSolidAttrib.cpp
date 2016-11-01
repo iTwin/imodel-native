@@ -273,6 +273,46 @@ void            PSolidAttrib::DeleteHiddenAttributeOnFaces (PK_BODY_t entity)
     PK_MEMORY_free (pFaces);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidAttrib::GetUserAttributes (bvector<int32_t>& attributes, PK_ENTITY_t entity, int32_t ownerId, int findIndex)
+    {
+    bool            found = false;
+    int             i, index = 0, numAttrib = 0;
+    PK_ATTRIB_t*    pAttribArray = NULL;
+
+    PSolidAttrib::GetAttrib (&numAttrib, &pAttribArray, entity, PKI_USERDATA_ATTRIB_NAME);
+
+    for (i = 0; i < numAttrib && !found; i++)
+        {
+        int     numData = 0, *pData = NULL;
+
+        if (SUCCESS == PK_ATTRIB_ask_ints (pAttribArray[i], 0, &numData, &pData))
+            {
+            if (numData > 0 && NULL != pData)
+                {
+                if (pData[0] == ownerId)
+                    {
+                    if (index++ == findIndex)
+                        {
+                        numData--;
+                        attributes.resize (numData);
+                        memcpy (&attributes[0], &pData[1], numData * sizeof (int32_t));
+                        found = true;
+                        }
+                    }
+
+                PK_MEMORY_free (pData);
+                }
+            }
+        }
+
+    PK_MEMORY_free (pAttribArray);
+
+    return (found ? SUCCESS : ERROR);
+    }
+
 
 
 
