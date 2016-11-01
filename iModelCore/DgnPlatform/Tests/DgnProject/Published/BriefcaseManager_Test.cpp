@@ -1001,7 +1001,7 @@ public:
         outPath.AppendToPath(testfixtureName);
 
         WString fileName(TEST_NAME, BentleyCharEncoding::Utf8);
-        fileName.append(L".dgndb");
+        fileName.append(L".bim");
         BeFileName sourceFilepath(outPath);
         sourceFilepath.AppendToPath(fileName.c_str());
 
@@ -1069,19 +1069,6 @@ public:
         return DgnDbStatus::Success == status ? model : nullptr;
         }
 };
-
-#ifdef WIP_MERGE_Hassan
-DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Umar.Hayat             08/2016
-//---------------------------------------------------------------------------------------
-//void RepositoryManagerTest::SetUpTestCase()
-//    {
-//    ScopedDgnHost tempHost;
-//    RepositoryManagerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
-//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -1494,8 +1481,6 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
         }
     }
 
-#ifdef WIP_MERGE_Hassan
-
 /*---------------------------------------------------------------------------------**//**
 * Simulate two briefcases operating against the same master DgnDb.
 * @bsistruct                                                    Paul.Connelly   11/15
@@ -1546,8 +1531,9 @@ struct DoubleBriefcaseTest : LocksManagerTest
     void SetUp()
         {
         SetupMasterFile(false);
-        CreateElement(*m_defaultModelP, false);
-        CreateElement(*m_defaultModelP, false);
+        auto defaultModel = GetDefaultPhysicalModel();
+        CreateElement(*defaultModel, false);
+        CreateElement(*defaultModel, false);
         DgnModelPtr modelA2d0 = CreateModel("Model2d", *m_db);
         CreateElement(*modelA2d0.get(), false);
         CreateElement(*modelA2d0.get(), false);
@@ -2188,8 +2174,6 @@ TEST_F (FastQueryTest, CacheCodes)
     ExpectResponsesEqual(req, dbB);
     }
 
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2627,41 +2611,4 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* Attempting unsucessfully to reproduce an issue described by Mehreen Javaid.
-* @bsimethod                                                    Paul.Connelly   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CodesManagerTest, BatchReserveAndInsert)
-    {
-    DgnDbPtr pDb = SetupDb(L"BatchReserveAndInsert.bim", BeBriefcaseId(2));
-    DgnDbR db = *pDb;
-    IBriefcaseManagerR mgr = db.BriefcaseManager();
-
-    EXPECT_TRUE(CreateModel("MyNewModel", db).IsValid());
-
-    IBriefcaseManager::Request req;
-
-    bvector<DgnElementPtr> elemsToInsert;
-    for (uint32_t i = 0; i < 5; i++)
-        {
-        AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
-        style->SetName(Utf8PrintfString("Style%u", i).c_str());
-        style->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
-        elemsToInsert.push_back(style);
-        }
-
-    EXPECT_EQ(RepositoryStatus::Success, mgr.Acquire(req).Result());
-
-    for (auto& elem : elemsToInsert)
-        {
-        DgnDbStatus status;
-        EXPECT_TRUE(elem->Insert(&status).IsValid());
-        EXPECT_EQ(DgnDbStatus::Success, status);
-        }
-
-    elemsToInsert.clear();
-    db.SaveChanges();
-    }
-
 

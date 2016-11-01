@@ -534,8 +534,8 @@ GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) con
 #   define FRAMERATE_DEBUG_PRINTF DEBUG_PRINTF
 #   define FRAMERATE_WARN_PRINTF WARN_PRINTF
 #else
-#   define FRAMERATE_DEBUG_PRINTF 
-#   define FRAMERATE_WARN_PRINTF 
+#   define FRAMERATE_DEBUG_PRINTF(...)
+#   define FRAMERATE_WARN_PRINTF(...)
 #endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/16
