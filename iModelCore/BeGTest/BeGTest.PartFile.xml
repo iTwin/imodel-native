@@ -10,40 +10,6 @@
         </Bindings>
     </Part>
 
-    <!-- ********************************************************************************************** -->
-    <!-- BeTestDocuments                                                                                -->
-    <!-- ********************************************************************************************** -->
-
-    <!-- Unit test PRODUCTS in other repositories all depend on this part.
-         This part generates the documents or gets them from LKGs, depending on the buildstrategy,
-         and then it defines bindings for the resulting directory that BeGTest products will look for. -->
-    <Part Name="UnitTests-Documents-DgnDb" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
-        <SubProduct ProductName="BeTestDocuments" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
-        </Bindings>
-    </Part>
-
-    <Product Name="BeTestDocuments" PrgOutputDir="DgnClientSdk">
-        <Directories DirectoryListName="BeTestDocumentsDirList" />
-        <SubPart PartName="DgnV8Converter"/>
-        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
-        <SubPart LibType="Static" PartName="UnitTests_Documents" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-    </Product>
-
-    <Part Name="DgnV8Converter" OnlyPlatforms="x64,x86">
-        <SubProduct ProductName="DgnV8Converter" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-    </Part>
-
-    <Part Name="LinkDgnDbPublisherIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
-        <SubPart PartName="DgnV8Converter" LibType="Dynamic"/>
-    </Part>
-
-    <ProductDirectoryList ListName="BeTestDocumentsDirList">
-        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true"/>
-        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true" LibType="Static"/>
-    </ProductDirectoryList>
-
     <!-- *********************************************************************************************** -->
     <!-- This ProductDirectory can be used by any portable unit test product based on dgnclientfx. -->
     <!-- This is also an example of how to lay out the directory structure for any BeGTest product. -->
@@ -67,8 +33,6 @@
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
@@ -95,8 +59,6 @@
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
-        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false"/>
-        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false" LibType="static"/>
         <ProductDirectory Name="cpprestsdkAssemblies" Deliver="false"/>
         <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
         <ProductDirectory Name="PlantDomainSchemasDir" Deliver="false"/>
