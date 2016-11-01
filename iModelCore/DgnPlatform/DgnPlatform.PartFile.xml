@@ -637,4 +637,14 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
+    <!-- *** ********************************************************** *** -->
+    <!-- *** WARNING: Numerous BuildStrategies point to this part! *** -->
+    <!-- *** ********************************************************** *** -->
+    <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
+    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
+    <Part Name="UnitTests_Documents">
+        <SubPart PartName="ConvertDgnDbUnitTestsData" Repository="DgnDbSync" PartFile="DgnDbSync"/>
+    </Part>
+
+
 </BuildContext>
