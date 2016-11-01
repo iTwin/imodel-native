@@ -142,6 +142,38 @@ bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_BODY_t PSolidUtil::GetBodyForEntity (PK_ENTITY_t entityTag)
+    {
+    PK_BODY_t   bodyTag = PK_ENTITY_null;
+    PK_CLASS_t  entityClass = 0;
+
+    PK_ENTITY_ask_class (entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_edge:
+            PK_EDGE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_face:
+            PK_FACE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_vertex:
+            PK_VERTEX_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_body:
+            bodyTag = entityTag;
+            break;
+        }
+
+    return bodyTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static CurveVector::BoundaryType getBoundaryType (CurveVectorCR curveVector)
@@ -497,6 +529,87 @@ size_t                      nextPrimitiveIndex
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static void computeZRangeFromBody (double& zMin, double& zMax, PK_BODY_t entityTag, TransformCR solidToClip)
+    {
+    zMin = -1.0e20;
+    zMax = 1.0e20;
+
+    PK_BOX_t    box;
+
+    if (PK_ERROR_no_errors != PK_TOPOL_find_box (entityTag, &box))
+        return;
+
+    DRange3d    range;
+
+    range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+    solidToClip.Multiply (range, range);
+ 
+    // Avoid coincident geometry and ensure a minimum path length for sweep...
+    double      s_uorClearFactor = .5;
+
+    zMin = range.low.z  - s_uorClearFactor;
+    zMax = range.high.z + s_uorClearFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus bodyFromSingleParallelClip (PK_BODY_t& clipBody, ClipPrimitiveCR clip, PK_BODY_t entityToClip, TransformCR clipToSolid, TransformCR solidToClip)
+    {
+    GPArrayCP   gpa;
+
+    if (NULL == (gpa = clip.GetGPA (false)))
+        return ERROR;
+
+    double      zMin, zMax;
+
+    computeZRangeFromBody (zMin, zMax, entityToClip, solidToClip);
+
+    if (clip.ClipZLow() || clip.ClipZHigh() && (zMin < clip.GetZLow() || zMax > clip.GetZHigh()))
+        {
+        if (clip.ClipZLow ())
+            zMin = clip.GetZLow ();
+
+        if (clip.ClipZHigh())
+            zMax = clip.GetZHigh();
+        }
+
+    Transform   clipZTranslation = Transform::From (0.0, 0.0, zMin), compound;
+    DPoint3d    clipSweep = DPoint3d::From (0.0, 0.0, zMax - zMin), solidSweep;
+
+    compound.InitProduct (clipToSolid, clipZTranslation);
+                                               
+    if (SUCCESS != PSolidGeom::BodyFromGPA (&clipBody, NULL, gpa, compound, true))
+        return ERROR;
+    
+    clipToSolid.MultiplyMatrixOnly (solidSweep, clipSweep);
+
+    // Need a minimum path length for sweep
+    if (solidSweep.Magnitude () < mgds_fc_epsilon)
+        solidSweep.ScaleToLength (mgds_fc_epsilon);
+
+    PK_VECTOR_t path;
+
+    path.coord[0] = solidSweep.x;
+    path.coord[1] = solidSweep.y;
+    path.coord[2] = solidSweep.z;
+
+    int               nLaterals;
+    PK_local_check_t  localCheck;
+
+    if (SUCCESS != PK_BODY_sweep (clipBody, path, false, &nLaterals, NULL, NULL, &localCheck))
+        {
+        PK_ENTITY_delete (1, &clipBody);
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void clipBodyByShape (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body, ClipPrimitiveCR clipPrimitive, TransformCR clipToBody, ClipVectorCR clipVector, size_t nextPrimitiveIndex)
@@ -505,11 +618,7 @@ static void clipBodyByShape (bvector<PK_BODY_t>& output, bool& clipped, size_t& 
     PK_BODY_t           clipBody;
 
     bodyToShape.InverseOf (shapeToBody);
-#if defined (NOT_NOW_NEEDSWORK)
     if (SUCCESS != bodyFromSingleParallelClip (clipBody, clipPrimitive, body, shapeToBody, bodyToShape))
-#else
-    if (true)
-#endif
         {
         clipBodyByClipVector (output, clipped, ++errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
         return;
@@ -681,3 +790,23 @@ BentleyStatus PSolidUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, Curve
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
+    {
+    size_t              errorCount = 0;
+    Transform           clipToBody;
+    bvector <PK_BODY_t> outBodies;
+
+    clipToBody.InverseOf(input.GetEntityTransform());
+    clipBodyByClipVector(outBodies, clipped, errorCount, PSolidUtil::GetEntityTag(input), clipToBody, clipVector, 0); 
+
+    for (PK_BODY_t body : outBodies)
+        output.push_back(PSolidUtil::CreateNewEntity(body, input.GetEntityTransform()));
+
+    return SUCCESS;
+    }
+
+
