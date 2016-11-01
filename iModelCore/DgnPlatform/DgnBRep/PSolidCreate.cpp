@@ -1161,6 +1161,225 @@ BentleyStatus   PSolidUtil::MakeEllipseCurve (PK_CURVE_t* curve, double* startPa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromGPA (PK_BODY_t* body, PK_VERTEX_t* startVertexP, GPArrayCP gpa, TransformCR gpaToBodyTransform, bool cap)
+    {
+    pki_make_minimal_body (body);
+
+    PK_VERTEX_t     startVertex;
+
+    if (NULL == startVertexP)
+        startVertexP = &startVertex;
+
+    *startVertexP = static_cast<PK_VERTEX_t>(0);
+
+    PK_BODY_t       currBody = *body, holeBody = 0;
+    StatusInt       status = SUCCESS;
+    DPoint3d        start=DPoint3d::FromZero(), end=DPoint3d::FromZero();
+    bool            firstSegment = true;
+
+    Transform       compositeTransform = gpaToBodyTransform;
+    DPlane3d        plane;
+
+    if (gpa->GetPlane (plane))
+        {
+        Transform flattenTransform;
+
+        flattenTransform.InitFromProjectionToPlane (*( &plane.origin),*( &plane.normal));
+        compositeTransform.InitProduct (compositeTransform, flattenTransform);
+        }
+
+    for (int i=0, count = gpa->GetCount(); i<count && SUCCESS == status;)
+        {
+        DPoint3d segmentStart = DPoint3d::FromZero();
+        DPoint3d segmentEnd = DPoint3d::FromZero();
+
+        if (i > 0 && gpa->IsMajorBreak (i-1) && cap && SUCCESS == PSolidUtil::CoverWires (currBody))
+            {
+            if (0 != holeBody)
+                PSolidUtil::Boolean (NULL, NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
+
+            pki_make_minimal_body (&holeBody);
+            currBody = holeBody;
+            firstSegment = true;
+            }
+
+        // Needs work? - Check connectivity and remove vertex loops.
+        PK_EDGE_t edge = 0;
+
+        switch (gpa->GetCurveType (i))
+            {
+            case GPCurveType::Ellipse:
+                {
+                DEllipse3d  ellipse;
+
+                if (SUCCESS != (status = gpa->GetEllipse (&i, &ellipse)))
+                    break;
+
+                double      r0, r1, theta0, sweep;
+                DPoint3d    center;
+                RotMatrix   rMatrix;
+
+                compositeTransform.Multiply (ellipse, ellipse);
+                ellipse.EvaluateEndPoints  (segmentStart, segmentEnd);
+                ellipse.GetScaledRotMatrix (center, rMatrix, r0, r1, theta0, sweep);
+
+                PK_CURVE_t  curveTag = 0;
+                double      startParam, endParam;
+
+                if (SUCCESS == (status = PSolidUtil::MakeEllipseCurve (&curveTag, &startParam, &endParam, &center, &rMatrix, r0, r1, theta0, sweep)))
+                    status = pki_scribe_curve_on_body (&edge, currBody, curveTag, &startParam, &endParam);
+
+                if (startVertexP != &startVertex && 0 == *startVertexP && ellipse.IsFullEllipse())
+                    {
+                    PK_VERTEX_t     newVertex;
+                    PK_EDGE_t       newEdge;
+
+                    PK_EDGE_split_at_param (edge, 0.0, &newVertex, &newEdge);
+                    }
+
+                break;
+                }
+
+            case GPCurveType::Bezier:
+            case GPCurveType::BSpline:
+                {
+                MSBsplineCurve curve;
+
+                if (SUCCESS != (status = gpa->GetBCurve (&i, &curve)))
+                    break;
+
+                curve.CopyTransformed (curve, compositeTransform);
+
+                curve.FractionToPoint (segmentStart,  0.0);
+                curve.FractionToPoint (segmentEnd,  1.0);
+
+                PK_CURVE_t  curveTag = 0;
+
+                if (SUCCESS == (status = PSolidGeom::CreateCurveFromMSBsplineCurve (&curveTag, curve)))
+                    status = pki_scribe_curve_on_body (&edge, currBody, curveTag, NULL, NULL);
+
+                if (SUCCESS != status)
+                    {
+                    PSolidUtil::NormalizeBsplineCurve (curve);
+
+                    if (SUCCESS == (status = PSolidGeom::CreateCurveFromMSBsplineCurve (&curveTag, curve)))
+                        status = pki_scribe_curve_on_body (&edge, currBody, curveTag, NULL, NULL);
+                    }
+
+                curve.ReleaseMem ();
+
+                break;
+                }
+
+            case GPCurveType::LineString:
+                {
+                bvector<DPoint3d> points;
+
+                if (SUCCESS != (status = gpa->GetLineString (&i, points)))
+                    break;
+
+                int nPoints = (int) points.size ();
+
+                compositeTransform.Multiply(&points.front (), nPoints);
+
+                // Ick... Make sure that this segment starts at previous and ends at final (if closed). -Else we'll get an imprint error.
+                if (!firstSegment)
+                    points[0] = end;                                                    // Force start Connected
+
+                if (cap && !firstSegment && (i == count || gpa->IsMajorBreak (i-1)))
+                    {
+                    points[nPoints-1] = start;
+                    }                   // Force Closure.
+                else if (GPCurveType::Ellipse == gpa->GetCurveType(i) && !gpa->IsMajorBreak (i-1))
+                    {
+                    gpa->GetPrimitiveFractionPoint (&points[nPoints-1], i, 0.0);        // Force end connected if followed by an arc.
+                    compositeTransform.Multiply(points[nPoints-1]);
+                    }
+
+                for (int j =0; j<nPoints-1 && SUCCESS == status; j++)
+                    {
+                    PK_EDGE_t       segmentEdge = 0;
+                    static double   s_minimumSegmentLength = 1.0E-7;
+                    
+                    //Make sure that the last (closure) point is used.
+                        if (j == nPoints-3 && points[j+1].Distance (points[j+2]) < s_minimumSegmentLength)
+                                points[j+1] = points[j+2];
+
+                    if (points[j].Distance (points[j+1]) > s_minimumSegmentLength &&
+                        SUCCESS == (status = PSolidUtil::ImprintSegment (currBody, &segmentEdge, &points[j])) &&
+                        0 == edge &&
+                        0 != segmentEdge)
+                        edge = segmentEdge;
+                    }
+
+                segmentStart = points[0];
+                segmentEnd = points[nPoints-1];
+                break;
+                }
+
+            default:
+                {
+                BeAssert (false);
+                i++;
+                break;
+                }
+            }
+
+        if (static_cast<PK_VERTEX_t>(0) != edge && 0 == *startVertexP)
+            {
+            PK_VERTEX_t vertices[2];
+
+            PK_EDGE_ask_vertices (edge, vertices);
+            *startVertexP = vertices[0];
+            }
+
+        if (firstSegment)
+            {
+            firstSegment = false;
+            start = segmentStart;
+            end   = segmentEnd;
+            }
+        else
+            {
+            end = segmentEnd;
+            }
+        }
+
+    if (SUCCESS == status)
+        {
+        if (cap)
+            {
+            if (SUCCESS == (status = PSolidUtil::CoverWires (currBody)) && 0 != holeBody)
+                PSolidUtil::Boolean (NULL, NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
+
+            // TR# 270092. - For some reason the cover function will sometimes create bad bodies that contain cone rather than
+            // planar surfaces and cause "hangs" when queried. Apparently Nick Shulga is alive and well and working on ParaSolid.
+            if (!PSolidUtil::HasOnlyPlanarFaces (*body))
+                {
+                PK_ENTITY_delete (1, body);
+
+                return ERROR;
+                }
+            }
+        else
+            {
+            PK_FACE_t face;
+
+            if (SUCCESS == PK_BODY_ask_first_face (*body, &face) && 0 != face)
+                PK_FACE_delete_from_sheet_body (face);
+            }
+        }
+    else
+        {
+        PK_ENTITY_delete (1, body);
+        }
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR curves, TransformCR uorToBodyTransform, bool coverClosed, EdgeToCurveIdMap* idMap)
@@ -1539,7 +1758,5 @@ BentleyStatus PSolidGeom::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveV
 
     return SUCCESS;
     }
-
-
 
 
