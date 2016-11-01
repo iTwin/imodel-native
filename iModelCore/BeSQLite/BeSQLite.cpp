@@ -4926,9 +4926,9 @@ Utf8String BeIdSet::ToReadableString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeIdSet::ToString(StringFormat format) const
+Utf8String BeIdSet::ToString() const
     {
-    return StringFormat::Compact == format ? ToCompactString() : ToReadableString();
+    return ToReadableString();
     }
 
 // Functions needed for 7z.  These are for a C API that simulates C++.

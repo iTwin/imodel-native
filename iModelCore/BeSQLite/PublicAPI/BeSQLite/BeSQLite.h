@@ -1127,14 +1127,14 @@ struct BeIdSet : bset<BeInt64Id>
 {
 private:
     Utf8String ToReadableString() const;
-    Utf8String ToCompactString() const;
     void FromCompactString(Utf8StringCR);
     void FromReadableString(Utf8StringCR);
 public:
     enum class StringFormat { Compact=0, Readable=1 };
 
     BE_SQLITE_EXPORT void FromString(Utf8StringCR in);
-    BE_SQLITE_EXPORT Utf8String ToString(StringFormat format=StringFormat::Compact) const;
+    BE_SQLITE_EXPORT Utf8String ToString() const;
+    BE_SQLITE_EXPORT Utf8String ToCompactString() const;    // NB: This method is NOT backwards-compatible!
 };
 
 //=======================================================================================
