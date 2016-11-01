@@ -21,11 +21,26 @@ HANDLER_DEFINE_MEMBERS(ViewAttachmentHandler);
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewAttachment::CheckValid() const
+    {
+    if (!GetViewId().IsValid())
+        return DgnDbStatus::ViewNotFound;
+    if (!GetModel()->IsSheetModel())
+        return DgnDbStatus::WrongModel;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::_OnInsert()
     {
-    return GetViewId().IsValid() ? T_Super::_OnInsert() : DgnDbStatus::ViewNotFound;
+    DgnDbStatus status = CheckValid();
+    if (DgnDbStatus::Success != status)
+        return status;
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,5 +48,8 @@ DgnDbStatus ViewAttachment::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::_OnUpdate(DgnElementCR el)
     {
-    return GetViewId().IsValid() ? T_Super::_OnUpdate(el) : DgnDbStatus::ViewNotFound;
+    DgnDbStatus status = CheckValid();
+    if (DgnDbStatus::Success != status)
+        return status;
+    return T_Super::_OnUpdate(el);
     }

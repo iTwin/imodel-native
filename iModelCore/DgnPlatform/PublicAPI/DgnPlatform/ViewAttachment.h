@@ -47,6 +47,8 @@ protected:
 
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment)); }
 
+    DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
+
 public:
     ViewAttachment(DgnDbR db, DgnModelId mid, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement)
         : T_Super(CreateParams(db, mid, QueryClassId(db), cat, placement))
