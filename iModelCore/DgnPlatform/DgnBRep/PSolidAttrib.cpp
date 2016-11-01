@@ -8,10 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
-#define PKI_HIDDEN_ENTITY_ATTRIB_NAME "BSI_TriformaAdjacencyAttribute"
-
-static const int HIDDEN_ATTRIBUTE_Visible    = 0;
-static const int HIDDEN_ATTRIBUTE_Hidden     = 1;
+static const int HIDDEN_ATTRIBUTE_Visible = 0;
+static const int HIDDEN_ATTRIBUTE_Hidden  = 1;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   05/97

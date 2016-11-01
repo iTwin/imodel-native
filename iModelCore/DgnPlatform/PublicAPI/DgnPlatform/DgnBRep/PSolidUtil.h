@@ -17,6 +17,7 @@
 
 #define PKI_ENTITY_ID_ATTRIB_NAME       "BSI_EntityId"
 #define PKI_USERDATA_ATTRIB_NAME        "BSI_UserData"
+#define PKI_HIDDEN_ENTITY_ATTRIB_NAME   "BSI_TriformaAdjacencyAttribute"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

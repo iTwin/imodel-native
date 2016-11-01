@@ -2440,34 +2440,48 @@ static int pki_start_modeler()
         return failureCode;
 
     /* Create face-id attribute definition */
-    PK_CLASS_t          entityIdOwnerTypes[] = { PK_CLASS_face, PK_CLASS_edge };
-    PK_ATTRIB_field_t   entityIdFieldTypes[] = { PK_ATTRIB_field_integer_c };
+    PK_CLASS_t          entityIdOwnerTypes[] = {PK_CLASS_face, PK_CLASS_edge};
+    PK_ATTRIB_field_t   entityIdFieldTypes[] = {PK_ATTRIB_field_integer_c};
     PK_ATTDEF_sf_t      entityIdAttribDefStruct;
     PK_ATTDEF_t         entityIdAttribDefTag;
 
     entityIdAttribDefStruct.name          = PKI_ENTITY_ID_ATTRIB_NAME;
     entityIdAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
-    entityIdAttribDefStruct.n_owner_types = sizeof (entityIdOwnerTypes) / sizeof (entityIdOwnerTypes[0]);
+    entityIdAttribDefStruct.n_owner_types = sizeof(entityIdOwnerTypes) / sizeof(entityIdOwnerTypes[0]);
     entityIdAttribDefStruct.owner_types   = entityIdOwnerTypes;
-    entityIdAttribDefStruct.n_fields      = sizeof (entityIdFieldTypes) / sizeof (entityIdFieldTypes[0]);
+    entityIdAttribDefStruct.n_fields      = sizeof(entityIdFieldTypes) / sizeof(entityIdFieldTypes[0]);
     entityIdAttribDefStruct.field_types   = entityIdFieldTypes;
 
     PK_ATTDEF_create (&entityIdAttribDefStruct, &entityIdAttribDefTag);
 
     /* Create userdata attribute definition */
-    PK_CLASS_t          userDataOwnerTypes[] = { PK_CLASS_body, PK_CLASS_region, PK_CLASS_shell, PK_CLASS_face, PK_CLASS_loop, PK_CLASS_edge, PK_CLASS_vertex};
-    PK_ATTRIB_field_t   userDataFieldTypes[] = { PK_ATTRIB_field_integer_c };
+    PK_CLASS_t          userDataOwnerTypes[] = {PK_CLASS_body, PK_CLASS_region, PK_CLASS_shell, PK_CLASS_face, PK_CLASS_loop, PK_CLASS_edge, PK_CLASS_vertex};
+    PK_ATTRIB_field_t   userDataFieldTypes[] = {PK_ATTRIB_field_integer_c};
     PK_ATTDEF_sf_t      userDataAttribDefStruct;
     PK_ATTDEF_t         userDataAttribDefTag;
 
-    userDataAttribDefStruct.name            = PKI_USERDATA_ATTRIB_NAME;
-    userDataAttribDefStruct.attdef_class    = PK_ATTDEF_class_06_c;
-    userDataAttribDefStruct.n_owner_types   = sizeof(userDataOwnerTypes) / sizeof(userDataOwnerTypes[0]);
-    userDataAttribDefStruct.owner_types     = userDataOwnerTypes;
-    userDataAttribDefStruct.n_fields        = sizeof(userDataFieldTypes) / sizeof(userDataFieldTypes[0]);
-    userDataAttribDefStruct.field_types     = userDataFieldTypes;
+    userDataAttribDefStruct.name          = PKI_USERDATA_ATTRIB_NAME;
+    userDataAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
+    userDataAttribDefStruct.n_owner_types = sizeof(userDataOwnerTypes) / sizeof(userDataOwnerTypes[0]);
+    userDataAttribDefStruct.owner_types   = userDataOwnerTypes;
+    userDataAttribDefStruct.n_fields      = sizeof(userDataFieldTypes) / sizeof(userDataFieldTypes[0]);
+    userDataAttribDefStruct.field_types   = userDataFieldTypes;
 
     PK_ATTDEF_create(&userDataAttribDefStruct, &userDataAttribDefTag);
+
+    PK_CLASS_t          hiddenAttrOwnerTypes[] = {PK_CLASS_fin, PK_CLASS_edge, PK_CLASS_face, PK_CLASS_body};
+    PK_ATTRIB_field_t   hiddenAttrFieldTypes[] = {PK_ATTRIB_field_integer_c};
+    PK_ATTDEF_sf_t      hiddenAttrDefStruct;
+    PK_ATTDEF_t         hiddenAttrDefTag;
+
+    hiddenAttrDefStruct.name              = PKI_HIDDEN_ENTITY_ATTRIB_NAME;
+    hiddenAttrDefStruct.attdef_class      = PK_ATTDEF_class_01_c;
+    hiddenAttrDefStruct.n_owner_types     = sizeof (hiddenAttrOwnerTypes) / sizeof (hiddenAttrOwnerTypes[0]);
+    hiddenAttrDefStruct.owner_types       = hiddenAttrOwnerTypes;
+    hiddenAttrDefStruct.n_fields          = sizeof (hiddenAttrFieldTypes) / sizeof (hiddenAttrFieldTypes[0]);
+    hiddenAttrDefStruct.field_types       = hiddenAttrFieldTypes;
+
+    PK_ATTDEF_create(&hiddenAttrDefStruct, &hiddenAttrDefTag);
 
     // Enable concurrent facetting...
     static char facetFuncStr[] = "PK_TOPOL_facet_2";
