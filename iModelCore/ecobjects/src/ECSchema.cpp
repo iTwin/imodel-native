@@ -735,7 +735,8 @@ bool ECSchema::Validate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::Validate(bool resolveIssues)
     {
-    if (GetClassCount() == 0)
+    // Need to skip validation for supplemental schemas since they are not required to have fully defined relationships
+    if (GetClassCount() == 0 || Utf8String::npos != GetName().find("_Supplemental_"))
         return true;
 
     bool isValid = true;

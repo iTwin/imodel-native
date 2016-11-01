@@ -32,8 +32,12 @@
     <ECRelationshipClass typeName="BaseRelationshipClass" isDomainClass="False" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="MyIntegerMember" typeName="int"/>
         <ECProperty propertyName="MyLongMember" typeName="long"/>
-        <Source cardinality="(0,1)" polymorphic="True"/>
-        <Target cardinality="(0,1)" polymorphic="True"/>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="BaseClass"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="BaseClass"/>
+        </Target>
     </ECRelationshipClass>
     <ECClass typeName="Struct3" isStruct="True" isDomainClass="True">
         <ECProperty propertyName="Struct3DoubleMember" typeName="double"/>
@@ -67,6 +71,7 @@
         <ECArrayProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" minOccurs="0" maxOccurs="1"/>
     </ECClass>
     <ECClass typeName="Test2Class" isDomainClass="True">
+        <BaseClass>SomeEntity</BaseClass>
         <ECProperty propertyName="Test2StringMember" typeName="string"/>
     </ECClass>
     <ECRelationshipClass typeName="ClonedRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">

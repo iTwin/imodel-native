@@ -2234,4 +2234,129 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenAbstractConstraintViolatesNar
     ASSERT_NE(SchemaReadStatus::Success, status) << "The schema should fail because DerivedARelD has a more base class as the target abstract constraint then it's base class ARelD.";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenRelationshipConstraintsEmpty)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECRelationshipClass typeName='ARelD' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='A'>"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B' >"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_NE(SchemaReadStatus::Success, status) << "The schema should fail because DerivedARelD has a more base class as the target abstract constraint then it's base class ARelD.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestInheritedRelationshipConstraints)
+    {
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='D' modifier='abstract'>"
+        "       <BaseClass>C</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='DerivedARelB' modifier='sealed'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='A'>"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B' >"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B' >"
+        "           <Class class='C' />"
+        "           <Class class='D' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "An ECSchema with inherited constraint classes should deserialize successfully";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "An ECSchema should validate as an EC3.1 even though there are no relationship constraint classes on the derived class.";
+
+    ECRelationshipClassCP relationClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_EQ(1, relationClass->GetSource().GetConstraintClasses().size());
+    EXPECT_TRUE(relationClass->GetSource().AreConstraintClassesDefinedLocally());
+    EXPECT_EQ(2, relationClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_TRUE(relationClass->GetTarget().AreConstraintClassesDefinedLocally());
+
+    ECRelationshipClassCP derivedRelationship = schema->GetClassCP("DerivedARelB")->GetRelationshipClassCP();
+    EXPECT_EQ(1, derivedRelationship->GetSource().GetConstraintClasses().size()) << "The Source constraint classes should be inherited from the base relationship.";
+    EXPECT_FALSE(derivedRelationship->GetSource().AreConstraintClassesDefinedLocally());
+    EXPECT_EQ(2, derivedRelationship->GetTarget().GetConstraintClasses().size()) << "The Target constraint classes should be inherited from the base relationship.";
+    EXPECT_FALSE(derivedRelationship->GetTarget().AreConstraintClassesDefinedLocally());
+    }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='D' modifier='abstract'>"
+        "       <BaseClass>C</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='DerivedARelD' modifier='sealed'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='A'>"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B' >"
+        "           <Class class='D' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B' >"
+        "           <Class class='C' />"
+        "           <Class class='D' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "An ECSchema with inherited constraint classes should deserialize successfully";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "An ECSchema should validate as an EC3.1 even though one of the relationship constraints inherits the from the base relationship and the other does not.";
+
+    ECRelationshipClassCP relationClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_EQ(1, relationClass->GetSource().GetConstraintClasses().size());
+    EXPECT_TRUE(relationClass->GetSource().AreConstraintClassesDefinedLocally());
+    EXPECT_EQ(2, relationClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_TRUE(relationClass->GetTarget().AreConstraintClassesDefinedLocally());
+
+    ECRelationshipClassCP derivedRelationship = schema->GetClassCP("DerivedARelD")->GetRelationshipClassCP();
+    EXPECT_EQ(1, derivedRelationship->GetSource().GetConstraintClasses().size()) << "The Source constraint classes should be inherited from the base relationship.";
+    EXPECT_FALSE(derivedRelationship->GetSource().AreConstraintClassesDefinedLocally());
+    EXPECT_EQ(1, derivedRelationship->GetTarget().GetConstraintClasses().size()) << "The Target constraint classes should be set locally base relationship.";
+    EXPECT_TRUE(derivedRelationship->GetTarget().AreConstraintClassesDefinedLocally());
+    }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

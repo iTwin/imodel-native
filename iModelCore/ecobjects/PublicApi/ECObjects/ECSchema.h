@@ -2284,6 +2284,9 @@ public:
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT ECRelationshipConstraintClassList& GetConstraintClassesR();
 
+    //! Returns true if the constraint classes are defined locally.
+    ECOBJECTS_EXPORT bool AreConstraintClassesDefinedLocally() const;
+
     ECOBJECTS_EXPORT bool SupportsClass(ECClassCR ecClass) const;
     
     //! Copies this constraint to the destination

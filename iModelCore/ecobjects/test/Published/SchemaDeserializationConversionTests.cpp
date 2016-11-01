@@ -627,4 +627,29 @@ TEST_F(SchemaDeserializationConversionTest, TestInheritedAbstractConstraintAttri
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, TestEmptyConstraints)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='A' isDomainClass='true'/>"
+        "   <ECClass typeName='B' isDomainClass='true'/>"
+        "   <ECRelationshipClass typeName='TestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The ECSchema should deserialize even though it will be an EC3.0 schema.";
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema should validate as an 3.0 schema because there are no constraint classes.";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

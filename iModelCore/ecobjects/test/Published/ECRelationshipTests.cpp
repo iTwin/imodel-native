@@ -543,23 +543,27 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     ecSchema->CreateRelationshipClass(relationClass, "RelClass");
     relationClass->SetStrength(StrengthType::Referencing);
     relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass->GetSource().SetRoleLabel("Source");
+    relationClass->GetTarget().SetRoleLabel("Target");
+
+    EXPECT_FALSE(relationClass->Verify()) << "There are no constraint classes defined on the constraints so it should fail to verify.";
 
     ECRelationshipClassP relationClassBase;
     ecSchema->CreateRelationshipClass(relationClassBase, "RelBaseClass");
     relationClassBase->SetStrength(StrengthType::Referencing);
     relationClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     
-    ECRelationshipConstraintR baseSourceContraint = relationClassBase->GetSource();
-    baseSourceContraint.AddClass(*classB);
+    relationClassBase->GetSource().AddClass(*classB);
     
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
 
-    // #1 ClassB is the constraint class so it should work...
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classB));
-    // #2 ClassC is deriving from ClassA so it should work too...
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classC));
-    // #3 ClassA is the base class of ClassB but violates the base constraints (expects ClassB or bigger)
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().AddClass(*classA));
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classB)) << "ClassB is the constraint class so it should work ";
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classC)) << "ClassC is deriving from ClassA so it should work too";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().AddClass(*classA)) << "ClassA is the base class of ClassB but violates the base constraints(expects ClassB or bigger)";
+
+    relationClass->GetTarget().AddClass(*classA);
+
+    EXPECT_TRUE(relationClass->Verify()) << "The relationship class should not be fully defined and should verify.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -843,6 +847,11 @@ TEST_F(ECRelationshipTests, TestRelationshipDelayedValidation)
 
     ECSchemaP ecSchema = schemaPtr.get();
 
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+
     ECRelationshipClassP baseRelationClass;
     ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass", false);
     ASSERT_FALSE(baseRelationClass->GetIsVerified()) << "A newly created relationship should not be verified.";
@@ -856,6 +865,11 @@ TEST_F(ECRelationshipTests, TestRelationshipDelayedValidation)
 
     baseRelationClass->GetSource().SetRoleLabel("Source");
     baseRelationClass->GetTarget().SetRoleLabel("Target");
+    ASSERT_FALSE(baseRelationClass->Verify());
+    ASSERT_FALSE(baseRelationClass->GetIsVerified()) << "Now that the Source and Target constraints are fully defined the class should verify.";
+
+    baseRelationClass->GetSource().AddClass(*entityClassA);
+    baseRelationClass->GetTarget().AddClass(*entityClassB);
     ASSERT_TRUE(baseRelationClass->Verify());
     ASSERT_TRUE(baseRelationClass->GetIsVerified()) << "Now that the Source and Target constraints are fully defined the class should verify.";
     ASSERT_TRUE(ecSchema->Validate()) << "The schema should now validate as an EC3.1 schema since the relationship is now verified.";
@@ -895,6 +909,63 @@ TEST_F(ECRelationshipTests, TestRelationshipSerialization)
     ECSchemaPtr roundTripSchema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipTests, TestRelationshipConstraintClassInheritance)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ECRelationshipClassP baseRelationClass;
+    ECRelationshipClassP derivedRelationClass;
+
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    ecSchema->CreateEntityClass(entityClassC, "C");
+
+    entityClassC->AddBaseClass(*entityClassB);
+
+    ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass");
+    baseRelationClass->SetStrength(StrengthType::Referencing);
+    baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
+    baseRelationClass->GetSource().SetRoleLabel("Source");
+    baseRelationClass->GetSource().AddClass(*entityClassA);
+    baseRelationClass->GetTarget().SetRoleLabel("Target");
+    baseRelationClass->GetTarget().AddClass(*entityClassB);
+    EXPECT_TRUE(baseRelationClass->Verify());
+
+    ecSchema->CreateRelationshipClass(derivedRelationClass, "derivedRelClass");
+    derivedRelationClass->SetStrength(StrengthType::Referencing);
+    derivedRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    derivedRelationClass->SetClassModifier(ECClassModifier::Sealed);
+    derivedRelationClass->AddBaseClass(*baseRelationClass);
+    derivedRelationClass->GetSource().SetRoleLabel("Source");
+    derivedRelationClass->GetTarget().SetRoleLabel("Target");
+    EXPECT_TRUE(derivedRelationClass->Verify());
+    EXPECT_EQ(1, derivedRelationClass->GetSource().GetConstraintClasses().size()) << "The derived Source Constraint should get the base constraint's classes.";
+    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived Target Constraint should get the base constraint's classes.";;
+
+    baseRelationClass->GetTarget().SetAbstractConstraint(*entityClassB);
+    baseRelationClass->GetTarget().AddClass(*entityClassC);
+
+    EXPECT_EQ(2, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived relationship should get the updated constraint class list when the base relationship changes.";
+
+    derivedRelationClass->GetTarget().AddClass(*entityClassC);
+    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived relationship should now get it's own constraint class instead of getting the inherited ones.";
+
+    derivedRelationClass->RemoveBaseClass(*baseRelationClass);
+    EXPECT_FALSE(derivedRelationClass->Verify());
+    EXPECT_EQ(0, derivedRelationClass->GetSource().GetConstraintClasses().size());
+    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

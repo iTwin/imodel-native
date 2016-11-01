@@ -2356,8 +2356,22 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::IsValid(bool resolveIssues)
-    { 
+    {
     bool valid = true;
+
+    if (GetConstraintClasses().size() == 0)
+        {
+        Utf8String errorMessage;
+        errorMessage.Sprintf("Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+                             (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+        if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
+            LOG.warningv(errorMessage.c_str());
+        else
+            LOG.errorv(errorMessage.c_str());
+
+        valid = false;
+        }
+
     if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         valid = false;
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
@@ -2933,6 +2947,8 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR 
         if (ECObjectsStatus::Success != status)
             return status;
         }
+    else
+        m_verified = false;
 
     m_abstractConstraint = &abstractConstraint;
     return ECObjectsStatus::Success;
@@ -3004,8 +3020,6 @@ ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelatio
             {
             return validationStatus;
             }
-
-        m_verified = true;
         }
     else
         m_verified = false;
@@ -3021,13 +3035,21 @@ ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECEntityClassCR classCons
     return m_constraintClasses.Remove(classConstraint);
     }
    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipConstraint::AreConstraintClassesDefinedLocally () const
+    {
+    return m_constraintClasses.size() > 0;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
     {
     ECConstraintClassesList listOfClasses;
-    for (auto const &constraintClassIterator : m_constraintClasses)
+    for (auto const &constraintClassIterator : GetConstraintClasses())
         {
         listOfClasses.push_back (const_cast<ECEntityClassP>(&constraintClassIterator->GetClass ()));
         }
@@ -3043,10 +3065,33 @@ ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelations
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraintClasses() const
     {
+    if (m_constraintClasses.size() == 0)
+        {
+        for (auto const& relBaseClass : m_relClass->GetBaseClasses())
+            {
+            ECRelationshipConstraintCP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
+                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+            ECRelationshipConstraintClassList const& baseConstraints = baseClassConstraint->GetConstraintClasses();
+            if (baseConstraints.size() > 0)
+                return baseConstraints;
+            }
+        }
+
     return m_constraintClasses;
     }
 ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClassesR() 
     {
+    if (m_constraintClasses.size() == 0)
+        {
+        for (auto const& relBaseClass : m_relClass->GetBaseClasses())
+            {
+            ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
+                                                                       : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+            ECRelationshipConstraintClassList& baseConstraints = baseClassConstraint->GetConstraintClassesR();
+            if (baseConstraints.size() > 0)
+                return baseConstraints;
+            }
+        }
     return m_constraintClasses;
     }
 
