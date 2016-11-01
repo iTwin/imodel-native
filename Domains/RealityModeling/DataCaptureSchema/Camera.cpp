@@ -239,17 +239,18 @@ DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::_OnInsert()
+Dgn::DgnDbStatus Camera::_OnDelete() const
     {
-//     PlanningModelP planningModel = dynamic_cast<PlanningModelP> (GetModel().get());
-//     if (nullptr == planningModel)
-//         {
-//         BeAssert(false && "Can insert Camera only in a PlanningModel");
-//         return DgnDbStatus::WrongModel;
-//         }
-
-    return T_Super::_OnInsert();
+    //If we delete a camera, we should also delete all related photos
+    for (PhotoEntry const& photo : MakePhotoIterator(GetDgnDb(), GetId()))
+        {
+        PhotoCPtr myPhotoPtr = Photo::Get(GetDgnDb(), photo.GePhotoElementId());
+        //delete them all
+        myPhotoPtr->Delete();
+        }
+    return DgnDbStatus::Success;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -290,8 +291,24 @@ CameraElementId Camera::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
         return CameraElementId();
-
+                                                                 
     return statement->GetValueId<CameraElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Camera::PhotoIterator Camera::MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraElementId cameraId)
+    {
+    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCamera) " WHERE TargetECInstanceId=?";
+
+    Camera::PhotoIterator iterator;
+    int idSelectColumnIndex = 0;
+    ECSqlStatement* statement = iterator.Prepare(dgndb, ecSql, idSelectColumnIndex);
+    if (statement != nullptr)
+        statement->BindId(1, cameraId);
+
+    return iterator;
     }
 
 

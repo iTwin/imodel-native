@@ -133,6 +133,24 @@ struct EXPORT_VTABLE_ATTRIBUTE Camera : Dgn::PhysicalElement
     friend struct CameraHandler;
     DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Camera, Dgn::PhysicalElement)
 
+public:
+    //! Entry in Photo iterator
+    struct PhotoEntry : Dgn::ECSqlStatementEntry
+    {
+        friend struct Dgn::ECSqlStatementIterator < Camera::PhotoEntry >;
+        friend struct Camera;
+    private:
+        PhotoEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
+    public:
+        PhotoElementId GePhotoElementId() const { return m_statement->GetValueId<PhotoElementId>(0); }
+    };
+
+    //! Iterator over timelines
+    struct PhotoIterator : Dgn::ECSqlStatementIterator < Camera::PhotoEntry >
+    {
+    };
+
+
 private:
     double                  m_focalLenghtPixels;
     ImageDimensionType      m_imageDimension;
@@ -147,6 +165,7 @@ private:
 protected:
 
     explicit Camera(CreateParams const& params) : T_Super(params) {}
+
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -170,10 +189,11 @@ protected:
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
-    //! Called when an element is about to be inserted into the DgnDb.
-    //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
-    virtual Dgn::DgnDbStatus _OnInsert() override;
+
+    //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
+    //! @note If you override this method, you @em must call T_Super::_OnDeleted.
+    virtual Dgn::DgnDbStatus _OnDelete() const override;
+
 
 public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Camera)
@@ -185,6 +205,10 @@ public:
     //! Query for an Camera (Id) by label
     //! @return Id of the Camera or invalid Id if an Camera was not found
     DATACAPTURE_EXPORT static CameraElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+
+    //! Make an iterator over all Photo-s relevant to a Camera
+    DATACAPTURE_EXPORT static Camera::PhotoIterator MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraElementId cameraId);
+
 
     //! Get the id of this Camera
     DATACAPTURE_EXPORT CameraElementId GetId() const;
