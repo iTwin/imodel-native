@@ -107,9 +107,6 @@ ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDat
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (IsAlienTable(propertyMap.GetTable()))
-        VisitorFeedback::Cancel;
-
     Result& result = Record(propertyMap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
@@ -185,6 +182,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
     return VisitorFeedback::Next;
     }
+
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16

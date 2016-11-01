@@ -112,7 +112,10 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
             Data = Primitive | Point3d | Point2d | PrimitiveArray | Struct | StructArray | Navigation | NavigationRelECClassId | NavigationId,
-            All = System | Data
+            All = System | Data,
+            Entity = ECInstanceId | ECClassId | Data,
+            Relationship = Entity | ConstraintECClassId | ConstraintECInstanceId,
+
             };
     private:
         Kind m_kind;

@@ -21,21 +21,6 @@ struct ConstraintECClassIdJoinInfo;
 struct ViewGenerator
     {
     private:
-        struct ViewMember
-            {
-            private:
-                std::vector<ClassMap const*> m_classMaps;
-                DbSchema::EntityType m_storageType;
-            public:
-                ViewMember() :m_storageType(DbSchema::EntityType::Table) {}
-                ViewMember(DbSchema::EntityType storageType, ClassMap const& classMap) :m_storageType(storageType) { m_classMaps.push_back(&classMap); }
-
-                void AddClassMap(ClassMap const& classMap) { m_classMaps.push_back(&classMap); }
-                std::vector<ClassMap const*> const& GetClassMaps() const { return m_classMaps; }
-                DbSchema::EntityType GetStorageType() const { return m_storageType; }
-            };
-
-        typedef bmap<DbTable const*, ViewMember> ViewMemberByTable;
 
         ECDb const& m_ecdb;
         bool m_optimizeByIncludingOnlyRealTables;
@@ -56,41 +41,23 @@ struct ViewGenerator
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
         BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
 
-        BentleyStatus ComputeViewMembers(ViewMemberByTable& viewMembers, ECN::ECClassCR, bool ensureDerivedClassesAreLoaded);
-        BentleyStatus GetRootClasses(std::vector<ClassMap const*>& rootClasses) const;
-        BentleyStatus GetViewQueryForChild(NativeSqlBuilder& viewSql, DbTable const&, const std::vector<ClassMap const*>& childClassMap, ClassMap const& baseClassMap);
-        //! Relationship polymorphic query
-        BentleyStatus CreateViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap);
-        BentleyStatus CreateViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap, ClassMap const& baseClassMap);
-        BentleyStatus CreateViewForRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassMapCR, ClassMap const& baseClassMap);
-        BentleyStatus CreateViewForRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const&, ClassMap const& baseClassMap);
-        BentleyStatus CreateNullViewForRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassMapCR, ClassMap const& baseClassMap);
-        BentleyStatus CreateNullViewForRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassMapCR, ClassMap const& baseClassMap);
-        BentleyStatus CreateNullViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap, ClassMap const& baseClassMap);
-        BentleyStatus CreateNullView(NativeSqlBuilder& viewSql, ClassMap const&);
-        Utf8CP GetECClassIdPrimaryTableAlias(ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
-
-        BentleyStatus BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, DbTable const& contextTable);
         
-        //! Append view prop map list separated by comma.
-        BentleyStatus AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql, DbTable const& table, std::vector<std::pair<PropertyMap const*, PropertyMap const*>> const& viewPropMaps, bool forNullView = false);
-
-        BentleyStatus AppendSystemPropMaps(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, DbTable const& contextTable);
-        BentleyStatus AppendSystemPropMapsToNullView(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, bool endWithComma);
-        BentleyStatus AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECN::ECRelationshipConstraintCR constraint, DbTable const& contextTable);
 
         //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
-        BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMap const*, PropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);
-
+        
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
 
-        /*NEW API*/
-
+        /*=====================NEW API=================*/
+        bool IsECClassIdFilterEnabled() const;
         void RecordPropertyMapIfRequried(PropertyMap const& accessString);
+        BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Kind filter = PropertyMap::Kind::Entity);
         BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
-        BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo) ;
-        BentleyStatus RendNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
-        /*-----*/
+        BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
+        BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+        BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+        BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
+        BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassLinkTableMap const& relationMap);
+        /*=====================NEW API=================*/
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view
@@ -106,7 +73,6 @@ struct ViewGenerator
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);
     };
-
 
 struct ConstraintECClassIdJoinInfo : NonCopyableClass
     {

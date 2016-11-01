@@ -112,6 +112,23 @@ struct NativeSqlBuilder
 
             return unionView;
             }
+        static NativeSqlBuilder GenerateSelectList(List const& list)
+            {
+            BeAssert(!list.empty());
+            NativeSqlBuilder unionView;
+            bool first = true;
+            for (NativeSqlBuilder const& sql : list)
+                {
+                if (first)
+                    first = false;
+                else
+                    unionView.Append(", ");
+
+                unionView.Append(sql);
+                }
+
+            return unionView;
+            }
     };
 
 
