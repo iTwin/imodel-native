@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                                                                                                                                         tolerance
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -1292,7 +1292,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         return elementPublishStatus;
 
     
-    // We have relity models... create a tile set that includes both the reality models and the elements.
+    // We have reality models... create a tile set that includes both the reality models and the elements.
     Json::Value     value;
     value["asset"]["version"] = "0.0";
 
