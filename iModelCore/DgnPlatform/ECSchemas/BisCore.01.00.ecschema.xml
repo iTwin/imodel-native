@@ -780,12 +780,14 @@
             </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
+
     <ECEntityClass typeName="Drawing">
         <BaseClass>Document</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+
     <ECEntityClass typeName="SectionDrawing">
         <BaseClass>Drawing</BaseClass>
         <ECCustomAttributes>
@@ -809,7 +811,7 @@
         </ECCustomAttributes>
         <!-- Template is required -->
         <!-- Should have IsNullable=False ...? -->
-        <ECNavigationProperty propertyName="BorderTemplate" relationshipName="SheetBorderHasSheetBorderTemplate" direction="Forward"></ECNavigationProperty>
+        <ECNavigationProperty propertyName="BorderTemplate" relationshipName="SheetBorderHasSheetBorderTemplate" direction="Forward" />
     </ECEntityClass>
 
     <ECEntityClass typeName="SheetTemplate">
@@ -821,7 +823,7 @@
         <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
         <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
         <!-- Border is optional -->
-        <ECNavigationProperty propertyName="Border" relationshipName="SheetTemplateHasSheetBorder" direction="Forward"></ECNavigationProperty>
+        <ECNavigationProperty propertyName="Border" relationshipName="SheetTemplateHasSheetBorder" direction="Forward" />
     </ECEntityClass>
 
     <ECEntityClass typeName="Sheet">
@@ -834,7 +836,7 @@
         <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
         <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
         <!-- Template is optional -->
-        <ECNavigationProperty propertyName="SheetTemplate" relationshipName="SheetHasSheetTemplate" direction="Forward"></ECNavigationProperty>
+        <ECNavigationProperty propertyName="SheetTemplate" relationshipName="SheetHasSheetTemplate" direction="Forward" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing">
@@ -1220,6 +1222,7 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
+
     <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source cardinality="(1,1)" polymorphic="false">
@@ -1847,6 +1850,7 @@
             <Class class="ModelSelector"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition3d"/>
@@ -1855,6 +1859,7 @@
             <Class class="ClipVolumeDefinition"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" >
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition"/>
@@ -1863,6 +1868,7 @@
             <Class class="CategorySelector"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition"/>
@@ -1871,6 +1877,7 @@
             <Class class="DisplayStyle"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source cardinality="(0,N)" polymorphic="true">
@@ -1880,6 +1887,7 @@
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ModelSelector"/>
@@ -1888,99 +1896,133 @@
             <Class class="Model"/>
         </Target>
     </ECRelationshipClass>
+
     <ECEntityClass typeName="ModelSelector">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <!-- Note: The Models in the selector are actually captured by the 1:N ModelSelectorRefersToModels ECRelationship -->
     </ECEntityClass>
+
     <ECEntityClass typeName="CategorySelector">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
     </ECEntityClass>
+
     <ECEntityClass typeName="DisplayStyle">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Styles" typeName="string" />
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="Styles" typeName="string" >
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
+
     <ECEntityClass typeName="DisplayStyle3d">
         <BaseClass>DisplayStyle</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
+
     <ECEntityClass typeName="ClipVolumeDefinition">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="ClipPlaneSet" typeName="string" displayLabel="JSON encoding of a ClipPlaneSet"/>
+        <ECProperty propertyName="ClipPlaneSet" typeName="string"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
-        <ECProperty propertyName="Details" typeName="string" />
-        <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward"/>
-        <ECNavigationProperty propertyName="DisplayStyle" relationshipName="ViewDefinitionUsesDisplayStyle" direction="Forward"/>
+        <ECProperty propertyName="Details" typeName="string">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="DisplayStyle" relationshipName="ViewDefinitionUsesDisplayStyle" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
+
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
-        <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
-        <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
-        <ECProperty propertyName="Yaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="Pitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="Roll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Yaw" typeName="double" displayLabel="Yaw component of the view direction in degrees">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Pitch" typeName="double" displayLabel="Pitch component of the view direction in degrees">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Roll" typeName="double" displayLabel="Roll component of the view direction in degrees">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
+
     <!-- A view of an area defined in the bim's coordinate system. -->
     <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract">
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
         <BaseClass>ViewDefinition3d</BaseClass>
     </ECEntityClass>
+
     <!-- A spatial view that shows a perspective projection -->
     <ECEntityClass typeName="CameraViewDefinition">
         <BaseClass>SpatialViewDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Camera eye point"></ECProperty>
-        <ECProperty propertyName="LensAngle" typeName="double" displayLabel="Camera lens angle in degrees"></ECProperty>
-        <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Camera focus distance"></ECProperty>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Camera eye point">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LensAngle" typeName="double" displayLabel="Camera lens angle in degrees">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Camera focus distance">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
+
     <!-- A spatial view that shows an orthographic parallel projection -->
     <ECEntityClass typeName="OrthographicViewDefinition">
         <BaseClass>SpatialViewDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
+
     <!-- A view of a 2D model that has its own local coordinate system. -->
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
-        <ECNavigationProperty propertyName="BaseModel" relationshipName="BaseModelForView2d" direction="Backward"/>
-        <ECProperty propertyName="Origin" typeName="Point2d" displayLabel="Lower left corner of the viewed area."></ECProperty>
-        <ECProperty propertyName="Extents" typeName="Point2d" displayLabel="Size of the view diagonal"></ECProperty>
-        <ECProperty propertyName="RotationAngle" typeName="double" displayLabel="Rotation angle in degrees of the viewed area."></ECProperty>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="BaseModel" relationshipName="BaseModelForView2d" direction="Backward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="Origin" typeName="Point2d" displayLabel="Lower left corner of the viewed area.">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Extents" typeName="Point2d" displayLabel="Size of the view diagonal">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RotationAngle" typeName="double" displayLabel="Rotation angle in degrees of the viewed area.">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
+
     <ECEntityClass typeName="DrawingViewDefinition">
         <BaseClass>ViewDefinition2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
+
     <ECEntityClass typeName="SheetViewDefinition">
         <BaseClass>ViewDefinition2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
   
     <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
@@ -2020,9 +2062,7 @@
 
     <ECEntityClass typeName="GeometryPart">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">

@@ -533,8 +533,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
 
     json["viewerOptions"] = viewerOptions;
 
-    BeFileName jsonFileName = m_outputDir;
-    jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
+    WString     jsonRootName = m_rootName + L"_AppData";
+    BeFileName  jsonFileName (nullptr, m_dataDir.c_str(), jsonRootName.c_str(), L"json");
 
     Utf8String jsonFileNameUtf8(jsonFileName.c_str());
     jsonFileNameUtf8.ReplaceAll("\\", "//");
@@ -554,7 +554,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     if (NULL == htmlFile)
         return Status::CantWriteToBaseDirectory;
 
-    Utf8String jsonFileUrl(m_rootName.c_str());
+    Utf8String jsonFileUrl = Utf8String (m_rootName) + "/" + Utf8String(jsonRootName.c_str());
     jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
     std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);

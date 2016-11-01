@@ -1,7 +1,3 @@
-Success
-BadArg
-Success
-Success
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnCategory.cpp $
@@ -30,24 +26,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
@@ -66,14 +44,12 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::BindParams(ECSqlStatement& stmt)
+void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Scope), static_cast<int32_t>(m_data.m_scope))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_data.m_rank)))
-        return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Scope), static_cast<int32_t>(m_data.m_scope));
+    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_data.m_rank));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,24 +237,6 @@ DgnCode DgnCategory::_GenerateDefaultCode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
@@ -335,16 +293,15 @@ DgnDbStatus DgnSubCategory::_SetPropertyValue(ElementECPropertyAccessor& accesso
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
+void DgnSubCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     // default sub-categories don't have a description
-    if (!IsDefaultSubCategory() && ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
+    if (!IsDefaultSubCategory())
+        stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
 
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
+    stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -436,7 +393,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     size_t count = 0;
     Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append (" WHERE ParentId=?");
+        ecsql.append(" WHERE ParentId=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
@@ -792,60 +749,52 @@ DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
-    DgnCategoryId cid;
+    DgnCategoryId categoryId;
         {
-        ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, "ParentId") || v.IsNull())
+        ECValue v;
+        if (ECObjectsStatus::Success != properties.GetValue(v, "ParentId") || v.IsNull())
             {
-            stat = DgnDbStatus::BadArg;
-            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance(), "");
+            stat = DgnDbStatus::InvalidParent;
+            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
             }
-        cid = DgnCategoryId((uint64_t) v.GetLong());
-        if (!cid.IsValid())
+        categoryId = DgnCategoryId((uint64_t) v.GetLong());
+        if (!categoryId.IsValid())
             {
-            stat = DgnDbStatus::BadArg;
-            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance(), "");
+            stat = DgnDbStatus::InvalidParent;
+            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
             }
         }
 
-    Utf8CP name = nullptr;
     ECN::ECValue codeValue;
     if (ECN::ECObjectsStatus::Success != properties.GetValue(codeValue, "CodeValue"))
         {
-        stat = DgnDbStatus::BadArg;
-        return DgnSubCategory::CreateParams(db, cid, "", Appearance(), "");
+        stat = DgnDbStatus::InvalidName;
+        return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
         }
-    name = codeValue.GetUtf8CP();
 
     ECN::ECValue props;
     if (ECN::ECObjectsStatus::Success != properties.GetValue(props, "Properties"))
         {
         stat = DgnDbStatus::BadArg;
-        return DgnSubCategory::CreateParams(db, cid, name, Appearance(), "");
+        return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
         }
-    Appearance appearance(props.GetUtf8CP());
 
     ECN::ECValue descr;
-    if (ECN::ECObjectsStatus::Success != properties.GetValue(props, "Descr"))
-        {
-        stat = DgnDbStatus::BadArg;
-        return DgnSubCategory::CreateParams(db, cid, name, appearance, "");
-        }
-    DgnSubCategory::CreateParams params(db, cid, name, appearance, !descr.IsNull() ? descr.GetUtf8CP() : "");
+    properties.GetValue(props, "Descr");
 
-    return params;
+    return DgnSubCategory::CreateParams(db, categoryId, codeValue.GetUtf8CP(), Appearance(props.GetUtf8CP()), !descr.IsNull() ? descr.GetUtf8CP() : "");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
-    auto params = DgnSubCategory::CreateParamsFromECInstance(inStat, db, properties);
+    auto params = DgnSubCategory::CreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
         return nullptr;
     auto ele = new DgnSubCategory(params);
@@ -859,78 +808,58 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbStatus* in
     return (DgnDbStatus::Success == stat) ? ele : nullptr;
     }
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/16
-//=======================================================================================
-struct CategoryElementPropertyAccessors
-    {
-    struct
-        {
-        ECSqlClassInfo::T_ElementPropGet  descr, scope, rank;
-        } get;
-    struct
-        {
-        ECSqlClassInfo::T_ElementPropSet  descr, scope, rank;
-        } set;
-    };
-
-static std::once_flag s_categoryAccessorsFlag;
-static CategoryElementPropertyAccessors s_categryAccessors; 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    std::call_once(s_categoryAccessorsFlag, [] ()
-        {
-        s_categryAccessors.get.descr = [] (ECValueR value, DgnElementCR elIn)
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Descr,
+        [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
             value.SetUtf8CP(el.GetDescription());
             return DgnDbStatus::Success;
-            };
-
-        s_categryAccessors.set.descr = [] (DgnElementR elIn, ECValueCR value)
+            },
+        [] (DgnElementR elIn, ECValueCR value)
             {
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCategory& el = (DgnCategory&) elIn;
             el.SetDescription(value.GetUtf8CP());
             return DgnDbStatus::Success;
-            };
+            });
 
-        s_categryAccessors.get.rank = [] (ECValueR value, DgnElementCR elIn)
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Rank, 
+        [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
             value.SetInteger(static_cast<int32_t>(el.GetRank()));
             return DgnDbStatus::Success;
-            };
-        s_categryAccessors.set.rank = [] (DgnElementR elIn, ECValueCR value)
+            },
+        [] (DgnElementR elIn, ECValueCR value)
             {
             if (!value.IsInteger())
                 return DgnDbStatus::BadArg;
             DgnCategory& el = (DgnCategory&) elIn;
             el.SetRank(static_cast<DgnCategory::Rank>(value.GetInteger()));
             return DgnDbStatus::Success;
-            };
+            });
 
-        s_categryAccessors.get.scope = [] (ECValueR value, DgnElementCR elIn)
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Scope,
+        [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
             value.SetInteger(static_cast<int32_t>(el.GetScope()));
             return DgnDbStatus::Success;
-            };
-        s_categryAccessors.set.scope = [] (DgnElementR elIn, ECValueCR value)
+            },
+        [] (DgnElementR elIn, ECValueCR value)
             {
             if (!value.IsInteger())
                 return DgnDbStatus::BadArg;
             DgnCategory& el = (DgnCategory&) elIn;
             el.SetScope(static_cast<DgnCategory::Scope>(value.GetInteger()));
             return DgnDbStatus::Success;
-            };
-        });
-
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Descr, s_categryAccessors.get.descr, s_categryAccessors.set.descr);
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Rank, s_categryAccessors.get.rank, s_categryAccessors.set.rank);
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Scope, s_categryAccessors.get.scope, s_categryAccessors.set.scope);
+            });
     }

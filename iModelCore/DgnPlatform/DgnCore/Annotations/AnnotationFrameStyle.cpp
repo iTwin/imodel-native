@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/Annotations/AnnotationFrameStyle.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Annotations/AnnotationFrameStyle.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFrameStylePersistence.h>
@@ -11,9 +13,6 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 
 USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
-
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -56,9 +55,6 @@ bool AnnotationFrameStylePropertyBag::_IsRealProperty(T_Key key) const
             return false;
         }
     }
-
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
 
 #define PROP_Data "Data"
 #define PROP_Description "Descr"
@@ -110,25 +106,10 @@ static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationFram
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationFrameStyle::_BindInsertParams(BeSQLite::EC::ECSqlStatement& insert)
+void AnnotationFrameStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus status = T_Super::_BindInsertParams(insert);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(insert, *this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationFrameStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& update)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(update);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(update, *this);
+    T_Super::_BindWriteParams(stmt, forInsert);
+    bindParams(stmt, *this);
     }
 
 //---------------------------------------------------------------------------------------
