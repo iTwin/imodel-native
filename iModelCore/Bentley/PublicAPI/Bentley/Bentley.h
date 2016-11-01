@@ -353,3 +353,21 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define POP_MSVC_IGNORE
     #define PUSH_MSVC_IGNORE_ANALYZE
 #endif
+
+#ifdef __clang__
+    // This is complicated because ignoring warnings for clang is all string-based.
+    // https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
+    #define CLANG_DIAG_STR(s) # s
+    #define CLANG_DIAG_JOINSTR(x,y) CLANG_DIAG_STR(x ## y)
+    #define CLANG_DIAG_DO_PRAGMA(x) _Pragma (#x)
+    #define CLANG_DIAG_PRAGMA(x) CLANG_DIAG_DO_PRAGMA(clang diagnostic x)
+    
+    #define PUSH_CLANG_IGNORE(x)\
+        CLANG_DIAG_PRAGMA(push)\
+        CLANG_DIAG_PRAGMA(ignored CLANG_DIAG_JOINSTR(-W,x))
+    #define POP_CLANG_IGNORE\
+        CLANG_DIAG_PRAGMA(pop)
+#else
+    #define PUSH_CLANG_IGNORE(x)
+    #define POP_CLANG_IGNORE
+#endif
