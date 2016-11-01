@@ -2520,6 +2520,9 @@ public:
 
     DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
 
+    //! Return DgnElementIdSet containing Ids of all Session elements.
+    DGNPLATFORM_EXPORT static DgnElementIdSet QuerySessions(DgnDbR db);
+
     //! Get the Json::Value associated with a variable in this Session. If the variable is not present, the returned Json::Value will be "null".
     //! @param[in] name The namespace of the variable 
     JsonValueCR GetVariable(Utf8CP name) const {return m_variables[name];}
