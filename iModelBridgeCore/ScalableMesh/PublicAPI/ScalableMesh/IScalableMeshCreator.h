@@ -23,6 +23,7 @@
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
+#include <ScalableMesh/ITextureProvider.h>
 
 #ifndef VANCOUVER_API
 namespace BENTLEY_NAMESPACE_NAME
@@ -75,6 +76,7 @@ public:
         BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
 
         BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider, Transform unitTransform = Transform::FromIdentity());
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.

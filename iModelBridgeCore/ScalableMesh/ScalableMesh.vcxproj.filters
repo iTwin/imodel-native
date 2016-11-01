@@ -990,6 +990,10 @@
     <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="STM\MosaicTextureProvider.h" />
+    <ClInclude Include="GeneratorTextureProvider.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1430,6 +1434,11 @@
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MosaicTextureProvider.cpp" />
+    <ClCompile Include="STM\TextureProvider.cpp" />
+    <ClCompile Include="GeneratorTextureProvider.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>

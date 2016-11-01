@@ -289,6 +289,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h" />
     <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h" />
     <ClInclude Include="AutomaticGroundDetection\TileLoaderQueue.h" />
+    <ClInclude Include="GeneratorTextureProvider.h" />
     <ClInclude Include="GeoCoords\GCSWktParsing.h" />
     <ClInclude Include="GeoCoords\StdCpp.h" />
     <ClInclude Include="GeoCoords\TransfoModelAffine.hpp" />
@@ -579,6 +580,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="AutomaticGroundDetection\TileLoaderQueue.cpp" />
     <ClCompile Include="Foundations\Errors.cpp" />
     <ClCompile Include="Foundations\PrivateStringTools.cpp" />
+    <ClCompile Include="GeneratorTextureProvider.cpp" />
     <ClCompile Include="GeoCoords\DGNModelGeoref.cpp" />
     <ClCompile Include="GeoCoords\GCS.cpp" />
     <ClCompile Include="GeoCoords\GCSWktParsing.cpp" />

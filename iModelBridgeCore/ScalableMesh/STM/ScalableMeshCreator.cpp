@@ -73,6 +73,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\Tools\ConfigurationManager.h>
 #endif
 
+#include "MosaicTextureProvider.h"
 
 #define SCALABLE_MESH_TIMINGS
 
@@ -302,6 +303,13 @@ StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform
     }
 
 
+StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+    {
+    return m_implP->SetTextureProvider(provider, unitTransform);
+    }
+
+
+
 StatusInt IScalableMeshCreator::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
     {
     return SetGCS(GetGCSFactory().Create(gcsPtr));
@@ -369,11 +377,18 @@ IScalableMeshCreator::Impl::~Impl()
 StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(mosaicP, unitTransform);
+    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
+    m_scmPtr->TextureFromRaster(mosaicPtr, unitTransform);
     return SUCCESS;
     }
 
- 
+StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+    {
+    if (m_scmPtr.get() == nullptr) return ERROR;
+    m_scmPtr->TextureFromRaster(provider, unitTransform);
+    return SUCCESS;
+    }
+
 
 
 // TDORAY: This is a duplicate of version in ScalableMesh.cpp. Find a way to use the same fn.

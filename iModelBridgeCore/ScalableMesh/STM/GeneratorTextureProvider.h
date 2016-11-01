@@ -1,15 +1,18 @@
 #pragma once
-
+#include <ScalableMesh\IScalableMeshTextureGenerator.h>
 #include <ScalableMesh\ITextureProvider.h>
-#include "ImagePPHeaders.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct MosaicTextureProvider : virtual public ITextureProvider
+
+struct GeneratorTextureProvider : virtual public ITextureProvider
     {
     private:
-        HIMMosaic* m_targetMosaic;
-        HGF2DExtent m_minExt;
+        IScalableMeshTextureGeneratorPtr m_generator;
+        double m_minPixelSize;
+        DRange3d m_extent;
+        BeFileName m_dir;
 
     protected:
 
@@ -20,6 +23,6 @@ struct MosaicTextureProvider : virtual public ITextureProvider
         virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area) override;
     public:
 
-        MosaicTextureProvider(HIMMosaic* mosaic);
+        GeneratorTextureProvider(IScalableMeshTextureGeneratorPtr& generator, DRange3d coveredExtent, double minPixelSize, BeFileName tempDirectory);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

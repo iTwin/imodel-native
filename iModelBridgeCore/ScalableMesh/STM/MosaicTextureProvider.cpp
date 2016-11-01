@@ -1,4 +1,5 @@
 #include "ScalableMeshPCH.h"
+#include <ScalableMesh/IScalableMesh.h>
 #include "MosaicTextureProvider.h"
 #include "ImagePPHeaders.h"
 #include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
@@ -16,10 +17,9 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 DPoint2d MosaicTextureProvider::_GetMinPixelSize()
     {
     DPoint2d minSize;
-    HGF2DExtent minExt, maxExt;
-    m_targetMosaic->GetPixelSizeRange(minExt, maxExt);
-    minSize.x = minExt.GetWidth();
-    minSize.y = minExt.GetHeight();
+
+    minSize.x = m_minExt.GetWidth();
+    minSize.y = m_minExt.GetHeight();
     return minSize;
     }
 
@@ -64,7 +64,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
 
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
-    texData.resize(width * height * 3);
+    texData.resize(3 * sizeof(int) + width * height * 3);
 
 #ifdef VANCOUVER_API
     pTextureBitmap = new HRABitmap(width,
@@ -83,7 +83,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
                                        pPixelType,
                                        8);
 #endif
-
+    m_minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
     byte* pixelBufferPRGBA = new byte[width * height * 4];
     pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, width * height * 4);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
@@ -113,7 +113,14 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     pTextureBitmap->CopyFrom(*m_targetMosaic, copyFromOptions);
 #endif
 
-    Byte *pPixel = &texData[0];
+    Byte *pPixel = &texData[0] + 3*sizeof(int);
+
+    int nChannels = 3;
+    memcpy(&texData[0], &width, sizeof(int));
+    memcpy(&texData[0]+sizeof(int), &height, sizeof(int));
+    memcpy(&texData[0] + 2*sizeof(int), &nChannels, sizeof(int));
+    
+
     for (size_t i = 0; i < width*height; ++i)
         {
         *pPixel++ = pixelBufferPRGBA[i * 4];
@@ -121,11 +128,13 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
         *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
     delete[] pixelBufferPRGBA;
+    pTextureBitmap = 0;
     return SUCCESS;
     }
 
 MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)
     : m_targetMosaic(mosaic)
     {
-
+    HGF2DExtent maxExt;
+    m_targetMosaic->GetPixelSizeRange(m_minExt, maxExt);
     }
