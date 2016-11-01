@@ -392,14 +392,14 @@ public:
 *   * DgnElement::_CopyFrom must copy member variables from source element. It is used in many different copying operations.
 *   * DgnElement::_Clone must make a copy of an element, suitable for inserting into the DgnDb.
 *   * DgnElement::_CloneForImport must make a copy of an element in a source DgnDb, suitable for inserting into a target DgnDb. 
-*   * DgnElement::_RemapIds must remap any IDs stored in the element or its aspects.
+*   * DgnElement::_RemapIds must remap any IDs stored in the element's member variables or its aspects.
 * 
 * If you define a new subclass of DgnElement, you may need to override one or more of these virtual methods.
 *
 * If subclass ...|It must override ...
 * ---------------|--------------------
 * Defines new member variables|DgnElement::_CopyFrom to copy them.
-* Defines new properties that are IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
+* Defines new member variables that stored IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
 * Stores some of its data in Aspects|DgnElement::_Clone and DgnElement::_CloneForImport, as described below.
 * 
 * Normally, there is no need to override _Clone, as the base class implementation will work for subclasses, as it calls _CopyFrom.
@@ -474,10 +474,7 @@ public:
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
-* the DgnElement::_SetPropertyValue method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
-* Note that _CopyFrom does <em>not</em> always call _SetPropertyValue on each copied property. If the element subclass needs to validate 
-* specific auto-handled properties even during copying, then it must <em>also</em> override _CopyFrom, call the superclass method to do the copying,
-* and then apply validation logic after the copy is done.
+* _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
 * In rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
@@ -747,7 +744,7 @@ public:
         //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
-        //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
+        //! The subclass should override this method if it has <em>custom-handled properties</em> that contain IDs that must be remapped when it is copied (perhaps between DgnDbs)
         virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
     };
 
@@ -1223,6 +1220,8 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
 
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
+
+    void RemapAutoHandledNavigationproperties(DgnImportContext&);
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
