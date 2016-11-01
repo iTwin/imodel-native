@@ -85,8 +85,7 @@ enum class EntityType
     Solid    = 0, //!< Body consisting of at least one solid region.
     Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
     Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
-    Minimal  = 3, //!< Body consisting of a single vertex.
-    Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
+    Invalid  = 3, //!< Body no longer valid (ex. extracted or consumed by operation).
     };
 
 protected:

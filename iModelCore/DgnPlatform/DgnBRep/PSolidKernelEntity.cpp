@@ -74,7 +74,7 @@ EntityType _GetEntityType() const
             return IBRepEntity::EntityType::Wire;
 
         default:
-            return IBRepEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Invalid;
         }
     }
 
@@ -239,8 +239,23 @@ void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned = true)
     {
-    if (NULTAG == entityTag)
+    if (PK_ENTITY_null == entityTag)
         return nullptr;
+
+    PK_BODY_type_t bodyType = PK_BODY_type_unspecified_c;
+
+    PK_BODY_ask_type(entityTag, &bodyType);
+
+    switch (bodyType)
+        {
+        case PK_BODY_type_solid_c:
+        case PK_BODY_type_sheet_c:
+        case PK_BODY_type_wire_c:
+            break; // Don't allow empty, minimal, acorn, general, or compound bodies...has unknown ramifications for down-stream operations...
+
+        default:
+            return nullptr;
+        }
 
     return new PSolidKernelEntity(entityTag, transform, owned);
     }
