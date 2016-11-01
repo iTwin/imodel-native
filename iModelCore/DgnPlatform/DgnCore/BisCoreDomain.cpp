@@ -188,14 +188,19 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::ModelSelectorDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::CategorySelectorDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::DisplayStyleDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::DisplayStyle3dDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::OrthographicViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
+    RegisterHandler(ViewElementHandler::View::GetHandler());
+    RegisterHandler(ViewElementHandler::View2d::GetHandler());
+    RegisterHandler(ViewElementHandler::View3d::GetHandler());
+    RegisterHandler(ViewElementHandler::SpatialView::GetHandler());
+    RegisterHandler(ViewElementHandler::DrawingView::GetHandler());
+    RegisterHandler(ViewElementHandler::SheetView::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewModels::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewCategories::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
+    RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
+    RegisterHandler(ViewElementHandler::CameraView::GetHandler());
+
     RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());

@@ -347,7 +347,7 @@ size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
         case GeometricPrimitive::GeometryType::SolidPrimitive:      return GetFacetCount(*geom.GetAsISolidPrimitive());
         case GeometricPrimitive::GeometryType::BsplineSurface:      return GetFacetCount(*geom.GetAsMSBsplineSurface());
         case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:   return GetFacetCount(*geom.GetAsISolidKernelEntity());
+        case GeometricPrimitive::GeometryType::BRepEntity:   return GetFacetCount(*geom.GetAsIBRepEntity());
         case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
         default:                                                    BeAssert(false); return 0;
         }
@@ -462,7 +462,7 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
+size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     auto shape = SolidKernelUtil::GetShape(entity);
@@ -501,7 +501,7 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
                 {
                 CurveVectorPtr  curveVector;
 
-                if ((curveVector = PSolidUtil::PlanarFaceToCurveVector (faceTag)).IsValid())
+                if ((curveVector = PSolidGeom::PlanarFaceToCurveVector (faceTag)).IsValid())
                     facetCount += GetFacetCount(*curveVector);
                 break;
                 }
@@ -514,7 +514,7 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
                 {
                 ISolidPrimitivePtr  solidPrimitive;
 
-                if ((solidPrimitive = PSolidUtil::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
+                if ((solidPrimitive = PSolidGeom::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
                     facetCount += GetFacetCount(*solidPrimitive);
                 break;
                 }
@@ -523,7 +523,7 @@ size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
                 {
                 MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
 
-                if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
+                if (SUCCESS == PSolidGeom::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
                     facetCount += GetFacetCount(*bSplineSurface);
 
                 break;

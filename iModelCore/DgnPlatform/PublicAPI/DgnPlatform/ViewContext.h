@@ -30,10 +30,10 @@ struct     ILineStyleComponent
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
     virtual double _GetLength() const = 0;
-    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================

@@ -135,7 +135,7 @@ private:
     virtual StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
     virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
     virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
-    virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity) override {return SUCCESS;}
+    virtual StatusInt   _ProcessBody (IBRepEntityCR entity) override {return SUCCESS;}
     virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
 
     virtual void        _AddTextString (TextStringCR text, double* zDepth) override;

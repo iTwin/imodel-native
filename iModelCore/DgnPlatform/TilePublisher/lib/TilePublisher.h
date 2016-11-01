@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/AutoRestore.h>
+#include <DgnPlatform/DgnMaterial.h>
 #include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
@@ -90,6 +91,11 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
+    void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors);
+    void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
+    Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
+    Json::Value GetDisplayStyleJson(DisplayStyleCR style);
+
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
 public:
@@ -110,6 +116,7 @@ public:
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TileGenerationCacheCR GetCache() const { return _GetCache(); }
 
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);

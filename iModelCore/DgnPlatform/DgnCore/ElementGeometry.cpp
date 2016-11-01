@@ -123,9 +123,9 @@ bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
             return false;
             }
 
-        case GeometryType::SolidKernelEntity:
+        case GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr entity = GetAsISolidKernelEntity();
+            IBRepEntityPtr entity = GetAsIBRepEntity();
 
             // The entity transform (after removing SWA scale) can be used for localToWorld (solid kernel to uors)...
             localToWorld = entity->GetEntityTransform();
@@ -175,8 +175,8 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
     GeometricPrimitivePtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    if (GeometryType::SolidKernelEntity == GetGeometryType())
-        clone = new GeometricPrimitive(PSolidUtil::InstanceEntity(*GetAsISolidKernelEntity()));
+    if (GeometryType::BRepEntity == GetGeometryType())
+        clone = new GeometricPrimitive(PSolidUtil::InstanceEntity(*GetAsIBRepEntity()));
     else
         clone = Clone();
 #else
@@ -253,7 +253,7 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(ISolidKernelEntityCR geom, DRange3dR range, TransformCP transform)
+static bool getRange(IBRepEntityCR geom, DRange3dR range, TransformCP transform)
     {
     range = geom.GetEntityRange();
 
@@ -325,9 +325,9 @@ bool GeometricPrimitive::GetRange(DRange3dR range, TransformCP transform) const
             return getRange(*geom, range, transform);
             }
 
-        case GeometryType::SolidKernelEntity:
+        case GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
+            IBRepEntityPtr geom = GetAsIBRepEntity();
 
             return getRange(*geom, range, transform);
             }
@@ -391,9 +391,9 @@ bool GeometricPrimitive::TransformInPlace(TransformCR transform)
             return (SUCCESS == geom->TransformSurface(transform) ? true : false);
             }
 
-        case GeometryType::SolidKernelEntity:
+        case GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
+            IBRepEntityPtr geom = GetAsIBRepEntity();
 
             geom->PreMultiplyEntityTransformInPlace(transform); // Just change entity transform...
 
@@ -458,9 +458,9 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
             return new GeometricPrimitive(geom);
             }
 
-        case GeometryType::SolidKernelEntity:
+        case GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity()->Clone();
+            IBRepEntityPtr geom = GetAsIBRepEntity()->Clone();
 
             return new GeometricPrimitive(geom);
             }
@@ -529,9 +529,9 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicBuilderR graphic) const
             break;
             }
 
-        case GeometryType::SolidKernelEntity:
+        case GeometryType::BRepEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
+            IBRepEntityPtr geom = GetAsIBRepEntity();
 
             graphic.AddBody(*geom);
             break;
@@ -566,8 +566,8 @@ bool GeometricPrimitive::IsSolid() const
         case GeometryType::Polyface:
             return GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
-        case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType::Solid == GetAsISolidKernelEntity()->GetEntityType();
+        case GeometryType::BRepEntity:
+            return IBRepEntity::EntityType::Solid == GetAsIBRepEntity()->GetEntityType();
 
         default:
             return false;
@@ -593,8 +593,8 @@ bool GeometricPrimitive::IsSheet() const
         case GeometryType::Polyface:
             return !GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
-        case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType::Sheet == GetAsISolidKernelEntity()->GetEntityType();
+        case GeometryType::BRepEntity:
+            return IBRepEntity::EntityType::Sheet == GetAsIBRepEntity()->GetEntityType();
 
         default:
             return false;
@@ -614,8 +614,8 @@ bool GeometricPrimitive::IsWire() const
         case GeometryType::CurveVector:
             return GetAsCurveVector()->IsOpenPath();
 
-        case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType::Wire == GetAsISolidKernelEntity()->GetEntityType();
+        case GeometryType::BRepEntity:
+            return IBRepEntity::EntityType::Wire == GetAsIBRepEntity()->GetEntityType();
 
         default:
             return false;
@@ -625,30 +625,30 @@ bool GeometricPrimitive::IsWire() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
+IBRepEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
     {
     switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
-            return ISolidKernelEntity::EntityType::Wire;
+            return IBRepEntity::EntityType::Wire;
 
         case GeometryType::CurveVector:
-            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType::Wire : ISolidKernelEntity::EntityType::Minimal));
+            return (GetAsCurveVector()->IsAnyRegionType() ? IBRepEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? IBRepEntity::EntityType::Wire : IBRepEntity::EntityType::Minimal));
 
         case GeometryType::BsplineSurface:
-            return ISolidKernelEntity::EntityType::Sheet;
+            return IBRepEntity::EntityType::Sheet;
 
         case GeometryType::SolidPrimitive:
-            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
+            return GetAsISolidPrimitive()->GetCapped() ? IBRepEntity::EntityType::Solid : IBRepEntity::EntityType::Sheet;
 
         case GeometryType::Polyface:
-            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
+            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? IBRepEntity::EntityType::Solid : IBRepEntity::EntityType::Sheet;
 
-        case GeometryType::SolidKernelEntity:
-            return GetAsISolidKernelEntity()->GetEntityType();
+        case GeometryType::BRepEntity:
+            return GetAsIBRepEntity()->GetEntityType();
 
         default:
-            return ISolidKernelEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Minimal;
         }
     }
 
@@ -660,7 +660,7 @@ GeometricPrimitive::GeometricPrimitive(CurveVectorPtr const& source) {m_type = G
 GeometricPrimitive::GeometricPrimitive(ISolidPrimitivePtr const& source) {m_type = GeometryType::SolidPrimitive; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(MSBsplineSurfacePtr const& source) {m_type = GeometryType::BsplineSurface; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(PolyfaceHeaderPtr const& source) {m_type = GeometryType::Polyface; m_data = source;}
-GeometricPrimitive::GeometricPrimitive(ISolidKernelEntityPtr const& source) {m_type = GeometryType::SolidKernelEntity; m_data = source;}
+GeometricPrimitive::GeometricPrimitive(IBRepEntityPtr const& source) {m_type = GeometryType::BRepEntity; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(TextStringPtr const& source) {m_type = GeometryType::TextString; m_data = source;}
 
 /*----------------------------------------------------------------------------------*//**
@@ -671,7 +671,7 @@ GeometricPrimitivePtr GeometricPrimitive::Create(CurveVectorPtr const& source) {
 GeometricPrimitivePtr GeometricPrimitive::Create(ISolidPrimitivePtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfacePtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceHeaderPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
-GeometricPrimitivePtr GeometricPrimitive::Create(ISolidKernelEntityPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
+GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 
 /*----------------------------------------------------------------------------------*//**
@@ -682,7 +682,7 @@ GeometricPrimitivePtr GeometricPrimitive::Create(CurveVectorCR source) {CurveVec
 GeometricPrimitivePtr GeometricPrimitive::Create(ISolidPrimitiveCR source) {ISolidPrimitivePtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
-GeometricPrimitivePtr GeometricPrimitive::Create(ISolidKernelEntityCR source) {ISolidKernelEntityPtr clone = source.Clone(); return Create(clone);}
+GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityCR source) {IBRepEntityPtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
 
 /*----------------------------------------------------------------------------------*//**
@@ -694,7 +694,7 @@ CurveVectorPtr GeometricPrimitive::GetAsCurveVector() const {return (GeometryTyp
 ISolidPrimitivePtr GeometricPrimitive::GetAsISolidPrimitive() const {return (GeometryType::SolidPrimitive == m_type ? static_cast <ISolidPrimitiveP> (m_data.get()) : nullptr);}
 MSBsplineSurfacePtr GeometricPrimitive::GetAsMSBsplineSurface() const {return (GeometryType::BsplineSurface == m_type ? static_cast <RefCountedMSBsplineSurface*> (m_data.get()) : nullptr);}
 PolyfaceHeaderPtr GeometricPrimitive::GetAsPolyfaceHeader() const {return (GeometryType::Polyface == m_type ? static_cast <PolyfaceHeaderP> (m_data.get()) : nullptr);}
-ISolidKernelEntityPtr GeometricPrimitive::GetAsISolidKernelEntity() const { return (GeometryType::SolidKernelEntity == m_type ? static_cast <ISolidKernelEntityP> (m_data.get()) : nullptr); }
+IBRepEntityPtr GeometricPrimitive::GetAsIBRepEntity() const { return (GeometryType::BRepEntity == m_type ? static_cast <IBRepEntityP> (m_data.get()) : nullptr); }
 TextStringPtr GeometricPrimitive::GetAsTextString() const { return (GeometryType::TextString == m_type ? static_cast <TextStringP> (m_data.get()) : nullptr); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1041,7 +1041,7 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
+void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     size_t      bufferSize = 0;
@@ -1114,10 +1114,10 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     // NOTE: Append redundant representation for platforms where we don't yet have support for Parasolid...
     switch (entity.GetEntityType())
         {
-        case ISolidKernelEntity::EntityType::Wire:
+        case IBRepEntity::EntityType::Wire:
             {
             // Save wire body as CurveVector...
-            CurveVectorPtr wireGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+            CurveVectorPtr wireGeom = PSolidGeom::WireBodyToCurveVector(entity);
 
             if (wireGeom.IsValid())
                 Append(*wireGeom, OpCode::BRepCurveVector);
@@ -1125,10 +1125,10 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             return;
             }
 
-        case ISolidKernelEntity::EntityType::Sheet:
+        case IBRepEntity::EntityType::Sheet:
             {
             // Save sheet body that is a single planar face as CurveVector...
-            CurveVectorPtr faceGeom = nullptr;//DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+            CurveVectorPtr faceGeom = PSolidGeom::PlanarSheetBodyToCurveVector(entity);
 
             if (faceGeom.IsValid())
                 {
@@ -1139,7 +1139,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             // Fall through...
             }
 
-        case ISolidKernelEntity::EntityType::Solid:
+        case IBRepEntity::EntityType::Solid:
             {
             IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
@@ -1461,9 +1461,9 @@ void GeometryStreamIO::Writer::Append(GeometricPrimitiveCR elemGeom)
             break;
             }
 
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:
+        case GeometricPrimitive::GeometryType::BRepEntity:
             {
-            Append(*elemGeom.GetAsISolidKernelEntity());
+            Append(*elemGeom.GetAsIBRepEntity());
             break;
             }
 
@@ -1619,7 +1619,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, MSBsplineSurfacePtr& s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity) const
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     if (OpCode::OpenCascadeBRep != egOp.m_opCode)
@@ -2158,7 +2158,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
-            ISolidKernelEntityPtr entityPtr;
+            IBRepEntityPtr entityPtr;
 
             if (!Get(egOp, entityPtr))
                 break;
@@ -2169,7 +2169,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
 #elif defined (BENTLEYCONFIG_PARASOLID) 
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
-            ISolidKernelEntityPtr entityPtr;
+            IBRepEntityPtr entityPtr;
 
             if (!Get(egOp, entityPtr))
                 break;
@@ -2436,8 +2436,8 @@ static void debugGeomId(GeometryStreamIO::IDebugOutput& output, GeometricPrimiti
             geomType.assign("Polyface");
             break;
 
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:
-            geomType.assign("SolidKernelEntity");
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            geomType.assign("BRepEntity");
             break;
 
         case GeometricPrimitive::GeometryType::TextString:
@@ -2924,7 +2924,7 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
 struct BRepCache : DgnElement::AppData
 {
 static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
-typedef bmap<uint16_t, ISolidKernelEntityPtr> IndexedGeomMap;
+typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
 IndexedGeomMap m_map;
 
 virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
@@ -3019,7 +3019,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidKernelEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
+static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
     {
     if (nullptr == element)
         return nullptr;
@@ -3040,7 +3040,7 @@ static ISolidKernelEntityPtr GetCachedSolidKernelEntity(ViewContextR context, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId, ISolidKernelEntityR entity)
+static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
     {
     // Only save for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...
     if (nullptr == context.GetIPickGeom())
@@ -3427,7 +3427,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
-                ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+                IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
 
                 if (!entityPtr.IsValid())
                     {
@@ -3450,7 +3450,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
-                ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+                IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
 
                 if (!entityPtr.IsValid())
                     {
@@ -3775,10 +3775,10 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
             return EntryType::BsplineSurface;
 
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
-            return EntryType::SolidKernelEntity;
+            return EntryType::BRepEntity;
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
-            return EntryType::SolidKernelEntity;
+            return EntryType::BRepEntity;
 
         case GeometryStreamIO::OpCode::BRepPolyface:
             return EntryType::Polyface;
@@ -3855,14 +3855,14 @@ bool GeometryCollection::Iterator::IsSurface() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            return (IBRepEntity::EntityType::Sheet == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 #elif defined (BENTLEYCONFIG_PARASOLID)  
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            return (IBRepEntity::EntityType::Sheet == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 #else
         case GeometryStreamIO::OpCode::BRepPolyface:
@@ -3911,14 +3911,14 @@ bool GeometryCollection::Iterator::IsSolid() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            return (IBRepEntity::EntityType::Solid == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 #elif defined (BENTLEYCONFIG_PARASOLID)  
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
+            return (IBRepEntity::EntityType::Solid == ((IBRepEntity::EntityType) ppfb->brepType()));
             }
 #else
         case GeometryStreamIO::OpCode::BRepPolyface:
@@ -4100,7 +4100,7 @@ static bool is3dGeometryType(GeometricPrimitive::GeometryType geomType)
         case GeometricPrimitive::GeometryType::SolidPrimitive:
         case GeometricPrimitive::GeometryType::BsplineSurface:
         case GeometricPrimitive::GeometryType::Polyface:
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:
+        case GeometricPrimitive::GeometryType::BRepEntity:
             return true;
 
         default:
@@ -4531,8 +4531,8 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom, CoordSystem coord)
     GeometricPrimitivePtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    if (GeometricPrimitive::GeometryType::SolidKernelEntity == geom.GetGeometryType())
-        clone = GeometricPrimitive::Create(PSolidUtil::InstanceEntity(*geom.GetAsISolidKernelEntity()));
+    if (GeometricPrimitive::GeometryType::BRepEntity == geom.GetGeometryType())
+        clone = GeometricPrimitive::Create(PSolidUtil::InstanceEntity(*geom.GetAsIBRepEntity()));
     else
         clone = geom.Clone();
 #else
@@ -4704,7 +4704,7 @@ bool GeometryBuilder::Append(IGeometryCR geometry, CoordSystem coord)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
+bool GeometryBuilder::Append(IBRepEntityCR geom, CoordSystem coord)
     {
     if (!m_is3d)
         {
@@ -4727,9 +4727,9 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
 
 #if defined (BENTLEYCONFIG_PARASOLID)
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    ISolidKernelEntityPtr clone = PSolidUtil::InstanceEntity(geom);
+    IBRepEntityPtr clone = PSolidUtil::InstanceEntity(geom);
 #else
-    ISolidKernelEntityPtr clone = geom.Clone();
+    IBRepEntityPtr clone = geom.Clone();
 #endif
 
     GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(clone);

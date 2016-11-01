@@ -9,685 +9,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::GetBodyFaces (bvector<PK_FACE_t>& faces, PK_BODY_t body)
-    {
-    int         faceCount = 0;
-    PK_FACE_t*  pFaceTagArray = NULL;
-
-    if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray))
-        return ERROR;
-
-    faces.resize (faceCount);
-    for (int i=0; i<faceCount; i++)
-        faces[i] = pFaceTagArray[i];
-
-    PK_MEMORY_free (pFaceTagArray);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVector::BoundaryType getBoundaryType (CurveVectorCR curveVector)
-    {
-    double      area;
-    DPoint3d    centroid;
-
-    curveVector.CentroidAreaXY (centroid, area);
-
-    return area < 0.0 ? CurveVector::BOUNDARY_TYPE_Inner : CurveVector::BOUNDARY_TYPE_Outer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr PSolidUtil::FaceToUVCurveVector(PK_FACE_t faceTag, PK_UVBOX_t* uvBox, bool splineParameterization)
-    {
-    PK_FACE_output_surf_trimmed_o_t options;
-
-    PK_FACE_output_surf_trimmed_o_m (options);
-
-    options.want_geoms  = PK_LOGICAL_true;
-    options.want_topols = PK_LOGICAL_false;
-    options.trim_surf   = splineParameterization ? PK_FACE_trim_surf_bsurf_c : PK_FACE_trim_surf_own_c;
-
-    PK_SURF_t           surfaceTag;
-    PK_LOGICAL_t        sense;
-    PK_SURF_trim_data_t trimData;
-    PK_GEOM_t*          geometryP = NULL;
-    PK_INTERVAL_t*      intervalP = NULL;
-    PK_TOPOL_t*         topologyP = NULL;
-    
-    if (SUCCESS != PK_FACE_output_surf_trimmed (faceTag, &options, &surfaceTag, &sense, &trimData, &geometryP, &intervalP, &topologyP))
-        return nullptr; // This can occur on some faces.... Error code is typically 1008 (failed to produce trimmed surface).
-
-    int                 currentLoopTag = -1;
-    CurveVectorPtr      currentLoop, curveVector;
-
-    for (size_t i=0; i < (size_t) trimData.n_spcurves; i++)
-        {
-        if (trimData.trim_loop[i] != currentLoopTag && currentLoop.IsValid())
-            {
-            if (!curveVector.IsValid())
-                curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
-            
-            currentLoop->SetBoundaryType (getBoundaryType (*currentLoop));
-            curveVector->Add (currentLoop);
-            currentLoop = NULL;
-            }
-
-        currentLoopTag = trimData.trim_loop[i];
-
-        PK_SPCURVE_sf_t     sfSpCurve;
-        PK_BCURVE_t         psBCurveTag;
-        PK_LOGICAL_t        isExact;
-        MSBsplineCurve      bCurve;
-
-        if (SUCCESS != PK_SPCURVE_ask (trimData.spcurves[i], &sfSpCurve) ||
-            SUCCESS != PK_CURVE_make_bcurve (sfSpCurve.curve, trimData.intervals[i], PK_LOGICAL_false, PK_LOGICAL_false, 1.0E-6, &psBCurveTag, &isExact) ||
-            SUCCESS != PSolidUtil::CreateMSBsplineCurveFromBCurve (bCurve, psBCurveTag))
-            {
-            BeAssert (false);
-            curveVector = NULL;
-            currentLoop = NULL;
-            break;
-            }
-
-        if (!currentLoop.IsValid())
-            currentLoop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-
-        currentLoop->Add (ICurvePrimitive::CreateBsplineCurve (bCurve));
-
-        PK_ENTITY_delete (1, &psBCurveTag);
-        }
-
-    if (currentLoop.IsValid())
-        {
-        currentLoop->SetBoundaryType (getBoundaryType (*currentLoop));
-
-        if (curveVector.IsValid())
-            curveVector->Add (currentLoop);
-        else
-            curveVector = currentLoop;
-        }
-
-    Transform rangeTransform;
-
-    if (NULL != uvBox && 
-        curveVector.IsValid() &&
-        Transform::TryRangeMapping (DRange2d::From (uvBox->param[0], uvBox->param[1], uvBox->param[2], uvBox->param[3]), DRange2d::From (0.0, 0.0, 1.0, 1.0), rangeTransform))
-        curveVector->TransformInPlace (rangeTransform);
-
-    if (trimData.n_spcurves)
-        {
-        PK_ENTITY_delete (trimData.n_spcurves, trimData.spcurves);
-
-        PK_MEMORY_free (trimData.spcurves);
-        PK_MEMORY_free (trimData.intervals);
-        PK_MEMORY_free (trimData.trim_loop);
-        PK_MEMORY_free (trimData.trim_set);
-        }
-
-    if (geometryP)
-        {
-        PK_ENTITY_delete (trimData.n_spcurves, geometryP);
-        PK_MEMORY_free (geometryP);
-        }
-
-    if (intervalP)
-        PK_MEMORY_free (intervalP);
-
-    return curveVector;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr  planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurveIdMap const* idMap)
-    {
-    CurveVectorPtr  childLoop;
-    int             nFins = 0;
-    PK_FIN_t*       fins = NULL;
-    PK_LOOP_type_t  loopType;
-
-    PK_LOOP_ask_type (loopTag, &loopType);
-
-    bool    isHoleLoop = (PK_LOOP_type_inner_c == loopType || PK_LOOP_type_inner_sing_c == loopType || PK_LOOP_type_likely_inner_c == loopType);
-
-    if (SUCCESS != PK_LOOP_ask_fins (loopTag, &nFins, &fins) || 0 == nFins)
-        return childLoop;
-
-    childLoop = CurveVector::Create (isHoleLoop ? CurveVector::BOUNDARY_TYPE_Inner : CurveVector::BOUNDARY_TYPE_Outer);
-
-    for (int iFin = 0; iFin < nFins; iFin++)
-        {
-        PK_EDGE_t   edgeTag = PK_ENTITY_null;
-
-        if (SUCCESS != PK_FIN_ask_edge (fins[iFin], &edgeTag))
-            continue;
-
-        PK_CURVE_t          curveTag = PK_ENTITY_null;
-        PK_LOGICAL_t        isPositiveFin;
-        PK_INTERVAL_t       interval;
-        ICurvePrimitivePtr  primitive;
-        PK_LOGICAL_t        orientation;
-
-
-        if (SUCCESS == PK_FIN_ask_oriented_curve (fins[iFin], &curveTag, &orientation) &&
-            SUCCESS == PK_FIN_find_interval (fins[iFin], &interval))
-            primitive = PSolidUtil::GetAsCurvePrimitive (curveTag, interval, !orientation);
-        else if (SUCCESS == PK_FIN_is_positive (fins[iFin], &isPositiveFin) &&
-                 SUCCESS == PK_EDGE_ask_oriented_curve (edgeTag, &curveTag, &orientation) &&
-                 SUCCESS == PK_EDGE_find_interval (edgeTag, &interval))
-            primitive = PSolidUtil::GetAsCurvePrimitive (curveTag, interval, orientation != isPositiveFin);
-
-        if (!primitive.IsValid ())
-            continue;
-
-        if (NULL != idMap)
-            {
-            FaceId  faceId;
-
-            if (SUCCESS == PSolidUtil::IdFromEntity (faceId, edgeTag, true))
-                {
-                EdgeToCurveIdMap::const_iterator found = idMap->find (faceId.nodeId);
-
-                if (found != idMap->end())
-                    primitive->SetId (CurvePrimitiveId::Create (*found->second).get());
-                }
-            }
-
-        childLoop->push_back (primitive);
-        }
-
-    PK_MEMORY_free (fins);
-
-    return childLoop;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr PSolidUtil::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurveIdMap const* idMap)
-    {
-    PK_SURF_t       surfaceTag;
-    PK_CLASS_t      surfaceClass;
-    int             nLoops = 0;
-    PK_LOOP_t*      loops = NULL;
-    PK_LOGICAL_t    orientation;
-
-    if (SUCCESS != PK_FACE_ask_oriented_surf (faceTag, &surfaceTag, &orientation) ||
-        SUCCESS != PK_ENTITY_ask_class (surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
-        SUCCESS != PK_FACE_ask_loops (faceTag, &nLoops, &loops) || nLoops < 1)
-        return NULL;
-
-    bvector<CurveVectorPtr> curveLoops;
-
-    for (int iLoop = 0; iLoop < nLoops; iLoop++)
-        {
-        CurveVectorPtr  childLoop = planarFaceLoopToCurveVector (loops[iLoop], idMap);
-
-        if (!childLoop.IsValid() || childLoop->empty())
-            continue;
-
-        // NOTE: I don't believe there is any real requirement for outer loop to be first in partity region...
-        if (CurveVector::BOUNDARY_TYPE_Outer == childLoop->GetBoundaryType ())
-            curveLoops.insert (curveLoops.begin (), childLoop);
-        else
-            curveLoops.push_back (childLoop);
-        }
-
-    PK_MEMORY_free (loops);
-
-    switch (curveLoops.size ())
-        {
-        case 0:
-            return NULL;
-
-        case 1:
-            return curveLoops.front ();
-
-        default:
-            {
-            CurveVectorPtr  curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
-
-            for (CurveVectorPtr childLoop: curveLoops)
-                curveVector->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*childLoop));
-
-            return curveVector;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void flipBoundaries (CurveVectorPtr* uvBoundaries, bool flipU, bool flipV)
-    {
-    if (NULL == uvBoundaries || !uvBoundaries->IsValid() || (!flipU && !flipV))
-        return;
-
-    Transform transform = Transform::FromIdentity();
-
-    if (flipU)
-        {
-        transform.ScaleMatrixColumns (transform, -1.0, 1.0, 1.0);
-        transform.TranslateInLocalCoordinates (transform, -1.0, 0.0, 0.0);
-        }
-
-    if (flipV)
-        {
-        transform.ScaleMatrixColumns (transform, 1.0, -1.0, 1.0);
-        transform.TranslateInLocalCoordinates (transform, 0.0, -1.0, 0.0);
-        }
-    
-    (*uvBoundaries)->TransformInPlace (transform);    
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void swapBoundariesXY (CurveVectorPtr* uvBoundaries)
-    {
-    if (NULL == uvBoundaries || !uvBoundaries->IsValid())
-        return;
-
-    Transform swapXY = Transform::From (RotMatrix::From2Vectors (DVec3d::From (0.0, 1.0, 0.0), DVec3d::From (1.0, 0.0, 0.0)));
-    
-    (*uvBoundaries)->TransformInPlace (swapXY);    
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidPrimitivePtr solidPrimitiveFromConePararameters
-(
-PK_AXIS2_sf_t&  basis_set,
-PK_UVBOX_t&     uvBox,
-double          radius,
-double          semiAngle,
-bool            reversed,
-CurveVectorPtr* uvBoundaries
-)
-    {
-    double      topRadius, baseRadius, sweepAngle = uvBox.param[2] - uvBox.param[0];
-
-    topRadius = radius + uvBox.param[1] * tan (semiAngle);
-    baseRadius = radius + uvBox.param[3] * tan (semiAngle);
-
-    DVec3d      xVector, yVector, zVector;
-    RotMatrix   rMatrix;
-
-    xVector = *((DVec3dP) basis_set.ref_direction.coord);
-    zVector = *((DVec3dP) basis_set.axis.coord);
-
-    yVector.CrossProduct (zVector, xVector);
-    rMatrix.InitFromColumnVectors (xVector, yVector, zVector);
-
-    DPoint3d    basePoint, topPoint;
-
-    topPoint.SumOf (*((DPoint3dP) basis_set.location.coord), *((DVec3dP) basis_set.axis.coord), uvBox.param[1]);
-    basePoint.SumOf (*((DPoint3dP) basis_set.location.coord), *((DVec3dP) basis_set.axis.coord), uvBox.param[3]);
-
-    if (fabs (sweepAngle) >= msGeomConst_2pi)
-        {
-        if (reversed)
-            {                                                                                                                                                                              
-            double      tmpRadius = topRadius;
-            DPoint3d    tmpPoint = topPoint;
-
-            topRadius = baseRadius;
-            topPoint = basePoint;
-
-            basePoint = tmpPoint;
-            baseRadius = tmpRadius;
-            }
-        else
-            {
-            // The top and base are reversed above - so need to flip V parameters (unless reverse already flipped).
-            flipBoundaries (uvBoundaries, false, true);
-            }
-     
-
-        DgnConeDetail detail (basePoint, topPoint, rMatrix, baseRadius, topRadius, false);
-
-        return ISolidPrimitive::CreateDgnCone (detail);
-        }
-
-    double      startAngle;
-
-    if (reversed)
-        {
-        startAngle = uvBox.param[0];
-        }
-    else
-        {
-        startAngle = uvBox.param[2];
-        sweepAngle = -sweepAngle;
-        }
-
-    flipBoundaries (uvBoundaries, !reversed, true);      // Always flip V to account for topPoint mismatch retained from SS3.  U flipped only if not reversed.  Ick.
-
-    DVec3d      m0, m1;
-
-    rMatrix.GetColumn (m0, 0);
-    rMatrix.GetColumn (m1, 1);
-
-    DEllipse3d  baseEllipse, topEllipse;
-
-    baseEllipse.InitFromDGNFields3d (basePoint, m0, m1, baseRadius, baseRadius, startAngle, sweepAngle);
-    topEllipse.InitFromDGNFields3d (topPoint, m0, m1, topRadius, topRadius, startAngle, sweepAngle);
-
-    CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-    CurveVectorPtr  topCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-
-    baseCurve->push_back (ICurvePrimitive::CreateArc (baseEllipse));
-    topCurve->push_back (ICurvePrimitive::CreateArc (topEllipse));
-
-    DgnRuledSweepDetail detail (baseCurve, topCurve, false);
-
-    return ISolidPrimitive::CreateDgnRuledSweep (detail);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidPrimitivePtr solidPrimitiveFromConeFace (PK_FACE_t face, PK_UVBOX_t uvBox, CurveVectorPtr* uvBoundaries)
-    {
-    PK_SURF_t       surface;
-    PK_CLASS_t      surfaceClass;
-    PK_LOGICAL_t    orientation;
-
-    PK_FACE_ask_oriented_surf (face, &surface, &orientation);
-    PK_ENTITY_ask_class (surface, &surfaceClass);
-
-    if (PK_CLASS_cyl == surfaceClass)
-        {
-        PK_CYL_sf_t sfCylinder;
-
-        if (SUCCESS != PK_CYL_ask (surface, &sfCylinder))
-            return NULL;
-
-        return solidPrimitiveFromConePararameters (sfCylinder.basis_set, uvBox, sfCylinder.radius, 0.0, PK_LOGICAL_false == orientation, uvBoundaries);
-        }
-
-    PK_CONE_sf_t sfCone;
-
-    if (SUCCESS != PK_CONE_ask (surface, &sfCone))
-        return NULL;
-
-    return solidPrimitiveFromConePararameters (sfCone.basis_set, uvBox, sfCone.radius, sfCone.semi_angle, PK_LOGICAL_false == orientation, uvBoundaries);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidPrimitivePtr solidPrimitiveFromTorusFace (PK_FACE_t face, PK_UVBOX_t uvBox, CurveVectorPtr* uvBoundaries)
-    {
-    PK_SURF_t       surface;
-    PK_LOGICAL_t    orientation;
-
-    PK_FACE_ask_oriented_surf (face, &surface, &orientation);
-
-    PK_TORUS_sf_t   sfTorus;
-
-    if (SUCCESS != PK_TORUS_ask (surface, &sfTorus))
-        return NULL;
-
-    DVec3d      xVector, yVector, zVector;
-    RotMatrix   rMatrix, rotateRMatrix;
-
-    xVector = *((DVec3dP) sfTorus.basis_set.ref_direction.coord);
-    zVector = *((DVec3dP) sfTorus.basis_set.axis.coord);
-
-    yVector.CrossProduct (zVector, xVector);
-    rMatrix.InitFromColumnVectors (xVector, yVector, zVector);
-
-    rotateRMatrix.InitFromAxisAndRotationAngle (2, uvBox.param[0]);
-    rMatrix.InitProduct (rMatrix, rotateRMatrix);
-
-    DVec3d      m0, m1, m2;
-
-    rMatrix.GetColumn (m0, 0);
-    rMatrix.GetColumn (m1, 1);
-    rMatrix.GetColumn (m2, 2);
-
-    double      sweepAngle = uvBox.param[2] - uvBox.param[0];
-    double      arcStart = uvBox.param[1], arcEnd = uvBox.param[3], arcSweep;
-
-    swapBoundariesXY (uvBoundaries);
-
-    if (PK_LOGICAL_false == orientation)
-        {
-        arcSweep = arcEnd - arcStart;
-        }
-    else
-        {
-        arcSweep = arcStart - arcEnd;
-        arcStart = arcEnd;
-
-        flipBoundaries (uvBoundaries, true, false);
-        }
-
-    if (arcSweep >= msGeomConst_2pi && (NULL == uvBoundaries || !uvBoundaries->IsValid()))
-        {
-        DgnTorusPipeDetail  detail (*((DPoint3dP) (sfTorus.basis_set.location.coord)), m0, m1, sfTorus.major_radius, sfTorus.minor_radius, sweepAngle, false);
-        return ISolidPrimitive::CreateDgnTorusPipe (detail);
-        }
-
-    DPoint3d center;
-
-    center.SumOf (*((DPoint3dP) sfTorus.basis_set.location.coord), m0, sfTorus.major_radius);
-
-    DEllipse3d      ellipse;
-    CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-
-    ellipse.InitFromDGNFields3d (center, m0, m2, sfTorus.minor_radius, sfTorus.minor_radius, arcStart, arcSweep);
-    baseCurve->push_back (ICurvePrimitive::CreateArc (ellipse));
-
-    DgnRotationalSweepDetail  detail (baseCurve, *((DPoint3dP) sfTorus.basis_set.location.coord), m2, sweepAngle, false);
-
-    return ISolidPrimitive::CreateDgnRotationalSweep (detail);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidPrimitivePtr solidPrimitiveFromSphereFace (PK_FACE_t face, PK_UVBOX_t uvBox, CurveVectorPtr* uvBoundaries)
-    {
-    PK_SURF_t       surface;
-    PK_LOGICAL_t    orientation;
-
-    PK_FACE_ask_oriented_surf (face, &surface, &orientation);
-
-    PK_SPHERE_sf_t  sfSphere;
-
-    if (SUCCESS != PK_SPHERE_ask (surface, &sfSphere))
-        return NULL;
-
-    DVec3d      xVector, yVector, zVector;
-    RotMatrix   rMatrix, rotateRMatrix;
-
-    xVector = *((DVec3dP) sfSphere.basis_set.ref_direction.coord);
-    zVector = *((DVec3dP) sfSphere.basis_set.axis.coord);
-
-    yVector.CrossProduct (zVector, xVector);
-    rMatrix.InitFromColumnVectors (xVector, yVector, zVector);
-
-    rotateRMatrix.InitFromAxisAndRotationAngle (2, uvBox.param[0]);
-    rMatrix.InitProduct (rMatrix, rotateRMatrix);
-
-    DVec3d      m0, m1, m2;
-
-    rMatrix.GetColumn (m0, 0);
-    rMatrix.GetColumn (m1, 1);
-    rMatrix.GetColumn (m2, 2);
-
-    double      sweepAngle = uvBox.param[2] - uvBox.param[0];
-    double      arcStart = uvBox.param[1], arcEnd = uvBox.param[3], arcSweep;
-
-    swapBoundariesXY (uvBoundaries);
-
-    if (PK_LOGICAL_false == orientation)
-        {
-        arcSweep = arcEnd - arcStart;
-        }
-    else
-        {
-        arcSweep = arcStart - arcEnd;
-        arcStart = arcEnd;
-
-        flipBoundaries (uvBoundaries, true, false);
-        }
-
-    DEllipse3d      ellipse;
-    CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-
-    ellipse.InitFromDGNFields3d (*((DPoint3dP) sfSphere.basis_set.location.coord), m0, m2, sfSphere.radius, sfSphere.radius, arcStart, arcSweep);
-    baseCurve->push_back (ICurvePrimitive::CreateArc (ellipse));
-
-    DgnRotationalSweepDetail  detail (baseCurve, *((DPoint3dP) sfSphere.basis_set.location.coord), m2, sweepAngle, false);
-
-    return ISolidPrimitive::CreateDgnRotationalSweep (detail);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ISolidPrimitivePtr solidPrimitiveFromSweptFace (PK_FACE_t face, PK_UVBOX_t uvBox, CurveVectorPtr* uvBoundaries)
-    {
-    PK_SURF_t       surface;
-    PK_LOGICAL_t    orientation;
-
-    PK_FACE_ask_oriented_surf (face, &surface, &orientation);
-
-    PK_SWEPT_sf_t   sfSwept;
-
-    if (SUCCESS != PK_SWEPT_ask (surface, &sfSwept))
-        return NULL;
-
-    double  startSweepParam = uvBox.param[1];
-    double  endSweepParam   = uvBox.param[3];
-    DVec3d  extrudeDir = *((DVec3dP) sfSwept.direction.coord);
-
-    extrudeDir.ScaleToLength (endSweepParam - startSweepParam);
-
-    PK_INTERVAL_t   interval;
-
-    interval.value[0] = uvBox.param[0];
-    interval.value[1] = uvBox.param[2];
-
-    CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-
-    baseCurve->push_back (PSolidUtil::GetAsCurvePrimitive (sfSwept.curve, interval, false));
-
-    // Adjust location of base profile to start param...
-    if (fabs (startSweepParam) > 1.0e-12)
-        {
-        DVec3d      shiftDir = *((DVec3dP) sfSwept.direction.coord);
-
-        shiftDir.ScaleToLength (startSweepParam);
-
-        Transform   shiftTransform = Transform::From (shiftDir);
-
-        baseCurve->TransformInPlace (shiftTransform);
-        }
-
-    DgnExtrusionDetail  detail (baseCurve, extrudeDir, false);
-
-    return ISolidPrimitive::CreateDgnExtrusion (detail);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ISolidPrimitivePtr PSolidUtil::FaceToSolidPrimitive(PK_FACE_t faceTag, CurveVectorPtr* uvBoundaries)
-    {
-    PK_LOGICAL_t    isBox;
-    PK_UVBOX_t      uvBox;
-
-    if (SUCCESS != PK_FACE_is_uvbox (faceTag, &isBox, &uvBox) || (!isBox && NULL == uvBoundaries))
-        return NULL;
-
-    if (!isBox && (SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox) || ! (*uvBoundaries = FaceToUVCurveVector (faceTag, &uvBox, false)).IsValid()))
-        return NULL; // This can occur on some faces.... Error code is typically 1008 (failed to produce trimmed surface).
-
-    PK_SURF_t   surface;
-    PK_CLASS_t  surfaceClass;
-
-    PK_FACE_ask_surf (faceTag, &surface);
-    PK_ENTITY_ask_class (surface, &surfaceClass);
-
-    switch (surfaceClass)
-        {
-        case PK_CLASS_cyl:
-        case PK_CLASS_cone:
-            return solidPrimitiveFromConeFace (faceTag, uvBox, uvBoundaries);
-
-        case PK_CLASS_torus:
-            return solidPrimitiveFromTorusFace (faceTag, uvBox, uvBoundaries);
-
-        case PK_CLASS_sphere:
-            return solidPrimitiveFromSphereFace (faceTag, uvBox, uvBoundaries);
-
-        case PK_CLASS_swept:
-            return solidPrimitiveFromSweptFace (faceTag, uvBox, uvBoundaries);
-
-        default:
-            return NULL;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::GetCurveOfEdge
-(
-PK_CURVE_t&     curveTagOut,
-double*         startParamP,
-double*         endParamP,
-bool*           reversedP,
-PK_EDGE_t       edgeTagIn
-)
-    {
-    PK_FIN_t        fin;
-    PK_INTERVAL_t   interval;
-    PK_LOGICAL_t    sense = PK_LOGICAL_true;
-
-    curveTagOut = NULTAG;
-
-    if (SUCCESS == PK_EDGE_ask_oriented_curve (edgeTagIn, &curveTagOut, &sense) && curveTagOut != NULTAG)
-        {
-        if (startParamP || endParamP)
-            {
-            if (SUCCESS != PK_EDGE_find_interval (edgeTagIn, &interval))
-                PK_CURVE_ask_interval (curveTagOut, &interval);
-            }
-        }
-    else if (SUCCESS == PK_EDGE_ask_first_fin (edgeTagIn, &fin))
-        {
-        PK_FIN_ask_oriented_curve (fin, &curveTagOut, &sense);
-
-        if ((startParamP || endParamP) && curveTagOut != NULTAG)
-            PK_FIN_find_interval (fin, &interval);
-        }
-
-    if (startParamP)
-        *startParamP = interval.value[sense == PK_LOGICAL_true ? 0 : 1];
-
-    if (endParamP)
-        *endParamP = interval.value[sense == PK_LOGICAL_true ? 1 : 0];
-
-    if (reversedP)
-        *reversedP = (sense == PK_LOGICAL_true ? false : true);
-
-    return (curveTagOut != NULTAG ? SUCCESS : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
@@ -744,7 +65,7 @@ bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
         PK_CURVE_t      curveTag;
         bool            isStraight = false;
 
-        if (SUCCESS == PSolidUtil::GetCurveOfEdge (curveTag, NULL, NULL, NULL, edges[i]))
+        if (SUCCESS == PSolidTopo::GetCurveOfEdge (curveTag, NULL, NULL, NULL, edges[i]))
             {
             PK_CLASS_t  entityClass;
 
@@ -763,6 +84,208 @@ bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
     PK_MEMORY_free (edges);
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::HasOnlyPlanarFaces (PK_BODY_t entity)
+    {
+    if (!entity)
+        return true;
+
+    bool        isPlanar = true;
+    int         numFaces = 0;
+    PK_FACE_t*  faces = NULL;
+
+    PK_BODY_ask_faces (entity, &numFaces, &faces);
+
+    for (int i=0; i < numFaces && isPlanar; i++)
+        {
+        PK_SURF_t       surfaceTag;
+        PK_LOGICAL_t    orientation;
+
+        if (SUCCESS == PK_FACE_ask_oriented_surf (faces[i], &surfaceTag, &orientation))
+            {
+            PK_CLASS_t  entityClass;
+
+            PK_ENTITY_ask_class (surfaceTag, &entityClass);
+
+            switch (entityClass)
+                {
+                case PK_CLASS_plane:
+                case PK_CLASS_circle:
+                case PK_CLASS_ellipse:
+                    break;
+
+                default:
+                    isPlanar = false;
+                    break;
+                }
+            }
+        }
+
+    PK_MEMORY_free (faces);
+
+    return isPlanar;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
+    {
+    PK_LOGICAL_t smooth;
+    static double smoothTolerance = 1.0e-5;
+
+    return (SUCCESS == PK_EDGE_is_smooth (edge, smoothTolerance, &smooth)) && smooth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_BODY_t PSolidUtil::GetBodyForEntity (PK_ENTITY_t entityTag)
+    {
+    PK_BODY_t   bodyTag = PK_ENTITY_null;
+    PK_CLASS_t  entityClass = 0;
+
+    PK_ENTITY_ask_class (entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_edge:
+            PK_EDGE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_face:
+            PK_FACE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_vertex:
+            PK_VERTEX_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_body:
+            bodyTag = entityTag;
+            break;
+        }
+
+    return bodyTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static CurveVector::BoundaryType getBoundaryType (CurveVectorCR curveVector)
+    {
+    double      area;
+    DPoint3d    centroid;
+
+    curveVector.CentroidAreaXY (centroid, area);
+
+    return area < 0.0 ? CurveVector::BOUNDARY_TYPE_Inner : CurveVector::BOUNDARY_TYPE_Outer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr PSolidGeom::FaceToUVCurveVector(PK_FACE_t faceTag, PK_UVBOX_t* uvBox, bool splineParameterization)
+    {
+    PK_FACE_output_surf_trimmed_o_t options;
+
+    PK_FACE_output_surf_trimmed_o_m (options);
+
+    options.want_geoms  = PK_LOGICAL_true;
+    options.want_topols = PK_LOGICAL_false;
+    options.trim_surf   = splineParameterization ? PK_FACE_trim_surf_bsurf_c : PK_FACE_trim_surf_own_c;
+
+    PK_SURF_t           surfaceTag;
+    PK_LOGICAL_t        sense;
+    PK_SURF_trim_data_t trimData;
+    PK_GEOM_t*          geometryP = NULL;
+    PK_INTERVAL_t*      intervalP = NULL;
+    PK_TOPOL_t*         topologyP = NULL;
+    
+    if (SUCCESS != PK_FACE_output_surf_trimmed (faceTag, &options, &surfaceTag, &sense, &trimData, &geometryP, &intervalP, &topologyP))
+        return nullptr; // This can occur on some faces.... Error code is typically 1008 (failed to produce trimmed surface).
+
+    int                 currentLoopTag = -1;
+    CurveVectorPtr      currentLoop, curveVector;
+
+    for (size_t i=0; i < (size_t) trimData.n_spcurves; i++)
+        {
+        if (trimData.trim_loop[i] != currentLoopTag && currentLoop.IsValid())
+            {
+            if (!curveVector.IsValid())
+                curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+            
+            currentLoop->SetBoundaryType (getBoundaryType (*currentLoop));
+            curveVector->Add (currentLoop);
+            currentLoop = NULL;
+            }
+
+        currentLoopTag = trimData.trim_loop[i];
+
+        PK_SPCURVE_sf_t     sfSpCurve;
+        PK_BCURVE_t         psBCurveTag;
+        PK_LOGICAL_t        isExact;
+        MSBsplineCurve      bCurve;
+
+        if (SUCCESS != PK_SPCURVE_ask (trimData.spcurves[i], &sfSpCurve) ||
+            SUCCESS != PK_CURVE_make_bcurve (sfSpCurve.curve, trimData.intervals[i], PK_LOGICAL_false, PK_LOGICAL_false, 1.0E-6, &psBCurveTag, &isExact) ||
+            SUCCESS != PSolidGeom::CreateMSBsplineCurveFromBCurve (bCurve, psBCurveTag))
+            {
+            BeAssert (false);
+            curveVector = NULL;
+            currentLoop = NULL;
+            break;
+            }
+
+        if (!currentLoop.IsValid())
+            currentLoop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+
+        currentLoop->Add (ICurvePrimitive::CreateBsplineCurve (bCurve));
+
+        PK_ENTITY_delete (1, &psBCurveTag);
+        }
+
+    if (currentLoop.IsValid())
+        {
+        currentLoop->SetBoundaryType (getBoundaryType (*currentLoop));
+
+        if (curveVector.IsValid())
+            curveVector->Add (currentLoop);
+        else
+            curveVector = currentLoop;
+        }
+
+    Transform rangeTransform;
+
+    if (NULL != uvBox && 
+        curveVector.IsValid() &&
+        Transform::TryRangeMapping (DRange2d::From (uvBox->param[0], uvBox->param[1], uvBox->param[2], uvBox->param[3]), DRange2d::From (0.0, 0.0, 1.0, 1.0), rangeTransform))
+        curveVector->TransformInPlace (rangeTransform);
+
+    if (trimData.n_spcurves)
+        {
+        PK_ENTITY_delete (trimData.n_spcurves, trimData.spcurves);
+
+        PK_MEMORY_free (trimData.spcurves);
+        PK_MEMORY_free (trimData.intervals);
+        PK_MEMORY_free (trimData.trim_loop);
+        PK_MEMORY_free (trimData.trim_set);
+        }
+
+    if (geometryP)
+        {
+        PK_ENTITY_delete (trimData.n_spcurves, geometryP);
+        PK_MEMORY_free (geometryP);
+        }
+
+    if (intervalP)
+        PK_MEMORY_free (intervalP);
+
+    return curveVector;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,89 +315,498 @@ void PSolidUtil::ExtractStartAndSweepFromInterval (double& start, double& sweep,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/11
+* @bsimethod                                                    Brien.Bastings  07/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr PSolidUtil::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVAL_t interval, bool reverseDirection)
+static  int     pki_get_body_box
+(
+DPoint3d        *pLo,
+DPoint3d        *pHi,
+int             entityTagIn
+)
     {
-    PK_CLASS_t  curveClass;
+    int         status = ERROR;
+    PK_BOX_t    entityBox;
 
-    PK_ENTITY_ask_class (curve, &curveClass);
-
-    switch (curveClass)
+    if (PK_ERROR_no_errors == PK_TOPOL_find_box (entityTagIn, &entityBox))
         {
-        case PK_CLASS_line:
-            {
-            PK_LINE_sf_t    sfLine;
+        pLo->x = entityBox.coord[0];
+        pLo->y = entityBox.coord[1];
+        pLo->z = entityBox.coord[2];
+        pHi->x = entityBox.coord[3];
+        pHi->y = entityBox.coord[4];
+        pHi->z = entityBox.coord[5];
 
-            if (SUCCESS != PK_LINE_ask (curve, &sfLine))
-                return NULL;
+        status = SUCCESS;
+        }
 
-            DSegment3d  segment;
+    return status;
+    }
 
-            segment.point[0].SumOf (*((DPoint3dCP) sfLine.basis_set.location.coord),*((DVec3dCP) sfLine.basis_set.axis.coord), interval.value[reverseDirection ? 1 : 0]);
-            segment.point[1].SumOf (*((DPoint3dCP) sfLine.basis_set.location.coord),*((DVec3dCP) sfLine.basis_set.axis.coord), interval.value[reverseDirection ? 0 : 1]);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::GetEntityRange (DRange3dR range, PK_TOPOL_t entity)
+    {
+    return (SUCCESS == pki_get_body_box(&range.low, &range.high, entity) ? SUCCESS : ERROR);
+    }
 
-            return ICurvePrimitive::CreateLine (segment);
-            }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void copyToSheet (PK_BODY_t* outBody, PK_BODY_t inBody, bool setHiddenEdges)
+    {
+    PK_ENTITY_copy (inBody, outBody);
+    PSolidUtil::ConvertSolidBodyToSheet (*outBody);
 
-        case PK_CLASS_circle:
-            {
-            PK_CIRCLE_sf_t  sfCircle;
+    if (setHiddenEdges)
+        {
+        int                     nEdges;
+        PK_EDGE_t*              edges;
+        bool                    hidden;
 
-            if (SUCCESS != PK_CIRCLE_ask (curve, &sfCircle))
-                return NULL;
+        PK_BODY_ask_edges (*outBody, &nEdges, &edges);
 
-            double      start, sweep;
-            DVec3d      xVector, yVector;
+        for (int i=0; i<nEdges; i++)
+            if (SUCCESS != PSolidAttrib::GetHiddenAttribute (hidden, edges[i]))
+                PSolidAttrib::SetHiddenAttribute (edges[i], false);
 
-            xVector.Scale (*((DVec3dP) &sfCircle.basis_set.ref_direction.coord), sfCircle.radius);
-            yVector.CrossProduct (*((DVec3dP) sfCircle.basis_set.axis.coord), *((DVec3dP) &xVector));
-
-            PSolidUtil::ExtractStartAndSweepFromInterval (start, sweep, interval, reverseDirection);
-
-            DEllipse3d  ellipse;
-
-            ellipse.InitFromVectors (*(DPoint3dP) sfCircle.basis_set.location.coord, xVector, yVector, start, sweep);
-
-            return ICurvePrimitive::CreateArc (ellipse);
-            }
-
-        case PK_CLASS_ellipse:
-            {
-            PK_ELLIPSE_sf_t  sfEllipse;
-
-            if (SUCCESS != PK_ELLIPSE_ask (curve, &sfEllipse))
-                return NULL;
-
-            double      start, sweep;
-            DVec3d      xVector, yVector;
-
-            xVector.Init (sfEllipse.basis_set.ref_direction.coord[0], sfEllipse.basis_set.ref_direction.coord[1], sfEllipse.basis_set.ref_direction.coord[2]);
-            yVector.CrossProduct (*((DVec3dP) sfEllipse.basis_set.axis.coord), xVector);
-            xVector.Scale (sfEllipse.R1);
-            yVector.Scale (sfEllipse.R2);
-
-            PSolidUtil::ExtractStartAndSweepFromInterval (start, sweep, interval, reverseDirection);
-
-            DEllipse3d  ellipse;
-
-            ellipse.InitFromVectors (*(DPoint3dP) sfEllipse.basis_set.location.coord, xVector, yVector, start, sweep);
-
-            return ICurvePrimitive::CreateArc (ellipse);
-            }
-
-        default:
-            {
-            MSBsplineCurve  bCurve;
-
-            if (SUCCESS != PSolidUtil::CreateMSBsplineCurveFromCurve (bCurve, curve, interval, reverseDirection))
-                return NULL;
-
-            ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateBsplineCurve (bCurve);
-
-            bCurve.ReleaseMem ();
-
-            return primitive;
-            }
+        PK_MEMORY_free (edges);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setHiddenEdgeAttributes (PK_BODY_t body)
+    {
+    int         nEdges;
+    PK_EDGE_t*  edges;
+    bool        isHidden;
+
+    PK_BODY_ask_edges (body, &nEdges, &edges);
+
+    for (int i=0; i<nEdges; i++)
+        {
+        if (SUCCESS == PSolidAttrib::GetHiddenAttribute (isHidden, edges[i]))
+            {
+            if (!isHidden)
+                PSolidAttrib::DeleteHiddenAttribute (edges[i]);
+            }
+        else
+            {
+            PSolidAttrib::SetHiddenAttribute (edges[i], TRUE);
+            }
+        }
+
+    PK_MEMORY_free (edges);
+    }
+
+static void clipBodyByClipVector (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body,  TransformCR clipToBody, ClipVectorCR clip, size_t nextPrimitiveIndex);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByPlanes
+(
+bvector<PK_BODY_t>&         output,
+bool&                       clipped,
+size_t&                     errorCount, 
+PK_BODY_t                   body,
+ClipPlaneCP                 clipPlane,
+ClipPlaneCP                 endPlane,
+TransformCR                 clipToBody,
+ClipVectorCR                clipVector, 
+size_t                      nextPrimitiveIndex
+)
+    {
+    if (clipPlane >= endPlane)
+        {
+        clipBodyByClipVector (output, clipped, errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+    DPlane3d            bodyPlane;
+    DPoint3d            bodyCorners[8];
+    DRange3d            range;
+
+    bodyPlane.normal = clipPlane->GetNormal();
+    bodyPlane.origin.Scale (*(&clipPlane->GetNormal()), clipPlane->GetDistance());
+
+    clipToBody.Multiply (bodyPlane, bodyPlane);
+    bodyPlane.Normalize ();
+
+    double          planeDistance = bodyPlane.normal.DotProduct (bodyPlane.origin), minDistance=0.0, maxDistance=0.0;
+
+    PSolidUtil::GetEntityRange (range, body);
+    range.Get8Corners (bodyCorners);
+
+    for (size_t i=0; i<8; i++)
+        {
+        double          cornerDistance = bodyPlane.normal.DotProduct (bodyCorners[i]) - planeDistance;
+
+        if (0 == i)
+            {
+            minDistance = maxDistance = cornerDistance;
+            }
+        else
+            {
+            if (cornerDistance < minDistance)
+                minDistance = cornerDistance;
+            else if (cornerDistance > maxDistance)
+                maxDistance = cornerDistance;
+            }
+        }
+
+    if (minDistance  > -1.0E-8)     // Entire body in front.
+        {
+        clipBodyByPlanes (output, clipped, errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+    if (maxDistance < 0.0)      // Entire body behind plane (we're done).
+        {
+        clipped = true;
+        return;
+        }
+
+    PK_PLANE_sf_t       planeSurfaceSF;
+    PK_PLANE_t          planeSurface;
+    RotMatrix           planeMatrix;
+
+    planeMatrix.InitFrom1Vector (bodyPlane.normal, 2, false);
+
+    planeSurfaceSF.basis_set.location.coord[0] = bodyPlane.origin.x;
+    planeSurfaceSF.basis_set.location.coord[1] = bodyPlane.origin.y;
+    planeSurfaceSF.basis_set.location.coord[2] = bodyPlane.origin.z;
+
+    planeSurfaceSF.basis_set.axis.coord[0] = bodyPlane.normal.x;
+    planeSurfaceSF.basis_set.axis.coord[1] = bodyPlane.normal.y;
+    planeSurfaceSF.basis_set.axis.coord[2] = bodyPlane.normal.z;
+    // copy column 0 (x vector) 
+    planeSurfaceSF.basis_set.ref_direction.coord[0] = planeMatrix.form3d[0][0];
+    planeSurfaceSF.basis_set.ref_direction.coord[1] = planeMatrix.form3d[1][0];
+    planeSurfaceSF.basis_set.ref_direction.coord[2] = planeMatrix.form3d[2][0];
+
+    PK_BODY_section_o_t     options;
+    PK_section_r_t          results;
+
+    PK_BODY_section_o_m (options);
+    memset (&results, 0, sizeof (results));
+
+   if (SUCCESS != PK_PLANE_create (&planeSurfaceSF, &planeSurface))
+        {    
+        clipBodyByPlanes (output, clipped, ++errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+    PK_BODY_t   sheetBody;
+
+    copyToSheet (&sheetBody, body, !clipPlane->IsVisible());
+
+    if (SUCCESS == PK_BODY_section_with_surf (sheetBody, planeSurface, &options, &results))
+        {
+        if (0 != results.back_bodies.length)
+            clipped = true;
+
+        for (int i=0; i<results.front_bodies.length; i++)
+            {
+            if (!clipPlane->IsVisible())
+                setHiddenEdgeAttributes (results.front_bodies.array[i]);
+
+            clipBodyByPlanes (output, clipped, errorCount, results.front_bodies.array[i], clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+            }
+
+        PK_ENTITY_delete (results.front_bodies.length, results.front_bodies.array);
+        PK_ENTITY_delete (results.back_bodies.length, results.back_bodies.array);
+        PK_section_r_f (&results);
+        }
+    else
+        {
+        clipBodyByPlanes (output, clipped, ++errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        PK_ENTITY_delete (1, &sheetBody);
+        }
+
+    PK_ENTITY_delete (1, &planeSurface);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static void computeZRangeFromBody (double& zMin, double& zMax, PK_BODY_t entityTag, TransformCR solidToClip)
+    {
+    zMin = -1.0e20;
+    zMax = 1.0e20;
+
+    PK_BOX_t    box;
+
+    if (PK_ERROR_no_errors != PK_TOPOL_find_box (entityTag, &box))
+        return;
+
+    DRange3d    range;
+
+    range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+    solidToClip.Multiply (range, range);
+ 
+    // Avoid coincident geometry and ensure a minimum path length for sweep...
+    double      s_uorClearFactor = .5;
+
+    zMin = range.low.z  - s_uorClearFactor;
+    zMax = range.high.z + s_uorClearFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus bodyFromSingleParallelClip (PK_BODY_t& clipBody, ClipPrimitiveCR clip, PK_BODY_t entityToClip, TransformCR clipToSolid, TransformCR solidToClip)
+    {
+    GPArrayCP   gpa;
+
+    if (NULL == (gpa = clip.GetGPA (false)))
+        return ERROR;
+
+    double      zMin, zMax;
+
+    computeZRangeFromBody (zMin, zMax, entityToClip, solidToClip);
+
+    if (clip.ClipZLow() || clip.ClipZHigh() && (zMin < clip.GetZLow() || zMax > clip.GetZHigh()))
+        {
+        if (clip.ClipZLow ())
+            zMin = clip.GetZLow ();
+
+        if (clip.ClipZHigh())
+            zMax = clip.GetZHigh();
+        }
+
+    Transform   clipZTranslation = Transform::From (0.0, 0.0, zMin), compound;
+    DPoint3d    clipSweep = DPoint3d::From (0.0, 0.0, zMax - zMin), solidSweep;
+
+    compound.InitProduct (clipToSolid, clipZTranslation);
+                                               
+    if (SUCCESS != PSolidGeom::BodyFromGPA (&clipBody, NULL, gpa, compound, true))
+        return ERROR;
+    
+    clipToSolid.MultiplyMatrixOnly (solidSweep, clipSweep);
+
+    // Need a minimum path length for sweep
+    if (solidSweep.Magnitude () < mgds_fc_epsilon)
+        solidSweep.ScaleToLength (mgds_fc_epsilon);
+
+    PK_VECTOR_t path;
+
+    path.coord[0] = solidSweep.x;
+    path.coord[1] = solidSweep.y;
+    path.coord[2] = solidSweep.z;
+
+    int               nLaterals;
+    PK_local_check_t  localCheck;
+
+    if (SUCCESS != PK_BODY_sweep (clipBody, path, false, &nLaterals, NULL, NULL, &localCheck))
+        {
+        PK_ENTITY_delete (1, &clipBody);
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByShape (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body, ClipPrimitiveCR clipPrimitive, TransformCR clipToBody, ClipVectorCR clipVector, size_t nextPrimitiveIndex)
+    {                     
+    Transform           bodyToShape, shapeToBody = (NULL != clipPrimitive.GetTransformFromClip()) ? Transform::FromProduct (clipToBody, *clipPrimitive.GetTransformFromClip()) : clipToBody;
+    PK_BODY_t           clipBody;
+
+    bodyToShape.InverseOf (shapeToBody);
+    if (SUCCESS != bodyFromSingleParallelClip (clipBody, clipPrimitive, body, shapeToBody, bodyToShape))
+        {
+        clipBodyByClipVector (output, clipped, ++errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+#ifdef NOTYET
+    if (mdlSolid_hasHiddenFace ((BODY*) body))          // Changed to only do the (unreliable) clipBodyWithHiddenEntities if faces (unification) are present.
+        {                                               // If only hidden entities are present (as arises from previous clipping, these will be handled by propagating hidden edge attribute below.
+        PK_BODY_t   clipBodyCopy, *clippedBodies = 0;
+        StatusInt   status;
+        int         numClippedBodies = 0;
+
+        PK_ENTITY_copy (clipBody, &clipBodyCopy);
+
+        if (SUCCESS == (status = clipBodyWithHiddenEntities (&clippedBodies, &numClippedBodies, clipped, body, clipBodyCopy, clip->hdr.flags.outside != 0, clip->hdr.flags.dontDisplayCut)))
+            {
+            for (int i = 0; i < numClippedBodies; i++)
+                clipBodyByClipDescr (clippedBodies[i], clip->hdr.next, clipToBody, outputFunction, userArg, clipped);
+
+            PK_ENTITY_delete (1, &clipBody);
+            PK_ENTITY_delete (numClippedBodies, clippedBodies);
+            PK_MEMORY_free (clippedBodies);
+            return;
+            }
+
+        PK_ENTITY_delete (1, &clipBodyCopy);
+        }
+#endif
+
+    PK_BODY_t               sheetBody;
+    PK_BODY_boolean_o_t     options;
+    PK_boolean_r_t          results;
+    PK_TOPOL_track_r_t      tracking;
+
+    PK_BODY_boolean_o_m (options);
+    options.function        = clipPrimitive.IsMask() ? PK_boolean_subtract_c : PK_boolean_intersect_c;
+    options.merge_imprinted = PK_LOGICAL_true;
+
+    memset (&results, 0, sizeof (results));
+    memset (&tracking, 0, sizeof (tracking));
+
+    bool        dontDisplayCut = clipPrimitive.GetInvisible();
+
+    copyToSheet (&sheetBody, body, dontDisplayCut);      
+    if (dontDisplayCut)
+        {
+        int                     nEdges;
+        PK_EDGE_t*              edges;
+        bool                    hidden;
+
+        PK_BODY_ask_edges (sheetBody, &nEdges, &edges);
+
+        for (int i=0; i<nEdges; i++)
+            if (SUCCESS != PSolidAttrib::GetHiddenAttribute (hidden, edges[i]))
+                PSolidAttrib::SetHiddenAttribute (edges[i], false);
+
+        PK_MEMORY_free (edges);
+        }
+
+#ifdef DEBUG_CLIP
+    PK_PART_transmit_o_t transmitOptions;
+
+    PK_PART_transmit_o_m (transmitOptions);
+    PK_PART_transmit_u (1, &sheetBody, (PK_UCHAR_t const*) L"d:\\tmp\\SheetBody.xmt", &transmitOptions);
+    PK_PART_transmit_u (1, &clipBody, (PK_UCHAR_t const*) L"d:\\tmp\\ClipBody.xmt", &transmitOptions);
+#endif
+
+    if (SUCCESS == PK_BODY_boolean_2 (sheetBody, 1, &clipBody, &options, &tracking, &results) && PK_boolean_result_failed_c != results.result)
+        {
+        if (0 == results.n_bodies ||  results.result != PK_boolean_result_no_clash_c)
+            clipped = true;
+
+#ifdef DEBUG_CLIP
+        PK_PART_transmit_u (results.n_bodies, &results.bodies[0], (PK_UCHAR_t const*) L"d:\\tmp\\Result.xmt", &transmitOptions);
+#endif
+        for (int i=0; i<results.n_bodies; i++)
+            {
+            if (dontDisplayCut)
+                setHiddenEdgeAttributes (results.bodies[i]);
+
+            clipBodyByClipVector (output, clipped, errorCount, results.bodies[i], clipToBody, clipVector, nextPrimitiveIndex);
+            }
+
+        PK_ENTITY_delete (results.n_bodies, results.bodies);
+        }
+    else
+        {
+        PK_ENTITY_delete (1, &sheetBody);
+        PK_ENTITY_delete (1, &clipBody);
+
+        clipBodyByClipVector (output, clipped, ++errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        }
+
+    PK_boolean_r_f (&results);
+    PK_TOPOL_track_r_f (&tracking);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByClipVector (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body, TransformCR clipToBody, ClipVectorCR clipVector, size_t primitiveIndex)
+    {
+    if (primitiveIndex >= clipVector.size())
+        {
+        PK_BODY_t outputBody;
+
+        PK_ENTITY_copy (body, &outputBody);
+        output.push_back (outputBody);
+        return;
+        }
+
+    ClipPrimitiveCP primitive = clipVector.at(primitiveIndex++).get();
+
+    if (NULL == primitive)
+        {
+        BeAssert (false);       // Should never happen.
+        return;
+        }
+
+    if (NULL != primitive->GetPolygon())
+        return clipBodyByShape (output, clipped, errorCount, body, *primitive, clipToBody, clipVector, primitiveIndex);
+
+    if (NULL == primitive->GetClipPlanes())
+        {
+        BeAssert (false); // Should never happen.
+        return;
+        }
+
+    for (ConvexClipPlaneSetCR convexSet: *primitive->GetClipPlanes())
+        clipBodyByPlanes (output, clipped, errorCount, body, &convexSet.front(), &convexSet.front() + convexSet.size(), clipToBody, clipVector, primitiveIndex);
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transformToDgn)
+    {
+    BentleyStatus       status;
+    IBRepEntityPtr      entity;
+    EdgeToCurveIdMap    idMap;
+
+    if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (entity, input, transformToDgn, 0L, &idMap)))
+        return status;
+
+    bool                clipped = false;
+    bvector <PK_BODY_t> outBodies;
+    size_t              errorCount = 0;
+    Transform           clipToBody;
+
+    clipToBody.InverseOf (entity->GetEntityTransform());
+    clipBodyByClipVector (outBodies, clipped, errorCount, PSolidUtil::GetEntityTag (*entity), clipToBody, clipVector, 0);
+
+    if (!clipped)
+        {
+        output.push_back (input.Clone());
+        }
+    else
+        {
+        for (PK_BODY_t body: outBodies)
+            {
+            IBRepEntityPtr clippedEntity = PSolidUtil::CreateNewEntity(body, entity->GetEntityTransform(), false);
+
+            PSolidGeom::BodyToCurveVectors (output, *clippedEntity, &idMap);
+            }
+        }
+
+    if (!outBodies.empty())
+        PK_ENTITY_delete ((int) outBodies.size(), &outBodies[0]);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
+    {
+    size_t              errorCount = 0;
+    Transform           clipToBody;
+    bvector <PK_BODY_t> outBodies;
+
+    clipToBody.InverseOf(input.GetEntityTransform());
+    clipBodyByClipVector(outBodies, clipped, errorCount, PSolidUtil::GetEntityTag(input), clipToBody, clipVector, 0); 
+
+    for (PK_BODY_t body : outBodies)
+        output.push_back(PSolidUtil::CreateNewEntity(body, input.GetEntityTransform()));
+
+    return SUCCESS;
+    }
+
+

@@ -128,14 +128,15 @@ DPoint3dCR      pt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP pts, int nPts, bool isClosed) const
     {
     ViewContextP viewContext = lsContext.GetViewContext();
     double      totalLength;
     int         disconnect=0;
+    LineStyleSymb lsSymb = lsSymbIn;
 
     // totalLength of 0.0 can be a disconnect.
-    if (!IsWidthDiscernible (viewContext, lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
+    if (!IsWidthDiscernible (viewContext, &lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
         {
         if (disconnect > 1) // if we have a disconnect, recursively draw the part before and after
             {
@@ -149,12 +150,12 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic,
         return SUCCESS;
         }
 
-    lsSymb->SetElementClosed (isClosed);
-    lsSymb->SetTotalLength (totalLength);
+    lsSymb.SetElementClosed (isClosed);
+    lsSymb.SetTotalLength (totalLength);
 
-    double iterationLength = _GetLength() * lsSymb->GetScale();
+    double iterationLength = _GetLength() * lsSymb.GetScale();
     if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
-        return _DoStroke (lsContext, pts, nPts, lsSymb);
+        return _DoStroke (lsContext, pts, nPts, &lsSymb);
 
     //  We should never encounter this if drawing line styles with textures.  
     BeAssert (false && L"Trying to clip line string");
@@ -200,7 +201,7 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbCR lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
@@ -354,12 +355,13 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
+StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
-    if (SUCCESS == StrokeContinuousArc (lsContext, lsSymb, origin, rMatrix, r0, r1, inStart, inSweep, range))
+    if (SUCCESS == StrokeContinuousArc (lsContext, &lsSymbIn, origin, rMatrix, r0, r1, inStart, inSweep, range))
         return SUCCESS;
 
+    LineStyleSymb lsSymb = lsSymbIn;
     ViewContextP viewContext = lsContext.GetViewContext();
     double      start = inStart ? *inStart : 0.0;
     double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
@@ -408,8 +410,8 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineSt
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&trans, NULL, rMatrix, origin, r0, r1, 0.0);
     trans.Multiply (pts, pts, nPts);
 
-    bool hasStartTan = lsSymb->HasStartTangent();
-    bool hasEndTan   = lsSymb->HasEndTangent();
+    bool hasStartTan = lsSymb.HasStartTangent();
+    bool hasEndTan   = lsSymb.HasEndTangent();
 
     if (!hasStartTan || !hasEndTan)
         {
@@ -421,26 +423,26 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineSt
         rMatrix->Multiply(startTang);
         rMatrix->Multiply(endTang);
 
-        lsSymb->SetTangents (hasStartTan ? lsSymb->GetStartTangent() : &startTang, hasEndTan ? lsSymb->GetEndTangent() : &endTang);
+        lsSymb.SetTangents (hasStartTan ? lsSymb.GetStartTangent() : &startTang, hasEndTan ? lsSymb.GetEndTangent() : &endTang);
         }
 
     // NOTE: Save/Restore flags that aren't setup every time...
-    bool    saveTreatAsSingle = lsSymb->IsTreatAsSingleSegment ();
-    bool    saveIsCurve = lsSymb->IsCurve ();
+    bool    saveTreatAsSingle = lsSymb.IsTreatAsSingleSegment ();
+    bool    saveIsCurve = lsSymb.IsCurve ();
 
-    lsSymb->SetTreatAsSingleSegment (true);
-    lsSymb->SetIsCurve (true);
-    lsSymb->SetElementClosed (NULL == inSweep);
+    lsSymb.SetTreatAsSingleSegment (true);
+    lsSymb.SetIsCurve (true);
+    lsSymb.SetElementClosed (NULL == inSweep);
     
     int     disconnect;
     double  totalLength = getLinearLength (pts, nPts, disconnect);
 
-    lsSymb->SetTotalLength (totalLength);
+    lsSymb.SetTotalLength (totalLength);
 
-    StatusInt status = _DoStroke (lsContext, pts, nPts, lsSymb);
+    StatusInt status = _DoStroke (lsContext, pts, nPts, &lsSymb);
 
-    lsSymb->SetTreatAsSingleSegment (saveTreatAsSingle);
-    lsSymb->SetIsCurve (saveIsCurve);
+    lsSymb.SetTreatAsSingleSegment (saveTreatAsSingle);
+    lsSymb.SetIsCurve (saveIsCurve);
 
     return status;
     }
@@ -448,20 +450,21 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
+StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbCR lsSymbIn, MSBsplineCurveCP curve, double const* optTolerance) const
     {
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
     ViewContextP viewContext = lsContext.GetViewContext();
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
-    if (!IsWidthDiscernible (viewContext, lsSymb, firstPt))
+    if (!IsWidthDiscernible (viewContext, &lsSymbIn, firstPt))
         {
         graphic.AddBSplineCurve (*curve, false);
 
         return SUCCESS;
         }
 
+    LineStyleSymb lsSymb = lsSymbIn;
     bvector<DPoint3d> points;
     //  NEEDS_WORK_CONTINUOUS_RENDER should be using GetPixelSizeAtPoint when generating a texture
     double      tolerance = (optTolerance ? *optTolerance : viewContext->GetPixelSizeAtPoint (&firstPt));
@@ -493,22 +496,22 @@ StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphi
     if (nPoints > 1)
         {
         // NOTE: Save/Restore flags that aren't setup every time...
-        bool    saveTreatAsSingle = lsSymb->IsTreatAsSingleSegment ();
-        bool    saveIsCurve = lsSymb->IsCurve ();
+        bool    saveTreatAsSingle = lsSymb.IsTreatAsSingleSegment ();
+        bool    saveIsCurve = lsSymb.IsCurve ();
 
-        lsSymb->SetTreatAsSingleSegment (true);
-        lsSymb->SetIsCurve (true);
-        lsSymb->SetElementClosed (curve->IsClosed ());
+        lsSymb.SetTreatAsSingleSegment (true);
+        lsSymb.SetIsCurve (true);
+        lsSymb.SetElementClosed (curve->IsClosed ());
     
         int     disconnect;
         double  totalLength = getLinearLength (&points[0], nPoints, disconnect);
 
-        lsSymb->SetTotalLength (totalLength);
+        lsSymb.SetTotalLength (totalLength);
 
-        status = _DoStroke (lsContext, &points[0], nPoints, lsSymb);
+        status = _DoStroke (lsContext, &points[0], nPoints, &lsSymb);
 
-        lsSymb->SetTreatAsSingleSegment (saveTreatAsSingle);
-        lsSymb->SetIsCurve (saveIsCurve);
+        lsSymb.SetTreatAsSingleSegment (saveTreatAsSingle);
+        lsSymb.SetIsCurve (saveIsCurve);
         }
 
 

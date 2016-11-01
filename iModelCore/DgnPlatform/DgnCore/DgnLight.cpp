@@ -22,30 +22,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LightDefinition::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LightDefinition::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
@@ -63,13 +39,11 @@ DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LightDefinition::BindParams(ECSqlStatement& stmt)
+void LightDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Value), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Value), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No);
     }
 
 /*---------------------------------------------------------------------------------**//**

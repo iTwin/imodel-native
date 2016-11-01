@@ -96,7 +96,7 @@ bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
 +===============+===============+===============+===============+===============+======*/
-struct OpenCascadeEntity : RefCounted<ISolidKernelEntity>
+struct OpenCascadeEntity : RefCounted<IBRepEntity>
 {
 private:
 
@@ -190,23 +190,23 @@ EntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     switch (shapeType)
         {
         case TopAbs_COMPOUND:
-            return ISolidKernelEntity::EntityType::Compound;
+            return IBRepEntity::EntityType::Compound;
 
         case TopAbs_COMPSOLID:
         case TopAbs_SOLID:
-            return ISolidKernelEntity::EntityType::Solid;
+            return IBRepEntity::EntityType::Solid;
 
         case TopAbs_SHELL:
         case TopAbs_FACE:
-            return ISolidKernelEntity::EntityType::Sheet;
+            return IBRepEntity::EntityType::Sheet;
 
         case TopAbs_WIRE:
         case TopAbs_EDGE:
-            return ISolidKernelEntity::EntityType::Wire;
+            return IBRepEntity::EntityType::Wire;
 
         case TopAbs_VERTEX:
         default:
-            return ISolidKernelEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Minimal;
         }
     }
 
@@ -237,7 +237,7 @@ DRange3d _GetEntityRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual (ISolidKernelEntityCR entity) const override
+virtual bool _IsEqual (IBRepEntityCR entity) const override
     {
     if (this == &entity)
         return true;
@@ -259,7 +259,7 @@ virtual bool _InitFaceMaterialAttachments (Render::GeometryParamsCP baseParams) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ISolidKernelEntityPtr _Clone() const override
+virtual IBRepEntityPtr _Clone() const override
     {
     TopoDS_Shape clone(m_shape);
 
@@ -295,7 +295,7 @@ static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
+TopoDS_Shape const* SolidKernelUtil::GetShape(IBRepEntityCR entity)
     {
     OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
 
@@ -308,7 +308,7 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
+TopoDS_Shape* SolidKernelUtil::GetShapeP(IBRepEntityR entity)
     {
     OpenCascadeEntity* ocEntity = dynamic_cast <OpenCascadeEntity*> (&entity);
 
@@ -321,7 +321,7 @@ TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
+IBRepEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
     {
     return OpenCascadeEntity::CreateNewEntity(shape);
     }
@@ -330,7 +330,7 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
@@ -406,7 +406,7 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, double pixe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOptionsR facetOptions)
+PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
@@ -422,35 +422,35 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(ISolidKernelEntityCR entity, IFacetOptio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
+bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::FacetEntity(ISolidKernelEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
+bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
+bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = GetShape(entity);

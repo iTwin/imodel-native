@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_DGN
 static int s_parasolidInitialized = 0;
 static bool s_usingExternalFrustrum = false;
 
+#if defined (PARTITION_ROLLBACK_REQUIRED)
+
 #define PPI_DELTA_DATA_BLOCK_SIZE 10240
 
 #define DELTA_IS_CLOSED             0
@@ -764,6 +766,7 @@ static int      pki_partitionRollbackStop ()
 
     return errorCode;
     }
+#endif
     
 #define PKI_MARK_DATA_BLOCK_SIZE 1024
 
@@ -2452,7 +2455,7 @@ void
     sessionFrustrum.ffseek = pki_FFSEEK;
     sessionFrustrum.fftell = pki_FFTELL;
 
-#if defined (NOT_NOW)
+#if defined (GO_OUTPUT_REQUIRED)
     sessionFrustrum.gosgmt = pki_GOSGMT; // <- This is used to create face-iso in Connect...but it's yucky and not thread safe...
     sessionFrustrum.goopsg = pki_GOOPSG;
     sessionFrustrum.goclsg = pki_GOCLSG;
@@ -2463,8 +2466,10 @@ void
 
     PK_SESSION_register_frustrum (&sessionFrustrum);
 
+#if defined (PARTITION_ROLLBACK_REQUIRED)
     // Start partitioned rollback
     pki_partitionRollbackStart (NULL);   // Use a temporary file
+#endif
 
     PK_SESSION_start_o_m (sessionOptions);
 
@@ -2543,7 +2548,9 @@ static int pki_end_modeler()
     {
     s_parasolidInitialized = 0;
 
+#if defined (PARTITION_ROLLBACK_REQUIRED)
     pki_partitionRollbackStop();
+#endif
 
     return PK_SESSION_stop();
     }

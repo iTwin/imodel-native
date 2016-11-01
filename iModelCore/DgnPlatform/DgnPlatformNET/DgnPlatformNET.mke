@@ -1,0 +1,114 @@
+#----------------------------------------------------------------------
+#
+#     $Source: DgnPlatformNET/DgnPlatformNET.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+PrivateApiSrc                   = $(SrcDgnPlatform)PrivateApi/
+
+#-----------------------------------------------------------
+# Source directories
+#-----------------------------------------------------------
+DgnPlatformNETDir               = $(SrcDgnPlatform)DgnPlatformNET/
+
+#-----------------------------------------------------------
+# BuildContext
+#-----------------------------------------------------------
+BuildContext                    = $(OutBuildContexts)DgnPlatform/
+
+# Define these to handle multi-platform.
+DgnPlatformLib                  = $(libprefix)DgnPlatform$(libext)
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
+
+appName                         = DgnPlatformNET
+DLM_NAME                        = $(appName)
+MuiBaseName                     = $(appName)
+
+# so that we can #include "DgnPlatformInternal.h"
+dirToSearch  = $(SrcDgnPlatform)
+%include cincapnd.mki
+
+dirToSearch  = $(PrivateApiSrc)
+%include cincapnd.mki
+
+DgnPlatformNETObj               = $(OutDgnPlatformBuild)DgnPlatformNET/
+
+DLM_OBJECT_DEST                 = $(DgnPlatformNETObj)
+
+#---------------------------------------------------------
+#  Set up for signing
+#---------------------------------------------------------
+RIGHTSCOMPLIANT                 = false
+ASSEMBLY_NO_STRONGNAME          = 1
+%include $(SrcDgnPlatform)privmki/DgnPlatformSignatureDefaults.mki
+
+#----------------------------------------------------------------------
+#       Location for objects
+#----------------------------------------------------------------------
+o                               =% $(DgnPlatformNETObj)
+
+always:
+    !~@mkdir $(OutDgnPlatformBuild)
+     ~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+%include    compileForCLRStart.mki
+
+cIncs + -AI$(ContextSubpartsAssembliesDir)
+
+$(o)DgnPlatformNET$(oext) :                         $(DgnPlatformNETDir)DgnPlatformNET.cpp
+
+%include    compileForCLRStop.mki
+
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NAME                = Bentley.DgnPlatformNET
+DLM_DEST                = $(o)
+DLM_OBJECT_FILES        = $(o)DgnPlatformNET.obj
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+DLM_NO_IMPLIB           = 1
+LINKER_LIBRARIES        = $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                          $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                          $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                          $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                          $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
+                          $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+
+
+ASSEMBLY_TITLE              = $(DLM_NAME)
+ASSEMBLY_PRODUCT_NAME       = Bentley DgnPlatform
+ASSEMBLY_DESCRIPTION        = Managed API for Bentley DgnPlatform
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+
+%include linkMixedAssembly.mki
+
+
