@@ -8,8 +8,10 @@
 
 //#ifdef REALITYMODFRAMEWORK_LOCALTEST
 
+#include <windows.h>
 
 #include <Bentley/BeTest.h>
+#include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -21,6 +23,21 @@ class RealityDataDownloadTestFixture : public testing::Test
     {
     public:
         WCharCP directory = L"D:\\RealityDataDownloadTestDirectory";
+
+        BeFileName GetPemLocation()
+            {
+            WChar exePath[MAX_PATH];
+            GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+            WString exeDir = exePath;
+            size_t pos = exeDir.find_last_of(L"/\\");
+            exeDir = exeDir.substr(0, pos + 1);
+
+            BeFileName caBundlePath(exeDir);
+            caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+            return caBundlePath;
+            }
+
         void InitTestDirectory(WCharCP directoryname)
             {
             if(BeFileName::DoesPathExist(directoryname))
@@ -30,15 +47,15 @@ class RealityDataDownloadTestFixture : public testing::Test
 
         //Before each test
         virtual void SetUp() 
-        {
-        InitTestDirectory(directory);
-        }
+            {
+            InitTestDirectory(directory);
+            }
 
         //After each test
         virtual void TearDown()
-        {
-        BeFileName::EmptyAndRemoveDirectory(directory);
-        }
+            {
+            BeFileName::EmptyAndRemoveDirectory(directory);
+            }
     };
 
 //-------------------------------------------------------------------------------------
@@ -46,8 +63,7 @@ class RealityDataDownloadTestFixture : public testing::Test
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     {
-    AString urlUSGSLink = "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_east_2006.zip";
-
+    AString urlUSGSLink = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip";
     WString filename(directory);
     RealityDataDownload::ExtractFileName(filename, urlUSGSLink);
 
@@ -56,6 +72,7 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(simpleDlList);
     ASSERT_TRUE(pDownload != nullptr);
+    pDownload->SetCertificatePath(GetPemLocation());
 
     pDownload->Perform();
     
@@ -69,8 +86,8 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     {
     bvector<AString> urlOSMLink =
         {
-        "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_east_2006.zip",
-        "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
+        "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip",
+        "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip",
         };
 
     WString filename1(directory);
@@ -94,6 +111,7 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(sisterDlList);
     ASSERT_TRUE(pDownload != nullptr);
+    pDownload->SetCertificatePath(GetPemLocation());
 
     pDownload->Perform();
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[0].second.c_str()));
@@ -103,32 +121,121 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
-/*TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
+TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     {
-    bvector<AString> urlOSMLink =
+    bvector<AString> mirrors =
         {
-        "http://api.openstreetmap.org/api/0.6/map?bbox=-112.132,40.5292,-111.52,40.8019",
-        "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
+        "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/zz/badfilename.bip", //bad url, to force use of mirror
+        "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip",
         };
 
     WString filename1(directory);
-    RealityDataDownload::ExtractFileName(filename1, urlUSGSLink[0]);
+    RealityDataDownload::ExtractFileName(filename1, mirrors[0]);
     WString filename2(directory);
-    RealityDataDownload::ExtractFileName(filename2, urlUSGSLink[1]);
+    RealityDataDownload::ExtractFileName(filename2, mirrors[1]);
 
-    RealityDataDownload::sisterFileVector sisterDlList = bvector<bvector<std::pair<AString, WString>>>();
+    RealityDataDownload::Link_File_wMirrors mirrorDlList = bvector<bvector<std::pair<AString, WString>>>();
+    RealityDataDownload::mirrorVector ufPair = bvector<std::pair<AString, WString>>();
 
-    for (size_t i = 0; i < urlOSMLink.size(); ++i)
+    for (size_t i = 0; i < mirrors.size(); ++i)
         {
         wchar_t filename[1024];
-        swprintf(filename, 1024, L"%lsOsmFile_%2llu.osm", sOutputFolder.c_str(), i);
+        swprintf(filename, 1024, L"D:\\RealityDataDownloadTestDirectory\\OsmFile_%2llu.osm", i);
 
-        wMirrors = bvector<std::pair<AString, WString>>();
-        wMirrors.push_back(std::make_pair("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019", WString(filename))); //url with typo, to force use of mirror
-        wMirrors.push_back(std::make_pair(urlOSMLink[i], WString(filename)));
-        wSisters = bvector<bvector<std::pair<AString, WString>>>();
-        wSisters.push_back(wMirrors);
-        urlList.push_back(wSisters); //mirror file test
+        ufPair.push_back(std::make_pair(mirrors[i], WString(filename)));
         }
+
+    mirrorDlList.push_back(ufPair);
+
+    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(mirrorDlList);
+    ASSERT_TRUE(pDownload != nullptr);
+    pDownload->SetCertificatePath(GetPemLocation());
+
+    pDownload->Perform();
+    ASSERT_TRUE(!BeFileName::DoesPathExist(ufPair[0].second.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].second.c_str()));
     }
-    */
+
+TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
+    {
+    WString cachename1(directory);
+    RealityDataDownload::ExtractFileName(cachename1, "cache1.zip");
+    BeFile cache1, cache2;
+    cache1.Create(cachename1.c_str(), true);
+    WString cachename2(directory);
+    RealityDataDownload::ExtractFileName(cachename2, "cache2.zip");
+    cache2.Create(cachename2.c_str(), true);
+
+    ASSERT_TRUE(BeFileName::DoesPathExist(cachename1.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(cachename2.c_str()));
+
+    WString filename1(directory);
+    RealityDataDownload::ExtractFileName(filename1, L"can01.zip");
+    WString filename2(directory);
+    RealityDataDownload::ExtractFileName(filename2, L"can02.zip");
+    WString filename3(directory);
+    RealityDataDownload::ExtractFileName(filename3, L"can03.zip");
+
+    bvector<bvector<std::pair<AString, WString>>> cacheTest1 =
+        {
+            {
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", filename1),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2)
+            }
+        };//dl first file, other 2 exist
+
+    bvector<bvector<std::pair<AString, WString>>> cacheTest2 =
+        {
+            {
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", cachename1),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N37W025.hgt.zip", filename2),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", cachename2)
+            }
+        };//dl second file, other 2 exist
+
+    bvector<bvector<std::pair<AString, WString>>> cacheTest3 =
+        {
+            {
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2),
+            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", filename3)
+            }
+        };//dl last file, other 2 exist
+
+    RealityDataDownload::Link_File_wMirrors_wSisters sisterDlList = bvector<bvector<bvector<std::pair<AString, WString>>>>();
+
+    sisterDlList.push_back(cacheTest1);
+    sisterDlList.push_back(cacheTest2);
+    sisterDlList.push_back(cacheTest3);
+
+    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(sisterDlList);
+    ASSERT_TRUE(pDownload != nullptr);
+    pDownload->SetCertificatePath(GetPemLocation());
+
+    RealityDataDownload::DownloadReport* report = pDownload->Perform();
+    ASSERT_TRUE(BeFileName::DoesPathExist(filename1.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(filename2.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(filename3.c_str()));
+
+    BeXmlStatus status;
+    Utf8String reportString;
+    report->ToXml(reportString);
+    BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(status, reportString.c_str());
+    ASSERT_TRUE(status == BeXmlStatus::BEXML_Success);
+    int fileCount = 0;
+    /*WString innerXml;
+    reader->GetCurrentNodeString(innerXml);*/
+
+    while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element)))
+        {
+        Utf8String xmlNodeName;
+        reader->GetCurrentNodeName(xmlNodeName);
+        IBeXmlReader::NodeType nodeType = reader->GetCurrentNodeType();
+        if (IBeXmlReader::NodeType::NODE_TYPE_Element != nodeType
+            || 0 == xmlNodeName.CompareTo("File"))
+            fileCount++;
+        }
+
+    ASSERT_TRUE(fileCount == 3);
+    }

@@ -149,9 +149,9 @@ public:
             BeAssert(writer.IsValid());
             writer->SetIndentation(2);
 
-            writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
+            //writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
 
-            writer->WriteElementStart("RealityDataDownload DownloadReport");
+            writer->WriteElementStart("RealityDataDownload_DownloadReport");
                 {
                 writer->WriteAttribute("PackageId", packageId);
                 writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
