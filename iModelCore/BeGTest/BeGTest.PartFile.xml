@@ -33,6 +33,8 @@
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
