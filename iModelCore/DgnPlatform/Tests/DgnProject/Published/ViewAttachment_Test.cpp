@@ -78,7 +78,7 @@ void ViewAttachmentTest::SetUp()
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("MyDrawingListModel"));
     SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, DgnCode(), "MySectionDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("MyDrawingModel"));
-    m_drawingModelId = drawing->GetModelId();
+    m_drawingModelId = drawingModel->GetModelId();
 
     // Create a view of our (empty) model
     DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle(db,""));
@@ -248,9 +248,9 @@ TEST_F(ViewAttachmentTest, Geom)
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
 
-    DisplayStyle noStyle(db,"");
-    CategorySelector noCats(db,"");
-    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, noCats, noStyle);
+    DisplayStylePtr noStyle = new DisplayStyle(db,"");
+    CategorySelectorPtr noCats = new CategorySelector(db,"");
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *noCats, *noStyle);
     sheetView.Insert();
 
     SheetViewControllerPtr viewController = sheetView.LoadViewController();
