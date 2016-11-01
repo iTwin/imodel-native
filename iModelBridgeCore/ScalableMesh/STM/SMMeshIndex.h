@@ -463,6 +463,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> AddDisplayMesh(SmCachedDisplayMeshData* smCachedDisplayData, size_t sizeToReserve)
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         assert(smCachedDisplayData != 0);
 
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> customGenericBlobItemPtr(
@@ -518,6 +519,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> GetDisplayMeshes()
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> cachedDisplayMeshItemPtr;
 
         GetMemoryPool()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
@@ -584,6 +586,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void RemoveDisplayMesh()
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
         m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
@@ -718,6 +721,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     atomic<size_t> m_nbClips;
 
     std::mutex m_dtmLock;
+    std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
 

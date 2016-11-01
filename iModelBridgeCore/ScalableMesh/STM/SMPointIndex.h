@@ -949,7 +949,7 @@ public:
 #endif
         }
 
-  
+    std::mutex m_sharedTexLock;
 
 protected:
 

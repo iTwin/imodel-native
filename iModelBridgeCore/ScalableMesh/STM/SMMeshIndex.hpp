@@ -253,8 +253,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            {
+            std::lock_guard<std::mutex> lock(m_displayMeshLock);
+            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
         ISMMTGGraphDataStorePtr nodeGraphStore;
@@ -372,8 +375,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            {
+            std::lock_guard<std::mutex> lock(m_displayMeshLock);
+            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
             {
