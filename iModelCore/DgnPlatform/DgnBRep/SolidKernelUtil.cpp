@@ -425,11 +425,11 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR fac
 bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 
@@ -439,11 +439,11 @@ bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& pol
 bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 

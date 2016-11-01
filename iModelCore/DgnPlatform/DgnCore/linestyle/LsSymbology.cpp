@@ -31,6 +31,7 @@ void LineStyleSymb::Init (ILineStyleCP lStyle)
     m_planeByRows.InitIdentity();
     m_texture = nullptr;
     m_useLinePixels = false;
+    m_useStroker = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,8 +568,13 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     SetScale(scaleWithUnits);
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    // Texture is required for 3d...but it should still be an option for 2d...
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), params.GetWeight());
+    //
+    //  We want to remove the requirement tht the Texture is required for 3d.  Make the appropriate changes
+    //  to ElementGeometry and then add something like:
+    //
+    //      if (GetTexture failed) SetUseStroker(true)
+    uint32_t weight = context.GetViewFlags().m_weights ? params.GetWeight() : 0;
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), weight);
     }
 
 /*---------------------------------------------------------------------------------**//**

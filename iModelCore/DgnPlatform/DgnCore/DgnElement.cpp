@@ -275,6 +275,23 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  10/2016
+//---------------------------------------------------------------------------------------
+DgnElementIdSet Session::QuerySessions(DgnDbR db)
+    {
+    DgnElementIdSet ids;
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Session));
+    if (stmt.IsValid())
+        {
+        while (BE_SQLITE_ROW == stmt->Step())
+            ids.insert(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    return ids;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
