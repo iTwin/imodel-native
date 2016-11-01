@@ -204,7 +204,7 @@ protected:
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
-    bool            m_filled;       // true if the FillModel was called on this DgnModel.
+    bool m_filled;       // true if the FillModel was called on this DgnModel.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -224,19 +224,15 @@ protected:
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params);
 
-    //! Called to bind the model's property values to the ECSqlStatement when inserting
-    //! a new model.  The parameters to bind were the ones specified by this model's Handler.
-    //! @note If you override this method, you should bind your subclass properties
-    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+     //! argument for _BindWriteParams
+    enum class ForInsert : bool {No=false, Yes=true};
 
-    //! Called to bind the model's property values to the ECSqlStatement when updating
-    //! an existing model.  The parameters to bind were the ones specified by this model's Handler
+    //! Called to bind the model's property values to the ECSqlStatement when inserting or updating
+    //! a model.  The parameters to bind were the ones specified by this model's Handler.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    //! Then you @em must call T_Super::_BindWriteParams
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider

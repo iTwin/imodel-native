@@ -279,7 +279,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
         }
 
     polyface.SetNewFaceData (NULL);
-    if (edgeChainsRequired)           // Edge chains requested...
+    if (edgeChainsRequired) // Edge chains requested...
         addEdgeChains (polyface.EdgeChain(), edgeIdToIndicesMap);
         
     return SUCCESS;
@@ -879,14 +879,14 @@ virtual int     PSolidFacetTopologyTable::_GetFacetFaceCount () override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool    PSolidFacetTopologyTable::_GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge, bool useHighestId) override
     {
-    return false;//SUCCESS == PSolidUtil::CurveTopologyIdFromEdge (curveTopologyId, (PK_EDGE_t) edge, useHighestId);
+    return SUCCESS == PSolidTopoId::CurveTopologyIdFromEdge (curveTopologyId, (PK_EDGE_t) edge, useHighestId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    PSolidFacetTopologyTable::_IsHiddenEdge (int32_t entity) override  { return m_hiddenEdges.find(entity) != m_hiddenEdges.end(); }
-virtual bool    PSolidFacetTopologyTable::_IsHiddenFace (int32_t entity) override  { return m_hiddenFaces.find(entity) != m_hiddenFaces.end(); }
+virtual bool    PSolidFacetTopologyTable::_IsHiddenEdge (int32_t entity) override  {return m_hiddenEdges.find(entity) != m_hiddenEdges.end();}
+virtual bool    PSolidFacetTopologyTable::_IsHiddenFace (int32_t entity) override  {return m_hiddenFaces.find(entity) != m_hiddenFaces.end();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
@@ -971,7 +971,7 @@ void            PSolidFacetTopologyTable::RemoveHiddenEdges (PK_ENTITY_t entityT
         fin   = finEdgeP->fin;
         coFin = finFinIdxP[fin];
 
-        if (coFin != QV_HIDEFIN && false)//PSolidUtil::IsEntityHidden (finEdgeP->edge))
+        if (coFin != QV_HIDEFIN && PSolidAttrib::IsEntityHidden (finEdgeP->edge))
             {
             finFinIdxP[fin] = QV_HIDEFIN;
 
@@ -1019,7 +1019,7 @@ void            PSolidFacetTopologyTable::RemoveHiddenFaces (PK_ENTITY_t entityT
             // ...in a new face...
             if (prevFace != currFace)
                 {
-                stripIsHidden = false;//PSolidUtil::IsEntityHidden (currFace);
+                stripIsHidden = PSolidAttrib::IsEntityHidden (currFace);
                 prevFace = currFace;
                 }
 
@@ -1070,21 +1070,21 @@ void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMat
     if (hasHiddenEdge)
         {
         RemoveHiddenEdges (entityTag);
-//        PSolidUtil::GetHiddenBodyEdges (m_hiddenEdges, entityTag);
+        PSolidAttrib::GetHiddenBodyEdges (m_hiddenEdges, entityTag);
         }
 
     // Process hidden faces so they don't display...
     if (hasHiddenFace)
         {
         RemoveHiddenFaces (entityTag);
-//        PSolidUtil::GetHiddenBodyFaces (m_hiddenFaces, entityTag);
+        PSolidAttrib::GetHiddenBodyFaces (m_hiddenFaces, entityTag);
         }
 
     if (nullptr == attachments)
         {
         bvector<PK_FACE_t> faces;
 
-        PSolidUtil::GetBodyFaces (faces, entityTag);
+        PSolidTopo::GetBodyFaces (faces, entityTag);
 
         for (size_t i=0; i<faces.size(); i++)
             m_faceToSubElemIdMap[faces[i]] = make_bpair((int32_t) (i + 1), 0); // 0 is invalid attachment index...
@@ -1161,8 +1161,8 @@ void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, double 
     else
         GetFacetTolerances (&chordTol, &angleTol, nullptr, nullptr, pixelSize);
 
-    bool hasHiddenEdge = false;//PSolidUtil::HasHiddenEdge (entityTag);
-    bool hasHiddenFace = false;//PSolidUtil::HasHiddenFace (entityTag);
+    bool hasHiddenEdge = PSolidAttrib::HasHiddenEdge (entityTag);
+    bool hasHiddenFace = PSolidAttrib::HasHiddenFace (entityTag);
 
     PK_TOPOL_facet_2_o_t options;
 
@@ -1321,8 +1321,7 @@ void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, IFacetO
 
     IFaceMaterialAttachmentsCP attachments = in.GetFaceMaterialAttachments();
 
-//    CompleteTable (entityTag, attachments, PSolidUtil::HasHiddenEdge (entityTag), PSolidUtil::HasHiddenFace (entityTag));
-    CompleteTable (entityTag, attachments, false, false);
+    CompleteTable (entityTag, attachments, PSolidAttrib::HasHiddenEdge (entityTag), PSolidAttrib::HasHiddenFace (entityTag));
     }
 
 /*---------------------------------------------------------------------------------**//**

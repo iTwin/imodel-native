@@ -266,11 +266,20 @@ IBRepEntityPtr PSolidUtil::InstanceEntity(IBRepEntityCR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t PSolidUtil::GetEntityTag(IBRepEntityCR entity)
+PK_ENTITY_t PSolidUtil::GetEntityTag(IBRepEntityCR entity, bool* isOwned)
     {
+    if (isOwned)
+        *isOwned = false;
+
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
 
-    return (nullptr != psEntity ? psEntity->GetEntityTag() : 0);
+    if (nullptr == psEntity)
+        return PK_ENTITY_null;
+    
+    if (isOwned)
+        *isOwned = psEntity->IsOwnedEntity();
+
+    return psEntity->GetEntityTag();
     }
 
 /*---------------------------------------------------------------------------------**//**

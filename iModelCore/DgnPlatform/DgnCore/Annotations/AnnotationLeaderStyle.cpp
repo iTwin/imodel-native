@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/Annotations/AnnotationLeaderStyle.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Annotations/AnnotationLeaderStyle.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationLeaderStylePersistence.h>
@@ -48,9 +50,6 @@ bool AnnotationLeaderStylePropertyBag::_IsRealProperty(T_Key key) const
             return false;
         }
     }
-
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
 
 #define PROP_Data "Data"
 #define PROP_Description "Descr"
@@ -102,25 +101,10 @@ static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationLead
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationLeaderStyle::_BindInsertParams(BeSQLite::EC::ECSqlStatement& insert)
+void AnnotationLeaderStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus status = T_Super::_BindInsertParams(insert);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(insert, *this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationLeaderStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& update)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(update);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(update, *this);
+    T_Super::_BindWriteParams(stmt, forInsert);
+    bindParams(stmt, *this);
     }
 
 //---------------------------------------------------------------------------------------

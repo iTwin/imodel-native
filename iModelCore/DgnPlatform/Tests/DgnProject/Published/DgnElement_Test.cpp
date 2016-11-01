@@ -986,7 +986,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
             }
 
         DgnDbStatus status;
-        auto ele = m_db->Elements().CreateElement(&status, *testClassInstance);
+        auto ele = m_db->Elements().CreateElement(*testClassInstance, &status);
         ASSERT_TRUE(ele.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, status);
 
@@ -2085,9 +2085,8 @@ TEST_F(DgnElementTests, DemoArrayProblem)
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
-    DgnDbStatus stat;
-    DgnElementPtr dgnElement = m_db->Elements().CreateElement(&stat, *ecInstance);
-    DgnElementCPtr inserted = dgnElement->Insert(&stat);
+    DgnElementPtr dgnElement = m_db->Elements().CreateElement(*ecInstance);
+    DgnElementCPtr inserted = dgnElement->Insert();
     ASSERT_TRUE(inserted != nullptr);
     }
 

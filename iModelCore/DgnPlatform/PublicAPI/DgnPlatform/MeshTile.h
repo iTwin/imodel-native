@@ -93,7 +93,7 @@ private:
 
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
-    TileDisplayParams (uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor (fillColor), m_materialId (geometryParams.GetMaterialId()) {}
+    TileDisplayParams (uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor (fillColor), m_ignoreLighting(false), m_materialId (geometryParams.GetMaterialId()) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
     static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }

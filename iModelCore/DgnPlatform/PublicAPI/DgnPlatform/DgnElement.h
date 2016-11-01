@@ -477,10 +477,10 @@ public:
 * _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
-* In rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
+* In some cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
 * That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
 * This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
-* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams to load and store
+* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindWriteParams and DgnElement::_ReadSelectParams to load and store
 * the custom-handled properties. The subclass must also override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide name-based get/set support for its custom-handled properties.
 * Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
@@ -640,7 +640,7 @@ public:
         virtual DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original){return DgnDbStatus::Success;}
         virtual DgnDbStatus _OnDelete(DgnElementCR el) {return DgnDbStatus::Success;}
 
-        enum class DropMe {No=0, Yes=1};
+        enum class DropMe : bool {No=false, Yes=true};
 
         //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
@@ -874,7 +874,6 @@ public:
 
 
 private:
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
     void LoadUserProperties() const;
@@ -925,7 +924,7 @@ protected:
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() {m_code = DgnCode();} //!< @private
     
-    static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
+    static CreateParams InitCreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus*);
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -941,7 +940,7 @@ protected:
     //! You should then extract your subclass custom-handled properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     //! @see ElementProperties
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams);
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -953,13 +952,18 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
+     //! argument for _BindWriteParams
+    enum class ForInsert : bool {No=false, Yes=true};
+
     //! Called to bind the element's custom-handled property values to the ECSqlStatement when inserting
     //! a new element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
+    //! @param[in] statement A statement that has been prepared for either Insert or Update of your class' CustomHandledProperties
+    //! @param[in] forInsert Indicates whether the statemeent is an insert or update statement
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
-    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    //! Then you @em must call T_Super::_BindWriteParams,
     //! @see ElementProperties
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Override this method if your element needs to do additional Inserts into the database (for example,
     //! insert a relationship between the element and something else).
@@ -983,13 +987,6 @@ protected:
     //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
-
-    //! Called to bind the element's property values to the ECSqlStatement when updating
-    //! an existing element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
-    //! @note If you override this method, you should bind your subclass custom-handled properties
-    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
-    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass custom-handled properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
@@ -1915,24 +1912,22 @@ protected:
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnTableName() const = 0;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _OnDeleted() const override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
-    DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
+    DGNPLATFORM_EXPORT void _OnReversedAdd() const override;
+    DGNPLATFORM_EXPORT void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
     DgnDbStatus UpdateGeomStream() const;
@@ -1985,26 +1980,23 @@ protected:
     Placement3d m_placement;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
-    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
-    virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+    bool _IsPlacementValid() const override final {return m_placement.IsValid();}
+    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
+    DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    DgnElementCP _ToElement() const override final {return this;}
+    GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
+    DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
+    Placement3dCR _GetPlacement() const override final {return m_placement;}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     };
 
 //=======================================================================================
@@ -2050,26 +2042,23 @@ protected:
     Placement2d m_placement;
 
     explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
-    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
-    virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
+    bool _IsPlacementValid() const override final {return m_placement.IsValid();}
+    DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    DgnElementCP _ToElement() const override final {return this;}
+    GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
+    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
+    DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
+    Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
-    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 };
 
 //=======================================================================================
@@ -2937,11 +2926,13 @@ public:
 
     //! Create a new, non-persistent element from the supplied ECInstance.
     //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
-    //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
     //! @param properties The instance that contains all of the element's business properties
+    //! @param stat  Optional. If not null, an error status is returned here if the element cannot be created.
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
     //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
-    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(DgnDbStatus* stat, ECN::IECInstanceCR properties);
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const;
+
+    template<class T> RefCountedPtr<T> Create(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const {return dynamic_cast<T*>(CreateElement(properties,stat).get());}
 
     //! Get a DgnElement from this DgnDb by its DgnElementId.
     //! @remarks The element is loaded from the database if necessary.

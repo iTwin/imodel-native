@@ -87,18 +87,15 @@ protected:
     double      m_doubleProps[4];
     DPoint3d    m_pointProps[4];
 
-    virtual Dgn::DgnDbStatus _InsertInDb() override;
-    virtual Dgn::DgnDbStatus _UpdateInDb() override;
-    virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
-    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
+    Dgn::DgnDbStatus _InsertInDb() override;
+    Dgn::DgnDbStatus _UpdateInDb() override;
+    Dgn::DgnDbStatus _DeleteInDb() const override;
+    Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
+    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
+    Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    void _CopyFrom(Dgn::DgnElementCR el) override;
 
-    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
-    virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual void _CopyFrom(Dgn::DgnElementCR el) override;
-
-    void BindParams(BeSQLite::EC::ECSqlStatement&) const;
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }

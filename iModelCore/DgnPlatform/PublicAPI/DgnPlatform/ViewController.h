@@ -688,7 +688,6 @@ public:
     DGNPLATFORM_EXPORT void ClearActiveVolume();
     ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
     //! @}
-
 };
 
 //=======================================================================================
