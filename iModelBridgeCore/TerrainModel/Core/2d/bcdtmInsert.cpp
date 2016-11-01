@@ -4199,7 +4199,27 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
 /*
 ** Error Exit
 */
- errexit :
+errexit :
+ // To do, if we error then we have left the dtm in an invalid state, a half created line.
+ if (pointNumP != nullptr)
+     {
+     if (dbg)
+         bcdtmWrite_message(0, 0, 0, "Removing inserted Points\n");
+
+     long point = pointNumP[0];
+     
+     while (point != dtmP->nullPnt)
+         {
+         if (DTM_SUCCESS != bcdtmEdit_deletePointDtmObject(dtmP, point, 1))
+             {
+             if (dbg)
+                 bcdtmWrite_message(0, 0, 0, "Failed to remove pnt %d\n", point);
+             }
+         point = nodeAddrP(dtmP, point)->tPtr;
+         }
+     bcdtmList_nullTptrListDtmObject(dtmP, pointNumP[0]);
+     }
+
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
