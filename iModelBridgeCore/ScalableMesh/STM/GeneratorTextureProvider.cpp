@@ -32,7 +32,7 @@ DRange2d GeneratorTextureProvider::_GetTextureExtent()
     return rasterBox;
     }
 
-StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area)
+StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
     m_generator->SetPixelSize(std::max(std::min(area.XLength() / width, area.YLength() / height), m_minPixelSize));
     m_generator->SetTextureTempDir(m_dir);

@@ -20,7 +20,7 @@ struct GeneratorTextureProvider : virtual public ITextureProvider
 
         virtual DRange2d _GetTextureExtent() override;
 
-        virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area) override;
+        virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) override;
     public:
 
         GeneratorTextureProvider(IScalableMeshTextureGeneratorPtr& generator, DRange3d coveredExtent, double minPixelSize, BeFileName tempDirectory);

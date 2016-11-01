@@ -30,7 +30,7 @@ DRange2d MosaicTextureProvider::_GetTextureExtent()
     return rasterBox;
     }
 
-StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area)
+StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
     double unitsPerPixelX = (area.high.x - area.low.x) / width;
     double unitsPerPixelY = (area.high.y - area.low.y) / height;
@@ -63,7 +63,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
 
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
 
-    HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
+   // HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
     texData.resize(3 * sizeof(int) + width * height * 3);
 
 #ifdef VANCOUVER_API
@@ -112,6 +112,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
 #else
     pTextureBitmap->CopyFrom(*m_targetMosaic, copyFromOptions);
 #endif
+
 
     Byte *pPixel = &texData[0] + 3*sizeof(int);
 
