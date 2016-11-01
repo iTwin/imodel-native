@@ -1070,19 +1070,6 @@ public:
         }
 };
 
-#ifdef WIP_MERGE_Hassan
-DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Umar.Hayat             08/2016
-//---------------------------------------------------------------------------------------
-//void RepositoryManagerTest::SetUpTestCase()
-//    {
-//    ScopedDgnHost tempHost;
-//    RepositoryManagerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
-//    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
