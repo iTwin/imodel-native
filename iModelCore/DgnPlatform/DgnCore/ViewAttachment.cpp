@@ -25,7 +25,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::_OnInsert()
     {
-    return GetViewId().IsValid() ? DgnDbStatus::Success : DgnDbStatus::ViewNotFound;
+    return GetViewId().IsValid() ? T_Super::_OnInsert() : DgnDbStatus::ViewNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,5 +33,5 @@ DgnDbStatus ViewAttachment::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::_OnUpdate(DgnElementCR el)
     {
-    return GetViewId().IsValid() ? DgnDbStatus::Success : DgnDbStatus::ViewNotFound;
+    return GetViewId().IsValid() ? T_Super::_OnUpdate(el) : DgnDbStatus::ViewNotFound;
     }

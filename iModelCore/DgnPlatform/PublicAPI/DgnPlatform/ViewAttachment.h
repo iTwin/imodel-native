@@ -50,7 +50,10 @@ protected:
 public:
     ViewAttachment(DgnDbR db, DgnModelId mid, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement)
         : T_Super(CreateParams(db, mid, QueryClassId(db), cat, placement))
-        {}
+        {
+        SetViewId(viewId);
+        SetCode(GenerateDefaultCode());
+        }
 
     DgnViewId GetViewId() const {return GetPropertyValueId<DgnViewId>("View");} //!< Get the ID of the view definition to be drawn by this attachment
     DgnDbStatus SetViewId(DgnViewId viewId) {return SetPropertyValue("View", viewId);} //!< Set the view definition to be drawn
