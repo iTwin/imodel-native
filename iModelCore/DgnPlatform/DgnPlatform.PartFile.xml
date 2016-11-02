@@ -154,7 +154,6 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
@@ -395,7 +394,9 @@
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <SubPart PartName="DgnPlatformSqlang" />
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
     <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
@@ -636,15 +637,5 @@
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
-
-    <!-- *** ********************************************************** *** -->
-    <!-- *** WARNING: Numerous BuildStrategies point to this part! *** -->
-    <!-- *** ********************************************************** *** -->
-    <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
-    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
-    <Part Name="UnitTests_Documents">
-        <SubPart PartName="ConvertDgnDbUnitTestsData" Repository="DgnDbSync" PartFile="DgnDbSync"/>
-    </Part>
-
 
 </BuildContext>
