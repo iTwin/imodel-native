@@ -1166,7 +1166,7 @@ struct ECPropertyChange :ECObjectChange
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
-        StringChange& GetKindOfQuanity() { return Get<StringChange>(SystemId::KindOfQuantity); }
+        StringChange& GetKindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
         StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
     };
 

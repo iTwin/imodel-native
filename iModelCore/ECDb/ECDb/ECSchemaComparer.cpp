@@ -583,27 +583,29 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 
         KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
         KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
-        if (aKoq && !bKoq)
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoq->GetFullName());
-        else if (!aKoq && bKoq)
-            change.GetKindOfQuanity().SetValue(ValueId::New, bKoq->GetFullName());
-        else
-            change.GetKindOfQuanity().SetValue(aKoq->GetFullName(), bKoq->GetFullName());
-
+        if (aKoq != nullptr && bKoq != nullptr)
+            {
+            if (aKoq != bKoq)
+                change.GetKindOfQuantity().SetValue(aKoq->GetFullName(), bKoq->GetFullName());
+            }
+        else if (aKoq != nullptr && bKoq == nullptr)
+            change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
+        else if (aKoq == nullptr && bKoq != nullptr)
+            change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }
     else if (aExtendType != nullptr && bExtendType == nullptr)
         {
         change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendType->GetExtendedTypeName());
         KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
         if (aKoq != nullptr)
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoq->GetFullName());
+            change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
         }
     else if (!aExtendType && bExtendType)
         {
         change.GetExtendedTypeName().SetValue(ValueId::New, bExtendType->GetExtendedTypeName());
         KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
         if (bKoq != nullptr)
-            change.GetKindOfQuanity().SetValue(ValueId::New, bKoq->GetFullName());
+            change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
@@ -1358,7 +1360,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
             propertyChange.GetEnumeration().SetValue(appendType, primitiveProp->GetEnumeration()->GetFullName());
 
         if (primitiveProp->GetKindOfQuantity())
-            propertyChange.GetKindOfQuanity().SetValue(appendType, primitiveProp->GetKindOfQuantity()->GetFullName());
+            propertyChange.GetKindOfQuantity().SetValue(appendType, primitiveProp->GetKindOfQuantity()->GetFullName());
         }
     else if (v.GetIsStruct())
         {
@@ -1374,7 +1376,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
         auto primitivePropArray = v.GetAsPrimitiveArrayProperty();
         propertyChange.GetExtendedTypeName().SetValue(appendType, primitivePropArray->GetExtendedTypeName());
         if (primitivePropArray->GetKindOfQuantity())
-            propertyChange.GetKindOfQuanity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());
+            propertyChange.GetKindOfQuantity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());
         }
     else
         {

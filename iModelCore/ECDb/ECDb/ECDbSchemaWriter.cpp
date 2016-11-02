@@ -1080,9 +1080,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
             }
         }
 
-    if (propertyChange.GetKindOfQuanity().IsValid())
+    if (propertyChange.GetKindOfQuantity().IsValid())
         {
-        if (propertyChange.GetKindOfQuanity().GetState() == ChangeState::Deleted)
+        if (propertyChange.GetKindOfQuantity().GetState() == ChangeState::Deleted)
             {
             sqlUpdateBuilder.AddSetToNull("KindOfQuantityId"); //set to null;
             }
