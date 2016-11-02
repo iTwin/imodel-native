@@ -21,7 +21,6 @@ struct ConstraintECClassIdJoinInfo;
 struct ViewGenerator
     {
     private:
-
         ECDb const& m_ecdb;
         bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
@@ -30,6 +29,7 @@ struct ViewGenerator
         bool m_asSubQuery;
         bool m_captureViewAccessStringList;
 
+    private:
         explicit ViewGenerator(ECDb const& ecdb, bool returnViewAccessStringList = false, bool asSubQuery = true) :
             m_ecdb(ecdb), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
             {
@@ -37,26 +37,24 @@ struct ViewGenerator
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
             }
 
+        /*=====================Debug views===================== */
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
+        /*=====================Debug views===================== */
+        /*=====================System Polymorphic view===================== */
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
-        BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
-
-        
-
-        //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
-        
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
-
+        BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
+        /*=====================System Polymorphic view===================== */
         /*=====================NEW API=================*/
         bool IsECClassIdFilterEnabled() const;
         void RecordPropertyMapIfRequried(PropertyMap const& accessString);
         BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Kind filter = PropertyMap::Kind::Entity);
         BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
         BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
-        BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+        BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassLinkTableMap const& relationMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
-        BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassLinkTableMap const& relationMap);
+        BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         /*=====================NEW API=================*/
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
@@ -66,14 +64,15 @@ struct ViewGenerator
         //! @param prepareContext [in] prepareContext from ECSQL
         //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
         static BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const&, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
-
         static BentleyStatus CreateUpdatableViews(ECDbCR);
         static BentleyStatus DropUpdatableViews(ECDbCR);
-
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);
     };
 
+/*=================================================================================**//**
+* @bsiclass                                                     Affan.Khan       11/2016
++===============+===============+===============+===============+===============+======*/
 struct ConstraintECClassIdJoinInfo : NonCopyableClass
     {
     typedef std::unique_ptr<ConstraintECClassIdJoinInfo> Ptr;
@@ -88,7 +87,6 @@ struct ConstraintECClassIdJoinInfo : NonCopyableClass
             : m_primaryECInstanceId(primaryECInstanceId), m_primaryECClassId(primaryECClassId), m_forignECInstanceId(forignECClassId), m_propertyMap(propertyMap)
             {}
   
-
     public:
         ConstraintECClassIdPropertyMap const& GetConstraintECClassId() const { return m_propertyMap; }
         DbColumn const& GetPrimaryECInstanceIdColumn() const { return m_primaryECClassId; }
