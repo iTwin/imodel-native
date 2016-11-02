@@ -633,7 +633,7 @@ IBRepEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
             return IBRepEntity::EntityType::Wire;
 
         case GeometryType::CurveVector:
-            return (GetAsCurveVector()->IsAnyRegionType() ? IBRepEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? IBRepEntity::EntityType::Wire : IBRepEntity::EntityType::Minimal));
+            return (GetAsCurveVector()->IsAnyRegionType() ? IBRepEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? IBRepEntity::EntityType::Wire : IBRepEntity::EntityType::Invalid));
 
         case GeometryType::BsplineSurface:
             return IBRepEntity::EntityType::Sheet;
@@ -648,7 +648,7 @@ IBRepEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
             return GetAsIBRepEntity()->GetEntityType();
 
         default:
-            return IBRepEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Invalid;
         }
     }
 
@@ -1117,7 +1117,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
         case IBRepEntity::EntityType::Wire:
             {
             // Save wire body as CurveVector...
-            CurveVectorPtr wireGeom = PSolidUtil::WireBodyToCurveVector(entity);
+            CurveVectorPtr wireGeom = PSolidGeom::WireBodyToCurveVector(entity);
 
             if (wireGeom.IsValid())
                 Append(*wireGeom, OpCode::BRepCurveVector);
@@ -1128,7 +1128,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
         case IBRepEntity::EntityType::Sheet:
             {
             // Save sheet body that is a single planar face as CurveVector...
-            CurveVectorPtr faceGeom = PSolidUtil::PlanarSheetBodyToCurveVector(entity);
+            CurveVectorPtr faceGeom = PSolidGeom::PlanarSheetBodyToCurveVector(entity);
 
             if (faceGeom.IsValid())
                 {

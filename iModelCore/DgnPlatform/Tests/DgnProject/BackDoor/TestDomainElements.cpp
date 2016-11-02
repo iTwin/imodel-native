@@ -16,26 +16,20 @@ HANDLER_DEFINE_MEMBERS(TestElementComplexHandler)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub1::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void TestElementSub1::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop1_1"), m_prop1_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop1_2"), m_prop1_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop1_3"), m_prop1_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-    return DgnDbStatus::Success;
-    }
+    if (forInsert == ForInsert::No)
+        {
+        m_prop1_1 = "Element1 - UpdatedValue";
+        m_prop1_2 = 20000000LL;
+        m_prop1_3 = -6.283;
+         }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub1::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    stmt.BindText(stmt.GetParameterIndex("Prop1_1"), m_prop1_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindInt64(stmt.GetParameterIndex("Prop1_2"), m_prop1_2);
+    stmt.BindDouble(stmt.GetParameterIndex("Prop1_3"), m_prop1_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,28 +47,12 @@ DgnDbStatus TestElementSub1::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub1::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop1_1 = "Element1 - UpdatedValue";
-    m_prop1_2 = 20000000LL;
-    m_prop1_3 = -6.283;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
 TestElementSub1Ptr TestElementSub1::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new TestElementSub1(CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
-    else
-        return new TestElementSub1(CreateParams(db, modelId, classId, category));
+
+    return new TestElementSub1(CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -96,26 +74,20 @@ TestElementSub1CPtr TestElementSub1::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub2::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void TestElementSub2::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop2_2"), m_prop2_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop2_3"), m_prop2_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-    return DgnDbStatus::Success;
-    }
+    if (forInsert == ForInsert::No)
+        {
+        m_prop2_1 = "Element2 - UpdatedValue";
+        m_prop2_2 = 40000000LL;
+        m_prop2_3 = 5.43656;
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub2::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    stmt.BindText(stmt.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindInt64(stmt.GetParameterIndex("Prop2_2"), m_prop2_2);
+    stmt.BindDouble(stmt.GetParameterIndex("Prop2_3"), m_prop2_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,28 +106,11 @@ DgnDbStatus TestElementSub2::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub2::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop2_1 = "Element2 - UpdatedValue";
-    m_prop2_2 = 40000000LL;
-    m_prop2_3 = 5.43656;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
 TestElementSub2Ptr TestElementSub2::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new TestElementSub2(TestElementSub2::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
-    else
-        return new TestElementSub2(TestElementSub2::CreateParams(db, modelId, classId, category));
+    return new TestElementSub2(TestElementSub2::CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -177,26 +132,20 @@ TestElementSub2CPtr TestElementSub2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub3::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void TestElementSub3::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop3_2"), m_prop3_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop3_3"), m_prop3_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-    return DgnDbStatus::Success;
-    }
+    if (forInsert == ForInsert::No)
+        {
+        m_prop3_1 = "Element3 - UpdatedValue";
+        m_prop3_2 = 60000000LL;
+        m_prop3_3 = 2.828242;
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub3::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    stmt.BindText(stmt.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindInt64(stmt.GetParameterIndex("Prop3_2"), m_prop3_2);
+    stmt.BindDouble(stmt.GetParameterIndex("Prop3_3"), m_prop3_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,28 +164,11 @@ DgnDbStatus TestElementSub3::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementSub3::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop3_1 = "Element3 - UpdatedValue";
-    m_prop3_2 = 60000000LL;
-    m_prop3_3 = 2.828242;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
 TestElementSub3Ptr TestElementSub3::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new TestElementSub3(SpatialElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
-    else
-        return new TestElementSub3(SpatialElement::CreateParams(db, modelId, classId, category));
+    return new TestElementSub3(SpatialElement::CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -258,29 +190,27 @@ TestElementSub3CPtr TestElementSub3::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementComplex::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void TestElementComplex::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindPoint3d(statement.GetParameterIndex("Prop_point3d"), m_prop_DPoint3d)) )
-        return DgnDbStatus::BadArg;
-    IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex("Prop_struct"));
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    if (forInsert == ForInsert::No)
+        {
+        m_prop_TestStruct.BoolMember    = true;
+        m_prop_TestStruct.DoubleMember  = 2.0;
+        m_prop_TestStruct.IntMember     = 20;
+
+        m_prop_DPoint3d.x = 2.0;
+        m_prop_DPoint3d.y = 4.0;
+        m_prop_DPoint3d.z = 6.0;
+        }
+
+    stmt.BindPoint3d(stmt.GetParameterIndex("Prop_point3d"), m_prop_DPoint3d);
+    IECSqlStructBinder& structBinder = stmt.BindStruct(stmt.GetParameterIndex("Prop_struct"));
 
     EXPECT_EQ(ECSqlStatus::Success, structBinder.GetMember("TestStructDoubleMember").BindDouble(m_prop_TestStruct.DoubleMember));
     EXPECT_EQ(ECSqlStatus::Success, structBinder.GetMember("TestStructIntMember").BindInt(m_prop_TestStruct.IntMember));
     EXPECT_EQ(ECSqlStatus::Success, structBinder.GetMember("TestStructBoolMember").BindBoolean(m_prop_TestStruct.BoolMember));
-
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementComplex::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -305,26 +235,6 @@ DgnDbStatus TestElementComplex::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus TestElementComplex::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop_TestStruct.BoolMember    = true;
-    m_prop_TestStruct.DoubleMember  = 2.0;
-    m_prop_TestStruct.IntMember     = 20;
-
-    m_prop_DPoint3d.x = 2.0;
-    m_prop_DPoint3d.y = 4.0;
-    m_prop_DPoint3d.z = 6.0;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
 TestElementComplexPtr TestElementComplex::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
     {
     if (specifyProperyValues)
@@ -334,8 +244,8 @@ TestElementComplexPtr TestElementComplex::Create(Dgn::DgnDbR db, Dgn::DgnModelId
             TestStruct testStruct(10, 10.0, false);
         return new TestElementComplex(SpatialElement::CreateParams(db, modelId, classId, category), point, testStruct);
         }
-    else
-        return new TestElementComplex(SpatialElement::CreateParams(db, modelId, classId, category));
+
+    return new TestElementComplex(SpatialElement::CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------

@@ -161,11 +161,9 @@ private:
 
     Data m_data;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
@@ -177,7 +175,7 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
-    static CreateParams CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties);
+    static CreateParams CreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus*);
 
 public:
     static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer);
@@ -319,13 +317,9 @@ public:
 private:
     Data m_data;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
@@ -414,6 +408,7 @@ namespace dgn_ElementHandler
     struct Category : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Category, DgnCategory, Category, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
         };
 
     //=======================================================================================
@@ -424,7 +419,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     protected:
-        virtual DgnElement::CreateParams _InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties) override;
+        virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat) override;
 
     };
 }

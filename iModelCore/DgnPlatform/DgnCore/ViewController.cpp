@@ -172,7 +172,7 @@ AxisAlignedBox3d ViewController2d::_GetViewedExtents(DgnViewportCR vp) const
     {
     GeometricModelP target = GetViewedModel();
     if (target && target->GetRangeIndexP(false))
-        return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
+        return AxisAlignedBox3d(target->GetRangeIndexP(false)->GetExtents()->ToRange3d());
 
     return AxisAlignedBox3d();
     }

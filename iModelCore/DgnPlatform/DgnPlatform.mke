@@ -417,11 +417,21 @@ $(CoreObjs)PSolidKernelManager$(oext) :             $(DgnBRepSrc)PSolidKernelMan
 
 $(CoreObjs)PSolidKernelEntity$(oext) :              $(DgnBRepSrc)PSolidKernelEntity.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
+$(CoreObjs)PSolidAttrib$(oext) :                    $(DgnBRepSrc)PSolidAttrib.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
 $(CoreObjs)PSolidBSpline$(oext) :                   $(DgnBRepSrc)PSolidBSpline.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
 $(CoreObjs)PSolidCreate$(oext) :                    $(DgnBRepSrc)PSolidCreate.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
 $(CoreObjs)PSolidFacet$(oext) :                     $(DgnBRepSrc)PSolidFacet.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidModify$(oext) :                    $(DgnBRepSrc)PSolidModify.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidPolyface$(oext) :                  $(DgnBRepSrc)PSolidPolyface.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidTopo$(oext) :                      $(DgnBRepSrc)PSolidTopo.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)PSolidTopoId$(oext) :                    $(DgnBRepSrc)PSolidTopoId.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
 $(CoreObjs)PSolidUtil$(oext) :                      $(DgnBRepSrc)PSolidUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 

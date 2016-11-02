@@ -30,10 +30,10 @@ struct     ILineStyleComponent
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
     virtual double _GetLength() const = 0;
-    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================
@@ -44,14 +44,6 @@ struct  ILineStyle
     virtual Utf8CP _GetName() const = 0;
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct RangeNodeCheck
-{
-    virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
 //=======================================================================================
@@ -83,7 +75,7 @@ DEFINE_REF_COUNTED_PTR(IElemTopology)
 //! @ingroup GROUP_ViewContext
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeNodeCheck
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, ScanCriteria::Callback
 {
     friend struct ViewController;
     friend struct SimplifyGraphic;
@@ -137,7 +129,8 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::BoxCR, bool is3d) override;
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _OnRangeElementFound(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();
 

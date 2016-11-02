@@ -20,7 +20,6 @@ DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
-DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
@@ -31,7 +30,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;};
+namespace RangeIndex {struct Tree;}
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -204,7 +204,7 @@ protected:
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
-    bool            m_filled;       // true if the FillModel was called on this DgnModel.
+    bool m_filled;       // true if the FillModel was called on this DgnModel.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -224,19 +224,15 @@ protected:
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params);
 
-    //! Called to bind the model's property values to the ECSqlStatement when inserting
-    //! a new model.  The parameters to bind were the ones specified by this model's Handler.
-    //! @note If you override this method, you should bind your subclass properties
-    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+     //! argument for _BindWriteParams
+    enum class ForInsert : bool {No=false, Yes=true};
 
-    //! Called to bind the model's property values to the ECSqlStatement when updating
-    //! an existing model.  The parameters to bind were the ones specified by this model's Handler
+    //! Called to bind the model's property values to the ECSqlStatement when inserting or updating
+    //! a model.  The parameters to bind were the ones specified by this model's Handler.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    //! Then you @em must call T_Super::_BindWriteParams
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
@@ -422,7 +418,7 @@ protected:
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
-    virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
+    virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() {}
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
@@ -440,7 +436,7 @@ public:
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
-    DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
+    RangeIndex::Tree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
     //! Returns true if this is a 3d model.
     bool Is3d() const {return nullptr != ToGeometricModel3d();}
@@ -805,7 +801,7 @@ public:
     };
 
 private:
-    mutable DgnRangeTreeP m_rangeIndex;
+    mutable RangeIndex::Tree* m_rangeIndex;
     DisplayInfo  m_displayInfo;
 
     DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
@@ -839,7 +835,7 @@ protected:
 
     virtual void _OnFitView(FitContextR) {}
 
-    DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
+    DGNPLATFORM_EXPORT virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const override;
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     DGNPLATFORM_EXPORT virtual void _EmptyModel() override;
     DGNPLATFORM_EXPORT virtual void _RegisterElement(DgnElementCR element) override;

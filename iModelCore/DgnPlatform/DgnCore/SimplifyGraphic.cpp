@@ -9,6 +9,8 @@
 #include <DgnPlatform/DgnRscFontStructures.h>
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 /*=================================================================================**//**
@@ -672,9 +674,19 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
         if (isAutoClipPref)
             {
+#if defined (BENTLEYCONFIG_PARASOLID)
+            bvector<CurveVectorPtr> insideCurves;
+
+            if (SUCCESS == PSolidUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+                {
+                for (CurveVectorPtr tmpCurves : insideCurves)
+                    m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
+
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
             bvector<CurveVectorPtr> insideCurves;
 
             if (SUCCESS == OCBRep::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
@@ -684,9 +696,36 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 
                 return;
                 }
+#endif
             }
-        else if (!doClipping || geom.IsAnyRegionType()) // _ClipBody doesn't support wire bodies...
+        else if (!doClipping || geom.IsAnyRegionType()) // ClipBody doesn't support wire bodies...
             {
+#if defined (BENTLEYCONFIG_PARASOLID)
+            IBRepEntityPtr entityPtr;
+
+            if (SUCCESS == PSolidGeom::BodyFromCurveVector(entityPtr, geom))
+                {
+                if (!doClipping)
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    return;
+                    }
+
+                bool clipped;
+                bvector<IBRepEntityPtr> clippedBodies;
+
+                if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                    {
+                    for (IBRepEntityPtr entityOut : clippedBodies)
+                        m_processor._ProcessBody(*entityOut, *this);
+                    }
+                else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
             TopoDS_Shape shape;
 
             if (SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, geom))
@@ -716,8 +755,8 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                     }
                 return;
                 }
-            }
 #endif
+            }
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
         }
@@ -798,7 +837,32 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
+
+        if (SUCCESS == PSolidGeom::BodyFromSolidPrimitive(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<IBRepEntityPtr> clippedBodies;
+
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (IBRepEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         TopoDS_Shape shape;
 
         if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, geom))
@@ -921,7 +985,32 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
+
+        if (SUCCESS == PSolidGeom::BodyFromBSurface(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<IBRepEntityPtr> clippedBodies;
+
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (IBRepEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessSurface(geom, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         TopoDS_Shape shape;
 
         if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, geom))
@@ -1039,7 +1128,32 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
+
+        if (SUCCESS == PSolidGeom::BodyFromPolyface(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<IBRepEntityPtr> clippedBodies;
+
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (IBRepEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessPolyface(geom, filled, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         TopoDS_Shape shape;
 
         if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, geom))
@@ -1236,9 +1350,24 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::BRep;
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping) // Already had a chance at un-clipped solid...
+    bool isSolidOrSheet = (IBRepEntity::EntityType::Sheet == geom.GetEntityType() || IBRepEntity::EntityType::Solid == geom.GetEntityType());
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping && isSolidOrSheet) // Already had a chance at un-clipped solid...
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+        bool clipped;
+        bvector<IBRepEntityPtr> clippedBodies;
+
+        if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, geom, *GetCurrentClip()) && clipped)
+            {
+            for (IBRepEntityPtr entityOut : clippedBodies)
+                m_processor._ProcessBody(*entityOut, *this);
+            }
+        else
+            {
+            m_processor._ProcessBody(geom, *this);
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         TopoDS_Shape const* shape = SolidKernelUtil::GetShape(geom);
 
         if (nullptr == shape)
@@ -1264,7 +1393,7 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
         return;
         }
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled))
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled) && isSolidOrSheet)
         {
         ClipAndProcessBodyAsPolyface(geom);
         return;
@@ -1303,9 +1432,60 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR geom)
+void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (nullptr != entity.GetFaceMaterialAttachments())
+        {
+        bvector<PolyfaceHeaderPtr> polyfaces;
+        bvector<Render::GeometryParams> params;
+
+        if (BRepUtil::FacetEntity(entity, polyfaces, params, *m_facetOptions))
+            {
+            for (size_t i = 0; i < polyfaces.size(); i++)
+                {
+                if (0 == polyfaces[i]->GetPointCount())
+                    continue;
+
+                GraphicBuilder builder(*this);
+                m_context.CookGeometryParams(params[i], builder);
+
+                SimplifyPolyfaceClipper     polyfaceClipper;
+                bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+                if (0 != clippedPolyface.size())
+                    {
+                    for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                        m_processor._ProcessPolyface(*meshOut, false, *this);
+                    }
+                else if (polyfaceClipper.IsUnclipped())
+                    {
+                    m_processor._ProcessPolyface(*polyfaces[i], false, *this);
+                    }
+                }
+
+            return;
+            }
+        }
+
+    PolyfaceHeaderPtr meshPtr = BRepUtil::FacetEntity(entity, *m_facetOptions);
+
+    if (!meshPtr.IsValid())
+        return;
+
+    SimplifyPolyfaceClipper     polyfaceClipper;
+    bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*meshPtr, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+    if (0 != clippedPolyface.size())
+        {
+        for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+            m_processor._ProcessPolyface(*meshOut, false, *this);
+        }
+    else if (polyfaceClipper.IsUnclipped())
+        {
+        m_processor._ProcessPolyface(*meshPtr, false, *this);
+        }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(geom);
 
     if (nullptr == shape)

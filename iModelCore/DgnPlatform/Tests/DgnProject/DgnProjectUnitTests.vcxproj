@@ -35,6 +35,7 @@
     <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
+    <ClCompile Include="NonPublished\CsvFile_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
     <ClCompile Include="NonPublished\DgnFonts_Test.cpp" />
@@ -85,6 +86,7 @@
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
+    <ClCompile Include="Published\CreateFromInstance_Test.cpp" />
     <ClCompile Include="Published\DateTimeformat_test.cpp" />
     <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />

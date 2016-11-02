@@ -592,17 +592,18 @@ private:
     double      m_xElemPhase;       // where we left off from last element (for compound elements)
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
-    RotMatrix   m_planeByRows;
-    TexturePtr  m_texture;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
+    bool        m_useStroker;
+    RotMatrix   m_planeByRows;
+    TexturePtr  m_texture;
 
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
     DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
 
-    void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
+    void Clear() {m_lStyle = nullptr; m_texture = nullptr; }
     void Init(ILineStyleCP);
 
     DGNPLATFORM_EXPORT bool operator==(LineStyleSymbCR rhs) const; //!< Compare two LineStyleSymb.
@@ -667,6 +668,8 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
+    bool UseStroker() const {return m_useStroker;}
+    void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
@@ -1662,6 +1665,12 @@ struct GraphicBranch
 //=======================================================================================
 struct System
 {
+    Target* m_nowPainting = nullptr;
+    bool CheckPainting(Target* target) {return target==m_nowPainting;}
+    bool IsPainting() {return !CheckPainting(nullptr);}
+    void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
+    void NotPainting() {m_nowPainting = nullptr;}
+
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
 
