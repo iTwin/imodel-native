@@ -344,7 +344,8 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
         /*
         **  Create Temporary Object To Store Feature Occurrences
         */
-        if( bcdtmObject_createDtmObject(&polyDtmP)) goto errexit ;
+        if( bcdtmObject_createDtmObject(&polyDtmP))
+            goto errexit ;
 
         /*
         **  Create Temporary Object to Store the Cleaned FeaturesResult
@@ -381,7 +382,8 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
             changed = false;
             polyDtmP->ppTol = 0.0 ;
             polyDtmP->plTol = 0.0 ;
-            if( bcdtmObject_createTinDtmObject(polyDtmP,1,0.0, false)) goto errexit ;
+            if (bcdtmObject_createTinDtmObject(polyDtmP, 1, 0.0, false))
+                break;
 
 //            bcdtmList_nullTptrValuesDtmObject (polyDtmP);
 
@@ -389,7 +391,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
             ** Remove None Feature Hull Lines
             */
             if( dbg ) bcdtmWrite_message(0,0,0,"Removing Non Feature Hull Lines") ;
-            if( bcdtmList_removeNoneFeatureHullLinesDtmObject(polyDtmP))goto errexit ;
+            if( bcdtmList_removeNoneFeatureHullLinesDtmObject(polyDtmP)) goto errexit ;
             if( dbg ) bcdtmWrite_toFileDtmObject(polyDtmP,L"voidHulls.bcdtm") ;
             /*
             ** Report DTM Stats
@@ -601,11 +603,13 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                 /*
                 **  Remove Deleted Features
                 */
-                if( bcdtmData_compactFeatureTableDtmObject(polyDtmP)) goto errexit ;
+                if( bcdtmData_compactFeatureTableDtmObject(polyDtmP))
+                    goto errexit ;
 
                 if (polyDtmP->numFeatures == 0)
                     break;
-                if ( bcdtmObject_changeStateDtmObject(polyDtmP,DTMState::Data)) goto errexit ;
+                if ( bcdtmObject_changeStateDtmObject(polyDtmP,DTMState::Data))
+                    goto errexit ;
             }
             while (changed);
 
