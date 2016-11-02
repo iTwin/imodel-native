@@ -190,11 +190,9 @@ public:
     //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
     DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
 
-    //! Returns true if a revision can be created. 
-    DGNPLATFORM_EXPORT bool CanCreateRevision() const;
-
     //! Start creating a new revision from the changes saved to the Db
-    //! @return Newly created revision. Null if there was an error.
+    //! @return Newly created revision. Null if there was an error, or if 
+    //! there aren't any changes to create a revision. 
     //! @remarks 
     //! <ul>
     //! <li> The revision is initialized with an id, a parent id and a local file

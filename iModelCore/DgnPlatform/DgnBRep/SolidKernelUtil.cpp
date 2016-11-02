@@ -425,11 +425,11 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR fac
 bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 
@@ -439,11 +439,11 @@ bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& pol
 bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
-    return nullptr;
+    return false;
 #elif defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
 #else
-    return nullptr;
+    return false;
 #endif
     }
 
@@ -462,4 +462,143 @@ bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
     return false;
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanIntersect (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_intersect, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanSubtract (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanUnion (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SewBodies (bvector<IBRepEntityPtr>& sewnEntities, bvector<IBRepEntityPtr>& unsewnEntities, IBRepEntityPtr* toolEntities, size_t nTools, double gapWidthBound, size_t nIterations)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    if (nTools < 2)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create (&markTag);
+
+    bool                 isFirst = true;
+    Transform            targetTransform, invTargetTransform;
+    bvector<PK_ENTITY_t> toolEntityTags;
+
+    // Get tool bodies in coordinates of target...
+    for (size_t iTool = 0; iTool < nTools; ++iTool)
+        {
+        bool        isToolOwned;
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+
+        if (!isToolOwned)
+            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
+            
+        if (isFirst)
+            {
+            isFirst = false;
+            targetTransform = toolEntities[iTool]->GetEntityTransform ();
+            invTargetTransform.InverseOf (targetTransform);
+            invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&gapWidthBound,  1);
+            }
+        else
+            {
+            Transform   toolTransform;
+
+            toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
+            PSolidUtil::TransformBody (toolEntityTag, toolTransform);
+            }
+
+        toolEntityTags.push_back (toolEntityTag);
+        }
+
+    int                       nSewnBodies = 0, nUnsewnBodies = 0, nProblems = 0;
+    PK_BODY_t*                sewnBodyTags = NULL;
+    PK_BODY_t*                unsewnBodyTags = NULL;
+    PK_BODY_problem_group_t*  problemGroup = NULL;
+    PK_BODY_sew_bodies_o_t    options;
+
+    PK_BODY_sew_bodies_o_m (options);
+
+    options.allow_disjoint_result = PK_LOGICAL_true;
+    options.number_of_iterations  = (int) nIterations;
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_sew_bodies ((int) toolEntityTags.size (), &toolEntityTags.front (), gapWidthBound, &options, &nSewnBodies, &sewnBodyTags, &nUnsewnBodies, &unsewnBodyTags, &nProblems, &problemGroup) ? SUCCESS : ERROR);
+
+    if (SUCCESS == status)
+        {
+        if (sewnBodyTags)
+            {
+            for (int iSewn = 0; iSewn < nSewnBodies; ++iSewn)
+                sewnEntities.push_back (PSolidUtil::CreateNewEntity (sewnBodyTags[iSewn], targetTransform, true));
+            }
+
+        if (unsewnBodyTags)
+            {
+            for (int iUnsewn = 0; iUnsewn < nUnsewnBodies; ++iUnsewn)
+                unsewnEntities.push_back (PSolidUtil::CreateNewEntity (unsewnBodyTags[iUnsewn], targetTransform, true));
+            }
+
+        // Invalidate owned tool entities that are now reflected in sewn and unsewn lists...
+        for (size_t iTool = 0; iTool < nTools; ++iTool)
+            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
+        }
+    else
+        {
+        // Undo copy/transform of input entities...
+        PK_MARK_goto (markTag);
+        }
+
+    PK_MEMORY_free (sewnBodyTags);
+    PK_MEMORY_free (unsewnBodyTags);
+
+    if (problemGroup)
+        {
+        for (int iProblem = 0; iProblem < nProblems; ++iProblem)
+            PK_MEMORY_free (problemGroup[iProblem].edges);
+
+        PK_MEMORY_free (problemGroup);
+        }
+
+    PK_MARK_delete (markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+    
+
 

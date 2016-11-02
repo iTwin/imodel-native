@@ -12,7 +12,7 @@ enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemisphe
 enum BoundaryType : byte {None, Open, Closed}
 enum FillDisplay : byte {None, ByView, Always, Blanking}
 enum GeometryClass : byte {Primary, Construction, Dimension, Pattern}
-enum BRepType : byte {Solid, Sheet, Wire, Minimal}
+enum BRepType : byte {Solid, Sheet, Wire}
 
 //=======================================================================================
 // @bsiclass                                                    
