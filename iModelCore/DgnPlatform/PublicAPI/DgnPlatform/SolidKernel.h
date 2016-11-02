@@ -233,7 +233,44 @@ DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pi
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
+
+DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
+DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
+
+//! Support for the creation of new bodies from other types of geometry.
+struct Create
+    {
+    //! Create a new wire or planar sheet body from a CurveVector that represents an open path, closed path, region with holes, or union region.
+    //! @param[out] out The new body.
+    //! @param[in] curve The curve vector to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @note The CurvePrimitives that define an open path or closed loop are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector (IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 1L);
+    
+    //! Create a new sheet or solid body from an ISolidPrimitive.
+    //! @param[out] out The new body.
+    //! @param[in] primitive The surface or solid to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive (IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 1L);
+    
+    //! Create a new sheet body from a MSBsplineSurface.
+    //! @param[out] out The new body.
+    //! @param[in] surface The surface to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface (IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 1L);
+
+    //! Create a new sheet or solid body from a Polyface.
+    //! @param[out] out The new body.
+    //! @param[in] meshData The surface or solid to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface (IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 1L);
+    };
 
 //! Support for modification of bodies.
 struct Modify
