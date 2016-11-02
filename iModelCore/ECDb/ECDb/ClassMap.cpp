@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define CURRENTIMESTAMP_SQLEXP "julianday('now')"
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
@@ -105,17 +105,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
             }
         }
 
-    //Add ECInstanceId property map
-    //check if it already exists
-    if (GetECInstanceIdPropertyMap() != nullptr)
-        return MappingStatus::Success;
-
-    //does not exist yet
-    if (ClassMapper::CreateECInstanceIdPropertyMap(*this) != SUCCESS)
-        return MappingStatus::Error;
-
-   
-    return MappingStatus::Success;
+    return MapSystemColumns();
     }
 
 
@@ -219,7 +209,7 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
     return MappingStatus::Success;
     }
 
-#define CURRENTIMESTAMP_SQLEXP "julianday('now')"
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2014
@@ -268,68 +258,6 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
     whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
 
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                       Affan.Khan   02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk)
-    {
-    if (!GetDbMap().IsImportingSchema() && !loadingFromDisk)
-        {
-        BeAssert(false && "Can only be called during schema import");
-        return ERROR;
-        }
-
-    ECClassIdPropertyMap const* classIdPropertyMap = GetECClassIdPropertyMap();
-    if (classIdPropertyMap == nullptr)
-        {
-        RefCountedPtr<ECClassIdPropertyMap> ecclassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns);
-        if (ecclassIdPropertyMap == nullptr)
-            //log and assert already done in child method
-            return ERROR;
-
-        return GetPropertyMapsR().Insert(ecclassIdPropertyMap, 1);
-        }
-
-    //!WIP_MAPS Fix this though its just a check that Configure is not called twice on a ClassMap with different parameters
-    /*
-    std::vector<DbColumn const*>  existingColumns;
-    std::vector<WipColumnVerticalPropertyMap const*> vps = classIdPropertyMap->GetPropertyMaps();
-    if (vps.size() != columns.size())
-        {
-        BeAssert(false && "Invalid classMap");
-        return ERROR;
-        }
-
-    for (DbColumn const* col : existingColumns)
-        {
-        if (std::find(columns.begin(), columns.end(), col) == columns.end())
-            {
-            BeAssert(false && "Invalid classMap");
-            return ERROR;
-            }
-        }
-
-    for (DbColumn const* col : columns)
-        {
-        if (std::find(existingColumns.begin(), existingColumns.end(), col) == existingColumns.end())
-            {
-            BeAssert(false && "Invalid classMap");
-            return ERROR;
-            }
-        }
-     */
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                       Affan.Khan   02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk)
-    {
-    std::vector<DbColumn const*> columns;
-    columns.push_back(&classIdColumn);
-    return ConfigureECClassId(columns, loadingFromDisk);
     }
 
 //---------------------------------------------------------------------------------------
@@ -831,6 +759,71 @@ BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR
     return SUCCESS;
     }
 
+MappingStatus ClassMap::MapSystemColumns()
+    {
+    if (GetECInstanceIdPropertyMap() != nullptr || GetECClassIdPropertyMap() != nullptr)
+        {
+        BeAssert(false);
+        return MappingStatus::Error;
+        }
+
+    std::vector<DbColumn const*> ecInstanceIdColumns, ecClassIdColumns;
+
+    for (DbTable const* table : GetTables())
+        {
+        DbColumn const* ecInstanceIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        if (ecInstanceIdColumn == nullptr)
+            {
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
+
+        DbColumn const* ecClassIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+        if (ecClassIdColumn == nullptr)
+            {
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
+
+        //WIP: If we push it at back it will break some code that presume that first table is the correct one.
+        // The order should not be importable
+#ifndef NOT_A_GOOD_SOLUTION
+        ecInstanceIdColumns.insert(ecInstanceIdColumns.begin(), ecInstanceIdColumn);
+        ecClassIdColumns.insert(ecClassIdColumns.begin(), ecClassIdColumn);
+#else //This is the right way because order should not be important and anycode that depend on order should be corrected.
+        ecInstanceIdColumns.push_back(ecInstanceIdColumn);
+        ecClassIdColumns.push_back(ecClassIdColumn);
+#endif
+        }
+
+    if (ecInstanceIdColumns.empty() || ecClassIdColumns.empty())
+        {
+        BeAssert(false);
+        return MappingStatus::Error;
+        }
+
+    auto ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, ecInstanceIdColumns);
+    if (ecInstanceIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return MappingStatus::Error;
+        }
+
+    auto ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), ecClassIdColumns);
+    if (ecClassIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return MappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0LL) != SUCCESS)
+        return MappingStatus::Error;
+
+    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1LL) != SUCCESS)
+        return MappingStatus::Error;
+
+    return MappingStatus::Success;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------

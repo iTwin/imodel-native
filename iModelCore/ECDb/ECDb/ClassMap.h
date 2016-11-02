@@ -160,7 +160,7 @@ struct ClassMap : RefCountedBase
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
-
+        MappingStatus MapSystemColumns();
     public:
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
 
@@ -173,36 +173,26 @@ struct ClassMap : RefCountedBase
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
-        BentleyStatus ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk = false);
-        BentleyStatus ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk = false);
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
-
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
-
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
         DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
-
         //! Returns the class maps of the classes derived from this class map's class.
         //! @return Derived classes class maps
         std::vector<ClassMap const*> GetDerivedClassMaps() const;
-
         ECN::ECClassCR GetClass() const { return m_ecClass; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         //!Only call this if the map strategy is TablePerHierarchy
         TablePerHierarchyHelper const* GetTphHelper() const { BeAssert(m_tphHelper != nullptr); return m_tphHelper.get(); }
         bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
-
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-
         ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
-
         Utf8String GetUpdatableViewName() const;
         BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const&) const;
         DbTable const* ExpectingSingleTable() const;
@@ -211,7 +201,6 @@ struct ClassMap : RefCountedBase
         //! If MapStrategy != TPH: NotInherited
         //! Else: Clone
         static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const&);
-
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
 
