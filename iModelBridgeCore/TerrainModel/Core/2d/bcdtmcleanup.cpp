@@ -124,11 +124,12 @@ BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (B
         if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
         }
 
+    if( bcdtmObject_storeDtmFeatureInDtmObject (cleanedDtmP,featureType,cleanedDtmP->nullUserTag,2,&dtmFeatureId,(DPoint3d*)&points[0],(long)points.size())) goto errexit ;
+
     if (isValid)
         {
         if (bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject(tempDtmP, DTMFeatureType::Void)) goto errexit;
         //    if (bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject (tempDtmP, featureType) ) goto errexit;
-
 
         for (dtmFeature = 0; dtmFeature < tempDtmP->numFeatures; ++dtmFeature)
             {
@@ -146,7 +147,9 @@ BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (B
                 if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(tempDtmP, dtmFeature, &featurePtsP, &numFeaturePts)) goto errexit;
                 DTMFeatureId dtmFeatureId = (DTMFeatureId)(-1 - usedFeatureIndexes[0]);
                 if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::Breakline, (DTMUserTag)newFeatureType, 2, &dtmFeatureId, featurePtsP, numFeaturePts)) goto errexit;
-                if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+                if (featurePtsP != NULL)
+                    {
+                    free(featurePtsP); featurePtsP = NULL;
                     }
                 }
             }
