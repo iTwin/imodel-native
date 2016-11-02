@@ -8906,10 +8906,10 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubcl
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractBaseClass.ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
+    ASSERT_EQ(-1, getGeometrySourceHasGeometryRowCount(ecdb));
 
     ECSqlStatement insertStmt;
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_NE(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     //cannot insert anything as there is no concrete subclass of geometrysource
     }
 
@@ -8956,10 +8956,10 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubcl
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractBaseClass.ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
+    ASSERT_EQ(-1, getGeometrySourceHasGeometryRowCount(ecdb));
 
     ECSqlStatement insertStmt;
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_NE(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     //cannot insert anything as there is no concrete subclass of geometrysource
     }
 
