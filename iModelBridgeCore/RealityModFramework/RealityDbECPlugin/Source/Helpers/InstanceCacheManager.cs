@@ -348,7 +348,7 @@ namespace IndexECPlugin.Source.Helpers
             //and for SpatialEntityBase, this means that around 100 instances will break that limit.
 
             int addedCount = 0;
-            int step = 1050/numberOfParamsPerInstance;
+            int step = 1800/numberOfParamsPerInstance;
             int totalCount = instanceList.Count();
             while ( addedCount < totalCount )
                 {
@@ -396,7 +396,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     //IF PARAMETERS ARE ADDED IN THE deleteStatementManager, CHANGE ACCORDINGLY THE VALUE OF maxNumberOfDeleteParams VARIABLE BELOW.
                     deleteStatementManager = new WhereStatementManager();
-                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@; ";
+                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@ ";
                     deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
                     deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
                     }
@@ -404,7 +404,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     //IF PARAMETERS ARE ADDED IN THE deleteStatementManager, CHANGE ACCORDINGLY THE VALUE OF maxNumberOfDeleteParams VARIABLE BELOW.
                     deleteStatementManager = new WhereStatementManager();
-                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@ AND (Complete = 'false' OR DateCacheCreated <= @dateCacheReplaced@); ";
+                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@ AND (Complete = 'false' OR DateCacheCreated <= @dateCacheReplaced@) ";
                     deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
                     deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
                     deleteStatementManager.AddParameter("@dateCacheReplaced@", Bentley.ECObjects.ECObjects.DateTimeType, DateTime.UtcNow.AddDays(m_daysBeforeCacheReplaced * -1));
