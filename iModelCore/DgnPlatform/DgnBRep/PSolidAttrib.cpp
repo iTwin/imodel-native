@@ -24,8 +24,11 @@ char*           pAttribNameIn           // => input attrib type to get
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (pAttribNameIn)
-        PK_ATTDEF_find (pAttribNameIn, &attribDefTag);
+    *ppAttribArrayOut = nullptr;
+    *pNumAttribOut = 0;
+
+    if (nullptr == pAttribNameIn || SUCCESS != PK_ATTDEF_find (pAttribNameIn, &attribDefTag) || PK_ENTITY_null == attribDefTag)
+        return;
 
     PK_ENTITY_ask_attribs (entityTagIn, attribDefTag, pNumAttribOut, ppAttribArrayOut);
     }
@@ -56,7 +59,7 @@ BentleyStatus   PSolidAttrib::GetHiddenAttribute (bool& isHidden, PK_ENTITY_t en
 
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return ERROR;
 
     int             numAttributes = 0;
@@ -84,7 +87,7 @@ BentleyStatus   PSolidAttrib::SetHiddenAttribute (PK_ENTITY_t entity, bool isHid
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return ERROR;
 
     StatusInt       status = SUCCESS;
@@ -122,7 +125,7 @@ void            PSolidAttrib::DeleteHiddenAttribute (PK_ENTITY_t entity)
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return;
 
     int             numAttributes = 0;
