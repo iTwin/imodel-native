@@ -1138,8 +1138,10 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
-    if (nullptr != left.GetAbstractConstraint() && nullptr != right.GetAbstractConstraint() && left.GetAbstractConstraint()->GetFullName() != right.GetAbstractConstraint()->GetFullName())
-        diff->Add(DiffNodeId::AbstractConstraint)->SetValue(left.GetAbstractConstraint()->GetFullName(), right.GetAbstractConstraint()->GetFullName());
+    ECEntityClassCP leftAbstract = left.GetAbstractConstraint();
+    ECEntityClassCP rightAbstract = right.GetAbstractConstraint();
+    if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0))
+        diff->Add(DiffNodeId::AbstractConstraint)->SetValue(leftAbstract->GetFullName(), rightAbstract->GetFullName());
 
     DiffCustomAttributes (*diff, left, right);
     bvector<ECRelationshipConstraintCP> constraints;
