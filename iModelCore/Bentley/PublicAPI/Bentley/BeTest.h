@@ -65,6 +65,7 @@
             virtual void SetUp() {;}
             virtual void TearDown() {;}
             virtual void TestBody() {;}
+            virtual void InvokeTestBody() { TestBody(); }
           public:
             Test() {;}
             virtual ~Test() {;}

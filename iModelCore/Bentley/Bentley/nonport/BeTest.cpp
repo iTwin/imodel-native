@@ -966,7 +966,7 @@ static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
 void testing::Test::RunTest()
     {
     try {
-        TestBody();
+        InvokeTestBody();
         rethrowAssertFromOtherTreads ();
         } 
     catch(...) 
