@@ -36,8 +36,6 @@ struct TestElementSub1 : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TESTELEMENTSUB1_CLASS, TestElement);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop1_1;
         int64_t m_prop1_2;
         double m_prop1_3;
@@ -46,9 +44,8 @@ struct TestElementSub1 : TestElement
         TestElementSub1 (CreateParams const& params) : T_Super (params) {}
         TestElementSub1 (CreateParams const& params, Utf8CP prop1_1, int64_t prop1_2, double prop1_3) : T_Super (params), m_prop1_1 (prop1_1), m_prop1_2 (prop1_2), m_prop1_3 (prop1_3) {}
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static TestElementSub1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
@@ -66,8 +63,6 @@ struct TestElementSub2 : TestElementSub1
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB2_CLASS, TestElementSub1);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop2_1;
         int64_t m_prop2_2;
         double m_prop2_3;
@@ -81,9 +76,8 @@ struct TestElementSub2 : TestElementSub1
             }
 
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static TestElementSub2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
@@ -101,8 +95,6 @@ struct TestElementSub3 : TestElementSub2
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB3_CLASS, TestElementSub2);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop3_1;
         int64_t m_prop3_2;
         double m_prop3_3;
@@ -116,9 +108,8 @@ struct TestElementSub3 : TestElementSub2
             {
             }
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static TestElementSub3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
@@ -149,8 +140,6 @@ struct TestElementComplex : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TestElementComplex_CLASS, TestElement);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         DPoint3d    m_prop_DPoint3d;
         TestStruct  m_prop_TestStruct;
 
@@ -158,9 +147,8 @@ struct TestElementComplex : TestElement
         TestElementComplex (CreateParams const& params) : T_Super (params) {}
         TestElementComplex (CreateParams const& params, DPoint3d prop1_1, TestStruct prop1_2) : T_Super (params), m_prop_DPoint3d (prop1_1), m_prop_TestStruct (prop1_2) {}
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static TestElementComplexPtr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);

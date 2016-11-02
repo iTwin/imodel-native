@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                                                                                                                                         tolerance
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -651,6 +651,11 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
 
             if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
                 alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+
+            DgnMaterialCPtr material = DgnMaterial::QueryMaterial(displayParams->GetMaterialId(), m_context.GetDgnDb());
+
+            if (material.IsValid())
+                materialValue["name"] = material->GetMaterialName().c_str();
             }
         }
 
@@ -1287,7 +1292,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         return elementPublishStatus;
 
     
-    // We have relity models... create a tile set that includes both the reality models and the elements.
+    // We have reality models... create a tile set that includes both the reality models and the elements.
     Json::Value     value;
     value["asset"]["version"] = "0.0";
 
@@ -1404,27 +1409,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
     else
         {
-        // Cesium does not support orthographic views directly - simulate using small field of view
-        json["type"] = "camera";
-
-        DPoint3d backCenter;
-        DVec3d x, y, z;
-        auto const& rot = view.GetRotation();
-        rot.GetRows(x, y, z);
-        rot.Multiply(backCenter, view.GetOrigin());
-        backCenter.SumOf(backCenter, viewExtents, 0.5);
-        rot.MultiplyTranspose(backCenter);
-
-        static const    double s_orthographicFieldOfView = .01;
-        double zDist = viewExtents.x / tan(s_orthographicFieldOfView / 2.0);
-
-        DPoint3d eyePoint;
-        eyePoint.SumOf(backCenter, z, zDist);
-        transform.Multiply(eyePoint);
-
-        json["eyePoint"] = PointToJson(eyePoint);
-        json["focusDistance"] = zDist;
-        json["lensAngle"] = msGeomConst_piOver2;
+        json["type"] = "ortho";
         }
     }
 

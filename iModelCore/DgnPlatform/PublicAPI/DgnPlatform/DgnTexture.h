@@ -64,11 +64,9 @@ private:
     Render::ImageSource m_data;
     Utf8String m_descr;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }

@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/AutoRestore.h>
+#include <DgnPlatform/DgnMaterial.h>
 #include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)

@@ -279,35 +279,12 @@ UrlLinkCPtr UrlLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus UrlLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+void UrlLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindInsertParams(statement);
-    }
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus UrlLink::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindUpdateParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus UrlLink::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(URLLINK_Url), m_url.empty() ? nullptr : m_url.c_str(), IECSqlBinder::MakeCopy::No) ||
-        ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(URLLINK_Description), m_description.empty() ? nullptr : m_description.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
+    stmt.BindText(stmt.GetParameterIndex(URLLINK_Url), m_url.empty() ? nullptr : m_url.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(URLLINK_Description), m_description.empty() ? nullptr : m_description.c_str(), IECSqlBinder::MakeCopy::No);
     }
 
 //---------------------------------------------------------------------------------------
@@ -437,35 +414,12 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus EmbeddedFileLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+void EmbeddedFileLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindInsertParams(statement);
-    }
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus EmbeddedFileLink::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindUpdateParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus EmbeddedFileLink::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Name), m_name.empty() ? nullptr : m_name.c_str(), IECSqlBinder::MakeCopy::No) ||
-        ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Description), m_name.empty() ? nullptr : m_description.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
+    stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Name), m_name.empty() ? nullptr : m_name.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Description), m_name.empty() ? nullptr : m_description.c_str(), IECSqlBinder::MakeCopy::No);
     }
 
 //---------------------------------------------------------------------------------------

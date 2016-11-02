@@ -645,8 +645,11 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     OnChangesApplied(changes, TxnAction::Merge);
 
-    if (SUCCESS != PropagateChanges())
-        status = RevisionStatus::MergePropagationError;
+    if (HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
+        {
+        if (SUCCESS != PropagateChanges())
+            status = RevisionStatus::MergePropagationError;
+        }
 
     UndoChangeSet indirectChanges;
     if (HasChanges())

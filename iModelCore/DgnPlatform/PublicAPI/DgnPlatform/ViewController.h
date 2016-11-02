@@ -688,7 +688,6 @@ public:
     DGNPLATFORM_EXPORT void ClearActiveVolume();
     ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
     //! @}
-
 };
 
 //=======================================================================================
@@ -1052,6 +1051,7 @@ struct SheetViewController : ViewController2d
 
 protected:
     SheetViewControllerCP _ToSheetView() const override {return this;}
+    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
 
     //! Construct a new SheetViewController.
     DGNPLATFORM_EXPORT SheetViewController(SheetViewDefinitionCR def);

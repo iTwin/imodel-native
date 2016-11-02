@@ -24,23 +24,17 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTexture::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+void DgnTexture::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     BeAssert(0 < m_data.GetByteStream().GetSize());
-    if (m_data.GetByteStream().GetSize() <= 0)
-        return DgnDbStatus::BadArg;
-
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Format), static_cast<int>(m_data.GetFormat()))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_width))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Height), static_cast<int>(m_height))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Flags), static_cast<int>(m_flags)))
-        {
-        return DgnDbStatus::BadArg;
-        }
-
-    return DgnDbStatus::Success;
+    stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(stmt.GetParameterIndex(PROP_Format), static_cast<int>(m_data.GetFormat()));
+    stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_width));
+    stmt.BindInt(stmt.GetParameterIndex(PROP_Height), static_cast<int>(m_height));
+    stmt.BindInt(stmt.GetParameterIndex(PROP_Flags), static_cast<int>(m_flags));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -66,24 +60,6 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
     m_height = static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Height)));
     m_flags = static_cast<DgnTexture::Flags>(stmt.GetValueInt(params.GetSelectIndex(PROP_Flags)));
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTexture::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTexture::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
     }
 
 /*---------------------------------------------------------------------------------**//**

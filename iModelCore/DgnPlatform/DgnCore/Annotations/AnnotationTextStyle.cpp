@@ -57,9 +57,6 @@ bool AnnotationTextStylePropertyBag::_IsRealProperty(T_Key key) const
         }
     }
 
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
-
 #define PROP_Data "Data"
 #define PROP_Description "Descr"
 
@@ -110,25 +107,10 @@ static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationText
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationTextStyle::_BindInsertParams(BeSQLite::EC::ECSqlStatement& insert)
+void AnnotationTextStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus status = T_Super::_BindInsertParams(insert);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(insert, *this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& update)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(update);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    return bindParams(update, *this);
+    T_Super::_BindWriteParams(stmt, forInsert);
+    bindParams(stmt, *this);
     }
 
 //---------------------------------------------------------------------------------------
