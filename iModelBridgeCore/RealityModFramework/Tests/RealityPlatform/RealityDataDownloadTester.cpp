@@ -22,7 +22,19 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 class RealityDataDownloadTestFixture : public testing::Test
     {
     public:
-        WCharCP directory = L"D:\\RealityDataDownloadTestDirectory";
+        WCharCP GetDirectory()
+            {
+            WChar exePath[MAX_PATH];
+            GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+            WString exeDir = exePath;
+            size_t pos = exeDir.find_last_of(L"/\\");
+            exeDir = exeDir.substr(0, pos + 1);
+
+            BeFileName testPath(exeDir);
+            testPath.AppendToPath(L"RealityDataDownloadTestDirectory");
+            return testPath;
+            }
 
         BeFileName GetPemLocation()
             {
@@ -48,13 +60,13 @@ class RealityDataDownloadTestFixture : public testing::Test
         //Before each test
         virtual void SetUp() 
             {
-            InitTestDirectory(directory);
+            InitTestDirectory(GetDirectory());
             }
 
         //After each test
         virtual void TearDown()
             {
-            BeFileName::EmptyAndRemoveDirectory(directory);
+            BeFileName::EmptyAndRemoveDirectory(GetDirectory());
             }
     };
 
@@ -64,7 +76,7 @@ class RealityDataDownloadTestFixture : public testing::Test
 TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     {
     AString urlUSGSLink = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip";
-    WString filename(directory);
+    WString filename(GetDirectory());
     RealityDataDownload::ExtractFileName(filename, urlUSGSLink);
 
     bvector<std::pair<AString, WString>> simpleDlList = bvector<std::pair<AString, WString>>();
@@ -90,6 +102,8 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
         "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip",
         };
 
+    WCharCP directory = GetDirectory();
+
     WString filename1(directory);
     RealityDataDownload::ExtractFileName(filename1, urlOSMLink[0]);
     WString filename2(directory);
@@ -102,7 +116,7 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     for (size_t i = 0; i < urlOSMLink.size(); ++i)
         {
         wchar_t filename[1024];
-        swprintf(filename, 1024, L"D:\\RealityDataDownloadTestDirectory\\OsmFile_%2llu.osm", i);
+        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory, i);
 
         ufPair.push_back(std::make_pair(urlOSMLink[i], WString(filename)));
         }
@@ -129,6 +143,8 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
         "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip",
         };
 
+    WCharCP directory = GetDirectory();
+
     WString filename1(directory);
     RealityDataDownload::ExtractFileName(filename1, mirrors[0]);
     WString filename2(directory);
@@ -140,7 +156,7 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     for (size_t i = 0; i < mirrors.size(); ++i)
         {
         wchar_t filename[1024];
-        swprintf(filename, 1024, L"D:\\RealityDataDownloadTestDirectory\\OsmFile_%2llu.osm", i);
+        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory, i);
 
         ufPair.push_back(std::make_pair(mirrors[i], WString(filename)));
         }
@@ -158,6 +174,8 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
 
 TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     {
+    WCharCP directory = GetDirectory();
+
     WString cachename1(directory);
     RealityDataDownload::ExtractFileName(cachename1, "cache1.zip");
     BeFile cache1, cache2;
