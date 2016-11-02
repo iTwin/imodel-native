@@ -393,12 +393,9 @@ private:
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
-    bvector<TileNodeCP>         m_emptyNodes;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
-    virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
-    virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootName().c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
@@ -470,15 +467,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     switch (publisherStatus)
         {
         case Status::Success:
-            break;
-        case Status::NoGeometry:    // ok for tile to have no geometry - but mark as empty so we avoid including in json
-            if (tile.GetChildren().empty())
-                {
-                // Leaf nodes with no children should not be published.
-                // Reality models often contain empty parents with non-empty children - they must be published.
-                BeMutexHolder lock(m_mutex);
-                m_emptyNodes.push_back(&tile);
-                }
+        case Status::NoGeometry:   
             break;
         default:
             m_acceptTileStatus = publisherStatus;
@@ -639,7 +628,7 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonito
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    auto status = Setup();
+    auto status = InitializeDirectories();
     if (Status::Success != status)
         return status;
 
@@ -650,11 +639,14 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    status = PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
+        {
+        CleanDirectories();
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+        }
 
     OutputStatistics(generator.GetStatistics());
 

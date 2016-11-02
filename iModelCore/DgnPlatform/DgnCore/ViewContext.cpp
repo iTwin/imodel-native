@@ -234,7 +234,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     Frustum polyhedron = GetFrustum();
 
     // get enclosing bounding box around polyhedron (outside scan range).
-    DRange3d scanRange = polyhedron.ToRange();
+    RangeIndex::Box scanRange(polyhedron.ToRange());
 
     if (!Is3dView())
         {
@@ -242,7 +242,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         scanRange.high.z = 1;
         }
 
-    m_scanCriteria.SetRangeTest(&scanRange);
+    m_scanCriteria.SetRangeTest(scanRange);
 
     // if we're doing a skew scan, get the skew parameters
     if (Is3dView())
@@ -253,7 +253,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         skewRange.InitFrom(polyhedron.GetPts(), 4);
 
         // get unit bvector from front plane to back plane
-        DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
+        DVec3d  skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
 
         // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
         int alongAxes = (fabs(skewVec.x) < 1e-8);
@@ -261,7 +261,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         alongAxes += (fabs(skewVec.z) < 1e-8);
 
         if (alongAxes < 2)
-            m_scanCriteria.SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
+            m_scanCriteria.SetSkewRangeTest(scanRange, RangeIndex::Box(skewRange), skewVec);
         }
 
     m_scanRangeValid = true;
@@ -486,17 +486,24 @@ StatusInt ViewContext::_VisitHit(HitDetailCR hit)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* private callback (called from scanner)
-* @bsimethod                                                    KeithBentley    04/01
+* @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCriteriaR sc)
+ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementCR element)
     {
     GeometrySourceCP geomElement = element.ToGeometrySource();
-    if (nullptr == geomElement)
-        return SUCCESS;
-    
-    ViewContextR context = *(ViewContext*)inContext;
-    return context.VisitGeometry(*geomElement);
+    if (nullptr != geomElement)
+        _VisitGeometry(*geomElement);
+
+    return WasAborted() ? ScanCriteria::Stop::Yes : ScanCriteria::Stop::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+ScanCriteria::Stop ViewContext::_CheckNodeRange(RangeIndex::BoxCR testRange, bool is3d)
+    {
+    Frustum box(testRange.ToRange3d());
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Stop::No : ScanCriteria::Stop::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,17 +511,7 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::SetScanReturn()
     {
-    m_scanCriteria.SetRangeNodeCheck(this);
-    m_scanCriteria.SetElementCallback(visitElementFunc, this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
-    {
-    Frustum box(testRange);
-    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
+    m_scanCriteria.SetCallback(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,8 +524,10 @@ bool ViewContext::_AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tole
         int nOutside = 0;
 
         for (int iPt=0; iPt < nPts; iPt++)
+            {
             if (!m_volume->PointInside(worldPoints[iPt], tolerance))
-                nOutside++;
+                ++nOutside;
+            }
 
         if (nOutside == nPts)
             return false;
@@ -538,7 +537,7 @@ bool ViewContext::_AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tole
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/16
+* @bsimethod        Brien.Bastings  05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsRangeVisible(DRange3dCR range, double tolerance)
     {
@@ -583,7 +582,7 @@ StatusInt ViewContext::_ScanDgnModel(DgnModelP model)
     if (!ValidateScanRange())
         return ERROR;
 
-    m_scanCriteria.SetDgnModel(model);
+    m_scanCriteria.SetDgnModel(*model);
     return m_scanCriteria.Scan();
     }
 

@@ -64,7 +64,6 @@ void ChangeTestFixture::_CreateDgnDb()
     BeFileName newName(TEST_NAME, true);
     newName.AppendString(L".ibim");
 
-    //SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
     SetupSeedProject();
     m_testDb = m_db;
     m_testFileName = BeFileName(m_db->GetDbFileName(),true);
