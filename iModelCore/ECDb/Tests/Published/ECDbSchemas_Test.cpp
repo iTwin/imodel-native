@@ -587,16 +587,20 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
     testSchema->CreateRelationshipClass(oneToManyRelClass, "FooHasGoo");
     oneToManyRelClass->SetStrength(StrengthType::Holding);
     oneToManyRelClass->GetSource().AddClass(*fooClass);
+    oneToManyRelClass->GetSource().SetRoleLabel("FooHasGoo");
     oneToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneToManyRelClass->GetTarget().AddClass(*gooClass);
+    oneToManyRelClass->GetTarget().SetRoleLabel("FooHasGoo (Reversed)");
     oneToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
     ECRelationshipClassP manyToManyRelClass = nullptr;
     testSchema->CreateRelationshipClass(manyToManyRelClass, "RelFooGoo");
     manyToManyRelClass->SetStrength(StrengthType::Referencing);
     manyToManyRelClass->GetSource().AddClass(*fooClass);
+    manyToManyRelClass->GetSource().SetRoleLabel("RelFooGoo");
     manyToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     manyToManyRelClass->GetTarget().AddClass(*gooClass);
+    manyToManyRelClass->GetTarget().SetRoleLabel("RelFooGoo (Reversed)");
     manyToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
     auto schemaCache = ECSchemaCache::Create();

@@ -29,8 +29,8 @@ private:
     BentleyStatus ImportECRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
     BentleyStatus ImportCustomAttributes(ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-    BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ECPropertyCR);
-    BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ECPropertyCR);
+    BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ExtendedTypeECPropertyCR);
+    BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ExtendedTypeECPropertyCR);
 
     BentleyStatus InsertECSchemaEntry(ECN::ECSchemaCR);
     BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
