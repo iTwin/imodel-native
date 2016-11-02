@@ -238,10 +238,11 @@ TEST_F(ViewAttachmentTest, Geom)
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
 
     AddTextToDrawing(m_drawingModelId, "Text", drawingViewRot);
-    AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
+    //AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
 
     // Create an attachment
-    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, MakePlacement());
+    Placement2d placement(DPoint2d::From(0,0), AngleInDegrees(), ElementAlignedBox2d(0,0,1,1));
+    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
