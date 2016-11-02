@@ -443,10 +443,10 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         };
 
     private:
-        bool m_isValid;
+        bool m_isComplete;
 
         NavigationPropertyMap(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(Type::Navigation, classMap, ecProperty), m_isValid(false)
+            : CompoundDataPropertyMap(Type::Navigation, classMap, ecProperty), m_isComplete(false)
             {}
 
         virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&) const override;
@@ -456,7 +456,7 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         virtual ~NavigationPropertyMap() {}
 
         //returns true if the prop map is fully set-up and can be used. If false, it is still under construction
-        bool IsValid() const { return m_isValid; }
+        bool IsComplete() const { return m_isComplete; }
         IdPropertyMap const& GetIdPropertyMap() const;
         RelECClassIdPropertyMap const& GetRelECClassIdPropertyMap() const;
 

@@ -64,6 +64,7 @@ struct ExistingColumn
         int GetPrimaryKeyOrdinal() const { return m_pkordinal; }
         bool IsNotNull() const { return m_isnotnull; }
         Utf8StringCR GetDefault() const { return m_defaultConstraint; }
+
         static BentleyStatus GetColumns(std::vector<ExistingColumn>& columns, DbCR db, Utf8CP existingTableName)
             {
             columns.clear();
@@ -71,7 +72,7 @@ struct ExistingColumn
             sql.Sprintf("PRAGMA table_info('%s')", existingTableName);
             Statement stmt;
             if (stmt.Prepare(db, sql.c_str()) != BE_SQLITE_OK)
-                return BentleyStatus::ERROR;
+                return ERROR;
 
             while (stmt.Step() == BE_SQLITE_ROW)
                 {
@@ -79,9 +80,33 @@ struct ExistingColumn
                 Utf8CP colName = stmt.GetValueText(1);
 
                 BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
-                Utf8String colTypeName(stmt.GetValueText(2));
-                colTypeName.ToLower();
-                colTypeName.Trim();
+                Utf8String colTypeName;
+                if (!stmt.IsColumnNull(2))
+                    colTypeName.assign(stmt.GetValueText(2));
+
+                DbColumn::Type colType = DbColumn::Type::Any;
+                if (!colTypeName.empty())
+                    {
+                    if (colTypeName.ContainsI("long") ||
+                        colTypeName.ContainsI("int"))
+                        colType = DbColumn::Type::Integer;
+                    else if (colTypeName.ContainsI("char") ||
+                             colTypeName.ContainsI("clob") ||
+                             colTypeName.ContainsI("text"))
+                        colType = DbColumn::Type::Text;
+                    else if (colTypeName.ContainsI("blob") ||
+                             colTypeName.ContainsI("binary"))
+                        colType = DbColumn::Type::Blob;
+                    else if (colTypeName.ContainsI("real") ||
+                             colTypeName.ContainsI("floa") ||
+                             colTypeName.ContainsI("doub"))
+                        colType = DbColumn::Type::Real;
+                    else if (colTypeName.ContainsI("date") ||
+                             colTypeName.ContainsI("timestamp"))
+                        colType = DbColumn::Type::TimeStamp;
+                    else if (colTypeName.ContainsI("bool"))
+                        colType = DbColumn::Type::Boolean;
+                    }
 
                 BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
                 const bool colIsNotNull = stmt.GetValueInt(3) == 1;
@@ -91,27 +116,6 @@ struct ExistingColumn
 
                 BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
                 const int pkOrdinal = stmt.GetValueInt(5) ; //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
-
-                DbColumn::Type colType = DbColumn::Type::Any;
-                if (colTypeName.rfind("long") != Utf8String::npos ||
-                    colTypeName.rfind("int") != Utf8String::npos)
-                    colType = DbColumn::Type::Integer;
-                else if (colTypeName.rfind("char") != Utf8String::npos ||
-                         colTypeName.rfind("clob") != Utf8String::npos ||
-                         colTypeName.rfind("text") != Utf8String::npos)
-                    colType = DbColumn::Type::Text;
-                else if (colTypeName.rfind("blob") != Utf8String::npos ||
-                         colTypeName.rfind("binary") != Utf8String::npos)
-                    colType = DbColumn::Type::Blob;
-                else if (colTypeName.rfind("real") != Utf8String::npos ||
-                         colTypeName.rfind("floa") != Utf8String::npos ||
-                         colTypeName.rfind("doub") != Utf8String::npos)
-                    colType = DbColumn::Type::Real;
-                else if (colTypeName.rfind("date") != Utf8String::npos ||
-                         colTypeName.rfind("timestamp") != Utf8String::npos)
-                    colType = DbColumn::Type::TimeStamp;
-                else if (colTypeName.rfind("bool") != Utf8String::npos)
-                    colType = DbColumn::Type::Boolean;
 
                 columns.push_back(ExistingColumn(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
                 }

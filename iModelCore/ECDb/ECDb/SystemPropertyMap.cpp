@@ -48,9 +48,9 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
     bset<DbTable const*> doneList;
     for (DbColumn const* column : columns)
         {
-        if (column->GetType() != DbColumn::Type::Integer || doneList.find(&column->GetTable()) != doneList.end())
+        if ((column->GetType() != DbColumn::Type::Integer && column->GetType() != DbColumn::Type::Any) || doneList.find(&column->GetTable()) != doneList.end())
             {
-            BeAssert(false && "System column must have type integer and column must be unique per table");
+            BeAssert(false && "System column must have type integer or 'Any' and column must be unique per table");
             m_dataPropMaps.clear();
             m_tables.clear();
             m_dataPropMapList.clear();

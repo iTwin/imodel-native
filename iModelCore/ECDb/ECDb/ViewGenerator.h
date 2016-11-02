@@ -37,14 +37,12 @@ struct ViewGenerator
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
             }
 
-        /*=====================Debug views===================== */
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
-        /*=====================Debug views===================== */
+
         /*=====================System Polymorphic view===================== */
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
         BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
-        /*=====================System Polymorphic view===================== */
         /*=====================NEW API=================*/
         bool IsECClassIdFilterEnabled() const;
         void RecordPropertyMapIfRequried(PropertyMap const& accessString);
@@ -55,7 +53,6 @@ struct ViewGenerator
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
-        /*=====================NEW API=================*/
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view

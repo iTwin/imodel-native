@@ -208,13 +208,15 @@ BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataProp
         return ERROR;
         }
 
-    if (m_map.find(propertyMap->GetAccessString().c_str()) != m_map.end())
+    //only holds the direct members, so don't use access string, but just the prop names of the member props
+    Utf8CP key = propertyMap->GetProperty().GetName().c_str();
+    if (m_map.find(key) != m_map.end())
         {
         BeAssert(false && "PropertyMap with same name or may be different case already exist");
         return ERROR;
         }
     auto where = position > m_list.size() ? m_list.end() : m_list.begin() + position;
-    m_map[propertyMap->GetAccessString().c_str()] = propertyMap;
+    m_map[key] = propertyMap;
     m_list.insert(where, propertyMap.get());
     return SUCCESS;
     }
@@ -509,7 +511,7 @@ RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(Cla
 //---------------------------------------------------------------------------------------
 VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    if (!m_isValid)
+    if (!m_isComplete)
         return VisitorFeedback::Cancel;
 
     VisitorFeedback fb = visitor.Visit(*this);
@@ -524,7 +526,7 @@ VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&
 //---------------------------------------------------------------------------------------
 NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::GetRelECClassIdPropertyMap() const
     {
-    BeAssert(m_isValid);
+    BeAssert(m_isComplete);
     return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME));
     }
 
@@ -533,7 +535,7 @@ NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::Get
 //---------------------------------------------------------------------------------------
 NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdPropertyMap() const
     {
-    BeAssert(m_isValid);
+    BeAssert(m_isComplete);
     return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME));
     }
 
@@ -542,7 +544,7 @@ NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdProperty
 //---------------------------------------------------------------------------------------
 BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId)
     {
-    if (m_isValid)
+    if (m_isComplete)
         {
         BeAssert(false && "NavigationPropertyMap::SetMembers can only be called on NavigationPropertyMap which is being built");
         return ERROR;
@@ -565,7 +567,7 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
     if (SUCCESS != m_children.Add(relECClassIdPropertyMap))
         return ERROR;
 
-    m_isValid = true;
+    m_isComplete = true;
     return SUCCESS;
     }
 
@@ -821,9 +823,7 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
 
             case PropertyMap::Type::Navigation:
             {
-            NavigationPropertyMap const& navPropMap = static_cast<NavigationPropertyMap const&> (propertyMap);
-            NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = navPropMap.GetRelECClassIdPropertyMap();
-
+            //nav props can be copied even when under construction. 
             RefCountedPtr<NavigationPropertyMap> clonedPropMap = NavigationPropertyMap::CreateInstance(newContext, *propertyMap.GetProperty().GetAsNavigationProperty());
             if (clonedPropMap == nullptr)
                 {
@@ -831,10 +831,16 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
                 return nullptr;
                 }
 
-            if (SUCCESS != clonedPropMap->SetMembers(navPropMap.GetIdPropertyMap().GetColumn(), relClassIdPropMap.GetColumn(), relClassIdPropMap.GetDefaultClassId()))
-                return nullptr;
+            NavigationPropertyMap const& navPropMap = static_cast<NavigationPropertyMap const&> (propertyMap);
+            if (navPropMap.IsComplete())
+                {
+                NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = navPropMap.GetRelECClassIdPropertyMap();
+                if (SUCCESS != clonedPropMap->SetMembers(navPropMap.GetIdPropertyMap().GetColumn(), relClassIdPropMap.GetColumn(), relClassIdPropMap.GetDefaultClassId()))
+                    return nullptr;
 
-            BeAssert(clonedPropMap->IsValid());
+                BeAssert(clonedPropMap->IsComplete());
+                }
+
             return clonedPropMap;
             }
 

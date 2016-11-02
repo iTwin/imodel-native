@@ -369,6 +369,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
         }
 
+    BeAssert(x != nullptr && y != nullptr && z != nullptr);
     return Point3dPropertyMap::CreateInstance(m_classMap, parentPropMap, property, *x, *y, *z);
     }
 
@@ -579,7 +580,7 @@ RefCountedPtr<StructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPro
 //+===============+===============+===============+===============+===============+======
 BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& propertyMap)
     {
-    if (propertyMap.IsValid())
+    if (propertyMap.IsComplete())
         {
         BeAssert(false && "propertyMap must be 'under construction' when passed to this method");
         return ERROR;
