@@ -28,11 +28,11 @@ const uint64_t PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD = 1; //Number of point that
 const double PCGroundTIN::SEED_BORDER_FACTOR = 1.0; //the percentage of the max grid size we will use around the border -> help add seed points near the border
 const double Triangle::TOLERANCE_FACTOR = 0.001; //One millimeter
 const unsigned int PCGroundTINMT::MAX_NUMBER_THREAD = 8;
-/*
-BeCriticalSection PCGroundTINMT::s_CSPCGroundTIN;
-BeCriticalSection PCGroundTINMT::s_newPointToAddCS;
-BeCriticalSection PCGroundTINMT::s_dtmLibCS;
-*/
+
+BeMutex PCGroundTINMT::s_CSPCGroundTIN;
+BeMutex PCGroundTINMT::s_newPointToAddCS;
+BeMutex PCGroundTINMT::s_dtmLibCS;
+
 static const uint32_t PROGESS_UPDATE_TIME = 2000;
 
 /*=================================================================================**//**
@@ -64,19 +64,19 @@ class  ProgressMonitor
         //return true if process should continue (was not canceled)
         static bool UpdateProgressInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             bool shouldContinue = UpdateProgress();
             return shouldContinue;
             }
         static bool CheckContinueInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             return !s_process_canceled;
             }
 
         static void SignalErrorInThread()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             SignalError();
             }
 
@@ -96,7 +96,7 @@ class  ProgressMonitor
 
         static size_t GetWorkDoneMT()
             {
-            //BeCriticalSectionHolder lk(s_CSProgress);
+            //BeMutexHolder lk(s_CSProgress);
             return s_workDone;
             }
 
@@ -166,13 +166,13 @@ class  ProgressMonitor
             {
             double accomplishmentRatio = (static_cast<double>(workDone) / static_cast<double>(m_processSize));
             {
-            //BeCriticalSectionHolder lk(s_reportCS);
+            //BeMutexHolder lk(s_reportCS);
             m_pReport->SetWorkDone(accomplishmentRatio);
             }
 
             if (s_errorOccured)
                 {
-                //BeCriticalSectionHolder lk(s_reportCS);
+                //BeMutexHolder lk(s_reportCS);
                 m_pReport->OnSignalError();
                 }
 
@@ -191,7 +191,7 @@ class  ProgressMonitor
         bool CheckContinueMT()
             {
                 {
-                //BeCriticalSectionHolder lk(s_reportCS);
+                //BeMutexHolder lk(s_reportCS);
                 s_process_canceled = !m_pReport->CheckContinueOnProgress();
                 }
 
@@ -204,7 +204,7 @@ class  ProgressMonitor
             }
         void RefreshMSViewMT(bool incremental)
             {
-            //BeCriticalSectionHolder lk(s_reportCS);
+            //BeMutexHolder lk(s_reportCS);
 
             m_pReport->RefreshMSView(incremental);
             }
@@ -843,8 +843,6 @@ size_t  PCGroundTriangle::GetMemorySize() const
     return m_memorySize;
     }
 
-
-#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -904,7 +902,6 @@ size_t  DensifyTriangleWork::_GetMemorySize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*
 void QueryAllPointsForFirstSeedPointWork::_DoWork()
     {
     try
@@ -918,7 +915,7 @@ void QueryAllPointsForFirstSeedPointWork::_DoWork()
         ProgressMonitor::SignalErrorInThread();
         }
     }
-*/
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -945,6 +942,8 @@ void FindFirstSeedPointWork::_DoWork()
         }
     }
 
+
+#if 0 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1611,7 +1610,7 @@ PCGroundTINPtr PCGroundTINMT::Create(GroundDetectionParameters& params, Progress
 * @bsimethod                                    Marc.Bedard                     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 PCGroundTINMT::PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& report)
-:PCGroundTIN(params, report)/*, m_mainThreadID(BeThreadUtilities::GetCurrentThreadId())*/
+:PCGroundTIN(params, report), m_mainThreadID(BeThreadUtilities::GetCurrentThreadId())
     {
     }
 
@@ -1621,11 +1620,10 @@ PCGroundTINMT::PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& 
 PCGroundTINMT::~PCGroundTINMT()
     {
     //GDZERO
-    //FlushThreadPoolWork();
+    FlushThreadPoolWork();
     }
 
 //GDZERO
-#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1650,9 +1648,8 @@ PointCloudThreadPool& PCGroundTINMT::GetQueryThreadPool()
     {
     if (m_pQueryThreadPool == NULL)
         {
-        //how many  threads can be created, zero means is meaningless for this platform
-        //We create only one thread because pointCloud query is not multi thread safe...
-        unsigned int num_threads = 1;
+        unsigned int num_threads = std::thread::hardware_concurrency();
+        //unsigned int num_threads = 1;
         m_pQueryThreadPool = PointCloudThreadPool::Create(num_threads, num_threads, SchedulingMethod::FIFO);
         }
     return *m_pQueryThreadPool;
@@ -1684,7 +1681,7 @@ void PCGroundTINMT::_IncrementWorkDone()
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridCellEntryPtr PCGroundTINMT::_CreateGridCellEntry(DRange3d const& boundingBoxUors) 
     {
-    //BeCriticalSectionHolder lock(s_CSPCGroundTIN);
+    //BeMutexHolder lock(s_CSPCGroundTIN);
     return T_Super::_CreateGridCellEntry(boundingBoxUors);
     }
 
@@ -1695,7 +1692,7 @@ GridCellEntryPtr PCGroundTINMT::_CreateGridCellEntry(DRange3d const& boundingBox
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PCGroundTINMT::_GetDistanceToTriangleFromPoint(double& distance, DPoint3d const& point) const
     {
-    BeCriticalSectionHolder lock(s_dtmLibCS);
+    BeMutexHolder lock(s_dtmLibCS);
     return T_Super::_GetDistanceToTriangleFromPoint(distance, point);
     }
 
@@ -1704,7 +1701,7 @@ bool PCGroundTINMT::_GetDistanceToTriangleFromPoint(double& distance, DPoint3d c
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t PCGroundTINMT::_ComputeTriangulation()
     {
-    BeCriticalSectionHolder lock(s_dtmLibCS);
+    BeMutexHolder lock(s_dtmLibCS);
     return T_Super::_ComputeTriangulation();
     }
 
@@ -1713,7 +1710,7 @@ size_t PCGroundTINMT::_ComputeTriangulation()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PCGroundTINMT::_ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats)
     {
-    BeCriticalSectionHolder lock(s_dtmLibCS);
+    BeMutexHolder lock(s_dtmLibCS);
     return T_Super::_ComputeStatisticsFromDTM(angleStats, heightStats);
     }
 
@@ -1744,7 +1741,7 @@ void PCGroundTINMT::_ComputeTrianglesToProcessFromPointToAdd()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PCGroundTINMT::_AddPoint(DPoint3d const& point)
     {
-    BeCriticalSectionHolder lock(s_newPointToAddCS);
+    BeMutexHolder lock(s_newPointToAddCS);
     T_Super::_AddPoint(point);
     }
 
@@ -1753,7 +1750,7 @@ void PCGroundTINMT::_AddPoint(DPoint3d const& point)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PCGroundTINMT::_SetNewSeedPoints(const bvector<DPoint3d>& newpoints)
     {
-    BeCriticalSectionHolder lock(s_newPointToAddCS);
+    BeMutexHolder lock(s_newPointToAddCS);
     T_Super::_SetNewSeedPoints(newpoints);
     }
 
@@ -1822,7 +1819,7 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
     for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
         {
         m_pReport->StartCurrentIteration(currentIteration);
-
+        /*
         //Special case for first iteration
         size_t trianglesToProcess(m_trianglesToProcess.size());
         //Assume every triangle to process will add one point -> and thus create three new triangles
@@ -1830,8 +1827,8 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
         size_t expectedNewTriangles = trianglesToProcess * 2;
         size_t actualTriangleCount = m_pBcDtm->GetTriangleCount();
         size_t TotalTrianglesExpected = actualTriangleCount + expectedNewTriangles;
-        double accomplishmentRatio = ((static_cast<double>(actualTriangleCount) / static_cast<double>(TotalTrianglesExpected)));
-        
+        //double accomplishmentRatio = ((static_cast<double>(actualTriangleCount) / static_cast<double>(TotalTrianglesExpected)));
+        */
         if (!m_pReport->CheckContinueOnProgress())
             {
             StopIteration();
@@ -1841,9 +1838,11 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
             }
 
         //Display some stat while processing to help debug
+/*        
         WChar tmpMessage[200];
         WString formatStr;
         double accomplishmentRatioItr = (static_cast<double>(actualTriangleCount) / static_cast<double>(TotalTrianglesExpected));
+
 #if !defined (NDEBUG)
         GetResourceHandle()->GetString(formatStr, DCPCMISC_PointCloudGroundDetectionStatisticDebug, STRINGID_DCPCMISC_Messages);
         BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), actualTriangleCount, trianglesToProcess, accomplishmentRatioItr * 100.0, m_pParams->GetHeightThreshold(), m_pParams->GetAngleThreshold().Degrees());
@@ -1852,7 +1851,7 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
         BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), accomplishmentRatioItr * 100.0);
 #endif
         m_pReport->OutputMessage(tmpMessage);
-
+        */
 
         ProgressMonitor progressMonitor(*m_pReport, m_trianglesToProcess.size(), false, m_pParams->GetUseMultiThread());
 
@@ -1885,10 +1884,13 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
         }
 
     //Display some stat while processing to help debug
+/*
     double elapsedSecond = m_pReport->GetTimerR().GetCurrentSeconds();
     long hours = (long) (elapsedSecond / 60 / 60);
     long minutes = (long) (elapsedSecond / 60) % 60;
     long seconds = (long) elapsedSecond % 60;
+
+
     WChar tmpMessage[200];
     WString formatStr;
 #if !defined (NDEBUG)
@@ -1899,7 +1901,7 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
     BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), m_pBcDtm->GetTriangleCount(), currentIteration, hours, minutes, seconds);
 #endif
     m_pReport->OutputMessage(tmpMessage);
-
+*/
     m_pReport->EndPhase(L"END - Densification of TIN");
     return SUCCESS;
     }
@@ -1909,6 +1911,9 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PCGroundTINMT::_Classify()
     {
+    //GDZERO
+    assert(!"Should not be called");
+#if 0 
     m_pReport->StartPhase(3, L"START - Classification");
     if (!m_pReport->CheckContinueOnProgress())
         return ERROR;//User abort
@@ -1941,8 +1946,8 @@ StatusInt PCGroundTINMT::_Classify()
         }
 
     m_pReport->EndPhase(L"END - Classification");
+#endif
     return SUCCESS;
     }
-#endif
 
 END_GROUND_DETECTION_NAMESPACE

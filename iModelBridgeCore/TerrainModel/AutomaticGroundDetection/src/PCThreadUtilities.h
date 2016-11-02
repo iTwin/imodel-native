@@ -14,6 +14,7 @@
 #include <Bentley/DateTime.h>
 
 #include "PCThreadUtilities.h"
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
 
 //__PUBLISH_SECTION_END__
 GROUND_DETECTION_TYPEDEF(PointCloudThread)
@@ -22,7 +23,6 @@ GROUND_DETECTION_TYPEDEF(PointCloudWork)
 GROUND_DETECTION_TYPEDEF(PointCloudWorkerThread)
 
 //__PUBLISH_SECTION_START__
-
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -113,7 +113,7 @@ struct PointCloudThread : RefCountedBase
 private:
     intptr_t    m_threadId;
     Utf8String  m_threadName;
-    Bentley::DgnPlatform::DgnPlatformLib::Host* m_hostToAdopt;
+    //DgnPlatformLib::Host* m_hostToAdopt;
     
 private:
     static void ThreadRunner(void* arg);
@@ -124,7 +124,7 @@ private:
 #endif
     
 protected:
-    PointCloudThread(Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt,Utf8CP threadName = NULL);
+    PointCloudThread(/*Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt,*/Utf8CP threadName = NULL);
     ~PointCloudThread();
     virtual void _Run() = 0;
 
@@ -176,7 +176,7 @@ private:
     void SetIsBusy(bool);
 
 protected:
-    PointCloudWorkerThread(Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt,IStateListener* stateListener, Utf8CP threadName);
+    PointCloudWorkerThread(/*Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt,*/IStateListener* stateListener, Utf8CP threadName);
     ~PointCloudWorkerThread();
     virtual void _OnBusy();
     virtual void _OnIdle();
@@ -195,7 +195,7 @@ public:
     void Terminate();
     //! Create a new PointCloudWorkerThread thread.
     //! note This function does not start the new thread. You must call the Start method on the returned thread object in order to start it.
-    static PointCloudWorkerThreadPtr Create(Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt, IStateListener* stateListener = NULL, Utf8CP threadName = NULL) { return new PointCloudWorkerThread(hostToAdopt, stateListener, threadName); }
+    static PointCloudWorkerThreadPtr Create(/*Bentley::DgnPlatform::DgnPlatformLib::Host* hostToAdopt,*/ IStateListener* stateListener = NULL, Utf8CP threadName = NULL) { return new PointCloudWorkerThread(/*hostToAdopt, */stateListener, threadName); }
 };
 
 /*=================================================================================**//**
@@ -222,8 +222,8 @@ private:
     int                                 m_maxThreads;
     bool                                m_isTerminating;
     mutable BeConditionVariable         m_threadsCV;
-    mutable BeCriticalSection           m_workQueueCS;
-    mutable BeCriticalSection           m_memoryUsedCS;
+    mutable BeMutex                     m_workQueueCS;
+    mutable BeMutex                     m_memoryUsedCS;
     bmap<PointCloudWorkerThread*, bool> m_threads;
     PointCloudWorkQueue                 m_workQueue;
     size_t                              m_memoryUsed;
@@ -252,7 +252,7 @@ public:
     int  GetThreadsCount() const;
     void QueueWork(PointCloudWork& work);
     void WaitUntilAllThreadsIdle() const;
-    bool WaitUntilWorkDone(UInt32 timeoutMillis) const;
+    bool WaitUntilWorkDone(uint32_t timeoutMillis) const;
     void WaitUntilQueueIsNotFull() const;
     void Terminate();
 };
