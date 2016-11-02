@@ -107,9 +107,6 @@ ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDat
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (IsAlienTable(propertyMap.GetTable()))
-        VisitorFeedback::Cancel;
-
     Result& result = Record(propertyMap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
@@ -135,7 +132,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPrope
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().CompareToIAscii(propertyMap.GetAccessString()))
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             {
             result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
             }
@@ -177,7 +174,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().CompareToIAscii(propertyMap.GetAccessString()))
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual )
             {
             result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
             }
@@ -186,12 +183,21 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
     return VisitorFeedback::Next;
     }
 
+
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMap const& propertyMap) const
     {
-    SingleColumnDataPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
+    SingleColumnDataPropertyMap const* vmap = nullptr;
+    if (!propertyMap.IsPersistedInDb())
+        {
+        //If not persisted we just need the ECClassId
+        vmap = propertyMap.FindDataPropertyMap(*propertyMap.GetTables().front());
+        }
+    else
+        vmap = FindSystemPropertyMapForTable(propertyMap);
+
     if (vmap == nullptr)
         {
         return VisitorFeedback::Cancel;
@@ -218,7 +224,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdProperty
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().CompareToIAscii(propertyMap.GetAccessString()))
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             {
             result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
             }
@@ -244,7 +250,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap con
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
+        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             {
             result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
             }

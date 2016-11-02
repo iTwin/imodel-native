@@ -826,31 +826,10 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
         bset<ClassMap*> const& classMaps = kvPair.second;
         bool canEdit = table->GetEditHandleR().CanEdit();
         if (!canEdit) table->GetEditHandleR().BeginEdit();
-        DbColumn const* classIdColumn = CreateClassIdColumn(*table, classMaps);
-        if (!canEdit) table->GetEditHandleR().EndEdit();
-
-        if (classIdColumn == nullptr)
-            {
-            BeAssert(false && "Failed to create/configure classId column");
+        if (UpdateECClassIdColumnIfRequired(*table, classMaps) != SUCCESS)
             return ERROR;
-            }
 
-        for (ClassMap* classMap : classMaps)
-            {
-            if (classMap->GetMapStrategy().IsTablePerHierarchy() && classMap->GetTphHelper()->HasJoinedTable()
-                && table->GetType() == DbTable::Type::Primary)
-                {
-                //WIP_BASECLASSID_REFACTOR Is this check ever true?
-                continue;
-                }
-
-            if (classMap->ConfigureECClassId(*classIdColumn) != SUCCESS)
-                {
-                BeAssert(false && "Failed to add classmap");
-                return ERROR;
-                }
-            }
-
+        if (!canEdit) table->GetEditHandleR().EndEdit();
         if (onlyCreateClassIdColumns)
             continue;
 
@@ -864,7 +843,7 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> const& classMaps) const
+BentleyStatus ECDbMap::UpdateECClassIdColumnIfRequired(DbTable& table, bset<ClassMap*> const& classMaps) const
     {
     DbColumn *existingClassIdCol = const_cast<DbColumn*>(table.GetFilteredColumnFirst(DbColumn::Kind::ECClassId));
     ClassMap const* firstClassMap = *classMaps.begin();
@@ -878,33 +857,33 @@ DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> con
     if (existingClassIdCol != nullptr)
         {
         if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
-            return existingClassIdCol;
+            return SUCCESS;
 
         if (existingClassIdCol->GetPersistenceType() != PersistenceType::Virtual)
-            return existingClassIdCol;
+            return SUCCESS;
 
         if (addClassIdCol)
             {
             if (DbColumn::MakePersisted(*existingClassIdCol) != SUCCESS)
                 {
                 BeAssert(false && "Changing persistence type from virtual to persisted failed");
-                return nullptr;
+                return ERROR;
                 }
 
             Utf8String indexName("ix_");
             indexName.append(table.GetName()).append("_ecclassid");
             return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {existingClassIdCol},
-                                              false, true, ECClassId()) != nullptr ? existingClassIdCol : nullptr;
+                                              false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
             }
 
-        return existingClassIdCol;
+        return SUCCESS;
         }
 
     DbColumn* ecClassIdColumn = table.CreateColumn(COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, addClassIdCol ? PersistenceType::Persisted : PersistenceType::Virtual);
     if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "Failed to create ECClassId column");
-        return nullptr;
+        return ERROR;
         }
 
     ecClassIdColumn->GetConstraintsR().SetNotNullConstraint();
@@ -914,10 +893,10 @@ DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> con
         Utf8String indexName("ix_");
         indexName.append(table.GetName()).append("_ecclassid");
         return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {ecClassIdColumn},
-                                          false, true, ECClassId()) != nullptr ? ecClassIdColumn : nullptr;
+                                          false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
         }
 
-    return ecClassIdColumn;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

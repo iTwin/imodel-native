@@ -264,7 +264,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
         return false;
 
     auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (referencedEndClassIdPropertyMap->IsMappedToSingleTable())
+    if (!referencedEndClassIdPropertyMap->IsMappedToSingleTable())
         {
         BeAssert(false);
         return false;

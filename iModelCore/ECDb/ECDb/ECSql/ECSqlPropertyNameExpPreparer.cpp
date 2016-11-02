@@ -123,6 +123,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
     {
+    ClassMap const& classMap = propMap.GetClassMap();
     switch (scope.GetECSqlType())
         {
             case ECSqlType::Select:
@@ -142,12 +143,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
                     }
                 }
 
-            GetTablesPropertyMapVisitor tableVisitor;
-            propMap.AcceptVisitor(tableVisitor);
-            BeAssert(tableVisitor.GetTables().size() == 1);
-            DbTable const* contextTable = *tableVisitor.GetTables().begin();
             if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
-                classIdentifier.assign(contextTable->GetName());
+                classIdentifier.assign(classMap.GetJoinedTable().GetName());
 
             break;
             }
@@ -165,11 +162,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
-    GetTablesPropertyMapVisitor tableVisitor;
-    propMap.AcceptVisitor(tableVisitor);
-
-    ToSqlPropertyMapVisitor sqlVisitor(*tableVisitor.GetSingleTable(),
-                                              ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::View : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
+    ClassMap const& classMap = propMap.GetClassMap();
+    ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
+                                       ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::View : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
 
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
