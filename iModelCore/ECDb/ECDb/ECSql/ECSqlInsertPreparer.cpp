@@ -225,7 +225,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         else
             {
             ECSqlStatus stat = ValidateConstraintClassId(ctx, *foreignEndClassIdExp, relationshipClassMap.GetConstraintMap(foreignEnd));
-            if (stat.IsSuccess())
+            if (!stat.IsSuccess())
                 return stat;
             }
         }
@@ -254,7 +254,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         else
             {
             ECSqlStatus stat = ValidateConstraintClassId(ctx, *referencedEndClassIdExp, relationshipClassMap.GetConstraintMap(referencedEnd));
-            if (stat.IsSuccess())
+            if (!stat.IsSuccess())
                 return stat;
             }
         }

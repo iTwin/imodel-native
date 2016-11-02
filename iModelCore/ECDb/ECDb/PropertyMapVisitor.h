@@ -231,6 +231,9 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
                 BeAssert(target == SqlTarget::Table);
                 BeAssert(wrapInParentheses == false);
                 }
+
+            if (m_classIdentifier != nullptr && strlen(m_classIdentifier) == 0)
+                m_classIdentifier = nullptr;
             }
 
         ~ToSqlPropertyMapVisitor() {}
