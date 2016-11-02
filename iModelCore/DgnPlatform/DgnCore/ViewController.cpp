@@ -1775,7 +1775,12 @@ void SheetViewController::_DrawView(ViewContextR context)
         pts[3] = DPoint2d::From(x       , y+height);
         auto rot = placement.GetTransform();
         rot.Multiply(pts, pts, _countof(pts));
-        context.DrawStyledLineString2d(_countof(pts), pts, 0, nullptr, true);
+
+        Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+
+        graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2);
+        graphic->AddLineString2d(_countof(pts), pts, 0.0);
+        context.OutputGraphic(*graphic, nullptr);
         }
     }
 
