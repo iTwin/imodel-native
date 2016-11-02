@@ -203,7 +203,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
 static int aecDTM_triangulateStart
 (
   struct CIVdtmsrf *srf,
-  long npnt,
+  long npnt_,
   int useBlockSize
 )
 {
@@ -212,7 +212,7 @@ static int aecDTM_triangulateStart
   struct CIVdtmpnt *p;
   DPoint3d cor[4];
   int sts;
-  long nrec = useBlockSize ? DTM_C_BLKSIZ : 2 * ( npnt + 100 );
+  long nrec = useBlockSize ? DTM_C_BLKSIZ : 2 * ( npnt_ + 100 );
 
   if (nrec > DTM_C_BLKSIZTIN)
       nrec = DTM_C_BLKSIZTIN;
@@ -1037,13 +1037,13 @@ static int aecDTM_triangulateLinearFindNeighbor
 
   for ( *side = -1, i = 0; i < tinNum  &&  *side == -1; i++ )
   {
-    *tin = (struct CIVdtmtin *)tins[i];
+    *tin = (struct CIVdtmtin *)(size_t)tins[i];
 
-    if ( (long)(*tin)->n12 == -1 )
+    if ( (long)(size_t)(*tin)->n12 == -1 )
       *side = 0, (*tin)->flg |= DTM_C_TINB12;
-    else if ( (long)(*tin)->n23 == -1 )
+    else if ( (long)(size_t)(*tin)->n23 == -1 )
       *side = 1, (*tin)->flg |= DTM_C_TINB23;
-    else if ( (long)(*tin)->n31 == -1 )
+    else if ( (long)(size_t)(*tin)->n31 == -1 )
       *side = 2, (*tin)->flg |= DTM_C_TINB31;
   }
 

@@ -208,7 +208,6 @@ static int _countTriangulatedPoint ( struct CIVdtmpnt *pntP )
 
     if ( pntP != NULL && _mapPointsByAddrP->Lookup ( pntP, dtmToTinPnt ) == FALSE )
     {
-        DTMtoTINPoint dtmToTinPnt;
         memset ( &dtmToTinPnt, 0, sizeof ( dtmToTinPnt ) );
 
         dtmToTinPnt.index = _curIndex++;
@@ -297,11 +296,11 @@ CIVdtmtin *tinP
 
             for (int i = 0; i < numPnts; i++)
             {
-                DTMtoTINPoint dtmToTinPnt;
-                struct CIVdtmpnt *dtmPntP = (struct CIVdtmpnt *)pntsP[i];
-                if ( _mapPointsByAddrP->Lookup ( dtmPntP, dtmToTinPnt ) == TRUE )
+                DTMtoTINPoint dtmToTinPnt_;
+                struct CIVdtmpnt *dtmPntP = (struct CIVdtmpnt *)(size_t)pntsP[i];
+                if ( _mapPointsByAddrP->Lookup ( dtmPntP, dtmToTinPnt_ ) == TRUE )
                 {
-                    indicesP[numIndices] = dtmToTinPnt.index;
+                    indicesP[numIndices] = dtmToTinPnt_.index;
                     numIndices++;
                 }
             }
