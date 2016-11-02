@@ -427,7 +427,8 @@ namespace IndexECPlugin.Source.Helpers
             //TODO : We should find a way to find this number programmatically instead of hardcoding it...
             //As things are of now, it is the responsibility of the programmer to update it.
             int maxNumberOfDeleteParams = 3;
-            return maxNumberOfDeleteParams + additionalColumnsList.Count() + ecClass.Count();
+            int bboxArgs = ecClass.Any(prop => prop.GetCustomAttributes("SpatialBBox") != null) ? 4 : 0;
+            return maxNumberOfDeleteParams + additionalColumnsList.Count() + ecClass.Count() + bboxArgs;
             }
         }
     }

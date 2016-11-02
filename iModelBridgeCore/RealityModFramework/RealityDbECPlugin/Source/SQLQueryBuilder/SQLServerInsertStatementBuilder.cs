@@ -252,30 +252,17 @@ namespace IndexECPlugin.Source
             insertIntoColumns += String.Join(",", m_columnNameTypePairs.Select(p => p.ColumnName)) + ") VALUES ";
             using ( StringWriter statement = new StringWriter() )
                 {
-                statement.Write(deleteFrom);
                 for ( int i = 0; i < m_rows.Count; i++ )
                     {
                     if ( m_deleteActivated && m_deleteWhereStatements[i] != null )
                         {
-                        statement.Write("(" + m_deleteWhereStatements[i] + ")");
-                        if ( i != m_rows.Count - 1 )
-                            {
-                            statement.Write(" OR ");
-                            }
+                        statement.Write(deleteFrom + m_deleteWhereStatements[i] + ";");
                         }
-                    }
-                statement.Write(";");
                 statement.Write(beginTry);
                 statement.Write(insertIntoColumns);
-                for (int i = 0; i < m_rows.Count; i++)
-                    {
-                    statement.Write(m_rows[i]);
-                    if(i != m_rows.Count - 1)
-                        {
-                        statement.Write(",");
-                        }
+                    statement.Write(m_rows[i] + ";");
+                    statement.Write(endTry);
                     }
-                statement.Write(endTry);
 
                 return statement.ToString();
                 }
