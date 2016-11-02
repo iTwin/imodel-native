@@ -19,7 +19,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : RangeIndex::Tree::Traverser
+struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : RangeIndex::Traverser
 {
 public:
     struct Callback
@@ -40,7 +40,7 @@ private:
 
     bool CheckElementRange(DgnElementCR) const;
     virtual bool _CheckRangeTreeNode(RangeIndex::BoxCR, bool) const override;
-    virtual Stop _VisitRangeTreeElem(DgnElementId, RangeIndex::BoxCR) override;
+    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR) override;
 
 public:
     RangeIndex::BoxCR GetScanRange() const {return m_range;}

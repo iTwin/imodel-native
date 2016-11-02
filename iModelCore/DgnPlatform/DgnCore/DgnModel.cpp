@@ -808,7 +808,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(geom->CalculateRange3d(), element.GetElementId()));
+        m_rangeIndex->RemoveElement(element.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,11 +834,12 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
         return;
 
     auto id = original.GetElementId();
+    auto cat = origGeom->GetCategoryId();
     if (origBox.IsValid())
-        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(origBox, id));
+        m_rangeIndex->RemoveElement(id);
 
     if (newBox.IsValid())
-        m_rangeIndex->AddElement(RangeIndex::Tree::Entry(newBox, id));  // origGeom has the address that will be used after update completes
+        m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, cat));
     }
 
 /*---------------------------------------------------------------------------------**//**

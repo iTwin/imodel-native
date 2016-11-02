@@ -200,12 +200,12 @@ ScanCriteria::Stop ScanCriteria::CheckElement(DgnElementCR element, bool doRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Traverser::Stop ScanCriteria::_VisitRangeTreeElem(DgnElementId id, BoxCR range)
+Traverser::Stop ScanCriteria::_VisitRangeTreeEntry(RangeIndex::EntryCR entry)
     {
-    if (ScanCriteria::Stop::No != CheckRange(range, m_model->Is3d()))
+    if (ScanCriteria::Stop::No != CheckRange(entry.m_range, m_model->Is3d()))
         return Stop::No;
 
-    auto el = m_model->GetDgnDb().Elements().GetElement(id);
+    auto el = m_model->GetDgnDb().Elements().GetElement(entry.m_id);
     if (ScanCriteria::Stop::Yes == CheckElement(*el, false))
         return Stop::No;
 

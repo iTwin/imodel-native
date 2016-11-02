@@ -20,7 +20,7 @@ typedef Tree::InternalNode* DRTInternalNodeP;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline bool rangeIsValid(BoxCR range, bool is3d)
+static bool rangeIsValid(BoxCR range, bool is3d)
     {
     return (range.low.x <= range.high.x) && (range.low.y <= range.high.y) && (!is3d || (range.low.z <= range.high.z));
     }
@@ -29,7 +29,7 @@ static inline bool rangeIsValid(BoxCR range, bool is3d)
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline double rangeExtentSquared(BoxCR range)
+static double rangeExtentSquared(BoxCR range)
     {
     double extentX = (double) range.high.x - range.low.x;
     double extentY = (double) range.high.y - range.low.y;
@@ -38,10 +38,9 @@ static inline double rangeExtentSquared(BoxCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline void extendRange(BoxR thisRange, BoxCR range)
+static void extendRange(BoxR thisRange, BoxCR range)
     {
     if (range.low.x < thisRange.low.x)
         thisRange.low.x = range.low.x;
@@ -70,6 +69,7 @@ struct DRTSplitEntry
 {
     Box m_range;
     DgnElementId m_id; 
+    DgnCategoryId m_category; 
     void* m_vp;
     int m_groupNumber[3];
 };
@@ -199,15 +199,6 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline size_t Tree::Node::GetEntryCount()
-    {
-    DRTLeafNodeP leaf = ToLeaf();
-    return leaf ? leaf->GetEntryCount() : ((DRTInternalNodeP) this)->GetEntryCount();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::Node::ValidateRange()
@@ -225,7 +216,7 @@ void Tree::Node::ValidateRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Traverser::Stop Tree::Node::Traverse(Traverser& traverser, bool is3d)
+Traverser::Stop Tree::Node::Traverse(Traverser& traverser, bool is3d)
     {
     DRTLeafNodeP leaf = ToLeaf();
     return leaf ? leaf->Traverse(traverser, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, is3d);
@@ -381,7 +372,7 @@ DRTNodeP Tree::InternalNode::ChooseBestNode(BoxCP pRange, TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::InternalNode::AddElement(Entry const& entry, TreeR root)
+void Tree::InternalNode::AddEntry(Entry const& entry, TreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
@@ -389,10 +380,10 @@ void Tree::InternalNode::AddElement(Entry const& entry, TreeR root)
 
     DRTLeafNodeP leaf = node->ToLeaf();
     if (leaf)
-        leaf->AddElementToLeaf(entry, root);
+        leaf->AddEntryToLeaf(entry, root);
     else
         {
-        ((DRTInternalNodeP) node)->AddElement(entry, root);
+        ((DRTInternalNodeP) node)->AddEntry(entry, root);
         }
     }
 
@@ -442,6 +433,7 @@ void Tree::InternalNode::DropNode(DRTNodeP entry, TreeR root)
     BeAssert(false); // we were asked to drop a child we didn't hold
     }
 
+#if defined (NEEDS_WORK_TARGET_MODEL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -463,7 +455,8 @@ bool Tree::InternalNode::DropElement(Entry const& entry, TreeR root)
 
     return false;
     }
-
+#endif
+                                                       o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -478,6 +471,7 @@ void Tree::InternalNode::AddInternalNode(DRTNodeP child, TreeR root)
         SplitInternalNode(root);
     }
 
+#if defined (NEEDS_WORK_TARGET_MODEL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -505,6 +499,7 @@ size_t Tree::InternalNode::GetNodeCount()
 
     return count;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -522,6 +517,7 @@ size_t Tree::InternalNode::GetElementCount()
     return count;
     }
 
+#if defined (NEEDS_WORK_TARGET_MODEL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -537,34 +533,40 @@ size_t Tree::InternalNode::GetMaxChildDepth()
 
     return 1 + maxChildDepth;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Traverser::Stop Tree::InternalNode::Traverse(Tree::Traverser& traverser, bool is3d)
+Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            if (Tree::Traverser::Stop::Yes == (*curr)->Traverse(traverser, is3d))
-                return  Tree::Traverser::Stop::Yes;
+            if (Traverser::Stop::Yes == (*curr)->Traverse(traverser, is3d))
+                return Traverser::Stop::Yes;
             }
         }
 
-    return  Tree::Traverser::Stop::No;
+    return  Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::LeafNode::AddElementToLeaf(Entry const& entry, TreeR root)
+void Tree::LeafNode::AddEntryToLeaf(Entry const& entry, TreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
 
     *m_endChild = entry;
     ++m_endChild;
+
+    auto stat = root.m_leafIdx.Insert(entry.m_id, this);
+    if (!stat.second)
+        stat.first->second = this;   // already was in the map, change its value to this leaf
+
     if (GetEntryCount() > (root.m_leafNodeSize))
         SplitLeafNode(root);
     }
@@ -572,13 +574,14 @@ void Tree::LeafNode::AddElementToLeaf(Entry const& entry, TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tree::LeafNode::DropElementFromLeaf(Entry const& entry, TreeR root)
+bool Tree::LeafNode::DropElement(DgnElementId id, TreeR root)
     {
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
-        if (curr->m_key != entry.m_key)
+        if (curr->m_id != id)
             continue;
 
+        Box range = curr->m_range;
         if (curr+1 < m_endChild)
             memmove(curr, curr+1, (m_endChild - curr) * sizeof(Entry));
 
@@ -597,11 +600,11 @@ bool Tree::LeafNode::DropElementFromLeaf(Entry const& entry, TreeR root)
             return true;
             }
 
-        if (!CompletelyContains(entry.m_range))
+        if (!CompletelyContains(range))
             {
             m_sloppy = true;
             if (m_parent)
-                m_parent->DropRange(entry.m_range);
+                m_parent->DropRange(range);
             }
         return true;
         }
@@ -622,7 +625,8 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
 
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
-        currEntry->m_id = curr->m_key;
+        currEntry->m_id = curr->m_id;
+        currEntry->m_category = curr->m_category;
         currEntry->m_range = curr->m_range;
         }
 
@@ -645,9 +649,9 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddElementToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
+            newNode1->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id, currEntry->m_category), root);
         else
-            newNode2->AddElementToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
+            newNode2->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id, currEntry->m_category), root);
         }
 
     // if parent is nullptr, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -668,29 +672,26 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Traverser::Stop Tree::LeafNode::Traverse(Tree::Traverser& traverser, bool is3d)
+Traverser::Stop Tree::LeafNode::Traverse(Traverser& traverser, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            if (Tree::Traverser::Stop::Yes == traverser._VisitRangeTreeElem(curr->m_key, curr->m_range))
-                return Tree::Traverser::Stop::Yes;
+            if (Traverser::Stop::Yes == traverser._VisitRangeTreeEntry(*curr))
+                return Traverser::Stop::Yes;
             }
         }
 
-    return Tree::Traverser::Stop::No;
+    return Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(bool is3d, size_t leafSize)
+Tree::Tree(bool is3d, size_t leafSize) : m_is3d(is3d)
     {
-    m_root = nullptr;
     m_internalNodeSize = m_leafNodeSize = 0;
-    m_elementsPerSecond = 0.0;
-    m_is3d = is3d;
 
     if (0 >= leafSize || leafSize>20)
         leafSize = 20;
@@ -712,14 +713,14 @@ void Tree::LoadTree(DgnModelCR dgnModel)
         {
         GeometrySourceCP geom = element.second->ToGeometrySource();
         if (nullptr != geom)
-            AddElement(Entry(geom->CalculateRange3d(), element.second->GetElementId()));
+            AddEntry(Entry(geom->CalculateRange3d(), element.second->GetElementId(), geom->GetCategoryId()));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::AddElement(Entry const& entry)
+void Tree::AddEntry(Entry const& entry)
     {
     if (!rangeIsValid(entry.m_range, m_is3d))
         return;
@@ -729,25 +730,29 @@ void Tree::AddElement(Entry const& entry)
     
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
-        leaf->AddElementToLeaf(entry, *this);
+        leaf->AddEntryToLeaf(entry, *this);
     else
-        ((DRTInternalNodeP)m_root)->AddElement(entry, *this);
+        ((DRTInternalNodeP)m_root)->AddEntry(entry, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Tree::RemoveElement(Entry const& entry)
+StatusInt Tree::RemoveElement(DgnElementId id)
     {
     if (nullptr == m_root)
         return ERROR;
 
-    if (!((DRTInternalNodeP)m_root)->DropElement(entry, *this))
-        {
-        BeAssert(false);
-        return  ERROR;
-        }
-    return  SUCCESS;
+    auto it = m_leafIdx.find(id);
+    if (it == m_leafIdx.end())
+        return ERROR;
+
+    bool dropped = it->second->DropElement(id, *this);
+    BeAssert(dropped);
+    UNUSED_VARIABLE(dropped);
+    m_leafIdx.erase(it);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,8 +770,8 @@ void Tree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Traverser::Stop Tree::Traverse(Tree::Traverser& traverser)
+Traverser::Stop Tree::Traverse(Traverser& traverser)
     {
-    return (nullptr == m_root) ? Tree::Traverser::Stop::No : m_root->Traverse(traverser, Is3d());
+    return (nullptr == m_root) ? Traverser::Stop::No : m_root->Traverse(traverser, Is3d());
     }
 
