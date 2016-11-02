@@ -30,6 +30,9 @@ m_token(std::move(token))
     {
     WString error;
     BeXmlStatus status;
+
+    BeMutexHolder mutexHolder(m_domMutex);
+
     m_dom = BeXmlDom::CreateAndReadFromString(status, m_token.c_str(), m_token.size(), &error);
     if (BeXmlStatus::BEXML_Success != status)
         {
@@ -42,6 +45,18 @@ m_token(std::move(token))
         m_dom->RegisterNamespace("ds", "http://www.w3.org/2000/09/xmldsig#");
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Adam.Eichelkraut    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlToken::SamlToken(SamlTokenCR other)
+    : m_token(std::move(other.m_token))
+    {
+    //hold onto other mutex since we are reading from other object
+    BeMutexHolder otherMutexHolder(other.m_domMutex);
+    m_dom = other.m_dom;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -55,6 +70,8 @@ bool SamlToken::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SamlToken::IsSupported() const
     {
+    BeMutexHolder mutexHolder(m_domMutex);
+
     if (m_dom.IsNull())
         {
         return false;
@@ -158,6 +175,8 @@ BentleyStatus SamlToken::GetConditionDates(DateTime& notBeforeUtc, DateTime& not
     {
     BentleyStatus result = ERROR;
 
+    BeMutexHolder mutexHolder(m_domMutex);
+
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr conditionsPtr = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:Conditions", context);
 
@@ -243,6 +262,8 @@ BentleyStatus SamlToken::GetAttributes(bmap<Utf8String, Utf8String>& attributesO
 
     BentleyStatus status = SUCCESS;
 
+    BeMutexHolder mutexHolder(m_domMutex);
+
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:AttributeStatement/saml:Attribute", context);
 
@@ -290,6 +311,9 @@ BentleyStatus SamlToken::GetX509Certificate(Utf8StringR certOut) const
     BentleyStatus status = ERROR;
 
     auto expression = "/saml:Assertion/ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate/text()";
+
+    BeMutexHolder mutexHolder(m_domMutex);
+
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression(expression, context);
 
@@ -339,4 +363,18 @@ Utf8StringCR SamlToken::AsString() const
 bool SamlToken::operator==(const SamlToken& other) const
     {
     return m_token == other.m_token;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlToken& SamlToken::operator=(const SamlToken& other)
+    {
+    //hold onto both mutexes since we are accessing both
+    BeMutexHolder mutexHolder(m_domMutex);
+    BeMutexHolder mutexHolder2(other.m_domMutex);
+
+    m_dom = other.m_dom;
+    m_token = std::move(other.m_token);
+    return *this;
     }

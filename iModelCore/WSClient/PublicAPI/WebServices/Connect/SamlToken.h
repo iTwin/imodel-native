@@ -20,6 +20,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct SamlToken
     {
     private:
+        mutable BeMutex m_domMutex;
+        
         Utf8String m_token;
         mutable BeXmlDomPtr m_dom;
 
@@ -30,6 +32,8 @@ struct SamlToken
     public:
         //! Construct empty token
         WSCLIENT_EXPORT SamlToken();
+        //! Copy constructor (thread safety)
+        WSCLIENT_EXPORT SamlToken(const SamlToken& other);
         //! Construct token from xml string
         WSCLIENT_EXPORT SamlToken(Utf8String token);
         //! Check whenver given token is empty
@@ -56,6 +60,8 @@ struct SamlToken
         WSCLIENT_EXPORT Utf8StringCR AsString() const;
         //! Compare contents of two tokens for equality
         WSCLIENT_EXPORT bool operator==(const SamlToken& other) const;
+        //! Assignment operator (thread safety)
+        WSCLIENT_EXPORT SamlToken& operator=(const SamlToken& other);
     };
 
 typedef SamlToken& SamlTokenR;
