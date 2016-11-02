@@ -282,8 +282,8 @@
 
     #### Primitive Array ECProperty
     - @b Modify 
-        - @ref BentleyApi::ECN::ArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
-        - @ref BentleyApi::ECN::ArrayECProperty::GetKindOfQuantity "KindOfQuantity"
+        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
+        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetKindOfQuantity "KindOfQuantity"
             - It is possible to 
                 - assign a KindOfQuantity to an ECProperty that didn't have one before
                 - change the KindOfQuantity of an ECProperty to another KindOfQuantity

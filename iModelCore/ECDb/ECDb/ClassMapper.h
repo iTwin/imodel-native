@@ -25,18 +25,20 @@ struct ClassMapper final
     private:
         ClassMapper(ClassMapR classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
         ClassMapper(ClassMapR classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
-        RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<Point3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<PrimitiveArrayPropertyMap> MapPrimitiveArrayProperty(ECN::ArrayECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<StructPropertyMap> MapStructProperty(ECN::StructECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<StructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR property, DataPropertyMap const* parent);
-        RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR property);
-        Utf8String ComputeAccessString(ECN::ECPropertyCR ecProperty, DataPropertyMap const* parent);
-        DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR ecProperty, Utf8CP accessString, DbColumn::Type colType);
-        PropertyMap* ProcessProperty(ECN::ECPropertyCR ecProperty);
-        static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end);
-        static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR navProp, RelationshipClassMapCR relClassMap, NavigationPropertyMap::NavigationEnd end);
+
+        PropertyMap* ProcessProperty(ECN::ECPropertyCR);
+
+        RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<Point3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<PrimitiveArrayPropertyMap> MapPrimitiveArrayProperty(ECN::PrimitiveArrayECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<StructPropertyMap> MapStructProperty(ECN::StructECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<StructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR, StructPropertyMapBuilder* parentBuilder);
+        RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR);
+        Utf8String ComputeAccessString(ECN::ECPropertyCR, DataPropertyMap const* parent);
+        DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type);
+        static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
+        static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
     public:
         //Navigation property map is not finished. It require a second pass and Nav->Setup() method must be called on it.

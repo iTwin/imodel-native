@@ -382,8 +382,8 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             continue;
             }
 
-        RefCountedPtr<DataPropertyMap> propertyMap = baseClassPropMap->CreateCopy(*this);        
-        if (GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
+        RefCountedPtr<DataPropertyMap> propertyMap = PropertyMapCopier::CreateCopy(*baseClassPropMap, *this);        
+        if (propertyMap == nullptr || SUCCESS != GetPropertyMapsR().Insert(propertyMap))
             return MappingStatus::Error;
         }
 
@@ -391,20 +391,20 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
 
     for (ECPropertyCP property : propertiesToMap)
         {
-        if (PropertyMap* newProperyMap = ClassMapper::MapProperty(*this, *property))
-            {
-            if (property->GetIsNavigation())
-                {
-                NavigationPropertyMap* navPropertyMap = static_cast<NavigationPropertyMap*>(newProperyMap);
-                ctx.GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
-                }
-            }
-        else
+        PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
+        if (propMap == nullptr)
             {
             BeAssert(false);
             return MappingStatus::Error;
             }
+
+        if (property->GetIsNavigation())
+            {
+            NavigationPropertyMap* navPropertyMap = static_cast<NavigationPropertyMap*>(propMap);
+            ctx.GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
+            }
         }
+
     return MappingStatus::Success;
     }
 
@@ -720,7 +720,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         else
             {
-            RefCountedPtr<PropertyMap> propMap = tphBaseClassPropMap->CreateCopy(*this);
+            RefCountedPtr<PropertyMap> propMap = PropertyMapCopier::CreateCopy(*tphBaseClassPropMap,*this);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -741,16 +741,18 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 return ERROR;
                 }
 
-            DataPropertyMap* vMap = dynamic_cast<DataPropertyMap*>(propMap);
-            if (vMap == nullptr)
+            if (!propMap->IsData())
                 {
                 BeAssert(false);
                 return ERROR;
                 }
+
+            DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap*>(propMap);
+
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
             //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(vMap->GetTable()) != SUCCESS)
+            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(dataPropMap->GetTable()) != SUCCESS)
                 {
                 BeAssert(false && "Failed to save table");
                 return ERROR;
@@ -1178,7 +1180,7 @@ bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
 void ColumnFactory::Update(bool includeDerivedClasses) const
     {
     m_idsOfColumnsInUseByClassMap.clear();
-    GetColumnsPropertyMapVisitor navigationProperytMapColumns(PropertyMap::Kind::Navigation);
+    GetColumnsPropertyMapVisitor navigationProperytMapColumns(PropertyMap::Type::Navigation);
     m_classMap.GetPropertyMaps().AcceptVisitor(navigationProperytMapColumns);
 
     for (DbColumn const* columnInUse : navigationProperytMapColumns.GetColumns())

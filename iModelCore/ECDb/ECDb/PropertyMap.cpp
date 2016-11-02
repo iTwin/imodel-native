@@ -15,28 +15,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-PropertyMap::PropertyMap(Kind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-    :m_kind(kind),  m_ecProperty(ecProperty), m_classMap(classMap), m_parentPropertMap(nullptr), 
-    m_propertyAccessString(ecProperty.GetName()), m_isInEditMode(true)
+PropertyMap::PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+    : m_type(kind),  m_ecProperty(ecProperty), m_classMap(classMap), m_parentPropertMap(nullptr), 
+    m_propertyAccessString(ecProperty.GetName())
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-PropertyMap::PropertyMap(Kind kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
-    :m_kind(kind), m_ecProperty(ecProperty), m_classMap(parentPropertyMap.GetClassMap()), m_parentPropertMap(&parentPropertyMap), 
-    m_propertyAccessString(parentPropertyMap.GetAccessString() + "." + ecProperty.GetName()), m_isInEditMode(true)
+PropertyMap::PropertyMap(Type kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
+    :m_type(kind), m_ecProperty(ecProperty), m_classMap(parentPropertyMap.GetClassMap()), m_parentPropertMap(&parentPropertyMap),
+    m_propertyAccessString(accessString)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-bool PropertyMap::IsKindOf(Kind kindOfThisOrOneOfItsParent) const
+bool PropertyMap::IsKindOf(Type kindOfThisOrOneOfItsParent) const
     {
     const PropertyMap *c = this;
     do
         {
-        if (Enum::Contains(kindOfThisOrOneOfItsParent, c->GetKind()))
+        if (Enum::Contains(kindOfThisOrOneOfItsParent, c->GetType()))
             return true;
 
         c = c->GetParent();
@@ -200,7 +200,7 @@ DataPropertyMap const* CompoundDataPropertyMap::Find(Utf8CP accessString, bool r
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataPropertyMap> propertyMap, DataPropertyMap const& parent, size_t position)
+BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataPropertyMap> propertyMap, size_t position)
     {
     if (propertyMap == nullptr)
         {
@@ -219,204 +219,36 @@ BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataProp
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::Collection::Remove(Utf8CP accessString)
-    {
-    if (DataPropertyMap const* r = Find(accessString))
-        {
-        m_list.erase(std::find(m_list.begin(), m_list.end(), r));
-        m_map.erase(accessString);
-        return SUCCESS;
-        }
-
-    return ERROR;
-    }
 
 //************************************CompoundDataPropertyMap********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::_Validate() const
-    {
-    if (IsEmpty())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    for (DataPropertyMap const* child : *this)
-        {
-        if (child->Validate() != BentleyStatus::SUCCESS)
-            return ERROR;
-        }
-
-    return IsReadonly() ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
 DbTable const& CompoundDataPropertyMap::_GetTable() const
     {
-    if (IsEmpty())
-        {
-        if (GetParent() == nullptr)
-            {
-            BeAssert(false);
-            return *static_cast<DbTable const*>(nullptr);
-            }
-        else
-            return static_cast<DataPropertyMap const*>(GetParent())->GetTable();
-        }
-
-    return m_children.Front()->GetTable();
+    BeAssert(!m_children.IsEmpty());
+    return m_children.GetList()[0]->GetTable();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::VerifyVerticalIntegerity(DataPropertyMap const& propertyMap) const
-    {
-    if (IsEmpty())
-        {
-        if (GetParent() != nullptr)
-            {
-            DataPropertyMap const* vp = static_cast<DataPropertyMap const*>(GetParent());
-            DbTable const& parentTable = vp->GetTable();
-            if (&propertyMap.GetTable() != &parentTable)
-                {
-                BeAssert(false && "Table must match parent table");
-                return ERROR;
-                }
-            }
-        }
-    else
-        {
-        if (&m_children.Front()->GetTable() != &propertyMap.GetTable())
-            {
-            BeAssert(false && "All property map must have same table");
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-void CompoundDataPropertyMap::Clear()
-    {
-    if (m_readonly)
-        {
-        BeAssert(false && "PropertyMap is readonly");
-        return;
-        }
-
-    m_children.Clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::Remove(Utf8CP accessString)
-    {
-    if (m_readonly)
-        {
-        BeAssert(false && "property map cannot be removed from this readonly collection");
-        return ERROR;
-        }
-    return m_children.Remove(accessString);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::Insert(RefCountedPtr<DataPropertyMap> propertyMap, size_t position)
-    {
-    if (m_readonly)
-        {
-        BeAssert(false && "New property maps cannot be added to this property map");
-        return ERROR;
-        }
-
-    if (&propertyMap->GetClassMap() != &GetClassMap())
-        {
-        BeAssert(false && "propertyMap must belong to same classMap context");
-        return ERROR;
-        }
-
-    if (propertyMap->GetParent() != this)
-        {
-        BeAssert(false && "Parent propertymap is incorrect or null");
-        return ERROR;
-        }
-
-    //Vertical integrity check
-    if (m_children.Insert(propertyMap, *this, position) != SUCCESS)
-        return ERROR;
-
-    if (VerifyVerticalIntegerity(*propertyMap) != SUCCESS)
-        {
-        m_children.Remove(propertyMap->GetAccessString().c_str());
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-
-
-//************************************DataPropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-RefCountedPtr<DataPropertyMap> DataPropertyMap::CreateCopy(ClassMap const& newClassMapContext) const
-    {
-    return PropertyMapCopier::CreateCopy(*this, newClassMapContext);
-    }
-
 
 
 //************************************PrimitivePropertyMap********************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus PrimitivePropertyMap::_Validate() const
-    {
-    ECN::PrimitiveECPropertyCP property = GetProperty().GetAsPrimitiveProperty();
-    return property->GetType() != PRIMITIVETYPE_Point2d && property->GetType() != PRIMITIVETYPE_Point3d ? SUCCESS : ERROR;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
     {
     if (ecProperty.GetType() == PRIMITIVETYPE_Point2d || ecProperty.GetType() == PRIMITIVETYPE_Point3d)
         {
         BeAssert(false && "Do not support Point2d or Point3d property");
         return nullptr;
         }
+
+    if (parentPropMap != nullptr)
+        return new PrimitivePropertyMap(*parentPropMap, ecProperty, column);
 
     return new PrimitivePropertyMap(classMap, ecProperty, column);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, PropertyMap const& parentPropertyMap, DbColumn const& column)
-    {
-    if (ecProperty.GetType() == PRIMITIVETYPE_Point2d || ecProperty.GetType() == PRIMITIVETYPE_Point3d)
-        {
-        BeAssert(false && "Do not support Point2d or Point3d property");
-        return nullptr;
-        }
-
-    return new PrimitivePropertyMap(parentPropertyMap, ecProperty, column);
     }
 
 
@@ -425,7 +257,7 @@ RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ECN::Pr
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
+RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
     {
     if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
         {
@@ -433,26 +265,12 @@ RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap co
         return nullptr;
         }
 
-    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(classMap, ecProperty);
-    if (ptr->Init(x, y) != SUCCESS)
-        return nullptr;
+    RefCountedPtr<Point2dPropertyMap> ptr = nullptr;
+    if (parentStructPropMap != nullptr)
+        ptr = new Point2dPropertyMap(*parentStructPropMap, ecProperty);
+    else
+        ptr = new Point2dPropertyMap(classMap, ecProperty);
 
-    return ptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
-        {
-        BeAssert(false && "PrimitiveType must be Point2d");
-        return nullptr;
-        }
-
-    RefCountedPtr<Point2dPropertyMap> ptr = new Point2dPropertyMap(parentPropertyMap, ecProperty);
     if (ptr->Init(x, y) != SUCCESS)
         return nullptr;
 
@@ -474,25 +292,24 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
     if (propX == nullptr)
         return ERROR;
 
-    RefCountedPtr<PrimitivePropertyMap> xPropertyMap = PrimitivePropertyMap::CreateInstance(*propX->GetAsPrimitiveProperty(), *this, x);
+    RefCountedPtr<PrimitivePropertyMap> xPropertyMap = PrimitivePropertyMap::CreateInstance(GetClassMap(), this, *propX->GetAsPrimitiveProperty(), x);
     if (xPropertyMap == nullptr)
         return ERROR;
 
-    if (Insert(xPropertyMap) != SUCCESS)
+    if (m_children.Add(xPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
     if (propY == nullptr)
         return ERROR;
 
-    RefCountedPtr<PrimitivePropertyMap> yPropertyMap = PrimitivePropertyMap::CreateInstance(*propY->GetAsPrimitiveProperty(), *this, y);
+    RefCountedPtr<PrimitivePropertyMap> yPropertyMap = PrimitivePropertyMap::CreateInstance(GetClassMap(), this, *propY->GetAsPrimitiveProperty(), y);
     if (yPropertyMap == nullptr)
         return ERROR;
 
-    if (Insert(yPropertyMap) != SUCCESS)
+    if (m_children.Add(yPropertyMap) != SUCCESS)
         return ERROR;
 
-    MakeReadOnly();
     return SUCCESS;
     }
 
@@ -506,14 +323,6 @@ VisitorFeedback Point2dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  v
         return fb;
 
     return AcceptChildren(visitor);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus Point2dPropertyMap::_Validate() const
-    {
-    return Size() == 2 && IsReadonly() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -537,7 +346,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetY() const
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
+RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
     if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
         {
@@ -545,31 +354,18 @@ RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap co
         return nullptr;
         }
 
-    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(classMap, ecProperty);
+    RefCountedPtr<Point3dPropertyMap> ptr = nullptr;
+    if (parentStructPropMap != nullptr)
+        ptr = new Point3dPropertyMap(*parentStructPropMap, ecProperty);
+    else
+        ptr = new Point3dPropertyMap(classMap, ecProperty);
+
     if (ptr->Init(x, y, z) != SUCCESS)
         return nullptr;
 
     return ptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static 
-RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, DataPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z)
-    {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
-        {
-        BeAssert(false && "PrimitiveType must be Point3d");
-        return nullptr;
-        }
-
-    RefCountedPtr<Point3dPropertyMap> ptr = new Point3dPropertyMap(parentPropertyMap, ecProperty);
-    if (ptr->Init(x, y, z) != SUCCESS)
-        return nullptr;
-
-    return ptr;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
@@ -580,36 +376,35 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (propX == nullptr)
         return ERROR;
 
-    RefCountedPtr<PrimitivePropertyMap> xPropertyMap = PrimitivePropertyMap::CreateInstance(*propX->GetAsPrimitiveProperty(), *this, x);
+    RefCountedPtr<PrimitivePropertyMap> xPropertyMap = PrimitivePropertyMap::CreateInstance(GetClassMap(), this, *propX->GetAsPrimitiveProperty(), x);
     if (xPropertyMap == nullptr)
         return ERROR;
 
-    if (Insert(xPropertyMap) != SUCCESS)
+    if (m_children.Add(xPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
     if (propY == nullptr)
         return ERROR;
 
-    RefCountedPtr<PrimitivePropertyMap> yPropertyMap = PrimitivePropertyMap::CreateInstance(*propY->GetAsPrimitiveProperty(), *this, y);
+    RefCountedPtr<PrimitivePropertyMap> yPropertyMap = PrimitivePropertyMap::CreateInstance(GetClassMap(), this, *propY->GetAsPrimitiveProperty(), y);
     if (yPropertyMap == nullptr)
         return ERROR;
 
-    if (Insert(yPropertyMap) != SUCCESS)
+    if (m_children.Add(yPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propZ = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Z);
     if (propZ == nullptr)
         return ERROR;
 
-    RefCountedPtr<PrimitivePropertyMap> zPropertyMap = PrimitivePropertyMap::CreateInstance(*propZ->GetAsPrimitiveProperty(), *this, z);
+    RefCountedPtr<PrimitivePropertyMap> zPropertyMap = PrimitivePropertyMap::CreateInstance(GetClassMap(), this, *propZ->GetAsPrimitiveProperty(), z);
     if (zPropertyMap == nullptr)
         return ERROR;
 
-    if (Insert(zPropertyMap) != SUCCESS)
+    if (m_children.Add(zPropertyMap) != SUCCESS)
         return ERROR;
 
-    MakeReadOnly();
     return SUCCESS;
     }
 
@@ -623,14 +418,6 @@ VisitorFeedback Point3dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  v
         return fb;
 
     return AcceptChildren(visitor);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus Point3dPropertyMap::_Validate() const
-    {
-    return Size() == 3 && IsReadonly() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -662,6 +449,19 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetZ() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructECPropertyCR ecProperty)
+    {
+    if (parentStructPropMap != nullptr)
+        return new StructPropertyMap(*parentStructPropMap, ecProperty);
+
+    return new StructPropertyMap(classMap, ecProperty);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
 VisitorFeedback StructPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
     VisitorFeedback fb = visitor.Visit(*this);
@@ -672,47 +472,46 @@ VisitorFeedback StructPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  vi
     }
 
 
+//************************************PrimitiveArrayPropertyMap********************
 
-//************************************NavigationPropertyMap********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus NavigationPropertyMap::Initialize(DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId, DbColumn const& idColumn)
+//static 
+RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveArrayECPropertyCR prop, DbColumn const& column)
     {
-    if (&relECClassIdColumn.GetTable() != &idColumn.GetTable())
-        {
-        return ERROR;
-        }
+    if (parentStructPropMap != nullptr)
+        return new PrimitiveArrayPropertyMap(*parentStructPropMap, prop, column);
 
-    RefCountedPtr<RelECClassIdPropertyMap> relECClassIdPropertyMap = RelECClassIdPropertyMap::CreateInstance(*this, relECClassIdColumn, defaultRelClassId);
-    if (relECClassIdPropertyMap == nullptr)
-        return ERROR;
-
-    relECClassIdPropertyMap->FinishEditing();
-    if(Insert(relECClassIdPropertyMap) != SUCCESS)
-        {
-        Clear();
-        return ERROR;
-        }
-
-    RefCountedPtr<IdPropertyMap> idPropertyMap = IdPropertyMap::CreateInstance(*this, idColumn);
-    if (idPropertyMap == nullptr)
-        return ERROR;
-
-    idPropertyMap->FinishEditing();
-    if(Insert(idPropertyMap) != SUCCESS)
-        return ERROR;
-
-    MakeReadOnly();
-    FinishEditing();
-    return SUCCESS;
+    return new PrimitiveArrayPropertyMap(classMap, prop, column);
     }
+
+//************************************StructArrayPropertyMap********************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructArrayECPropertyCR prop, DbColumn const& column)
+    {
+    if (parentStructPropMap != nullptr)
+        return new StructArrayPropertyMap(*parentStructPropMap, prop, column);
+
+    return new StructArrayPropertyMap(classMap, prop, column);
+    }
+
+
+
+//************************************NavigationPropertyMap********************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
+    if (!m_isValid)
+        return VisitorFeedback::Cancel;
+
     VisitorFeedback fb = visitor.Visit(*this);
     if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
         return fb;
@@ -723,29 +522,53 @@ VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus NavigationPropertyMap::_Validate() const
+NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::GetRelECClassIdPropertyMap() const
     {
-    if (Size() != 2)
-        return ERROR;
-
-    return CompoundDataPropertyMap::_Validate();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::GetRelECClassId() const
-    {
+    BeAssert(m_isValid);
     return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetId() const
+NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdPropertyMap() const
     {
+    BeAssert(m_isValid);
     return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/16
+//---------------------------------------------------------------------------------------
+BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId)
+    {
+    if (m_isValid)
+        {
+        BeAssert(false && "NavigationPropertyMap::SetMembers can only be called on NavigationPropertyMap which is being built");
+        return ERROR;
+        }
+
+    if (&relECClassIdColumn.GetTable() != &idColumn.GetTable())
+        return ERROR;
+
+    RefCountedPtr<NavigationPropertyMap::IdPropertyMap> idPropertyMap = IdPropertyMap::CreateInstance(*this, idColumn);
+    if (idPropertyMap == nullptr)
+        return ERROR;
+
+    if (m_children.Add(idPropertyMap) != SUCCESS)
+        return ERROR;
+
+    RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> relECClassIdPropertyMap = RelECClassIdPropertyMap::CreateInstance(*this, relECClassIdColumn, defaultRelClassId);
+    if (relECClassIdPropertyMap == nullptr)
+        return ERROR;
+
+    if (SUCCESS != m_children.Add(relECClassIdPropertyMap))
+        return ERROR;
+
+    m_isValid = true;
+    return SUCCESS;
+    }
+
 
 //************************************NavigationPropertyMap::RelECClassIdPropertyMap********************
 //---------------------------------------------------------------------------------------
@@ -759,7 +582,7 @@ RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationProperty
     if (relECClassIdProp == nullptr)
         return nullptr;
 
-    return  new RelECClassIdPropertyMap(parentPropertyMap, *relECClassIdProp->GetAsPrimitiveProperty(), column, defaultRelClassId);
+    return new RelECClassIdPropertyMap(parentPropertyMap, *relECClassIdProp->GetAsPrimitiveProperty(), column, defaultRelClassId);
     }
 
 //************************************NavigationPropertyMap::IdPropertyMap********************
@@ -777,7 +600,109 @@ RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPro
     return new IdPropertyMap(parentPropertyMap, *idProp->GetAsPrimitiveProperty(), column);
     }
 
-//************************************PropertyMapFactory********************
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/16
+//---------------------------------------------------------------------------------------
+StructPropertyMapBuilder::StructPropertyMapBuilder(ClassMap const& classMap, StructPropertyMapBuilder* parentBuilder, ECN::StructECPropertyCR prop) 
+    : m_propMap(StructPropertyMap::CreateInstance(classMap, parentBuilder != nullptr ? &parentBuilder->GetPropertyMapUnderConstruction() : nullptr, prop)), m_isFinished(false)
+    {
+    if (parentBuilder != nullptr)
+        {
+        parentBuilder->m_childStructBuilderCache[m_propMap.get()] = this;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/16
+//---------------------------------------------------------------------------------------
+BentleyStatus StructPropertyMapBuilder::InsertMember(RefCountedPtr<DataPropertyMap> propertyMap, size_t position)
+    {
+    if (!IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (propertyMap == nullptr || &m_propMap->GetClassMap() != &propertyMap->GetClassMap() || m_propMap.get() != propertyMap->GetParent())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (SUCCESS != m_propMap->m_children.Insert(propertyMap, position))
+        {
+        m_propMap = nullptr;
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/16
+//---------------------------------------------------------------------------------------
+BentleyStatus StructPropertyMapBuilder::AddMember(RefCountedPtr<DataPropertyMap> propertyMap)
+    {
+    return InsertMember(propertyMap, std::numeric_limits<size_t>::max());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/16
+//---------------------------------------------------------------------------------------
+BentleyStatus StructPropertyMapBuilder::Finish()
+    {
+    if (!IsValid() || m_isFinished)
+        {
+        BeAssert(false && "StructPropertyMapBuilder was never initialized or is already finished");
+        return ERROR;
+        }
+    
+    if (m_propMap->IsEmpty())
+        {
+        BeAssert(false && "Struct properties without members is not supported");
+        return ERROR;
+        }
+
+    DbTable const* table = nullptr;
+    for (DataPropertyMap const* member : *m_propMap)
+        {
+        if (member->GetType() == PropertyMap::Type::Struct)
+            {
+            auto it = m_childStructBuilderCache.find(static_cast<StructPropertyMap const*>(member));
+            if (it == m_childStructBuilderCache.end())
+                {
+                BeAssert(false && "Child struct builder should be in cache");
+                return ERROR;
+                }
+
+            if (!it->second->IsFinished())
+                {
+                BeAssert(false && "Child struct builder should be finished before owning builder is finished");
+                return ERROR;
+                }
+
+            if (table == nullptr)
+                table = &member->GetTable();
+            else
+                {
+                if (table != &member->GetTable())
+                    {
+                    BeAssert(false && "All members of the struct property map must map to the same table");
+                    return ERROR;
+                    }
+                }
+            }
+        }
+
+    m_childStructBuilderCache.clear();
+    m_isFinished = true;
+    return SUCCESS;
+    }
+
+
+//************************************PropertyMapCopier********************
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
@@ -806,8 +731,6 @@ RefCountedPtr<SystemPropertyMap> PropertyMapCopier::CreateCopy(SystemPropertyMap
     return nullptr;
     }
 
-
- 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
@@ -822,125 +745,104 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
 
     return CreateCopy(propertyMap, newContext, nullptr);
     }
+
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext, DataPropertyMap const* newParent)
+RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext, StructPropertyMapBuilder* parentStructPropMapBuilder)
     {
-    RefCountedPtr<DataPropertyMap> copy;
-    if (Point2dPropertyMap const* typed = dynamic_cast<Point2dPropertyMap const*>(&propertyMap))
+    StructPropertyMap const* parentPropMap = parentStructPropMapBuilder != nullptr ? &parentStructPropMapBuilder->GetPropertyMapUnderConstruction() : nullptr;
+    switch (propertyMap.GetType())
         {
-        PrimitiveECPropertyCP prop = typed->GetProperty().GetAsPrimitiveProperty();
-        if (newParent)
-            copy = Point2dPropertyMap::CreateInstance(*prop, *newParent, typed->GetX().GetColumn(), typed->GetY().GetColumn());
-        else
-            copy = Point2dPropertyMap::CreateInstance(newContext, *prop, typed->GetX().GetColumn(), typed->GetY().GetColumn());
-
-        copy->FinishEditing();
-        }
-    else if (Point3dPropertyMap const* typed = dynamic_cast<Point3dPropertyMap const*>(&propertyMap))
-        {
-        PrimitiveECPropertyCP prop = typed->GetProperty().GetAsPrimitiveProperty();
-        if (newParent)
-            copy = Point3dPropertyMap::CreateInstance(*prop, *newParent, typed->GetX().GetColumn(), typed->GetY().GetColumn(), typed->GetZ().GetColumn());
-        else
-            copy = Point3dPropertyMap::CreateInstance(newContext, *prop, typed->GetX().GetColumn(), typed->GetY().GetColumn(), typed->GetZ().GetColumn());
-
-        copy->FinishEditing();
-        }
-    else if (PrimitivePropertyMap const* typed = dynamic_cast<PrimitivePropertyMap const*>(&propertyMap))
-        {
-        PrimitiveECPropertyCP prop = typed->GetProperty().GetAsPrimitiveProperty();
-        if (newParent)
-            copy = PrimitivePropertyMap::CreateInstance(*prop, *newParent, typed->GetColumn());
-        else
-            copy = PrimitivePropertyMap::CreateInstance(newContext, *prop, typed->GetColumn());
-
-        copy->FinishEditing();
-        }
-    else if (PrimitiveArrayPropertyMap const* typed = dynamic_cast<PrimitiveArrayPropertyMap const*>(&propertyMap))
-        {
-        ArrayECPropertyCP prop = typed->GetProperty().GetAsArrayProperty();
-        if (newParent)
-            copy = PrimitiveArrayPropertyMap::CreateInstance(*prop, *newParent, typed->GetColumn());
-        else
-            copy = PrimitiveArrayPropertyMap::CreateInstance(newContext, *prop, typed->GetColumn());
-
-        copy->FinishEditing();
-        }
-    else if (StructPropertyMap const* typed = dynamic_cast<StructPropertyMap const*>(&propertyMap))
-        {
-        RefCountedPtr<StructPropertyMap> st;        
-        StructECPropertyCP prop = typed->GetProperty().GetAsStructProperty();
-        if (newParent)
-            st = StructPropertyMap::CreateInstance(*prop, *newParent);
-        else
-            st = StructPropertyMap::CreateInstance(newContext, *prop);
-
-        for (DataPropertyMap const* child : *typed)
+            case PropertyMap::Type::Primitive:
             {
-            RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*child, newContext, st.get());
-            if (childMap == nullptr)
-                {
-                BeAssert(false && "Failed to create copy child map");
-                return nullptr;
-                }
-
-            if (st->Insert(childMap) != SUCCESS)
-                {
-                BeAssert(false && "Failed to insert property map");
-                return nullptr;
-                }
+            PrimitivePropertyMap const& primPropMap = static_cast<PrimitivePropertyMap const&> (propertyMap);
+            PrimitiveECPropertyCP prop = primPropMap.GetProperty().GetAsPrimitiveProperty();
+            return PrimitivePropertyMap::CreateInstance(newContext, parentPropMap, *prop, primPropMap.GetColumn());
             }
 
-        copy = st;
-        copy->FinishEditing();
-        }
-    else if (StructArrayPropertyMap const* typed = dynamic_cast<StructArrayPropertyMap const*>(&propertyMap))
-        {
-        StructArrayECPropertyCP prop = typed->GetProperty().GetAsStructArrayProperty();
-        if (newParent)
-            copy = StructArrayPropertyMap::CreateInstance(*prop, *newParent, typed->GetColumn());
-        else
-            copy = StructArrayPropertyMap::CreateInstance(newContext, *prop, typed->GetColumn());
-
-        copy->FinishEditing();
-        }
-    else if (NavigationPropertyMap const* typed = dynamic_cast<NavigationPropertyMap const*>(&propertyMap))
-        {
-        RefCountedPtr<NavigationPropertyMap> nav;
-        NavigationECPropertyCP prop = typed->GetProperty().GetAsNavigationProperty();
-        if (newParent)
+            case PropertyMap::Type::Point2d:
             {
-            BeAssert(false && "Navigator property map can only be defined on the class directly");
+            Point2dPropertyMap const& ptPropMap = static_cast<Point2dPropertyMap const&> (propertyMap);
+            PrimitiveECPropertyCP prop = ptPropMap.GetProperty().GetAsPrimitiveProperty();
+            return Point2dPropertyMap::CreateInstance(newContext, parentPropMap, *prop, ptPropMap.GetX().GetColumn(), ptPropMap.GetY().GetColumn());
+            }
+
+            case PropertyMap::Type::Point3d:
+            {
+            Point3dPropertyMap const& ptPropMap = static_cast<Point3dPropertyMap const&> (propertyMap);
+            PrimitiveECPropertyCP prop = ptPropMap.GetProperty().GetAsPrimitiveProperty();
+            return Point3dPropertyMap::CreateInstance(newContext, parentPropMap, *prop, ptPropMap.GetX().GetColumn(), ptPropMap.GetY().GetColumn(), ptPropMap.GetZ().GetColumn());
+            }
+
+            case PropertyMap::Type::PrimitiveArray:
+            {
+            PrimitiveArrayPropertyMap const& arrayPropMap = static_cast<PrimitiveArrayPropertyMap const&> (propertyMap);
+            PrimitiveArrayECPropertyCP prop = arrayPropMap.GetProperty().GetAsPrimitiveArrayProperty();
+            return PrimitiveArrayPropertyMap::CreateInstance(newContext, parentPropMap, *prop, arrayPropMap.GetColumn());
+            }
+
+            case PropertyMap::Type::StructArray:
+            {
+            StructArrayPropertyMap const& arrayPropMap = static_cast<StructArrayPropertyMap const&> (propertyMap);
+            StructArrayECPropertyCP prop = arrayPropMap.GetProperty().GetAsStructArrayProperty();
+            return StructArrayPropertyMap::CreateInstance(newContext, parentPropMap, *prop, arrayPropMap.GetColumn());
+            }
+
+            case PropertyMap::Type::Struct:
+            {
+            StructPropertyMapBuilder builder(newContext, parentStructPropMapBuilder, *propertyMap.GetProperty().GetAsStructProperty());
+            StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
+            for (DataPropertyMap const* memberPropMap : structPropMap)
+                {
+                RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &builder);
+                if (childMap == nullptr)
+                    {
+                    BeAssert(false);
+                    return nullptr;
+                    }
+
+                if (SUCCESS != builder.AddMember(childMap))
+                    {
+                    BeAssert(false);
+                    return nullptr;
+                    }
+                }
+
+            if (SUCCESS != builder.Finish())
+                {
+                BeAssert(false);
+                return nullptr;
+                }
+
+            return builder.GetPropertyMap();
+            }
+
+            case PropertyMap::Type::Navigation:
+            {
+            NavigationPropertyMap const& navPropMap = static_cast<NavigationPropertyMap const&> (propertyMap);
+            NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = navPropMap.GetRelECClassIdPropertyMap();
+
+            RefCountedPtr<NavigationPropertyMap> clonedPropMap = NavigationPropertyMap::CreateInstance(newContext, *propertyMap.GetProperty().GetAsNavigationProperty());
+            if (clonedPropMap == nullptr)
+                {
+                BeAssert(false);
+                return nullptr;
+                }
+
+            if (SUCCESS != clonedPropMap->SetMembers(navPropMap.GetIdPropertyMap().GetColumn(), relClassIdPropMap.GetColumn(), relClassIdPropMap.GetDefaultClassId()))
+                return nullptr;
+
+            BeAssert(clonedPropMap->IsValid());
+            return clonedPropMap;
+            }
+
+            default:
+            {
+            BeAssert(false && "Unhandled property map type");
             return nullptr;
             }
-        else
-            nav = NavigationPropertyMap::CreateInstance(newContext, *prop);
-
-        if (typed->Validate() == SUCCESS)
-            {
-            NavigationPropertyMap::RelECClassIdPropertyMap const& relId = typed->GetRelECClassId();
-            NavigationPropertyMap::IdPropertyMap const& id = typed->GetId();
-
-            if (nav->Initialize(relId.GetColumn(), relId.GetDefaultClassId(), id.GetColumn()) != SUCCESS)
-                {
-                BeAssert(false && "Failed to setup navigation property");
-                return nullptr;
-                }
-            }
-
-        copy = nav;
         }
-    else
-        {
-        BeAssert(false && "Unhandled property map type");
-        return nullptr;
-        }
-
-    return copy;
     }
-
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

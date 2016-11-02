@@ -204,7 +204,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Reset();
     std::vector<Utf8String> values;
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Kind::Data); //Only inlcude none-system properties
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data); //Only inlcude none-system properties
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
     for (PropertyMap const* result: typeVisitor.ResultSet())
         {
@@ -589,7 +589,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMap const*, PropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Kind::All, true /*traverse compound properties but compound properties themself is not included*/);
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All, true /*traverse compound properties but compound properties themself is not included*/);
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
 
     for (PropertyMap const* baseClassPropertyMap : typeVisitor.ResultSet())
@@ -679,7 +679,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 viewSql.Append(actualResult.GetSql());
                 }
 
-            if (!actualResult.GetPropertyMap().IsKindOf(PropertyMap::Kind::System))
+            if (!actualResult.GetPropertyMap().IsKindOf(PropertyMap::Type::System))
                 {
                 if (actualResult.GetColumn().GetName() != baseResult.GetColumn().GetName()) //do not add alias if column name is same as alias.
                     viewSql.AppendSpace().Append(aliasSqlSnippet);
@@ -1136,8 +1136,8 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     //We only want to render propertyMap w.r.t contextTable. A endRelationship can now have more then one columns in each different table for ECInstanceId, SourceECInstanceId, TargetECInstanceId ...
     //There for we only need to render in term of context table that is chosen before this function is called. Resulting select are UNIONed.
     ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::View, contextTable.GetName().c_str());
-    GetColumnsPropertyMapVisitor sourceECClassIdVisitor(PropertyMap::Kind::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
-    GetColumnsPropertyMapVisitor targetECClassIdVisitor(PropertyMap::Kind::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
+    GetColumnsPropertyMapVisitor sourceECClassIdVisitor(PropertyMap::Type::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
+    GetColumnsPropertyMapVisitor targetECClassIdVisitor(PropertyMap::Type::ConstraintECClassId, /*doNotSkipHorizontalPropertyMaps = */ true);
 
     relationMap.GetECInstanceIdPropertyMap()->AcceptVisitor(sqlVisitor);
     relationMap.GetECClassIdPropertyMap()->AcceptVisitor(sqlVisitor);

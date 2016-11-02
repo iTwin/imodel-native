@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetKind()))
+    if (Enum::Contains(m_filter, propertyMap.GetType()))
         m_columns.push_back(&propertyMap.GetColumn());
 
     return VisitorFeedback::Next;
@@ -27,7 +27,7 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetKind()))
+    if (Enum::Contains(m_filter, propertyMap.GetType()))
         return VisitorFeedback::Next;
 
     return VisitorFeedback::NextSibling;
@@ -38,12 +38,12 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(CompoundDataPropertyMap con
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-    if (!Enum::Contains(m_filter, propertyMap.GetKind()))
+    if (!Enum::Contains(m_filter, propertyMap.GetType()))
         return VisitorFeedback::Next;
 
     if (m_doNotSkipSystemPropertyMaps)
         {
-        for (PrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
+        for (SystemPropertyMap::PerTablePrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
             {
             m_columns.push_back(&m->GetColumn());
             }
@@ -52,7 +52,7 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& pr
         {
         if (m_table)
             {
-            if (PrimitivePropertyMap const* m = propertyMap.FindDataPropertyMap(*m_table))
+            if (SystemPropertyMap::PerTablePrimitivePropertyMap const* m = propertyMap.FindDataPropertyMap(*m_table))
                 {
                 m_columns.push_back(&m->GetColumn());
                 }
@@ -275,15 +275,15 @@ VisitorFeedback ToSqlPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& p
 //+===============+===============+===============+===============+===============+======
 VisitorFeedback ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-    switch (propertyMap.GetKind())
+    switch (propertyMap.GetType())
         {
-            case PropertyMap::Kind::ConstraintECInstanceId:
+            case PropertyMap::Type::ConstraintECInstanceId:
                 return ToNativeSql(static_cast<ConstraintECInstanceIdPropertyMap const&>(propertyMap));
-            case PropertyMap::Kind::ConstraintECClassId:
+            case PropertyMap::Type::ConstraintECClassId:
                 return ToNativeSql(static_cast<ConstraintECClassIdPropertyMap const&>(propertyMap));
-            case PropertyMap::Kind::ECClassId:
+            case PropertyMap::Type::ECClassId:
                 return ToNativeSql(static_cast<ECClassIdPropertyMap const&>(propertyMap));
-            case PropertyMap::Kind::ECInstanceId:
+            case PropertyMap::Type::ECInstanceId:
                 return ToNativeSql(static_cast<ECInstanceIdPropertyMap const&>(propertyMap));
         }
 
@@ -337,7 +337,7 @@ VisitorFeedback SavePropertyMapVisitor::_Visit(SystemPropertyMap const& property
     {
     const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
-    for (SingleColumnDataPropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
+    for (SystemPropertyMap::PerTablePrimitivePropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
         {
         if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
             {

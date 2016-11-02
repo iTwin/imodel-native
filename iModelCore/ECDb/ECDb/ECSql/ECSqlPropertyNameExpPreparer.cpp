@@ -63,9 +63,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             }
         }
 
-    switch (effectivePropMap->GetKind())
+    switch (effectivePropMap->GetType())
         {
-            case PropertyMap::Kind::ConstraintECClassId:
+            case PropertyMap::Type::ConstraintECClassId:
                 return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, *exp, *static_cast<ConstraintECClassIdPropertyMap const*>(effectivePropMap), classIdentifier.c_str());
 
             default:
@@ -82,7 +82,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
-    GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Kind::All, true);
+    GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propertyMap.AcceptVisitor(columnVisitor);
     if (columnVisitor.GetColumns().empty())
         {
@@ -91,7 +91,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         }
  
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetKind() == PropertyMap::Kind::ConstraintECClassId ? static_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
+    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? static_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
     bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
     if (columnVisitor.AreResultingColumnsAreVirtual() || isConstraintIdPropertyMap)
         {
@@ -182,7 +182,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, ConstraintECClassIdPropertyMap const& propMap, Utf8CP classIdentifier)
     {
-    GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Kind::All, true);
+    GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propMap.AcceptVisitor(columnVisitor);
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
@@ -203,11 +203,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
             ConstraintECClassIdPropertyMap const* classIdPropMap = referencedEndConstraintMappings.GetECClassIdPropMap();
             if (classIdPropMap == &propMap)
                 {
-                GetColumnsPropertyMapVisitor  classIdVisitor(PropertyMap::Kind::All, true);
+                GetColumnsPropertyMapVisitor  classIdVisitor(PropertyMap::Type::All, true);
                 classIdPropMap->AcceptVisitor(classIdVisitor);
                 DbColumn const* classIdColumn = classIdVisitor.GetSingleColumn();
 
-                GetColumnsPropertyMapVisitor  ecInstanceIdVisitor(PropertyMap::Kind::All, true);
+                GetColumnsPropertyMapVisitor  ecInstanceIdVisitor(PropertyMap::Type::All, true);
                 referencedEndConstraintMappings.GetECInstanceIdPropMap()->AcceptVisitor(ecInstanceIdVisitor);
                 NativeSqlBuilder str;
                 str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",

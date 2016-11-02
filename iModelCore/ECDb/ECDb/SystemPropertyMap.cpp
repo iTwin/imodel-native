@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-SystemPropertyMap::SystemPropertyMap(Kind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
+SystemPropertyMap::SystemPropertyMap(Type kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
     : PropertyMap(kind, classMap, ecProperty)
     {
     BeAssert(ecProperty.GetType() == ECN::PrimitiveType::PRIMITIVETYPE_Long);
@@ -24,19 +24,7 @@ SystemPropertyMap::SystemPropertyMap(Kind kind, ClassMap const& classMap, ECN::P
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus SystemPropertyMap::_Validate() const
-    {
-    BeAssert(!m_dataPropMaps.empty());
-    if (m_dataPropMaps.empty())
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-PrimitivePropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableName) const
+SystemPropertyMap::PerTablePrimitivePropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableName) const
     {
     auto itor = m_dataPropMaps.find(tableName);
     if (itor != m_dataPropMaps.end())
@@ -51,9 +39,6 @@ PrimitivePropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableN
 //static 
 BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& columns)
     {
-    if (!InEditMode())
-        return ERROR;
-
     if (columns.empty())
         {
         BeAssert(false && "Columns cannot be empty");
@@ -73,7 +58,7 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
             }
 
         doneList.insert(&column->GetTable());
-        auto prop = PrimitivePropertyMap::CreateInstance(*GetProperty().GetAsPrimitiveProperty(),*this, *column);
+        RefCountedPtr<PerTablePrimitivePropertyMap> prop = PerTablePrimitivePropertyMap::CreateInstance(*this, *GetProperty().GetAsPrimitiveProperty(), *column);
         if (prop == nullptr)
             {
             BeAssert(false && "Failed to create property Map");
@@ -83,15 +68,32 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
             return ERROR;
             }
 
-        PropertyMap::OverrideAccessString(*prop, GetAccessString());
         m_dataPropMaps[prop->GetTable().GetName().c_str()] = prop;
         m_tables.push_back(&prop->GetTable());
         m_dataPropMapList.push_back(prop.get());
         }
     
-    FinishEditing();
     return SUCCESS;
     }
+
+
+//************************************SystemPropertyMap::PerTablePrimitivePropertyMap********************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle      10/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<SystemPropertyMap::PerTablePrimitivePropertyMap> SystemPropertyMap::PerTablePrimitivePropertyMap::CreateInstance(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+    {
+    if (ecProperty.GetType() != PRIMITIVETYPE_Long)
+        {
+        BeAssert(false && "SystemPropertyMap's child prop map must always be of data type PRIMITIVETYPE_Long");
+        return nullptr;
+        }
+
+    return new PerTablePrimitivePropertyMap(parentPropertyMap, ecProperty, column);
+    }
+
 
 //************************************ECInstanceIdPropertyMap********************
 //---------------------------------------------------------------------------------------

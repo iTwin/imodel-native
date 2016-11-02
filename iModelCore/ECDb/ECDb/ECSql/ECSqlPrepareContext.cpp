@@ -255,7 +255,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                     }
                 }
             }        
-        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMap::Kind::Data))
+        else if (Enum::Contains(property->GetPropertyMap().GetType(), PropertyMap::Type::Data))
             {
             DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)

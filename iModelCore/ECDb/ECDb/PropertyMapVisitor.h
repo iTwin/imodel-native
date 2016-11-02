@@ -19,7 +19,7 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
     private:
         mutable std::vector<DbColumn const*> m_columns;
         DbTable const* m_table;
-        PropertyMap::Kind m_filter;
+        PropertyMap::Type m_filter;
         bool m_doNotSkipSystemPropertyMaps;
     private:
 
@@ -28,10 +28,10 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const override;
 
     public:
-        GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Kind filter = PropertyMap::Kind::All)
+        GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Type filter = PropertyMap::Type::All)
             :m_table(&table), m_filter(filter), m_doNotSkipSystemPropertyMaps(false)
             {}
-        GetColumnsPropertyMapVisitor(PropertyMap::Kind filter = PropertyMap::Kind::All, bool doNotSkipHorizontalPropertyMaps = false)
+        GetColumnsPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool doNotSkipHorizontalPropertyMaps = false)
             :m_table(nullptr), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipHorizontalPropertyMaps)
             {}
         ~GetColumnsPropertyMapVisitor() {}
@@ -68,33 +68,33 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
         mutable std::set<DbTable const*> m_tables;
-        PropertyMap::Kind m_filter;
+        PropertyMap::Type m_filter;
     private:
 
         virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 m_tables.insert(&propertyMap.GetTable());
 
             return VisitorFeedback::Cancel;
             }
         virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 m_tables.insert(&propertyMap.GetTable());
 
             return VisitorFeedback::NextSibling;
             }
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 m_tables.insert(propertyMap.GetTables().begin(), propertyMap.GetTables().end());
 
             return VisitorFeedback::Cancel;
             }
 
     public:
-        GetTablesPropertyMapVisitor(PropertyMap::Kind filter = PropertyMap::Kind::All)
+        GetTablesPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All)
             : m_filter(filter)
             {}
         std::set<DbTable const*> GetTables() const { return m_tables; }
@@ -117,20 +117,20 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 
     private:
         mutable std::vector<PropertyMap const*> m_propertyMaps;
-        PropertyMap::Kind m_filter;
+        PropertyMap::Type m_filter;
         bool m_traverseCompoundProperties;
     private:
 
         virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 m_propertyMaps.push_back(&propertyMap);
 
             return VisitorFeedback::Next;
             }
         virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 {
                 if (m_traverseCompoundProperties)
                     return VisitorFeedback::Next;
@@ -143,20 +143,20 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
             }
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const override
             {
-            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+            if (Enum::Contains(m_filter, propertyMap.GetType()))
                 m_propertyMaps.push_back(&propertyMap);
 
             return VisitorFeedback::Next;
             }
 
     public:
-        SearchPropertyMapVisitor(PropertyMap::Kind filter = PropertyMap::Kind::All, bool traverseCompoundProperties = false)
+        SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool traverseCompoundProperties = false)
             :m_filter(filter), m_traverseCompoundProperties(traverseCompoundProperties)
             {}
         ~SearchPropertyMapVisitor() {}
         void Reset() { m_propertyMaps.clear(); }
         std::vector<PropertyMap const*> const& ResultSet() const { return m_propertyMaps; }
-        static std::vector<PropertyMap const*> Accept(PropertyMap const& propertyMap, PropertyMap::Kind filter = PropertyMap::Kind::All, bool traverseCompoundProperties = false)
+        static std::vector<PropertyMap const*> Accept(PropertyMap const& propertyMap, PropertyMap::Type filter = PropertyMap::Type::All, bool traverseCompoundProperties = false)
             {
             SearchPropertyMapVisitor visitor(filter, traverseCompoundProperties);
             propertyMap.AcceptVisitor(visitor);

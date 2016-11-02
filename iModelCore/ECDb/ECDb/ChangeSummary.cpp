@@ -473,7 +473,7 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
     if (propertyMap.IsSystem())
         return;
 
-    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
+    if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
         StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : structPropMap)
@@ -484,7 +484,7 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
         return;
         }
 
-    if (propertyMap.GetKind() == PropertyMap::Kind::Point2d || propertyMap.GetKind() == PropertyMap::Kind::Point3d)
+    if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d)
         {
         CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : pointPropMap)
@@ -1070,7 +1070,7 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        if (propertyMap->GetKind() == PropertyMap::Kind::ECClassId)
+        if (propertyMap->GetType() == PropertyMap::Type::ECClassId)
             continue;
 
         // ignore prop maps that map to more than one table or for which the table doesn't equal the table map's one
@@ -1093,7 +1093,7 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ChangeAffectsProperty(PropertyMap const& propertyMap) const
     {
-    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
+    if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
         for (PropertyMap const* childPropMap : static_cast<StructPropertyMap const&> (propertyMap))
             {
@@ -1525,7 +1525,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
     if (propertyMap.IsSystem())
         return;
 
-    if (propertyMap.GetKind() == PropertyMap::Kind::Struct)
+    if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
         for (PropertyMap const* memberPropMap : static_cast<StructPropertyMap const&> (propertyMap))
             {
@@ -1535,7 +1535,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    if (propertyMap.GetKind() == PropertyMap::Kind::Point2d || propertyMap.GetKind() == PropertyMap::Kind::Point3d)
+    if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d)
         {
         CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
         for (PropertyMap const* childPropMap : pointPropMap)
