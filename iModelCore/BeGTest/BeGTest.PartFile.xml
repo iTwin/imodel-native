@@ -27,8 +27,8 @@
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
-        <ProductDirectory Name="Assets"                          Path="Assets"/>
-        <ProductDirectory Name="Assets"                          Path="Assets"  LibType="static"/>
+        <ProductDirectory Name="Assets"                             Path="Assets"/>
+        <ProductDirectory Name="Assets"                             Path="Assets"  LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
