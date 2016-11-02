@@ -2858,7 +2858,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
 
     if (IsAbstractConstraintDefinedLocally() && ecXmlVersion >= ECVersion::V3_1)
-        xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, GetAbstractConstraint()->GetFullName());
+        xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *GetAbstractConstraint()).c_str());
         
     WriteCustomAttributes (xmlWriter);
 
