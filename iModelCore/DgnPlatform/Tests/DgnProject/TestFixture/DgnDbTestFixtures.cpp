@@ -162,44 +162,6 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .bim project file after copying it to out
-* baseProjFile is the existing file and testProjFile is what we get
-* @bsimethod                                     Majd.Uddin                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, bool needTestDomain)
-    {
-    wprintf(L"!!!!!!!!!!!!!!!!!! Test %ls is using a pre-published file. Change this test to create its own file\n", testProjFile); // *** WIP_TEST_DOCUMENTS
-
-
-    //** Force to copy the file in Sub-Directory of TestCase
-    BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
-    testFileName.AppendToPath(testProjFile);
-
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseProjFile, testFileName.c_str(), __FILE__));
-    
-    OpenDb(m_db, outFileName, mode, needBriefcase);
-
-    if (needBriefcase)
-        {
-        ASSERT_TRUE(m_db->IsBriefcase());
-        ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
-        }
-
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode && needTestDomain)
-        {
-        DgnDbStatus status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
-        ASSERT_TRUE(DgnDbStatus::Success == status);
-        }
-
-    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
-    ASSERT_TRUE(m_defaultModelId.IsValid());
-
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
-    ASSERT_TRUE(m_defaultCategoryId.IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode)
