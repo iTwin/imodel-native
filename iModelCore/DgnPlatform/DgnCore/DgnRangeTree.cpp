@@ -13,7 +13,7 @@ BEGIN_UNNAMED_NAMESPACE
 
 typedef Tree::Node&         DRTNodeR;
 typedef Tree::Node*         DRTNodeP;
-typedef DRTNodeP*                   DRTNodeH;
+typedef DRTNodeP*           DRTNodeH;
 typedef Tree::LeafNode*     DRTLeafNodeP;
 typedef Tree::InternalNode* DRTInternalNodeP;
 

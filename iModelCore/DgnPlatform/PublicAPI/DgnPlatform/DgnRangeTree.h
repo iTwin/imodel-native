@@ -18,9 +18,11 @@ static double ROUND_AWAY =    (1.0 + 1.0/8388608.0);  // Round away from zero
 static float roundDown(double d)
     {
     float f = (float)d; 
-    if (f>d)
+    if (f>d) 
+        {
         f = (float) (d * (d<0 ? ROUND_AWAY : ROUND_TOWARDS));
-
+        BeAssert(f<d);
+        }
     return f;
     }
 
@@ -28,8 +30,10 @@ static float roundUp(double d)
     {
     float f = (float)d;
     if (f<d)
-        f = (float)(d*(d<0 ? ROUND_TOWARDS : ROUND_AWAY));
-
+        {
+        f = (float) (d * (d<0 ? ROUND_TOWARDS : ROUND_AWAY));
+        BeAssert(f>d);
+        }
     return f;
     }
 
@@ -42,15 +46,15 @@ struct Box
     FPoint3d high;
     Box(DRange3dCR box)
         {
-        low.x = roundDown(box.low.x);
-        high.x = roundUp(box.high.x);
-        low.y = roundDown(box.low.y);
+        low.x  = roundDown(box.low.x);
+        low.y  = roundDown(box.low.y);
+        low.z  = roundDown(box.low.z);
         high.y = roundUp(box.high.y);
-        low.z = roundDown(box.low.z);
-        high.x = roundUp(box.high.z);
+        high.x = roundUp(box.high.x);
+        high.z = roundUp(box.high.z);
         }
 
-    void Init() {low.x = 1.0; high.x = -1.0; low.y = 1.0; high.x = -1.0; low.z = 1.0; high.z = -1.0;}
+    void Init() {low.x = 1.0; high.x = -1.0; low.y = 1.0; high.y = -1.0; low.z = 1.0; high.z = -1.0;}
     Box() {Init();}
     bool IsNull() const {return low.x>high.x || low.y>high.y || low.z>high.z;}
     DRange3d ToRange3d() const {return DRange3d::From(low.x, low.y, low.z, high.x, high.y, high.z);}
