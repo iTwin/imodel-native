@@ -1759,4 +1759,955 @@ BentleyStatus PSolidGeom::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveV
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          09/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int pki_create_solid_by_capping(PK_BODY_t* pBodyInOut)
+    {
+    int               failureCode;
+    int               numFace = 0, nBodies = 0;
+    PK_FACE_t*        pFaceArray = NULL;
+    PK_BODY_t*        pBodies = NULL;
+    PK_LOGICAL_t      localCheckFlag = PK_LOGICAL_false;
+    PK_local_check_t* localCheckStatus;
+
+    PK_BODY_ask_faces(*pBodyInOut, &numFace, &pFaceArray);
+
+    failureCode = PK_FACE_make_solid_bodies(numFace, pFaceArray, PK_FACE_heal_cap_c, localCheckFlag, &nBodies, &pBodies, &localCheckStatus);
+
+    if (nBodies >= 1 && pBodies)
+        {
+        PK_ENTITY_delete(1, pBodyInOut);
+        *pBodyInOut = pBodies[0];
+
+        if (nBodies > 1)
+            PK_ENTITY_delete(nBodies-1, &pBodies[1]);
+
+        PK_MEMORY_free(pBodies);
+        }
+
+    PK_MEMORY_free(pFaceArray);
+
+    return failureCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Josh.Schifter   12/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getDefaultBasis(PK_AXIS2_sf_t* basisP)
+    {
+    memset (basisP, 0, sizeof (*basisP));
+
+    basisP->axis.coord[2] = 1.0;
+    basisP->ref_direction.coord[0] = 1.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   06/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_make_cone
+(
+int             *pBodyOut,                  /* <= output tag of body created */
+double          bottomRadiusIn,             /* => input bottom radius */
+double          topRadiusIn,                /* => input top radius */
+double          heightIn                    /* => input height */
+)
+    {
+    int             failureCode;
+    PK_AXIS2_sf_t   basis;
+
+    *pBodyOut = NULTAG;
+
+    if (DoubleOps::WithinTolerance(heightIn, 0.0, 1e-08) || (DoubleOps::WithinTolerance(bottomRadiusIn, 0.0, 1e-08) && DoubleOps::WithinTolerance(topRadiusIn, 0.0, 1e-08)))
+        return ERROR;
+
+    if (0.0 > bottomRadiusIn)
+        bottomRadiusIn *= -1.0;
+
+    if (0.0 > topRadiusIn)
+        topRadiusIn *= -1.0;
+
+    getDefaultBasis (&basis);
+    basis.location.coord[2] = -heightIn/2.0;
+
+    if (DoubleOps::WithinTolerance(bottomRadiusIn, topRadiusIn, 1e-08))
+        {
+        failureCode = PK_BODY_create_solid_cyl (bottomRadiusIn, heightIn, &basis, pBodyOut);
+        }
+    else
+        {
+        double      angle, lesserRadius;
+
+        if (bottomRadiusIn < topRadiusIn)
+            {
+            angle = atan ((topRadiusIn - bottomRadiusIn) / heightIn);
+            lesserRadius = bottomRadiusIn;
+            basis.location.coord[2] = heightIn/2.0;
+            basis.axis.coord[2] = -1.0;
+            }
+        else
+            {
+            angle = atan ((bottomRadiusIn - topRadiusIn) / heightIn);
+            lesserRadius = topRadiusIn;
+            }
+
+        failureCode = PK_BODY_create_solid_cone (lesserRadius, heightIn, angle, &basis, pBodyOut);
+        }
+
+    return failureCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidGeom::BodyFromCone (PK_BODY_t& bodyTag, RotMatrixCR rMatrixIn, DPoint3dCR topCenter, DPoint3dCR bottomCenter, double topRadius, double bottomRadius, bool capped, uint32_t nodeId)
+    {
+    double      height;
+    DVec3d      normal, baseNormal, skewVector;
+    DPoint3d    center;
+    RotMatrix   rMatrix = rMatrixIn;
+    Transform   transform, rotateTransform;
+
+    rMatrix.GetColumn(baseNormal, 2);
+    normal.DifferenceOf (topCenter, bottomCenter);
+    skewVector.CrossProduct (normal, baseNormal);
+
+    if (skewVector.Magnitude () > 1.0e-6)
+        {
+        MSBsplineSurface  surface;
+
+        if (SUCCESS != bspconv_coneToSurface (&surface, topRadius, bottomRadius, &rMatrix, (DPoint3dP) &topCenter, (DPoint3dP) &bottomCenter))
+            return ERROR;
+
+        StatusInt   status;
+
+        if (SUCCESS == (status = PSolidGeom::BodyFromMSBsplineSurface (bodyTag, surface)) && capped)
+            status = pki_create_solid_by_capping (&bodyTag);
+
+        surface.ReleaseMem ();
+
+        if (nodeId && SUCCESS == status)
+            PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+        return (BentleyStatus) status;
+        }
+
+    height = normal.Normalize ();
+
+    if (baseNormal.DotProduct (normal) < 0.0)
+        {
+        RotMatrix   rotate180;
+
+        rotate180.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (), msGeomConst_pi, 0.0, 0.0);
+        rMatrix.InitProduct(rMatrix, rotate180);
+        }
+
+    if (SUCCESS != pki_make_cone (&bodyTag, topRadius, bottomRadius, height))
+        return ERROR;
+
+    if (nodeId)
+        {
+        PSolidTopoId::AssignConeFaceIds (bodyTag, nodeId);
+        PSolidTopoId::AssignEdgeIds (bodyTag, nodeId, true);
+        }
+
+    if (!capped)
+        {
+        int         nFaces;
+        PK_FACE_t*  faces = NULL;
+
+        PK_BODY_ask_faces (bodyTag, &nFaces, &faces);
+
+        for (int i=0; i < nFaces; i++)
+            {
+            PK_SURF_t   surface;
+            PK_CLASS_t  surfaceClass;
+
+            PK_FACE_ask_surf (faces[i], &surface);
+            PK_ENTITY_ask_class (surface, &surfaceClass);
+
+            if (PK_CLASS_cone == surfaceClass || PK_CLASS_cyl == surfaceClass)
+                {
+                PK_BODY_t   sheetBody;
+
+                if (SUCCESS == PK_FACE_make_sheet_body (1, &faces[i], &sheetBody))
+                    {
+                    PK_ENTITY_delete (1, &bodyTag);
+                    bodyTag = sheetBody;
+                    }
+
+                break;
+                }
+            }
+
+        PK_MEMORY_free (faces);
+        }
+
+    center.SumOf (bottomCenter, topCenter);
+    center.Scale (center, 0.5);
+
+    rotateTransform.InitFrom (rMatrix);
+    transform.InitFrom (center.x, center.y, center.z);
+    transform.InitProduct (transform, rotateTransform);
+
+    PSolidUtil::TransformBody (bodyTag, transform);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidGeom::BodyFromLoft (PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides)
+    {
+    if ((nProfiles < 1) || (nProfiles < 2 && nGuides < 1))
+        return ERROR;
+
+    PK_BODY_make_lofted_body_o_t    options;
+    PK_BODY_tracked_loft_r_t        result;
+
+    PK_BODY_make_lofted_body_o_m (options);
+    memset (&result, 0, sizeof (result));
+
+    if (nGuides)
+        {
+        options.n_guide_wires = (int) nGuides;
+        options.guide_wires = guides;
+        }
+
+    StatusInt   status;
+
+    if (SUCCESS == (status = PK_BODY_make_lofted_body ((int) nProfiles, profiles, startVertices, &options, &result)))
+        {
+        if (PK_ENTITY_null == result.body || PK_BODY_loft_ok_c != result.status.fault)
+            {
+            PK_ENTITY_delete (1, &result.body);
+            status = ERROR;
+            }
+        else
+            {
+            bodyTag = result.body;
+            }                                          
+        }
+
+    PK_BODY_tracked_loft_r_f (&result);
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getPathVertices (PK_VERTEX_t* vertices, PK_BODY_t pathTag)
+    {
+    PK_BODY_type_t bodyType;
+
+    PK_BODY_ask_type (pathTag, &bodyType);
+
+    if (PK_BODY_type_wire_c != bodyType)
+        return ERROR;
+
+    bvector <PK_EDGE_t> edges;
+    PK_VERTEX_t startVertices[2], endVertices[2];
+
+    if (SUCCESS != PSolidTopo::GetBodyEdges (edges, pathTag) || edges.empty() ||
+        SUCCESS != PK_EDGE_ask_vertices (edges.front(), startVertices) ||
+        SUCCESS != PK_EDGE_ask_vertices (edges.back(), endVertices) ||
+        PK_ENTITY_null == startVertices[0] ||
+        PK_ENTITY_null == endVertices[1])
+        return ERROR;
+    
+    vertices[0] = startVertices[0];
+    vertices[1] = endVertices[1];
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidGeom::BodyFromSweep (PK_BODY_t& bodyTag, PK_BODY_t profileTag, PK_BODY_t pathTag, PK_VERTEX_t pathVertexTag, bool alignParallel, bool selfRepair, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint)
+
+    {
+    PK_BODY_make_swept_body_2_o_t   options;
+    PK_BODY_tracked_sweep_2_r_t     result;
+
+    PK_BODY_make_swept_body_2_o_m (options);
+    memset (&result, 0, sizeof (result));
+
+    options.alignment = alignParallel ? PK_BODY_sweep_align_parallel_c : PK_BODY_sweep_align_normal_c;
+    options.topology_form = PK_BODY_topology_grid_c;
+
+    if (lockDirection)
+        {
+        options.have_lock_direction = true; 
+        options.lock_type = PK_sweep_lock_path_and_dir_c;
+
+        options.lock_direction.coord[0] = lockDirection->x;
+        options.lock_direction.coord[1] = lockDirection->y;
+        options.lock_direction.coord[2] = lockDirection->z;
+        }
+
+    if (NULL != twistAngle)
+        {
+        options.twist.law_set.vertices = new PK_VERTEX_t[2];                
+        options.twist.law_set.values = new double[2];   // From 3dtube.c.... Is this leaked?
+
+        if (SUCCESS != getPathVertices (options.twist.law_set.vertices, pathTag))
+            return ERROR;
+
+        options.twist.law_set.n_vertices = 2;
+        options.twist.law_set.values [0] = 0.0;
+        options.twist.law_set.values [1] = *twistAngle;
+        options.twist.law_type = PK_BODY_sweep_law_discrete_c;
+        }
+
+    if (NULL != scale)
+        {
+        if (0.0 == *scale || NULL == scalePoint)
+            return  ERROR;
+
+        options.scale_type = PK_BODY_sweep_scale_size_c;
+
+        options.scale_point.coord[0] = scalePoint->x;
+        options.scale_point.coord[1] = scalePoint->y;
+        options.scale_point.coord[2] = scalePoint->z;
+        options.scale.law_type = PK_BODY_sweep_law_discrete_c;
+
+        options.scale.law_set.n_vertices = 2;                    // From 3dtube.c.... Is this leaked?
+        options.scale.law_set.vertices = new PK_VERTEX_t[2];
+
+        if (SUCCESS != getPathVertices (options.scale.law_set.vertices, pathTag))
+            return ERROR;
+
+        options.scale.law_set.values = new double[2];
+        options.scale.law_set.values [0] = 1;
+        options.scale.law_set.values [1] = *scale;
+        }
+    
+    static bool     s_doRepair;
+
+    if (selfRepair)
+        options.repair = PK_sweep_repair_yes_c;
+
+    StatusInt   status;
+
+    if (SUCCESS == (status = PK_BODY_make_swept_body_2 (1, &profileTag, pathTag, &pathVertexTag, &options, &result)))
+        {
+        if (PK_ENTITY_null == result.body || PK_BODY_sweep_ok_c != result.status.fault)
+            {
+            PK_ENTITY_delete (1, &result.body);
+            status = ERROR;
+            }
+        else
+            {
+            bodyTag = result.body;
+            }
+        }
+
+    PK_BODY_tracked_sweep_2_r_f (&result);
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus degeneratePointFromCurveVector (PK_BODY_t& bodyTag, CurveVectorCR curves, TransformCR uorToBodyTransform)
+    {
+    if (1 > curves.size () || curves.FastLength () > 1.0e-10)
+        return ERROR;
+
+    DPoint3d    startPoint;
+
+    if (!curves.GetStartPoint (startPoint))
+        return ERROR;
+
+    PK_POINT_t  point;
+
+    uorToBodyTransform.Multiply (startPoint);
+    PK_POINT_create ((PK_POINT_sf_t*) &startPoint, &point);
+
+    return (SUCCESS == PK_POINT_make_minimum_body (point, &bodyTag) ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
+    {
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    Transform   solidToDgn, dgnToSolid;
+
+    switch (primitive.GetSolidPrimitiveType ())
+        {
+        case SolidPrimitiveType_DgnTorusPipe:
+            {
+            DgnTorusPipeDetail  detail;
+
+            if (!primitive.TryGetDgnTorusPipeDetail (detail))
+                return ERROR;
+
+            DPoint3d    center;
+            DVec3d      axis;
+            double      sweepRadians;
+
+            if (!detail.TryGetRotationAxis (center, axis, sweepRadians))
+                return ERROR;
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &center);
+
+            DEllipse3d      minorHoop = detail.VFractionToUSectionDEllipse3d (0.0);
+            CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    
+            curve->push_back (ICurvePrimitive::CreateArc (minorHoop));
+
+            PK_BODY_t   bodyTag;
+
+            if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, *curve, dgnToSolid, primitive.GetCapped ()))
+                return ERROR;
+
+            if (nodeId)
+                PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+            DPoint3d    zeroPoint = {0.0, 0.0, 0.0};
+
+            dgnToSolid.MultiplyMatrixOnly (axis);
+
+            if (SUCCESS != PSolidUtil::SweepBodyAxis (bodyTag, axis, zeroPoint, sweepRadians))
+                {
+                PK_ENTITY_delete (1, &bodyTag);
+
+                return ERROR;
+                }
+
+            if (nodeId)
+                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, false);
+
+            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+            return SUCCESS;
+            }
+
+        case SolidPrimitiveType_DgnCone:
+            {
+            DgnConeDetail  detail;
+
+            if (!primitive.TryGetDgnConeDetail (detail))
+                return ERROR;
+
+            DPoint3d    centerA, centerB;
+            RotMatrix   rMatrix;
+            double      radiusA, radiusB;
+            bool        capped;
+
+            if (!detail.IsCircular (centerA, centerB, rMatrix, radiusA, radiusB, capped))
+                return ERROR;
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &centerA);
+
+            DPoint3d    zeroPoint = {0.0, 0.0, 0.0}, delta;
+
+            delta.DifferenceOf (centerB, centerA);
+            dgnToSolid.MultiplyMatrixOnly (delta);
+
+            PK_BODY_t   bodyTag;
+
+            if (SUCCESS != PSolidGeom::BodyFromCone (bodyTag, rMatrix, zeroPoint, delta, radiusA, radiusB, capped, nodeId))
+                return ERROR;
+
+            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+            return SUCCESS;
+            }
+
+        case SolidPrimitiveType_DgnBox:
+            {
+            DgnBoxDetail  detail;
+
+            if (!primitive.TryGetDgnBoxDetail (detail))
+                return ERROR;
+
+            bvector<DPoint3d>  corners;
+
+            detail.GetCorners (corners);
+
+            DPoint3d  baseRectangle[5];
+
+            baseRectangle[0] = corners[0];
+            baseRectangle[1] = corners[1];
+            baseRectangle[2] = corners[3];
+            baseRectangle[3] = corners[2];
+            baseRectangle[4] = corners[0];
+
+            DPoint3d  topRectangle[5];
+
+            topRectangle[0] = corners[4];
+            topRectangle[1] = corners[5];
+            topRectangle[2] = corners[7];
+            topRectangle[3] = corners[6];
+            topRectangle[4] = corners[4];
+
+            CurveVectorPtr  baseCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+            CurveVectorPtr  topCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+
+            baseCurve->push_back (ICurvePrimitive::CreateLineString (baseRectangle, 5));
+            topCurve->push_back (ICurvePrimitive::CreateLineString (topRectangle, 5));
+
+            DgnRuledSweepDetail  ruleDetail (baseCurve, topCurve, primitive.GetCapped ());
+            ISolidPrimitivePtr   rulePrimitive = ISolidPrimitive::CreateDgnRuledSweep (ruleDetail);
+
+            return BodyFromSolidPrimitive (entityOut, *rulePrimitive, nodeId);
+            }
+
+        case SolidPrimitiveType_DgnSphere:
+            {
+            DgnSphereDetail  detail;
+
+            if (!primitive.TryGetDgnSphereDetail (detail))
+                return ERROR;
+
+            DPoint3d    origin;
+            double      sweepRadians;
+            DVec3d      axis;
+
+            if (!detail.TryGetRotationAxis (origin, axis, sweepRadians))
+                return ERROR;
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+            DEllipse3d  ellipse = detail.UFractionToVSectionDEllipse3d (0.0);
+            
+            if (ellipse.IsCircular ()) // Special case for Sphere...
+                {
+                double      r0, r1, theta0, sweep;
+                DPoint3d    center;
+                RotMatrix   rMatrix;
+                DEllipse3d  tmpEllipse;
+                
+
+                dgnToSolid.Multiply (tmpEllipse, ellipse);
+                tmpEllipse.GetScaledRotMatrix (center, rMatrix, r0, r1, theta0, sweep);
+
+                PK_BODY_t   bodyTag;
+
+                if (SUCCESS == PK_BODY_create_solid_sphere (r0, NULL, &bodyTag))
+                    {
+                    Transform   sphereTransform;
+
+                    sphereTransform.InitFrom (rMatrix, center);
+                    PSolidUtil::TransformBody (bodyTag, sphereTransform);
+
+                    if (nodeId)
+                        PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+                    entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+                    return SUCCESS;
+                    }
+                }
+
+            CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open); // Only true sphere should be a solid...
+    
+            curve->push_back (ICurvePrimitive::CreateArc (ellipse));
+
+            PK_BODY_t   bodyTag;
+
+            if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, *curve, dgnToSolid))
+                return ERROR;
+
+            if (nodeId)
+                PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+            DPoint3d    zeroPoint = {0.0, 0.0, 0.0};
+
+            dgnToSolid.MultiplyMatrixOnly (axis);
+
+            if (SUCCESS != PSolidUtil::SweepBodyAxis (bodyTag, axis, zeroPoint, sweepRadians))
+                {
+                PK_ENTITY_delete (1, &bodyTag);
+
+                return ERROR;
+                }
+
+            if (nodeId)
+                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, false);
+
+            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+            return SUCCESS;
+            }
+
+        case SolidPrimitiveType_DgnExtrusion:
+            {
+            DgnExtrusionDetail  detail;
+
+            if (!primitive.TryGetDgnExtrusionDetail (detail))
+                return ERROR;
+
+            DPoint3d    origin;
+
+            detail.m_baseCurve->GetStartPoint (origin);
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+            PK_BODY_t   bodyTag;
+
+            if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, *detail.m_baseCurve, dgnToSolid, primitive.GetCapped ()))
+                return ERROR;
+
+            if (nodeId)
+                PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+            DVec3d      extrusion = detail.m_extrusionVector;
+
+            dgnToSolid.MultiplyMatrixOnly (extrusion);
+
+            double      distance = extrusion.Normalize ();
+
+            if (SUCCESS != PSolidUtil::SweepBodyVector (bodyTag, extrusion, distance))
+                {
+                PK_ENTITY_delete (1, &bodyTag);
+
+                return ERROR;
+                }
+
+            if (nodeId)
+                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, false);
+
+            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+            return SUCCESS;
+            }
+
+        case SolidPrimitiveType_DgnRotationalSweep:
+            {
+            DgnRotationalSweepDetail  detail;
+
+            if (!primitive.TryGetDgnRotationalSweepDetail (detail))
+                return ERROR;
+
+            DPoint3d    origin;
+            DVec3d      axis;
+            double      sweepRadians;
+
+            if (!detail.TryGetRotationAxis (origin, axis, sweepRadians))
+                return ERROR;
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+            PK_BODY_t   bodyTag;
+
+            if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, *detail.m_baseCurve, dgnToSolid, primitive.GetCapped ()))
+                return ERROR;
+
+            if (nodeId)
+                PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+            DPoint3d    zeroPoint = {0.0, 0.0, 0.0};
+
+            dgnToSolid.MultiplyMatrixOnly (axis);
+
+            if (sweepRadians > msGeomConst_2pi)
+                sweepRadians = msGeomConst_2pi;
+            else if (sweepRadians < -msGeomConst_2pi)
+                sweepRadians = -msGeomConst_2pi;
+            
+            if (SUCCESS != PSolidUtil::SweepBodyAxis (bodyTag, axis, zeroPoint, sweepRadians))
+                {
+                PK_ENTITY_delete (1, &bodyTag);
+
+                return ERROR;
+                }
+
+            if (nodeId)
+                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, false);
+
+            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+            return SUCCESS;
+            }
+
+        case SolidPrimitiveType_DgnRuledSweep:
+            {
+            DgnRuledSweepDetail  detail;
+    
+            if (!primitive.TryGetDgnRuledSweepDetail (detail))
+                return ERROR;
+
+            DPoint3d    origin;
+
+            if (!detail.m_sectionCurves.front ()->GetStartPoint (origin))
+                return ERROR;
+
+            PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+            DVec3d      translation;
+
+            if (2 == detail.m_sectionCurves.size () && detail.GetSectionCurveTranslation (translation, 0, 1))
+                {
+                PK_BODY_t   bodyTag;
+
+                if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, *detail.m_sectionCurves.front (), dgnToSolid, primitive.GetCapped ()))
+                    return ERROR;
+
+                if (nodeId)
+                    PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
+
+                dgnToSolid.MultiplyMatrixOnly (translation);
+
+                double      distance = translation.Normalize ();
+
+                if (SUCCESS != PSolidUtil::SweepBodyVector (bodyTag, translation, distance))
+                    {
+                    PK_ENTITY_delete (1, &bodyTag);
+
+                    return ERROR;
+                    }
+
+                if (nodeId)
+                    PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, false);
+
+                entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+                return SUCCESS;
+                }
+            else if (detail.m_sectionCurves.front()->IsParityRegion())
+                {
+                // NOTE: PK_BODY_make_lofted_body doesn't support sheets with holes, try to convert by stitching faces...
+                StatusInt            status = ERROR;
+                DgnRuledSweepDetail  correctedDetail;
+
+                correctedDetail.m_capped = primitive.GetCapped ();
+
+                double a = dgnToSolid.ColumnXMagnitude (), b;
+
+                DoubleOps::SafeDivide (b, 1.0, a, 1.0);
+
+                CurveGapOptions     options (1.0e-10 * b, 1.0e-4 * b, 1.0e-3 * b);
+
+                // Create new solid/surface with profiles cleaned up to remove gaps/silver faces...
+                for (CurveVectorPtr& profile : detail.m_sectionCurves)
+                    correctedDetail.m_sectionCurves.push_back (profile->CloneWithGapsClosed (options));
+
+                ISolidPrimitivePtr correctedPrimitive = ISolidPrimitive::CreateDgnRuledSweep (correctedDetail);
+
+                bvector <SolidLocationDetail::FaceIndices> faceIndices;
+
+                correctedPrimitive->GetFaceIndices (faceIndices);
+
+                if (0 != faceIndices.size ())
+                    {
+                    bvector<IBRepEntityPtr> tools;
+
+                    for (SolidLocationDetail::FaceIndices const& thisFace: faceIndices)
+                        {
+                        IGeometryPtr faceGeom = correctedPrimitive->GetFace (thisFace);
+
+                        if (!faceGeom.IsValid ())
+                            continue;
+
+                        IBRepEntityPtr faceEntity;
+
+                        switch (faceGeom->GetGeometryType ())
+                            {
+                            case IGeometry::GeometryType::CurveVector:
+                                {
+                                CurveVectorPtr thisFace = faceGeom->GetAsCurveVector();
+                                PK_BODY_t thisSurfTag;
+
+                                if (SUCCESS != PSolidGeom::BodyFromCurveVector (thisSurfTag, nullptr, *thisFace, dgnToSolid, true))
+                                    break;
+
+                                IBRepEntityPtr faceEntity = PSolidUtil::CreateNewEntity (thisSurfTag, solidToDgn);
+
+                                tools.push_back (faceEntity);
+                                break;
+                                }
+
+                            case IGeometry::GeometryType::SolidPrimitive:
+                                {
+                                // NOTE: Avoids recursion and likely failure...
+                                bvector<MSBsplineSurfacePtr> surfaces;
+
+                                if (!MSBsplineSurface::CreateTrimmedSurfaces (surfaces, *faceGeom->GetAsISolidPrimitive()) || 1 != surfaces.size())
+                                    break;
+
+                                if (SUCCESS != surfaces.front()->TransformSurface (&dgnToSolid))
+                                    break;
+
+                                PK_BODY_t thisSurfTag;
+
+                                if (SUCCESS != PSolidGeom::BodyFromMSBsplineSurface (thisSurfTag, *surfaces.front()))
+                                    break;
+
+                                IBRepEntityPtr faceEntity = PSolidUtil::CreateNewEntity (thisSurfTag, solidToDgn);
+
+                                tools.push_back (faceEntity);
+                                break;
+                                }
+
+                            case IGeometry::GeometryType::BsplineSurface:
+                                {
+                                MSBsplineSurfacePtr thisFace = faceGeom->GetAsMSBsplineSurface();
+
+                                if (SUCCESS != thisFace->TransformSurface (&dgnToSolid))
+                                    break;
+
+                                PK_BODY_t thisSurfTag;
+
+                                if (SUCCESS != PSolidGeom::BodyFromMSBsplineSurface (thisSurfTag, *thisFace))
+                                    break;
+
+                                IBRepEntityPtr faceEntity = PSolidUtil::CreateNewEntity (thisSurfTag, solidToDgn);
+
+                                tools.push_back (faceEntity);
+                                break;
+                                }
+
+                            default:
+                                {
+                                BeAssert (false);
+                                break;
+                                }
+                            }
+                        }
+
+                    if (tools.size() == faceIndices.size())
+                        {
+                        bvector<IBRepEntityPtr> sewn;
+                        bvector<IBRepEntityPtr> unsewn;
+
+                        if (SUCCESS == BRepUtil::Modify::SewBodies (sewn, unsewn, &tools.front(), tools.size(), 1.0))
+                            {
+                            if (0 == sewn.size())
+                                return ERROR;
+
+                            entityOut = sewn.front();
+
+                            if (primitive.GetCapped ())
+                                {
+                                if (1 != sewn.size() || 0 != unsewn.size())
+                                    return ERROR;
+                                }
+                            else
+                                {
+                                if (sewn.size() > 1)
+                                    unsewn.insert (unsewn.begin (), sewn.begin () + 1, sewn.end ());
+
+                                if (0 != unsewn.size())
+                                    {
+                                    if (SUCCESS != BRepUtil::Modify::BooleanUnion (entityOut, &unsewn.front(), unsewn.size()))
+                                        return ERROR;
+                                    }
+                                }
+
+                            PK_TOPOL_delete_redundant (PSolidUtil::GetEntityTag (*entityOut));
+
+                            if (nodeId)
+                                PSolidTopoId::AddNodeIdAttributes (PSolidUtil::GetEntityTag (*entityOut), nodeId, true);
+
+                            if ((primitive.GetCapped() && IBRepEntity::EntityType::Solid == entityOut->GetEntityType()) || 
+                                (!primitive.GetCapped() && IBRepEntity::EntityType::Sheet == entityOut->GetEntityType()))
+                                status = SUCCESS;
+                            }
+                        }
+                    }
+
+                return (BentleyStatus) status;
+                }
+
+            size_t          nProfiles = detail.m_sectionCurves.size ();
+            PK_BODY_t*      profileBodies = (PK_BODY_t*) _alloca (nProfiles * sizeof (PK_BODY_t));
+            PK_VERTEX_t*    startVertices = (PK_VERTEX_t*) _alloca (nProfiles * sizeof (PK_VERTEX_t));
+
+            memset (profileBodies, 0, nProfiles * sizeof (PK_BODY_t));
+
+            StatusInt       status = ERROR;
+        
+            for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
+                {
+                // NOTE: Need all open profiles for multi-stage linear transition even though each loft is done 2 profiles at a time.
+                //       A loft of co-planar closed profiles (ex. concentric circles) isn't valid. We will instead create a
+                //       surface and attempt to cap it at the end...
+                bool    coverClosed = (nProfiles > 2 ? false : (primitive.GetCapped () && (0 == iProfile || iProfile+1 == nProfiles)));
+
+                // Degenerate point profile is allowed for first or last (Scale of 0 in both X and Y)...
+                if ((0 == iProfile || iProfile+1 == nProfiles) && SUCCESS == (status = degeneratePointFromCurveVector (profileBodies[iProfile], *detail.m_sectionCurves.at (iProfile), dgnToSolid)))
+                    {
+                    startVertices[iProfile] = PK_ENTITY_null;
+                    continue;
+                    }
+
+                if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (profileBodies[iProfile], &startVertices[iProfile], *detail.m_sectionCurves.at (iProfile), dgnToSolid, coverClosed)))
+                    break;
+                }
+
+            if (SUCCESS == status)
+                {
+                PK_BODY_make_lofted_body_o_t    options;
+                PK_BODY_tracked_loft_r_t        result;
+
+                PK_BODY_make_lofted_body_o_m (options);
+                memset (&result, 0, sizeof (result));
+
+                bvector<PK_BODY_t>  resultTags;
+
+                for (size_t iProfilePair = 0; iProfilePair < nProfiles-1; iProfilePair++)
+                    {
+                    if (SUCCESS == PK_BODY_make_lofted_body (2, &profileBodies[iProfilePair], &startVertices[iProfilePair], &options, &result))
+                        {
+                        if (PK_ENTITY_null == result.body || PK_BODY_loft_ok_c != result.status.fault)
+                            status = ERROR;
+
+                        resultTags.push_back (result.body);
+                        }
+
+                    PK_BODY_tracked_loft_r_f (&result);
+                    }
+
+                if (SUCCESS == status)
+                    {
+                    if (0 == resultTags.size ())
+                        {
+                        status = ERROR;
+                        }
+                    else
+                        {
+                        PK_BODY_t   bodyTag = resultTags.front ();
+
+                        if (resultTags.size () > 1)
+                            {
+                            status = PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, &resultTags.at (1), (int) resultTags.size ()-1, PKI_BOOLEAN_OPTION_None);
+
+                            if (SUCCESS == status && primitive.GetCapped ())
+                                pki_create_solid_by_capping (&bodyTag);
+                            }
+
+                        if (SUCCESS == status)
+                            {
+                            if (nodeId)
+                                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+                            entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+                            }
+                        }
+                    }
+
+                if (SUCCESS != status && 0 != resultTags.size ())
+                    PK_ENTITY_delete ((int) resultTags.size (), &resultTags.front ());
+                }
+
+            PK_ENTITY_delete ((int) nProfiles, profileBodies);
+
+            return (BentleyStatus) status;
+            }
+
+        default:
+            return ERROR;
+        }
+    }
+
+
 

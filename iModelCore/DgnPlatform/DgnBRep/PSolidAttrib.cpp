@@ -8,10 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
-#define PKI_HIDDEN_ENTITY_ATTRIB_NAME "BSI_TriformaAdjacencyAttribute"
-
-static const int HIDDEN_ATTRIBUTE_Visible    = 0;
-static const int HIDDEN_ATTRIBUTE_Hidden     = 1;
+static const int HIDDEN_ATTRIBUTE_Visible = 0;
+static const int HIDDEN_ATTRIBUTE_Hidden  = 1;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   05/97
@@ -26,8 +24,11 @@ char*           pAttribNameIn           // => input attrib type to get
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (pAttribNameIn)
-        PK_ATTDEF_find (pAttribNameIn, &attribDefTag);
+    *ppAttribArrayOut = nullptr;
+    *pNumAttribOut = 0;
+
+    if (nullptr == pAttribNameIn || SUCCESS != PK_ATTDEF_find (pAttribNameIn, &attribDefTag) || PK_ENTITY_null == attribDefTag)
+        return;
 
     PK_ENTITY_ask_attribs (entityTagIn, attribDefTag, pNumAttribOut, ppAttribArrayOut);
     }
@@ -58,7 +59,7 @@ BentleyStatus   PSolidAttrib::GetHiddenAttribute (bool& isHidden, PK_ENTITY_t en
 
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return ERROR;
 
     int             numAttributes = 0;
@@ -86,7 +87,7 @@ BentleyStatus   PSolidAttrib::SetHiddenAttribute (PK_ENTITY_t entity, bool isHid
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return ERROR;
 
     StatusInt       status = SUCCESS;
@@ -124,7 +125,7 @@ void            PSolidAttrib::DeleteHiddenAttribute (PK_ENTITY_t entity)
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
-    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag))
+    if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return;
 
     int             numAttributes = 0;
@@ -271,6 +272,46 @@ void            PSolidAttrib::DeleteHiddenAttributeOnFaces (PK_BODY_t entity)
         PSolidAttrib::DeleteHiddenAttribute (pFaces[i]);
 
     PK_MEMORY_free (pFaces);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidAttrib::GetUserAttributes (bvector<int32_t>& attributes, PK_ENTITY_t entity, int32_t ownerId, int findIndex)
+    {
+    bool            found = false;
+    int             i, index = 0, numAttrib = 0;
+    PK_ATTRIB_t*    pAttribArray = NULL;
+
+    PSolidAttrib::GetAttrib (&numAttrib, &pAttribArray, entity, PKI_USERDATA_ATTRIB_NAME);
+
+    for (i = 0; i < numAttrib && !found; i++)
+        {
+        int     numData = 0, *pData = NULL;
+
+        if (SUCCESS == PK_ATTRIB_ask_ints (pAttribArray[i], 0, &numData, &pData))
+            {
+            if (numData > 0 && NULL != pData)
+                {
+                if (pData[0] == ownerId)
+                    {
+                    if (index++ == findIndex)
+                        {
+                        numData--;
+                        attributes.resize (numData);
+                        memcpy (&attributes[0], &pData[1], numData * sizeof (int32_t));
+                        found = true;
+                        }
+                    }
+
+                PK_MEMORY_free (pData);
+                }
+            }
+        }
+
+    PK_MEMORY_free (pAttribArray);
+
+    return (found ? SUCCESS : ERROR);
     }
 
 

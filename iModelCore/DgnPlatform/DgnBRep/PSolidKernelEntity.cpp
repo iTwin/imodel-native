@@ -74,7 +74,7 @@ EntityType _GetEntityType() const
             return IBRepEntity::EntityType::Wire;
 
         default:
-            return IBRepEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Invalid;
         }
     }
 
@@ -239,8 +239,23 @@ void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned = true)
     {
-    if (NULTAG == entityTag)
+    if (PK_ENTITY_null == entityTag)
         return nullptr;
+
+    PK_BODY_type_t bodyType = PK_BODY_type_unspecified_c;
+
+    PK_BODY_ask_type(entityTag, &bodyType);
+
+    switch (bodyType)
+        {
+        case PK_BODY_type_solid_c:
+        case PK_BODY_type_sheet_c:
+        case PK_BODY_type_wire_c:
+            break; // Don't allow empty, minimal, acorn, general, or compound bodies...has unknown ramifications for down-stream operations...
+
+        default:
+            return nullptr;
+        }
 
     return new PSolidKernelEntity(entityTag, transform, owned);
     }
@@ -250,7 +265,7 @@ static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBRepEntityPtr PSolidUtil::CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned)
+IBRepEntityPtr PSolidUtil::CreateNewEntity(PK_ENTITY_t entityTag, TransformCR entityTransform, bool owned)
     {
     return PSolidKernelEntity::CreateNewEntity(entityTag, entityTransform, owned);
     }
@@ -280,6 +295,38 @@ PK_ENTITY_t PSolidUtil::GetEntityTag(IBRepEntityCR entity, bool* isOwned)
         *isOwned = psEntity->IsOwnedEntity();
 
     return psEntity->GetEntityTag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_ENTITY_t PSolidUtil::ExtractEntityTag(IBRepEntityR entity)
+    {
+    PSolidKernelEntity* psEntity;
+
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
+        return PK_ENTITY_null;
+
+    return psEntity->ExtractEntityTag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_ENTITY_t PSolidUtil::GetEntityTagForModify(IBRepEntityR entity)
+    {
+    PSolidKernelEntity* psEntity;
+
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
+        return PK_ENTITY_null;
+
+    PK_ENTITY_t entityTag;
+
+    // *** IMPORTANT *** Extract fails for a non-owning/cached entity ptr. We must create a copy to make sure it's not freed!!!
+    if (PK_ENTITY_null == (entityTag = psEntity->ExtractEntityTag()))
+        PK_ENTITY_copy(psEntity->GetEntityTag(), &entityTag);
+
+    return entityTag;
     }
 
 /*---------------------------------------------------------------------------------**//**

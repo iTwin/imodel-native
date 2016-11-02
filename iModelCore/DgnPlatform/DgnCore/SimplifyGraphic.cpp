@@ -837,10 +837,10 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_PARASOLID_X)
-        ISolidKernelEntityPtr entityPtr;
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, geom))
+        if (SUCCESS == PSolidGeom::BodyFromSolidPrimitive(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -849,11 +849,11 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
                 }
 
             bool clipped;
-            bvector<ISolidKernelEntityPtr> clippedBodies;
+            bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
-                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
                 }
             else if (!m_processor._ProcessSolidPrimitive(geom, *this))
@@ -985,10 +985,10 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
-#if defined (BENTLEYCONFIG_PARASOLID_X)
-        ISolidKernelEntityPtr entityPtr;
+#if defined (BENTLEYCONFIG_PARASOLID)
+        IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, geom))
+        if (SUCCESS == PSolidGeom::BodyFromBSurface(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -997,11 +997,11 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
                 }
 
             bool clipped;
-            bvector<ISolidKernelEntityPtr> clippedBodies;
+            bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == PSolidUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
-                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
                 }
             else if (!m_processor._ProcessSurface(geom, *this))
@@ -1350,7 +1350,9 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::BRep;
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping) // Already had a chance at un-clipped solid...
+    bool isSolidOrSheet = (IBRepEntity::EntityType::Sheet == geom.GetEntityType() || IBRepEntity::EntityType::Solid == geom.GetEntityType());
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping && isSolidOrSheet) // Already had a chance at un-clipped solid...
         {
 #if defined (BENTLEYCONFIG_PARASOLID)
         bool clipped;
@@ -1391,7 +1393,7 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
         return;
         }
 
-    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled))
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled) && isSolidOrSheet)
         {
         ClipAndProcessBodyAsPolyface(geom);
         return;
@@ -1430,53 +1432,23 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR geom)
+void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID_X)
-    // Bleech...use FacetEntity methods...
-    IFacetTopologyTablePtr  facetsPtr;
-
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody(facetsPtr, geom, *m_facetOptions))
-        return;
-
-    T_FaceAttachmentsVec const* faceAttachmentsVec = (m_facetOptions->GetIgnoreFaceMaterialAttachments() ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
-
-    if (faceAttachmentsVec)
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (nullptr != entity.GetFaceMaterialAttachments())
         {
-        bvector<PolyfaceHeaderPtr>             polyfaces;
-        bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-        bmap<int, PolyfaceHeaderCP>            faceToPolyfaces;
-        T_FaceToSubElemIdMap const*            faceToSubElemIdMap = facetsPtr->_GetFaceToSubElemIdMap();
+        bvector<PolyfaceHeaderPtr> polyfaces;
+        bvector<Render::GeometryParams> params;
 
-        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap->begin(); curr != faceToSubElemIdMap->end(); ++curr)
+        if (BRepUtil::FacetEntity(entity, polyfaces, params, *m_facetOptions))
             {
-            FaceAttachment faceAttachment = faceAttachmentsVec->at(curr->second.second);
-            bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
-
-            if (found == uniqueFaceAttachments.end())
+            for (size_t i = 0; i < polyfaces.size(); i++)
                 {
-                PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+                if (0 == polyfaces[i]->GetPointCount())
+                    continue;
 
-                polyfaces.push_back(polyface);
-                faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
-                }
-            else
-                {
-                faceToPolyfaces[curr->first] = found->second;
-                }
-            }
-
-        if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *m_facetOptions))
-            {
-            Render::GraphicPtr graphic = _CreateSubGraphic(geom.GetEntityTransform());
-
-            for (size_t i=0; i<polyfaces.size(); i++)
-                {
-                polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
-
-                Render::GeometryParams geomParams(m_currGeometryParams);
-                faceAttachmentsVec->at(i).ToGeometryParams(geomParams);
-                m_context.CookGeometryParams(geomParams, *graphic);
+                GraphicBuilder builder(*this);
+                m_context.CookGeometryParams(params[i], builder);
 
                 SimplifyPolyfaceClipper     polyfaceClipper;
                 bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1484,37 +1456,34 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR geom)
                 if (0 != clippedPolyface.size())
                     {
                     for (PolyfaceHeaderPtr meshOut : clippedPolyface)
-                        m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
+                        m_processor._ProcessPolyface(*meshOut, false, *this);
                     }
                 else if (polyfaceClipper.IsUnclipped())
                     {
-                    m_processor._ProcessPolyface(*polyfaces[i], false, static_cast<SimplifyGraphic&> (*graphic));
+                    m_processor._ProcessPolyface(*polyfaces[i], false, *this);
                     }
                 }
+
+            return;
             }
-        return;
         }
 
-    PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+    PolyfaceHeaderPtr meshPtr = BRepUtil::FacetEntity(entity, *m_facetOptions);
 
-    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*polyface, *facetsPtr, *m_facetOptions))
+    if (!meshPtr.IsValid())
         return;
 
-    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
-
     SimplifyPolyfaceClipper     polyfaceClipper;
-    bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
-
-    Render::GraphicPtr graphic = _CreateSubGraphic(geom.GetEntityTransform());
+    bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*meshPtr, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
 
     if (0 != clippedPolyface.size())
         {
         for (PolyfaceHeaderPtr meshOut : clippedPolyface)
-            m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
+            m_processor._ProcessPolyface(*meshOut, false, *this);
         }
     else if (polyfaceClipper.IsUnclipped())
         {
-        m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic&> (*graphic));
+        m_processor._ProcessPolyface(*meshPtr, false, *this);
         }
 #elif defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(geom);

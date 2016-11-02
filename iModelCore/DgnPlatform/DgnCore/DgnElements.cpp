@@ -434,10 +434,10 @@ void ElemIdTree::Purge(int64_t memTarget)
     if (memTarget < 0)
         memTarget = 0;
 
-    if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_Purge(memTarget)))
+    if (nullptr == m_root || (ElemPurge::Deleted != m_root->_Purge(memTarget)))
         return;
 
-    // all of the elements were garbage!
+    // all of the elements were garbage. The tree is now empty.
     FreeNode(m_root, m_root->IsLeaf());
     m_root = nullptr;
     }
