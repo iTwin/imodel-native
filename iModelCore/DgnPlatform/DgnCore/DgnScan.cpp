@@ -7,64 +7,45 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::ScanCriteria() 
-    {
-    // do this so we don't lose our vtable
-    memset (&m_firstMember, 0, offsetof (ScanCriteria, m_lastMember) - offsetof (ScanCriteria, m_firstMember));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    08/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::UseRangeTree(DgnRangeTree& rangeTree)
-    {
-    if (nullptr != m_appRangeNodeCheck)
-        return  true;
-
-    DRange3dCP modelRange = rangeTree.GetExtents();
-    return (nullptr != modelRange);
-    }
+using namespace RangeIndex;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Result checkSubRange (DRange3dCR scanRange, DRange3dCR elemRange, bool isElem3d)
+static ScanCriteria::Stop checkSubRange(BoxCR scanRange, BoxCR elemRange, bool isElem3d)
     {
     /* if element xlow is greater than range xhigh, reject */
     if (elemRange.low.x > scanRange.high.x)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* if element ylow is greater than range yhigh, reject */
     if (elemRange.low.y > scanRange.high.y)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* if element xhigh is less than range xlow, reject */
     if (elemRange.high.x < scanRange.low.x)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* if element yhigh is less than range ylow, reject */
     if (elemRange.high.y < scanRange.low.y)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* if element zlow is greater than range zhigh, reject */
     if ((isElem3d ? elemRange.low.z : 0) > scanRange.high.z)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* if element zhigh is less than range zlow, reject */
     if ((isElem3d ? elemRange.high.z : 0) < scanRange.low.z)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* passed all tests, so accept it */
-    return  ScanCriteria::Result::Pass;
+    return  ScanCriteria::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BJB             12/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline void exchangeAndNegate (double *dbl1, double *dbl2)
+static inline void exchangeAndNegate(double *dbl1, double *dbl2)
     {
     double temp = *dbl1;
     *dbl1 = - *dbl2;
@@ -74,7 +55,7 @@ static inline void exchangeAndNegate (double *dbl1, double *dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BJB             12/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP skewVector, DRange3dCR elemRange, bool isElem3d)
+static ScanCriteria::Stop checkSkewRange(BoxCP skewRange, DPoint3dCP skewVector, BoxCR elemRange, bool isElem3d)
     {
     double va1, va2, va3, va4;
     double vb1, vb2, vb3, vb4;
@@ -93,26 +74,26 @@ static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP ske
     if (skVector.x < 0.0)
         {
         skVector.x = - skVector.x;
-        exchangeAndNegate (&dlo.x, &dhi.x);
+        exchangeAndNegate(&dlo.x, &dhi.x);
         }
 
     if (skVector.y < 0.0)
         {
         skVector.y = - skVector.y;
-        exchangeAndNegate (&dlo.y, &dhi.y);
+        exchangeAndNegate(&dlo.y, &dhi.y);
         }
 
     /* Check the projection of the element's xhigh to the plane where ylow of the element is equal to yhigh of the skewrange */
     va1 = dlo.x * skVector.y;
     vb2 = dhi.y * skVector.x;
     if (va1 > vb2)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* Check the projection of the element's xlow to the plane where yhigh of the element is equal to ylow of the skewrange */
     vb1 = dlo.y * skVector.x;
     va2 = dhi.x * skVector.y;
     if (va2 < vb1)
-        return ScanCriteria::Result::Fail;
+        return ScanCriteria::Stop::Yes;
 
     /* now we need the Z stuff */
     dlo.z = (isElem3d ? (double) elemRange.low.z  : 0.0) - skewRange->high.z;
@@ -120,7 +101,7 @@ static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP ske
     if (skVector.z < 0.0)
         {
         skVector.z = - skVector.z;
-        exchangeAndNegate (&dlo.z, &dhi.z);
+        exchangeAndNegate(&dlo.z, &dhi.z);
         }
 
     /* project onto either the xz or yz plane */
@@ -129,14 +110,14 @@ static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP ske
         va3 = dlo.x * skVector.z;
         vc2 = dhi.z * skVector.x;
         if (va3 > vc2)
-            return ScanCriteria::Result::Fail;
+            return ScanCriteria::Stop::Yes;
         }
     else
         {
         vb3 = dlo.y * skVector.z;
         vc4 = dhi.z * skVector.y;
         if (vb3 > vc4)
-            return ScanCriteria::Result::Fail;
+            return ScanCriteria::Stop::Yes;
         }
 
     /* project onto the other plane */
@@ -145,39 +126,36 @@ static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP ske
         va4 = dhi.x * skVector.z;
         vc1 = dlo.z * skVector.x;
         if (va4 < vc1)
-            return ScanCriteria::Result::Fail;
+            return ScanCriteria::Stop::Yes;
         }
     else
         {
         vb4 = dhi.y * skVector.z;
         vc3 = dlo.z * skVector.y;
         if (vb4 < vc3)
-            return ScanCriteria::Result::Fail;
+            return ScanCriteria::Stop::Yes;
         }
 
-    return ScanCriteria::Result::Pass;
+    return ScanCriteria::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result  ScanCriteria::CheckRange(DRange3dCR elemRange, bool is3d) const
+ScanCriteria::Stop ScanCriteria::CheckRange(BoxCR elemRange, bool is3d) const
     {
-    if (m_type.testSkewScan)
+    if (m_testSkewScan)
         {
-        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Result::Fail)
-            return ScanCriteria::Result::Fail;
+        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Stop::Yes)
+            return ScanCriteria::Stop::Yes;
 
-        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Result::Pass)
-            return ScanCriteria::Result::Pass;
+        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Stop::No)
+            return ScanCriteria::Stop::No;
 
         return checkSkewRange(&m_skewRange, &m_skewVector, elemRange, is3d);
         }
 
-    if (m_type.testRange)
-        return checkSubRange(m_range, elemRange, is3d);
-
-    return ScanCriteria::Result::Pass;
+    return checkSubRange(m_range, elemRange, is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -192,53 +170,46 @@ bool ScanCriteria::CheckElementRange(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::_CheckRangeTreeNode(DRange3dCR nodeRange, bool is3d) const
+bool ScanCriteria::_CheckRangeTreeNode(BoxCR nodeRange, bool is3d) const
     {
-    if (ScanCriteria::Result::Pass != CheckRange(nodeRange, is3d))
-        return false;
-
-    return (nullptr == m_appRangeNodeCheck) ? true : (ScanCriteria::Result::Pass == m_appRangeNodeCheck->_CheckNodeRange(*this, nodeRange, is3d));
+    return ScanCriteria::Stop::No == ((nullptr == m_callback) ? CheckRange(nodeRange, is3d) : m_callback->_CheckNodeRange(nodeRange, is3d));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
+ScanCriteria::Stop ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
     {
-    if (m_type.testCategory)
+    if (m_testCategory)
         {
         auto geomEl = element.ToGeometrySource();
         if (nullptr == geomEl || !m_categories->Contains(geomEl->GetCategoryId()))
-            return  ScanCriteria::Result::Fail;
+            return  ScanCriteria::Stop::Yes;
         }
 
     /* check the range */
     if (doRangeTest)
         {
         if (!CheckElementRange(element))
-            return  ScanCriteria::Result::Fail;
+            return  ScanCriteria::Stop::Yes;
         }
 
-    return ScanCriteria::Result::Pass;
+    return ScanCriteria::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometrySourceCP source, DRange3dCR range)
+Tree::Traverser::Stop ScanCriteria::_VisitRangeTreeElem(DgnElementId id, BoxCR range)
     {
-    DgnElementCP element = source->ToElement();
+    if (ScanCriteria::Stop::No != CheckRange(range, m_model->Is3d()))
+        return Stop::No;
 
-    if (nullptr == element)
-        return DgnRangeTree::Match::Ok;
+    auto el = m_model->GetDgnDb().Elements().GetElement(id);
+    if (ScanCriteria::Stop::Yes == CheckElement(*el, false))
+        return Stop::No;
 
-    if (ScanCriteria::Result::Pass != CheckRange(range, element->Is3d()))
-        return DgnRangeTree::Match::Ok;
-
-    if (ScanCriteria::Result::Fail == CheckElement(*element, false))
-        return DgnRangeTree::Match::Ok;
-
-    return (SUCCESS == m_callbackFunc(*element, m_callbackArg, *this)) ? DgnRangeTree::Match::Ok : DgnRangeTree::Match::Aborted;
+    return m_callback->_OnRangeElementFound(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,92 +217,26 @@ DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometrySourceCP source, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ScanCriteria::Scan()
     {
-    if (nullptr == m_model)
-        return ERROR;
+    BeAssert(m_model != nullptr);
+    BeAssert(m_callback != nullptr);
 
-    DgnRangeTreeP rangeIndex;
-    if (m_type.testRange && (nullptr != (rangeIndex = m_model->GetRangeIndexP(true))) && UseRangeTree(*rangeIndex))
+    TreeP rangeIndex;
+    if (nullptr != (rangeIndex = m_model->GetRangeIndexP(true)))
         {
-        rangeIndex->FindMatches(*this);
+        rangeIndex->Traverse(*this);
         return SUCCESS;
         }
 
     for (auto curr : *m_model)
         {
         DgnElementCR el = *curr.second.get();
-        if (ScanCriteria::Result::Pass != CheckElement(el, true))
+        if (ScanCriteria::Stop::No != CheckElement(el, true))
             continue;
 
-        if (SUCCESS != m_callbackFunc(el, m_callbackArg, *this))
+        if (Stop::Yes == m_callback->_OnRangeElementFound(el))
             break;
         }
 
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ScanCriteria::SetDgnModel (DgnModelP model)
-    {
-    if (NULL == (m_model = model))
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScanCriteria::SetElementCallback (PFScanElementCallback callbackFunc, CallbackArgP callbackArg)
-    {
-    m_callbackArg  = callbackArg;
-    m_callbackFunc = callbackFunc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScanCriteria::SetRangeTest (DRange3dP srP)
-    {
-    m_type.testSkewScan = false;
-    if (NULL != srP)
-        {
-        m_range = *srP;
-        m_type.testRange = 1;
-        }
-    else
-        {
-        m_type.testRange = 0;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScanCriteria::SetSkewRangeTest (DRange3dP mainRange, DRange3dP skewRange, DPoint3dP skewVector)
-    {
-    if (NULL != mainRange)
-        SetRangeTest (mainRange);
-
-    if ( (NULL != skewRange) && (NULL != skewVector) )
-        {
-        m_skewRange = *skewRange;
-        m_skewVector = *skewVector;
-        m_type.testSkewScan = 1;
-        m_numRanges = 1;
-        }
-    else
-        {
-        m_type.testSkewScan = 0;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScanCriteria::SetCategoryTest(DgnCategoryIdSet const& categories)
-    {
-    m_categories = &categories;
-    m_type.testCategory = 1;
-    }

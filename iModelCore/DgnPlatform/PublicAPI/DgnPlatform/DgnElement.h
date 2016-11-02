@@ -257,14 +257,13 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! Returns all auto- or custom-handled properties on a class that are for the specified type of statements
+//! @private
 // @bsiclass                                                    Sam.Wilson      07/16
 //=======================================================================================
 struct AutoHandledPropertiesCollection
-    {
+{
     ECN::ECPropertyIterable m_props;
     ECN::ECPropertyIterable::const_iterator m_end;
     ECN::ECClassCP m_customHandledProperty;
@@ -295,22 +294,20 @@ struct AutoHandledPropertiesCollection
     typedef Iterator const_iterator;
     const_iterator begin() const {return Iterator(m_props.begin(), *this);}
     const_iterator end() const {return Iterator(m_props.end(), *this);}
-    };
-
-//__PUBLISH_SECTION_START__
+};
 
 //=======================================================================================
 //! Specifies either an invalid value or the index of an item in an array.
 // @bsiclass                                                     Sam.Wilson        10/16
 //=======================================================================================
 struct PropertyArrayIndex
-    {
+{
     bool m_hasIndex;
     uint32_t m_index;
     PropertyArrayIndex() : m_hasIndex(0) {}
     PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
     PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
-    };
+};
 
 //=======================================================================================
 //! Helps with access to an individual element property
@@ -1531,25 +1528,32 @@ public:
     //! Set a DPoint3d ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a DPoint2d ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a boolean ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a double ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set an integer ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a string ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 

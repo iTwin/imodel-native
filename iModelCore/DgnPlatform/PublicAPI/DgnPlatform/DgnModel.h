@@ -20,7 +20,6 @@ DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
-DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
@@ -31,7 +30,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;};
+namespace RangeIndex {struct Tree;}
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -418,7 +418,7 @@ protected:
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
-    virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
+    virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() {}
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
@@ -436,7 +436,7 @@ public:
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
-    DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
+    RangeIndex::Tree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
     //! Returns true if this is a 3d model.
     bool Is3d() const {return nullptr != ToGeometricModel3d();}
@@ -801,7 +801,7 @@ public:
     };
 
 private:
-    mutable DgnRangeTreeP m_rangeIndex;
+    mutable RangeIndex::Tree* m_rangeIndex;
     DisplayInfo  m_displayInfo;
 
     DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
@@ -835,7 +835,7 @@ protected:
 
     virtual void _OnFitView(FitContextR) {}
 
-    DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
+    DGNPLATFORM_EXPORT virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const override;
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     DGNPLATFORM_EXPORT virtual void _EmptyModel() override;
     DGNPLATFORM_EXPORT virtual void _RegisterElement(DgnElementCR element) override;

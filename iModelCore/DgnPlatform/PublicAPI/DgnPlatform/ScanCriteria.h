@@ -12,7 +12,6 @@
 #include "DgnModel.h"
 #include "DgnRangeTree.h"
 
-DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (RangeNodeCheck)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -20,79 +19,62 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : DgnRangeTree::Traverser
+struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : RangeIndex::Tree::Traverser
 {
 public:
-    enum class Result {Pass= 0, Fail = 1,};
-    typedef int (*PFScanElementCallback)(DgnElementCR, void *callbackArg, ScanCriteriaR sc);
-
-private:
-    struct ScanType
+    struct Callback
     {
-        unsigned int testRange:1;
-        unsigned int testSkewScan:1;
-        unsigned int testCategory:1;
+        virtual Stop _CheckNodeRange(RangeIndex::BoxCR, bool is3d) = 0;
+        virtual Stop _OnRangeElementFound(DgnElementCR) = 0;
     };
 
-    int                     m_firstMember;
-    ScanType                m_type;
-    DgnModelP               m_model;
-    int                     m_numRanges;
-    DPoint3d                m_skewVector;
-    DRange3d                m_skewRange;
-    DRange3d                m_range;
-    PFScanElementCallback   m_callbackFunc;
-    void*                   m_callbackArg;
-    DgnCategoryIdSet const* m_categories;
-    RangeNodeCheckP         m_appRangeNodeCheck;
-    int                     m_lastMember;
+private:
+    bool m_testSkewScan = false;
+    bool m_testCategory = false;
+    DgnModelP m_model = nullptr;
+    DPoint3d m_skewVector;
+    RangeIndex::Box m_skewRange;
+    RangeIndex::Box m_range;
+    Callback* m_callback = nullptr;
+    DgnCategoryIdSet const* m_categories = nullptr;
 
-    bool UseRangeTree(DgnRangeTree&);
     bool CheckElementRange(DgnElementCR) const;
-    virtual bool _CheckRangeTreeNode (DRange3dCR, bool) const override;
-    virtual DgnRangeTree::Match _VisitRangeTreeElem(GeometrySourceCP, DRange3dCR) override;
+    virtual bool _CheckRangeTreeNode(RangeIndex::BoxCR, bool) const override;
+    virtual Stop _VisitRangeTreeElem(DgnElementId, RangeIndex::BoxCR) override;
 
 public:
-    DGNPLATFORM_EXPORT ScanCriteria();
-
-    ScanType GetScanType() const {return m_type;}
-    DRange3dCR GetScanRange() const {return m_range;}
+    RangeIndex::BoxCR GetScanRange() const {return m_range;}
     DPoint3dCR GetSkewVector() const {return m_skewVector;}
     DgnModelP GetDgnModelP() {return m_model;}
-    PFScanElementCallback GetCallbackFunc() {return m_callbackFunc;}
-    void SetRangeNodeCheck(RangeNodeCheckP checker) {m_appRangeNodeCheck = checker;}
+
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
-    DGNPLATFORM_EXPORT Result CheckRange(DRange3dCR elemRange, bool isElem3d) const;
-    DGNPLATFORM_EXPORT void SetSkewRangeTest(DRange3dP mainRange, DRange3dP skewRange, DPoint3dP skewVector);
+    DGNPLATFORM_EXPORT Stop CheckRange(RangeIndex::BoxCR elemRange, bool isElem3d) const;
+
+    void SetSkewRangeTest(RangeIndex::BoxCR mainRange, RangeIndex::BoxCR skewRange, DPoint3dCR skewVector) {SetRangeTest(mainRange); m_skewRange = skewRange; m_skewVector = skewVector; m_testSkewScan = true;}
 
     //! Set the Categories filter. Only elements on categories that pass the category test will be returned by the scan.
     //! @param[in] categories  The set of categoryids
-    DGNPLATFORM_EXPORT void SetCategoryTest(DgnCategoryIdSet const& categories);
+    void SetCategoryTest(DgnCategoryIdSet const& categories) {m_categories = &categories; m_testCategory = true;}
 
     //! Sets the DgnModel that is to be scanned.
     //! @param[in] model The model to be scanned.
-    DGNPLATFORM_EXPORT StatusInt SetDgnModel(DgnModelP model);
+    void SetDgnModel(DgnModelR model) {m_model = &model;}
 
     //! Sets the function that is to be called for each acceptable element when the #Scan method is called.
-    //! @param[in] callbackFunc The function that is to be called for each accepted element.
-    //! @param[in] callbackArg  A argument passed to the callbackFunc.
-    DGNPLATFORM_EXPORT void SetElementCallback(PFScanElementCallback callbackFunc, CallbackArgP callbackArg);
+    void SetCallback(Callback& callback) {m_callback = &callback;}
 
     //! Sets the range testing for the scan. If scanRange is NULL, then no range testing is performed.
     //! @param[in] scanRange    The range to test. An element whose range overlaps any part of scanRange is returned by the scan.
-    DGNPLATFORM_EXPORT void SetRangeTest(DRange3dP scanRange);
+    void SetRangeTest(RangeIndex::BoxCR range) {m_testSkewScan = false; m_range = range;}
 
-    //! Perform the scan, filtering elements as dictated by this ScanCriteria, calling the callbackFunc specified in #SetElementCallback.
+    //! Perform the scan, filtering elements as dictated by this ScanCriteria, calling the callback specified in #SetCallback.
     DGNPLATFORM_EXPORT StatusInt Scan();
-
-    //! Get the DgnModel set by #SetDgnModel.
-    DGNPLATFORM_EXPORT DgnModelP GetDgnModel();
 
     //! Check one particular element agains this ScanCriteria
     //! @param[in] element The element to test.
     //! @param[in] doRangeTest Check the range.
-    DGNPLATFORM_EXPORT Result CheckElement(DgnElementCR element, bool doRangeTest) const;
+    DGNPLATFORM_EXPORT Stop CheckElement(DgnElementCR element, bool doRangeTest) const;
 };
 
 END_BENTLEY_DGN_NAMESPACE

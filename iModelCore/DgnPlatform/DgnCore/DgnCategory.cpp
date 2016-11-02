@@ -1,7 +1,3 @@
-Success
-BadArg
-Success
-Success
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnCategory.cpp $
