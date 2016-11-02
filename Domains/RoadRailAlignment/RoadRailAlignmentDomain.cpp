@@ -23,6 +23,27 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
+    {
+    DgnDbStatus status;
+
+    auto alignmentPartitionPtr = PhysicalPartition::Create(*db.Elements().GetRootSubject(), "Alignments");
+    if (alignmentPartitionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
+    auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(db, AlignmentModel::QueryClassId(db),
+        alignmentPartitionPtr->GetElementId(), AlignmentModel::CreateModelCode("Alignment Model")));
+
+    if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
+        return status;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const

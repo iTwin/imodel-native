@@ -25,9 +25,10 @@ protected:
     explicit AlignmentModel(CreateParams const& params) : T_Super(params) {}
 
 public:
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
+
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BRRA_SCHEMA_NAME, BRRA_CLASS_AlignmentModel)); }
 }; // AlignmentModel
 
 //=======================================================================================
