@@ -59,7 +59,6 @@ struct PublisherContext
         CantCreateSubDirectory,
         ErrorWritingScene,
         ErrorWritingNode,
-        NotImplemented,
         };
 
 
@@ -78,16 +77,15 @@ protected:
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
-    virtual TileGenerationCacheCR _GetCache() const = 0;
-    virtual bool _OmitFromTileset(TileNodeCR) const { return false; }
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
-    TILEPUBLISHER_EXPORT Status Setup();
+    TILEPUBLISHER_EXPORT Status InitializeDirectories();
+    TILEPUBLISHER_EXPORT void CleanDirectories();
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
     TILEPUBLISHER_EXPORT Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
 
-    Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
-    Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
+    TileGenerator::Status PublishModelElements (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
+    TileGenerator::Status DirectPublishModel (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
 
     TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
@@ -114,7 +112,6 @@ public:
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
-    TileGenerationCacheCR GetCache() const { return _GetCache(); }
 
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);

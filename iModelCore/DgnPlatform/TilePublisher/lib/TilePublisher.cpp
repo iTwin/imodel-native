@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                         tolerance
+/*------------------------------------------------------------g--------------------------+                                                                                                                                      
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -148,7 +148,7 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
 void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
     {
     Utf8String  metadataStr = Json::FastWriter().write(value);
-    auto        outputFile = std::fopen(Utf8String(fileName).c_str(), "w");
+    auto        outputFile = _wfopen(fileName, L"w");
 
     std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
     std::fclose(outputFile);
@@ -210,7 +210,7 @@ PublisherContext::Status TilePublisher::Publish()
     if (m_meshes.empty())
         return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
+    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetFileName (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
@@ -224,7 +224,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
+    m_outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -1030,7 +1030,7 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::Setup()
+PublisherContext::Status PublisherContext::InitializeDirectories()
     {
     // Ensure directories exist and are writable
     if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
@@ -1046,6 +1046,14 @@ PublisherContext::Status PublisherContext::Setup()
         return Status::CantCreateSubDirectory;
 
     return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::CleanDirectories()
+    {
+    BeFileName::EmptyAndRemoveDirectory (m_dataDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1081,7 +1089,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    if (tile.GetIsEmpty() || _OmitFromTileset(tile))
+    if (tile.GetIsEmpty())
         {
         range = DRange3d::NullRange();
         return;
@@ -1114,7 +1122,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 childTileset["asset"]["version"] = "0.0";
 
                 auto&       childRoot = childTileset[JSON_Root];
-                WString     metadataRelativePath = childTile->GetRelativePath(GetRootName().c_str(), s_metadataExtension);
+                WString     metadataRelativePath = childTile->GetFileName(GetRootName().c_str(), s_metadataExtension);
                 BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
 
                 WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
@@ -1174,16 +1182,6 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     val["asset"]["version"] = "0.0";
 
-    if (!GetTilesetTransform().IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (GetTilesetTransform());
-        auto&       transformValue = val[JSON_Root][JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
-
     auto&       root = val[JSON_Root];
     DRange3d    rootRange;
 
@@ -1191,60 +1189,28 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name)
-    {
-    Json::Value         child;
-
-    rootRange.Extend (rootTile.GetTileRange());
-    rootJson["refine"] = "replace";
-    rootJson[JSON_GeometricError] = rootTile.GetTolerance();
-    TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
-
-    rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
-
-    WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+TileGenerator::Status   PublisherContext::DirectPublishModel (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
     {
     IGenerateMeshTiles*         generateMeshTiles;
-    TileNodePtr                 rootTile;
-    Status                      status;
-    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
 
     if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
-        return Status::NotImplemented;
+        return TileGenerator::Status::NotImplemented;
 
-    progressMeter._SetModel (&model);
-    progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
-    progressMeter._IndicateProgress (0, 1);
-                                                                            
-    if (Status::Success == (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter()))))
-        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
-
-    return status;
+    return generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
+TileGenerator::Status   PublisherContext::PublishModelElements (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
     {
-    AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
-    TileNodePtr             rootTile;
     static size_t           s_maxPointsPerTile = 250000;
-    Status                  status;
 
-    if (Status::Success == (status = ConvertStatus (generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile))))
-        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
-
-    return status;
+    return generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile, model.GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1259,40 +1225,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         return Status::NoGeometry;
         }
 
-    Json::Value         realityModelTilesets, elementTileSet;
-
-    rootRange = DRange3d::NullRange();
-    // First go through and collect tilesets for any (reality) models.   These will produce tileset from the HLOD trees directly and therefore don't
-    // won't be included by collecting through their elements.
-    for (auto& modelId : spatialView->GetViewedModels())
-        {
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
-        WString         tilesetName;
-        Json::Value     tileValue;
-
-        if (viewedModel.IsValid())
-            {
-            tilesetName = L"RealityModel_" + WString (viewedModel->GetName().c_str(), true);
-
-            if (Status::Success == DirectPublishModel (tileValue, rootRange, tilesetName, *viewedModel, generator, collector, toleranceInMeters, progressMeter))
-                realityModelTilesets.append (tileValue);
-            }
-        }
-
-    if (realityModelTilesets.empty())
-        m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
-
-    progressMeter._SetModel (m_viewController.GetTargetModel());
-
-    WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
-    Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);
-
-    m_tilesetTransform = Transform::FromIdentity();
-    if (realityModelTilesets.empty())
-        return elementPublishStatus;
-
-    
-    // We have reality models... create a tile set that includes both the reality models and the elements.
     Json::Value     value;
     value["asset"]["version"] = "0.0";
 
@@ -1309,12 +1241,72 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         }
 
     root["refine"] = "replace";
-
     root[JSON_GeometricError] = 1.E6;
+
+    rootRange = DRange3d::NullRange();
+    for (auto& modelId : spatialView->GetViewedModels())
+        {
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
+
+        if (viewedModel.IsValid())
+            {
+            WString                 tilesetName;
+            TileNodePtr             childRootTile;
+            Utf8String              childTilesetName = Utf8String("Model_") + viewedModel->GetName();
+            AutoRestore<WString>    saveRootName (&m_rootName);
+            AutoRestore<BeFileName> saveDataDir (&m_dataDir);
+            Status                  status;
+
+            m_rootName.AssignUtf8 (childTilesetName.c_str());
+            m_dataDir.AppendToPath (m_rootName.c_str());
+
+            if (Status::Success != (status = InitializeDirectories()))
+                return status;
+
+            progressMeter._SetModel (viewedModel.get());
+            progressMeter._IndicateProgress (0, 1);
+
+            if (TileGenerator::Status::Success == DirectPublishModel (childRootTile, *viewedModel, generator, collector, toleranceInMeters) ||
+                TileGenerator::Status::Success == PublishModelElements (childRootTile, *viewedModel, generator, collector, toleranceInMeters))
+                {
+                Json::Value         childRoot;
+
+                rootRange.Extend (childRootTile->GetTileRange());
+                childRoot["refine"] = "replace";
+                childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
+                TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
+
+                BeFileName      childTilesetFileName (nullptr, nullptr, m_rootName.c_str(), s_metadataExtension);
+
+                childRoot[JSON_Content]["url"] = Utf8String (childTilesetName + "/" + Utf8String(childTilesetFileName.c_str())).c_str();
+
+                WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), childRootTile->GetFileName ((GetRootName()).c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
+
+                root[JSON_Children].append(childRoot);
+                }
+            else
+                {
+                CleanDirectories();
+                }
+
+            }
+        }
+    if (!root.isMember(JSON_Children))
+        return Status::NoGeometry;
+
+    m_tilesetTransform = Transform::FromIdentity();
+
     TilePublisher::WriteBoundingVolume(root, rootRange);
-    root[JSON_Children] = realityModelTilesets;
-    if (Status::Success == elementPublishStatus)
-        root[JSON_Children].append (elementTileSet);
+    if (!GetTilesetTransform().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (GetTilesetTransform());
+        auto&       transformValue = root[JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
 
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
 

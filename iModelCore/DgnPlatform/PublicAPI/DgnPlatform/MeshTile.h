@@ -398,6 +398,7 @@ public:
     bool IsEmpty() const { return m_set.IsEmpty(); }
 };
 
+
 //=======================================================================================
 //! Filters elements according to the viewed models and categories associated with a
 //! ViewController.
@@ -407,6 +408,7 @@ struct TileViewControllerFilter : TileModelCategoryFilter
 {
 public:
     TileViewControllerFilter(SpatialViewControllerCR view) : TileModelCategoryFilter(view.GetDgnDb(), &view.GetViewedModels(), &view.GetViewedCategories()) { }
+
 };
 
 //=======================================================================================
@@ -436,7 +438,7 @@ private:
 
     friend struct TileGenerator; // Invokes Populate() from ctor
     TileGenerationCache(Options options = Options::CacheGeometrySources);
-    void Populate(DgnDbR db, ITileGenerationFilterR filter);
+    void Populate(DgnDbR db, DgnModelId modelId, ITileGenerationFilterP filter);
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
@@ -468,7 +470,6 @@ protected:
     size_t              m_siblingIndex;
     double              m_tolerance;
     TileNodeP           m_parent;
-    WString             m_subdirectory;
     Transform           m_transformFromDgn;
     mutable DRange3d    m_publishedRange;
     bool                m_isEmpty;
@@ -497,8 +498,6 @@ public:
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
     TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
-    WStringCR GetSubdirectory() const { return m_subdirectory; }
-    void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
     void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
     void SetPublishedRange (DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
@@ -511,8 +510,7 @@ public:
     DGNPLATFORM_EXPORT TileNodePList GetTiles();
     DGNPLATFORM_EXPORT WString GetNameSuffix() const;
     DGNPLATFORM_EXPORT size_t   GetNameSuffixId() const;
-    DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
-    DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
+    DGNPLATFORM_EXPORT WString GetFileName (WCharCP rootName, WCharCP extension) const;
     void SetIsEmpty(bool isEmpty) { m_isEmpty = isEmpty; }
     bool GetIsEmpty () const { return m_isEmpty; }
 
@@ -624,14 +622,13 @@ private:
     ITileGenerationProgressMonitorR m_progressMeter;
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
-    TileGenerationCache             m_cache;
     double                          m_totalVolume;
     double                          m_completedVolume;
     BeAtomic<uint32_t>              m_totalTiles;
     BeAtomic<uint32_t>              m_completedTiles;
 
 
-    void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+    void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -639,10 +636,9 @@ public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
-    TileGenerationCacheCR GetCache() const { return m_cache; }
     ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId);
 
 };
 
