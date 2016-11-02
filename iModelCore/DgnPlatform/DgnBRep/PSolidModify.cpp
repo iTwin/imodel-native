@@ -136,16 +136,119 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool assignNodeIds)
+    {
+    if (0 == nTools || !targetEntity.IsValid ())
+        return ERROR;
+
+    bool        isOwned;
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTag (*targetEntity, &isOwned);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t            markTag = PK_ENTITY_null;
+    bvector<PK_ENTITY_t> toolEntityTags;
+
+    PK_MARK_create (&markTag);
+
+    if (!isOwned)
+        PK_ENTITY_copy (targetEntityTag, &targetEntityTag);
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf (targetEntity->GetEntityTransform ());
+
+    // Get tool bodies in coordinates of target...
+    for (size_t iTool = 0; iTool < nTools; ++iTool)
+        {
+        bool        isToolOwned;
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+
+        if (!isToolOwned)
+            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
+            
+        Transform   toolTransform;
+
+        toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
+        PSolidUtil::TransformBody (toolEntityTag, toolTransform);                                                                                                                                                
+
+        toolEntityTags.push_back (toolEntityTag);
+        }
+
+    uint32_t highestNodeId, lowestNodeId;
+
+    // If node ids are assigned to target body, avoid duplicate node ids with tool bodies...otherwise assume caller doesn't care about ids...
+    if (assignNodeIds && SUCCESS == PSolidTopoId::FindNodeIdRange (targetEntityTag, highestNodeId, lowestNodeId))
+        {
+        for (PK_ENTITY_t toolEntityTag: toolEntityTags)
+            {
+            uint32_t highestToolNodeId, lowestToolNodeId;
+
+            if (SUCCESS == PSolidTopoId::FindNodeIdRange (toolEntityTag, highestToolNodeId, lowestToolNodeId))
+                {
+                if (highestToolNodeId < lowestNodeId)
+                    {
+                    // No overlap...new lowest found...
+                    lowestNodeId = lowestToolNodeId;
+                    }
+                else if (lowestToolNodeId > highestNodeId)
+                    {
+                    // No overlap...new highest found...
+                    highestNodeId = highestToolNodeId;
+                    }
+                else
+                    {
+                    int32_t increment = abs ((int) highestNodeId - (int) lowestToolNodeId) + 1;
+
+                    PSolidTopoId::IncrementNodeIdAttributes (toolEntityTag, increment);
+                    highestNodeId = highestToolNodeId + increment;
+                    lowestNodeId  = (lowestNodeId < lowestToolNodeId ? lowestNodeId : lowestToolNodeId);
+                    }
+                }
+            else
+                {
+                PSolidTopoId::AddNodeIdAttributes (toolEntityTag, ++highestNodeId, false);
+                }
+            }
+        }
+
+    BentleyStatus   status = (SUCCESS == PSolidUtil::Boolean (NULL, NULL, operation, false, targetEntityTag, &toolEntityTags.front (), (int) toolEntityTags.size (), options) ? SUCCESS : ERROR);
+
+    if (SUCCESS == status)
+        {
+        // Invalidate owned tool entities that were consumed in boolean...
+        for (size_t iTool = 0; iTool < nTools; ++iTool)
+            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
+
+        // Update target in case it wasn't owned and we had to make a copy...
+        if (!isOwned)
+            targetEntity = PSolidUtil::CreateNewEntity (targetEntityTag, targetEntity->GetEntityTransform (), true);
+        }
+    else
+        {
+        // Undo copy/transform of input entities...
+        PK_MARK_goto (markTag);
+        }
+
+    PK_MARK_delete (markTag);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidUtil::ConvertSolidBodyToSheet (PK_BODY_t body)
+BentleyStatus   PSolidUtil::ConvertSolidBodyToSheet (PK_BODY_t body)
     {
     PK_BODY_type_t  bodyType;
 
     PK_BODY_ask_type (body, &bodyType);
 
     if (bodyType != PK_BODY_type_solid_c)
-         return;
+        return ERROR;
 
     int                 nRegions;
     PK_REGION_t*        regions = NULL;
@@ -155,6 +258,113 @@ void PSolidUtil::ConvertSolidBodyToSheet (PK_BODY_t body)
         PK_REGION_make_void (regions[i]);
 
     PK_MEMORY_free (regions);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::SweepBodyVector (PK_BODY_t bodyTag, DVec3dCR direction, double distance)
+    {
+    PK_LOGICAL_t    sweptSpun;
+
+    PK_SESSION_ask_swept_spun_surfs (&sweptSpun);
+    PK_SESSION_set_swept_spun_surfs (true);
+
+    DVec3d      extrude;
+
+    extrude.ScaleToLength (direction, distance);
+
+    PK_VECTOR_t path;
+
+    path.coord[0] = extrude.x;
+    path.coord[1] = extrude.y;
+    path.coord[2] = extrude.z;
+
+    StatusInt           status;
+    int                 nLaterals;
+    PK_TOPOL_t          *lateralP = NULL, *baseP = NULL;
+    PK_local_check_t    localCheck;
+
+    if (SUCCESS == (status = PK_BODY_sweep (bodyTag, path, PK_LOGICAL_true, &nLaterals, &lateralP, &baseP, &localCheck)))
+        {
+        PSolidTopoId::AssignSweptProfileLateralIds (nLaterals, baseP, lateralP); // Propagate ids from profile edges (if any) onto lateral faces...
+
+        if (PK_local_check_ok_c == localCheck)
+            {
+            int     nGeoms;
+
+            PK_BODY_simplify_geom (bodyTag, PK_LOGICAL_true, &nGeoms, NULL);
+            PK_TOPOL_delete_redundant (bodyTag);
+            }
+        else
+            {
+            status = ERROR;
+            }
+
+        PK_MEMORY_free (lateralP);
+        PK_MEMORY_free (baseP);
+        }
+
+    PK_SESSION_set_swept_spun_surfs (sweptSpun);
+
+    return (BentleyStatus) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::SweepBodyAxis (PK_BODY_t bodyTag, DVec3dCR revolveAxis, DPoint3dCR radiusPt, double sweep)
+    {
+    if (0.0 == sweep)
+        return ERROR;
+
+    PK_LOGICAL_t    sweptSpun;
+
+    PK_SESSION_ask_swept_spun_surfs (&sweptSpun);
+    PK_SESSION_set_swept_spun_surfs (true);
+
+    PK_AXIS1_sf_t   sweepAxis;
+
+    sweepAxis.location.coord[0] = radiusPt.x;
+    sweepAxis.location.coord[1] = radiusPt.y;
+    sweepAxis.location.coord[2] = radiusPt.z;
+
+    sweepAxis.axis.coord[0] = revolveAxis.x;
+    sweepAxis.axis.coord[1] = revolveAxis.y;
+    sweepAxis.axis.coord[2] = revolveAxis.z;
+
+    ((DVec3dR) sweepAxis.axis.coord).Normalize ();
+
+    StatusInt           status;
+    int                 nLaterals;
+    PK_TOPOL_t          *lateralP = NULL, *baseP = NULL;
+    PK_local_check_t    localCheck;
+
+    if (SUCCESS == (status = PK_BODY_spin (bodyTag, &sweepAxis, sweep, PK_LOGICAL_true, &nLaterals, &lateralP, &baseP, &localCheck)))
+        {
+        PSolidTopoId::AssignSweptProfileLateralIds (nLaterals, baseP, lateralP); // Propagate ids from profile edges (if any) onto lateral faces...
+
+        if (PK_local_check_ok_c == localCheck)
+            {
+            int     nGeoms;
+
+            PK_BODY_simplify_geom (bodyTag, PK_LOGICAL_true, &nGeoms, NULL);
+            PK_TOPOL_delete_redundant (bodyTag);
+            }
+        else
+            {
+            status = ERROR;
+            }
+
+        PK_MEMORY_free (lateralP);
+        PK_MEMORY_free (baseP);
+        }
+
+    PK_SESSION_set_swept_spun_surfs (sweptSpun);
+
+    return (BentleyStatus) status;
     }
 
 

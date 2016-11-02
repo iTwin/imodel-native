@@ -142,6 +142,99 @@ bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::GetPlanarFaceData (DPoint3dP pointOut, DVec3dP normalOut, PK_FACE_t faceTag)
+    {
+    if (!faceTag)
+        return ERROR;
+
+    PK_SURF_t       surfaceTag = 0;
+    PK_LOGICAL_t    orientation;
+
+    PK_FACE_ask_oriented_surf (faceTag, &surfaceTag, &orientation);
+
+    PK_UVBOX_t      uvBox;
+
+    if (!surfaceTag || SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox))
+        return ERROR;
+
+    PK_UV_t         uv;
+
+    uv.param[0] = (uvBox.param[2]+uvBox.param[0])/2.0;
+    uv.param[1] = (uvBox.param[3]+uvBox.param[1])/2.0;
+
+    PK_LOGICAL_t    triangular = PK_LOGICAL_false;
+    PK_VECTOR_t     point, normal;
+
+    PK_SURF_eval_with_normal (surfaceTag, uv, 0, 0, triangular, &point, &normal);
+
+    if (pointOut)
+        {
+        pointOut->x = point.coord[0];
+        pointOut->y = point.coord[1];
+        pointOut->z = point.coord[2];
+        }
+
+    if (normalOut)
+        {
+        normalOut->x = normal.coord[0];
+        normalOut->y = normal.coord[1];
+        normalOut->z = normal.coord[2];
+
+        if (orientation == PK_LOGICAL_false)
+            normalOut->Negate ();
+        }
+
+    PK_CLASS_t      entityClass;
+
+    PK_ENTITY_ask_class (surfaceTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_plane:
+        case PK_CLASS_circle:
+        case PK_CLASS_ellipse:
+            return SUCCESS;
+
+        default:
+            return ERROR;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_BODY_t PSolidUtil::GetBodyForEntity (PK_ENTITY_t entityTag)
+    {
+    PK_BODY_t   bodyTag = PK_ENTITY_null;
+    PK_CLASS_t  entityClass = 0;
+
+    PK_ENTITY_ask_class (entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_edge:
+            PK_EDGE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_face:
+            PK_FACE_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_vertex:
+            PK_VERTEX_ask_body (entityTag, &bodyTag);
+            break;
+
+        case PK_CLASS_body:
+            bodyTag = entityTag;
+            break;
+        }
+
+    return bodyTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static CurveVector::BoundaryType getBoundaryType (CurveVectorCR curveVector)
@@ -777,4 +870,375 @@ BentleyStatus PSolidUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clippe
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::MassProperties
+(
+double*         amountOut,
+double*         peripheryOut,
+DPoint3dP       centroidOut,
+double          inertiaOut[3][3],
+PK_BODY_t       bodyTag,
+TransformCP     transform,
+double          tolerance
+)
+    {
+    if (tolerance > 100.0)
+        tolerance = 100.0;
+    else if (tolerance < 0.0)
+        tolerance = 0.0;
+
+    double      accuracy = 1.0 - (tolerance / 100.0);
+
+    PK_TOPOL_eval_mass_props_o_t  propOptions;
+
+    PK_TOPOL_eval_mass_props_o_m (propOptions);
+
+    propOptions.mass = PK_mass_mass_c;
+
+    if (centroidOut)
+        propOptions.mass = PK_mass_c_of_g_c;
+
+    if (inertiaOut)
+        propOptions.mass = PK_mass_m_of_i_c;
+
+    double      mass, amount, periphery, centroid[3], inertia[9];
+    PK_BODY_t   copyBodyTag = PK_ENTITY_null;
+
+    if (NULL != transform)
+        {
+        PK_TRANSF_t  transformTag = NULTAG;
+
+        if (SUCCESS == PSolidUtil::CreateTransf (transformTag, *transform) && NULTAG != transformTag)
+            {
+            if (SUCCESS == PK_ENTITY_copy (bodyTag, &copyBodyTag))
+                PSolidUtil::ApplyTransform (copyBodyTag, transformTag);
+
+            PK_ENTITY_delete (1, &transformTag);
+            }
+        }
+
+    if (SUCCESS != PK_TOPOL_eval_mass_props (1, PK_ENTITY_null != copyBodyTag ? &copyBodyTag : &bodyTag, accuracy, &propOptions, &amount, &mass, centroid, inertia, &periphery))
+        {
+        PK_ENTITY_delete (1, &copyBodyTag);
+
+        return ERROR;
+        }
+
+    PK_ENTITY_delete (1, &copyBodyTag);
+
+    if (amountOut)
+        *amountOut = amount;
+
+    if (peripheryOut)
+        *peripheryOut = periphery;
+
+    if (inertiaOut)
+        memcpy ((double *) inertiaOut, inertia, sizeof (double) * 9);
+
+    if (centroidOut)
+        centroidOut->Init (centroid[0], centroid[1], centroid[2]);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::CheckBody (PK_BODY_t body, bool checkGeometry, bool checkTopology, bool checkSize)
+    {
+    int                 nFaults = 0;
+    PK_check_fault_t    *faultsP = NULL;
+    PK_BODY_check_o_t   options;
+
+    if (PK_ENTITY_null == body)
+        return ERROR;
+
+    PK_BODY_check_o_m (options);
+
+    options.max_faults = 0;
+
+    if (!checkGeometry)
+        {
+        options.geom  = PK_check_geom_no_c;
+        options.bgeom = PK_check_bgeom_no_c;
+        }
+
+    if (!checkTopology)
+        {
+        options.top_geo = PK_check_top_geo_no_c;
+        options.fa_X    = PK_check_fa_X_no_c;
+        options.loops   = PK_check_loops_no_c;
+        options.fa_fa   = PK_check_fa_fa_no_c;
+        options.sh      = PK_check_sh_no_c;
+        options.corrupt = PK_check_corrupt_no_c;
+        }
+
+    if (!checkSize)
+        {
+        options.size_box = PK_check_size_box_no_c;
+        }
+
+    return (SUCCESS == PK_BODY_check (body, &options, &nFaults, &faultsP) ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PSolidUtil::AreBodiesEqual (PK_BODY_t body1, PK_BODY_t body2, double tolerance, TransformCP deltaTransform1To2)
+    {
+    // Transforming the body can be expensive (particularly with bodies containing B-Splines)
+    // so do some tests here to try to avoid it unless we are fairly certain the bodies are equal.
+
+    int         nVertices1, nVertices2;
+    PK_VERTEX_t *vertices1 = NULL, *vertices2 = NULL;
+
+    PK_BODY_ask_vertices (body1, &nVertices1, &vertices1);
+    PK_BODY_ask_vertices (body2, &nVertices2, &vertices2);
+
+    bool        verticesEqual;
+
+    if (true == (verticesEqual = (nVertices1 == nVertices2)))
+        {
+        for (int i=0; i<nVertices1 && verticesEqual; i++)
+            {
+            PK_POINT_t  point1Tag, point2Tag;
+            DPoint3d    point1, point2;
+
+            if (SUCCESS == PK_VERTEX_ask_point (vertices1[i], &point1Tag) &&
+                SUCCESS == PK_VERTEX_ask_point (vertices2[i], &point2Tag) &&
+                SUCCESS == PK_POINT_ask (point1Tag, (PK_POINT_sf_t*) &point1) &&
+                SUCCESS == PK_POINT_ask (point2Tag, (PK_POINT_sf_t*) &point2))
+                {
+                if (NULL != deltaTransform1To2)
+                    deltaTransform1To2->Multiply(point1);
+
+                verticesEqual = point1.IsEqual (point2, tolerance);
+                }
+            }
+        }
+
+    PK_MEMORY_free (vertices1);
+    PK_MEMORY_free (vertices2);
+
+    if (!verticesEqual)
+        return false;
+
+    // The face test (evaluating and testing a point at each face) was added to address TRE# 281976 which had
+    // two rotated symettric bodes that were not distinguisued correctly by PK_DEBUG_BODY_compare.
+    int         nFaces1, nFaces2;
+    PK_FACE_t   *faces1 = NULL, *faces2 = NULL;
+
+    PK_BODY_ask_faces (body1, &nFaces1, &faces1);
+    PK_BODY_ask_faces (body2, &nFaces2, &faces2);
+
+    bool        facesEqual;
+
+    if (true == (facesEqual = (nFaces1 == nFaces2)))
+        {
+        for (int i=0; i<nFaces1 && facesEqual; i++)
+            {
+            PK_SURF_t       surf1, surf2;
+            PK_PARAM_sf_t   params1[2], params2[2];
+
+            if (SUCCESS == PK_FACE_ask_surf (faces1[i], &surf1) &&
+                SUCCESS == PK_FACE_ask_surf (faces2[i], &surf2) &&
+                SUCCESS == PK_SURF_ask_params (surf1, params1) &&
+                SUCCESS == PK_SURF_ask_params (surf2, params2))
+                {
+                PK_UV_t         uv1 = {(params1[0].range.value[0] + params1[0].range.value[1])/2.0, (params1[1].range.value[1] + params1[1].range.value[1])/2.0},
+                                uv2 = {(params2[0].range.value[0] + params2[0].range.value[1])/2.0, (params2[1].range.value[1] + params2[1].range.value[1])/2.0};
+                DPoint3d        p1[4], p2[4];
+
+                if (SUCCESS == PK_SURF_eval (surf1, uv1, 1, 1, true, (PK_VECTOR_t*) p1) &&
+                    SUCCESS == PK_SURF_eval (surf2, uv2, 1, 1, true, (PK_VECTOR_t*) p2))
+                    {
+                    if (NULL != deltaTransform1To2)
+                        deltaTransform1To2->Multiply(p1[0]);
+
+                    facesEqual = p1[0].IsEqual (p2[0], tolerance);
+
+                    for (int j=1; j<3 && facesEqual; j++)
+                        {
+                        if (NULL != deltaTransform1To2)
+                            deltaTransform1To2->MultiplyMatrixOnly(p1[j]);
+
+                        facesEqual = p1[j].IsEqual (p2[j], 1.0E-8);
+                        }
+                    }
+                }
+            }
+        }
+
+    PK_MEMORY_free (faces1);
+    PK_MEMORY_free (faces2);
+
+    // The face test (evaluating and testing a point at each face) was added to address TRE# 281976 which had
+    // two rotated symettric bodes that were not distinguisued correctly by PK_DEBUG_BODY_compare.
+    int         nEdges1, nEdges2;
+    PK_EDGE_t   *edges1 = NULL, *edges2 = NULL;
+
+    PK_BODY_ask_edges (body1, &nEdges1, &edges1);
+    PK_BODY_ask_edges (body2, &nEdges2, &edges2);
+
+    bool        edgesEqual;
+
+    if (true == (edgesEqual = (nEdges1 == nEdges2)))
+        {
+        for (int i=0; i<nEdges1 && edgesEqual; i++)
+            {
+            PK_CURVE_t      curve1, curve2;
+            DPoint3d        p1, p2;
+
+            if (SUCCESS == PK_EDGE_ask_curve (edges1[i], &curve1) &&
+                SUCCESS == PK_EDGE_ask_curve (edges2[i], &curve2) &&
+                SUCCESS == PK_CURVE_eval (curve1, 0.0, 0, (PK_VECTOR_t*) &p1) && 
+                SUCCESS == PK_CURVE_eval (curve2, 0.0, 0, (PK_VECTOR_t*) &p2))
+                {
+                if (NULL != deltaTransform1To2)
+                    deltaTransform1To2->Multiply(p1);
+
+                edgesEqual = p1.IsEqual (p2, tolerance);
+                }
+            }
+        }
+
+    PK_MEMORY_free (edges1);
+    PK_MEMORY_free (edges2);
+
+    if (!edgesEqual)
+        return false;
+
+    if (NULL != deltaTransform1To2)
+        PSolidUtil::TransformBody (body1, *deltaTransform1To2);
+
+    DRange3d        box1, box2;
+
+    if (SUCCESS != pki_get_body_box (&box1.low, &box1.high, body1) ||
+        SUCCESS != pki_get_body_box (&box2.low, &box2.high, body2))
+        return false;
+
+    if (!box1.IsEqual (box2, tolerance))
+        return false;
+
+    PK_DEBUG_BODY_compare_o_t   options;
+    PK_DEBUG_BODY_compare_r_t   results;
+
+    PK_DEBUG_BODY_compare_o_m (options);
+
+    if (SUCCESS != PK_DEBUG_BODY_compare (body1, body2, &options, &results))
+        return false;
+
+    bool    isEqual = (PK_DEBUG_global_res_no_diffs_c == results.global_result);
+
+    PK_DEBUG_BODY_compare_r_f (&results);
+
+    return isEqual;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::DisjoinBody (bvector<PK_BODY_t>& bodiesOut, PK_BODY_t bodyTag)
+    {
+    int         nBodies = 0;
+    PK_BODY_t*  bodies = nullptr;
+
+    if (SUCCESS != PK_BODY_disjoin(bodyTag, &nBodies, &bodies) || nBodies < 1)
+        return ERROR;
+
+    for (int iBody=0; iBody < nBodies; iBody++)
+        bodiesOut.push_back(bodies[iBody]);
+
+    PK_MEMORY_free(bodies);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/98
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::CreateTransf(PK_TRANSF_t& transfTag, TransformCR transform)
+    {
+    if (transform.IsIdentity())
+        {
+        transfTag = NULTAG;
+
+        return SUCCESS;
+        }
+
+    RotMatrix rMatrix = RotMatrix::From(transform);
+
+    // Scale the whole transform so the rotational part has determinant +-1.
+    // The scale factor goes back in at the 33 spot.
+    // It's ok for leading determinant to be negative.
+    // It's not ok for the scale factor to be negative.
+    double det = rMatrix.Determinant();
+    double scale = pow(fabs(det), 1.0 / 3.0);
+    double a = 1.0 / scale;
+
+    PK_TRANSF_sf_t transSF;
+
+    for (int i = 0; i < 3; i++)
+        {
+        for (int j = 0; j < 4; j++)
+            transSF.matrix[i][j] = transform.form3d[i][j] * a;
+        }
+
+    transSF.matrix[3][0] = 0.0;
+    transSF.matrix[3][1] = 0.0;
+    transSF.matrix[3][2] = 0.0;
+    transSF.matrix[3][3] = a;
+
+    return (SUCCESS == PK_TRANSF_create(&transSF, &transfTag) ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/97
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ApplyTransform(PK_BODY_t bodyTag, PK_TRANSF_t transfTag)
+    {
+    int                   failureCode;
+    PK_TOPOL_track_r_t    tracking;
+    PK_TOPOL_local_r_t    results;
+    PK_BODY_transform_o_t options;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    PK_BODY_transform_o_m(options);
+
+    failureCode = PK_BODY_transform_2(bodyTag, transfTag, 1.0e-05, &options, &tracking, &results);
+
+    if (PK_ERROR_no_errors == failureCode)
+        {
+        if (PK_local_status_ok_c != results.status && PK_local_status_nocheck_c != results.status)
+            failureCode = ERROR;
+        }
+
+    PK_TOPOL_track_r_f(&tracking);
+    PK_TOPOL_local_r_f(&results);
+
+    return (SUCCESS == failureCode ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::TransformBody(PK_BODY_t bodyTag, TransformCR transform)
+    {
+    PK_TRANSF_t transfTag;
+
+    if (SUCCESS != PSolidUtil::CreateTransf(transfTag, transform))
+        return ERROR;
+
+    if (NULTAG == transfTag)
+        return SUCCESS;
+
+    BentleyStatus status = PSolidUtil::ApplyTransform(bodyTag, transfTag);
+    PK_ENTITY_delete(1, &transfTag);
+
+    return status;
+    }
 

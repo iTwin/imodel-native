@@ -205,7 +205,7 @@ void ChangeStreamFileReader::_Reset()
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
     {
-    Utf8CP tableName;
+    Utf8CP tableName = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
@@ -215,22 +215,16 @@ ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::Con
     if (cause == ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
        return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
 
-    if (indirect)
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        // We are going to re-run the change propagation logic after applying the changeset in order to resolve indirect changes
-        // NEEDSWORK: Often the only conflict here is the 'LastMod' column of an element...can we detect that?
-        return ChangeSet::ConflictResolution::Skip; // rely on change propagation
+        LOG.infov("Conflict detected - incoming revision:");
+        BeAssert(tableName != nullptr);
+        iter.Dump(m_dgndb, false, 1);
         }
 
-    // NEEDSWORK: What about the case in which we have a local indirect change and a conflicting direct change?
-    // The direct change should win - but do we have a way of detecting this scenario?
-    // We could assert that the local change MUST be indirect if our locking logic is functioning properly, and therefore always allow the direct change to Replace the indirect change
-
-    if (tableName)
-        iter.Dump(m_dgndb, false, 1);
-
-    BeAssert(false);
-    return ChangeSet::ConflictResolution::Abort;
+    // We take the consistent position that an indirect change always loses to a direct change. The same element
+    // can be directly modified either locally, or in the server, but not in both places due to locking. 
+    return indirect ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
     }
 
 //=======================================================================================
@@ -395,19 +389,17 @@ BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
 //---------------------------------------------------------------------------------------
 void DgnRevision::Dump(DgnDbCR dgndb) const
     {
-    printf("Id : %s\n", m_id.c_str());
-    printf("ParentId : %s\n", m_parentId.c_str());
-    printf("Initial ParentId : %s\n", m_initialParentId.c_str());
-    printf("DbGuid: %s\n", m_dbGuid.c_str());
-    printf("User Name: %s\n", m_userName.c_str());
-    printf("Summary: %s\n", m_summary.c_str());
-    printf("ChangeStreamFile: %ls\n", m_changeStreamFile.c_str());
-    printf("DateTime: %s\n", m_dateTime.ToUtf8String().c_str());
+    LOG.infov("Id : %s\n", m_id.c_str());
+    LOG.infov("ParentId : %s\n", m_parentId.c_str());
+    LOG.infov("Initial ParentId : %s\n", m_initialParentId.c_str());
+    LOG.infov("DbGuid: %s\n", m_dbGuid.c_str());
+    LOG.infov("User Name: %s\n", m_userName.c_str());
+    LOG.infov("Summary: %s\n", m_summary.c_str());
+    LOG.infov("ChangeStreamFile: %ls\n", m_changeStreamFile.c_str());
+    LOG.infov("DateTime: %s\n", m_dateTime.ToUtf8String().c_str());
 
     ChangeStreamFileReader fs(m_changeStreamFile, dgndb);
-    fs.Dump("Contents:\n", dgndb, false, 0);
-
-    printf("\n");
+    fs.Dump("Revision Contents:\n", dgndb, false, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -655,18 +647,14 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
-    
+
     TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
-    if (!startTxnId.IsValid())
+    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
+    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
         return RevisionStatus::NoTransactions;
 
-    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
-
-    bool anyChanges = false;
     for (TxnManager::TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = txnMgr.QueryNextTxnId(currTxnId))
         {
-        anyChanges = true;
-
         AbortOnConflictChangeSet sqlChangeSet;
         txnMgr.ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
 
@@ -678,7 +666,7 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
             }
         }
 
-    return anyChanges ? RevisionStatus::Success : RevisionStatus::NoTransactions;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

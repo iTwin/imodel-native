@@ -633,7 +633,7 @@ IBRepEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
             return IBRepEntity::EntityType::Wire;
 
         case GeometryType::CurveVector:
-            return (GetAsCurveVector()->IsAnyRegionType() ? IBRepEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? IBRepEntity::EntityType::Wire : IBRepEntity::EntityType::Minimal));
+            return (GetAsCurveVector()->IsAnyRegionType() ? IBRepEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? IBRepEntity::EntityType::Wire : IBRepEntity::EntityType::Invalid));
 
         case GeometryType::BsplineSurface:
             return IBRepEntity::EntityType::Sheet;
@@ -648,7 +648,7 @@ IBRepEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
             return GetAsIBRepEntity()->GetEntityType();
 
         default:
-            return IBRepEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Invalid;
         }
     }
 
