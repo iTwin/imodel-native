@@ -19,16 +19,17 @@ HANDLER_DEFINE_MEMBERS(RoadTransitionSegmentHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegment::RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
+RoadSegment::RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong, RoadCrossSectionCR crossSection):
     T_Super(params, fromDistanceAlong, toDistanceAlong)
     {
     _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());
+    SetRoadCrossSection(crossSection);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong)
+RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong, RoadCrossSectionCR crossSection)
     {
     if (!roadRange.GetElementId().IsValid())
         return nullptr;
@@ -40,7 +41,7 @@ RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, double fromDistanceAlo
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()), roadRange.GetCategoryId());
     params.SetParentId(roadRange.GetElementId());
 
-    auto retVal = new RoadSegment(params, fromDistanceAlong, toDistanceAlong);
+    auto retVal = new RoadSegment(params, fromDistanceAlong, toDistanceAlong, crossSection);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
     }

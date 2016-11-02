@@ -26,13 +26,16 @@ protected:
     //! @private
     explicit RoadSegment(CreateParams const& params) : T_Super(params) {}
 
-    explicit RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
+    explicit RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong, RoadCrossSectionCR crossSection);
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegment)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadSegment)
 
-    ROADRAILPHYSICAL_EXPORT static RoadSegmentPtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong);
+    Dgn::DgnElementId GetRoadCrossSectionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadCrossSection"); }
+    void SetRoadCrossSection(RoadCrossSectionCR crossSection) { SetPropertyValue("RoadCrossSection", crossSection.GetElementId()); }
+
+    ROADRAILPHYSICAL_EXPORT static RoadSegmentPtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong, RoadCrossSectionCR crossSection);
 }; // RoadSegment
 
 //=======================================================================================

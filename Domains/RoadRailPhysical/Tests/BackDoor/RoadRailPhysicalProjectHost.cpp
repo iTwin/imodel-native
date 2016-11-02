@@ -188,27 +188,11 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
-    auto alignmentPartitionPtr = PhysicalPartition::Create(*projectPtr->Elements().GetRootSubject(), "Alignments");
-    if (alignmentPartitionPtr->Insert(&status).IsNull())
+    if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
         return nullptr;
 
-    auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
-    auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr),
-        alignmentPartitionPtr->GetElementId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
-
-    if (DgnDbStatus::Success != alignmentModelPtr->Insert())
-        return nullptr;
-
-    auto physicalPartitionPtr = PhysicalPartition::Create(*projectPtr->Elements().GetRootSubject(), "Physical");
-    if (physicalPartitionPtr->Insert(&status).IsNull())
-        return nullptr;
-
-    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
-    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(physicalModelHandlerR),
-        physicalPartitionPtr->GetElementId(), PhysicalModel::CreateModelCode("Test Physical Model")));
-
-    if (DgnDbStatus::Success != physicalModelPtr->Insert())
-        return nullptr;
+    if (DgnDbStatus::Success != RoadRailPhysicalDomain::SetUpModelHierarchy(*projectPtr))
+        return nullptr;    
 
     return projectPtr;
     }
@@ -279,42 +263,21 @@ void RoadRailPhysicalTestsFixture::TearDownTestCase()
     m_host = nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Shaun.Sewall           09/2016
-//---------------------------------------------------------------------------------------
-DgnModelId RoadRailPhysicalTestsFixture::QueryFirstAlignmentModelId(DgnDbR db)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId RoadRailPhysicalTestsFixture::QueryFirstModelIdOfType(DgnDbR db, DgnClassId classId)
     {
-    for (auto const& modelEntry : db.Models().MakeIterator())
-        {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
+    ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Model) " WHERE ECClassId = ? LIMIT 1;");
+    BeAssert(stmt.IsPrepared());
 
-        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel() && dynamic_cast<AlignmentModelP>(model.get()))
-            return modelEntry.GetModelId();
-        }
+    stmt.BindId(1, classId);
 
-    BeAssert(false && "No AlignmentModel found");
-    return DgnModelId();
-    }
+    if (DbResult::BE_SQLITE_ROW != stmt.Step())
+        return DgnModelId();
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Shaun.Sewall           09/2016
-//---------------------------------------------------------------------------------------
-DgnModelId RoadRailPhysicalTestsFixture::QueryFirstPhysicalModelId(DgnDbR db)
-    {
-    for (auto const& modelEntry : db.Models().MakeIterator())
-        {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
-
-        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel() && dynamic_cast<PhysicalModelP>(model.get()))
-            return modelEntry.GetModelId();
-        }
-
-    BeAssert(false && "No PhysicalModel found");
-    return DgnModelId();
+    return stmt.GetValueId<DgnModelId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -393,4 +356,30 @@ Dgn::DgnDbPtr RoadRailPhysicalTestsFixture::OpenProject(WCharCP baseName, bool n
         }
 
     return s_currentProject;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+RoadDesignSpeedDefinitionPtr RoadRailPhysicalTestsFixture::InsertRoadDesignSpeedDefinition(Dgn::DgnDbR db)
+    {
+    RoadDesignSpeedDefinitionPtr designSpeedDefPtr;
+
+    // Insert dummy design-speed definition
+    auto designSpeedTableModelId = QueryFirstModelIdOfType(db, RoadDesignSpeedDefinitionTableModel::QueryClassId(db));
+    if (!designSpeedTableModelId.IsValid())
+        return designSpeedDefPtr;
+
+    auto designSpeedTablePtr = RoadDesignSpeedDefinitionTable::Create(*RoadDesignSpeedDefinitionTableModel::Get(db, designSpeedTableModelId), "Dummy", UnitSystem::Metric);
+
+    DgnDbStatus status;
+    RoadDesignSpeedDefinitionModelPtr designSpeedDefModelPtr;
+    if (designSpeedTablePtr->Insert(designSpeedDefModelPtr, &status).IsNull())
+        return designSpeedDefPtr;
+
+    designSpeedDefPtr = RoadDesignSpeedDefinition::Create(*designSpeedDefModelPtr, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    if (designSpeedDefPtr->Insert().IsNull())
+        return designSpeedDefPtr;
+
+    return designSpeedDefPtr;
     }

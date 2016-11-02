@@ -67,6 +67,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Models
 #define BRRP_CLASS_CrossSectionBreakDownModel                       "CrossSectionBreakDownModel"
 #define BRRP_CLASS_CrossSectionDefinitionModel                      "CrossSectionDefinitionModel"
+#define BRRP_CLASS_RoadDesignSpeedDefinitionModel                   "RoadDesignSpeedDefinitionModel"
+#define BRRP_CLASS_RoadDesignSpeedDefinitionTableModel              "RoadDesignSpeedDefinitionTableModel"
+#define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
 
 
 // Elements
@@ -81,6 +84,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_RegularSegmentElement                            "RegularSegmentElement"
 #define BRRP_CLASS_RoadCrossSection                                 "RoadCrossSection"
 #define BRRP_CLASS_RoadDesignSpeed                                  "RoadDesignSpeed"
+#define BRRP_CLASS_RoadDesignSpeedDefinition                        "RoadDesignSpeedDefinition"
+#define BRRP_CLASS_RoadDesignSpeedDefinitionTable                   "RoadDesignSpeedDefinitionTable"
+#define BRRP_CLASS_RoadDesignSpeedStandards                         "RoadDesignSpeedStandards"
 #define BRRP_CLASS_RoadIntersection                                 "RoadIntersection"
 #define BRRP_CLASS_RoadIntersectionSegment                          "RoadIntersectionSegment"
 #define BRRP_CLASS_RoadRange                                        "RoadRange"
@@ -115,6 +121,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Authority names
 //-----------------------------------------------------------------------------------------
 #define BRRP_AUTHORITY_RoadCrossSection                             "RoadCrossSection"
+#define BRRP_AUTHORITY_RoadDesignSpeedDefinition                    "RoadDesignSpeedDefinition"
+#define BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable               "RoadDesignSpeedDefinitionTable"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
@@ -165,6 +173,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the RoadRailPhysical namespace
 //-----------------------------------------------------------------------------------------
+
+// Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionBreakDownModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionDefinitionModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CrossSectionElement)
@@ -176,10 +186,16 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SegmentRangeElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(StatusAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TransitionSegmentElement)
 
+// Road-specific
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadCrossSection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionTable)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionTableModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedStandards)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RailRange)
@@ -187,6 +203,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadTransitionSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
 
 
 //-----------------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
+    DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
 
     // Create Alignment
@@ -31,7 +31,15 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
 #pragma endregion
 
 #pragma region Create Road Elements
-    DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
+    DgnModelId crossSectionDefModelId = QueryFirstModelIdOfType(*projectPtr, CrossSectionDefinitionModel::QueryClassId(*projectPtr));
+    auto crossSectionDefModelPtr = projectPtr->Models().Get<CrossSectionDefinitionModel>(crossSectionDefModelId);
+    auto roadCrossSectionPtr = RoadCrossSection::Create(*static_cast<CrossSectionDefinitionModelCP>(crossSectionDefModelPtr.get()), "2 lane");
+
+    CrossSectionBreakDownModelPtr breakDownModelPtr;
+    ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
+
+    DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
+        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
@@ -42,11 +50,12 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
-    auto designSpeedPtr = RoadDesignSpeed::Create(*roadRangeCPtr, 0, 150);
+    auto designSpeedDefPtr = InsertRoadDesignSpeedDefinition(*projectPtr);
+    auto designSpeedPtr = RoadDesignSpeed::Create(*roadRangeCPtr, *designSpeedDefPtr, 0, 150);
     ASSERT_TRUE(designSpeedPtr->Insert().IsValid());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50);
+    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50, *roadCrossSectionPtr);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
@@ -58,7 +67,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150);
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150, *roadCrossSectionPtr);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
 #pragma endregion
 
@@ -83,7 +92,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeWithBridgeTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
+    DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
 
     // Create Alignment
@@ -105,7 +114,15 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
 #pragma endregion
 
 #pragma region Create Road Elements
-    DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
+    DgnModelId crossSectionDefModelId = QueryFirstModelIdOfType(*projectPtr, CrossSectionDefinitionModel::QueryClassId(*projectPtr));
+    auto crossSectionDefModelPtr = projectPtr->Models().Get<CrossSectionDefinitionModel>(crossSectionDefModelId);
+    auto roadCrossSectionPtr = RoadCrossSection::Create(*static_cast<CrossSectionDefinitionModelCP>(crossSectionDefModelPtr.get()), "2 lane");
+
+    CrossSectionBreakDownModelPtr breakDownModelPtr;
+    ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
+
+    DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
+        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
@@ -117,7 +134,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 10);
+    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 10, *roadCrossSectionPtr);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
@@ -180,7 +197,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 140, 150);
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 140, 150, *roadCrossSectionPtr);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
 #pragma endregion
 

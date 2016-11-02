@@ -26,8 +26,9 @@ protected:
     explicit CrossSectionDefinitionModel(CreateParams const& params) : T_Super(params) { }
 
 public:
-    static CrossSectionDefinitionModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< CrossSectionDefinitionModel >(id); }
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_CLASS_CrossSectionDefinitionModel)); }
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionDefinitionModel)
+
+    static CrossSectionDefinitionModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< CrossSectionDefinitionModel >(id); }    
     static CrossSectionDefinitionModelPtr Create(CreateParams const& params) { return new CrossSectionDefinitionModel(params); }
 }; // CrossSectionDefinitionModel
 
@@ -62,8 +63,9 @@ protected:
     explicit CrossSectionBreakDownModel(CreateParams const& params) : T_Super(params) { }
 
 public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionBreakDownModel)
+
     static CrossSectionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< CrossSectionBreakDownModel >(id); }
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_CLASS_CrossSectionBreakDownModel)); }
     static CrossSectionBreakDownModelPtr Create(CreateParams const& params) { return new CrossSectionBreakDownModel(params); }
 }; // CrossSectionBreakDownModel
 

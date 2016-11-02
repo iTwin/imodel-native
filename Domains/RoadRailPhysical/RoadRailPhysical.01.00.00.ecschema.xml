@@ -48,7 +48,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeRefersToAlignment" strength="referencing">
+    <ECRelationshipClass typeName="SegmentRangeRefersToAlignment" strength="referencing" strengthDirection="Backward">
         <BaseClass>rralign:SpatialElementRefersToAlignment</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="SegmentRangeElement"/>
@@ -108,13 +108,13 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="forward"/>
+        <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing">
+    <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing" strengthDirection="Backward">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 intersection">
             <Class class="IntersectionSegmentElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by zero or more intersection segments">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more intersection segments">
             <Class class="IntersectionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -126,9 +126,17 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECNavigationProperty propertyName="RoadCrossSectionDefinitionId" relationshipName="RoadCrossSectionReferencesDefinition" direction="forward"/-->
+        <ECNavigationProperty propertyName="RoadCrossSection" relationshipName="RoadSegmentRefersToCrossSection" direction="Forward"/>
         <ECProperty propertyName="CrossSectionDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
     </ECEntityClass>
+    <ECRelationshipClass typeName="RoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RoadSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 cross-section">
+            <Class class="RoadCrossSection"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="RoadTransitionSegment" modifier="Sealed" description="Physical segment of a road, with a variable cross-section.">
         <BaseClass>TransitionSegmentElement</BaseClass>
         <ECCustomAttributes>
@@ -141,8 +149,16 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECNavigationProperty propertyName="RoadBridgeCrossSectionDefinitionId" relationshipName="RoadCrossSectionReferencesDefinition" direction="forward"/-->
+        <ECNavigationProperty propertyName="ElevatedRoadCrossSection" relationshipName="ElevatedRoadSegmentRefersToCrossSection" direction="Forward"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElevatedRoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="ElevatedRoadSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 cross-section">
+            <Class class="ElevatedRoadCrossSection"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="RoadSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
         <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false">
@@ -157,8 +173,16 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECNavigationProperty propertyName="RoadIntersectionLegDefinitionId" relationshipName="RoadIntersectionLegReferencesDefinition" direction="forward"/-->
+        <ECNavigationProperty propertyName="RoadIntersectionLegDefinition" relationshipName="RoadIntersectionLegRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="RoadIntersectionLegRefersToDefinition" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RoadIntersectionSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 cross-section">
+            <Class class="RoadIntersectionLegDefinition"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="ElevatedRoadIntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection, supported by a bridge.">
         <BaseClass>IntersectionSegmentElement</BaseClass>
         <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
@@ -221,7 +245,7 @@
     <!-- BEGIN FurnitureElement Class Hierarchy -->
     <ECEntityClass typeName="FurnitureElement" modifier="Abstract" description="Physical element supplementing Road and Rail models.">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="forward"/>
+        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="DiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single placement-point.">
         <BaseClass>FurnitureElement</BaseClass>
@@ -254,10 +278,10 @@
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECProperty propertyName="Thumbnail" typeName="binary" />
         <ECProperty propertyName="LightsJson" typeName="string" />
-        <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="forward"/>
+        <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N furniture elements">
+    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
             <Class class="FurnitureElement"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
@@ -274,7 +298,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
             <Class class="FurnitureDefinitionElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by zero or more furniture definitions">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more furniture definitions">
             <Class class="GeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -391,10 +415,44 @@
     <!-- END General Aspects classes -->
 
     <!-- BEGIN Road Design-Speed classes -->
+    <ECEntityClass typeName="RoadwayStandardsModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedStandards">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionTableModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionTable">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UnitSystem" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="RoadDesignSpeedDefinition">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="SideSlopeFrictionFactor" typeName="double" />
-        <ECProperty propertyName="Speed" typeName="double" />
+        <ECProperty propertyName="DesignSpeed" typeName="double" />
         <ECProperty propertyName="MaxTransitionRadius" typeName="double" />
         <ECProperty propertyName="DesirableSpiralLength" typeName="double" />
         <ECProperty propertyName="Type1CrestVertical" typeName="double" />
@@ -404,11 +462,10 @@
         <ECProperty propertyName="MaximumRelativeGradient" typeName="double" />
         <ECProperty propertyName="CrestK_SSD" typeName="double" />
         <ECProperty propertyName="SagK_SSD" typeName="double" />
-        <ECProperty propertyName="IgnoreLength" typeName="double" />
-        <ECProperty propertyName="UnitSystem" typeName="int" />
+        <ECProperty propertyName="IgnoreLength" typeName="double" />        
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is refered by N design-speeds">
+    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N design-speeds">
             <Class class="RoadDesignSpeed"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
@@ -421,7 +478,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="forward"/>
+        <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
     <!--ECRelationshipClass typeName="RoadRangeHasDesignSpeeds" strength="embedding">
         <BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass>
@@ -435,6 +492,60 @@
     <!-- END General Aspects classes -->
 
     <!-- BEGIN CrossSection Element classes -->
+    <ECEnumeration typeName="CrossSectionComponent_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="User-defined"/>
+        <ECEnumerator value="2" displayLabel="End-condition"/>
+        <ECEnumerator value="3" displayLabel="Barrier"/>
+        <ECEnumerator value="4" displayLabel="Curb"/>
+        <ECEnumerator value="5" displayLabel="Gutter"/>
+        <ECEnumerator value="6" displayLabel="Bridge girder"/>
+        <ECEnumerator value="7" displayLabel="Buffer"/>
+        <ECEnumerator value="8" displayLabel="Guardrail"/>
+        <ECEnumerator value="9" displayLabel="Paved-and-gravel shoulder"/>
+        <ECEnumerator value="10" displayLabel="Paving"/>
+        <ECEnumerator value="11" displayLabel="Median"/>
+        <ECEnumerator value="12" displayLabel="Sidewalk"/>
+        <ECEnumerator value="13" displayLabel="Sublayer"/>
+        <ECEnumerator value="14" displayLabel="Wall"/>
+        <ECEnumerator value="15" displayLabel="Ditch"/>
+        <ECEnumerator value="16" displayLabel="Rail"/>
+        <ECEnumerator value="17" displayLabel="Bridge deck"/>
+        <ECEnumerator value="18" displayLabel="Ballast"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="CrossSectionComponent_SubType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="Dual-face barrier 1"/>
+        <ECEnumerator value="2" displayLabel="Dual-face barrier 2"/>
+        <ECEnumerator value="3" displayLabel="Single-face barrier 1"/>
+        <ECEnumerator value="4" displayLabel="Single-face barrier 2"/>
+        <ECEnumerator value="5" displayLabel="Barrier curb type 1"/>
+        <ECEnumerator value="6" displayLabel="Barrier curb type 2"/>
+        <ECEnumerator value="7" displayLabel="Barrier curb type 3"/>
+        <ECEnumerator value="8" displayLabel="Barrier curb type 4"/>
+        <ECEnumerator value="9" displayLabel="Curb and gutter type 1"/>
+        <ECEnumerator value="10" displayLabel="Curb and gutter type 2"/>
+        <ECEnumerator value="11" displayLabel="Driveway gutter"/>
+        <ECEnumerator value="12" displayLabel="Shoulder gutter"/>
+        <ECEnumerator value="13" displayLabel="Mountable concrete curb"/>
+        <ECEnumerator value="14" displayLabel="Bridge curb"/>
+        <ECEnumerator value="15" displayLabel="Monolithic sidewalk"/>
+        <ECEnumerator value="16" displayLabel="Curb sidewalk"/>
+        <ECEnumerator value="17" displayLabel="Slab sidewalk"/>
+        <ECEnumerator value="18" displayLabel="Wall"/>
+        <ECEnumerator value="19" displayLabel="Berm"/>
+        <ECEnumerator value="20" displayLabel="Ditch"/>
+        <ECEnumerator value="21" displayLabel="Bridge curb top origin"/>
+        <ECEnumerator value="22" displayLabel="Barrier curb type 1 top origin"/>
+        <ECEnumerator value="23" displayLabel="Single-face barrier 1 top origin"/>
+        <ECEnumerator value="24" displayLabel="Wall Fill"/>
+        <ECEnumerator value="25" displayLabel="Wall Cut"/>
+        <ECEnumerator value="26" displayLabel="Wall MSE Fill"/>
+        <ECEnumerator value="27" displayLabel="Wall MSE Cut"/>
+        <ECEnumerator value="1024" displayLabel="Buffer Segment"/>
+        <ECEnumerator value="1025" displayLabel="Buffer Shoulder"/>
+    </ECEnumeration>
+    
     <ECEntityClass typeName="CrossSectionDefinitionModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
@@ -465,8 +576,8 @@
         <ECCustomAttributes>
             <!--ClassHasHandler xmlns="dgn.02.00"/-->
         </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="int"/>
-        <ECProperty propertyName="SubType" typeName="int"/>
+        <ECProperty propertyName="Type" typeName="CrossSectionComponent_Type"/>
+        <ECProperty propertyName="SubType" typeName="CrossSectionComponent_SubType"/>
         <ECProperty propertyName="Material" typeName="int"/>
         <ECProperty propertyName="IsClosed" typeName="boolean"/>
         <ECProperty propertyName="IsEndCondition" typeName="boolean"/>

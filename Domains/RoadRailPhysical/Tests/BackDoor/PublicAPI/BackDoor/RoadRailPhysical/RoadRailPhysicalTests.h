@@ -59,8 +59,8 @@ protected:
 public:
     static RoadRailPhysicalProjectHost& GetHost() { return *m_host; }
 
-    static Dgn::DgnModelId QueryFirstAlignmentModelId(Dgn::DgnDbR db);
-    static Dgn::DgnModelId QueryFirstPhysicalModelId(Dgn::DgnDbR db);
+    static Dgn::DgnModelId QueryFirstModelIdOfType(Dgn::DgnDbR db, Dgn::DgnClassId classId);
+    static RoadDesignSpeedDefinitionPtr InsertRoadDesignSpeedDefinition(Dgn::DgnDbR db);
 
     //! Creates and caches a fresh "created" file to make the whole process faster
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
