@@ -558,12 +558,6 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindId(enumIdIndex, ecenum->GetId()))
                 return ERROR;
             }
-
-        if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, ecProperty))
-            return ERROR;
-
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
-            return ERROR;
         }
     else if (ecProperty.GetIsStruct())
         {
@@ -593,12 +587,6 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 return ERROR;
             }
 
-        if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, ecProperty))
-            return ERROR;
-
-        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
-            return ERROR;
-
         if (BE_SQLITE_OK != stmt->BindInt(arrayMinIndex, (int) arrayProp->GetMinOccurs()))
             return ERROR;
 
@@ -617,6 +605,16 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
+            return ERROR;
+        }
+
+    ExtendedTypeECPropertyCP extendedTypeProp = ecProperty.GetAsExtendedTypeProperty();
+    if (extendedTypeProp != nullptr)
+        {
+        if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *extendedTypeProp))
+            return ERROR;
+
+        if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, *extendedTypeProp))
             return ERROR;
         }
 
@@ -777,45 +775,23 @@ BentleyStatus ECDbSchemaWriter::InsertBaseClassEntry(ECClassId ecClassId, ECClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int paramIndex, ECPropertyCR prop)
+BentleyStatus ECDbSchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int paramIndex, ExtendedTypeECPropertyCR prop)
     {
-    Utf8StringCP extendedTypeName = nullptr;
-    if (prop.HasExtendedType())
-        {
-        if (prop.GetIsPrimitive())
-            extendedTypeName = &prop.GetAsPrimitiveProperty()->GetExtendedTypeName();
-        else if (prop.GetIsPrimitiveArray())
-            extendedTypeName = &prop.GetAsArrayProperty()->GetExtendedTypeName();
-        else
-            BeAssert(false && "Only prim and prim arrays are expected to have extended type names");
-        }
-
-    if (extendedTypeName == nullptr || extendedTypeName->empty())
+    if (!prop.HasExtendedType() || prop.GetExtendedTypeName().empty())
         return SUCCESS;
 
-    return stmt.BindText(paramIndex, extendedTypeName->c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    return stmt.BindText(paramIndex, prop.GetExtendedTypeName().c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, ECPropertyCR prop)
+BentleyStatus ECDbSchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, ExtendedTypeECPropertyCR prop)
     {
-    KindOfQuantityCP koq = nullptr;
-    if (prop.GetIsPrimitive())
-        {
-        PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
-        koq = primProp->IsKindOfQuantityDefinedLocally() ? primProp->GetKindOfQuantity() : nullptr;
-        }
-    else if (prop.GetIsPrimitiveArray())
-        {
-        PrimitiveArrayECPropertyCP arrayProp = prop.GetAsPrimitiveArrayProperty();
-        koq = arrayProp->IsKindOfQuantityDefinedLocally() ? arrayProp->GetKindOfQuantity() : nullptr;
-        }
-
-    if (koq == nullptr)
+    if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
         return SUCCESS;
 
+    KindOfQuantityCP koq = prop.GetKindOfQuantity();
     if (SUCCESS != ImportKindOfQuantity(*koq))
         return ERROR;
 

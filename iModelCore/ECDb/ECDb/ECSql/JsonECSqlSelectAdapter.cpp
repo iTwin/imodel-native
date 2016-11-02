@@ -143,19 +143,14 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
         if (!isInlinedStructMember)
             structValue = &ecsqlValue.GetStruct();
         }
-    else if (ecProperty->GetIsArray())
+    else if (ecProperty->GetIsStructArray())
         {
-        ArrayECPropertyCP arrayLeafProperty = ecProperty->GetAsArrayProperty();
-        BeAssert(arrayLeafProperty != nullptr);
-        if (arrayLeafProperty->GetKind() == ARRAYKIND_Struct)
+        IECSqlArrayValue const& arrayValue = ecsqlValue.GetArray();
+        auto arrayIt = arrayValue.begin();
+        if (arrayIt != arrayValue.end())
             {
-            IECSqlArrayValue const& arrayValue = ecsqlValue.GetArray();
-            auto arrayIt = arrayValue.begin();
-            if (arrayIt != arrayValue.end())
-                {
-                IECSqlValue const* arrayElementValue = *arrayIt;
-                structValue = &arrayElementValue->GetStruct();
-                }
+            IECSqlValue const* arrayElementValue = *arrayIt;
+            structValue = &arrayElementValue->GetStruct();
             }
         }
 

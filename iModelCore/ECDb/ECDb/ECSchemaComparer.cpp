@@ -551,79 +551,60 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
             else
                 change.GetEnumeration().SetValue(aEnum->GetFullName(), bEnum->GetFullName());
             }
-
-        auto aKoQ = aPrimitive->GetKindOfQuantity();
-        auto bKoQ = bPrimitive->GetKindOfQuantity();
-        if (aKoQ != bKoQ)
-            {
-            if (aKoQ && !bKoQ)
-                change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
-            else if (!aKoQ && bKoQ)
-                change.GetKindOfQuanity().SetValue(ValueId::New, bKoQ->GetFullName());
-            else
-                change.GetKindOfQuanity().SetValue(aKoQ->GetFullName(), bKoQ->GetFullName());
-            }
-        }
-    else if (aPrimitive && !bPrimitive)
-        {
-        if (auto aKoQ = aPrimitive->GetKindOfQuantity())
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
-        }
-    else if (!aPrimitive && bPrimitive)
-        {
-        if (auto bKoQ = bPrimitive->GetKindOfQuantity())
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, bKoQ->GetFullName());
         }
 
-    auto aArray = a.GetAsArrayProperty();
-    auto bArray = b.GetAsArrayProperty();
-    if (aArray && bArray)
+    ArrayECPropertyCP aArray = a.GetAsArrayProperty();
+    ArrayECPropertyCP bArray = b.GetAsArrayProperty();
+    if (aArray != nullptr && bArray != nullptr)
         {
         if (aArray->GetStoredMaxOccurs() != bArray->GetStoredMaxOccurs())
             change.GetArray().MaxOccurs().SetValue(aArray->GetStoredMaxOccurs(), bArray->GetStoredMaxOccurs());
 
         if (aArray->GetMinOccurs() != bArray->GetMinOccurs())
             change.GetArray().MinOccurs().SetValue(aArray->GetMinOccurs(), bArray->GetMinOccurs());
-
-        auto aKoQ = aArray->GetKindOfQuantity();
-        auto bKoQ = bArray->GetKindOfQuantity();
-        if (aKoQ != bKoQ)
-            {
-            if (aKoQ && !bKoQ)
-                change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
-            else if (!aKoQ && bKoQ)
-                change.GetKindOfQuanity().SetValue(ValueId::New, bKoQ->GetFullName());
-            else
-                change.GetKindOfQuanity().SetValue(aKoQ->GetFullName(), bKoQ->GetFullName());
-            }
         }
-    else if (aArray && !bArray)
+    else if (aArray != nullptr && bArray == nullptr)
         {
         change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetStoredMaxOccurs());
         change.GetArray().MinOccurs().SetValue(ValueId::Deleted, aArray->GetMinOccurs());
-        if (auto aKoQ = aArray->GetKindOfQuantity())
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
-
         }
-    else if (!aArray && bArray)
+    else if (aArray == nullptr && bArray != nullptr)
         {
         change.GetArray().MaxOccurs().SetValue(ValueId::New, bArray->GetStoredMaxOccurs());
         change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
-        if (auto bKoQ = bArray->GetKindOfQuantity())
-            change.GetKindOfQuanity().SetValue(ValueId::Deleted, bKoQ->GetFullName());
         }
 
     auto aExtendType = a.GetAsExtendedTypeProperty();
     auto bExtendType = b.GetAsExtendedTypeProperty();
-    if (aExtendType && bExtendType)
+    if (aExtendType != nullptr && bExtendType != nullptr)
         {
-        if (aExtendType->GetExtendedTypeName() != bExtendType->GetExtendedTypeName())
+        if (!aExtendType->GetExtendedTypeName().EqualsIAscii(bExtendType->GetExtendedTypeName()))
             change.GetExtendedTypeName().SetValue(aExtendType->GetExtendedTypeName(), bExtendType->GetExtendedTypeName());
+
+        KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
+        KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
+        if (aKoq && !bKoq)
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoq->GetFullName());
+        else if (!aKoq && bKoq)
+            change.GetKindOfQuanity().SetValue(ValueId::New, bKoq->GetFullName());
+        else
+            change.GetKindOfQuanity().SetValue(aKoq->GetFullName(), bKoq->GetFullName());
+
         }
-    else if (aExtendType && !bExtendType)
+    else if (aExtendType != nullptr && bExtendType == nullptr)
+        {
         change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendType->GetExtendedTypeName());
+        KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
+        if (aKoq != nullptr)
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoq->GetFullName());
+        }
     else if (!aExtendType && bExtendType)
+        {
         change.GetExtendedTypeName().SetValue(ValueId::New, bExtendType->GetExtendedTypeName());
+        KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
+        if (bKoq != nullptr)
+            change.GetKindOfQuanity().SetValue(ValueId::New, bKoq->GetFullName());
+        }
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
     }
