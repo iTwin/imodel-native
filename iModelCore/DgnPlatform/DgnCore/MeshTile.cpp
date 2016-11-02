@@ -669,6 +669,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
+    bool                    isTextured = false;
 
     if (!params.empty() &&
         (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
@@ -676,15 +677,18 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
         auto const&         patternMap = m_material.GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
-        if (patternMap.IsValid() &&
-            SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
-            params = computedParams;
+        if (patternMap.IsValid())
+            {
+            isTextured = true;
+            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+                params = computedParams;
+            }
         }
             
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !isTextured || params.empty() ? nullptr : &params.at(i), entityId);
         newTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
