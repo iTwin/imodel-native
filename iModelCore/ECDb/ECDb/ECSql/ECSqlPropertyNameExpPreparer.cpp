@@ -74,7 +74,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         }
     }
 
-
+//Alias
+//  UPDATE
+//  INSERT
+//  DELETE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -123,7 +126,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
     {
-    ClassMap const& classMap = propMap.GetClassMap();
+    //ClassMap const& classMap = propMap.GetClassMap();
     switch (scope.GetECSqlType())
         {
             case ECSqlType::Select:
@@ -143,8 +146,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
                     }
                 }
 
-            if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
-                classIdentifier.assign(classMap.GetJoinedTable().GetName());
+            //if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
+            //    classIdentifier.assign(classMap.GetJoinedTable().GetName());
 
             break;
             }

@@ -125,8 +125,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                     parentOfjoinedTableId->GetName().c_str(),
                     whereClause.ToString()
                     );
-
+                
+                //topLevelWhereClause.GetParameterIndexMappings()
                 topLevelWhereClause = snippet;
+                topLevelWhereClause.CopyIndexMappingFrom(whereClause);
                 }
             }
         else
