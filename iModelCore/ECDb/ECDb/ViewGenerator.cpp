@@ -465,7 +465,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Cla
             return ERROR;
 
 
-        if (PrimitivePropertyMap const* classIdPropertyMap = contextClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
+        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = contextClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
             {
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
                 {
@@ -610,7 +610,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             view.Append(targetECClassIdJoinInfo->GetNativeJoinSQL());
             }
 
-        if (PrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
+        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
             {
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
                 {
@@ -677,7 +677,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
         view.Append(" WHERE ").AppendEscaped(relationMap.GetReferencedEndECInstanceIdPropMap()->GetAccessString().c_str()).Append(" IS NOT NULL");
         //! Add Polymorphic Filter if required
-        if (PrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
+        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
             {
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
                 {    
@@ -1056,7 +1056,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
     if (table->GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 
-    PrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
+    SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
     if (c->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 
@@ -1066,16 +1066,14 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
         if (map.GetConstraintMap(map.GetReferencedEnd()).GetECClassIdPropMap() == &propertyMap)
             {
             if (Enum::Contains(c->GetColumn().GetKind(), DbColumn::Kind::ECClassId))
-                {
                 return table;
-                }
             }
+
+        return nullptr;
         }
-    else
-        {
-        if (!propertyMap.IsMappedToClassMapTables())
-            return table;
-        }
+
+    if (!propertyMap.IsMappedToClassMapTables())
+        return table;
 
     return nullptr;
     }
@@ -1092,8 +1090,7 @@ ConstraintECClassIdJoinInfo::Ptr ConstraintECClassIdJoinInfo::Create(ConstraintE
     DbColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* primaryECClassIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
     DbColumn const* forignECInstanceIdColumn = nullptr;
-    bool isSource = propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source;
-
+    const bool isSource = propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source;
 
     RelationshipClassMap const& relationshipMap = static_cast<RelationshipClassMap const&>(propertyMap.GetClassMap());
     if (!relationshipMap.IsMappedTo(contextTable))
@@ -1104,7 +1101,7 @@ ConstraintECClassIdJoinInfo::Ptr ConstraintECClassIdJoinInfo::Create(ConstraintE
 
     ConstraintECInstanceIdPropertyMap const*  constraintId = isSource ? relationshipMap.GetSourceECInstanceIdPropMap() : relationshipMap.GetTargetECInstanceIdPropMap();
     BeAssert(constraintId != nullptr);
-    PrimitivePropertyMap const* relaventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
+    SystemPropertyMap::PerTablePrimitivePropertyMap const* relaventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
     if (relaventECClassIdPropertyMap == nullptr)
         {
         BeAssert(false && "Expecting a property map for given context table");
@@ -1117,7 +1114,6 @@ ConstraintECClassIdJoinInfo::Ptr ConstraintECClassIdJoinInfo::Create(ConstraintE
         BeAssert(false);
         return nullptr;
         }
-
 
     return Ptr(new ConstraintECClassIdJoinInfo(propertyMap, *primaryECInstanceIdColumn, *primaryECClassIdColumn, *forignECInstanceIdColumn));
     }
