@@ -49,12 +49,26 @@ m_token(std::move(token))
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Adam.Eichelkraut    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlToken::SamlToken(SamlTokenCR other)
-    : m_token(std::move(other.m_token))
+SamlToken::SamlToken(SamlTokenCR other) :
+m_token(other.m_token)
     {
-    //hold onto other mutex since we are reading from other object
-    BeMutexHolder otherMutexHolder(other.m_domMutex);
+    // Hold onto other mutex since we are reading from other object
+    BeMutexHolder otherLock(other.m_domMutex);
     m_dom = other.m_dom;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Adam.Eichelkraut    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlToken& SamlToken::operator=(const SamlToken& other)
+    {
+    // Hold onto both mutexes since we are accessing both
+    BeMutexHolder lock(m_domMutex);
+    BeMutexHolder otherLock(other.m_domMutex);
+
+    m_dom = other.m_dom;
+    m_token = other.m_token;
+    return *this;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -70,7 +84,7 @@ bool SamlToken::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SamlToken::IsSupported() const
     {
-    BeMutexHolder mutexHolder(m_domMutex);
+    BeMutexHolder lock(m_domMutex);
 
     if (m_dom.IsNull())
         {
@@ -173,9 +187,9 @@ bool SamlToken::IsValidNow(uint32_t offsetMinutes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SamlToken::GetConditionDates(DateTime& notBeforeUtc, DateTime& notOnOrAfterUtc) const
     {
-    BentleyStatus result = ERROR;
+    BeMutexHolder lock(m_domMutex);
 
-    BeMutexHolder mutexHolder(m_domMutex);
+    BentleyStatus result = ERROR;
 
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr conditionsPtr = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:Conditions", context);
@@ -260,9 +274,9 @@ BentleyStatus SamlToken::GetAttributes(bmap<Utf8String, Utf8String>& attributesO
         return ERROR;
         }
 
-    BentleyStatus status = SUCCESS;
+    BeMutexHolder lock(m_domMutex);
 
-    BeMutexHolder mutexHolder(m_domMutex);
+    BentleyStatus status = SUCCESS;
 
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:AttributeStatement/saml:Attribute", context);
@@ -308,11 +322,10 @@ BentleyStatus SamlToken::GetX509Certificate(Utf8StringR certOut) const
         return ERROR;
         }
 
+    BeMutexHolder lock(m_domMutex);
+
     BentleyStatus status = ERROR;
-
     auto expression = "/saml:Assertion/ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate/text()";
-
-    BeMutexHolder mutexHolder(m_domMutex);
 
     xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
     xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression(expression, context);
@@ -363,18 +376,4 @@ Utf8StringCR SamlToken::AsString() const
 bool SamlToken::operator==(const SamlToken& other) const
     {
     return m_token == other.m_token;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-SamlToken& SamlToken::operator=(const SamlToken& other)
-    {
-    //hold onto both mutexes since we are accessing both
-    BeMutexHolder mutexHolder(m_domMutex);
-    BeMutexHolder mutexHolder2(other.m_domMutex);
-
-    m_dom = other.m_dom;
-    m_token = std::move(other.m_token);
-    return *this;
     }
