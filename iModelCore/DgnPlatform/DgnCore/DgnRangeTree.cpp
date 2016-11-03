@@ -7,18 +7,20 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+using namespace RangeIndex;
+
 BEGIN_UNNAMED_NAMESPACE
 
-typedef DgnRangeTree::Node&         DRTNodeR;
-typedef DgnRangeTree::Node*         DRTNodeP;
-typedef DRTNodeP*                   DRTNodeH;
-typedef DgnRangeTree::LeafNode*     DRTLeafNodeP;
-typedef DgnRangeTree::InternalNode* DRTInternalNodeP;
+typedef Tree::Node&         DRTNodeR;
+typedef Tree::Node*         DRTNodeP;
+typedef DRTNodeP*           DRTNodeH;
+typedef Tree::LeafNode*     DRTLeafNodeP;
+typedef Tree::InternalNode* DRTInternalNodeP;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline bool rangeIsValid(DRange3dCR range, bool is3d)
+static inline bool rangeIsValid(BoxCR range, bool is3d)
     {
     return (range.low.x <= range.high.x) && (range.low.y <= range.high.y) && (!is3d || (range.low.z <= range.high.z));
     }
@@ -27,7 +29,7 @@ static inline bool rangeIsValid(DRange3dCR range, bool is3d)
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline double rangeExtentSquared(DRange3dCR range)
+static inline double rangeExtentSquared(BoxCR range)
     {
     double extentX = (double) range.high.x - range.low.x;
     double extentY = (double) range.high.y - range.low.y;
@@ -39,7 +41,7 @@ static inline double rangeExtentSquared(DRange3dCR range)
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline void extendRange(DRange3dR thisRange, DRange3dCR range)
+static inline void extendRange(BoxR thisRange, BoxCR range)
     {
     if (range.low.x < thisRange.low.x)
         thisRange.low.x = range.low.x;
@@ -66,15 +68,15 @@ static inline void extendRange(DRange3dR thisRange, DRange3dCR range)
 //=======================================================================================
 struct DRTSplitEntry
 {
-    DRange3d    m_range;
-    void*       m_entry;        // this is void* so we can use this struct for both LeafNodes and InternalNodes
-    int         m_groupNumber[3];
+    Box m_range;
+    DgnElementId m_id; 
+    void* m_vp;
+    int m_groupNumber[3];
 };
 
 typedef DRTSplitEntry* DRTSplitEntryP;
 typedef DRTSplitEntry const * DRTSplitEntryCP;
 typedef DRTSplitEntry const& DRTSplitEntryCR;
-typedef DgnRangeTree::ProgressMonitor* ProgressMonitorP;
 
 static inline bool compareX(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.low.x < entry2.m_range.low.x;}
 static inline bool compareY(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.low.y < entry2.m_range.low.y;}
@@ -199,7 +201,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline size_t DgnRangeTree::Node::GetEntryCount()
+inline size_t Tree::Node::GetEntryCount()
     {
     DRTLeafNodeP leaf = ToLeaf();
     return leaf ? leaf->GetEntryCount() : ((DRTInternalNodeP) this)->GetEntryCount();
@@ -208,7 +210,7 @@ inline size_t DgnRangeTree::Node::GetEntryCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::Node::ValidateRange()
+void Tree::Node::ValidateRange()
     {
     if (!m_sloppy)
         return;
@@ -223,7 +225,7 @@ void DgnRangeTree::Node::ValidateRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match DgnRangeTree::Node::Traverse(Traverser& traverser, bool is3d)
+Tree::Traverser::Stop Tree::Node::Traverse(Traverser& traverser, bool is3d)
     {
     DRTLeafNodeP leaf = ToLeaf();
     return leaf ? leaf->Traverse(traverser, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, is3d);
@@ -232,7 +234,7 @@ DgnRangeTree::Match DgnRangeTree::Node::Traverse(Traverser& traverser, bool is3d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DgnRangeTree::InternalNode::ValidateInternalRange()
+inline void Tree::InternalNode::ValidateInternalRange()
     {
     if (!m_sloppy)
         return;
@@ -246,7 +248,7 @@ inline void DgnRangeTree::InternalNode::ValidateInternalRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DgnRangeTree::LeafNode::ValidateLeafRange()
+inline void Tree::LeafNode::ValidateLeafRange()
     {
     if (!m_sloppy)
         return;
@@ -261,7 +263,7 @@ inline void DgnRangeTree::LeafNode::ValidateLeafRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnRangeTree::Node::Overlaps(DRange3dCR range) const
+bool Tree::Node::Overlaps(BoxCR range) const
     {
     if (m_nodeRange.low.x > range.high.x || m_nodeRange.high.x < range.low.x ||
         m_nodeRange.low.y > range.high.y || m_nodeRange.high.y < range.low.y)
@@ -273,7 +275,7 @@ bool DgnRangeTree::Node::Overlaps(DRange3dCR range) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnRangeTree::Node::CompletelyContains(DRange3dCR range) const
+bool Tree::Node::CompletelyContains(BoxCR range) const
     {
     if (m_nodeRange.low.x >= range.low.x || m_nodeRange.high.x <= range.high.x ||
         m_nodeRange.low.y >= range.low.y || m_nodeRange.high.y <= range.high.y)
@@ -287,7 +289,7 @@ bool DgnRangeTree::Node::CompletelyContains(DRange3dCR range) const
 * enteries between this node and the new one.
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::InternalNode::SplitInternalNode(DgnRangeTreeR root)
+void Tree::InternalNode::SplitInternalNode(TreeR root)
     {
     size_t  count = GetEntryCount();
     DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
@@ -297,7 +299,7 @@ void DgnRangeTree::InternalNode::SplitInternalNode(DgnRangeTreeR root)
 
     for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
-        currEntry->m_entry = *curr;
+        currEntry->m_vp = *curr;
         currEntry->m_range = (*curr)->GetRangeCR();
         }
 
@@ -321,9 +323,9 @@ void DgnRangeTree::InternalNode::SplitInternalNode(DgnRangeTreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddInternalNode((DRTNodeP) currEntry->m_entry, root);
+            newNode1->AddInternalNode((DRTNodeP) currEntry->m_vp, root);
         else
-            newNode2->AddInternalNode((DRTNodeP) currEntry->m_entry, root);
+            newNode2->AddInternalNode((DRTNodeP) currEntry->m_vp, root);
         }
 
     // now add the newly created node into the parent of this node. If parent is nullptr, we're the root of the tree and we've just added a new level
@@ -342,7 +344,7 @@ void DgnRangeTree::InternalNode::SplitInternalNode(DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRTNodeP DgnRangeTree::InternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeTreeR root)
+DRTNodeP Tree::InternalNode::ChooseBestNode(BoxCP pRange, TreeR root)
     {
     DRTNodeP best = nullptr;
     double   bestFit = 0.0;
@@ -350,8 +352,8 @@ DRTNodeP DgnRangeTree::InternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeT
 
     for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
-        DRange3dCR thisRange = (*curr)->GetRange();
-        DRange3d   newRange;
+        BoxCR thisRange = (*curr)->GetRange();
+        Box newRange;
 
         newRange = thisRange;
         extendRange(newRange, *pRange);
@@ -379,7 +381,7 @@ DRTNodeP DgnRangeTree::InternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::InternalNode::AddElement(Entry const& entry, DgnRangeTreeR root)
+void Tree::InternalNode::AddElement(Entry const& entry, TreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
@@ -397,7 +399,7 @@ void DgnRangeTree::InternalNode::AddElement(Entry const& entry, DgnRangeTreeR ro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::InternalNode::DropRange(DRange3dCR range)
+void Tree::InternalNode::DropRange(BoxCR range)
     {
     if (CompletelyContains(range))
         return;
@@ -410,7 +412,7 @@ void DgnRangeTree::InternalNode::DropRange(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::InternalNode::DropNode(DRTNodeP entry, DgnRangeTreeR root)
+void Tree::InternalNode::DropNode(DRTNodeP entry, TreeR root)
     {
     for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
@@ -443,7 +445,7 @@ void DgnRangeTree::InternalNode::DropNode(DRTNodeP entry, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnRangeTree::InternalNode::DropElement(Entry const& entry, DgnRangeTreeR root)
+bool Tree::InternalNode::DropElement(Entry const& entry, TreeR root)
     {
     DRTLeafNodeP leaf = ToLeaf();
     if (leaf)
@@ -465,7 +467,7 @@ bool DgnRangeTree::InternalNode::DropElement(Entry const& entry, DgnRangeTreeR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::InternalNode::AddInternalNode(DRTNodeP child, DgnRangeTreeR root)
+void Tree::InternalNode::AddInternalNode(DRTNodeP child, TreeR root)
     {
     child->SetParent(this);
     ValidateInternalRange();
@@ -479,7 +481,7 @@ void DgnRangeTree::InternalNode::AddInternalNode(DRTNodeP child, DgnRangeTreeR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnRangeTree::InternalNode::GetLeafCount()
+size_t Tree::InternalNode::GetLeafCount()
     {
     if (IsLeaf())
         return  1;
@@ -494,7 +496,7 @@ size_t DgnRangeTree::InternalNode::GetLeafCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnRangeTree::InternalNode::GetNodeCount()
+size_t Tree::InternalNode::GetNodeCount()
     {
     size_t count = 1;
     if (!IsLeaf())
@@ -507,7 +509,7 @@ size_t DgnRangeTree::InternalNode::GetNodeCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnRangeTree::InternalNode::GetElementCount()
+size_t Tree::InternalNode::GetElementCount()
     {
     DRTLeafNodeP leaf = ToLeaf();
     if (nullptr != leaf)
@@ -523,7 +525,7 @@ size_t DgnRangeTree::InternalNode::GetElementCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnRangeTree::InternalNode::GetMaxChildDepth()
+size_t Tree::InternalNode::GetMaxChildDepth()
     {
     if (IsLeaf())
         return  1;
@@ -539,25 +541,24 @@ size_t DgnRangeTree::InternalNode::GetMaxChildDepth()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match DgnRangeTree::InternalNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
+Tree::Traverser::Stop Tree::InternalNode::Traverse(Tree::Traverser& traverser, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            DgnRangeTree::Match status = (*curr)->Traverse(traverser, is3d);
-            if (DgnRangeTree::Match::Ok != status)
-                return  status;
+            if (Tree::Traverser::Stop::Yes == (*curr)->Traverse(traverser, is3d))
+                return  Tree::Traverser::Stop::Yes;
             }
         }
 
-    return  DgnRangeTree::Match::Ok;
+    return  Tree::Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::LeafNode::AddElementToLeaf(Entry const& entry, DgnRangeTreeR root)
+void Tree::LeafNode::AddElementToLeaf(Entry const& entry, TreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
@@ -571,11 +572,11 @@ void DgnRangeTree::LeafNode::AddElementToLeaf(Entry const& entry, DgnRangeTreeR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnRangeTree::LeafNode::DropElementFromLeaf(Entry const& entry, DgnRangeTreeR root)
+bool Tree::LeafNode::DropElementFromLeaf(Entry const& entry, TreeR root)
     {
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
-        if (curr->m_geom != entry.m_geom)
+        if (curr->m_key != entry.m_key)
             continue;
 
         if (curr+1 < m_endChild)
@@ -611,7 +612,7 @@ bool DgnRangeTree::LeafNode::DropElementFromLeaf(Entry const& entry, DgnRangeTre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
+void Tree::LeafNode::SplitLeafNode(TreeR root)
     {
     size_t  count = GetEntryCount();
     DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
@@ -621,7 +622,7 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
 
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
-        currEntry->m_entry = (void*) curr->m_geom;
+        currEntry->m_id = curr->m_key;
         currEntry->m_range = curr->m_range;
         }
 
@@ -644,9 +645,9 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddElementToLeaf(Entry(currEntry->m_range, *(GeometrySourceCP)currEntry->m_entry), root);
+            newNode1->AddElementToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
         else
-            newNode2->AddElementToLeaf(Entry(currEntry->m_range, *(GeometrySourceCP)currEntry->m_entry), root);
+            newNode2->AddElementToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
         }
 
     // if parent is nullptr, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -667,25 +668,24 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match DgnRangeTree::LeafNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
+Tree::Traverser::Stop Tree::LeafNode::Traverse(Tree::Traverser& traverser, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_geom, curr->m_range);
-            if (DgnRangeTree::Match::Ok != stat)
-                return  stat;
+            if (Tree::Traverser::Stop::Yes == traverser._VisitRangeTreeElem(curr->m_key, curr->m_range))
+                return Tree::Traverser::Stop::Yes;
             }
         }
 
-    return  DgnRangeTree::Match::Ok;
+    return Tree::Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::DgnRangeTree(bool is3d, size_t leafSize)
+Tree::Tree(bool is3d, size_t leafSize)
     {
     m_root = nullptr;
     m_internalNodeSize = m_leafNodeSize = 0;
@@ -701,7 +701,7 @@ DgnRangeTree::DgnRangeTree(bool is3d, size_t leafSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
+void Tree::LoadTree(DgnModelCR dgnModel)
     {
     BeAssert(nullptr == m_root);
     BeAssert(0 != m_internalNodeSize);
@@ -712,14 +712,14 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         {
         GeometrySourceCP geom = element.second->ToGeometrySource();
         if (nullptr != geom)
-            AddElement(Entry(geom->CalculateRange3d(), *geom));
+            AddElement(Entry(geom->CalculateRange3d(), element.second->GetElementId()));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::AddElement(Entry const& entry)
+void Tree::AddElement(Entry const& entry)
     {
     if (!rangeIsValid(entry.m_range, m_is3d))
         return;
@@ -737,7 +737,7 @@ void DgnRangeTree::AddElement(Entry const& entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnRangeTree::RemoveElement(Entry const& entry)
+StatusInt Tree::RemoveElement(Entry const& entry)
     {
     if (nullptr == m_root)
         return ERROR;
@@ -753,20 +753,20 @@ StatusInt DgnRangeTree::RemoveElement(Entry const& entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
+void Tree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
     {
     m_internalNodeSize = internalNodeSize;
     m_leafNodeSize = leafNodeSize;
 
-    m_leafNodes.SetEntrySize(sizeof(DgnRangeTree::LeafNode) + ((int) leafNodeSize*sizeof(Entry)), 1);
-    m_internalNodes.SetEntrySize(sizeof(DgnRangeTree::InternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
+    m_leafNodes.SetEntrySize(sizeof(Tree::LeafNode) + ((int) leafNodeSize*sizeof(Entry)), 1);
+    m_internalNodes.SetEntrySize(sizeof(Tree::InternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser)
+Tree::Traverser::Stop Tree::Traverse(Tree::Traverser& traverser)
     {
-    return (nullptr == m_root) ? DgnRangeTree::Match::Ok : m_root->Traverse(traverser, Is3d());
+    return (nullptr == m_root) ? Tree::Traverser::Stop::No : m_root->Traverse(traverser, Is3d());
     }
 

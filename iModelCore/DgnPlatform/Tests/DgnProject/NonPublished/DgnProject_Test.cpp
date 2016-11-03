@@ -306,6 +306,7 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, GetCoordinateSystemProperties)
     {
+#ifdef WIP_NO_PRE_PUBLISHED_FILES
     SetupWithPrePublishedFile(L"GeoCoordinateSystem.i.ibim", L"GetCoordinateSystemProperties.ibim", BeSQLite::Db::OpenMode::Readonly);
     DgnGCS* dgnGCS = m_db->Units().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
@@ -318,6 +319,7 @@ TEST_F(DgnDbTest, GetCoordinateSystemProperties)
     EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
     double const longitudeExpected = -71.0806;
     EXPECT_TRUE(fabs(longitudeExpected - gorigin.longitude) < eps)<<"Expected diffrent longitude ";
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -663,51 +665,6 @@ TEST(DgnProject, DuplicateElementId)
     //     ASSERT_TRUE(secondAddId.IsValid());
     //     ASSERT_TRUE(secondAddId > firstAddId);
     //     }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad Hassan                         12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
-    {
-    // *** WIP_TEST_DEPENDs_ON_CONVERTER - move this to DgnV8ConverterTests
-    std::vector<Utf8String> dgndbFiles;
-    dgndbFiles.push_back("79_Main.i.ibim");
-    dgndbFiles.push_back("04_Plant.i.ibim");
-    dgndbFiles.push_back("BGRSubset.i.ibim");
-    dgndbFiles.push_back("fonts.dgn.i.ibim");
-    dgndbFiles.push_back("2dMetricGeneral.ibim");
-    dgndbFiles.push_back("3dMetricGeneral.ibim");
-
-    BeFileName dgndbFilesPath;
-    BeTest::GetHost().GetDocumentsRoot(dgndbFilesPath);
-    dgndbFilesPath.AppendToPath(L"DgnDb");
-
-    DbResult status;
-    DgnDbPtr dgnProj;
-
-    for (auto dgndbFileName : dgndbFiles)
-        {
-        BeFileName filePath = dgndbFilesPath;
-        filePath.AppendToPath((BeFileName) dgndbFileName);
-
-        dgnProj = DgnDb::OpenDgnDb(&status, filePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, status) << status;
-
-        Statement statement;
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
-        while (statement.Step() == BE_SQLITE_ROW)
-            {
-            //printf ("\n Schema : %s ,     View Name : %s   \n", statement.GetValueText (0), statement.GetValueText (1));
-            Statement stmt;
-            Utf8String sql;
-            sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
-            ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(*dgnProj, sql.c_str())) << "Prepare failed : " << sql.c_str() << " in DgnDb : " << dgndbFileName.c_str();
-            }
-        statement.Finalize();
-
-        dgnProj->CloseDb();
-        }
     }
 
 /*=================================================================================**//**

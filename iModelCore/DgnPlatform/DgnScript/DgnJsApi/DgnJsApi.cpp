@@ -360,6 +360,18 @@ JsDgnModelP JsDgnElement::GetModel()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/16
+//---------------------------------------------------------------------------------------
+JsDgnModelP JsDgnElement::GetSubModel() 
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    auto subModel = m_el->GetSubModel();
+    if (!subModel.IsValid())
+        return nullptr;
+    return new JsDgnModel(*subModel);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
 JsECClassP JsDgnElement::GetElementClass() 
@@ -465,11 +477,32 @@ JsDgnElementP JsDgnElements::GetElement(JsDgnObjectIdP id) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/16
+//---------------------------------------------------------------------------------------
+JsDgnCode* JsDgnCode::FromJson(JsDgnDbP jsdb, Utf8StringCR jsonStr)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(jsdb));
+    Json::Value json(Json::objectValue);
+    if (!Json::Reader::Parse(jsonStr, json))
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("Args", "json");
+        return nullptr;
+        }
+
+    auto db = jsdb->m_db;
+    auto a = db->Authorities().QueryAuthorityId(json["AuthorityId"].asCString());
+    auto v = json["Value"].asCString();
+    auto n = json["Namespace"].asCString();
+    return new JsDgnCode(DgnCode(a, v, n));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsDgnObjectIdP JsDgnElements::QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace) const
+JsDgnObjectIdP JsDgnElements::QueryElementIdByCode(JsDgnCodeP jscode) const
     {
-    DgnElementId id = m_elements.QueryElementIdByCode(codeAuthorityName.c_str(), codeValue, nameSpace);
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(jscode));
+    DgnElementId id = m_elements.QueryElementIdByCode(jscode->m_code);
     return id.IsValid()? new JsDgnObjectId(id.GetValue()): nullptr;
     }
 
@@ -723,7 +756,7 @@ void JsPreparedECSqlStatement::BindDRange3d(int parameterIndex, JsDRange3dP valu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void JsPreparedECSqlStatement::BindDPoint3d(int parameterIndex, JsDPoint3dP value) 
+void JsPreparedECSqlStatement::BindPoint3d(int parameterIndex, JsDPoint3dP value) 
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(nullptr != value);
     CHECK_BIND_RESULT(m_stmt->BindPoint3d(parameterIndex, value->GetCR()));

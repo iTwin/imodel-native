@@ -21,9 +21,6 @@ UnitIterator.GetName                                    # fails randomonly on 06
 
 ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
-#TFS 492144
-DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild
-
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
@@ -133,4 +130,5 @@ RealityDataThreadPool.SpawnsThreads
 CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 
 TextAnnotationTest.BasicCrud2d # WIP_VIEW_DEFINITION
+TextAnnotationTest.BasicCrud3d # After merge
 

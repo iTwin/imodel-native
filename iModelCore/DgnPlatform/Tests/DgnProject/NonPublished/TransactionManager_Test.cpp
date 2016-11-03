@@ -47,20 +47,10 @@ public:
     TransactionManagerTests() { }
     ~TransactionManagerTests();
     void TwiddleTime(DgnElementCPtr);
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
 };
 
 END_UNNAMED_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
-    {
-    T_Super::SetupWithPrePublishedFile(projFile,testFile,mode, true, false);
-    ASSERT_TRUE(m_db->IsBriefcase());
-    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
-    }
+
 /*---------------------------------------------------------------------------------**//**
 * set up method that opens an existing .bim project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
@@ -134,26 +124,6 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
     DgnElementPtr mod = el->CopyForEdit();
     mod->Update();
     }
-
-
-/*---------------------------------------------------------------------------------**//**
-* Test of StreetMapModel
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-// Wait for some other free map tile server
-//TEST_F(TransactionManagerTests, StreetMapModel)
-//    {
-//    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_StreetMapModel.ibim", Db::OpenMode::ReadWrite);
-//
-//    auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
-//    ASSERT_TRUE( newModelId.IsValid() );
-//
-//    DgnModelPtr model = m_db->Models().GetModel(newModelId);
-//    ASSERT_TRUE(model.IsValid());
-//
-//    WebMercatorModel* webmercatormodel = dynamic_cast<WebMercatorModel*>(model.get());
-//    ASSERT_NE( nullptr , webmercatormodel );
-//    }
 
 /*---------------------------------------------------------------------------------**//**
 * Test of Element CRUD

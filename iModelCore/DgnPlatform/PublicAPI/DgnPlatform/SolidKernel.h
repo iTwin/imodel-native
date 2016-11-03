@@ -10,7 +10,9 @@
 
 #include "Render.h"
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 class TopoDS_Shape;
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -65,18 +67,16 @@ virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
 virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
-//typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
-
 //=======================================================================================
-//! ISolidKernelEntity represents a boundary representation body (BRep). A BRep is
+//! IBRepEntity represents a boundary representation body (BRep). A BRep is
 //! defined by it's topology and geometry. The geometry is the surfaces, curves, and points.
 //! The topology is the faces, edges, and vertices that describe how the geometry is connected.
-//! The ISolidKernelEntity is used to provide solid modeling functionality such as booleans,
+//! The IBRepEntity is used to provide solid modeling functionality such as booleans,
 //! blending, and hollowing. Typically only solids and non-planar sheet bodies are persisted
 //! as BRep elements. A wire body or planar sheet body can be efficiently represented as
 //! a CurveVector.
 //=======================================================================================
-struct ISolidKernelEntity : BentleyApi::IRefCounted
+struct IBRepEntity : BentleyApi::IRefCounted
 {
 public:
 
@@ -85,14 +85,13 @@ enum class EntityType
     Solid    = 0, //!< Body consisting of at least one solid region.
     Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
     Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
-    Minimal  = 3, //!< Body consisting of a single vertex.
-    Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
+    Invalid  = 3, //!< Body no longer valid (ex. extracted or consumed by operation).
     };
 
 protected:
 
 //! @private
-virtual bool _IsEqual(ISolidKernelEntityCR) const = 0;
+virtual bool _IsEqual(IBRepEntityCR) const = 0;
 //! @private
 virtual EntityType _GetEntityType() const = 0;
 //! @private
@@ -106,13 +105,13 @@ virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
 virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP) = 0;
 //! @private
-virtual ISolidKernelEntityPtr _Clone() const = 0;
+virtual IBRepEntityPtr _Clone() const = 0;
 
 public:
 
 //! Compare entities to see if they refer to the same body.
 //! @return true if entities are equal.
-bool IsEqual (ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
+bool IsEqual (IBRepEntityCR entity) const {return _IsEqual(entity);}
 
 //! Get the body type for this entity.
 //! @return The solid kernel entity type.
@@ -148,12 +147,10 @@ IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMa
 //! Initialize per-face color/material using the supplied GeometryParams or clear if nullptr.
 bool InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
-//! Create deep copy of this ISolidKernelEntity.
-ISolidKernelEntityPtr Clone() const {return _Clone();}
+//! Create deep copy of this IBRepEntity.
+IBRepEntityPtr Clone() const {return _Clone();}
 
-}; // ISolidKernelEntity
-
-//typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
+}; // IBRepEntity
 
 //=======================================================================================
 //! ISubEntity represents a topological entity that can refer to a
@@ -210,17 +207,106 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 
 }; // ISubEntity
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)    
 //=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so
-//! that the entire set of Open CASCADE includes isn't required for the published api.
+//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
+//! that the entire set of solid kernel includes isn't required for the published api.
 //=======================================================================================
 struct SolidKernelUtil
 {
-DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
-DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
-DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(ISolidKernelEntityCR);
-};
+DGNPLATFORM_EXPORT static IBRepEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
+DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(IBRepEntityCR);
+DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
+}; // SolidKernelUtil
+#endif
+
+//=======================================================================================
+//! BRepUtil provides support for the creation, querying, and modification of BReps.
+//! Coordinates and distances are always supplied and returned in uors. Operations between 
+//! entities such as BRepUtil::Modify::BooleanUnion will automatically take the 
+//! individual target and tool entity transforms into account.
+//! @bsiclass                                                   Brien.Bastings  07/12
+//=======================================================================================
+struct BRepUtil
+{
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+
+DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
+
+DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
+DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
+
+//! Support for the creation of new bodies from other types of geometry.
+struct Create
+    {
+    //! Create a new wire or planar sheet body from a CurveVector that represents an open path, closed path, region with holes, or union region.
+    //! @param[out] out The new body.
+    //! @param[in] curve The curve vector to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @note The CurvePrimitives that define an open path or closed loop are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector (IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 1L);
+    
+    //! Create a new sheet or solid body from an ISolidPrimitive.
+    //! @param[out] out The new body.
+    //! @param[in] primitive The surface or solid to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive (IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 1L);
+    
+    //! Create a new sheet body from a MSBsplineSurface.
+    //! @param[out] out The new body.
+    //! @param[in] surface The surface to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface (IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 1L);
+
+    //! Create a new sheet or solid body from a Polyface.
+    //! @param[out] out The new body.
+    //! @param[in] meshData The surface or solid to create a body from.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface (IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 1L);
+    };
+
+//! Support for modification of bodies.
+struct Modify
+    {
+    //! Modify the target body by intersecting with one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools A list of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanIntersect (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Modify the target body by subtracting one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanSubtract (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Modify the target body by uniting with one or more tool bodies.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
+    //! @param[in] nTools Count of tool bodies.
+    //! @return SUCCESS if boolean operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanUnion (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+
+    //! Sew the given set of sheet bodies together by joining those that share edges in common.
+    //! @param[out] sewn The new bodies produced by sewing.
+    //! @param[out] unsewn The bodies that were not able to be sewn.
+    //! @param[in,out] tools The array of sheet bodies. (invalidated after sew).
+    //! @param[in] nTools Count of tool bodies.
+    //! @param[in] gapWidthBound Defines a limit on the width of the gap between sheet body edges that will be allowed to remain.
+    //! @param[in] nIterations To request repeated sew attempts that automatically increase gap up to limit set by gapWidthBound.
+    //! @return SUCCESS if some bodies were able to be sewn together.
+    DGNPLATFORM_EXPORT static BentleyStatus SewBodies (bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
+    };
+
+}; // BRepUtil
 
 END_BENTLEY_DGN_NAMESPACE

@@ -357,11 +357,11 @@ public:
     virtual double      _GetLengthForTexture    () const           {return _GetLength();}
     virtual void        _PostProcessLoad        () { return; }
     virtual void        _ClearPostProcess       () { return; }
-    virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
+    virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP, int nPts, bool isClosed) const override;
+    virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbCR, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
                                                     double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbCR lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
@@ -1242,7 +1242,20 @@ struct          TextureDescr
     double m_textureWidth;
     };
 
-typedef bmap<uint32_t, TextureDescr> WeightToTexture_t;
+struct TextureParams
+    {
+private:
+    uint32_t    m_lineWeight;
+    uint32_t    m_flags;
+    double      m_scale;
+    double      m_styleWidth;  //  don't allow both end and start for texture.
+public:
+    bool operator< (struct TextureParams const&rhs) const;    
+    TextureParams();
+    TextureParams(uint32_t lineWeight, uint32_t flags, double scale, double styleWidth);
+    };
+
+typedef bmap<TextureParams, TextureDescr> ParamsToTexture_t;
 //=======================================================================================
 //! Represents the definition of a line style.
 //!  @ingroup LineStyleManagerModule
@@ -1273,12 +1286,12 @@ private:
     mutable bool        m_firstTextureInitialized;
     mutable bool        m_texturesNotSupported;
     mutable bool        m_usesSymbolWeight;   //  if m_usesSymbolWeight is true, only use m_textures[0]
-    WeightToTexture_t   m_textures;
+    ParamsToTexture_t   m_textures;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, double scaleWithoutUnits, uint32_t);
+    StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
     StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, uint32_t);
     LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
@@ -1312,7 +1325,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnitDef, uint32_t weight);
+    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, uint32_t weight);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
@@ -1584,12 +1597,10 @@ private:
     Utf8String m_data;
 
     static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_LineStyle); }
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;

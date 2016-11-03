@@ -544,7 +544,7 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetModel::_OnInsert()
     {
-    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
+    if (!GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
         {
         BeAssert(false && "A SheetModel should be modeling a Sheet element");
         return DgnDbStatus::BadElement;
@@ -556,7 +556,7 @@ DgnDbStatus SheetModel::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr SheetModel::Create(SheetCR sheet, DPoint2dCR sheetSize)
+SheetModelPtr SheetModel::Create(SheetCR sheet)
     {
     DgnDbR db = sheet.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
@@ -575,9 +575,7 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DPoint2dCR sheetSize)
         return nullptr;
         }
 
-    SheetModelPtr sheetModel = dynamic_cast<SheetModelP>(model.get());
-    sheetModel->m_size = sheetSize;
-    return sheetModel;
+    return dynamic_cast<SheetModelP>(model.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,12 +639,16 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
     {
+    if (forInsert == ForInsert::Yes)
+        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
+
+
     if (!m_modeledElementId.IsValid())
         {
         BeAssert(false);
-        return DgnDbStatus::BadElement;
+        return ;
         }
 
     statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
@@ -662,25 +664,6 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
         }
     else
         statement.BindNull(statement.GetParameterIndex(MODEL_PROP_Properties));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_BindInsertParams(ECSqlStatement& statement)
-    {
-    statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    return BindInsertAndUpdateParams(statement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -696,9 +679,7 @@ DgnDbStatus DgnModel::Update()
     if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
-    status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success != status)
-        return status;
+    _BindWriteParams(*stmt, ForInsert::No);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_DONE != result)
@@ -746,7 +727,7 @@ void GeometricModel::AllocateRangeIndex() const
     {
     if (nullptr == m_rangeIndex)
         {
-        m_rangeIndex = new DgnRangeTree(Is3d(), 20);
+        m_rangeIndex = new RangeIndex::Tree(Is3d(), 20);
         m_rangeIndex->LoadTree(*this);
         }
     }
@@ -782,7 +763,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
+        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(geom->CalculateRange3d(), element.GetElementId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -807,11 +788,12 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (origBox.IsEqual(newBox)) // many changes don't affect range
         return;
 
+    auto id = original.GetElementId();
     if (origBox.IsValid())
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(origBox, *origGeom));
+        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(origBox, id));
 
     if (newBox.IsValid())
-        m_rangeIndex->AddElement(DgnRangeTree::Entry(newBox, *origGeom));  // origGeom has the address that will be used after update completes
+        m_rangeIndex->AddElement(RangeIndex::Tree::Entry(newBox, id));  // origGeom has the address that will be used after update completes
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -947,7 +929,7 @@ void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTreeP GeometricModel::_GetRangeIndexP(bool create) const
+RangeIndex::TreeP GeometricModel::_GetRangeIndexP(bool create) const
     {
     if (nullptr == m_rangeIndex && create)
         AllocateRangeIndex();
@@ -1197,12 +1179,7 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::WriteError;
         }
     
-    status = _BindInsertParams(*stmt);
-    if (DgnDbStatus::Success != status)
-        {
-        m_modelId = DgnModelId();
-        return status;
-        }
+    _BindWriteParams(*stmt, ForInsert::Yes);
         
     DbResult stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
@@ -1480,15 +1457,6 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(SHEET_MODEL_PROP_SheetSize, ECSqlClassParams::StatementType::All);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1631,57 +1599,6 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
-    {
-    statement.BindPoint2d(statement.GetParameterIndex(SHEET_MODEL_PROP_SheetSize), m_size);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_BindInsertParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
-    {
-    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_size = statement.GetValuePoint2d(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SheetModel::_InitFrom(DgnModelCR other)
-    {
-    T_Super::_InitFrom(other);
-    SheetModelCP otherModel = other.ToSheetModel();
-    if (nullptr != otherModel)
-        m_size = otherModel->m_size;
     }
 
 /*---------------------------------------------------------------------------------**//**

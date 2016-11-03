@@ -8,9 +8,9 @@
 #include "Command.h"
 #include "BimConsole.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -24,15 +24,15 @@ Utf8String ECSqlCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::_Run(Session& session, vector<Utf8String> const& args) const
+void ECSqlCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
     {
     if (!session.IsFileLoaded(true))
         return;
 
     //for ECSQL command the arg vector contains a single arg which contains the original command line.
-    Utf8CP ecsql = args[0].c_str();
+    Utf8StringCR ecsql = args[0];
     ECSqlStatement stmt;
-    ECSqlStatus status = stmt.Prepare(session.GetFile().GetHandle(), ecsql);
+    ECSqlStatus status = stmt.Prepare(session.GetFile().GetHandle(), ecsql.c_str());
     if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
@@ -43,9 +43,9 @@ void ECSqlCommand::_Run(Session& session, vector<Utf8String> const& args) const
         return;
         }
 
-    if (strnicmp(ecsql, "SELECT", 6) == 0)
+    if (ecsql.StartsWithIAscii("select"))
         ExecuteSelect(session, stmt);
-    else if (strnicmp(ecsql, "INSERT INTO", 11) == 0)
+    else if (ecsql.StartsWithIAscii("insert into"))
         ExecuteInsert(session, stmt);
     else
         ExecuteUpdateOrDelete(session, stmt);
@@ -57,41 +57,66 @@ void ECSqlCommand::_Run(Session& session, vector<Utf8String> const& args) const
 void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) const
     {
     const int columnCount = statement.GetColumnCount();
+    bvector<int> columnSizes;
+    Utf8String header;
     for (int i = 0; i < columnCount; i++)
         {
-        auto const& columnInfo = statement.GetColumnInfo(i);
-        auto prop = columnInfo.GetProperty();
-        Utf8String propName(prop->GetDisplayLabel());
-        Console::Write("%s\t", propName.c_str());
+        ECSqlColumnInfo const& columnInfo = statement.GetColumnInfo(i);
+        const int columnSize = ComputeColumnSize(columnInfo);
+        columnSizes.push_back(columnSize);
+        
+        Utf8String formatString;
+        formatString.Sprintf("%%-%ds", columnSize);
+        Utf8String columnHeader;
+        columnHeader.Sprintf(formatString.c_str(), columnInfo.GetProperty()->GetDisplayLabel().c_str());
+        header.append(columnHeader);
+
+        if (i < columnCount - 1)
+            header.append("|");
         }
 
-    Console::WriteLine();
-    Console::WriteLine("-------------------------------------------------------------");
+    Console::WriteLine(header.c_str());
+    Utf8String line(header.size(), '-');
+    Console::WriteLine(line.c_str());
 
     while (BE_SQLITE_ROW == statement.Step())
         {
-        Utf8String out;
+        Utf8String rowString;
         for (int i = 0; i < columnCount; i++)
             {
             IECSqlValue const& value = statement.GetValue(i);
-            auto prop = value.GetColumnInfo().GetProperty();
+            ECPropertyCP prop = value.GetColumnInfo().GetProperty();
+
+            Utf8String cellValue;
             if (prop->GetIsPrimitive())
-                out += PrimitiveToString(value) + "\t";
+                cellValue = PrimitiveToString(value);
             else if (prop->GetIsStruct())
-                out += StructToString(value) + "\t";
+                cellValue = StructToString(value);
             else if (prop->GetIsArray())
-                out += ArrayToString(value, prop) + "\t";
+                cellValue = ArrayToString(value, prop);
             else if (prop->GetIsNavigation())
                 {
                 ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
                 if (!navProp->IsMultiple())
-                    out += PrimitiveToString(value) + "\t";
+                    cellValue = PrimitiveToString(value);
                 else
-                    out += ArrayToString(value, prop) + "\t";
+                    cellValue = ArrayToString(value, prop);
                 }
+
+            const int columnSize = columnSizes[(size_t) i];
+
+            Utf8String formatString;
+            formatString.Sprintf("%%-%ds", columnSize);
+
+            Utf8String formattedCellValue;
+            formattedCellValue.Sprintf(formatString.c_str(), cellValue.c_str());
+            rowString.append(formattedCellValue);
+
+            if (i < columnCount - 1)
+                rowString.append("|");
             }
 
-        Console::WriteLine(out.c_str());
+        Console::WriteLine(rowString.c_str());
         }
     }
 
@@ -128,6 +153,71 @@ void ECSqlCommand::ExecuteUpdateOrDelete(Session& session, ECSqlStatement& state
 
         return;
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    11/2016
+//---------------------------------------------------------------------------------------
+//static
+int ECSqlCommand::ComputeColumnSize(ECSqlColumnInfo const& colInfo)
+    {
+    const int defaultSize = 20;
+    if (colInfo.GetDataType().IsPrimitive())
+        {
+        switch (colInfo.GetDataType().GetPrimitiveType())
+            {
+                case PRIMITIVETYPE_Binary:
+                    //Output: "BINARY[%d bytes]"
+                    return 14 + std::numeric_limits<int>::digits10;
+
+                case PRIMITIVETYPE_Boolean:
+                    //Output: "True" or "False"
+                    return 5;
+
+                case PRIMITIVETYPE_DateTime:
+                {
+                //Output: ISO string representation of a DateTime
+                DateTimeInfo dtInfoCA;
+                if (ECObjectsStatus::Success != StandardCustomAttributeHelper::GetDateTimeInfo(dtInfoCA, *colInfo.GetProperty()))
+                    return defaultSize;
+
+                DateTime::Info dtInfo = dtInfoCA.GetInfo(false);
+                if (!dtInfoCA.IsComponentNull() && dtInfo.GetComponent() == DateTime::Component::Date)
+                    //Just the date string, e.g "2016-11-02"
+                    return 10;
+
+                if (!dtInfoCA.IsKindNull() && dtInfo.GetKind() == DateTime::Kind::Utc)
+                    //ISO date time string with trailing Z for UTC: e.g. "2016-11-02T17:39:01.438Z"
+                    return 24;
+
+                //ISO date time string without trailing Z: e.g. "2016-11-02T17:39:01.438"
+                return 23;
+                }
+
+                case PRIMITIVETYPE_Double:
+                    return std::numeric_limits<double>::max_digits10;
+
+                case PRIMITIVETYPE_IGeometry:
+                    //Output: Type name of top-level geometry types
+                    return 14;
+
+                case PRIMITIVETYPE_Integer:
+                    return std::numeric_limits<int32_t>::digits10;
+                case PRIMITIVETYPE_Long:
+                    return std::numeric_limits<int64_t>::digits10;
+                case PRIMITIVETYPE_Point2d:
+                    //Output: "(x,y)"
+                    return 2 * std::numeric_limits<double>::max_digits10 + 3;
+                case PRIMITIVETYPE_Point3d:
+                    //Output: "(x,y,z)"
+                    return 3 * std::numeric_limits<double>::max_digits10 + 4;
+                default:
+                    return defaultSize;
+            }
+        }
+
+    //for struct and arrays we don't anticipate a column size
+    return defaultSize;
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,13 +269,13 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             case ECN::PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d = value.GetPoint2d();
-            out.Sprintf("(%2.1f, %2.1f)", point2d.x, point2d.y);
+            out.Sprintf("(%.1f,%.1f)", point2d.x, point2d.y);
             break;
             }
             case ECN::PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d = value.GetPoint3d();
-            out.Sprintf("(%2.1f, %2.1f, %2.1f)", point3d.x, point3d.y, point3d.z);
+            out.Sprintf("(%.1f,%.1f,%.1f)", point3d.x, point3d.y, point3d.z);
             break;
             }
             case ECN::PRIMITIVETYPE_String:
@@ -238,8 +328,7 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
 //static
 Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value)
     {
-    Utf8String out;
-    auto primitiveType = value.GetColumnInfo().GetDataType().GetPrimitiveType();
+    const PrimitiveType primitiveType = value.GetColumnInfo().GetDataType().GetPrimitiveType();
     return PrimitiveToString(value, primitiveType);
     }
 
@@ -257,9 +346,8 @@ Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value, ECN::ECProperty
         if (!isFirstRow)
             out.append(", ");
 
-        auto arrayProperty = property->GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ECN::ArrayKind::ARRAYKIND_Primitive)
-            out.append(PrimitiveToString(*arrayElementValue, arrayProperty->GetPrimitiveElementType()));
+        if (property->GetIsPrimitiveArray())
+            out.append(PrimitiveToString(*arrayElementValue, property->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()));
         else
             out.append(StructToString(*arrayElementValue));
 

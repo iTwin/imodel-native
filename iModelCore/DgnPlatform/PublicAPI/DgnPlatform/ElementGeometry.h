@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
-//! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
+//! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, IBRepEntity.
 //! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometricPrimitive : RefCountedBase
@@ -33,7 +33,7 @@ public:
         SolidPrimitive      = 3,
         BsplineSurface      = 4,
         Polyface            = 5,
-        SolidKernelEntity   = 6,
+        BRepEntity          = 6,
         TextString          = 7,
     };
 
@@ -46,7 +46,7 @@ protected:
     GeometricPrimitive(ISolidPrimitivePtr const& source);
     GeometricPrimitive(MSBsplineSurfacePtr const& source);
     GeometricPrimitive(PolyfaceHeaderPtr const& source);
-    GeometricPrimitive(ISolidKernelEntityPtr const& source);
+    GeometricPrimitive(IBRepEntityPtr const& source);
     GeometricPrimitive(TextStringPtr const& source);
 
 public:
@@ -62,14 +62,14 @@ public:
     DGNPLATFORM_EXPORT bool IsWire() const;
 
     // Return the type of solid kernel entity that would be used to represent this geometry.
-    DGNPLATFORM_EXPORT ISolidKernelEntity::EntityType GetBRepEntityType() const;
+    DGNPLATFORM_EXPORT IBRepEntity::EntityType GetBRepEntityType() const;
 
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetAsICurvePrimitive() const;
     DGNPLATFORM_EXPORT CurveVectorPtr GetAsCurveVector() const;
     DGNPLATFORM_EXPORT ISolidPrimitivePtr GetAsISolidPrimitive() const;
     DGNPLATFORM_EXPORT MSBsplineSurfacePtr GetAsMSBsplineSurface() const;
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetAsPolyfaceHeader() const;
-    DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity() const;
+    DGNPLATFORM_EXPORT IBRepEntityPtr GetAsIBRepEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
 
     DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const;
@@ -85,7 +85,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitiveCR source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfaceCR source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidKernelEntityCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityCR source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);
 
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);
@@ -93,7 +93,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitivePtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfacePtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidKernelEntityPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityPtr const& source);
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);
 
 }; // GeometricPrimitive
@@ -137,8 +137,10 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(GeometricPrimitiveCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
 
-    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(IBRepEntityCR) const;
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
+#endif
 };
 
 //=======================================================================================
@@ -168,6 +170,9 @@ struct GeometryStreamIO
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
+        ParasolidBRep           = 25,   //!< Parasolid body
+        BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
+        BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 
     };
 
     //=======================================================================================
@@ -223,7 +228,7 @@ struct GeometryStreamIO
         void Append(PolyfaceQueryCR, OpCode opCode = OpCode::Polyface);
         void Append(ISolidPrimitiveCR);
         void Append(MSBsplineSurfaceCR);
-        void Append(ISolidKernelEntityCR);
+        void Append(IBRepEntityCR);
         void Append(GeometricPrimitiveCR);
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
@@ -251,7 +256,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, CurveVectorPtr&) const;
         bool Get(Operation const&, ISolidPrimitivePtr&) const;
         bool Get(Operation const&, MSBsplineSurfacePtr&) const;
-        bool Get(Operation const&, ISolidKernelEntityPtr&) const;
+        bool Get(Operation const&, IBRepEntityPtr&) const;
         bool Get(Operation const&, GeometricPrimitivePtr&) const;
         bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
@@ -353,7 +358,7 @@ struct GeometryCollection
             SolidPrimitive      = 4,  //!< ISolidPrimitive
             BsplineSurface      = 5,  //!< MSBSplineSurface
             Polyface            = 6,  //!< Polyface
-            SolidKernelEntity   = 7,  //!< SolidKernelEntity
+            BRepEntity   = 7,  //!< BRepEntity
             TextString          = 8,  //!< TextString
         };
 
@@ -625,9 +630,9 @@ public:
     //! @note Only valid with 3d builder.
     DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, CoordSystem coord = CoordSystem::Local);
 
-    //! Append a ISolidKernelEntity to builder in either local or world coordinates.
+    //! Append a IBRepEntity to builder in either local or world coordinates.
     //! @note Only valid with 3d builder.
-    DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append (IBRepEntityCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a IGeometry to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append (IGeometryCR, CoordSystem coord = CoordSystem::Local);

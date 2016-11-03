@@ -103,7 +103,7 @@ Json::Value ViewFlags::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
-    GetViewDefinitionR().GetCategorySelectorR().ChangeCategoryDisplay(categoryId, onOff);
+    GetViewDefinition().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
     _OnCategoryChange(onOff);
     }
 
@@ -172,7 +172,7 @@ AxisAlignedBox3d ViewController2d::_GetViewedExtents(DgnViewportCR vp) const
     {
     GeometricModelP target = GetViewedModel();
     if (target && target->GetRangeIndexP(false))
-        return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
+        return AxisAlignedBox3d(target->GetRangeIndexP(false)->GetExtents()->ToRange3d());
 
     return AxisAlignedBox3d();
     }
@@ -599,7 +599,7 @@ void CameraViewDefinition::_OnTransform(TransformCR trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::TransformBy(TransformCR trans)
     {
-    GetSpatialViewDefinitionR()._OnTransform(trans);
+    GetSpatialViewDefinition()._OnTransform(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1701,7 +1701,12 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController2d::_DrawView(ViewContextR context)
     {
-    context.VisitDgnModel(GetViewedModel());
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return;
+    if (!model->IsFilled())
+        model->FillModel();
+    context.VisitDgnModel(model);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1722,4 +1727,55 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingViewController::DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
 SheetViewController::SheetViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetViewController::_DrawView(ViewContextR context)
+    {
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return;
+    if (!model->IsFilled())
+        model->FillModel();
+
+    context.VisitDgnModel(model);
+
+    // Find and draw the view attachments.
+    // While we know that the model is filled, and therefore we could iterate it to find the attachments, we won't do that.
+    // Soon, we'll get rid of the concept of filling a model
+    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[View] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    attachments->BindId(1, model->GetModelId());
+    while (BE_SQLITE_ROW == attachments->Step())
+        {
+        auto attachmentId = attachments->GetValueId<DgnElementId>(0);
+        auto viewId = attachments->GetValueId<DgnViewId>(1);
+        auto view = ViewDefinition::QueryView(viewId, GetDgnDb());
+        if (view.IsNull())
+            continue;
+
+        // *** WIP_VIEW_ATTACHMENT - call GenerateThumbnail on view
+
+        // *** WIP_VIEW_ATTACHMENT - for now, just draw the box
+
+        auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachmentId);
+        if (!attachment.IsValid())
+            continue;
+
+        auto const& placement = attachment->GetPlacement();
+        auto x = placement.GetOrigin().x;
+        auto y = placement.GetOrigin().y;
+        auto const& box = placement.GetElementBox();
+        auto height = box.GetHeight();
+        auto width = box.GetWidth();
+        DPoint2d pts[4];
+        pts[0] = DPoint2d::From(x       , y);
+        pts[1] = DPoint2d::From(x+width , y);
+        pts[2] = DPoint2d::From(x+width , y+height);
+        pts[3] = DPoint2d::From(x       , y+height);
+        auto rot = placement.GetTransform();
+        rot.Multiply(pts, pts, _countof(pts));
+        context.DrawStyledLineString2d(_countof(pts), pts, 0, nullptr, true);
+        }
+    }
 

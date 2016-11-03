@@ -6,24 +6,19 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   Local Type Definitions                                              |
-|                                                                       |
-+----------------------------------------------------------------------*/
+
 struct Squetch
-    {
+{
     int32_t    pa, wa, pb, wb;
-    };
+};
 
 /* Squetch Modes */
 enum    SquetchMode
-    {
+{
     SAMESIZE        = 0,
     EXPAND          = 1,
     RGBCOMPRESS     = 2
-    };
-
+};
 
 #define SQ_ONE 512
 
@@ -33,7 +28,7 @@ typedef  bvector<Squetch> T_SquetchTable;
 * @bsiclass                                                     Ray.Bentley     10/2016
 +===============+===============+===============+===============+===============+======*/
 struct Resizer
-    {
+{
     Byte const*             m_input;
     ByteStream&             m_output;
     Point2d                 m_inSize;
@@ -194,8 +189,6 @@ int32_t*            outBuf          /* output Buffer */
         }
     }
 
-    
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -258,7 +251,6 @@ int ExpandRows (int32_t* inBufA, int32_t* inBufB, int32_t* outBuf)
     return (0);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -285,7 +277,6 @@ int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
         }
     return (0);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
@@ -388,5 +379,3 @@ Image Image::FromResizedImage (uint32_t targetWidth, uint32_t targetHeight, Imag
 
     return Image (targetWidth, targetHeight, std::move (outputImage), sourceImage.GetFormat());
     }
-
-

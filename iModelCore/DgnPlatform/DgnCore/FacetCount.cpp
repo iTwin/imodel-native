@@ -6,8 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 #include <GeomLib_IsPlanarSurface.hxx>
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 #define TRIANGLE_MULTIPLIER 2
 
@@ -343,7 +347,7 @@ size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
         case GeometricPrimitive::GeometryType::SolidPrimitive:      return GetFacetCount(*geom.GetAsISolidPrimitive());
         case GeometricPrimitive::GeometryType::BsplineSurface:      return GetFacetCount(*geom.GetAsMSBsplineSurface());
         case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
-        case GeometricPrimitive::GeometryType::SolidKernelEntity:   return GetFacetCount(*geom.GetAsISolidKernelEntity());
+        case GeometricPrimitive::GeometryType::BRepEntity:   return GetFacetCount(*geom.GetAsIBRepEntity());
         case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
         default:                                                    BeAssert(false); return 0;
         }
@@ -366,6 +370,7 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
     return options;
     }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -452,14 +457,85 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
+size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
     auto shape = SolidKernelUtil::GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity);
+
+    if (0 == entityTag)
+        return 0;
+
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faceTags))
+        return 0;
+
+    size_t facetCount = 0;
+
+    for (int iFace = 0; iFace < nFaces; iFace++)
+        {
+        PK_ENTITY_t faceTag = faceTags[iFace];
+
+        PK_SURF_t       surface;
+        PK_CLASS_t      surfaceClass;
+        PK_LOGICAL_t    orientation;
+
+        PK_FACE_ask_oriented_surf (faceTag, &surface, &orientation);
+        PK_ENTITY_ask_class (surface, &surfaceClass);
+        
+        switch (surfaceClass)
+            {
+            case PK_CLASS_plane:
+            case PK_CLASS_circle:
+            case PK_CLASS_ellipse:
+                {
+                CurveVectorPtr  curveVector;
+
+                if ((curveVector = PSolidGeom::PlanarFaceToCurveVector (faceTag)).IsValid())
+                    facetCount += GetFacetCount(*curveVector);
+                break;
+                }
+
+            case PK_CLASS_cyl:
+            case PK_CLASS_cone:
+            case PK_CLASS_torus:
+            case PK_CLASS_sphere:
+            case PK_CLASS_swept:
+                {
+                ISolidPrimitivePtr  solidPrimitive;
+
+                if ((solidPrimitive = PSolidGeom::FaceToSolidPrimitive (faceTag, nullptr)).IsValid())
+                    facetCount += GetFacetCount(*solidPrimitive);
+                break;
+                }
+
+            default:
+                {
+                MSBsplineSurfacePtr bSplineSurface = MSBsplineSurface::CreatePtr() ;
+
+                if (SUCCESS == PSolidGeom::CreateMSBsplineSurfaceFromSurface (*bSplineSurface, surface, nullptr, nullptr, nullptr, 0, 0, 1.0E-6, false))
+                    facetCount += GetFacetCount(*bSplineSurface);
+
+                break;
+                }
+            }
+        }
+
+    PK_MEMORY_free(faceTags);
+
+    return facetCount;
+#else
+    return 0;
+#endif
     }
 

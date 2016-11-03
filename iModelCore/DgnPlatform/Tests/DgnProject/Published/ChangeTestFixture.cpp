@@ -64,7 +64,6 @@ void ChangeTestFixture::_CreateDgnDb()
     BeFileName newName(TEST_NAME, true);
     newName.AppendString(L".ibim");
 
-    //SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
     SetupSeedProject();
     m_testDb = m_db;
     m_testFileName = BeFileName(m_db->GetDbFileName(),true);
@@ -196,14 +195,16 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    CategorySelector categories(*m_testDb,"");
+    auto categories = new CategorySelector(*m_testDb,"");
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        categories.AddCategory(catId);
+        categories->AddCategory(catId);
 
-    DisplayStyle3d style(*m_testDb,"");
-    style.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
+    auto style = new DisplayStyle3d(*m_testDb,"");
+    auto flags = style->GetViewFlags();
+    flags.SetRenderMode(Render::RenderMode::SmoothShade);
+    style->SetViewFlags(flags);
 
-    ModelSelector models(*m_testDb,"");
+    auto models = new ModelSelector(*m_testDb,"");
     DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
     for (auto& entry : modIter)
         {
@@ -211,10 +212,10 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
         auto model = m_testDb->Models().GetModel(id);
 
         if (model.IsValid() && model->IsSpatialModel())
-            models.AddModel(id);
+            models->AddModel(id);
         }
 
-    CameraViewDefinition view(*m_testDb, "Default", categories, style, models);
+    CameraViewDefinition view(*m_testDb, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());

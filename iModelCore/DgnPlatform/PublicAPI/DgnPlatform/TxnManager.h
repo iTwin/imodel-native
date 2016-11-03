@@ -126,10 +126,10 @@ struct TxnTable : RefCountedBase
     //@{
     //! Called before a set of Txns are undone/redone. TxnTables that use temporary tables can prepare them in this method.
     //! After this method is called one or more _OnReversedxxx methods will be called, followed finally by a call to _OnReversed
-    virtual void _OnReverse() { }
+    virtual void _OnReverse() {}
 
     //! Called after undo/redo of a set of Txns is complete. TxnTables that create temporary tables can empty them in this method.
-    virtual void _OnReversed() { }
+    virtual void _OnReversed() {}
 
     //! Called when an add of a row in this TxnTable was reversed via undo or redo.
     //! @param[in] change The data for a previously added row that is now deleted. All data will be in the "old values" of change.
@@ -258,7 +258,7 @@ struct TxnManager : BeSQLite::ChangeTracker
         SessionId GetSession() const {return SessionId(m_id.m_32[1]);}//!< Get the SessionId from this TxnId
         bool IsValid() const {return GetSession().IsValid();}
         bool operator==(TxnId const& rhs) const {return m_id.m_64==rhs.m_id.m_64;}
-        bool operator!=(TxnId const& rhs) const { return m_id.m_64 != rhs.m_id.m_64; }
+        bool operator!=(TxnId const& rhs) const {return m_id.m_64 != rhs.m_id.m_64;}
         bool operator<(TxnId const& rhs) const  {return m_id.m_64<rhs.m_id.m_64;}
         bool operator<=(TxnId const& rhs) const {return m_id.m_64<=rhs.m_id.m_64;}
         bool operator>(TxnId const& rhs) const  {return m_id.m_64>rhs.m_id.m_64;}
@@ -503,7 +503,7 @@ public:
     DGNPLATFORM_EXPORT void EndDynamicOperation(DynamicTxnProcessor* processor=nullptr);
 
     //! Returns true if a dynamic transaction is in progress.
-    bool InDynamicTxn() const { return !m_dynamicTxns.empty(); }
+    bool InDynamicTxn() const {return !m_dynamicTxns.empty();}
 
     //! Tell the TxnManager to track changes to instances of the specified ECRelationship class.
     //! Relationship-specific changes will be captured in the Txn summary in different ways, depending on how the relationship was mapped. 
@@ -626,7 +626,7 @@ namespace dgn_TxnTable
         //! iterator for models that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
         {
-            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
             struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
             private:
@@ -652,12 +652,12 @@ namespace dgn_TxnTable
     struct ElementDep : TxnTable
     {
         struct DepRelData
-            {
+        {
             BeSQLite::EC::ECInstanceKey m_relKey;
             DgnElementId m_source, m_target;
 
             DepRelData(BeSQLite::EC::ECInstanceKey const& key, DgnElementId s, DgnElementId t) : m_relKey(key), m_source(s), m_target(t) {;}
-            };
+        };
 
         BeSQLite::Statement m_stmt;
         DgnElementIdSet m_failedTargets;
@@ -684,47 +684,49 @@ namespace dgn_TxnTable
 
     //! @private
     struct RelationshipLinkTable : TxnTable
-        {
+    {
         friend struct Dgn::TxnManager;
-      protected:
+    protected:
         bool m_changes;
         BeSQLite::Statement m_stmt;
       
-        Utf8CP _GetTableName() const { BeAssert(false); return ""; } // many tables are merged into this. So, this handler must be installed specially.
+        Utf8CP _GetTableName() const {BeAssert(false); return "";} // many tables are merged into this. So, this handler must be installed specially.
         RelationshipLinkTable(TxnManager& mgr): TxnTable(mgr), m_changes(false) {}
         virtual void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) = 0;
       
         void _Initialize() override;
         void _OnValidate() override;
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override { _UpdateSummary(change, TxnTable::ChangeType::Insert); }
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override { _UpdateSummary(change, TxnTable::ChangeType::Delete); }
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { _UpdateSummary(change, TxnTable::ChangeType::Update); }
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Delete);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Update);}
         void _PropagateChanges() override {}
         void _OnValidated() override;
       
         BeSQLite::DbResult QueryTargets(DgnElementId& srcelemid, DgnElementId& tgtelemid, BeSQLite::EC::ECInstanceId relid, ECN::ECClassCR relClass);
 
       public:
-        bool HasChanges() const { return m_changes; }
-        };
+        bool HasChanges() const {return m_changes;}
+    };
 
+    //! @private
     struct UniqueRelationshipLinkTable : RelationshipLinkTable
-        {
+    {
         friend struct Dgn::TxnManager;
-      protected:
+    protected:
         ECN::ECClassCP m_ecclass;
         UniqueRelationshipLinkTable(TxnManager& mgr) : RelationshipLinkTable(mgr) {}
         void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) override;
-        };
+    };
 
+    //! @private
     struct MultiRelationshipLinkTable : RelationshipLinkTable
-        {
+    {
         friend struct Dgn::TxnManager;
-      protected:
+    protected:
         bset<ECN::ECClassCP> m_ecclasses;
         MultiRelationshipLinkTable(TxnManager& mgr) : RelationshipLinkTable(mgr) {}
         void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) override;
-        };
+    };
 
     struct BeProperties : TxnTable
     {

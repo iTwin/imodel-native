@@ -1,4 +1,5 @@
 /*--------------------------------------------------------------------------------------+
+
 |
 |     $Source: TilePublisher/exe/main.cpp $
 |
@@ -46,6 +47,7 @@ enum class ParamId
     GlobeImagery,
     GlobeTerrain,
     Standalone,
+    NoReplace,
     Invalid,
 };
 
@@ -79,6 +81,7 @@ static CommandParam s_paramTable[] =
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
+        { L"nr", L"noreplace", L"Do not replace existing files", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -157,6 +160,7 @@ private:
     Utf8String      m_terrainProvider;
     bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
+    bool            m_overwriteExisting = true;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -172,6 +176,7 @@ public:
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+    bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -351,7 +356,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 break;
                 }
-
+            case ParamId::NoReplace:
+                m_overwriteExisting = false;
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -386,12 +393,9 @@ private:
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
-    bvector<TileNodeCP>         m_emptyNodes;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
-    virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
-    virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootName().c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
@@ -434,11 +438,12 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto const& modelSelector = spatialView->GetModelSelector();
+            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
+            auto& modelSelector = spatial->GetModelSelector();
             auto viewModels = modelSelector.GetModels();
             m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto& categorySelector = spatial->GetCategorySelector();
             auto viewCats = categorySelector.GetCategories();
             m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
@@ -462,15 +467,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     switch (publisherStatus)
         {
         case Status::Success:
-            break;
-        case Status::NoGeometry:    // ok for tile to have no geometry - but mark as empty so we avoid including in json
-            if (tile.GetChildren().empty())
-                {
-                // Leaf nodes with no children should not be published.
-                // Reality models often contain empty parents with non-empty children - they must be published.
-                BeMutexHolder lock(m_mutex);
-                m_emptyNodes.push_back(&tile);
-                }
+        case Status::NoGeometry:   
             break;
         default:
             m_acceptTileStatus = publisherStatus;
@@ -491,63 +488,10 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     tilesetUrl.append(1, '/');
     tilesetUrl.append(rootNameUtf8);
     tilesetUrl.append(".json");
+
     json["tilesetUrl"] = tilesetUrl;
-    json["name"] = rootNameUtf8;
 
-    // Geolocation
-    bool geoLocated = !m_tileToEcef.IsIdentity();
-    if (geoLocated)
-        {
-        DPoint3d    groundEcefPoint;
-
-        transform.Multiply (groundEcefPoint, groundPoint);
-        json["geolocated"] = true;
-        json["groundPoint"] = PointToJson(groundEcefPoint);
-        }
-
-    auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
-    bset<DgnViewId> publishedViews;
-
-    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
-        {
-        auto    viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
-
-        SpatialViewDefinitionCP spatialView;
-
-        if (!viewDefinition.IsValid() || nullptr == (spatialView = viewDefinition->ToSpatialView()))
-            continue;
-
-        Json::Value     entry (Json::objectValue);
-
-        if (nullptr != view.GetName())
-            entry["name"] = view.GetName();
-
-        GetSpatialViewJson (entry, *spatialView, transform);
-        entry["models"] = IdSetToJson(spatialView->GetModelSelector().GetModels());
-        entry["categories"] = IdSetToJson(spatialView->GetCategorySelector().GetCategories());
-
-        ColorDef    backgroundColor = spatialView->GetDisplayStyle().GetBackgroundColor();
-        auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
-        colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
-        colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
-        colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
-
-        publishedViews.insert (view.GetId());
-        viewsJson[view.GetId().ToString()] = entry;
-        }
-
-    if (m_allModels.empty())
-        return Status::NoGeometry;
-
-    json["models"] = GetModelsJson (m_allModels);
-    json["categories"] = GetCategoriesJson (m_allCategories);
-
-    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
-        json["defaultView"] = publishedViews.begin()->ToString();
-    else
-        json["defaultView"] = GetViewController().GetViewId().ToString();
-    
-    return Status::Success; 
+    return GetViewsetJson(json, transform, groundPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -578,8 +522,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
 
     json["viewerOptions"] = viewerOptions;
 
-    BeFileName jsonFileName = m_outputDir;
-    jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
+    WString     jsonRootName = m_rootName + L"_AppData";
+    BeFileName  jsonFileName (nullptr, m_dataDir.c_str(), jsonRootName.c_str(), L"json");
 
     Utf8String jsonFileNameUtf8(jsonFileName.c_str());
     jsonFileNameUtf8.ReplaceAll("\\", "//");
@@ -599,7 +543,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     if (NULL == htmlFile)
         return Status::CantWriteToBaseDirectory;
 
-    Utf8String jsonFileUrl(m_rootName.c_str());
+    Utf8String jsonFileUrl = Utf8String (m_rootName) + "/" + Utf8String(jsonRootName.c_str());
     jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
     std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);
@@ -684,7 +628,7 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonito
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    auto status = Setup();
+    auto status = InitializeDirectories();
     if (Status::Success != status)
         return status;
 
@@ -695,11 +639,14 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    status = PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
+        {
+        CleanDirectories();
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+        }
 
     OutputStatistics(generator.GetStatistics());
 
@@ -807,7 +754,6 @@ int wmain(int ac, wchar_t const** av)
     if (db.IsNull())
         return 1;
 
-
     ViewControllerPtr viewController = createParams.LoadViewController(*db);
     if (viewController.IsNull())
         return 1;
@@ -816,6 +762,16 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
     TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
+
+    if (!createParams.GetOverwriteExistingOutputFile())
+        {
+        BeFileName  outputFile (nullptr, createParams.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), L".html");
+        if (outputFile.DoesPathExist())
+            {
+            printf ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
+            return 1;
+            }
+        }
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

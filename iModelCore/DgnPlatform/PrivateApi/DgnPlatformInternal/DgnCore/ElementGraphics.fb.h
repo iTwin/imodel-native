@@ -94,12 +94,11 @@ inline const char *EnumNameGeometryClass(GeometryClass e) { return EnumNamesGeom
 enum BRepType {
   BRepType_Solid = 0,
   BRepType_Sheet = 1,
-  BRepType_Wire = 2,
-  BRepType_Minimal = 3
+  BRepType_Wire = 2
 };
 
 inline const char **EnumNamesBRepType() {
-  static const char *names[] = { "Solid", "Sheet", "Wire", "Minimal", nullptr };
+  static const char *names[] = { "Solid", "Sheet", "Wire", nullptr };
   return names;
 }
 

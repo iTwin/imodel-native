@@ -40,8 +40,6 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, Dgn::PhysicalElement);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop1_1;
         int64_t m_prop1_2;
         double m_prop1_3;
@@ -50,9 +48,8 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         PerformanceElement1 (CreateParams const& params) : T_Super (params) {}
         PerformanceElement1 (CreateParams const& params, Utf8CP prop1_1, int64_t prop1_2, double prop1_3) : T_Super (params), m_prop1_1 (prop1_1), m_prop1_2 (prop1_2), m_prop1_3 (prop1_3) {}
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams (BeSQLite::EC::ECSqlStatement& statement, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
@@ -72,8 +69,6 @@ struct PerformanceElement2 : PerformanceElement1
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, PerformanceElement1);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop2_1;
         int64_t m_prop2_2;
         double m_prop2_3;
@@ -87,9 +82,8 @@ struct PerformanceElement2 : PerformanceElement1
             }
 
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams (BeSQLite::EC::ECSqlStatement& statement, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
@@ -107,8 +101,6 @@ struct PerformanceElement3 : PerformanceElement2
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, PerformanceElement2);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop3_1;
         int64_t m_prop3_2;
         double m_prop3_3;
@@ -122,9 +114,8 @@ struct PerformanceElement3 : PerformanceElement2
             {
             }
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams (BeSQLite::EC::ECSqlStatement& statement, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
@@ -142,8 +133,6 @@ struct PerformanceElement4 : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, PerformanceElement3);
 
     private:
-        DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
-
         Utf8String m_prop4_1;
         int64_t m_prop4_2;
         double m_prop4_3;
@@ -159,9 +148,8 @@ struct PerformanceElement4 : PerformanceElement3
             {
             }
 
-        virtual Dgn::DgnDbStatus _BindInsertParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _BindUpdateParams (BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
+        void _BindWriteParams (BeSQLite::EC::ECSqlStatement& statement, ForInsert) override;
+        Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
         static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);

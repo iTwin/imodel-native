@@ -16,12 +16,23 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     class Params
     {
-        modelName: string;
+        modeledElementIdStr: string;
+        newModeledElementIdStr: string;
         categoryName: string;
     };
 
     var shiftXSize = 5.0;
     var shiftYsize = 2.5;
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function getModelFromModeledElementIdStr(db: be.DgnDb, modeledElementIdStr: string) {
+        var modelElementId = new be.DgnObjectId;
+        modelElementId.FromString(modeledElementIdStr);
+        var modelElement = db.Elements.GetElement(modelElementId);
+        return modelElement.SubModel;
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
@@ -577,10 +588,10 @@ module DgnScriptTests {
         if (!catid.Equals(be.DgnCategory.QueryCategoryId(params.categoryName, db)))
             be.Script.ReportError('QueryCategoryId failed?');
 
+        // Get the model. The caller has passed in the DgnElementId of the model *element*. We want its submodel. 
+        var model = getModelFromModeledElementIdStr(db, params.modeledElementIdStr);
+
         //  Create element
-        be.Script.ReportError('QueryModelId has been removed, this test needs to be refactored');
-        var modelId: be.DgnObjectId = null;
-        var model = db.Models.GetModel(modelId /* WIP: db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName))*/);
         var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder

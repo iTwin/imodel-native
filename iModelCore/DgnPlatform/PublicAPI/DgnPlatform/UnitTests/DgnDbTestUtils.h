@@ -45,7 +45,11 @@ public:
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP label=nullptr);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label);
+
+    //! Insert a Sheet element
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
@@ -53,7 +57,7 @@ public:
 
     //! Insert a SheetModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetModelPtr InsertSheetModel(SheetCR, DPoint2dCR sheetSize=DPoint2d::FromZero());
+    static SheetModelPtr InsertSheetModel(SheetCR);
 
     //! Insert a LinkModel
     //! @note Also creates an InformationPartitionElement for the DocumentListModel to model

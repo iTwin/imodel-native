@@ -42,13 +42,10 @@ DgnDbStatus DgnTrueColor::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTrueColor::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
+void DgnTrueColor::_BindWriteParams(BeSQLite::EC::ECSqlStatement& stmt, ForInsert forInsert)
     {
-    auto status = T_Super::_BindInsertParams(stmt);
-    if (DgnDbStatus::Success == status)
-        stmt.BindInt(stmt.GetParameterIndex(PROP_Value), static_cast<int32_t>(m_colorDef.GetValue()));
-
-    return status;
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindInt(stmt.GetParameterIndex(PROP_Value), static_cast<int32_t>(m_colorDef.GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**

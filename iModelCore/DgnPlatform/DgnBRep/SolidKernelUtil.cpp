@@ -6,11 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <GeomSerialization/GeomLibsFlatBufferApi.h>
-#include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-
-using namespace flatbuffers;
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
@@ -92,10 +92,11 @@ bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
             m_uv.y             < rhs.m_uv.y);
     }
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)    
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
 +===============+===============+===============+===============+===============+======*/
-struct OpenCascadeEntity : RefCounted<ISolidKernelEntity>
+struct OpenCascadeEntity : RefCounted<IBRepEntity>
 {
 private:
 
@@ -189,23 +190,23 @@ EntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     switch (shapeType)
         {
         case TopAbs_COMPOUND:
-            return ISolidKernelEntity::EntityType::Compound;
+            return IBRepEntity::EntityType::Compound;
 
         case TopAbs_COMPSOLID:
         case TopAbs_SOLID:
-            return ISolidKernelEntity::EntityType::Solid;
+            return IBRepEntity::EntityType::Solid;
 
         case TopAbs_SHELL:
         case TopAbs_FACE:
-            return ISolidKernelEntity::EntityType::Sheet;
+            return IBRepEntity::EntityType::Sheet;
 
         case TopAbs_WIRE:
         case TopAbs_EDGE:
-            return ISolidKernelEntity::EntityType::Wire;
+            return IBRepEntity::EntityType::Wire;
 
         case TopAbs_VERTEX:
         default:
-            return ISolidKernelEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Minimal;
         }
     }
 
@@ -236,7 +237,7 @@ DRange3d _GetEntityRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual (ISolidKernelEntityCR entity) const override
+virtual bool _IsEqual (IBRepEntityCR entity) const override
     {
     if (this == &entity)
         return true;
@@ -258,7 +259,7 @@ virtual bool _InitFaceMaterialAttachments (Render::GeometryParamsCP baseParams) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ISolidKernelEntityPtr _Clone() const override
+virtual IBRepEntityPtr _Clone() const override
     {
     TopoDS_Shape clone(m_shape);
 
@@ -294,7 +295,7 @@ static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
+TopoDS_Shape const* SolidKernelUtil::GetShape(IBRepEntityCR entity)
     {
     OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
 
@@ -305,19 +306,9 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
-    {
-    TopoDS_Shape const* shape = GetShape(entity);
-    BeAssert(nullptr != shape);
-    return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
+TopoDS_Shape* SolidKernelUtil::GetShapeP(IBRepEntityR entity)
     {
     OpenCascadeEntity* ocEntity = dynamic_cast <OpenCascadeEntity*> (&entity);
 
@@ -330,16 +321,20 @@ TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
+IBRepEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
     {
     return OpenCascadeEntity::CreateNewEntity(shape);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, pixelSize, pixelSizeRange);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -403,4 +398,336 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
+#else
+    return nullptr;
+#endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR facetOptions)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, facetOptions);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr);
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    return false;
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    return false;
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::ClipCurveVector(output, input, clipVector, transform);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    return OCBRep::ClipCurveVector(output, input, clipVector, transform);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidUtil::ClipBody(output, clipped, input, clipVector);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    if (nullptr == shape)
+        return ERROR;
+
+    bvector<TopoDS_Shape> clipResults;
+
+    if (SUCCESS != OCBRep::ClipTopoShape(clipResults, clipped, shape, clipVector))
+        return ERROR;
+
+    for (TopoDS_Shape clipShape : clipResults)
+        {
+        IBRepEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+
+        output.push_back(entityPtr);
+        }
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromCurveVector (entityOut, curveVector, nullptr, nodeId);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape shape;
+
+    if (SUCCESS != OCBRep::Create::TopoShapeFromCurveVector(shape, curveVector))
+        return ERROR;
+
+    entityOut = SolidKernelUtil::CreateNewEntity(shape);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromSolidPrimitive (entityOut, primitive, nodeId);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape shape;
+
+    if (SUCCESS != OCBRep::Create::TopoShapeFromSolidPrimitive(shape, primitive))
+        return ERROR;
+
+    entityOut = SolidKernelUtil::CreateNewEntity(shape);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromBSurface (IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromBSurface (entityOut, surface, nodeId);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape shape;
+
+    if (SUCCESS != OCBRep::Create::TopoShapeFromBSurface(shape, surface))
+        return ERROR;
+
+    entityOut = SolidKernelUtil::CreateNewEntity(shape);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromPolyface (IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromPolyface (entityOut, meshData, nodeId);
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape shape;
+
+    if (SUCCESS != OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
+        return ERROR;
+
+    entityOut = SolidKernelUtil::CreateNewEntity(shape);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanIntersect (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_intersect, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanSubtract (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanUnion (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SewBodies (bvector<IBRepEntityPtr>& sewnEntities, bvector<IBRepEntityPtr>& unsewnEntities, IBRepEntityPtr* toolEntities, size_t nTools, double gapWidthBound, size_t nIterations)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    if (nTools < 2)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create (&markTag);
+
+    bool                 isFirst = true;
+    Transform            targetTransform, invTargetTransform;
+    bvector<PK_ENTITY_t> toolEntityTags;
+
+    // Get tool bodies in coordinates of target...
+    for (size_t iTool = 0; iTool < nTools; ++iTool)
+        {
+        bool        isToolOwned;
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+
+        if (!isToolOwned)
+            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
+            
+        if (isFirst)
+            {
+            isFirst = false;
+            targetTransform = toolEntities[iTool]->GetEntityTransform ();
+            invTargetTransform.InverseOf (targetTransform);
+            invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&gapWidthBound,  1);
+            }
+        else
+            {
+            Transform   toolTransform;
+
+            toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
+            PSolidUtil::TransformBody (toolEntityTag, toolTransform);
+            }
+
+        toolEntityTags.push_back (toolEntityTag);
+        }
+
+    int                       nSewnBodies = 0, nUnsewnBodies = 0, nProblems = 0;
+    PK_BODY_t*                sewnBodyTags = NULL;
+    PK_BODY_t*                unsewnBodyTags = NULL;
+    PK_BODY_problem_group_t*  problemGroup = NULL;
+    PK_BODY_sew_bodies_o_t    options;
+
+    PK_BODY_sew_bodies_o_m (options);
+
+    options.allow_disjoint_result = PK_LOGICAL_true;
+    options.number_of_iterations  = (int) nIterations;
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_sew_bodies ((int) toolEntityTags.size (), &toolEntityTags.front (), gapWidthBound, &options, &nSewnBodies, &sewnBodyTags, &nUnsewnBodies, &unsewnBodyTags, &nProblems, &problemGroup) ? SUCCESS : ERROR);
+
+    if (SUCCESS == status)
+        {
+        if (sewnBodyTags)
+            {
+            for (int iSewn = 0; iSewn < nSewnBodies; ++iSewn)
+                sewnEntities.push_back (PSolidUtil::CreateNewEntity (sewnBodyTags[iSewn], targetTransform, true));
+            }
+
+        if (unsewnBodyTags)
+            {
+            for (int iUnsewn = 0; iUnsewn < nUnsewnBodies; ++iUnsewn)
+                unsewnEntities.push_back (PSolidUtil::CreateNewEntity (unsewnBodyTags[iUnsewn], targetTransform, true));
+            }
+
+        // Invalidate owned tool entities that are now reflected in sewn and unsewn lists...
+        for (size_t iTool = 0; iTool < nTools; ++iTool)
+            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
+        }
+    else
+        {
+        // Undo copy/transform of input entities...
+        PK_MARK_goto (markTag);
+        }
+
+    PK_MEMORY_free (sewnBodyTags);
+    PK_MEMORY_free (unsewnBodyTags);
+
+    if (problemGroup)
+        {
+        for (int iProblem = 0; iProblem < nProblems; ++iProblem)
+            PK_MEMORY_free (problemGroup[iProblem].edges);
+
+        PK_MEMORY_free (problemGroup);
+        }
+
+    PK_MARK_delete (markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+    
+
+

@@ -4976,7 +4976,7 @@ WStringR    outputBuffer
 ) const
     {
     DgnProjectionTypes projectionType = BaseGCS::DgnProjectionTypeFromCSDefName (m_csParameters->csdef.prj_knm);
-	
+
     return BaseGeoCoordResource::GetLocalizedProjectionName(outputBuffer, projectionType);
     }
 

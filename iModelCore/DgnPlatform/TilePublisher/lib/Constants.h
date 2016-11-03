@@ -45,7 +45,7 @@ USING_NAMESPACE_BENTLEY
 #define JSON_Transform "transform"
 
 //Shaders for display of mesh data
-static std::string s_litTextureCommon = 
+static std::string s_litVertexCommon = 
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_n;\n"
 "attribute float a_batchId;\n"
@@ -55,22 +55,22 @@ static std::string s_litTextureCommon =
 "varying vec3 v_n;\n"
 "varying vec3 v_pos;\n"
 "void main(void) {\n"
-"v_n = normalize(u_nmx * a_n);\n"
-"v_pos = a_pos;\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n";
-
+"vec4 pos = u_mv * vec4(a_pos,1.0);\n"
+"v_n = u_nmx * a_n;\n"
+"v_pos = pos.xyz;\n"
+"gl_Position = u_proj * pos;\n";
 
 static std::string s_texturedVertexShader =
 "precision highp float;\n" 
 "attribute vec2 a_texc;\n"
 "varying vec2 v_texc;\n"
-+ s_litTextureCommon +
++ s_litVertexCommon +
 "v_texc = a_texc;\n"
 "}\n";
 
 static std::string s_untexturedVertexShader =
 "precision highp float;\n" 
-+ s_litTextureCommon +
++ s_litVertexCommon +
 "}\n";
 
 static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
@@ -86,38 +86,58 @@ static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
 
 
-static std::string s_fragShaderCommon = 
-"varying vec3 v_n;\n"
-"varying vec3 v_pos;\n"
-"uniform float u_specularExponent;\n"
-"uniform vec3 u_specularColor;\n"
-"void main(void) {\n"
-"vec3 n = normalize(v_n);\n"
-"vec3 toEye = normalize (-v_pos);\n"
-"n = faceforward(n, vec3(0.0, 0.0, 1.0), -n);\n"
-"float diffuseIntensity = .5 * n.z + .3 * n.y + .3 * czm_getLambertDiffuse(czm_sunDirectionEC, n);\n"
-"vec3 toReflectedLight = reflect(-czm_sunDirectionEC, n);\n"
-"float specular = max(dot(toReflectedLight, toEye), 0.0);\n"
-"float specularIntensity=pow (specular, u_specularExponent);\n";
+static std::string s_computeLighting = 
+"void computeSingleLight (inout float diffuse, inout float specular, vec3 normal, vec3 toEye, vec3 lightDir, float lightIntensity, float specularExponent)\n"
+"{\n"
+"diffuse += lightIntensity * max(dot(normal,lightDir), 0.0);\n"
+"vec3 toReflectedLight = reflect(lightDir, normal);\n"
+"float specularDot = max(dot(toReflectedLight, toEye), 0.0);\n"
+"specular += lightIntensity * pow(specularDot, specularExponent);\n"
+"}"
+"vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor)\n"
+"{\n"
+"vec3 normal = normalize(normalIn);\n"
+"vec3 toEye = normalize (position);\n"
+"normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);\n"
+"float ambient = 0.2;\n"
+"vec3 lightPos1 = vec3(-500, -200.0, 0.0);\n"
+"vec3 lightPos2 = vec3(500, 200.0, 0.0);\n"
+"vec3 lightDir1 = normalize(lightPos1 - position);\n"
+"vec3 lightDir2 = normalize(lightPos2 - position);\n"
+"float diffuseIntensity = 0.0;\n"
+"float specularIntensity = 0.0;\n"
+"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir1, .35, specularExponent);\n"
+"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir2, .45, specularExponent);\n"
+"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, czm_sunDirectionWC, .25, specularExponent);\n"
+"vec3   diffuseAndAmbient = inputColor.rgb * min (1.0, diffuseIntensity + ambient);\n"
+"vec3   specular = specularColor.rgb * min (1.0, specularIntensity);\n"
+"return vec4 (diffuseAndAmbient + specular, inputColor.a);\n"
+"}\n";
 
 static std::string s_untexturedFragShader = 
 "precision highp float;\n"
 "uniform vec4 u_color;\n"
-+ s_fragShaderCommon + 
-"vec3 color = (u_color.rgb * diffuseIntensity) + (u_specularColor * specularIntensity);\n"
-"gl_FragColor = vec4(color, u_color.a);\n"
-"}\n";
+"varying vec3 v_n;\n"
+"varying vec3 v_pos;\n"
+"uniform float u_specularExponent;\n"
+"uniform vec3 u_specularColor;\n"
++ s_computeLighting +     
+"void main(void) {\n"
+"gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, u_color);}\n";
 
 static std::string s_texturedFragShader =
 "precision highp float;\n"
 "varying vec2 v_texc;\n"  
 "uniform sampler2D u_tex;\n" 
-+ s_fragShaderCommon + 
+"varying vec3 v_n;\n"
+"varying vec3 v_pos;\n"
+"uniform float u_specularExponent;\n"
+"uniform vec3 u_specularColor;\n"
++ s_computeLighting +    
+"void main(void) {\n"
 "vec4 textureColor = texture2D(u_tex, v_texc);\n"
 "if (0.0 == textureColor.a) discard;\n"
-"vec3 color = (textureColor.rgb * diffuseIntensity) + (u_specularColor * specularIntensity);\n"
-"gl_FragColor = vec4(color.rgb * diffuseIntensity, textureColor.a);\n"
-"}\n";
+"gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor); }\n";
 
 static std::string s_unlitTextureFragmentShader =
 "precision highp float;\n"

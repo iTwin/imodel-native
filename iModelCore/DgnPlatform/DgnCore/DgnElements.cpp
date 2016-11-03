@@ -434,10 +434,10 @@ void ElemIdTree::Purge(int64_t memTarget)
     if (memTarget < 0)
         memTarget = 0;
 
-    if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_Purge(memTarget)))
+    if (nullptr == m_root || (ElemPurge::Deleted != m_root->_Purge(memTarget)))
         return;
 
-    // all of the elements were garbage!
+    // all of the elements were garbage. The tree is now empty.
     FreeNode(m_root, m_root->IsLeaf());
     m_root = nullptr;
     }
@@ -1085,7 +1085,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
-    DgnElementPtr el = (DgnElementP) elements.FindElement(elementId);
+    DgnElementCPtr el = elements.FindElement(elementId);
     if (el.IsValid())
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
@@ -1554,6 +1554,8 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
 ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
     DgnClassId classId = el.GetElementClassId();
+
+    BeDbMutexHolder _v(m_mutex);
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;
@@ -1573,11 +1575,7 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
-    BeDbMutexHolder _v(m_mutex);
-
-    /* unused - auto& classInfo = FindClassInfo(el);*/
     auto stmt = FindClassInfo(el).GetSelectStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
-
     return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }
 
@@ -1617,4 +1615,15 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
         if (nullptr != part)
             part->Graphics().DropFor(viewport);
         });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SessionR SessionManager::GetCurrent() const
+    {
+    if (!m_current.IsValid())
+        m_current = Session::Create(m_dgndb, "");
+
+    return *m_current;
     }

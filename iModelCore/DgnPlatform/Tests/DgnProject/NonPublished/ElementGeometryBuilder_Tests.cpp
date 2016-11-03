@@ -88,7 +88,7 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
     PolyfaceHeaderPtr mesh = faceBuilder->GetClientMeshPtr();
     EXPECT_TRUE(builder->Append(*mesh));
 
-    // ISolidKernelEntityPtr
+    // IBRepEntityPtr
     //
 
     // TextString
@@ -109,7 +109,7 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
     SetupSeedProject();
 
     DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "SheetListModel");
-    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "TestSheet");
+    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1,1,1, DgnCode(), "TestSheet");
     SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     DgnModelId sheetModelId = sheetModel->GetModelId();
 

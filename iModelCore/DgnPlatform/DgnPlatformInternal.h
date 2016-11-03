@@ -32,7 +32,6 @@
 #include <DgnPlatform/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCoreEvent.h>
 #include <DgnPlatform/DgnDbTables.h>
-#include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/DgnLight.h>
 #include <DgnPlatform/DgnMaterial.h>

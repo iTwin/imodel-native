@@ -16,10 +16,20 @@ module DgnScriptPerformanceTests {
     //---------------------------------------------------------------------------------------
     class Params
     {
-        modelName: string;
-        newModelName: string;
+        modeledElementIdStr: string;
+        newModeledElementIdStr: string;
         categoryName: string;
     };
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function getModelFromModeledElementIdStr(db: be.DgnDb, modeledElementIdStr: string) {
+        var modelElementId = new be.DgnObjectId;
+        modelElementId.FromString(modeledElementIdStr);
+        var modelElement = db.Elements.GetElement(modelElementId);
+        return modelElement.SubModel;
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
@@ -45,9 +55,7 @@ module DgnScriptPerformanceTests {
     //---------------------------------------------------------------------------------------
     function Test(db: be.DgnDb, params: Params): number
     {
-        be.Script.ReportError('QueryModelId has been removed, this test needs to be refactored');
-        var modelId: be.DgnObjectId = null;
-        var model = db.Models.GetModel(modelId /* WIP: db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.newModelName))*/);
+        var model = getModelFromModeledElementIdStr(db, params.newModeledElementIdStr);
         var catid = be.DgnCategory.QueryCategoryId(params.categoryName, db);
 
         //var starti = Date.now();

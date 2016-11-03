@@ -16,9 +16,10 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
+
 // Turn this on for debugging.
 // #define DUMP_REVISION 1
-
 // #define DUMP_CODES
 
 //=======================================================================================
@@ -37,7 +38,7 @@ protected:
     void ModifyElement(DgnElementId elementId);
 
     DgnRevisionPtr CreateRevision();
-    void DumpRevision(DgnRevisionCR revision);
+    void DumpRevision(DgnRevisionCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
     void RestoreTestFile();
@@ -127,12 +128,14 @@ void RevisionTestFixture::InsertFloor(int xmax, int ymax)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::DumpRevision(DgnRevisionCR revision)
+void RevisionTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
     {
 #ifdef DUMP_REVISION
-    printf("---------------------------------------------------------\n");
+    LOG.infov("---------------------------------------------------------");
+    if (summary != nullptr)
+        LOG.infov(summary);
     revision.Dump(*m_testDb);
-    printf("\n\n");
+    LOG.infov("---------------------------------------------------------");
 #endif
     }
 
@@ -161,10 +164,7 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
     {
     DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
     if (!revision.IsValid())
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
     RevisionStatus status = m_testDb->Revisions().FinishCreateRevision();
     if (RevisionStatus::Success != status)
@@ -272,41 +272,6 @@ TEST_F(RevisionTestFixture, Workflow)
 
     Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, ConflictError)
-    {
-    // Setup a model with a few elements
-    CreateDgnDb();
-    DgnElementId elementId = InsertPhysicalElement(*m_testModel, m_testCategoryId, 1, 1, 1);
-    m_testDb->SaveChanges("Created Initial Model");
-
-    // Create an initial revision
-    DgnRevisionPtr initialRevision = CreateRevision();
-    ASSERT_TRUE(initialRevision.IsValid());
-
-    // Create a revision for modifying the above element. 
-    BackupTestFile();
-    ModifyElement(elementId);
-    m_testDb->SaveChanges("Modified the element in revision");
-
-    DgnRevisionPtr revision = CreateRevision();
-    ASSERT_TRUE(revision.IsValid());
-
-    RestoreTestFile();
-
-    // Modify the same element to generate an intentional conflict
-    ModifyElement(elementId);
-    m_testDb->SaveChanges("Modified the element");
-
-    // Merge changes from revision
-    BeTest::SetFailOnAssert(false);
-    RevisionStatus status = m_testDb->Revisions().MergeRevision(*revision);
-    ASSERT_TRUE(status != RevisionStatus::Success);
-    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,8 +564,10 @@ struct DependencyRevisionTest : RevisionTestFixture
 
     TestElementCPtr InsertElement(int32_t intProp1);
     void UpdateRootProperty(int32_t intProp1, DgnElementId eId);
-    void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
     void VerifyRootProperty(DgnElementId, int32_t);
+    void UpdateDependentProperty(DgnElementId eId, uint8_t index, int32_t value);
+    void VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value);
+    void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
 
     DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.ibim", true) { }
 };
@@ -638,6 +605,28 @@ void DependencyRevisionTest::VerifyRootProperty(DgnElementId eId, int32_t prop)
     auto el = m_testDb->Elements().Get<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(el->GetIntegerProperty(0), prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::UpdateDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
+    {
+    auto el = m_testDb->Elements().GetForEdit<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    el->SetIntegerProperty(index, value);
+    ASSERT_TRUE(el->Update().IsValid());
+    VerifyDependentProperty(eId, index, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
+    {
+    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(el->GetIntegerProperty(index), value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,6 +881,47 @@ TEST_F(DependencyRevisionTest, Conflict)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Directly modify a dependent element, then run dependency callbacks which indirectly
+* modify the dependent element in a different way.
+* Expect that no conflicts occur in merging revisions containing these changes.
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
+    {
+    CreateDgnDb();
+
+    // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
+    DgnElementId rootId = InsertElement(123)->GetElementId();
+    DgnElementId depId = InsertElement(456)->GetElementId();
+    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    ASSERT_TRUE(CreateRevision().IsValid());
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
+    BackupTestFile();
+
+    // Modify dependent property directly
+    UpdateDependentProperty(depId, 2, 789);
+    VerifyDependentProperties(depId, { 456, 0, 789, 0 });
+
+    // Saving changes will re-run dependency logic
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
+
+    // Create a revision
+    DgnRevisionPtr rev = CreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    DumpRevision(*rev);
+
+    // Apply revision to original state - expect same state + no conflicts
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, { 456, 0, 123, 0 });
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * When a changeset is applied for undo/redo, we notify TxnTables so they can update
 * their in-memory state. e.g., undoing the insertion of an element causes that element
 * to be dropped from the element cache.
@@ -944,3 +974,65 @@ TEST_F(DependencyRevisionTest, UpdateCache)
     elB = nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
+    {
+    CreateDgnDb();
+
+    // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
+    DgnElementId rootId = InsertElement(123)->GetElementId();
+    DgnElementId depId = InsertElement(456)->GetElementId();
+    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    ASSERT_TRUE(CreateRevision().IsValid());
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+    BackupTestFile();
+
+    // Create a revision with some direct changes to the dependent property
+    UpdateDependentProperty(depId, 2, 789);
+    VerifyDependentProperties(depId, {456, 0, 789, 0});
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    DgnRevisionPtr directChangesRev = CreateRevision();
+    ASSERT_TRUE(directChangesRev.IsValid());
+    DumpRevision(*directChangesRev, "Direct Changes to Dependency:");
+
+    // Create a revision with some indirect changes to the dependent property
+    RestoreTestFile();
+    UpdateRootProperty(654, rootId);
+    m_testDb->SaveChanges("Revision");
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    DgnRevisionPtr indirectChangesRev = CreateRevision();
+    ASSERT_TRUE(indirectChangesRev.IsValid());
+    DumpRevision(*indirectChangesRev, "Indirect Changes to Dependency:");
+
+    // Make direct changes, and merge the revision with indirect changes
+    RestoreTestFile();
+    UpdateDependentProperty(depId, 2, 789);
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Make indirect changes, and merge the revision with direct changes
+    RestoreTestFile();
+    UpdateRootProperty(654, rootId);
+    m_testDb->SaveChanges("Revision");
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*directChangesRev));
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Make no changes, and merge the revision with indirect changes
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
+    DgnRevisionPtr noChangesRevision = CreateRevision();
+    ASSERT_FALSE(noChangesRevision.IsValid());
+    }

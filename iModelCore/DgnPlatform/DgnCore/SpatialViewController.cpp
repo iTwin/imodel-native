@@ -47,6 +47,7 @@ Frustum::Frustum(DRange3dCR range)
     m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -243,7 +244,7 @@ void SpatialViewController::ClearNeverDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
-    auto& models = GetSpatialViewDefinitionR().GetModelSelectorR().GetModelsR();
+    auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
     if (onOff == models.Contains(modelId))
         return;
 
