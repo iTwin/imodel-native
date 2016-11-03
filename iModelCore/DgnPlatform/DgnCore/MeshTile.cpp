@@ -1145,7 +1145,7 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb), 
-      m_totalTiles(0), m_completedTiles(0), m_totalVolume(0.0), m_completedVolume (0.0)
+      m_totalTiles(0)
     {
     }
 
@@ -1180,8 +1180,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 
         if (tile.GetGeometries().empty())
             {
-            m_completedVolume += tile.GetDgnRange().Volume();
-            m_completedTiles++;
             return;
             }
 
@@ -1192,7 +1190,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
             {
             tile.SetTolerance (leafTolerance);
             collector._AcceptTile(tile);
-            m_completedVolume += tile.GetDgnRange().Volume();
             }
         else
             {
@@ -1217,7 +1214,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
  
         tile.ClearGeometry();
         DgnPlatformLib::ForgetHost();
-        m_completedTiles++;
         });
     }
 
@@ -1231,6 +1227,8 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
         return Status::NoGeometry;
 
     auto nCompletedModels = 0;
+
+    StopWatch timer(true);
     for (auto const& modelId : modelIds)
         {
         m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
@@ -1258,7 +1256,13 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 
         if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
             return Status::Aborted;
+        else if (root.IsValid())
+            m_totalTiles += root->GetNodeCount();
         }
+
+    m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
+    m_statistics.m_tileCount = m_totalTiles;
+    m_totalTiles.store(0);
 
     return Status::Success;
     }
@@ -1276,7 +1280,6 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     PSolidKernelManager::StartSession();
     GetDgnDb().Fonts().Update();
 
-    StopWatch               timer(true);
     TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
     
     generationCache.Populate (GetDgnDb(), model.GetModelId(), nullptr);
@@ -1291,8 +1294,6 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     m_totalTiles++;
     ElementTileNodePtr  elementRoot =  ElementTileNode::Create(model, viewRange, GetTransformFromDgn(), 0, 0, nullptr);
     root = elementRoot;
-    m_completedVolume = 0.0;
-    m_totalVolume = viewRange.Volume();
 
     ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile, generationCache);
 
@@ -1301,12 +1302,7 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
         {
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
-    while (m_completedTiles < m_totalTiles);
-
-    // NB: No longer possible to differentiate between tile collection + tile generation time - they happen simultaneously
-    m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
-    m_statistics.m_tileCount = m_totalTiles;
-    m_statistics.m_tileDepth = root->GetMaxDepth();
+    while (/*m_completedTiles < m_totalTiles*/ true);
 
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }

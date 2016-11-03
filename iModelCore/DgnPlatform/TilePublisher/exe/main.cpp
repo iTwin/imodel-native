@@ -563,11 +563,9 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
     {
     printf("\nStatistics:\n"
            "Tile count: %u\n"
-           "Tile depth: %u\n"
            "Tile generation time: %.4f seconds\n"
            "Average per-tile: %.4f seconds\n",
            static_cast<uint32_t>(stats.m_tileCount),
-           static_cast<uint32_t>(stats.m_tileDepth),
            stats.m_tileGenerationTime,
            0 != stats.m_tileCount ? stats.m_tileGenerationTime / stats.m_tileCount : 0.0);
     }

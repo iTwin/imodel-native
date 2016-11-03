@@ -612,7 +612,6 @@ struct TileGenerator
     struct Statistics
     {
         size_t      m_tileCount = 0;
-        size_t      m_tileDepth = 0;
         double      m_tileGenerationTime = 0.0;
     };
 private:
@@ -620,10 +619,7 @@ private:
     ITileGenerationProgressMonitorR m_progressMeter;
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
-    double                          m_totalVolume;
-    double                          m_completedVolume;
     BeAtomic<uint32_t>              m_totalTiles;
-    BeAtomic<uint32_t>              m_completedTiles;
 
     void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
