@@ -89,9 +89,9 @@ void ViewAttachmentTest::SetUp()
     DgnDbR db = GetDgnDb();
 
     // Set up a sheet to hold attachments
-    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("SheetListModel"));
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, "SheetListModel");
     SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "MySheet");
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"), DPoint2d::From(10,10));
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DPoint2d::From(10,10));
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
@@ -101,9 +101,9 @@ void ViewAttachmentTest::SetUp()
     ASSERT_TRUE(m_attachmentCatId.IsValid());
 
     // Set up a viewed model
-    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("MyDrawingListModel"));
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, "MyDrawingListModel");
     SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, DgnCode(), "MySectionDrawing");
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("MyDrawingModel"));
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     m_drawingModelId = drawing->GetModelId();
 
     // Create a view of our (empty) model

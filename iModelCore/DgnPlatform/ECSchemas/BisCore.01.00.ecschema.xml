@@ -197,15 +197,6 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
         </ECNavigationProperty>
-        <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Properties" typeName="string">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">

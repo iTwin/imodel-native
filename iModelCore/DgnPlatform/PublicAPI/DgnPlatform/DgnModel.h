@@ -71,7 +71,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 {
     friend struct DgnModels;
     friend struct DgnElement;
@@ -137,7 +137,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         DgnDbR              m_dgndb;
         DgnClassId          m_classId;
         DgnElementId        m_modeledElementId;
-        DgnCode             m_code;
         bool                m_inGuiList;
         bool                m_isTemplate = false;
 
@@ -145,15 +144,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code The code for the DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, bool inGuiList = true) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_code(code), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList)
             {
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
-        void SetCode(DgnCode code) {m_code = code;} //!< Set the DgnCode for models created with this CreateParams
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;} //!< Set the visibility of models created with this CreateParams in model lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -169,9 +166,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
-        static const uint64_t SetCode = Clone << 1; //!< Change this model's DgnCode. "SetCode"
-
-        static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = Clone << 1;      //!< Reserved for future use 
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
@@ -194,7 +190,6 @@ protected:
     DgnModelId          m_modelId;
     DgnClassId          m_classId;
     DgnElementId        m_modeledElementId;
-    DgnCode             m_code;
     bool                m_inGuiList;
     bool                m_isTemplate;
 
@@ -424,12 +419,6 @@ protected:
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
-    virtual DgnCodeCR _GetCode() const override final {return m_code;}
-    virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
-    virtual DgnModelCP _ToDgnModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
-    DGNPLATFORM_EXPORT virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override;
-    virtual DgnCode _GenerateDefaultCode() const override {return DgnCode();}
 public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
@@ -464,7 +453,7 @@ public:
     bool IsPersistent() const {return m_persistent;}
 
     //! Get the name of this model
-    Utf8String GetName() const {return m_code.GetValue();}
+    DGNPLATFORM_EXPORT Utf8String GetName() const;
     
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -560,17 +549,15 @@ public:
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
-    //! @param[in] newCode The code for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this DgnModel, it does NOT clone the elements of this DgnModel.
     //! @see CopyModel, Import
-    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnElementId newModeledElementId, DgnCodeCR newCode) const;
+    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnElementId newModeledElementId) const;
 
     //! Make a persitent copy of the specified DgnModel and its contents.
     //! @param[in] model The model to copy
     //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
-    //! @param[in] newCode The DgnCode for the new DgnModel.
     //! @see Import
-    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId, DgnCodeCR newCode);
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -650,9 +637,6 @@ public:
     //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     void OnValidate() {_OnValidate();}
-
-    //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
-    static DgnCode CreateModelCode(Utf8StringCR modelName) {return ModelAuthority::CreateModelCode(modelName);}
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate
@@ -777,11 +761,10 @@ public:
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code The DgnCode for the DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, code, inGuiList), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
@@ -924,21 +907,21 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : SpatialModel
     friend struct dgn_ModelHandler::Physical;
 
 private:
-    static PhysicalModelPtr Create(DgnDbR db, DgnElementId modeledElementId, DgnCodeCR code);
+    static PhysicalModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
 
 protected:
     PhysicalModelCP _ToPhysicalModel() const override final {return this;}
     explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalPartitionCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalPartitionCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement);
 };
 
 //=======================================================================================
@@ -1003,8 +986,8 @@ protected:
     explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DocumentPartitionCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DocumentPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DocumentPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DocumentPartitionCR modeledElement);
 };
 
 //=======================================================================================
@@ -1089,7 +1072,7 @@ protected:
 
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element
-    DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
 };
 
 //=======================================================================================
@@ -1142,12 +1125,11 @@ public:
         //! @param[in] dgndb the DgnDb into which the SheetModel will be created
         //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
-            T_Super(dgndb, classId, modeledElementId, code, displayInfo, inGuiList), m_size(size) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DPoint2d size, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, modeledElementId, displayInfo, inGuiList), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
 
@@ -1179,7 +1161,7 @@ public:
     static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
     //! Create a SheetModel that breaks down the specified Sheet element
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize=DPoint2d::FromZero());
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DPoint2dCR sheetSize=DPoint2d::FromZero());
 
     //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}

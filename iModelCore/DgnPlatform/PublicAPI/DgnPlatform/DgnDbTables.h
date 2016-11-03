@@ -364,8 +364,6 @@ public:
     };
 
 public:
-    static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
-
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! Ths supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
@@ -392,21 +390,12 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(DgnCode& code, DgnModelId id) const;
 
-    //! Find the ModelId of the model with the specified code.
-    //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
+    //! Query for a DgnModelId by the DgnCode of the element that it is modeling
+    DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
-    //@}
-
-    //! Generate a model name that is not currently in use in this file
-    //! @param[in]  baseName base model name to start with (optional)
-    //! @return unique name that was generated
-    DGNPLATFORM_EXPORT Utf8String GetUniqueModelName(Utf8CP baseName);
-    //@}
 
     //! Get a string containing the list of characters that may NOT appear in model names.
     static Utf8CP GetIllegalCharacters() {return "\\/:*?<>|\"\t\n,=&";}

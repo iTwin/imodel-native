@@ -76,9 +76,6 @@ public:
     //! @note will fail if a 2d model is the default
     PhysicalModelPtr GetDefaultPhysicalModel();
 
-    //! Insert a new PhysicalModel using the specified name
-    PhysicalModelPtr InsertPhysicalModel(Utf8CP modelName) {return DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), DgnModel::CreateModelCode(modelName));}
-
     //! Get the DgnCategoryId of the default category created by SetupSeedProject
     DgnCategoryId GetDefaultCategoryId() {return m_defaultCategoryId;}
 

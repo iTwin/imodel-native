@@ -2496,6 +2496,9 @@ protected:
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+
     //! Get the description of this InformationPartitionElement
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
     //! Set the description of this InformationPartitionElement

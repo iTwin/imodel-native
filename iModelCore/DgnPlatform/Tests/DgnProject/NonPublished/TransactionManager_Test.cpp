@@ -265,8 +265,7 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testModelUndoRedo(DgnDbR db)
     {
-    Utf8String name = db.Models().GetUniqueModelName("TestPhysical");
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, DgnModel::CreateModelCode(name));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysical");
 
     auto category = DgnCategory::QueryFirstCategoryId(db);
 
@@ -653,18 +652,16 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
 
     ModelTxnMonitor monitor;
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
     m_db->SaveChanges("changeSet1");
     DgnModelId model1Id = model1->GetModelId();
     EXPECT_TRUE(monitor.WasAdded(model1Id));
     monitor.Clear();
 
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
-
     //Reverse insertion.Model 1 should'nt be in the Db now.
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(model1Id).IsValid());
     EXPECT_TRUE(monitor.WasDeleted(model1Id));
     monitor.Clear();
 
@@ -675,7 +672,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet2");
 
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_TRUE(m_db->Models().GetModel(model1Id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -686,26 +683,26 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
     SetupSeedProject();
     auto& txns = m_db->Txns();
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
+    DgnModelId model1Id = model1->GetModelId();
     m_db->SaveChanges("changeSet1");
-    ASSERT_TRUE(model1->GetModelId() == m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")));
 
     DgnDbStatus modelStatus = model1->Delete();
     EXPECT_EQ(DgnDbStatus::Success, modelStatus);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(model1Id).IsValid());
     m_db->SaveChanges("changeSet2");
 
     //Reverse deletion.Model 1 should be in the Db now.
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_TRUE(m_db->Models().GetModel(model1Id).IsValid());
 
     //Reinstate Transaction.Model should'nt be there anymore.
     stat = txns.ReinstateTxn();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet3");
 
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(model1Id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -716,9 +713,9 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     SetupSeedProject();
     auto& txns = m_db->Txns();
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
     m_db->SaveChanges("changeSet1");
-    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
+    DgnModelId m1id = model1->GetModelId();
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement("E1", m1id);
@@ -752,7 +749,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 
     //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll(true);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -764,9 +761,9 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     auto& txns = m_db->Txns();
 
     //Creates a model.
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
     m_db->SaveChanges("changeSet1");
-    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
+    DgnModelId m1id = model1->GetModelId();
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement("E1", m1id);
@@ -799,7 +796,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 
     //Both the elements and the model should'nt be in the database.
     txns.ReverseAll(true);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,14 +809,14 @@ TEST_F (TransactionManagerTests, ReverseToPos)
     auto txn_id = txns.GetCurrentTxnId();
 
     //creates model
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
+    DgnModelId m1id = model1->GetModelId();
     m_db->SaveChanges("changeSet1");
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Reverse insertion.Model 1 should'nt be in the Db now.
     DgnDbStatus stat = txns.ReverseTo(txn_id);
     EXPECT_EQ((DgnDbStatus)SUCCESS, stat);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,21 +828,21 @@ TEST_F (TransactionManagerTests, CancelToPos)
     auto& txns = m_db->Txns();
 
     //creates model
-    DgnModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("model1"));
+    DgnModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
+    DgnModelId m1id = model1->GetModelId();
     m_db->SaveChanges("changeSet1");
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     TxnManager::TxnId t1 = txns.GetCurrentTxnId();
 
     //Deletes the model.
     DgnDbStatus modelStatus = model1->Delete ();
     EXPECT_EQ(DgnDbStatus::Success, modelStatus);
-    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     m_db->SaveChanges("changeSet2");
 
     //Model should be back in the db.
     DgnDbStatus status = txns.CancelTo(t1);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_TRUE(m_db->Models().GetModel(m1id).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -857,24 +854,20 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     auto& txns = m_db->Txns();
 
     //Inserts a  model
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
     m_db->SaveChanges("changeSet1");
-    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
 
     txns.BeginMultiTxnOperation();
 
     //Inserts 2 models..
-    PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model2"));
+    PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model2");
     m_db->SaveChanges("changeSet2");
-
-    ASSERT_TRUE (model2 != nullptr);
-    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
 
     model2->FillModel();
     EXPECT_TRUE (model2->IsFilled());
     m_db->SaveChanges("changeSet3");
 
-    PhysicalModelPtr model3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model3"));
+    PhysicalModelPtr model3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model3");
     auto t3 = txns.GetCurrentTxnId();
     m_db->SaveChanges("changeSet4");
 
@@ -884,15 +877,15 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shouldn't be in the db.
-    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
-    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
+    EXPECT_FALSE (m_db->Models().GetModel(model2->GetModelId()).IsValid());
+    EXPECT_FALSE (m_db->Models().GetModel(model3->GetModelId()).IsValid());
 
     status = txns.ReinstateTxn();
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shoud be back in the db.
-    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
-    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
+    EXPECT_TRUE (m_db->Models().GetModel(model2->GetModelId()).IsValid());
+    EXPECT_TRUE (m_db->Models().GetModel(model3->GetModelId()).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -749,15 +749,6 @@ DgnDbStatus CategoryAuthority::_ValidateCode(ICodedEntityCR entity) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnModel::_SupportsCodeAuthority(DgnAuthorityCR auth) const
-    {
-    // No reason not to allow customized model code authorities.
-    return SystemAuthority::GetId(SystemAuthority::Local) != auth.GetAuthorityId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnAuthority::RestrictedAction::Parse(Utf8CP name)
     {
     if (0 == BeStringUtilities::Stricmp(name, "validatecode"))

@@ -45,7 +45,9 @@ module DgnScriptPerformanceTests {
     //---------------------------------------------------------------------------------------
     function Test(db: be.DgnDb, params: Params): number
     {
-        var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.newModelName)));
+        be.Script.ReportError('QueryModelId has been removed, this test needs to be refactored');
+        var modelId: be.DgnObjectId = null;
+        var model = db.Models.GetModel(modelId /* WIP: db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.newModelName))*/);
         var catid = be.DgnCategory.QueryCategoryId(params.categoryName, db);
 
         //var starti = Date.now();

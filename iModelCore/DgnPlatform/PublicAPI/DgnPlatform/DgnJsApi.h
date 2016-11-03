@@ -604,25 +604,15 @@ struct JsDgnModel : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());
         }
-    JsAuthorityIssuedCodeP GetCode() const 
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsAuthorityIssuedCode(m_model->GetCode());
-        }
     JsDgnDbP GetDgnDb() 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnDb(m_model->GetDgnDb());
         }
-    static JsAuthorityIssuedCodeP CreateModelCode(Utf8StringCR name) 
-        {
-        return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));
-        }
 
     RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
-    STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
 };
 
@@ -658,7 +648,7 @@ struct JsDgnModels : RefCountedBaseWithCreate
 
     JsDgnModels(DgnModels& m) : m_models(m) {;}
 
-    JsDgnObjectIdP QueryModelId(JsAuthorityIssuedCodeP code) {return new JsDgnObjectId(m_models.QueryModelId(code->m_code).GetValueUnchecked());}
+    //JsDgnObjectIdP QueryModelId(JsAuthorityIssuedCodeP code) {return new JsDgnObjectId(m_models.QueryModelId(code->m_code).GetValueUnchecked());}
     JsDgnModelP GetModel(JsDgnObjectIdP mid) {auto model = m_models.GetModel(DgnModelId(mid->m_id)); return model.IsValid()? new JsDgnModel(*model): nullptr;}
 };
 

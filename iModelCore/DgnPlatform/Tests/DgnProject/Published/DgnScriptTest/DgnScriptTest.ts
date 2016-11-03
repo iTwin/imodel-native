@@ -578,7 +578,9 @@ module DgnScriptTests {
             be.Script.ReportError('QueryCategoryId failed?');
 
         //  Create element
-        var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
+        be.Script.ReportError('QueryModelId has been removed, this test needs to be refactored');
+        var modelId: be.DgnObjectId = null;
+        var model = db.Models.GetModel(modelId /* WIP: db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName))*/);
         var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder

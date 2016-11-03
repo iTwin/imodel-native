@@ -67,7 +67,8 @@ DgnModelPtr DgnElement::GetModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnElement::GetSubModel() const
     {
-    return m_dgndb.Models().GetModel(GetSubModelId());
+    // The DgnModelId value for the SubModel is the same as this element's DgnElementId value
+    return m_dgndb.Models().GetModel(DgnModelId(GetElementId().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,8 +76,8 @@ DgnModelPtr DgnElement::GetSubModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnElement::GetSubModelId() const
     {
-    // The DgnModelId value for the sub-model is the same as this element's DgnElementId value
-    return DgnModelId(GetElementId().GetValue());
+    DgnModelPtr model = GetSubModel();
+    return model.IsValid() ? model->GetModelId() : DgnModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -358,6 +359,14 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
         modelId.Invalidate(); // mark CreateParams as invalid
 
     return CreateParams(db, modelId, classId, code, nullptr, parentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP name)
+    {
+    return PartitionAuthority::CreatePartitionCode(name, parentSubject.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -689,7 +698,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         return DgnDbStatus::InvalidParent;
 
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()) || GetDgnDb().Models().QueryModelId(m_code).IsValid())
+    if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()))
         return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)

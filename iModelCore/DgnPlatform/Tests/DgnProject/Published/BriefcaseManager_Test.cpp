@@ -1026,7 +1026,7 @@ public:
         EXPECT_TRUE(partition.IsValid());
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*partition));
         EXPECT_TRUE(db.Elements().Insert<PhysicalPartition>(*partition).IsValid());
-        PhysicalModelPtr model = PhysicalModel::Create(*partition, DgnModel::CreateModelCode(name));
+        PhysicalModelPtr model = PhysicalModel::Create(*partition);
         EXPECT_TRUE(model.IsValid());
         IBriefcaseManager::Request req;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));

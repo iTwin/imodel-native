@@ -1132,7 +1132,7 @@ RedlineModelPtr RedlineModel::Create(SheetCR sheet, Utf8CP name, DgnModelId temp
         }
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
-    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, sheet.GetElementId(), CreateModelCode(name), DPoint2d::FromZero()));
+    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, sheet.GetElementId(), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
         return nullptr;
 
@@ -1162,7 +1162,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
-    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name)));
+    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */));
     if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("SpatialRedlineModel::CreateModel failed");
@@ -1395,7 +1395,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId(), CategorySelector(*project, ""), DisplayStyle(*project));
+    RedlineViewDefinition view(*project, rdlModel.GetName().c_str(), rdlModel.GetModelId(), CategorySelector(*project, ""), DisplayStyle(*project));
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
@@ -1709,17 +1709,19 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DocumentListModelPtr DgnMarkupProject::GetSheetListModel()
     {
-    DgnCode modelCode = DgnModel::CreateModelCode("Markup Sheets");
-    DgnModelId modelId = Models().QueryModelId(modelCode);
+    DgnCode partitionCode = DocumentPartition::CreateCode(*Elements().GetRootSubject(), "Markup Sheets");
+    DgnElementId partitionId = Elements().QueryElementIdByCode(partitionCode);
 
-    if (modelId.IsValid())
-        return Models().Get<DocumentListModel>(modelId);
-
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Markup Sheets");
-    if (!partition.IsValid())
-        return nullptr;
-
-    return DocumentListModel::CreateAndInsert(*partition, modelCode);
+    if (partitionId.IsValid())
+        {
+        DocumentPartitionCPtr partition = Elements().Get<DocumentPartition>(partitionId);
+        return partition.IsValid() ? Models().Get<DocumentListModel>(partition->GetSubModelId()) : nullptr;
+        }
+    else
+        {
+        DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), partitionCode.GetValueCP());
+        return partition.IsValid() ? DocumentListModel::CreateAndInsert(*partition) : nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

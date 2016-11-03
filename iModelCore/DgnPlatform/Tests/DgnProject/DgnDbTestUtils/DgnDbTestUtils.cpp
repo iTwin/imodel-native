@@ -48,13 +48,13 @@ DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, DgnCodeCR modelCode)
+DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a partition to model
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition, modelCode);
+    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
@@ -99,10 +99,10 @@ SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, DgnCodeCR code, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR modelCode)
+DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing)
     {
     MUST_HAVE_HOST(nullptr);
-    DrawingModelPtr model = DrawingModel::Create(drawing, modelCode);
+    DrawingModelPtr model = DrawingModel::Create(drawing);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -113,10 +113,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode, DPoint2dCR sheetSize)
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DPoint2dCR sheetSize)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet, modelCode, sheetSize);
+    SheetModelPtr model = SheetModel::Create(sheet, sheetSize);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -127,13 +127,13 @@ SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
+LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    LinkPartitionCPtr partition = LinkPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    LinkPartitionCPtr partition = LinkPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, partition->GetElementId(), modelCode));
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, partition->GetElementId()));
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -144,14 +144,13 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelCode)
+PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    Utf8PrintfString partitionLabel("Partition for %s", modelCode.GetValueCP());
-    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, partitionLabel.c_str());
+    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition, modelCode);
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
@@ -353,4 +352,21 @@ int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
         return -1;
 
     return statement.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    11/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbTestUtils::CodeValueExists(DgnDbR db, Utf8CP codeValue)
+    {
+    ECSqlStatement statement;
+    ECSqlStatus prepareStatus = statement.Prepare(db, "SELECT * FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE [CodeValue]=? LIMIT 1");
+    ECSqlStatus bindStatus = statement.BindText(1, codeValue, IECSqlBinder::MakeCopy::No);
+    if ((ECSqlStatus::Success != prepareStatus) || (ECSqlStatus::Success != bindStatus))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    return (BE_SQLITE_ROW == statement.Step());
     }

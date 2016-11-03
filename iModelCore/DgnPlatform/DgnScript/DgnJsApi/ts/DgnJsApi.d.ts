@@ -452,8 +452,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
-        /** Look up a DgnModelId by the model's code. @param name The code to look up. @return The ID of the corresponding model if found */
-        QueryModelId(name: AuthorityIssuedCode): DgnObjectIdP;
         /** Find or load the model identified by the specified ID. @param id The model ID. @return The loaded model or null if not found */
         GetModel(id: DgnObjectIdP): DgnModelP;
         OnDispose(): void;
@@ -731,12 +729,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
         /** The ID of this model */
         ModelId: DgnObjectIdP;
-        /** The Code of this model */
-        Code: AuthorityIssuedCode;
         /** The DgnDb that contains this model */
         DgnDb: DgnDbP;
-        /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
-        static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
 
         /**
         * Add any required locks and/or codes to the specified request in preparation for the specified operation
