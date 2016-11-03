@@ -1268,6 +1268,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     root[JSON_GeometricError] = 1.E6;
 
     rootRange = DRange3d::NullRange();
+
     for (auto& modelId : spatialView->GetViewedModels())
         {
         DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);

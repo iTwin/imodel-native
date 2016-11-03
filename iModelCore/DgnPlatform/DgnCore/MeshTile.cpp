@@ -99,7 +99,7 @@ ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMa
 ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
     { 
     if (nullptr == m_previousLocalStorage) 
-        s_threadLocalParasolidHandlerStorage = nullptr;
+        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
 
     }
 
@@ -432,10 +432,15 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
+TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) :
+    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
     {
     if (nullptr != geometryParams)
+        {
         m_materialId = geometryParams->GetMaterialId();
+        m_categoryId = geometryParams->GetCategoryId();
+        m_subCategoryId = geometryParams->GetSubCategoryId();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -445,6 +450,9 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
+    COMPARE_VALUES (m_categoryId.GetValueUnchecked(), rhs.m_categoryId.GetValueUnchecked());
+    COMPARE_VALUES (m_subCategoryId.GetValueUnchecked(), rhs.m_subCategoryId.GetValueUnchecked());
+
     // No need to compare textures -- if materials match then textures must too.
 
     return false;
