@@ -98,6 +98,9 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
         mutable bool m_forceRedraw;
         mutable bset<uint64_t>                          m_activeClips;
 
+        BeFileName                              m_path;
+        bool                                    m_isProgressiveDisplayOn;        
+                       
         void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
                        
     protected:
@@ -144,6 +147,8 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
                 
         void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
 
+        SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
+
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
 
@@ -161,7 +166,12 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
 
         SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
+        SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
+        
+        SCALABLEMESH_SCHEMA_EXPORT void ClearOverviews(IScalableMeshPtr& targetSM);
 
+        SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
+        
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial

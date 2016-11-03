@@ -11,4 +11,5 @@
 #include "DataCaptureSchemaDefinitions.h"
 #include "DataCaptureDomain.h"
 #include "Camera.h"
+#include "Photo.h"
 

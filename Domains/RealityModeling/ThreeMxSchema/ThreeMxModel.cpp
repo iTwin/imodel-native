@@ -482,7 +482,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                     {
                     builder = found->second;
                     }
-                }
+                }                                   99
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
@@ -565,11 +565,6 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
     if (node._HasChildren() && node.IsNotLoaded())
         m_scene.LoadNodeSynchronous(node);
 
-    folly::via(&BeFolly::IOThreadPool::GetPool(), [&]()  
-        {  
-        m_collector._AcceptTile(tile);  
-        m_completedTiles++;
-        });
 
     static size_t       s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
 
@@ -591,6 +586,12 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
                 }
             }
         }
+    folly::via(&BeFolly::IOThreadPool::GetPool(), [&]()  
+        {  
+        m_collector._AcceptTile(tile);  
+        m_completedTiles++;
+        });
+
     IndicateProgress();
     }
 

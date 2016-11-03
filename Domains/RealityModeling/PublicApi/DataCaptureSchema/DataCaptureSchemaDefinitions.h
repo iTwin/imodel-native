@@ -51,7 +51,7 @@
 #define END_BENTLEY_DATACAPTURE_NAMESPACE          } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_DATACAPTURE        using namespace BENTLEY_NAMESPACE_NAME::DataCapture;
 
-// create the Bentley.ConceptCivil namespace
+// create the Bentley.DataCapture namespace
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 END_BENTLEY_DATACAPTURE_NAMESPACE
 
@@ -71,22 +71,17 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 
 // Elements
 #define BDCP_CLASS_Camera                                        "Camera"
+#define BDCP_CLASS_Photo                                         "Photo"
 
-// 
-// 
 // Relationships
-// #define BDCP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
-// #define BDCP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
-// 
-// 
-// Properties
-// #define BDCP_PROP_StatusAspect_Status                               "Status"
+#define BDCP_REL_PhotoIsTakenByCamera                          "PhotoIsTakenByCamera"
 
 
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BDCP_CATEGORY_Camera                                         "Camera"
+#define BDCP_CATEGORY_Photo                                          "Photo"
 
 
 //-----------------------------------------------------------------------------------------
@@ -129,13 +124,20 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Define typedefs and Ptrs in the DataCapture namespace
 //-----------------------------------------------------------------------------------------
 DATACAPTURE_TYPEDEFS(Camera)
+DATACAPTURE_TYPEDEFS(ImageDimensionType)
+DATACAPTURE_TYPEDEFS(CameraDistortionType)
+DATACAPTURE_TYPEDEFS(Photo)
+DATACAPTURE_TYPEDEFS(PoseType)
+DATACAPTURE_TYPEDEFS(RotationMatrixType)
 
 
 DATACAPTURE_REFCOUNTED_PTR(Camera)
+DATACAPTURE_REFCOUNTED_PTR(Photo)
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-BEBRIEFCASEBASED_ID_SUBCLASS(CameraId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(CameraElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(PhotoElementId, Dgn::DgnElementId)
 
 /**
 @addtogroup DataCaptureGroup DataCapture

@@ -255,4 +255,12 @@ void WmsModel::_ReadJsonProperties(Json::Value const& v)
     m_map.FromJson(v);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+WmsMap const& WmsModel::GetMap() const
+    {
+    return m_map;
+    }
+
 

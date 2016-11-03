@@ -30,7 +30,8 @@ TestKnownLocationsAdmin()
     }
 };
 
-#if 0
+
+#if 0  //This is only available in BIM02 - not on DgnDb06Dev
 //=======================================================================================
 // @bsiclass
 //! Refer to http://bsw-wiki.bentley.com/bin/view.pl/Main/DgnDbServerClientAPIExamples
@@ -114,9 +115,20 @@ void DataCaptureProjectHost::CleanOutputDirectory()
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2015
+//---------------------------------------------------------------------------------------
+BeFileName DataCaptureProjectHost::GetDocumentsDirectory()
+    {
+    BeFileName documentsDir;
+    BeTest::GetHost().GetDocumentsRoot(documentsDir);
+    documentsDir.AppendToPath(L"DgnDb/DataCapture");
+    return documentsDir;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    11/2014
+//---------------------------------------------------------------------------------------
 BeFileName DataCaptureProjectHost::GetOutputDirectory()
     {
     BeFileName outputDir;
@@ -148,6 +160,25 @@ BeFileName DataCaptureProjectHost::BuildProjectFileName(WCharCP baseName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DataCaptureProjectHost::ImportDataCaptureSchema(DgnDbR dgndb)
+    {
+    BeFileName assetsRootDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDir);
+
+    BeFileName schemaRootDir = assetsRootDir;
+    schemaRootDir.AppendToPath(BDCP_SCHEMA_LOCATION);
+
+    BeFileName DataCaptureSchemaFileName = schemaRootDir;
+    DataCaptureSchemaFileName.AppendToPath(BDCP_SCHEMA_FILE);
+
+    auto status = DataCaptureDomain::GetDomain().ImportSchema(dgndb, DataCaptureSchemaFileName);
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
@@ -164,33 +195,18 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     if (!projectPtr.IsValid() || DbResult::BE_SQLITE_OK != createStatus)
         return nullptr;
 
-    BeFileName assetsRootDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDir);
-
-    BeFileName schemaRootDir = assetsRootDir;
-    schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
-
     DgnDbStatus status;
-    BeFileName DataCaptureSchemaFileName = schemaRootDir;
-    DataCaptureSchemaFileName.AppendToPath(BDCP_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = DataCapture::DataCaptureDomain::GetDomain().ImportSchema(*projectPtr, DataCaptureSchemaFileName)))
+    if (DgnDbStatus::Success != (status = ImportDataCaptureSchema(*projectPtr)))
         return nullptr;
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
-//     auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
-//     auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr),
-//         projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
-// 
-//     if (DgnDbStatus::Success != alignmentModelPtr->Insert())
-//         return nullptr;
+    auto& spatialModelHandlerR = dgn_ModelHandler::Spatial::GetHandler();
+    auto spatialModelPtr = spatialModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(spatialModelHandlerR),
+                                                                              DgnModel::CreateModelCode("Test Spatial Model")));
 
-//     auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
-//     auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(physicalModelHandlerR),
-//         projectPtr->Elements().GetRootSubjectId(), PhysicalModel::CreateModelCode("Test Physical Model")));
-
-//     if (DgnDbStatus::Success != physicalModelPtr->Insert())
-//         return nullptr;
+    if (DgnDbStatus::Success != spatialModelPtr->Insert())
+        return nullptr;
 
     return projectPtr;
     }
@@ -235,123 +251,4 @@ DataCaptureProjectHostImpl::~DataCaptureProjectHostImpl()
     }
 
 
-DataCaptureProjectHost* DataCaptureTestsFixture::m_host = nullptr;
-DgnDbPtr DataCaptureTestsFixture::s_currentProject = DgnDbPtr(nullptr);
-//---------------------------------------------------------------------------------------
-// Automatically called by gTest framework before running every test
-//---------------------------------------------------------------------------------------
-void DataCaptureTestsFixture::SetUpTestCase()
-    {
-    m_host = new DataCaptureProjectHost();
-    }
-//---------------------------------------------------------------------------------------
-// Automatically called by gTest framework after running every test
-//---------------------------------------------------------------------------------------
-void DataCaptureTestsFixture::TearDownTestCase()
-    {
-    if (s_currentProject.IsValid())
-        s_currentProject->SaveChanges();
 
-    s_currentProject = nullptr;
-
-    delete m_host;
-    m_host = nullptr;
-    }
-
-#if 0
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Shaun.Sewall           09/2016
-//---------------------------------------------------------------------------------------
-DgnModelId DataCaptureTestsFixture::QueryFirstPhysicalModelId(DgnDbR db)
-    {
-    for (auto const& modelEntry : db.Models().MakeIterator())
-        {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
-
-        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel() && dynamic_cast<PhysicalModelP>(model.get()))
-            return modelEntry.GetModelId();
-        }
-
-    BeAssert(false && "No PhysicalModel found");
-    return DgnModelId();
-    }
-#endif
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetBriefcase)
-    {
-    BeAssert(nullptr != m_host);
-
-    const WCharCP testSeedName = L"TestSeed.dgndb";
-    const BeFileName testSeedPath = m_host->BuildProjectFileName(testSeedName);
-    const BeFileName projectName = m_host->BuildProjectFileName(baseName);
-
-    //! Create seed
-    if (!testSeedPath.DoesPathExist())
-        {
-        DgnDbPtr seedProject = m_host->CreateProject(testSeedName);
-
-        //! Error
-        if (seedProject.IsNull())
-            return nullptr;
-
-        seedProject->CloseDb();
-        }
-
-    if (s_currentProject.IsValid())
-        {
-        s_currentProject->SaveChanges();
-        s_currentProject->CloseDb();
-        s_currentProject = nullptr;
-        }
-
-    if (BeFileNameStatus::Success != BeFileName::BeCopyFile(testSeedPath.c_str(), projectName.c_str(), false))
-        return nullptr;
-
-    s_currentProject = m_host->OpenProject(baseName);
-    if (s_currentProject.IsNull())
-        return nullptr;
-
-    if (needsSetBriefcase)
-        {
-        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
-        s_currentProject->CloseDb();
-        s_currentProject = m_host->OpenProject(baseName);
-        }
-
-    return s_currentProject;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbPtr DataCaptureTestsFixture::OpenProject(WCharCP baseName, bool needsSetBriefcase)
-    {
-    BeAssert(nullptr != m_host);
-
-    const BeFileName projectName = m_host->BuildProjectFileName(baseName);
-
-    bool wantsCurrentProject = false;
-
-    if (s_currentProject.IsValid())
-        {
-        Utf8String projectNameUtf(projectName.c_str());
-        if (0 == projectNameUtf.CompareTo(s_currentProject->GetDbFileName()))
-            wantsCurrentProject = true;
-        }
-
-    if (!wantsCurrentProject)
-        s_currentProject = m_host->OpenProject(baseName);
-
-    if (needsSetBriefcase && s_currentProject.IsValid())
-        {
-        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
-        s_currentProject->SaveChanges();
-        s_currentProject->CloseDb();
-        s_currentProject = m_host->OpenProject(baseName);
-        }
-
-    return s_currentProject;
-    }

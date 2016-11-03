@@ -1,6 +1,15 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: DataCaptureSchema/Tests/BackDoor/PublicAPI/BackDoor/DataCapture/BackDoor.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "DataCaptureTests.h"
+#include "DataCaptureTestDomain.h"
+#include "DataCaptureTestFixture.h"
 
 BEGIN_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE
 
