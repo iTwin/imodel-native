@@ -794,8 +794,8 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
-    if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->AddGeomElement(*geom);
+    if (nullptr != geom)
+        m_rangeIndex->AddElement(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,12 +834,8 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
         return;
 
     auto id = original.GetElementId();
-    auto cat = origGeom->GetCategoryId();
-    if (origBox.IsValid())
-        m_rangeIndex->RemoveElement(id);
-
-    if (newBox.IsValid())
-        m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, cat));
+    m_rangeIndex->RemoveElement(id);
+    m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1464,7 +1460,7 @@ void DgnModel::_FillModel()
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      01/10
+* @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GeometricModel::DisplayInfo::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {

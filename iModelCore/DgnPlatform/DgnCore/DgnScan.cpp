@@ -12,30 +12,30 @@ using namespace RangeIndex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Stop checkSubRange(BoxCR scanRange, BoxCR elemRange, bool isElem3d)
+static ScanCriteria::Stop checkSubRange(FBoxCR scanRange, FBoxCR elemRange, bool isElem3d)
     {
     /* if element xlow is greater than range xhigh, reject */
-    if (elemRange.low.x > scanRange.high.x)
+    if (elemRange.m_low.x > scanRange.m_high.x)
         return ScanCriteria::Stop::Yes;
 
     /* if element ylow is greater than range yhigh, reject */
-    if (elemRange.low.y > scanRange.high.y)
+    if (elemRange.m_low.y > scanRange.m_high.y)
         return ScanCriteria::Stop::Yes;
 
     /* if element xhigh is less than range xlow, reject */
-    if (elemRange.high.x < scanRange.low.x)
+    if (elemRange.m_high.x < scanRange.m_low.x)
         return ScanCriteria::Stop::Yes;
 
     /* if element yhigh is less than range ylow, reject */
-    if (elemRange.high.y < scanRange.low.y)
+    if (elemRange.m_high.y < scanRange.m_low.y)
         return ScanCriteria::Stop::Yes;
 
     /* if element zlow is greater than range zhigh, reject */
-    if ((isElem3d ? elemRange.low.z : 0) > scanRange.high.z)
+    if ((isElem3d ? elemRange.m_low.z : 0) > scanRange.m_high.z)
         return ScanCriteria::Stop::Yes;
 
     /* if element zhigh is less than range zlow, reject */
-    if ((isElem3d ? elemRange.high.z : 0) < scanRange.low.z)
+    if ((isElem3d ? elemRange.m_high.z : 0) < scanRange.m_low.z)
         return ScanCriteria::Stop::Yes;
 
     /* passed all tests, so accept it */
@@ -55,7 +55,7 @@ static inline void exchangeAndNegate(double *dbl1, double *dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BJB             12/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Stop checkSkewRange(BoxCP skewRange, DPoint3dCP skewVector, BoxCR elemRange, bool isElem3d)
+static ScanCriteria::Stop checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector, FBoxCR elemRange, bool isElem3d)
     {
     double va1, va2, va3, va4;
     double vb1, vb2, vb3, vb4;
@@ -66,10 +66,10 @@ static ScanCriteria::Stop checkSkewRange(BoxCP skewRange, DPoint3dCP skewVector,
     DPoint3d dlo;
     DPoint3d dhi;
 
-    dlo.x = (double) elemRange.low.x  - skewRange->high.x;
-    dlo.y = (double) elemRange.low.y  - skewRange->high.y;
-    dhi.x = (double) elemRange.high.x - skewRange->low.x;
-    dhi.y = (double) elemRange.high.y - skewRange->low.y;
+    dlo.x = (double) elemRange.m_low.x  - skewRange->m_high.x;
+    dlo.y = (double) elemRange.m_low.y  - skewRange->m_high.y;
+    dhi.x = (double) elemRange.m_high.x - skewRange->m_low.x;
+    dhi.y = (double) elemRange.m_high.y - skewRange->m_low.y;
 
     if (skVector.x < 0.0)
         {
@@ -96,8 +96,8 @@ static ScanCriteria::Stop checkSkewRange(BoxCP skewRange, DPoint3dCP skewVector,
         return ScanCriteria::Stop::Yes;
 
     /* now we need the Z stuff */
-    dlo.z = (isElem3d ? (double) elemRange.low.z  : 0.0) - skewRange->high.z;
-    dhi.z = (isElem3d ? (double) elemRange.high.z : 0.0) - skewRange->low.z;
+    dlo.z = (isElem3d ? (double) elemRange.m_low.z  : 0.0) - skewRange->m_high.z;
+    dhi.z = (isElem3d ? (double) elemRange.m_high.z : 0.0) - skewRange->m_low.z;
     if (skVector.z < 0.0)
         {
         skVector.z = - skVector.z;
@@ -142,7 +142,7 @@ static ScanCriteria::Stop checkSkewRange(BoxCP skewRange, DPoint3dCP skewVector,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ScanCriteria::CheckRange(BoxCR elemRange, bool is3d) const
+ScanCriteria::Stop ScanCriteria::CheckRange(FBoxCR elemRange, bool is3d) const
     {
     if (m_testSkewScan)
         {
@@ -170,7 +170,7 @@ bool ScanCriteria::CheckElementRange(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::_CheckRangeTreeNode(BoxCR nodeRange, bool is3d) const
+bool ScanCriteria::_CheckRangeTreeNode(FBoxCR nodeRange, bool is3d) const
     {
     return ScanCriteria::Stop::No == ((nullptr == m_callback) ? CheckRange(nodeRange, is3d) : m_callback->_CheckNodeRange(nodeRange, is3d));
     }
