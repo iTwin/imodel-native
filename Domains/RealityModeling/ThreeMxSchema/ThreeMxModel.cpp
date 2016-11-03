@@ -390,10 +390,9 @@ struct  PublishTileNode : ModelTileNode
     SceneCP             m_scene;
     NodePtr             m_node;
     ClipVectorCP        m_clip;
-    DgnModelId          m_modelId;
 
-    PublishTileNode(DgnModelId modelId, SceneR scene, NodeR node, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent, ClipVectorCP clip)
-        : ModelTileNode(DRange3d::NullRange(), transformDbToTile, depth, siblingIndex, parent, 0.0), m_scene(&scene), m_node(&node), m_clip(clip), m_modelId(modelId)  { }
+    PublishTileNode(DgnModelCR model, SceneR scene, NodeR node, TransformCR transformDbToTile, size_t depth, size_t siblingIndex, TileNodeP parent, ClipVectorCP clip)
+        : ModelTileNode(model, DRange3d::NullRange(), transformDbToTile, depth, siblingIndex, parent, 0.0), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
 
     void    SetTolerance (double tolerance) { m_tolerance = tolerance; }
@@ -482,17 +481,17 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                     {
                     builder = found->second;
                     }
-                }                                   99
+                }
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
-                ClipOutputCollector clipOutputCollector(m_modelId, dgnDb, *builder, twoSidedTriangles);
+                ClipOutputCollector clipOutputCollector(m_model->GetModelId(), dgnDb, *builder, twoSidedTriangles);
 
                 m_clip->ClipPolyface(*polyface, clipOutputCollector, true);
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, m_modelId, twoSidedTriangles);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, m_model->GetModelId(), twoSidedTriangles);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
@@ -525,7 +524,7 @@ typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 struct Publish3MxContext
 {
     SceneR                          m_scene;
-    DgnModelId                      m_modelId;
+    DgnModelCPtr                    m_model;
     TransformCR                     m_transformDbToTile;
     ClipVectorCP                    m_tileClip;
     TileGenerator::ITileCollector&  m_collector;
@@ -534,8 +533,8 @@ struct Publish3MxContext
     BeAtomic<uint32_t>              m_completedTiles;
     StopWatch                       m_progressTimer;
 
-    Publish3MxContext (SceneR scene, DgnModelId modelId, TransformCR transformDbToTile, ClipVectorCP tileClip, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) :
-                        m_scene(scene), m_modelId(modelId), m_transformDbToTile(transformDbToTile), m_tileClip(tileClip), m_collector(collector), m_progressMeter(progressMeter), m_totalTiles(1), m_progressTimer(true) { }
+    Publish3MxContext (SceneR scene, DgnModelCR model, TransformCR transformDbToTile, ClipVectorCP tileClip, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) :
+                        m_scene(scene), m_model(&model), m_transformDbToTile(transformDbToTile), m_tileClip(tileClip), m_collector(collector), m_progressMeter(progressMeter), m_totalTiles(1), m_progressTimer(true) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -578,7 +577,7 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
 
             if (childNode._HasChildren())
                 {
-                T_PublishTilePtr    childTile = new PublishTileNode(m_modelId, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex, &tile, m_tileClip);
+                T_PublishTilePtr    childTile = new PublishTileNode(*m_model, m_scene, (NodeR) *child, m_transformDbToTile, depth, childIndex, &tile, m_tileClip);
 
                 m_totalTiles++;
                 tile.GetChildren().push_back(childTile);
@@ -644,8 +643,8 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
         tileClip->TransformInPlace(transformDbToTile);
         }
     
-    Publish3MxContext   publishContext (*scene, GetModelId(), transformDbToTile, tileClip.get(), collector, progressMeter);
-    T_PublishTilePtr    rootPublishTile =  new PublishTileNode(GetModelId(), *scene, (NodeR) *scene->GetRootTile(), transformDbToTile, 0, 0, nullptr, tileClip.get());
+    Publish3MxContext   publishContext (*scene, *this, transformDbToTile, tileClip.get(), collector, progressMeter);
+    T_PublishTilePtr    rootPublishTile =  new PublishTileNode(*this, *scene, (NodeR) *scene->GetRootTile(), transformDbToTile, 0, 0, nullptr, tileClip.get());
 
     rootTile = rootPublishTile;
 
