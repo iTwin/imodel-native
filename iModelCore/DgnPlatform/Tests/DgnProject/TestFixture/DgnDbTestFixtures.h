@@ -50,9 +50,6 @@ public:
 
     virtual void TearDown(){ SaveDb(); }
     
-    //! Initialize already converted/published bim/ibim file
-    void SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false, bool needTestDomain = false);
-    
     //! Initialize a seed file with the name provided
     void SetupSeedProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     
@@ -72,7 +69,7 @@ public:
             m_db->SaveChanges();
         }
 
-    //! Get the default PhysicalModel created by SetupSeedProject or SetupWithPrePublishedFile
+    //! Get the default PhysicalModel created by SetupSeedProject
     //! @note will fail if a 2d model is the default
     PhysicalModelPtr GetDefaultPhysicalModel();
 

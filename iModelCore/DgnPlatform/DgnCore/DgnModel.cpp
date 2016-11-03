@@ -772,7 +772,7 @@ void GeometricModel::AllocateRangeIndex() const
     {
     if (nullptr == m_rangeIndex)
         {
-        m_rangeIndex = new DgnRangeTree(Is3d(), 20);
+        m_rangeIndex = new RangeIndex::Tree(Is3d(), 20);
         m_rangeIndex->LoadTree(*this);
         }
     }
@@ -808,7 +808,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
+        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(geom->CalculateRange3d(), element.GetElementId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -833,11 +833,12 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (origBox.IsEqual(newBox)) // many changes don't affect range
         return;
 
+    auto id = original.GetElementId();
     if (origBox.IsValid())
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(origBox, *origGeom));
+        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(origBox, id));
 
     if (newBox.IsValid())
-        m_rangeIndex->AddElement(DgnRangeTree::Entry(newBox, *origGeom));  // origGeom has the address that will be used after update completes
+        m_rangeIndex->AddElement(RangeIndex::Tree::Entry(newBox, id));  // origGeom has the address that will be used after update completes
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -973,7 +974,7 @@ void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTreeP GeometricModel::_GetRangeIndexP(bool create) const
+RangeIndex::TreeP GeometricModel::_GetRangeIndexP(bool create) const
     {
     if (nullptr == m_rangeIndex && create)
         AllocateRangeIndex();

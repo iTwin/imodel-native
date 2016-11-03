@@ -1665,6 +1665,12 @@ struct GraphicBranch
 //=======================================================================================
 struct System
 {
+    Target* m_nowPainting = nullptr;
+    bool CheckPainting(Target* target) {return target==m_nowPainting;}
+    bool IsPainting() {return !CheckPainting(nullptr);}
+    void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
+    void NotPainting() {m_nowPainting = nullptr;}
+
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
 

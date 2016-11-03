@@ -46,13 +46,13 @@ uint32_t        entityIdIn          // => input entity id of entity
 )
     {
     int         failureCode;
-    PK_ATTDEF_t entityIdAttribDefTag;
-    PK_ATTRIB_t currEntityIdAttribTag;
+    PK_ATTDEF_t entityIdAttribDefTag = PK_ENTITY_null;
+    PK_ATTRIB_t currEntityIdAttribTag = PK_ENTITY_null;
 
     if (entityIdIn == KRN_INVALID_FACE_ID)
         return ERROR;
 
-    if (SUCCESS == (failureCode = PK_ATTDEF_find (PKI_ENTITY_ID_ATTRIB_NAME, &entityIdAttribDefTag)) &&
+    if (SUCCESS == (failureCode = PK_ATTDEF_find (PKI_ENTITY_ID_ATTRIB_NAME, &entityIdAttribDefTag)) && PK_ENTITY_null != entityIdAttribDefTag &&
         SUCCESS == (failureCode = PK_ATTRIB_create_empty (entityTagIn, entityIdAttribDefTag, &currEntityIdAttribTag)))
         {
         int     entityIdAttribData[2];

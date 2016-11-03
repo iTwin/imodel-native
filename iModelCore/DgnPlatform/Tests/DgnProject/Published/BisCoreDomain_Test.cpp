@@ -104,7 +104,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement2d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ViewId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([View]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -169,7 +169,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ModelId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([UserLabel]) WHERE ([UserLabel] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([CategoryId])");
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([View]) WHERE ([View] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement3d) "]([CategoryId])");
 
         for (Utf8String expectedSql : expectedSqlList)
