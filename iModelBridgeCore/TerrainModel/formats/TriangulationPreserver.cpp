@@ -68,6 +68,29 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     // Make sure it is the right orientation.
     if (side > 0)
         std::swap(ptNums[2], ptNums[1]);
+/*
+    DTMDirection direction;
+    double area;
+    if (bcdtmMath_getPolygonDirectionP3D(pts, numPoints, &direction, &area) != DTM_SUCCESS)
+        return;
+    if (area < MAXAREAFORVOIDORISLANDS)
+        return;
+    long onLine;
+    double X, Y;
+    double d2 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, &X, &Y);
+
+    if (d2 < 0.001)
+        return;
+
+    double d3 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[0].x, pts[0].y, &X, &Y);
+
+    if (d3 < 0.001)
+        return;
+    double d4 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[2].x, pts[2].y, pts[0].x, pts[0].y, pts[1].x, pts[1].y, &X, &Y);
+
+    if (d4 < 0.001)
+        return;
+*/
 
     for (int i = 0; i < 3; i++)
         {
@@ -109,10 +132,18 @@ BcDTMPtr TriangulationPreserver::Finish ()
             BeAssert(-1 != pt);
             }
         }
+
     bcdtmObject_storeTrianglesInDtmObject(m_stmDtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_pts.data(), (int)m_pts.size(), m_pointIndex.data(), (int)m_pointIndex.size() / 3);
+
     // Recreate the triangulation.
-    bcdtmObject_triangulateStmTrianglesDtmObject (m_stmDtm->GetTinHandle ());
-    if (m_dtm->GetPointCount () == 0)
+    if (bcdtmObject_triangulateStmTrianglesDtmObject(m_stmDtm->GetTinHandle()) != DTM_SUCCESS)
+        {
+        m_dtm->AddPoints(m_pts.data(), (int)m_pts.size());
+        m_dtm->Triangulate();
+        return m_dtm;
+        }
+
+    if (m_dtm->GetPointCount() == 0)
         return m_stmDtm;
 
     // Add the void features to the TM.
@@ -211,6 +242,7 @@ BcDTMPtr TriangulationPreserver::Finish ()
 
             }
         }
+
     if (m_useGraphicBreaks)
         {
         // Triangulate the DTM.
@@ -264,6 +296,85 @@ BcDTMPtr TriangulationPreserver::Finish ()
 //    l->Save (L"d:\\temp\\failedToSwap.tin");
 //    m_dtm->Save (L"d:\\temp\\newDTM.tin");
     return m_dtm;
+    }
+
+void TriangulationPreserver::MatchEdges()
+    {
+    bmap<UInt64, bool> edgeMap;
+
+    for (size_t i = 0; i < m_pointIndex.size(); i++)
+        {
+        size_t endPointIndex = i + 1;
+        if (i % 3 == 2) endPointIndex -= 3;
+
+        int p1 = m_pointIndex[i];
+        int p2 = m_pointIndex[endPointIndex];
+
+        auto it = edgeMap.find((UInt64)p2 << 32 | p1);
+
+        if (it != edgeMap.end())
+            {
+            BeAssert(!it->second);
+            it->second = true;
+            }
+        else
+            {
+            it = edgeMap.find((UInt64)p1 << 32 | p2);
+
+            if (it != edgeMap.end())
+                BeAssert(false);
+            else
+                {
+                edgeMap[(UInt64)p1 << 32 | p2] = false;
+                }
+            }
+        }
+
+    BcDTMPtr joinDTM = BcDTM::Create();
+
+    for (auto it : edgeMap)
+        {
+        if (it.second)
+            continue;
+
+        DTMFeatureId featureId;
+        DPoint3d pts[2];
+        pts[0] = m_pts[it.first >> 32];
+        pts[1] = m_pts[it.first && 0xffffffff];
+
+        joinDTM->AddLinearFeature(DTMFeatureType::Breakline, pts, 2, &featureId);
+        }
+    int nFeatures, nJoinedFatures;
+    joinDTM->JoinFeatures(DTMFeatureType::Breakline, &nFeatures, &nJoinedFatures, 0);
+
+    m_stmDtm = BcDTM::Create();
+
+    // Add the void features to the TM.
+    DTMFeatureEnumerator features(*joinDTM);
+    bvector<DPoint3d> pts;
+    // Add the Voids/Holes/Islands.
+    for (const auto& feature : features)
+        {
+        DTMFeatureId id;
+        feature.GetFeaturePoints(pts);
+
+        if (pts.size() <= 2)
+            continue;
+
+        DTMDirection direction;
+        double area;
+        if (bcdtmMath_getPolygonDirectionP3D(pts.data(), (long)pts.size(), &direction, &area) != DTM_SUCCESS)
+            continue;
+        if (area < MAXAREAFORVOIDORISLANDS)
+            continue;
+
+        if (direction == DTMDirection::AntiClockwise)
+            m_stmDtm->AddLinearFeature(DTMFeatureType::Island, pts.data(), (int)pts.size(), &id);
+        if (direction == DTMDirection::Clockwise)
+            m_stmDtm->AddLinearFeature(DTMFeatureType::Void, pts.data(), (int)pts.size(), &id);
+        }
+
+
     }
 
 void TriangulationPreserver::CheckTriangle (long* ptNums, int numPts)

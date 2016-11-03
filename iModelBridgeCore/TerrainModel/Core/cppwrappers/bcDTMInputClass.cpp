@@ -249,7 +249,7 @@ DTMStatusInt BcDTM::JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* n
 
     if (nFeatures) *nFeatures = numFeat;
     if (nJoinedFeatures) *nJoinedFeatures = numJoined;
-    if( joinUserTagsP != nullptr ) free(&joinUserTagsP) ;
+    if( joinUserTagsP != nullptr ) free(joinUserTagsP) ;
 
     return status;
     }

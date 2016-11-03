@@ -7796,6 +7796,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     bcdtmObject_triangulateDtmObject (dtmP, false, false);
     dtmP->maxSide = prevMaxSide;
 
+    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; dtmFeature++)
+        {
+        if (ftableAddrP(dtmP, dtmFeature)->dtmFeatureState == DTMFeatureState::TinError)
+            goto errexit;
+        }
 
     if (dbg)
         {
