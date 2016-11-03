@@ -25,6 +25,7 @@ BENTLEYDTMFORMATS_EXPORT InroadsExporterPtr InroadsExporter::Create()
 
 StatusInt InroadsExporter::Export(WCharCP filename, NamedDTM const& dtm)
     {
+    dtm.GetBcDTMP()->SetMemoryAccess(DTMAccessMode::Temporary);
     bcdtmFormatInroads_exportBclibDtmToInroadsDtmFile(dtm.GetBcDTMP()->GetTinHandle(), filename, dtm.GetName(), dtm.GetDescription());
     return SUCCESS;
     }

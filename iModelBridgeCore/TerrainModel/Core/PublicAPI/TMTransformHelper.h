@@ -415,20 +415,20 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertDtmStringVectorFromDTM (bvector<DtmString>& value)
             {
-            for(DtmString it : value)
+            for(DtmString& it : value)
                 convertPointsFromDTM (it);
             return;
             }
         void convertDTMDynamicFeaturesFromDTM (DTMDynamicFeatureArray& features)
             {
-            for(DTMDynamicFeature it : features)
+            for(DTMDynamicFeature& it : features)
                 convertPointsFromDTM (&it.featurePts[0], (int)it.featurePts.size());
             }
 
 #ifdef __BENTLEYDTM_BUILD__
         void convertDrapedPointsFromDTM (bvector<RefCountedPtr<BcDTMDrapedLinePoint>>& drapedPoints)
             {
-            for (RefCountedPtr<BcDTMDrapedLinePoint> it : drapedPoints)
+            for (RefCountedPtr<BcDTMDrapedLinePoint>& it : drapedPoints)
                 {
                 DPoint3d pt;
                 it->GetPointCoordinates (pt);
@@ -673,7 +673,7 @@ struct TMTransformHelper : RefCountedBase
 
         void convertDtmStringVectorToDTM (bvector<DtmString>& value)
             {
-            for (DtmString it : value)
+            for (DtmString& it : value)
                 convertPointsToDTM (it);
             return;
             }

@@ -68,6 +68,8 @@ class TriangulationPreserver
         BcDTMPtr Finish ();
 
         void CheckTriangle (long* ptNums, int numPoints);
+    private:
+        void MatchEdges();
     };
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
