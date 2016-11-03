@@ -205,6 +205,7 @@ struct ECSqlCommand : public Command
         void ExecuteInsert(Session&, BeSQLite::EC::ECSqlStatement&) const;
         void ExecuteUpdateOrDelete(Session&, BeSQLite::EC::ECSqlStatement&) const;
 
+        static int ComputeColumnSize(BeSQLite::EC::ECSqlColumnInfo const&);
         static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
         static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&);
         static Utf8String ArrayToString(BeSQLite::EC::IECSqlValue const& arrayValue, ECN::ECPropertyCP);
