@@ -121,7 +121,7 @@ LoggingProviderType type
             }
         case ( MANAGED_LOGGING_PROVIDER ):
             {
-            pProvider = LoggingConfig::LoadProvider ( L"Bentley.logging.interop-2.0.dll" );
+            pProvider = LoggingConfig::LoadProvider ( L"Bentley.logging.interopB02.dll" );
             break;
             }
         case ( CONSOLE_LOGGING_PROVIDER ):
