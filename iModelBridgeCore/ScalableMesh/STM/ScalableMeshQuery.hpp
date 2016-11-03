@@ -2603,7 +2603,6 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     for (int& idx : indicesVec) idx = (int)sortedReverse[idx - 1] + 1;
     pointsPtr->push_back(&nodePts[0], nodePts.size());
 
-    m_meshNode->m_nodeHeader.m_nbFaceIndexes = nIndices;
     bvector<int> componentPointsId;
    // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
@@ -2625,9 +2624,9 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
         memcpy(m_meshNode->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
         }
 
-    m_meshNode->PushPtsIndices(&indicesVec[0], m_meshNode->m_nodeHeader.m_nbFaceIndexes);        
+    m_meshNode->PushPtsIndices(&indicesVec[0], indicesVec.size());
     m_meshNode->IncreaseTotalCount(m_meshNode->GetNbPoints());
-
+    m_meshNode->m_nodeHeader.m_nbFaceIndexes = nIndices;
     m_meshNode->SetDirty(true);
     return BSISUCCESS;
     }

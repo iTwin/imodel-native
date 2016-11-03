@@ -52,7 +52,8 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/ScalableMeshLib.h>
 //#include "CGALEdgeCollapse.h"
 
-DataSourceManager ScalableMeshBase::s_dataSourceManager;
+//DataSourceManager s_dataSourceManager;
+
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
@@ -2114,7 +2115,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
     skirts.push_back(coverageData);
    // _AddSkirt(skirts, id, false);
 
-    DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
+/*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
     m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
     return SUCCESS;
     }

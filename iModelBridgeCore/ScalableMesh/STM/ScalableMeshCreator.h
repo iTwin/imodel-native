@@ -132,7 +132,6 @@ struct IScalableMeshCreator::Impl
 
 
         StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
-                                                            HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                             bool needBalancing = false);
 
 

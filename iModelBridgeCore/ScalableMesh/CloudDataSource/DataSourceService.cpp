@@ -12,7 +12,7 @@ DataSourceService::DataSourceService(DataSourceManager &manager, const ServiceNa
 DataSourceService::~DataSourceService(void)
 {
                                                             // Delete all accounts
-    destroyAll(true);
+ //   destroyAll(true);
 }
 
 
@@ -38,7 +38,7 @@ const DataSourceService::ServiceName & DataSourceService::getServiceName(void)
 
 DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountName)
 {
-    if (destroy(accountName, true))
+    if (destroy(accountName))
     {
         return DataSourceStatus();
     }

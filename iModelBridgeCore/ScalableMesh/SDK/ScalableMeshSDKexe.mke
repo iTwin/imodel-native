@@ -41,7 +41,7 @@ $(o)StmStreamingImporter.obj: $(baseDir)StmStreamingImporter.cpp  ${MultiCompile
 
 
 %include MultiCppCompileGo.mki
-
+certDir             = $(bsiCerts)
 #----------------------------------------------------------------------
 #   Link the executable
 #----------------------------------------------------------------------

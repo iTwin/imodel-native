@@ -357,7 +357,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
-    CreateDataIndex(pDataIndex, myMemMgr, true);
+    CreateDataIndex(pDataIndex, true);
 
 
     size_t previousDepth = pDataIndex->GetDepth();
