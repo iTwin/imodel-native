@@ -326,6 +326,7 @@ public:
     //! @param format           The formatting to apply
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than destArraySize; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., destArray[destArraySize-1] = 0;)
+    // Are you seeing C6054 when calling this? Just add PUSH_MSVC_IGNORE(6054) and POP_MSVC_IGNORE; Bevsnprintf goes out of its way to ensure a trailing 0...
     template <size_t destArraySize>
     static int Snprintf (char (&destArray)[destArraySize], CharCP format, ...)
         {

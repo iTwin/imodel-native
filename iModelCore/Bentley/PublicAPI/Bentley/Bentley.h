@@ -340,14 +340,9 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define POP_MSVC_IGNORE\
         __pragma(warning(pop))
     
-    #if defined(BSI_MSVC_ANALYZE)
-        #include <codeanalysis/warnings.h>
-        #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
-        #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
-    #else
-        #define PUSH_MSVC_IGNORE_ANALYZE
-        #define POP_MSVC_IGNORE_ANALYZE
-    #endif
+    #include <codeanalysis/warnings.h>
+    #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
+    #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
 #else
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
     #define POP_MSVC_IGNORE
