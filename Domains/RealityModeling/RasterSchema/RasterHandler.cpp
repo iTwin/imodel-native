@@ -77,7 +77,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     m_infoString(model.GetName())
     {
     if (m_infoString.empty())
-        m_infoString = model.GetCode().GetValueCP();
+        m_infoString = model.GetName();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     Render::GeometryParams geomParams;
