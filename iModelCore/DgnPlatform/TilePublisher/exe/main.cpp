@@ -384,7 +384,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
 //! Publishes the contents of a DgnDb view as a Cesium tileset.
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
+struct TilesetPublisher : PublisherContext
 {
 private:
     TileGeneratorP              m_generator = nullptr;
@@ -395,7 +395,7 @@ private:
     BeMutex                     m_mutex;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootName().c_str(), fileExtension); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
@@ -628,7 +628,7 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonito
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    auto status = InitializeDirectories();
+    auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;
 
@@ -639,12 +639,12 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    status = PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    status = PublishViewModels(generator, range, params.GetTolerance(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
         {
-        CleanDirectories();
+        CleanDirectories(GetDataDirectory());
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
         }
 
