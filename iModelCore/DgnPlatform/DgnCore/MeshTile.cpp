@@ -1224,25 +1224,43 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId)
+TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
     {
-    DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-    if (model.IsNull())
+    auto nModels = static_cast<uint32_t>(modelIds.size());
+    if (0 == nModels)
         return Status::NoGeometry;
 
-    auto beginStatus = collector._BeginProcessModel(*model);
-    if (Status::Success != beginStatus)
-        return beginStatus;
+    auto nCompletedModels = 0;
+    for (auto const& modelId : modelIds)
+        {
+        m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
 
-    auto modelStatus = Status::Success;
+        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+        if (model.IsNull())
+            continue;
 
-    auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
-    if (nullptr != generateMeshTiles)
-        modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
-    else
-        modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
+        auto beginStatus = collector._BeginProcessModel(*model);
+        switch (beginStatus)
+            {
+            case Status::Success:       break;                  // process this model
+            case Status::Aborted:       return Status::Aborted; // stop all further processing
+            default:                    continue;               // skip this model
+            }
 
-    return collector._EndProcessModel(*model, root.get(), modelStatus);
+        auto modelStatus = Status::Success;
+
+        auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
+        TileNodePtr root;
+        if (nullptr != generateMeshTiles)
+            modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+        else
+            modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
+
+        if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
+            return Status::Aborted;
+        }
+
+    return Status::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

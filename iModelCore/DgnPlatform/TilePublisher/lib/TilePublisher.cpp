@@ -1277,32 +1277,13 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     rootRange = DRange3d::NullRange();
 
-    auto viewedModels = spatialView->GetViewedModels();
-    auto nTotalModels = static_cast<uint32_t>(viewedModels.size());
-    auto nCompletedModels = 0;
-
-    if (0 == nTotalModels)
-        return Status::NoGeometry;
-
-    for (auto& modelId : viewedModels)
-        {
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
-
-        if (viewedModel.IsValid())
-            {
-            progressMeter._IndicateProgress (nCompletedModels++, nTotalModels);
-
-            static size_t           s_maxPointsPerTile = 250000;
-
-            TileNodePtr             childRootTile;
-            generator.GenerateTiles(childRootTile, *this, toleranceInMeters, s_maxPointsPerTile, modelId);
-            }
-        }
+    static size_t           s_maxPointsPerTile = 250000;
+    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile);
+    if (TileGenerator::Status::Success != status)
+        return ConvertStatus(status);
 
     if (m_modelRoots.empty())
         return Status::NoGeometry;
-
-    progressMeter._IndicateProgress(nCompletedModels, nTotalModels);
 
     for (auto childRootTile : m_modelRoots)
         {

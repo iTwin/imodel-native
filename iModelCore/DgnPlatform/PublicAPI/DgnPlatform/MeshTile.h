@@ -635,7 +635,7 @@ public:
     Statistics const& GetStatistics() const { return m_statistics; }
     ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId);
+    DGNPLATFORM_EXPORT Status GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
 };
 
 //=======================================================================================
