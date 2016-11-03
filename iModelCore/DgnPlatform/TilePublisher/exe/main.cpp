@@ -585,7 +585,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
         }
     else
         {
-        printf("\nGenerating Tiles: %u%% (%u/%u) models%s", pctComplete, completed, total, completed == total ? "\n" : "");
+        printf("\nGenerating Tiles: %3u%% (%u/%u models completed)%s", pctComplete, completed, total, completed == total ? "\n" : "");
         m_lastPercentCompleted = pctComplete;
         }
     }
