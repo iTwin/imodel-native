@@ -50,8 +50,9 @@ public:
 
     DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
 
-    void AddTextToModel(TextAnnotation2dPtr&, DgnModelId, Utf8CP text);
+    void AddTextToModel(TextAnnotation2dCPtr&, DgnModelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees=0.0);
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
+    void AddBoxToModel(AnnotationElement2dCPtr&, DgnModelId, DPoint2dCR origin, double width, double height, double boxRotationDegrees=0.0);
     void AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot=0.0);
     template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
 };
@@ -93,7 +94,7 @@ void ViewAttachmentTest::SetUp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentTest::AddTextToModel(TextAnnotation2dPtr& annoElem, DgnModelId modelId, Utf8CP text)
+void ViewAttachmentTest::AddTextToModel(TextAnnotation2dCPtr& annoElemOut, DgnModelId modelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees)
     {
     auto& db = GetDgnDb();
     if (!m_textStyleId.IsValid())
@@ -111,9 +112,15 @@ void ViewAttachmentTest::AddTextToModel(TextAnnotation2dPtr& annoElem, DgnModelI
 
     TextAnnotation anno(db);
     anno.SetText(AnnotationTextBlock::Create(db, m_textStyleId, text).get());
-    annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, modelId, TextAnnotation2d::QueryDgnClassId(db), m_annotationCatId));
+    TextAnnotation2dPtr annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, modelId, TextAnnotation2d::QueryDgnClassId(db), m_annotationCatId));
     annoElem->SetAnnotation(&anno);
-    EXPECT_TRUE(annoElem->Insert().IsValid());
+
+    auto placement = annoElem->GetPlacement();
+    placement.GetOriginR() = origin;
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(textRotationDegrees);
+
+    annoElemOut = db.Elements().Insert(*annoElem);
+    ASSERT_TRUE(annoElemOut.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,8 +129,8 @@ void ViewAttachmentTest::AddTextToModel(TextAnnotation2dPtr& annoElem, DgnModelI
 void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, double viewRot)
     {
     auto& db = GetDgnDb();
-    TextAnnotation2dPtr annoElem;
-    AddTextToModel(annoElem, drawingId, text);
+    TextAnnotation2dCPtr annoElem;
+    AddTextToModel(annoElem, drawingId, DPoint2d::From(3,2), text);
     DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
     SetupAndSaveViewController(*viewController, *annoElem, drawingId, viewRot);
     }
@@ -131,7 +138,7 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot)
+void ViewAttachmentTest::AddBoxToModel(AnnotationElement2dCPtr& geomElOut, DgnModelId modelId, DPoint2dCR origin, double width, double height, double rot)
     {
     bvector<DPoint3d> pts
         {
@@ -145,18 +152,32 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
 
     auto& db = GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
-    DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
+    DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, modelId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 
     auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
     geomEl->SetCategoryId(m_annotationCatId);
-    geomEl->SetPlacement(Placement2d(DPoint2d::From(3,2), AngleInDegrees()));
+    geomEl->SetPlacement(Placement2d(origin, AngleInDegrees::FromDegrees(rot)));
     GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl);
 
     builder->Append(*curve);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
-    EXPECT_TRUE(el->Insert().IsValid());
 
+    auto persistentEl = db.Elements().Insert(*el);
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    geomElOut = persistentEl->ToAnnotationElement2d();
+    ASSERT_TRUE(geomElOut.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot)
+    {
+    auto& db = GetDgnDb();
+    AnnotationElement2dCPtr geomEl;
+    AddBoxToModel(geomEl, drawingId, DPoint2d::From(3,2), width, height, viewRot);
     DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
     SetupAndSaveViewController(*viewController, *geomEl, drawingId, viewRot);
     }
@@ -259,8 +280,11 @@ TEST_F(ViewAttachmentTest, Geom)
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
-    TextAnnotation2dPtr annoElemOnSheet;
-    AddTextToModel(annoElemOnSheet, m_sheetModelId, "Text on sheet");
+    TextAnnotation2dCPtr annoElemOnSheet;
+    AddTextToModel(annoElemOnSheet, m_sheetModelId, DPoint2d::From(0,0), "Text on sheet");
+
+    AnnotationElement2dCPtr boxOnSheet; // make a box about the same size as the ViewAttachment, so that we can use it to check the attachment's BB by eye
+    AddBoxToModel(boxOnSheet, m_sheetModelId, DPoint2d::From(0,0), placement.GetElementBox().GetWidth()+0.01, placement.GetElementBox().GetHeight()+0.01);
 
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
