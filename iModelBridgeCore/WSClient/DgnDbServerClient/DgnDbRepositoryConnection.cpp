@@ -151,7 +151,7 @@ AuthenticationHandlerPtr authenticationHandler
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
     return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
     }
 
@@ -349,7 +349,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -405,7 +405,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
         })->Then<DgnDbServerFileResult>([=] ()
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return *finalResult;
             });
     }
@@ -451,7 +451,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancel
                 {
                 finalResult->SetSuccess();
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                 }
             });
         })->Then<DgnDbServerStatusResult>([=] ()
@@ -1441,7 +1441,7 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
                 }
             finalResult->SetSuccess(codesLocks);
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             });
         })->Then<DgnDbServerCodeLockSetResult>([=] ()
             {
@@ -1507,7 +1507,7 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumInd
                 //NEEDSWORK: log an error
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerCodeTemplateSetResult::Success(templates);
             }
         else
@@ -1549,7 +1549,7 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvaila
                 //NEEDSWORK: log an error
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerCodeTemplateSetResult::Success(templates);
             }
         else
@@ -1669,7 +1669,7 @@ ICancellationTokenPtr cancellationToken
             {
             auto revision = ParseRevision(revisionResult.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties]);
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerRevisionResult::Success(revision);
             }
         else
@@ -2090,7 +2090,7 @@ ICancellationTokenPtr cancellationToken
                 return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerEventResult::Success(ptr);
             }
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
@@ -2196,7 +2196,7 @@ ICancellationTokenPtr cancellationToken
                     {
                     finalResult->SetSuccess(revisionsResult.GetValue());
                     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                     }
                 else
                     {
@@ -2244,7 +2244,7 @@ ICancellationTokenPtr                  cancellationToken
                 }
             }
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -2272,7 +2272,7 @@ ICancellationTokenPtr           cancellationToken
                 if (downloadResult.IsSuccess())
                     {
                     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                     finalResult->SetSuccess(revisionsResult.GetValue());
                     }
                 else
