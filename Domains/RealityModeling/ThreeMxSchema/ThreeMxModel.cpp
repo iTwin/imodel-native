@@ -483,7 +483,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                     {
                     builder = found->second;
                     }
-                }                                   99
+                }
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
