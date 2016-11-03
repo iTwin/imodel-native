@@ -614,7 +614,7 @@ struct TileGenerator
         //! Invoked before a model is processed.
         virtual Status _BeginProcessModel(DgnModelCR model) { return Status::Success; }
         //! Invoked after a model is processed, with the result of processing.
-        virtual Status _EndProcessModel(DgnModelCR model, Status status) { return status; }
+        virtual Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, Status status) { return status; }
     };
 
     //! Accumulates statistics during tile generation

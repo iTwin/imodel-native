@@ -1205,10 +1205,18 @@ TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileGenerator::Status status)
+TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status)
     {
-    if (TileGenerator::Status::Success != status)
+    if (TileGenerator::Status::Success == status)
+        {
+        BeAssert(nullptr != rootTile);
+        BeMutexHolder lock(m_mutex);
+        m_modelRoots.push_back(rootTile);
+        }
+    else
+        {
         CleanDirectories(GetDataDirForModel(model));
+        }
 
     return status;
     }
@@ -1275,36 +1283,38 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
         if (viewedModel.IsValid())
             {
-            TileNodePtr             childRootTile;
-
             progressMeter._SetModel (viewedModel.get());
             progressMeter._IndicateProgress (0, 1);
 
             static size_t           s_maxPointsPerTile = 250000;
-            if (TileGenerator::Status::Success == generator.GenerateTiles(childRootTile, *this, toleranceInMeters, s_maxPointsPerTile, modelId))
-                {
-                Json::Value         childRoot;
 
-                rootRange.Extend (childRootTile->GetTileRange());
-                childRoot["refine"] = "replace";
-                childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
-                TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
-
-                WString modelRootName;
-                BeFileName modelDataDir = GetDataDirForModel(*viewedModel, &modelRootName);
-
-                BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
-                childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
-
-                WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-
-                root[JSON_Children].append(childRoot);
-                }
+            TileNodePtr             childRootTile;
+            generator.GenerateTiles(childRootTile, *this, toleranceInMeters, s_maxPointsPerTile, modelId);
             }
         }
 
-    if (!root.isMember(JSON_Children))
+    if (m_modelRoots.empty())
         return Status::NoGeometry;
+
+    for (auto childRootTile : m_modelRoots)
+        {
+        Json::Value childRoot;
+        rootRange.Extend(childRootTile->GetTileRange());
+        childRoot["refine"] = "replace";
+        childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
+        TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
+
+        WString modelRootName;
+        BeFileName modelDataDir = GetDataDirForModel(childRootTile->GetModel(), &modelRootName);
+
+        BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+        childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
+
+        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
+
+        root[JSON_Children].append(childRoot);
+        }
+
 
     TilePublisher::WriteBoundingVolume(root, rootRange);
 

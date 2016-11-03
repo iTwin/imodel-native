@@ -1242,7 +1242,7 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     else
         modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
 
-    return collector._EndProcessModel(*model, modelStatus);
+    return collector._EndProcessModel(*model, root.get(), modelStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**

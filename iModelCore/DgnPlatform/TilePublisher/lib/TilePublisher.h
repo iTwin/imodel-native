@@ -63,15 +63,17 @@ struct PublisherContext : TileGenerator::ITileCollector
 
 
 protected:
-    ViewControllerR     m_viewController;
-    BeFileName          m_outputDir;
-    BeFileName          m_dataDir;
-    WString             m_rootName;
-    Transform           m_dbToTile;
-    Transform           m_tileToEcef;
-    size_t              m_maxTilesetDepth;
-    size_t              m_maxTilesPerDirectory;
-    bool                m_publishPolylines;
+    ViewControllerR         m_viewController;
+    BeFileName              m_outputDir;
+    BeFileName              m_dataDir;
+    WString                 m_rootName;
+    Transform               m_dbToTile;
+    Transform               m_tileToEcef;
+    size_t                  m_maxTilesetDepth;
+    size_t                  m_maxTilesPerDirectory;
+    bvector<TileNodePtr>    m_modelRoots;
+    BeMutex                 m_mutex;
+    bool                    m_publishPolylines;
 
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
@@ -92,7 +94,7 @@ protected:
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT virtual TileGenerator::Status _BeginProcessModel(DgnModelCR model) override;
-    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileGenerator::Status status) override;
+    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status) override;
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
