@@ -227,7 +227,7 @@ $(CoreObjs)RasterLineStyle$(oext) :                 $(lineStyleDir)RasterLineSty
 
 $(CoreObjs)DgnScan$(oext) :                         $(DgnCoreDir)DgnScan.cpp $(DgnPlatformAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)DgnRangeTree$(oext) :                    $(DgnCoreDir)DgnRangeTree.cpp $(DgnPlatformAPISrc)DgnRangeTree.h ${MultiCompileDepends}
+$(CoreObjs)RangeIndex$(oext) :                      $(DgnCoreDir)RangeIndex.cpp $(DgnPlatformAPISrc)RangeIndex.h ${MultiCompileDepends}
 
 $(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 

@@ -23,7 +23,7 @@ StatusInt FitContext::_InitContextForView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FitContext::IsRangeContained(RangeIndex::BoxCR range)
+bool FitContext::IsRangeContained(RangeIndex::FBoxCR range)
     {
     Frustum box(range.ToRange3d());
     box.Multiply(m_trans);
@@ -41,7 +41,7 @@ bool FitContext::IsRangeContained(RangeIndex::BoxCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop FitContext::_CheckNodeRange(RangeIndex::BoxCR range, bool is3d) 
+ScanCriteria::Stop FitContext::_CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) 
     {
     if (ScanCriteria::Stop::Yes == T_Super::_CheckNodeRange(range, is3d))
         return ScanCriteria::Stop::Yes;
@@ -58,10 +58,10 @@ bool FitContext::_ScanRangeFromPolyhedron()
     if (!m_params.m_limitByVolume)
         {
         // Rather than no range test - use a big range so range tree still gets used (and we can reject nodes).
-        RangeIndex::Box bigRange;
+        RangeIndex::FBox bigRange;
         
-        bigRange.low.x = bigRange.low.y = bigRange.low.z = -1.0e20;
-        bigRange.high.x = bigRange.high.y = bigRange.high.z = 1.0e20;
+        bigRange.m_low.x = bigRange.m_low.y = bigRange.m_low.z = -1.0e20;
+        bigRange.m_high.x = bigRange.m_high.y = bigRange.m_high.z = 1.0e20;
         m_scanCriteria.SetRangeTest(bigRange);
 
         return true;
