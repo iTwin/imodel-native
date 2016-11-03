@@ -103,7 +103,8 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
 
     auto where = position > m_directDecendentList.size() ? m_directDecendentList.end() : m_directDecendentList.begin() + position;
     m_map[propertyMap->GetAccessString().c_str()] = propertyMap;
-    m_directDecendentList.insert(where, propertyMap.get());
+    if (propertyMap->GetParent() == nullptr)
+        m_directDecendentList.insert(where, propertyMap.get());
     return SUCCESS;
     }
 
@@ -126,17 +127,11 @@ VisitorFeedback PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString, bool recusive) const
+PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
     {
     auto itor = m_map.find(accessString);
     if (itor != m_map.end())
         return itor->second.get();
-
-    if (recusive)
-        for (PropertyMap const* child : m_directDecendentList)
-            if (auto collection = dynamic_cast<CompoundDataPropertyMap const*>(child))
-                if (auto result = collection->Find(accessString, true))
-                    return result;
 
     return nullptr;
     }
@@ -152,18 +147,6 @@ ECN::ECClass const& PropertyMapContainer::GetClass() const { return m_classMap.G
 ECDbCR PropertyMapContainer::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //************************************CompoundDataPropertyMap::Collection********
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-DataPropertyMap const* CompoundDataPropertyMap::Collection::Find(Utf8CP accessString) const
-    {
-    auto itor = m_map.find(accessString);
-    if (itor != m_map.end())
-        return itor->second.get();
-  
-    return nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
@@ -183,41 +166,28 @@ VisitorFeedback CompoundDataPropertyMap::AcceptChildren(IPropertyMapVisitor cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-DataPropertyMap const* CompoundDataPropertyMap::Find(Utf8CP accessString, bool recusive) const
+DataPropertyMap const* CompoundDataPropertyMap::Find(Utf8CP accessString) const
     {
-    if (auto result = m_children.Find(accessString))
-        return result;
-
-    if (recusive)
-        for (DataPropertyMap const* child : m_children.GetList())
-            if (auto collection = dynamic_cast<CompoundDataPropertyMap const*>(child))
-                if (auto result = collection->Find(accessString, true))
-                    return result;
-
-    return nullptr;
+    Utf8String resolveAccessString = GetAccessString();
+    resolveAccessString.append(".").append(accessString);
+    return  static_cast<DataPropertyMap const*>(GetClassMap().GetPropertyMaps().Find(resolveAccessString.c_str()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataPropertyMap> propertyMap, size_t position)
+BentleyStatus CompoundDataPropertyMap::InsertMember(RefCountedPtr<DataPropertyMap> propertyMap)
     {
-    if (propertyMap == nullptr)
+    if (propertyMap->GetParent() != this)
         {
-        BeAssert(false && "propertyMap cannot be null");
+        BeAssert(false);
         return ERROR;
         }
 
-    //only holds the direct members, so don't use access string, but just the prop names of the member props
-    Utf8CP key = propertyMap->GetProperty().GetName().c_str();
-    if (m_map.find(key) != m_map.end())
-        {
-        BeAssert(false && "PropertyMap with same name or may be different case already exist");
+    if (const_cast<ClassMap&>(GetClassMap()).GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         return ERROR;
-        }
-    auto where = position > m_list.size() ? m_list.end() : m_list.begin() + position;
-    m_map[key] = propertyMap;
-    m_list.insert(where, propertyMap.get());
+
+    m_list.push_back(propertyMap.get());
     return SUCCESS;
     }
 
@@ -228,8 +198,8 @@ BentleyStatus CompoundDataPropertyMap::Collection::Insert(RefCountedPtr<DataProp
 //---------------------------------------------------------------------------------------
 DbTable const& CompoundDataPropertyMap::_GetTable() const
     {
-    BeAssert(!m_children.IsEmpty());
-    return m_children.GetList()[0]->GetTable();
+    BeAssert(!m_list.empty());
+    return m_list[0]->GetTable();
     }
 
 
@@ -298,7 +268,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
     if (xPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(xPropertyMap) != SUCCESS)
+    if (InsertMember(xPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
@@ -309,7 +279,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
     if (yPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(yPropertyMap) != SUCCESS)
+    if (InsertMember(yPropertyMap) != SUCCESS)
         return ERROR;
 
     return SUCCESS;
@@ -382,7 +352,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (xPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(xPropertyMap) != SUCCESS)
+    if (InsertMember(xPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
@@ -393,7 +363,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (yPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(yPropertyMap) != SUCCESS)
+    if (InsertMember(yPropertyMap) != SUCCESS)
         return ERROR;
 
     ECPropertyCP propZ = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Z);
@@ -404,7 +374,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (zPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(zPropertyMap) != SUCCESS)
+    if (InsertMember(zPropertyMap) != SUCCESS)
         return ERROR;
 
     return SUCCESS;
@@ -557,14 +527,14 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
     if (idPropertyMap == nullptr)
         return ERROR;
 
-    if (m_children.Add(idPropertyMap) != SUCCESS)
+    if (InsertMember(idPropertyMap) != SUCCESS)
         return ERROR;
 
     RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> relECClassIdPropertyMap = RelECClassIdPropertyMap::CreateInstance(*this, relECClassIdColumn, defaultRelClassId);
     if (relECClassIdPropertyMap == nullptr)
         return ERROR;
 
-    if (SUCCESS != m_children.Add(relECClassIdPropertyMap))
+    if (SUCCESS != InsertMember(relECClassIdPropertyMap))
         return ERROR;
 
     m_isComplete = true;
@@ -616,10 +586,11 @@ StructPropertyMapBuilder::StructPropertyMapBuilder(ClassMap const& classMap, Str
         }
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle         10/16
 //---------------------------------------------------------------------------------------
-BentleyStatus StructPropertyMapBuilder::InsertMember(RefCountedPtr<DataPropertyMap> propertyMap, size_t position)
+BentleyStatus StructPropertyMapBuilder::AddMember(RefCountedPtr<DataPropertyMap> propertyMap)
     {
     if (!IsValid())
         {
@@ -633,21 +604,13 @@ BentleyStatus StructPropertyMapBuilder::InsertMember(RefCountedPtr<DataPropertyM
         return ERROR;
         }
 
-    if (SUCCESS != m_propMap->m_children.Insert(propertyMap, position))
+    if (SUCCESS != m_propMap->InsertMember(propertyMap))
         {
         m_propMap = nullptr;
         return ERROR;
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle         10/16
-//---------------------------------------------------------------------------------------
-BentleyStatus StructPropertyMapBuilder::AddMember(RefCountedPtr<DataPropertyMap> propertyMap)
-    {
-    return InsertMember(propertyMap, std::numeric_limits<size_t>::max());
     }
 
 //---------------------------------------------------------------------------------------

@@ -77,12 +77,11 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         ClassMap const& GetClassMap() const { return m_classMap; }
         ECN::ECClass const& GetClass() const;
         ECDbCR GetECDb() const;
-        BentleyStatus Insert(RefCountedPtr<PropertyMap> propertyMap, size_t position = UINT_MAX);
-        PropertyMap const* Find(Utf8CP accessString, bool recusive = true) const;
+        BentleyStatus Insert(RefCountedPtr<PropertyMap> propertyMap, size_t position = std::numeric_limits<size_t>::max());
+        PropertyMap const* Find(Utf8CP accessString) const;
         const_iterator begin() const { return m_directDecendentList.begin(); }
         const_iterator end() const { return m_directDecendentList.end(); }
     };
-
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 // Abstract baseclass of all property map.
@@ -192,41 +191,27 @@ struct DataPropertyMap : PropertyMap
 struct CompoundDataPropertyMap : DataPropertyMap
     {
     typedef bvector<DataPropertyMap const*>::const_iterator const_iterator;
-    struct Collection
-        {
-    private:
-        bmap<Utf8CP, RefCountedPtr<DataPropertyMap>, CompareIUtf8Ascii> m_map;
-        bvector<DataPropertyMap const*> m_list;
-
-    public:
-        DataPropertyMap const* Find(Utf8CP accessString) const;
-        bvector<DataPropertyMap const*> const& GetList() const { return m_list; }
-        bool IsEmpty() const { return m_map.empty(); }
-        BentleyStatus Insert(RefCountedPtr<DataPropertyMap> propertyMap, size_t position);
-        BentleyStatus Add(RefCountedPtr<DataPropertyMap> propertyMap) { return Insert(propertyMap, std::numeric_limits<size_t>::max()); }
-        };
-
+    bvector<DataPropertyMap const*> m_list;
     private:
         virtual DbTable const& _GetTable() const override;
 
     protected:
-        Collection m_children;
-
-        CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+          CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, classMap, ecProperty) {}
         CompoundDataPropertyMap(Type kind, DataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, parentPropertyMap, ecProperty, true) {}
 
         VisitorFeedback AcceptChildren(IPropertyMapVisitor const&) const;
+        BentleyStatus InsertMember(RefCountedPtr<DataPropertyMap> propertyMap);
 
     public:
         virtual ~CompoundDataPropertyMap() {}
 
-        DataPropertyMap const* Find(Utf8CP accessString, bool recursive = true) const;
-        const_iterator begin() const { return m_children.GetList().begin(); }
-        const_iterator end() const { return m_children.GetList().end(); }
-        size_t Size() const { return m_children.GetList().size(); }
-        bool IsEmpty() const { return m_children.GetList().empty(); }
+        DataPropertyMap const* Find(Utf8CP accessString) const;
+        const_iterator begin() const { return m_list.begin(); }
+        const_iterator end() const { return m_list.end(); }
+        size_t Size() const { return m_list.size(); }
+        bool IsEmpty() const { return m_list.empty(); }
     };
 
 //=======================================================================================
@@ -385,7 +370,6 @@ struct StructPropertyMapBuilder final : NonCopyableClass
         StructPropertyMapBuilder(ClassMap const& classMap, StructPropertyMapBuilder* parentBuilder, ECN::StructECPropertyCR prop);
         bool IsValid() const { return m_propMap != nullptr; }
 
-        BentleyStatus InsertMember(RefCountedPtr<DataPropertyMap> propertyMap, size_t position);
         BentleyStatus AddMember(RefCountedPtr<DataPropertyMap> propertyMap);
 
         bool IsFinished() const { return m_isFinished; }
