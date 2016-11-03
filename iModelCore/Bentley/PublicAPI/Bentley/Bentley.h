@@ -347,4 +347,7 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
     #define POP_MSVC_IGNORE
     #define PUSH_MSVC_IGNORE_ANALYZE
+
+    // Microsoft SAL macros that we use to help silence static analysis warnings.
+    #define _Out_writes_z_(size)
 #endif
