@@ -1218,6 +1218,14 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId)
     {
+    DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+    if (model.IsNull())
+        return Status::NoGeometry;
+
+    auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
+    if (nullptr != generateMeshTiles)
+        return generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
 #endif

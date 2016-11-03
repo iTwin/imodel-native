@@ -597,7 +597,6 @@ struct TileGenerator
     {
         Success = SUCCESS,
         NoGeometry,
-        NotImplemented,
         Aborted,
     };
 
@@ -639,7 +638,6 @@ public:
     ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId);
-
 };
 
 //=======================================================================================

@@ -1065,7 +1065,6 @@ PublisherContext::Status PublisherContext::ConvertStatus(TileGenerator::Status i
         {
         case TileGenerator::Status::Success:        return Status::Success;
         case TileGenerator::Status::NoGeometry:     return Status::NoGeometry;
-        case TileGenerator::Status::NotImplemented: return Status::NoGeometry;  // "NotImplemented" means "the viewed model is not an IPublishModelTiles therefore no tiles to publish"...not an error.
         default: BeAssert(TileGenerator::Status::Aborted == input); return Status::Aborted;
         }
     }
@@ -1189,30 +1188,6 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status   PublisherContext::DirectPublishModel (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
-    {
-    IGenerateMeshTiles*         generateMeshTiles;
-
-    if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
-        return TileGenerator::Status::NotImplemented;
-
-    return generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status   PublisherContext::PublishModelElements (TileNodePtr& rootTile, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
-    {
-    static size_t           s_maxPointsPerTile = 250000;
-
-    return generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile, model.GetModelId());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1266,8 +1241,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
             progressMeter._SetModel (viewedModel.get());
             progressMeter._IndicateProgress (0, 1);
 
-            if (TileGenerator::Status::Success == DirectPublishModel (childRootTile, *viewedModel, generator, collector, toleranceInMeters) ||
-                TileGenerator::Status::Success == PublishModelElements (childRootTile, *viewedModel, generator, collector, toleranceInMeters))
+            static size_t           s_maxPointsPerTile = 250000;
+            if (TileGenerator::Status::Success == generator.GenerateTiles(childRootTile, collector, toleranceInMeters, s_maxPointsPerTile, modelId))
                 {
                 Json::Value         childRoot;
 
