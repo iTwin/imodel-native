@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                         tolerance
+/*------------------------------------------------------------g--------------------------+                                                                                                                                      
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -148,7 +148,7 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
 void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
     {
     Utf8String  metadataStr = Json::FastWriter().write(value);
-    auto        outputFile = std::fopen(Utf8String(fileName).c_str(), "w");
+    auto        outputFile = _wfopen(fileName, L"w");
 
     std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
     std::fclose(outputFile);
@@ -210,7 +210,10 @@ PublisherContext::Status TilePublisher::Publish()
     if (m_meshes.empty())
         return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
+    WString rootName;
+    BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
+
+    BeFileName  binaryDataFileName (nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), s_binaryDataExtension).c_str(), nullptr);
     
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
@@ -224,7 +227,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
+    m_outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -982,7 +985,6 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     DPoint3d        origin = m_viewController.GetCenter ();
 
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
-    m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
@@ -1030,22 +1032,30 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::Setup()
+PublisherContext::Status PublisherContext::InitializeDirectories(BeFileNameCR dataDir)
     {
     // Ensure directories exist and are writable
-    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
+    if (m_outputDir != dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
         return Status::CantWriteToBaseDirectory;
 
-    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
-    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
+    bool dataDirExists = BeFileName::DoesPathExist(dataDir);
+    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
         return Status::CantCreateSubDirectory;
-    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
+    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(dataDir))
         return Status::CantCreateSubDirectory;
 
-    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
+    if (BeFileNameStatus::Success != BeFileName::CheckAccess(dataDir, BeFileNameAccess::Write))
         return Status::CantCreateSubDirectory;
 
     return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::CleanDirectories(BeFileNameCR dataDir)
+    {
+    BeFileName::EmptyAndRemoveDirectory (dataDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1057,7 +1067,6 @@ PublisherContext::Status PublisherContext::ConvertStatus(TileGenerator::Status i
         {
         case TileGenerator::Status::Success:        return Status::Success;
         case TileGenerator::Status::NoGeometry:     return Status::NoGeometry;
-        case TileGenerator::Status::NotImplemented: return Status::NoGeometry;  // "NotImplemented" means "the viewed model is not an IPublishModelTiles therefore no tiles to publish"...not an error.
         default: BeAssert(TileGenerator::Status::Aborted == input); return Status::Aborted;
         }
     }
@@ -1081,11 +1090,14 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    if (tile.GetIsEmpty() || _OmitFromTileset(tile))
+    if (tile.GetIsEmpty())
         {
         range = DRange3d::NullRange();
         return;
         }
+
+    WString rootName;
+    BeFileName dataDir = GetDataDirForModel(tile.GetModel(), &rootName);
 
     DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
 
@@ -1114,8 +1126,8 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 childTileset["asset"]["version"] = "0.0";
 
                 auto&       childRoot = childTileset[JSON_Root];
-                WString     metadataRelativePath = childTile->GetRelativePath(GetRootName().c_str(), s_metadataExtension);
-                BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
+                WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
+                BeFileName  metadataFileName (nullptr, dataDir.c_str(), metadataRelativePath.c_str(), nullptr);
 
                 WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
@@ -1174,16 +1186,6 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     val["asset"]["version"] = "0.0";
 
-    if (!GetTilesetTransform().IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (GetTilesetTransform());
-        auto&       transformValue = val[JSON_Root][JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
-
     auto&       root = val[JSON_Root];
     DRange3d    rootRange;
 
@@ -1192,65 +1194,53 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name)
+TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    Json::Value         child;
-
-    rootRange.Extend (rootTile.GetTileRange());
-    rootJson["refine"] = "replace";
-    rootJson[JSON_GeometricError] = rootTile.GetTolerance();
-    TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
-
-    rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
-
-    WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
+    BeFileName dataDir = GetDataDirForModel(model);
+    return Status::Success == InitializeDirectories(dataDir) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileGenerator::Status status)
     {
-    IGenerateMeshTiles*         generateMeshTiles;
-    TileNodePtr                 rootTile;
-    Status                      status;
-    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
-
-    if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
-        return Status::NotImplemented;
-
-    progressMeter._SetModel (&model);
-    progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
-    progressMeter._IndicateProgress (0, 1);
-                                                                            
-    if (Status::Success == (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter()))))
-        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
+    if (TileGenerator::Status::Success != status)
+        CleanDirectories(GetDataDirForModel(model));
 
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
+BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTilesetName) const
     {
-    AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
-    TileNodePtr             rootTile;
-    static size_t           s_maxPointsPerTile = 250000;
-    Status                  status;
+    WString tmpTilesetName;
+    WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
+    tilesetName = GetRootNameForModel(model);
 
-    if (Status::Success == (status = ConvertStatus (generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile))))
-        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
+    BeFileName dataDir = m_dataDir;
+    dataDir.AppendToPath(tilesetName.c_str());
 
-    return status;
+    return dataDir;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WString PublisherContext::GetRootNameForModel(DgnModelCR model) const
+    {
+    static const WString s_prefix(L"Model_");
+    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     auto spatialView = m_viewController._ToSpatialView();
     if (nullptr == spatialView)
@@ -1259,40 +1249,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         return Status::NoGeometry;
         }
 
-    Json::Value         realityModelTilesets, elementTileSet;
-
-    rootRange = DRange3d::NullRange();
-    // First go through and collect tilesets for any (reality) models.   These will produce tileset from the HLOD trees directly and therefore don't
-    // won't be included by collecting through their elements.
-    for (auto& modelId : spatialView->GetViewedModels())
-        {
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
-        WString         tilesetName;
-        Json::Value     tileValue;
-
-        if (viewedModel.IsValid())
-            {
-            tilesetName = L"RealityModel_" + WString (viewedModel->GetName().c_str(), true);
-
-            if (Status::Success == DirectPublishModel (tileValue, rootRange, tilesetName, *viewedModel, generator, collector, toleranceInMeters, progressMeter))
-                realityModelTilesets.append (tileValue);
-            }
-        }
-
-    if (realityModelTilesets.empty())
-        m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
-
-    progressMeter._SetModel (m_viewController.GetTargetModel());
-
-    WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
-    Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);
-
-    m_tilesetTransform = Transform::FromIdentity();
-    if (realityModelTilesets.empty())
-        return elementPublishStatus;
-
-    
-    // We have reality models... create a tile set that includes both the reality models and the elements.
     Json::Value     value;
     value["asset"]["version"] = "0.0";
 
@@ -1309,12 +1265,48 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         }
 
     root["refine"] = "replace";
-
     root[JSON_GeometricError] = 1.E6;
+
+    rootRange = DRange3d::NullRange();
+
+    for (auto& modelId : spatialView->GetViewedModels())
+        {
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
+
+        if (viewedModel.IsValid())
+            {
+            TileNodePtr             childRootTile;
+
+            progressMeter._SetModel (viewedModel.get());
+            progressMeter._IndicateProgress (0, 1);
+
+            static size_t           s_maxPointsPerTile = 250000;
+            if (TileGenerator::Status::Success == generator.GenerateTiles(childRootTile, *this, toleranceInMeters, s_maxPointsPerTile, modelId))
+                {
+                Json::Value         childRoot;
+
+                rootRange.Extend (childRootTile->GetTileRange());
+                childRoot["refine"] = "replace";
+                childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
+                TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
+
+                WString modelRootName;
+                BeFileName modelDataDir = GetDataDirForModel(*viewedModel, &modelRootName);
+
+                BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+                childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
+
+                WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
+
+                root[JSON_Children].append(childRoot);
+                }
+            }
+        }
+
+    if (!root.isMember(JSON_Children))
+        return Status::NoGeometry;
+
     TilePublisher::WriteBoundingVolume(root, rootRange);
-    root[JSON_Children] = realityModelTilesets;
-    if (Status::Success == elementPublishStatus)
-        root[JSON_Children].append (elementTileSet);
 
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
 
@@ -1409,27 +1401,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
     else
         {
-        // Cesium does not support orthographic views directly - simulate using small field of view
-        json["type"] = "camera";
-
-        DPoint3d backCenter;
-        DVec3d x, y, z;
-        auto const& rot = view.GetRotation();
-        rot.GetRows(x, y, z);
-        rot.Multiply(backCenter, view.GetOrigin());
-        backCenter.SumOf(backCenter, viewExtents, 0.5);
-        rot.MultiplyTranspose(backCenter);
-
-        static const    double s_orthographicFieldOfView = .01;
-        double zDist = viewExtents.x / tan(s_orthographicFieldOfView / 2.0);
-
-        DPoint3d eyePoint;
-        eyePoint.SumOf(backCenter, z, zDist);
-        transform.Multiply(eyePoint);
-
-        json["eyePoint"] = PointToJson(eyePoint);
-        json["focusDistance"] = zDist;
-        json["lensAngle"] = msGeomConst_piOver2;
+        json["type"] = "ortho";
         }
     }
 
