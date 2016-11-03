@@ -580,17 +580,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ITileGenerationProgressMonitor
 {
-    enum class TaskName
-    {
-        PopulatingCache,
-        GeneratingTileNodes,
-        CollectingTileMeshes,
-    };
-
     virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
     virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
-    virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
-    virtual void _SetModel (DgnModelCP dgnModel) { }
 };
 
 //=======================================================================================
@@ -635,7 +626,6 @@ private:
     double                          m_completedVolume;
     BeAtomic<uint32_t>              m_totalTiles;
     BeAtomic<uint32_t>              m_completedTiles;
-
 
     void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);

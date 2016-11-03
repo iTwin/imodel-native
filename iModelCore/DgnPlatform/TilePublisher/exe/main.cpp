@@ -411,16 +411,12 @@ private:
     struct ProgressMeter : ITileGenerationProgressMonitor
     {
     private:
-        Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
         uint32_t            m_lastPercentCompleted = 0xffffffff;
-        DgnModelCP          m_model;
         
         virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
     public:
-        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher), m_model (nullptr) { }
-        virtual void _SetModel (DgnModelCP model) { m_model = model; }
-        virtual void _SetTaskName(ITileGenerationProgressMonitor::TaskName task) override;
+        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
@@ -565,7 +561,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
     {
-    printf("Statistics:\n"
+    printf("\nStatistics:\n"
            "Tile count: %u\n"
            "Tile depth: %u\n"
            "Cache population time: %.4f seconds\n"
@@ -592,34 +588,8 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
         }
     else
         {
-        Utf8String  modelNameString;   
-
-        if (nullptr != m_model)
-            modelNameString = " (" +  m_model->GetName() + ")";
-
-        printf("\n%s%s: %u%% (%u/%u)%s", m_taskName.c_str(), modelNameString.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        printf("\nGenerating Tiles: %u%% (%u/%u)%s", pctComplete, completed, total, completed == total ? "\n" : "");
         m_lastPercentCompleted = pctComplete;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonitor::TaskName task)
-    {
-    Utf8String newTaskName;
-    switch (task)
-        {
-        case ITileGenerationProgressMonitor::TaskName::PopulatingCache:         newTaskName = "Populating cache"; break;
-        case ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes:     newTaskName = "Generating tile tree"; break;
-        case ITileGenerationProgressMonitor::TaskName::CollectingTileMeshes:    newTaskName = "Publishing tiles"; break;
-        default:                                                                BeAssert(false); newTaskName = "Unknown task"; break;
-        }
-
-    if (!m_taskName.Equals(newTaskName))
-        {
-        m_lastPercentCompleted = 0xffffffff;
-        m_taskName = newTaskName;
         }
     }
 
