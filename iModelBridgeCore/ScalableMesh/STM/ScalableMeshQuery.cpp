@@ -1548,12 +1548,14 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
-    volatile bool dbg = false;
+
+#ifndef NDEBUG
+    bool dbg = false;
     if (dbg)
         {
         for (auto& idx : indices) idx += 1;
         size_t nIndices = indices.size();
-        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-06-03\\") + L"fpostgetmesh_";
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-11-02\\") + L"fpostgetmesh_";
         DRange3d range;
         bcdtm->GetRange(range);
         nameBefore.append(to_wstring(range.low.x).c_str());
@@ -1561,12 +1563,14 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         nameBefore.append(to_wstring(range.low.y).c_str());
         nameBefore.append(L".m");
         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-        fwrite(&m_nbPoints, sizeof(size_t), 1, meshBeforeClip);
-        fwrite(m_points, sizeof(DPoint3d), m_nbPoints, meshBeforeClip);
+        size_t npts = pts.size();
+        fwrite(&npts, sizeof(size_t), 1, meshBeforeClip);
+        fwrite(&pts[0], sizeof(DPoint3d), npts, meshBeforeClip);
         fwrite(&nIndices, sizeof(size_t), 1, meshBeforeClip);
         fwrite(&indices[0], sizeof(int32_t), nIndices, meshBeforeClip);
         fclose(meshBeforeClip);
         }
+#endif
     assert(status == SUCCESS);
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());

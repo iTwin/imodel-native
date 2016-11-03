@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-06-04\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-11-02\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -824,6 +824,7 @@ size_t s_nclip = 0;
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
+#ifndef NDEBUG
     bool dbg = false;
     if (dbg)
         {
@@ -858,6 +859,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fclose(polyCliPFile);
             }
         }
+#endif
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
     long          numRegionTextureIds = 0;
@@ -871,7 +873,9 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         }
     if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
     polyfaces.resize(polygons.size() + 1);
+#ifndef NDEBUG
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".tin")).c_str());
+#endif
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
@@ -905,8 +909,9 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             userTag++;
             }
         }
-
+#ifndef NDEBUG
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
+#endif
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
@@ -917,6 +922,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
         vec->CopyFrom(*pf);
         if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap);
+#ifndef NDEBUG
         if (dbg)
             {
             WString name = WString(s_path) + L"fpostclipmeshnoutsideregion_";
@@ -937,6 +943,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
             fclose(meshAfterClip);
             }
+#endif
         polyfaces[0].push_back(vec);
         }
     for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
@@ -950,7 +957,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
             vec->CopyFrom(*pf);
             if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap);
-
+#ifndef NDEBUG
             if (dbg)
                 {
                 WString name = WString(s_path) + L"fpostclipmeshregion_";
@@ -973,6 +980,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
                 fclose(meshAfterClip);
                 }
+#endif
             ++n2;
             polyfaces[n + 1].push_back(vec);
             }
