@@ -436,11 +436,7 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
     m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
     {
     if (nullptr != geometryParams)
-        {
         m_materialId = geometryParams->GetMaterialId();
-        m_categoryId = geometryParams->GetCategoryId();
-        m_subCategoryId = geometryParams->GetSubCategoryId();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,11 +446,8 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_categoryId.GetValueUnchecked(), rhs.m_categoryId.GetValueUnchecked());
-    COMPARE_VALUES (m_subCategoryId.GetValueUnchecked(), rhs.m_subCategoryId.GetValueUnchecked());
 
     // No need to compare textures -- if materials match then textures must too.
-
     return false;
     }
 

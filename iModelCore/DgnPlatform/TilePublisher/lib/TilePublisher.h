@@ -145,7 +145,6 @@ struct TilePublisher
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
     BatchIdMap              m_batchIds;
-    std::FILE*              m_outputFile;
     DPoint3d                m_centroid;
     TileMeshList            m_meshes;
     TileNodeCR              m_tile;
@@ -171,7 +170,6 @@ private:
     Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
-    void AppendUInt32(uint32_t value);
 
     Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
@@ -189,6 +187,35 @@ public:
     TILEPUBLISHER_EXPORT static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 
+//=======================================================================================
+//! Read a single tile.
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct TileReader
+{
+    enum class Status
+        {
+        Success = SUCCESS,
+        UnableToOpenFile,
+        InvalidHeader,
+        ReadError,
+        BatchTableError,
+        };
+
+    TILEPUBLISHER_EXPORT static Status  ReadTileFromGLTF (TileMeshList& meshes, BeFileNameCR file);
+};
+
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 
+
+
+
+
+
+
+
+
+
+
+                                         
