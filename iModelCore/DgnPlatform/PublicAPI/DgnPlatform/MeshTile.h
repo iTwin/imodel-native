@@ -613,9 +613,7 @@ struct TileGenerator
     {
         size_t      m_tileCount = 0;
         size_t      m_tileDepth = 0;
-        double      m_collectionTime = 0.0;
-        double      m_tileCreationTime = 0.0;
-        double      m_cachePopulationTime = 0.0;
+        double      m_tileGenerationTime = 0.0;
     };
 private:
     Statistics                      m_statistics;

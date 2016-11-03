@@ -1261,10 +1261,7 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     StopWatch               timer(true);
     TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
     
-    //m_progressMeter._IndicateProgress(0, 1);
     generationCache.Populate (GetDgnDb(), model.GetModelId(), nullptr);
-    //m_progressMeter._IndicateProgress(1, 1);
-    m_statistics.m_cachePopulationTime = timer.GetCurrentSeconds();
 
     DRange3d viewRange = generationCache.GetRange();
     if (viewRange.IsNull())
@@ -1274,7 +1271,6 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
         }
     
     m_totalTiles++;
-    //m_progressMeter._IndicateProgress(0, 1);
     ElementTileNodePtr  elementRoot =  ElementTileNode::Create(model, viewRange, GetTransformFromDgn(), 0, 0, nullptr);
     root = elementRoot;
     m_completedVolume = 0.0;
@@ -1285,13 +1281,12 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     static const uint32_t s_sleepMillis = 1000.0;
     do
         {
-        //m_progressMeter._IndicateProgress((uint32_t (100.0) * m_completedVolume / m_totalVolume), 100);
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
     while (m_completedTiles < m_totalTiles);
 
     // NB: No longer possible to differentiate between tile collection + tile generation time - they happen simultaneously
-    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
+    m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
     m_statistics.m_tileCount = m_totalTiles;
     m_statistics.m_tileDepth = root->GetMaxDepth();
 
