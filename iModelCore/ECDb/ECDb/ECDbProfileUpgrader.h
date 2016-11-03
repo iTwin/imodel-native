@@ -96,7 +96,7 @@ struct ECDbProfileUpgrader_3720 : ECDbProfileUpgrader
         static DbResult AddECClassIdPropertyPath(PropertyPathId& ecclassIdPropertyPathId, ECDbCR ecdb);
         static DbResult GetECClassIdByTable(std::map<DbTableId, DbColumnId>& tableByECClassId, ECDbCR ecdb);
         static DbResult GetECClassMapByTableId(std::map<ClassMapId, DbTableId>& classMapByTable, ECDbCR ecdb);
-        static DbResult AddECClassIdPropertyMap(PropertyPathId ecclassIdPropertyPathId, std::map<ClassMapId, DbTableId>& classMapByTable, std::map<DbTableId, DbColumnId>& tableByECClassId, ECDbCR ecdb);
+        static DbResult AddECClassIdPropertyMap(PropertyPathId ecclassIdPropertyPathId, ECDbCR ecdb);
 
 
         virtual DbResult _Upgrade(ECDbCR) const override;

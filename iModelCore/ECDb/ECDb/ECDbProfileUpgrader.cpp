@@ -190,6 +190,169 @@ DbResult ECDbProfileUpgrader_3730::_Upgrade(ECDbCR ecdb) const
     return BE_SQLITE_OK;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3720::_Upgrade(ECDbCR ecdb) const
+    {
+    StopWatch timer(true);
+    if (AddVirtualECClassIdToTableWhichDoesNotHaveIt(ecdb) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    PropertyPathId ecclassIdPropertyPathId;
+    if (AddECClassIdPropertyPath(ecclassIdPropertyPathId, ecdb) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    if (AddECClassIdPropertyMap(ecclassIdPropertyPathId, ecdb) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    Statement stmt;
+    if (stmt.Prepare(ecdb,
+                     "WITH "
+                     "MapStruct (ColumnId, ClassMapId, TableId, MapStrategy, AccessString, ColumnName, ClassName, NamespacePrefix) AS ( "
+                     "SELECT "
+                     "       ec_Column.[Id], "
+                     "       ec_ClassMap.[Id], "
+                     "       ec_Table.[Id], "
+                     "       ec_ClassMap.MapStrategy, "
+                     "       ec_PropertyPath.AccessString, "
+                     "       ec_Column.Name, "
+                     "       ec_Class.[Name], "
+                     "       ec_Schema.[NamespacePrefix] "
+                     "FROM ec_PropertyMap "
+                     "    JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+                     "    JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                     "    JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+                     "    JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+                     "    JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId "
+                     "    JOIN ec_Table ON ec_Table.Id = ec_Column.TableId) "
+                     "SELECT "
+                     "  A.[ClassMapId], A.[TableId], "
+                     "  (SELECT MAX(ec_Column.[Ordinal]) + 1 FROM ec_Column WHERE ec_Column.[TableId] = A.[TableId]) NewColumnOrdinal, "
+                     "  (CASE WHEN A.MapStrategy = 100 THEN "
+                     "        (CASE WHEN SUBSTR(A.ColumnName, LENGTH(A.ColumnName) - 1, 2) = 'Id' AND A.ColumnName != 'Id' THEN "
+                     "              SUBSTR(A.ColumnName, 1, LENGTH(A.ColumnName) - 2) || 'RelECClassId' "
+                     "         ELSE "
+                     "             A.[NamespacePrefix] || '_' || A.ClassName || '_RelECClassId' "
+                     "         END) "
+                     "  ELSE "
+                     "        (CASE WHEN SUBSTR(B.ColumnName, LENGTH(B.ColumnName) - 1, 2) = 'Id' AND B.ColumnName != 'Id' THEN "
+                     "              SUBSTR(B.ColumnName, 1, LENGTH(B.ColumnName) - 2) || 'RelECClassId' "
+                     "         ELSE "
+                     "             B.[NamespacePrefix] || '_' || B.ClassName || '_RelECClassId' "
+                     "         END) "
+                     "  END) RelECClassIdColumnName, "
+                     " (A.ColumnId = B.ColumnId) IsSelf "
+                     "FROM MapStruct A INNER JOIN MapStruct B ON A.[ClassMapId] = B.ClassMapId  AND B.AccessString ='TargetECInstanceId' "
+                     "WHERE A.MapStrategy IN (100, 101) AND A.AccessString ='SourceECInstanceId'") != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+    //ClassMapId, TableId, ordinal, columnName, IsSelf
+
+    std::vector<std::tuple<DbColumnId, DbTableId, ClassMapId, Utf8String, int>> ecColumnEntries;
+    bmap<DbTableId, bmap<Utf8CP, DbColumnId, CompareIUtf8Ascii>> uniqueColumnsHelper;
+    std::vector<std::tuple<ClassMapId,DbColumnId>> ecPropertyMapEntries;
+
+    std::map<DbTableId, int> ordinals;
+    std::map<DbTableId, std::pair<DbColumnId, bool>> selfRelClassIdColum;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ClassMapId classMapId = stmt.GetValueId<ClassMapId>(0);
+        DbTableId tableId = stmt.GetValueId<DbTableId>(1);
+        int newColumnOrdinalId = stmt.GetValueInt(2);
+        Utf8CP newColumnName = stmt.GetValueText(3);
+        bool isSelf = stmt.GetValueInt(4) == 1;
+
+        auto& uniqueColumns = uniqueColumnsHelper[tableId];
+        auto it = uniqueColumns.find(newColumnName);
+        if (it != uniqueColumns.end())
+            {
+            ecPropertyMapEntries.push_back(std::tuple<ClassMapId, DbColumnId>(classMapId, it->second));
+            continue;
+            }
+
+        DbColumnId newColumnId;
+        if (isSelf && selfRelClassIdColum.find(tableId) != selfRelClassIdColum.end())
+            {
+            newColumnId = selfRelClassIdColum[tableId].first;
+            }
+        else
+            {
+            if (ecdb.GetECDbImplR().GetColumnIdSequence().GetNextValue(newColumnId) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+            if (ordinals.find(tableId) != ordinals.end())
+                {
+                newColumnOrdinalId = ordinals[tableId] + 1;
+                ordinals[tableId] = newColumnOrdinalId;
+                }
+            else
+                ordinals[tableId] = newColumnOrdinalId;
+
+            if (isSelf)
+                selfRelClassIdColum[tableId] = std::make_pair(newColumnId, false);
+            }
+
+        uniqueColumns[newColumnName] = newColumnId;
+        ecPropertyMapEntries.push_back(std::tuple<ClassMapId, DbColumnId>(classMapId, newColumnId));
+        ecColumnEntries.push_back(std::tuple<DbColumnId, DbTableId, ClassMapId, Utf8String, int>(newColumnId, tableId, classMapId, newColumnName, newColumnOrdinalId));
+        }
+
+    stmt.Finalize();
+    if (stmt.Prepare(ecdb, SqlPrintfString("INSERT INTO ec_Column(Id, TableId, Name, [Type], IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) "
+                                           " VALUES(?, ?, ?, %d, 1, ?, 0, 0, null, null ,0 ,null ,%d);",
+                                           Enum::ToInt(DbColumn::Type::Integer), Enum::ToInt(DbColumn::Kind::RelECClassId)).GetUtf8CP()) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    for (auto const& tuple : ecColumnEntries)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        auto itor = selfRelClassIdColum.find(std::get<1>(tuple));
+        if (itor != selfRelClassIdColum.end())
+            {
+            if (itor->second.second)
+                continue;
+
+            itor->second.second = true;
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(1, std::get<0>(tuple)) || //Id
+            BE_SQLITE_OK != stmt.BindId(2, std::get<1>(tuple)) || //TableId
+            BE_SQLITE_OK != stmt.BindText(3, std::get<3>(tuple).c_str(), Statement::MakeCopy::No) || //ColumnName
+            BE_SQLITE_OK != stmt.BindInt(4, std::get<4>(tuple)) || //Ordinal
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed. Error when executing SQL '%s' "
+                       "(Params: 1: %" PRIu64 ", 2: %" PRIu64 ", 3: %s, 4: %d): %s",
+                       stmt.GetSql(), std::get<0>(tuple).GetValue(), std::get<1>(tuple).GetValue(), std::get<3>(tuple).c_str(),
+                       std::get<4>(tuple), ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+
+    stmt.Finalize();
+    if (stmt.Prepare(ecdb, "INSERT INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)") != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    for (auto const& tuple : ecPropertyMapEntries)
+        {
+        if (BE_SQLITE_OK != stmt.BindId(1, std::get<0>(tuple)) ||
+            BE_SQLITE_OK != stmt.BindId(2, ecclassIdPropertyPathId) ||
+            BE_SQLITE_OK != stmt.BindId(3, std::get<1>(tuple)) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    timer.Stop();
+    LOG.debugv("ECDb profile upgrade: Added Relationship ECClassId columns and property maps. [%.4f msecs]", timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        06/2016
@@ -340,8 +503,16 @@ DbResult ECDbProfileUpgrader_3720::GetECClassMapByTableId(std::map<ClassMapId, D
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader_3720::AddECClassIdPropertyMap(PropertyPathId ecclassIdPropertyPathId, std::map<ClassMapId, DbTableId>& classMapByTable, std::map<DbTableId, DbColumnId>& tableByECClassId, ECDbCR ecdb)
+DbResult ECDbProfileUpgrader_3720::AddECClassIdPropertyMap(PropertyPathId ecclassIdPropertyPathId, ECDbCR ecdb)
     {
+    std::map<DbTableId, DbColumnId> tableByECClassId;
+    if (GetECClassIdByTable(tableByECClassId, ecdb) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    std::map<ClassMapId, DbTableId> classMapByTable;
+    if (GetECClassMapByTableId(classMapByTable, ecdb) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
     Statement stmt;
     if (stmt.Prepare(ecdb, "INSERT INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)") != BE_SQLITE_OK)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -363,152 +534,7 @@ DbResult ECDbProfileUpgrader_3720::AddECClassIdPropertyMap(PropertyPathId ecclas
     return BE_SQLITE_OK;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        06/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader_3720::_Upgrade(ECDbCR ecdb) const
-    {
-    if (AddVirtualECClassIdToTableWhichDoesNotHaveIt(ecdb) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
 
-    PropertyPathId ecclassIdPropertyPathId;
-    if (AddECClassIdPropertyPath(ecclassIdPropertyPathId, ecdb) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    std::map<DbTableId, DbColumnId> tableByECClassId;
-    if (GetECClassIdByTable(tableByECClassId, ecdb) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    std::map<ClassMapId, DbTableId> classMapByTable;
-    if (GetECClassMapByTableId(classMapByTable, ecdb) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    if (AddECClassIdPropertyMap(ecclassIdPropertyPathId, classMapByTable, tableByECClassId, ecdb) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    Statement stmt;
-    if (stmt.Prepare(ecdb,
-                     "WITH "
-                     "MapStruct (ColumnId, ClassMapId, TableId, MapStrategy, AccessString, ColumnName, ClassName, NamespacePrefix) AS ( "
-                     "SELECT "
-                     "       ec_Column.[Id], "
-                     "       ec_ClassMap.[Id], "
-                     "       ec_Table.[Id], "
-                     "       ec_ClassMap.MapStrategy, "
-                     "       ec_PropertyPath.AccessString, "
-                     "       ec_Column.Name, "
-                     "       ec_Class.[Name], "
-                     "       ec_Schema.[NamespacePrefix] "
-                     "FROM ec_PropertyMap "
-                     "    JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-                     "    JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                     "    JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-                     "    JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-                     "    JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId "
-                     "    JOIN ec_Table ON ec_Table.Id = ec_Column.TableId) "
-                     "SELECT "
-                     "  A.[ClassMapId], A.[TableId], "
-                     "  (SELECT MAX(ec_Column.[Ordinal]) + 1 FROM ec_Column WHERE ec_Column.[TableId] = A.[TableId]) NewColumnOrdinal, "
-                     "  (CASE WHEN A.MapStrategy = 100 THEN "
-                     "        (CASE WHEN SUBSTR(A.ColumnName, LENGTH(A.ColumnName) - 1, 2) = 'Id' AND A.ColumnName != 'Id' THEN "
-                     "              SUBSTR(A.ColumnName, 1, LENGTH(A.ColumnName) - 2) || 'RelECClassId' "
-                     "         ELSE "
-                     "             A.[NamespacePrefix] || '_' || A.ClassName || '_RelECClassId' "
-                     "         END) "
-                     "  ELSE "
-                     "        (CASE WHEN SUBSTR(B.ColumnName, LENGTH(B.ColumnName) - 1, 2) = 'Id' AND B.ColumnName != 'Id' THEN "
-                     "              SUBSTR(B.ColumnName, 1, LENGTH(B.ColumnName) - 2) || 'RelECClassId' "
-                     "         ELSE "
-                     "             B.[NamespacePrefix] || '_' || B.ClassName || '_RelECClassId' "
-                     "         END) "
-                     "  END) RelECClassIdColumnName, "
-                     " (A.ColumnId = B.ColumnId) IsSelf "
-                     "FROM MapStruct A INNER JOIN MapStruct B ON A.[ClassMapId] = B.ClassMapId  AND B.AccessString ='TargetECInstanceId' "
-                     "WHERE A.MapStrategy IN (100, 101) AND A.AccessString ='SourceECInstanceId'") != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-    //ClassMapId, TableId, ordinal, columnName, IsSelf
-
-    std::vector<std::tuple<DbColumnId, DbTableId, ClassMapId, Utf8String, int>> tupleList;
-    std::map<DbTableId, int> ordinals;
-    std::map<DbTableId, std::pair<DbColumnId, bool>> selfRelClassIdColum;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ClassMapId classMapId = stmt.GetValueId<ClassMapId>(0);
-        DbTableId tableId = stmt.GetValueId<DbTableId>(1);
-        int newColumnOrdinalId = stmt.GetValueInt(2);
-        Utf8CP newColumnName = stmt.GetValueText(3);
-        bool isSelf = stmt.GetValueInt(4) == 1;
-        DbColumnId newColumnId;
-        if (isSelf && selfRelClassIdColum.find(tableId) != selfRelClassIdColum.end())
-            {
-            newColumnId = selfRelClassIdColum[tableId].first;
-            }
-        else
-            {
-            if (ecdb.GetECDbImplR().GetColumnIdSequence().GetNextValue(newColumnId) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-            if (ordinals.find(tableId) != ordinals.end())
-                {
-                newColumnOrdinalId = ordinals[tableId] + 1;
-                ordinals[tableId] = newColumnOrdinalId;
-                }
-            else
-                ordinals[tableId] = newColumnOrdinalId;
-
-            if (isSelf)
-                selfRelClassIdColum[tableId] = std::make_pair(newColumnId, false);
-            }
-
-        tupleList.push_back(std::tuple<DbColumnId, DbTableId, ClassMapId, Utf8String, int >(newColumnId, tableId, classMapId, newColumnName, newColumnOrdinalId));
-        }
-
-    stmt.Finalize();
-    if (stmt.Prepare(ecdb, SqlPrintfString("INSERT INTO ec_Column(Id, TableId, Name, [Type], IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) "
-                                           " VALUES(?, ?, ?, %d, 1, ?, 0, 0, null, null ,0 ,null ,%d);",
-                                           Enum::ToInt(DbColumn::Type::Integer), Enum::ToInt(DbColumn::Kind::RelECClassId)).GetUtf8CP()) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    for (auto const& tuple : tupleList)
-        { 
-        stmt.Reset();
-        stmt.ClearBindings();
-        auto itor = selfRelClassIdColum.find(std::get<1>(tuple));
-        if (itor != selfRelClassIdColum.end())
-            {
-            if (itor->second.second)
-                continue;
-
-            itor->second.second = true;
-            }
-
-        stmt.BindId(1, std::get<0>(tuple)); //Id
-        stmt.BindId(2, std::get<1>(tuple)); //TableId
-        stmt.BindText(3, std::get<3>(tuple).c_str(), Statement::MakeCopy::No); //ColumnName
-        stmt.BindInt(4, std::get<4>(tuple)); //Ordinal
-        DbResult r = stmt.Step();
-        
-        if (r != BE_SQLITE_DONE)
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    stmt.Finalize();
-    if (stmt.Prepare(ecdb, "INSERT INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)") != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-
-    for (auto const& tuple : tupleList)
-        {
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindId(1, std::get<2>(tuple));
-        stmt.BindId(2, ecclassIdPropertyPathId);
-        stmt.BindId(3, std::get<0>(tuple));
-        if (stmt.Step() != BE_SQLITE_DONE)
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    return BE_SQLITE_OK;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2016
@@ -589,7 +615,7 @@ DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
 
     timer.Stop();
     LOG.debugv("ECDb profile upgrade: Updated NotNullConstraint column in table 'ec_Column' for "
-              "%" PRIu64 " Foreign Key columns. [%.4f ms]", (uint64_t) colsToUpdate.size(), timer.GetElapsedSeconds() * 1000.0);
+              "%" PRIu64 " Foreign Key columns. [%.4f msecs]", (uint64_t) colsToUpdate.size(), timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
 
