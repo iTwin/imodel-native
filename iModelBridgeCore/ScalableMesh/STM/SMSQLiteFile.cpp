@@ -23,7 +23,7 @@
 #define READWRITE Db::OpenMode::ReadWrite
 #endif
 
-const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -53,10 +53,11 @@ bool SMSQLiteFile::Close()
     }
 
 
-const SchemaVersion s_listOfReleasedSchemas[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
-const size_t s_numberOfReleasedSchemas = 2;
-double s_expectedTimeUpdate[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
+const SchemaVersion s_listOfReleasedSchemas[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
+const size_t s_numberOfReleasedSchemas = 3;
+double s_expectedTimeUpdate[2] = { 1.2*1e-5, 1e-6 };
+//all the functions for each schema transition. 
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
     [](BeSQLite::Db* database)
         {
         assert(database->TableExists("SMMasterHeader"));
@@ -132,6 +133,13 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
         database->DropTable("SMClipDefinitions");
         database->DropTable("SMGraph");
         s3.Commit();
+        },
+
+        [] (BeSQLite::Db* database)
+        {
+        database->ExecuteSql("ALTER TABLE SMMasterHeader ADD COLUMN DataResolution REAL DEFAULT 0.0");
+        database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN GeometryResolution REAL DEFAULT 0.0");
+        database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN TextureResolution REAL DEFAULT 0.0");
         }
     };
 
@@ -190,7 +198,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     if (m_database->IsDbOpen())
         m_database->CloseDb();
 
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(/*openReadOnly ? READONLY:*/ READWRITE));
+    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
     if (result == BE_SQLITE_SCHEMA)
         {
@@ -274,7 +282,8 @@ DbResult SMSQLiteFile::CreateTables()
                                      "GCS STRING,"
                                      "LastModifiedTime INTEGER,"
                                      "LastSyncTime INTEGER,"
-                                     "CheckTime INTEGER");
+                                     "CheckTime INTEGER,"
+                                     "DataResolution REAL");
     assert(result == BE_SQLITE_OK);
 
 
@@ -303,7 +312,9 @@ DbResult SMSQLiteFile::CreateTables()
                                      "IsTextured INTEGER,"
                                      "TexID INTEGER,"
                                      "SubNode BLOB,"
-                                     "Neighbor BLOB");
+                                     "Neighbor BLOB,"
+                                     "GeometryResolution REAL,"
+                                     "TextureResolution REAL");
     assert(result == BE_SQLITE_OK);
 
 
@@ -418,11 +429,11 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     CachedStatementPtr stmt;
     if (nRows == 0)
     {
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, MeshDataDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, MeshDataDepth, IsTextured, IsTerrain, DataResolution) VALUES(?,?,?,?,?,?,?,?,?)");
     }
     else
     {
-        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, MeshDataDepth=?, IsTextured=?, IsTerrain=?"
+        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, MeshDataDepth=?, IsTextured=?, IsTerrain=?, DataResolution=?"
             " WHERE MasterHeaderId=?");
     }
     stmt->BindInt64(1, id);
@@ -433,9 +444,9 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     stmt->BindInt64(6, newHeader.m_terrainDepth);
     stmt->BindInt(7, newHeader.m_textured ? 1 : 0);
     stmt->BindInt(8, newHeader.m_isTerrain ? 1 : 0);
-    //stmt->BindInt(7, newHeader.m_singleFile ? 1 : 0);
+    stmt->BindDouble(9, (double)newHeader.m_resolution);
     if (nRows != 0)
-        stmt->BindInt64(9, id);
+        stmt->BindInt64(10, id);
     DbResult status = stmt->Step();
     assert(status == BE_SQLITE_DONE);
     return status == BE_SQLITE_DONE;
@@ -447,7 +458,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "REPLACE INTO SMNodeHeader (NodeId, ParentNodeId, Resolution," 
                                   "Filtered, Extent, ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent,SubNode,Neighbor, TexID, IsTextured, NodeCount) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                  "NumberOfMeshComponents, AllComponent,SubNode,Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     stmt->BindInt64(1, newNodeHeader.m_nodeID);
     stmt->BindInt64(2, newNodeHeader.m_parentNodeID);
     stmt->BindInt64(3, newNodeHeader.m_level);
@@ -472,16 +483,14 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         offset += (int)newNodeHeader.m_apNeighborNodeID[i].size();
         }
     stmt->BindBlob(13, (void*)neighbors, (int)nOfNeighbors*sizeof(int) + 26 * sizeof(int), MAKE_COPY_NO);
-   // if (newNodeHeader.m_textureID.size() > 0)
-        stmt->BindInt64(14, newNodeHeader.m_textureID);
-   // else
-  //      {
-  //      size_t texID = SQLiteNodeHeader::NO_NODEID;
-   //     stmt->BindInt64(16, texID);
-   //     }
+
+    stmt->BindInt64(14, newNodeHeader.m_textureID);
+
 
     stmt->BindInt(15, newNodeHeader.m_isTextured ? 1 : 0); 
     stmt->BindInt(16, (int)newNodeHeader.m_nodeCount);
+    stmt->BindDouble(17, (double)newNodeHeader.m_geometricResolution);
+    stmt->BindDouble(18, (double)newNodeHeader.m_textureResolution);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
     delete[]neighbors;
@@ -493,7 +502,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, MeshDataDepth, IsTerrain FROM SMMasterHeader WHERE MasterHeaderId = ?");
+    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, MeshDataDepth, IsTerrain, DataResolution FROM SMMasterHeader WHERE MasterHeaderId = ?");
     size_t id = 0;
     stmt->BindInt64(1, id);
     DbResult status = stmt->Step();
@@ -507,6 +516,7 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
     header.m_terrainDepth = stmt->GetValueInt64(6);
     header.m_isTerrain = stmt->GetValueInt(7) ? true : false;
+    header.m_resolution = (float)stmt->GetValueDouble(8);
     return true;
     }
 
@@ -517,7 +527,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount FROM SMNodeHeader WHERE NodeId=?");
+                                  "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution FROM SMNodeHeader WHERE NodeId=?");
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
 
@@ -570,7 +580,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(12);
     nodeHeader.m_isTextured = stmt->GetValueInt(13) ? true : false;
-    if (/*texIdx != SQLiteNodeHeader::NO_NODEID &&*/ nodeHeader.m_isTextured)
+    if (nodeHeader.m_isTextured)
         {
         nodeHeader.m_textureID = texIdx;
         nodeHeader.m_nbTextures = 1;
@@ -578,6 +588,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         nodeHeader.m_uvsIndicesID[0] = texIdx;
         }
     nodeHeader.m_nodeCount = stmt->GetValueInt(14);
+    nodeHeader.m_geometricResolution = (float)stmt->GetValueDouble(15);
+    nodeHeader.m_textureResolution = (float)stmt->GetValueDouble(16);
     stmt->ClearBindings();
     return true;
     }
@@ -743,7 +755,7 @@ uint64_t SMSQLiteFile::GetLastNodeId()
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMPoint ORDER BY NodeId DESC LIMIT 1");
+    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMNodeHeader ORDER BY NodeId DESC LIMIT 1");
     stmt->Step();
     auto numResults = stmt->GetColumnCount();
 
@@ -1499,8 +1511,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         CachedStatementPtr stmtSequence;
         bvector<ImportCommandData> sequenceData;
         m_database->GetCachedStatement(stmtSequence, "SELECT SourceLayer, TargetLayer, SourceType, TargetType FROM SMImportSequences WHERE SourceID=? ORDER BY CommandPosition ASC");
-        stmt->BindInt64(1, sourceData.GetSourceID());
-        while (stmt->Step() == BE_SQLITE_ROW)
+        stmtSequence->BindInt64(1, sourceData.GetSourceID());
+        while (stmtSequence->Step() == BE_SQLITE_ROW)
             {
             ImportCommandData data;
             if (!stmt->IsColumnNull(0))

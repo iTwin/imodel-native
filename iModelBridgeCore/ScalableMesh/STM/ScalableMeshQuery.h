@@ -1220,13 +1220,17 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
     {
     protected:
 
+        //NEEDS_WORK_SM : Load graph required since removed from file?
         bool m_loadGraph;
+        bool m_loadIndices;
         bool m_loadTexture;
 
         virtual bool _ShouldLoadTexture() const override;
+        virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
 
         virtual void _SetLoadTexture(bool loadTexture) override;
+        virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
 
     public:
@@ -1234,6 +1238,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             {
             m_loadGraph = false;
             m_loadTexture = false;
+            m_loadIndices = true;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
@@ -1245,7 +1250,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
+        bool ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1504,6 +1509,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual StatusInt _SetContentExtent(DRange3d& extent) override;
 
         virtual StatusInt _SetArePoints3d(bool arePoints3d) override;
+
+        virtual StatusInt _SetResolution(float geometricResolution, float textureResolution) override;
 
         virtual bool _IsHeaderLoaded() const override;
 

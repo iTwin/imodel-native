@@ -92,7 +92,8 @@ struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
     {
     private :
 
-        IScalableMeshPtr m_smesh;
+        IScalableMeshPtr  m_smesh;
+        bvector<DPoint3d> m_extractionArea;
 
     protected : 
 
@@ -103,6 +104,9 @@ struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
         virtual void               _GetAvailableRange(DRange3d& availableRange) override;
 
     public :
+
+
+        void SetExtractionArea(const bvector<DPoint3d>& area);
 
         ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh);        
 

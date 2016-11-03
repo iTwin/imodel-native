@@ -109,7 +109,13 @@ void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status, computeNeighbors);
     }
 
-int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
+
+void IScalableMeshNodeCreator::SetDataResolution(float resolution)
+    {
+    dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->SetDataResolution(resolution);
+    }
+
+int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
     {
     int status = BSISUCCESS;
 
@@ -160,8 +166,12 @@ void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshN
         status = BSIERROR;
         return;
         }
-    nodeP->SortSubNodes();
-    if (computeNeighbors) nodeP->SetupNeighborNodesAfterSplit();
+
+    if (computeNeighbors)
+        {
+        nodeP->SortSubNodes();
+        nodeP->SetupNeighborNodesAfterSplit();
+        }
     status = BSISUCCESS;
     return;
     }
@@ -228,6 +238,18 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
     return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
     }
 
+
+void IScalableMeshNodeCreator::Impl::SetDataResolution(float resolution)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return;
+            }
+        }
+    m_pDataIndex->SetDataResolution(resolution);
+    }
 
 int64_t  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int nOfChannels, const byte* texData)
     {

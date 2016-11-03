@@ -110,7 +110,7 @@ struct MeshTraversalQueue
 
     public:
 
-        map<int64_t, std::future<DTMStatusInt>> m_nodesToLoad;
+        std::map<int64_t, std::future<DTMStatusInt>> m_nodesToLoad;
 
         MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {};
