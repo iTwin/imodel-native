@@ -7,7 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 
 #using <mscorlib.dll>
+#ifdef USE_VANCOUVER_LOGGING
+#using <Bentley.logging-2.0.dll>
+#else
 #using <Bentley.loggingB02.dll>
+#endif
 
 namespace ManagedApi = ::Bentley::Logging;
 
