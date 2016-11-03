@@ -674,7 +674,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 BeAssert(false);
                 return ERROR;
                 }
-
+            //Nav properties cannot be safed here as they are not yet mapped.
             if (propMap->GetType() != PropertyMap::Type::Navigation)
                 {
                 DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap*>(propMap);

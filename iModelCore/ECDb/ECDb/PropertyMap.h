@@ -82,12 +82,32 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         const_iterator begin() const { return m_directDecendentList.begin(); }
         const_iterator end() const { return m_directDecendentList.end(); }
     };
+
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 // Abstract baseclass of all property map.
 //+===============+===============+===============+===============+===============+======
 struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisitor
     {
+    struct Path
+        {
+        typedef bvector<PropertyMap const*>::const_iterator const_iterator;
+        private:
+            bvector<PropertyMap const*> m_vect;
+            Path(bvector<PropertyMap const*>& vect):m_vect(std::move(vect)){}
+        public:
+            Path(Path const&& path) : m_vect(std::move(path.m_vect)) {}
+            Path(Path const& path) :m_vect(path.m_vect) {}
+            Path& operator = (Path const& path);
+            Path& operator = (Path const&& path);
+            PropertyMap const& operator [] (size_t i) const;
+            size_t size() const { return m_vect.size(); }
+            const_iterator begin() const { return m_vect.begin(); }
+            const_iterator end() const { return m_vect.end(); }
+            PropertyMap const& Front() const { return *m_vect.front(); }
+            PropertyMap const& Back() const { return *m_vect.back(); }
+            static Path From(PropertyMap const& propertyMap);
+        };
     public:
         enum class Type
             {
@@ -154,6 +174,7 @@ struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisit
         bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
         //! Test if current property map part of class map tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
+        Path GetPath() const { return Path::From(*this); }
     };
 
 //=======================================================================================

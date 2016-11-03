@@ -420,16 +420,27 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
     if (IsEmpty())
         return ERROR;
 
-    ECClassCP cursorClass = &classMap.GetClass();
-    const size_t leafIndex = m_path.size() - 1;
-    bool isLeafEntry = false;
+    Utf8String accessString = ToString(false, false);
+    PropertyMap const * propertyMap = classMap.GetPropertyMaps().Find(accessString.c_str());
+    if (propertyMap == nullptr)
+        {
+        Reset();
+        if (errorMessage != nullptr)
+            errorMessage->Sprintf("Fail to find accessString '%s'.", ToString().c_str());
+
+        return ERROR;
+        }
+
+    PropertyMap::Path propertyPath = propertyMap->GetPath();
+    if (propertyPath.size() != m_path.size())
+        {
+        BeAssert(false && "Programmer Error");
+        return ERROR;
+        }
+
     for (size_t i = 0; i < m_path.size(); i++)
         {
-        if (i == leafIndex)
-            isLeafEntry = true;
-
         Location& element = m_path[i];
-        Utf8CP propertyName = element.GetPropertyName();
         if (element.HasArrayIndex())
             {
             Reset();
@@ -438,65 +449,7 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
             return ERROR;
             }
 
-        ECPropertyCP property = cursorClass->GetPropertyP(propertyName, true);
-
-        if (property == nullptr && i == 0)
-            {
-            PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyName);
-            if (propertyMap != nullptr)
-                property = &propertyMap->GetProperty();
-            }
-
-        if (property == nullptr)
-            {
-            Reset();
-            if (errorMessage != nullptr)
-                errorMessage->Sprintf("ECProperty '%s' in property access string '%s' does not exist.", propertyName, ToString().c_str());
-            
-            return ERROR;
-            }
-
-        element.SetProperty(*property);
-
-        if (property->GetIsPrimitive() || property->GetIsNavigation())
-            {
-            if (!isLeafEntry || element.HasArrayIndex())
-                {
-                Reset();
-                if (errorMessage != nullptr)
-                    errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
-                return ERROR;
-                }
-            }
-        else if (property->GetIsStruct())
-            {
-            if (element.HasArrayIndex())
-                {
-                Reset();
-                if (errorMessage != nullptr)
-                    errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
-                return ERROR;
-                }
-
-            cursorClass = &property->GetAsStructProperty()->GetType();
-            }
-        else if (property->GetIsArray())
-            {
-            if (property->GetIsPrimitiveArray())
-                {
-                if (!isLeafEntry)
-                    {
-                    Reset();
-                    if (errorMessage != nullptr)
-                        errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
-                    return ERROR;
-                    }
-                }
-            else if (property->GetIsStructArray())
-                {
-                cursorClass = property->GetAsStructArrayProperty()->GetStructElementType();
-                }
-            }
+        element.SetProperty(propertyPath[i].GetProperty());
         }
 
     BeAssert(IsResolved() && "Must be resolved by now");

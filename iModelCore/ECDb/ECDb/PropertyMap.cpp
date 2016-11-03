@@ -71,6 +71,52 @@ bool PropertyMap::IsMappedToClassMapTables() const
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const& path)
+    {
+    if (this != &path)
+        m_vect = path.m_vect;
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const&& path)
+    {
+    if (this != &path)
+        m_vect = std::move(path.m_vect);
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//--------------------------------------------------------------------------------------
+PropertyMap const& PropertyMap::Path::operator [] (size_t i) const
+    {
+    return *m_vect[i];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+PropertyMap::Path PropertyMap::Path::From(PropertyMap const& propertyMap)
+    {
+    bvector<PropertyMap const*> vect;
+    PropertyMap const* mp = &propertyMap;
+    while (mp != nullptr)
+        {
+        vect.insert(vect.begin(), mp);
+        mp = mp->GetParent();
+        }
+
+    return Path(vect);
+    }
+
 //***************************************************WipPropertyMapContainer*****************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
