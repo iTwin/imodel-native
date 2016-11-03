@@ -112,8 +112,7 @@ BentleyStatus TileData::ReadFromFile() const
         return SUCCESS;
         }
 
-    if (m_tile.IsValid() && 
-        SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
+    if (m_tile.IsValid() && SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
         {
         m_tile->SetNotFound();
         return ERROR;

@@ -1,4 +1,4 @@
-/*------------------------------------------------------------g--------------------------+                                                                                                                                      
+/*--------------------------------------------------------------------------------------+                                                                                                                                      
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -102,7 +102,7 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
@@ -110,14 +110,6 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #endif
 
     m_meshes = m_tile.GenerateMeshes(context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AppendUInt32(uint32_t value)
-    {
-    std::fwrite(&value, 1, sizeof(value), m_outputFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,7 +219,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    m_outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
+    std::FILE*  outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -242,29 +234,35 @@ PublisherContext::Status TilePublisher::Publish()
     static const size_t s_b3dmHeaderSize = 24;
     static const char s_b3dmMagic[] = "b3dm";
     static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmNumBatches = m_batchIds.Count();
+    uint32_t b3dmNumBatches = m_batchIds.Count(), zero = 0;
     uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
 
-    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_b3dmVersion);
-    AppendUInt32(b3dmLength);
-    AppendUInt32(batchTableStrLen);
-    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
-    AppendUInt32(b3dmNumBatches);
-    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
+    std::fwrite(s_b3dmMagic, 1, 4, outputFile);
+    std::fwrite(&s_b3dmVersion, 1, 4, outputFile);
+    std::fwrite(&b3dmLength, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(&batchTableStrLen, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile); // length of binary portion of batch table - we have no binary batch table data
+    std::fwrite(&b3dmNumBatches, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
+    std::fwrite(&s_gltfMagic, 1, 4, outputFile);
+    std::fwrite(&s_gltfVersion, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(&gltfLength, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(&sceneStrLength, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(&s_gltfSceneFormat, 1, sizeof(uint32_t), outputFile);
 
-    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
-    AppendUInt32(s_gltfVersion);
-    AppendUInt32(gltfLength);
-    AppendUInt32(sceneStrLength);
-    AppendUInt32(s_gltfSceneFormat);
-
-    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
+    std::fwrite(sceneStr.data(), 1, sceneStrLength, outputFile);
     if (!m_binaryData.empty())
-        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
+        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), outputFile);
 
-    std::fclose(m_outputFile);
-    m_outputFile = NULL;
+    std::fclose(outputFile);
+
+//#define ROUND_TRIP_DEBUG
+
+#ifdef  ROUND_TRIP_DEBUG
+    TileMeshList    roundTripMeshes;
+
+    TileReader::ReadTileFromGLTF (roundTripMeshes, binaryDataFileName); 
+#endif
 
     return PublisherContext::Status::Success;
     }
