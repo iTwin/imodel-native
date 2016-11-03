@@ -805,6 +805,7 @@ From .NET implementation:
 ///
 * @bsimethod                                    Carole.MacDonald                11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6054) // BeStringUtilities::Snprintf's array overload eventually calls Bevsnprintf which does goes out of its way to ensure a trailing 0.
 bool ECClass::SchemaAllowsOverridingArrays
 (
 ECSchemaCP schema
@@ -818,7 +819,7 @@ ECSchemaCP schema
 
     return false;
     }
-
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
