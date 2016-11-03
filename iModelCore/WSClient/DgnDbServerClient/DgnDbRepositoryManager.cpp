@@ -60,7 +60,7 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     if (!readResult.IsSuccess())
         {
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return readResult;
         }
 
@@ -69,7 +69,7 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
         if (repositoryInfo == m_connection->GetRepositoryInfo())
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerStatusResult::Success();
             }
         }
@@ -80,7 +80,7 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
         DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         m_connection = connection;
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return DgnDbServerStatusResult::Success();
         }
     else
