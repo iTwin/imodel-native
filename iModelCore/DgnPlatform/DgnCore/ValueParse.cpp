@@ -300,7 +300,7 @@ double          uorPerSub
 
     bool            negflg;
     BeAssert(wcslen(inStr) < 1024);
-    BeStringUtilities::Wcsncpy(buffer, _countof(buffer), inStr, _TRUNCATE);
+    BeStringUtilities::Wcsncpy(buffer, _countof(buffer), inStr, BeStringUtilities::AsManyAsPossible);
     WCharP str = buffer;
 
     /* skip leading whitespace */
