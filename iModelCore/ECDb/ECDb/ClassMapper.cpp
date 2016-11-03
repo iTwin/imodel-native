@@ -61,7 +61,11 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 
     if (propertyMap == nullptr)
         {
-        BeAssert(false && "Failed to created property map");
+        if (!m_loadContext)
+            {
+            BeAssert(false && "Failed to created property map");
+            }
+
         return nullptr;
         }
 
@@ -395,7 +399,6 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
         columns = m_loadContext->FindColumnByAccessString(accessString.c_str());
         if (columns == nullptr || columns->size() != 1)
             {
-            BeAssert(false);
             return nullptr;
             }
 
@@ -501,7 +504,6 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::ID_PROPNAME).c_str());
     if (columns == nullptr || columns->size() != 1)
         {
-        BeAssert(false);
         return nullptr;
         }
 
@@ -509,7 +511,6 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME).c_str());
     if (columns == nullptr || columns->size() != 1)
         {
-        BeAssert(false);
         return nullptr;
         }
 
@@ -517,7 +518,6 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 
     if (SUCCESS != propertyMap->SetMembers(*id, *relClassId, property.GetRelationshipClass()->GetId()))
         {
-        BeAssert(false);
         return nullptr;
         }
 

@@ -2126,7 +2126,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>");
-
+    m_ecdb.SaveChanges();
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);

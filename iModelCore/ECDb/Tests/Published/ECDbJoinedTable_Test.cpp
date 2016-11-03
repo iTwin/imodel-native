@@ -2462,7 +2462,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     {
     SetUpECSqlStatementTestsDb();
 
-    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].[ECInstanceId],[ECST_Person].[ECClassId] FROM [ECST_Person]) [Person]";
+    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECInstanceId], [ECClassId] FROM [ECST_Person]) [Person]";
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId FROM ECST.Person"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
@@ -2475,7 +2475,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
 TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     {
     SetUpECSqlStatementTestsDb();
-
+    m_ecdb.SaveChanges();
     int rowCount;
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*) FROM (SELECT CompanyName FROM ECST.Supplier UNION ALL SELECT CompanyName FROM ECST.Shipper)"));

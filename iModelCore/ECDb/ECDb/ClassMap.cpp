@@ -573,7 +573,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (mapColumnsList == nullptr)
         return ERROR;
 
-    //Load ECInstanceId================================================
+        //Load ECInstanceId================================================
     RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, *mapColumnsList);
     if (ecInstanceIdPropertyMap == nullptr)
         {
@@ -675,22 +675,24 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 return ERROR;
                 }
 
-            DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap*>(propMap);
-
-            //! ECSchema update added new property for which we need to save property map
-            DbMapSaveContext ctx(m_ecdb);
-            //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(dataPropMap->GetTable()) != SUCCESS)
+            if (propMap->GetType() != PropertyMap::Type::Navigation)
                 {
-                BeAssert(false && "Failed to save table");
-                return ERROR;
-                }
+                DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap*>(propMap);
+                //! ECSchema update added new property for which we need to save property map
+                DbMapSaveContext ctx(m_ecdb);
+                //First make sure table is updated on disk. The table must already exist for this operation to work.
+                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(dataPropMap->GetTable()) != SUCCESS)
+                    {
+                    BeAssert(false && "Failed to save table");
+                    return ERROR;
+                    }
 
-            ctx.BeginSaving(*this);
-            DbClassMapSaveContext classMapContext(ctx);
-            SavePropertyMapVisitor saveVisitor(classMapContext);
-            propMap->AcceptVisitor(saveVisitor);
-            ctx.EndSaving(*this);
+                ctx.BeginSaving(*this);
+                DbClassMapSaveContext classMapContext(ctx);
+                SavePropertyMapVisitor saveVisitor(classMapContext);
+                propMap->AcceptVisitor(saveVisitor);
+                ctx.EndSaving(*this);
+                }
             }
         }
 
@@ -1173,13 +1175,11 @@ bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
 void ColumnFactory::Update(bool includeDerivedClasses) const
     {
     m_idsOfColumnsInUseByClassMap.clear();
-    GetColumnsPropertyMapVisitor navigationProperytMapColumns(PropertyMap::Type::Navigation);
-    m_classMap.GetPropertyMaps().AcceptVisitor(navigationProperytMapColumns);
-
-    for (DbColumn const* columnInUse : navigationProperytMapColumns.GetColumns())
+    GetColumnsPropertyMapVisitor sharedColumnVisitor(PropertyMap::Type::Data);
+    m_classMap.GetPropertyMaps().AcceptVisitor(sharedColumnVisitor);
+    for (DbColumn const* columnInUse : sharedColumnVisitor.GetColumns())
         {
-        //WIP Why can the column ever be nullptr at all??
-        if (columnInUse != nullptr)
+        if (columnInUse->IsShared() && &columnInUse->GetTable() == &GetTable())
             CacheUsedColumn(*columnInUse);
         }
 

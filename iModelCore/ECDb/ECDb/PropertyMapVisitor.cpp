@@ -105,8 +105,37 @@ ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDat
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
+VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const
+    {
+    Result& result = Record(propertyMap);
+    if (propertyMap.GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+    else
+        {
+        if (m_target == SqlTarget::View)
+            result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        else
+            {
+            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
+            propertyMap.GetDefaultClassId().ToString(classIdStr);
+            result.GetSqlBuilderR()
+                .Append(classIdStr).AppendSpace()
+                .Append(propertyMap.GetColumn().GetName().c_str());
+            }
+        }
+
+    return VisitorFeedback::Next;
+    }
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
+    if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
+        {
+        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
+        }
+
     Result& result = Record(propertyMap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());

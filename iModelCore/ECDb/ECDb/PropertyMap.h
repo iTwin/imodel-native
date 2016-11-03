@@ -191,12 +191,13 @@ struct DataPropertyMap : PropertyMap
 struct CompoundDataPropertyMap : DataPropertyMap
     {
     typedef bvector<DataPropertyMap const*>::const_iterator const_iterator;
-    bvector<DataPropertyMap const*> m_list;
+ 
     private:
         virtual DbTable const& _GetTable() const override;
 
     protected:
-          CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+        bvector<DataPropertyMap const*> m_list;
+        CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, classMap, ecProperty) {}
         CompoundDataPropertyMap(Type kind, DataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, parentPropertyMap, ecProperty, true) {}

@@ -220,7 +220,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
             }
         }
 
-    PrepareDefault(nativeSqlSnippets, ecsqlType, exp, propMap, classIdentifier);
+
+    NativeSqlBuilder selectSql;
+    selectSql.Append(classIdentifier, propMap.GetAccessString().c_str());
+    nativeSqlSnippets.push_back(selectSql);
+    //PrepareDefault(nativeSqlSnippets, ecsqlType, exp, propMap, classIdentifier);
     return ECSqlStatus::Success;
     }
 
@@ -251,7 +255,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 {
                 if (!propertyRef->IsConverted())
                     {
-                    ToSqlPropertyMapVisitor sqlVisitor(propertyName->GetPropertyMap().GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::View, nullptr);
+                    PropertyMap const& propertyMap = propertyName->GetPropertyMap();
+                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::View, nullptr);
+                    propertyMap.AcceptVisitor(sqlVisitor);
                     NativeSqlBuilder::List snippets;
                     for (auto const&r : sqlVisitor.GetResultSet())
                         snippets.push_back(r.GetSqlBuilder());

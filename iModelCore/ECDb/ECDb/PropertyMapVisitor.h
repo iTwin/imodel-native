@@ -212,6 +212,7 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         bool IsAlienTable(DbTable const& table) const;
         SingleColumnDataPropertyMap const* FindSystemPropertyMapForTable(SystemPropertyMap const& systemPropertyMap) const;
         VisitorFeedback ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const;
+        VisitorFeedback ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(ConstraintECInstanceIdPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(ConstraintECClassIdPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(ECClassIdPropertyMap const& propertyMap) const;

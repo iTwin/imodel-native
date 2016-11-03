@@ -587,7 +587,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             }
 
         ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*relationshipECClass);
-        if (classMap == nullptr || classMap->GetType() == ClassMap::Type::RelationshipLinkTable)
+        if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipLinkTable)
             {
             BeAssert(false);
             return ERROR;
@@ -932,6 +932,8 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
             {
             BeAssert(propertyMap->IsData());
             BeAssert(dynamic_cast<SingleColumnDataPropertyMap const*>(propertyMap) != nullptr);
+
+
             SingleColumnDataPropertyMap const* dataProperty = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
             //! Join table does not require casting as we only split table into exactly two possiable tables and only if shared table is enabled.
             if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
