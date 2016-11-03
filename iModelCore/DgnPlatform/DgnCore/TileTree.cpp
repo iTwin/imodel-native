@@ -75,13 +75,17 @@ BentleyStatus TileData::ReadFromFile() const
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
         {
-        m_tile->SetNotFound();
+        if (m_tile.IsValid())
+            m_tile->SetNotFound();
+        
         return ERROR;
         }
 
     if (BeFileStatus::Success != dataFile.ReadEntireFile(m_tileBytes))
         {
-        m_tile->SetNotFound();
+        if (m_tile.IsValid())
+            m_tile->SetNotFound();
+
         return ERROR;
         }
 
@@ -91,7 +95,8 @@ BentleyStatus TileData::ReadFromFile() const
         return SUCCESS;
         }
 
-    if (SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
+    if (m_tile.IsValid() && 
+        SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
         {
         m_tile->SetNotFound();
         return ERROR;
