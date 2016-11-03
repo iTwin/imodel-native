@@ -46,6 +46,7 @@ TEST_F(MemoryManagerTests, CalculateAndPurge)
 
     DgnDb& db = *m_db;
     MemoryManager& mgr = db.Memory();
+    EXPECT_TRUE(mgr.PurgeUntil(0)); // purge any memory cached by SetupSeedProject
 
     TestConsumer consumers[] =
         {

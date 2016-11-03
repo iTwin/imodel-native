@@ -62,10 +62,7 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("Splines");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
+    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
     InsertElement(*m_db, model->GetModelId(), true, true);
 
     LoadModel("Splines");
@@ -87,10 +84,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
 TEST_F(DgnModelTests, EmptyList)
     {
     SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("Splines");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
+    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
     InsertElement(*m_db, model->GetModelId(), true, true);
 
     LoadModel("Splines");
@@ -108,10 +102,7 @@ TEST_F(DgnModelTests, EmptyList)
 TEST_F(DgnModelTests, GetRange)
     {
     SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("RangeTest");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
+    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
     InsertElement(*m_db, model->GetModelId(), true, true);
 
     LoadModel("RangeTest");
@@ -350,9 +341,7 @@ TEST_F(DgnModelTests, AbandonChanges)
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
-    //Inserts a model
     PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-    EXPECT_TRUE(model1.IsValid());
     db.SaveChanges("changeSet1");
 
     model1->Delete();
@@ -389,7 +378,6 @@ TEST_F(DgnModelTests, AddAppData)
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
-    //Inserts a model
     PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
 
     // Add Appdata
@@ -414,7 +402,6 @@ TEST_F(DgnModelTests, DropAppData)
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
-    //Inserts a model
     PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
 
     static DgnModel::AppData::Key m_key;
