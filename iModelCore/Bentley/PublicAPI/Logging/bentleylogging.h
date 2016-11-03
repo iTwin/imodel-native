@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Logging/bentleylogging.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,10 +15,8 @@
 #define END_BENTLEY_LOGGING_NAMESPACE   } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_LOGGING using namespace BentleyApi::NativeLogging;
 
-//__PUBLISH_SECTION_END__
 #define USING_NAMESPACE_BENTLEY_LOGGING_PROVIDER using namespace BentleyApi::NativeLogging::Provider;
 
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_LOGGING_NAMESPACE
 
 /**
@@ -43,7 +41,6 @@ typedef enum
     LOG_TRACE = (-5)    //!< Used for tracing function calls
     } SEVERITY;
 
-//__PUBLISH_SECTION_END__
 // Logger message severity levels in text form.
 #define LOG_TEXT_FATAL      L"FATAL"
 #define LOG_TEXT_ERROR      L"ERROR"
@@ -79,6 +76,7 @@ class ILogProviderContext
 //! Logger provider interface. This class must be implemented by the any logging service
 //! that provides logging functionality to the application
 //! @ingroup LoggingGroup
+//! @private
 //=======================================================================================
 class ILogProvider
 {
@@ -97,7 +95,7 @@ public:
 
     /** Create logger method. Called when user calls LoggerFactory::createLogger.
         @param nameSpace    => requested name for logger namespace
-        @param pContext     <= Pointer to logger context value, passed to all subsequent provider interface method calls.
+        @param ppContext    <= Pointer to logger context value, passed to all subsequent provider interface method calls.
         @return SUCCESS or ERROR
         @see destroyLogger, LoggingManager::GetLogger
              LoggingManager::CreateUncachedLogger */
@@ -162,7 +160,6 @@ public:
 
 };
 
-//__PUBLISH_SECTION_START__
 //=======================================================================================
 //! Logger interface. This class provides the product-agnostic logging interface.
 //! @ingroup LoggingGroup
@@ -396,19 +393,17 @@ public:
     static int STDCALL_ATTRIBUTE ActivateProvider ( LoggingProviderType type );
 
 
-//__PUBLISH_SECTION_END__
     /** Load and activate an external logging provider. This
         will register and activate the logging provider from the
         specified model, only one interface can be active at a
         time.
-        @param moduleName     => name of module that contains the
-                              logging provider
+        @private
+        @param pProvider     => logging provider to activate
         @return SUCCESS or ERROR
         @see LoadAndActivateProvider, DeactivateProvider,
              IsProviderActive */
     static int STDCALL_ATTRIBUTE ActivateProvider ( Provider::ILogProvider* pProvider );
 
-//__PUBLISH_SECTION_START__
     /** Load and activate an external logging provider. This
         will register and activate the logging provider from the
         specified model, only one interface can be active at a
@@ -471,17 +466,16 @@ public:
         @private */
     static uint32_t STDCALL_ATTRIBUTE SetMaxMessageSize ( uint32_t size );
 
-//__PUBLISH_SECTION_END__
 protected:
     /** Load an external logging provider. This will instance a
         logging provider from the specified module, only one
         provider can be active at a time.
+        @private
         @param moduleName     => name of module that contains the
                               logging provider
         @return Instanced provider or NULL */
     static Provider::ILogProvider* STDCALL_ATTRIBUTE LoadProvider ( WCharCP moduleName );
 
-//__PUBLISH_SECTION_START__
 private:
     /** Private constructor so class can not be instanced */
     LoggingConfig ( void );
@@ -524,16 +518,17 @@ public:
         */
     static ILogger* STDCALL_ATTRIBUTE GetLogger ( Utf8CP nameSpace );
 
-//__PUBLISH_SECTION_END__
     /** Create an uncached logger for the requested namespace.
         Susequent calls to this method with the same namespace will
         always return new loggers.
+        @private
         @param nameSpace    => Name of namespace
         @return pointer to logger interface or NULL
         @see DestroyUncachedLogger */
     static ILogger* STDCALL_ATTRIBUTE CreateUncachedLogger ( WCharCP nameSpace );
 
     /** Destroy the provided logger.
+        @private
         @param pLogger      => pointer to logger interface to destroy
         @return SUCCESS or ERROR
         @see CreateUncachedLogger */
@@ -542,12 +537,12 @@ public:
     /** Remove the provided logger from the cache and destroy it.
         This method is not typically called and should only be
         called when the logger is no longer needed by application.
+        @private
         @param pLogger      => pointer to logger interface to destroy
         @return SUCCESS or ERROR
         @see GetLogger */
     static int STDCALL_ATTRIBUTE ReleaseLogger ( ILogger* pLogger );
 
-//__PUBLISH_SECTION_START__
 private:
     //! Private constructor so class can not be instanced
     LoggingManager ( void );
