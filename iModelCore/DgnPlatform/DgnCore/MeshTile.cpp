@@ -226,7 +226,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-static UnconditionalTileGenerationFilter s_defaultFilter;
+// unused - static UnconditionalTileGenerationFilter s_defaultFilter;
 
 struct RangeTreeNode
 {
@@ -1228,16 +1228,14 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
 #endif
-    
 
     T_HOST.GetFontAdmin().EnsureInitialized();
-    PSolidKernelManager::StartSession();
     GetDgnDb().Fonts().Update();
 
     StopWatch               timer(true);
     TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
-    
 
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
     m_progressMeter._IndicateProgress(0, 1);
