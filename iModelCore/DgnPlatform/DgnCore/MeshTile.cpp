@@ -1194,7 +1194,7 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
             tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
             for (auto& subRange : subRanges)
                 {
-                ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+                ElementTileNodePtr      child  = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
 
                 m_totalTiles++;
                 tile.GetChildren().push_back (child);
@@ -1222,14 +1222,29 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     if (model.IsNull())
         return Status::NoGeometry;
 
+    auto beginStatus = collector._BeginProcessModel(*model);
+    if (Status::Success != beginStatus)
+        return beginStatus;
+
+    auto modelStatus = Status::Success;
+
     auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
     if (nullptr != generateMeshTiles)
-        return generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+        modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+    else
+        modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
 
+    return collector._EndProcessModel(*model, modelStatus);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+    {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
 #endif
-    
 
     T_HOST.GetFontAdmin().EnsureInitialized();
     PSolidKernelManager::StartSession();
@@ -1238,24 +1253,23 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     StopWatch               timer(true);
     TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
     
-
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
     m_progressMeter._IndicateProgress(0, 1);
-    generationCache.Populate (GetDgnDb(), modelId, nullptr);
+    generationCache.Populate (GetDgnDb(), model.GetModelId(), nullptr);
     m_progressMeter._IndicateProgress(1, 1);
     m_statistics.m_cachePopulationTime = timer.GetCurrentSeconds();
 
     DRange3d viewRange = generationCache.GetRange();
     if (viewRange.IsNull())
         {
-        root = ElementTileNode::Create(GetTransformFromDgn());
+        root = ElementTileNode::Create(model, GetTransformFromDgn());
         return Status::NoGeometry;
         }
     
     m_totalTiles++;
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
-    ElementTileNodePtr  elementRoot =  ElementTileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
+    ElementTileNodePtr  elementRoot =  ElementTileNode::Create(model, viewRange, GetTransformFromDgn(), 0, 0, nullptr);
     root = elementRoot;
     m_completedVolume = 0.0;
     m_totalVolume = viewRange.Volume();
