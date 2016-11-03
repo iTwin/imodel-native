@@ -249,10 +249,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     Load(&context.GetTargetR().GetSystem());
 
     if (!m_scene.IsValid())
-        {
-        BeAssert(false);
         return;
-        }
 
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, m_scene->GetLocation(), now, now-m_scene->GetExpirationTime());
