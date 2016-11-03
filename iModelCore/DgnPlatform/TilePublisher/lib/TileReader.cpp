@@ -13,9 +13,22 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct InputFile
+{
+    FILE*       m_file;
+
+InputFile() : m_file (nullptr) { } 
+~InputFile()   { if (nullptr != m_file)  fclose(m_file); }; 
+
+
+
+}; // InputFile
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/16
+* @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileReader::Status  TileReader::ReadTileFromGLTF (TileMeshList& meshes, BeFileNameCR fileName)
     {
