@@ -34,7 +34,7 @@ PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(PhysicalModelR mode
         return NULL;
 
     DgnDbStatus statusInsert;
-    auto member = testElement->Insert(&statusInsert);
+    testElement->Insert(&statusInsert);
     if (DgnDbStatus::Success != statusInsert)
         return NULL;
 
@@ -49,11 +49,11 @@ TEST_F(ElementGroupTests, CRUD)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
@@ -116,11 +116,11 @@ TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
@@ -176,11 +176,11 @@ TEST_F(ElementGroupTests, NestedGroups)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
@@ -227,7 +227,7 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
 
     // Create Element Group
@@ -260,7 +260,7 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
 
     // Create Element Group
@@ -296,9 +296,9 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     
-    auto member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
 
     // Create Element Group

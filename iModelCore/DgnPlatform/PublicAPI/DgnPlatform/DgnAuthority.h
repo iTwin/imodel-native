@@ -123,22 +123,6 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 };
 
 //=======================================================================================
-//! The default code-issuing authority for DgnModels.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct ModelAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Model;
-
-protected:
-    ModelAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName);
-};
-
-//=======================================================================================
 //! The default code-issuing authority for InformationPartitionElements.
 // @bsistruct                                                    Shaun.Sewall    10/16
 //=======================================================================================
@@ -293,11 +277,6 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Model : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelAuthority, ModelAuthority, Model, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Partition : Authority

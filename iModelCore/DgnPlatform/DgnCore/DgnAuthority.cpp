@@ -346,7 +346,7 @@ struct SystemAuthority
         Category = 3LL,
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
-        Model = 6LL,
+        // 6LL is available
         Partition = 7LL,
         Session = 8LL,
 
@@ -408,7 +408,6 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnCategories", SystemAuthority::Category, dgn_AuthorityHandler::Category::GetHandler() },
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
-            { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
             { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
             { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
@@ -522,18 +521,6 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
 DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Partition, codeValue, scopeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
-    {
-    // ###TODO_CODES: Silently replace illegal characters?
-    Utf8String trimmed(modelName);
-    trimmed.Trim();
-
-    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, "");
     }
 
 /*---------------------------------------------------------------------------------**//**

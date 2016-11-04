@@ -128,12 +128,6 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="ModelAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="TrueColorAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

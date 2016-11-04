@@ -61,7 +61,6 @@
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
 #define BIS_CLASS_Model                     "Model"
-#define BIS_CLASS_ModelAuthority            "ModelAuthority"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
 #define BIS_CLASS_PartitionAuthority        "PartitionAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
