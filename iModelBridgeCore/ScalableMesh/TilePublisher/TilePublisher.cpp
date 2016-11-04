@@ -353,6 +353,84 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, Utf8StringR scen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& outData)
+    {
+    // .b3dm file
+    Json::Value sceneJson(Json::objectValue);
+
+    m_meshes.push_back(TileMeshPtr(&mesh));
+
+    ProcessMeshes(sceneJson);
+
+    Utf8String sceneStr = Json::FastWriter().write(sceneJson);
+
+    Json::Value batchTableJson(Json::objectValue);
+    m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
+    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+    uint32_t batchTableBinarySize = 0;
+
+    // GLTF header = 5 32-bit values
+    static const size_t s_gltfHeaderSize = 20;
+    static const char s_gltfMagic[] = "glTF";
+    static const uint32_t s_gltfVersion = 1;
+    static const uint32_t s_gltfSceneFormat = 0;
+    uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
+    uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
+
+    // B3DM header = 6 32-bit values
+    // Header immediately followed by batch table json
+    static const size_t s_b3dmHeaderSize = 24;
+    static const char s_b3dmMagic[] = "b3dm";
+    static const uint32_t s_b3dmVersion = 1;
+    uint32_t b3dmNumBatches = m_batchIds.Count();
+    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
+
+    outData.resize(b3dmLength);
+    uint32_t dataOffset = 0;
+
+    memcpy(outData.data() + dataOffset, &s_b3dmMagic, 4);
+    dataOffset += 4;
+    memcpy(outData.data() + dataOffset, &s_b3dmVersion, sizeof(s_b3dmVersion));
+    dataOffset += sizeof(s_b3dmVersion);
+    memcpy(outData.data() + dataOffset, &b3dmLength, sizeof(b3dmLength));
+    dataOffset += sizeof(b3dmLength);
+    memcpy(outData.data() + dataOffset, &batchTableStrLen, sizeof(batchTableStrLen));
+    dataOffset += sizeof(batchTableStrLen);
+    memcpy(outData.data() + dataOffset, &batchTableBinarySize, sizeof(batchTableBinarySize));
+    dataOffset += sizeof(batchTableBinarySize);
+    memcpy(outData.data() + dataOffset, &b3dmNumBatches, sizeof(b3dmNumBatches));
+    dataOffset += sizeof(b3dmNumBatches);
+
+    memcpy(outData.data() + dataOffset, batchTableStr.c_str(), batchTableStrLen);
+    dataOffset += batchTableStrLen;
+
+    memcpy(outData.data() + dataOffset, &s_gltfMagic, 4);
+    dataOffset += 4;
+    memcpy(outData.data() + dataOffset, &s_gltfVersion, sizeof(s_gltfVersion));
+    dataOffset += sizeof(s_gltfVersion);
+    memcpy(outData.data() + dataOffset, &gltfLength, sizeof(gltfLength));
+    dataOffset += sizeof(gltfLength);
+    memcpy(outData.data() + dataOffset, &sceneStrLength, sizeof(sceneStrLength));
+    dataOffset += sizeof(sceneStrLength);
+    memcpy(outData.data() + dataOffset, &s_gltfSceneFormat, sizeof(s_gltfSceneFormat));
+    dataOffset += sizeof(s_gltfSceneFormat);
+
+    memcpy(outData.data() + dataOffset, sceneStr.c_str(), sceneStrLength);
+    dataOffset += sceneStrLength;
+
+    if (!m_binaryData.empty())
+        {
+        memcpy(outData.data() + dataOffset, m_binaryData.data(), m_binaryData.size());
+        dataOffset += sizeof(m_binaryData.size());
+        }
+
+    return PublisherContext::Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::ProcessMeshes(Json::Value& val)
     {
     AddExtensions(val);

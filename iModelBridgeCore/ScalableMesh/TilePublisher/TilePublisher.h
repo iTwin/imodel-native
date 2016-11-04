@@ -258,6 +258,7 @@ public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile);
 
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
+    TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, bvector<Byte>& outData);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, Utf8StringR sceneStr);
 
     BeFileNameCR GetDataDirectory() const { return m_context->GetDataDirectory(); }
