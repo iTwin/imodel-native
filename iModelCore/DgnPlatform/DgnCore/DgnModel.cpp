@@ -12,7 +12,6 @@
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
-#define SHEET_MODEL_PROP_SheetSize "SheetSize"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -1122,7 +1121,7 @@ DgnDbStatus DgnModel::Delete()
 
     // give the element being modeled a chance to reject the delete
     DgnDbStatus status;
-    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelDelete(*this))))
         return status;
@@ -1164,7 +1163,7 @@ DgnDbStatus DgnModel::Insert()
     m_modelId = DgnModelId(m_modeledElementId.GetValue());
 
     // give the element being modeled a chance to reject the insert
-    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
         return status;
