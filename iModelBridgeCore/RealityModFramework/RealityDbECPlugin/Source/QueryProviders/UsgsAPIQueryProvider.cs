@@ -1338,7 +1338,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         IECInstance instance = ecClass.CreateInstance();
 
-                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
+                        //CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
 
                         InitializePropertiesToNull(instance, ecClass);
 
