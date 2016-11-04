@@ -799,6 +799,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
                                              resultingClipShapePtr,
                                              fileGCS,
                                              targetScalableMeshData);
+    if (filteredSources.empty()) return BSISUCCESS;
     s_rasterMemPool = new HPMPool(30000, HPMPool::None);
     auto cluster = new HGFHMRStdWorldCluster();
     pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
@@ -864,6 +865,7 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
     HFCPtr<HIMMosaic> pMosaic;
     StatusInt status = GetRasterSources(pMosaic);
     if (BSISUCCESS != status) return BSIERROR;
+    if (pMosaic == nullptr) return BSISUCCESS;
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
     pIndex->TextureFromRaster(mosaicPtr);
     return BSISUCCESS;
