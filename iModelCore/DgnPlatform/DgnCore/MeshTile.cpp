@@ -6,8 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#if !defined(MESHTILE_NO_FOLLY)
 #include <folly/BeFolly.h>
-#include <folly/futures/Future.h>
+#endif
 #include <Geom/XYZRangeTree.h>
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
@@ -1168,6 +1169,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel)
     {
+#if !defined(MESHTILE_NO_FOLLY)
     auto nModels = static_cast<uint32_t>(modelIds.size());
     if (0 == nModels)
         return Status::NoGeometry;
@@ -1238,8 +1240,12 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     m_progressMeter._IndicateProgress(nModels, nModels);
 
     return Status::Success;
+#else
+    return Status::NoGeometry;
+#endif
     }
 
+#if !defined(MESHTILE_NO_FOLLY)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1435,6 +1441,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         return result;
         });
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
@@ -1454,6 +1461,7 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
         m_geometries.erase(eraseAt, m_geometries.end());
     }
 
+#if !defined(MESHTILE_NO_FOLLY)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1496,6 +1504,7 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     root = result.m_tile.get();
     return result.m_status;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
