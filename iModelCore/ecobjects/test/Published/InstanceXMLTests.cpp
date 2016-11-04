@@ -599,8 +599,8 @@ TEST_F(InstanceDeserializationTest, DeserializeManagedXmlWithBinary)
     if (NULL != (byteData = binaryMember.GetBinary(numBytes)))
         {
         ASSERT_EQ(_countof(sourceBinaryData), numBytes);
-        //for (int index = 0; index <_countof(sourceBinaryData); index++)
-        //    EXPECT_EQ(sourceBinaryData[index], byteData[index]);
+        for (int index = 0; index <_countof(sourceBinaryData); index++)
+            EXPECT_EQ(sourceBinaryData[index], byteData[index]);
         }
 
     }
