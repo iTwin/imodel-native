@@ -1190,6 +1190,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
 #endif
 
     StopWatch timer(true);
