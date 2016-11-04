@@ -103,7 +103,7 @@ void* HRAEditorRLE1Line::GetRun(HUINTX  pi_StartPosX,
                                                       m_pPacketRLE->GetLineBuffer(pi_StartPosY));
         }
 
-    if (pi_StartPosX = 0 && pi_PixelCount == m_Width)
+    if (pi_StartPosX == 0 && pi_PixelCount == m_Width)
         return pRawData;
 
     uint64_t PixelCount = pi_PixelCount + PixelsToSkipInFirstLen + PixelsToSkipInSecondLen;

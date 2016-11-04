@@ -244,7 +244,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
         }
     else
         {
-        if ((m_NumberOfStripByImageHeight = 1) && (m_StripHeight > m_ImageHeight))
+        if ((m_NumberOfStripByImageHeight == 1) && (m_StripHeight > m_ImageHeight))
             {
             // Alloc working buffer
             m_pStripsData = new Byte[m_ExactBytesPerStrip];
