@@ -1404,11 +1404,19 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         // This initial collection is done at the (target) leaf tolerance.  If this is not already a leaf (tolerance < leaf tolerance)
         // then collection will only happen until the maxPointsPerTile is exceeded.  If leaf size is exceeded we'll have to add
         // discard this geometry, recollect at tile tolerance and add children (below).   
+//#define PROFILE_DISCARDED_GEOMETRY
+#if defined(PROFILE_DISCARDED_GEOMETRY)
+        StopWatch profileTimer(true);
+#endif
         tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
+#if defined(PROFILE_DISCARDED_GEOMETRY)
+        if (!isLeaf)
+            printf("%f seconds collecting discarded geometry\n", profileTimer.GetCurrentSeconds());
+#endif
         ElementTileResult result(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
         auto status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
         if (tile.GetGeometries().empty())
