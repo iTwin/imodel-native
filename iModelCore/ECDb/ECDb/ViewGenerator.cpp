@@ -432,21 +432,39 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Cla
     NativeSqlBuilder::List unionList;
     StorageDescription const& storageDesc = classMap.GetStorageDescription();
     bool isVertical = storageDesc.GetVerticalPartitions().size() > 1;
-    std::vector<Partition> const& partitionOfInterest = isVertical ? storageDesc.GetVerticalPartitions() : storageDesc.GetHorizontalPartitions();
-    for (Partition const& partition : partitionOfInterest)
+    std::vector<Partition const*> partitionOfInterest;
+    if (m_isPolymorphic)
         {
-        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (isVertical)
+            {
+            for (Partition const& partition : storageDesc.GetVerticalPartitions())
+                partitionOfInterest.push_back(&partition);
+            }
+        else
+            {
+            for (Partition const& partition : storageDesc.GetHorizontalPartitions())
+                partitionOfInterest.push_back(&partition);
+            }
+        }
+    else
+        {
+        partitionOfInterest.push_back(&storageDesc.GetRootHorizontalPartition());
+        }
+
+    for (Partition const* partition : partitionOfInterest)
+        {
+        if (partition->GetTable().GetPersistenceType() == PersistenceType::Virtual)
             continue;
 
         //For vertical partition we like to skip the first primary partition table.
         if (isVertical)
             {
-            if (&partition.GetTable() == &storageDesc.GetRootHorizontalPartition().GetTable())
+            if (&partition->GetTable() == &storageDesc.GetRootHorizontalPartition().GetTable())
                 continue;
             }
 
         NativeSqlBuilder view;
-        ECClass const* entityClassMap = m_ecdb.Schemas().GetECClass(partition.GetRootClassId());
+        ECClass const* entityClassMap = m_ecdb.Schemas().GetECClass(partition->GetRootClassId());
         if (entityClassMap == nullptr || entityClassMap->GetClassType() != ECClassType::Entity)
             {
             BeAssert(false);
@@ -461,16 +479,16 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Cla
             }
 
         ClassMap const* castInto = contextClassMap == &classMap ? nullptr : &classMap;
-        if (RenderEntityClassMap(view, *contextClassMap, partition.GetTable(), castInto) != SUCCESS)
+        if (RenderEntityClassMap(view, *contextClassMap, partition->GetTable(), castInto) != SUCCESS)
             return ERROR;
 
 
-        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = contextClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
+        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = contextClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
             {
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
                 {
                 Utf8String whereClause;
-                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition.GetTable(), classIdPropertyMap->GetColumn(), m_isPolymorphic, true))
+                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition->GetTable(), classIdPropertyMap->GetColumn(), m_isPolymorphic, true))
                     return ERROR;
 
                 if (!whereClause.empty())

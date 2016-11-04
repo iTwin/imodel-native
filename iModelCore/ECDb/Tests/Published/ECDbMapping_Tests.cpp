@@ -9011,9 +9011,15 @@ TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
 void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
     {
     ECSqlStatement stmt;
-    auto sql = SqlPrintfString("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", relationshipClass);
+    auto sql = SqlPrintfString("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(:sECInstanceId,:sECClassId,:tECInstanceId,:tECClassId)", relationshipClass);
     ASSERT_EQ(stmt.Prepare(ecdb, sql.GetUtf8CP()), ECSqlStatus::Success);
     ASSERT_EQ(expected.size(), sourceKeys.size() * targetKeys.size());
+
+    const int sECInstanceId = stmt.GetParameterIndex("sECInstanceId");
+    const int sECClassId = stmt.GetParameterIndex("sECClassId");
+    const int tECInstanceId = stmt.GetParameterIndex("tECInstanceId");
+    const int tECClassId = stmt.GetParameterIndex("tECClassId");
+
     int n = 0;
     for (auto& fooKey : sourceKeys)
         {
@@ -9021,10 +9027,10 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
             {
             stmt.Reset();
             ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
-            stmt.BindId(1, fooKey.GetECInstanceId());
-            stmt.BindId(2, fooKey.GetECClassId());
-            stmt.BindId(3, gooKey.GetECInstanceId());
-            stmt.BindId(4, gooKey.GetECClassId());
+            stmt.BindId(sECInstanceId, fooKey.GetECInstanceId());
+            stmt.BindId(sECClassId, fooKey.GetECClassId());
+            stmt.BindId(tECInstanceId, gooKey.GetECInstanceId());
+            stmt.BindId(tECClassId, gooKey.GetECClassId());
             if (expected[n] != BE_SQLITE_DONE)
                 ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
             else
@@ -9032,7 +9038,6 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
                 ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
                 rowInserted++;
                 }
-
             n = n + 1;
             }
         }
@@ -9202,7 +9207,6 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
             reinsertResultDone.push_back(BE_SQLITE_DONE);
             }
         }
-
     //1:1--------------------------------
     size_t count_OneFooHasOneGoo = 0;
     VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);

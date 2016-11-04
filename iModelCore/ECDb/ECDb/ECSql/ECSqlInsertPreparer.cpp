@@ -510,6 +510,7 @@ RelationshipClassEndTableMap const& classMap
 
     DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
+    classMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlVisitor);
     for (auto const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
         {
         updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");
