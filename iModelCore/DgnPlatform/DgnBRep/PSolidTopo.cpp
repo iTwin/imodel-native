@@ -49,100 +49,21 @@ BentleyStatus   PSolidTopo::GetBodyEdges (bvector<PK_EDGE_t>& edges, PK_BODY_t b
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
+* @bsimethod                                                    Brien.Bastings  11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidTopo::GetEdgeFaces (bvector<PK_FACE_t>& faces, PK_EDGE_t edge)
+BentleyStatus   PSolidTopo::GetBodyVertices (bvector<PK_VERTEX_t>& vertices, PK_BODY_t body)
     {
-    int         faceCount = 0;
-    PK_FACE_t*  pFaceTagArray = 0;
+    int           vertexCount = 0;
+    PK_VERTEX_t*  pVertexTagArray = NULL;
 
-    if (SUCCESS != PK_EDGE_ask_faces (edge, &faceCount, &pFaceTagArray))
+    if (SUCCESS != PK_BODY_ask_vertices (body, &vertexCount, &pVertexTagArray))
         return ERROR;
 
-    faces.resize (faceCount);
-    for (int i=0; i<faceCount; i++)
-        faces[i] = pFaceTagArray[i];
+    vertices.resize (vertexCount);
+    for (int i=0; i<vertexCount; i++)
+        vertices[i] = pVertexTagArray[i];
 
-    PK_MEMORY_free (pFaceTagArray);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidTopo::GetFaceEdges (bvector<PK_EDGE_t>& edges, PK_FACE_t face)
-    {
-    int         nEdges = 0;
-    PK_EDGE_t*  edgesP = NULL;
-
-    if (SUCCESS != PK_FACE_ask_edges (face, &nEdges, &edgesP))
-        return ERROR;
-
-    for (int i = 0; i<nEdges; i++)
-        edges.push_back (edgesP[i]);
-
-    PK_MEMORY_free (edgesP);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidTopo::GetFaceLoops (bvector<PK_LOOP_t>& loops, PK_FACE_t face)
-    {
-    int         loopCount = 0;
-    PK_LOOP_t*  pLoopTagArray = NULL;
-
-    if (SUCCESS != PK_FACE_ask_loops (face, &loopCount, &pLoopTagArray))
-        return ERROR;
-
-    loops.resize (loopCount);
-    for (int i=0; i<loopCount; i++)
-        loops[i] = pLoopTagArray[i];
-
-    PK_MEMORY_free (pLoopTagArray);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidTopo::GetEdgeFins (bvector<PK_FIN_t>& fins, PK_EDGE_t edge)
-    {
-    int         finCount = 0;
-    PK_FIN_t*   pFinTagArray = NULL;
-
-    if (SUCCESS != PK_EDGE_ask_fins (edge, &finCount, &pFinTagArray))
-        return ERROR;
-
-    fins.resize (finCount);
-    for (int i=0; i<finCount; i++)
-        fins[i] = pFinTagArray[i];
-
-    PK_MEMORY_free (pFinTagArray);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidTopo::GetLoopFins (bvector<PK_FIN_t>& fins, PK_LOOP_t loop)
-    {
-    int         finCount = 0;
-    PK_FIN_t*   pFinTagArray = NULL;
-
-    if (SUCCESS != PK_LOOP_ask_fins (loop, &finCount, &pFinTagArray))
-        return ERROR;
-
-    fins.resize (finCount);
-    for (int i=0; i<finCount; i++)
-        fins[i] = pFinTagArray[i];
-
-    PK_MEMORY_free (pFinTagArray);
+    PK_MEMORY_free (pVertexTagArray);
 
     return SUCCESS;
     }
@@ -171,6 +92,185 @@ BentleyStatus   PSolidTopo::GetBodyEdgesAndFaces (bvector<PK_ENTITY_t>& edgesAnd
     PK_MEMORY_free (pFaceTagArray);
 
     return edgesAndFaces.empty() ? ERROR : SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetFaceEdges (bvector<PK_EDGE_t>& edges, PK_FACE_t face)
+    {
+    int         nEdges = 0;
+    PK_EDGE_t*  edgesP = NULL;
+
+    if (SUCCESS != PK_FACE_ask_edges (face, &nEdges, &edgesP))
+        return ERROR;
+
+    edges.resize (nEdges);
+    for (int i=0; i<nEdges; i++)
+        edges[i] = edgesP[i];
+
+    PK_MEMORY_free (edgesP);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetFaceVertices (bvector<PK_VERTEX_t>& vertices, PK_FACE_t face)
+    {
+    int           nVertex = 0;
+    PK_VERTEX_t*  verticesP = NULL;
+
+    if (SUCCESS != PK_FACE_ask_vertices (face, &nVertex, &verticesP))
+        return ERROR;
+
+    vertices.resize (nVertex);
+    for (int i=0; i<nVertex; i++)
+        vertices[i] = verticesP[i];
+
+    PK_MEMORY_free (verticesP);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetFaceLoops (bvector<PK_LOOP_t>& loops, PK_FACE_t face)
+    {
+    int         loopCount = 0;
+    PK_LOOP_t*  pLoopTagArray = NULL;
+
+    if (SUCCESS != PK_FACE_ask_loops (face, &loopCount, &pLoopTagArray))
+        return ERROR;
+
+    loops.resize (loopCount);
+    for (int i=0; i<loopCount; i++)
+        loops[i] = pLoopTagArray[i];
+
+    PK_MEMORY_free (pLoopTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetEdgeFaces (bvector<PK_FACE_t>& faces, PK_EDGE_t edge)
+    {
+    int         faceCount = 0;
+    PK_FACE_t*  pFaceTagArray = 0;
+
+    if (SUCCESS != PK_EDGE_ask_faces (edge, &faceCount, &pFaceTagArray))
+        return ERROR;
+
+    faces.resize (faceCount);
+    for (int i=0; i<faceCount; i++)
+        faces[i] = pFaceTagArray[i];
+
+    PK_MEMORY_free (pFaceTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetEdgeVertices (bvector<PK_VERTEX_t>& vertices, PK_EDGE_t edge)
+    {
+    PK_VERTEX_t vertexTags[2];
+
+    if (SUCCESS != PK_EDGE_ask_vertices (edge, vertexTags))
+        return ERROR;
+
+    if (PK_ENTITY_null != vertexTags[0])
+        vertices.push_back(vertexTags[0]);
+
+    if (PK_ENTITY_null != vertexTags[1])
+        vertices.push_back(vertexTags[1]);
+
+    return (0 != vertices.size() ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetEdgeFins (bvector<PK_FIN_t>& fins, PK_EDGE_t edge)
+    {
+    int         finCount = 0;
+    PK_FIN_t*   pFinTagArray = NULL;
+
+    if (SUCCESS != PK_EDGE_ask_fins (edge, &finCount, &pFinTagArray))
+        return ERROR;
+
+    fins.resize (finCount);
+    for (int i=0; i<finCount; i++)
+        fins[i] = pFinTagArray[i];
+
+    PK_MEMORY_free (pFinTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetVertexFaces (bvector<PK_FACE_t>& faces, PK_VERTEX_t vertex)
+    {
+    int         faceCount = 0;
+    PK_FACE_t*  pFaceTagArray = 0;
+
+    if (SUCCESS != PK_VERTEX_ask_faces (vertex, &faceCount, &pFaceTagArray))
+        return ERROR;
+
+    faces.resize (faceCount);
+    for (int i=0; i<faceCount; i++)
+        faces[i] = pFaceTagArray[i];
+
+    PK_MEMORY_free (pFaceTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetVertexEdges (bvector<PK_EDGE_t>& edges, PK_VERTEX_t vertex)
+    {
+    int         edgeCount = 0;
+    PK_EDGE_t*  pEdgeTagArray = NULL;
+
+    if (SUCCESS != PK_VERTEX_ask_oriented_edges (vertex, &edgeCount, &pEdgeTagArray, nullptr))
+        return ERROR;
+
+    edges.resize (edgeCount);
+    for (int i=0; i<edgeCount; i++)
+        edges[i] = pEdgeTagArray[i];
+
+    PK_MEMORY_free (pEdgeTagArray);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetLoopFins (bvector<PK_FIN_t>& fins, PK_LOOP_t loop)
+    {
+    int         finCount = 0;
+    PK_FIN_t*   pFinTagArray = NULL;
+
+    if (SUCCESS != PK_LOOP_ask_fins (loop, &finCount, &pFinTagArray))
+        return ERROR;
+
+    fins.resize (finCount);
+    for (int i=0; i<finCount; i++)
+        fins[i] = pFinTagArray[i];
+
+    PK_MEMORY_free (pFinTagArray);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

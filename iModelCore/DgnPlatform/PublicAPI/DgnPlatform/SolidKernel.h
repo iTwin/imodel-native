@@ -175,6 +175,8 @@ protected:
 //! @private
 virtual bool _IsEqual(ISubEntityCR) const = 0;
 //! @private
+virtual bool _IsParentEqual(GeometricPrimitiveCR) const = 0;
+//! @private
 virtual SubEntityType _GetSubEntityType() const = 0;
 //! @private
 virtual DRange3d _GetSubEntityRange() const = 0;
@@ -189,6 +191,9 @@ public:
 
 //! @return Compare sub-entities and return true if they refer to the same topology.
 bool IsEqual(ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
+
+//! @return Whether this sub-entity is from the input parent geometry.
+bool IsParentEqual(GeometricPrimitiveCR parent) const {return _IsParentEqual(parent);}
 
 //! @return The topology type for this sub-entity.
 SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
@@ -239,6 +244,19 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
 DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
 
+//! Pick face, edge, and vertex sub-entities of a body by their proximity to a ray.
+//! @param[in] entity The entity to pick sub-entities for.
+//! @param[in] boresite The ray origin and direction.
+//! @param[out] intersectEntities The selected sub-entities.
+//! @param[in] maxFace The maximum number of face hits to return. Pass 0 to not pick faces.
+//! @param[in] maxEdge The maximum number of edge hits to return. Pass 0 to not pick edges.
+//! @param[in] maxVertex The maximum number of vertex hits to return. Pass 0 to not pick vertices.
+//! @param[in] maxEdgeDistance An edge will be picked if it is within this distance from the ray.
+//! @param[in] maxVertexDistance A vertex will be picked if it is within this distance from the ray.
+//! @note The returned entities are ordered by increasing distance from ray origin to hit point on entity.
+//! @return true if ray intersected a requested entity type.
+DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance);
+
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
     {
@@ -248,28 +266,28 @@ struct Create
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @note The CurvePrimitives that define an open path or closed loop are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector (IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 1L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 0L);
     
     //! Create a new sheet or solid body from an ISolidPrimitive.
     //! @param[out] out The new body.
     //! @param[in] primitive The surface or solid to create a body from.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive (IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 1L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive(IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 0L);
     
     //! Create a new sheet body from a MSBsplineSurface.
     //! @param[out] out The new body.
     //! @param[in] surface The surface to create a body from.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface (IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 1L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface(IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 0L);
 
     //! Create a new sheet or solid body from a Polyface.
     //! @param[out] out The new body.
     //! @param[in] meshData The surface or solid to create a body from.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface (IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 1L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L);
     };
 
 //! Support for modification of bodies.
@@ -280,21 +298,21 @@ struct Modify
     //! @param[in,out] tools A list of one or more tool bodies (consumed in boolean).
     //! @param[in] nTools Count of tool bodies.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanIntersect (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanIntersect(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
 
     //! Modify the target body by subtracting one or more tool bodies.
     //! @param[in,out] target The target body to modify.
     //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
     //! @param[in] nTools Count of tool bodies.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanSubtract (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanSubtract(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
 
     //! Modify the target body by uniting with one or more tool bodies.
     //! @param[in,out] target The target body to modify.
     //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
     //! @param[in] nTools Count of tool bodies.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanUnion (IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanUnion(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
 
     //! Sew the given set of sheet bodies together by joining those that share edges in common.
     //! @param[out] sewn The new bodies produced by sewing.
@@ -304,7 +322,7 @@ struct Modify
     //! @param[in] gapWidthBound Defines a limit on the width of the gap between sheet body edges that will be allowed to remain.
     //! @param[in] nIterations To request repeated sew attempts that automatically increase gap up to limit set by gapWidthBound.
     //! @return SUCCESS if some bodies were able to be sewn together.
-    DGNPLATFORM_EXPORT static BentleyStatus SewBodies (bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
+    DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
     };
 
 }; // BRepUtil
