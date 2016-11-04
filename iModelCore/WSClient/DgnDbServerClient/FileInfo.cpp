@@ -142,6 +142,14 @@ DateTimeCR FileInfo::GetUploadedDate() const
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             10/2016
+//---------------------------------------------------------------------------------------
+bool FileInfo::GetInitialized() const
+    {
+    return m_initialized;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
@@ -199,6 +207,8 @@ FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
     Utf8String dateStr = properties[ServerSchema::Property::UploadedDate].asString();
     if (!dateStr.empty())
         DateTime::FromString(info->m_uploadedDate, dateStr.c_str());
+
+    info->m_initialized = properties[ServerSchema::Property::Initialized].asBool();
 
     return info;
     }
