@@ -37,7 +37,7 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnProgressMeter.h>
-#include <DgnPlatform/DgnRangeTree.h>
+#include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/DgnView.h>

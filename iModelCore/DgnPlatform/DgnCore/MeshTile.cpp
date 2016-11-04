@@ -23,6 +23,15 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct ScopedHostAdopter
+{
+    ScopedHostAdopter(DgnPlatformLib::Host& host) { DgnPlatformLib::AdoptHost(host); }
+    ~ScopedHostAdopter() { DgnPlatformLib::ForgetHost(); }
+};
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
 
@@ -99,7 +108,7 @@ ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMa
 ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
     { 
     if (nullptr == m_previousLocalStorage) 
-        s_threadLocalParasolidHandlerStorage = nullptr;
+        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
 
     }
 
@@ -226,7 +235,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-static UnconditionalTileGenerationFilter s_defaultFilter;
+// unused - static UnconditionalTileGenerationFilter s_defaultFilter;
 
 struct RangeTreeNode
 {
@@ -432,7 +441,8 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
+TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) :
+    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
     {
     if (nullptr != geometryParams)
         m_materialId = geometryParams->GetMaterialId();
@@ -445,8 +455,8 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    // No need to compare textures -- if materials match then textures must too.
 
+    // No need to compare textures -- if materials match then textures must too.
     return false;
     }
 
@@ -653,7 +663,7 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool alwaysIncludeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -669,6 +679,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
+    bool                    includeParams = alwaysIncludeParams;
 
     if (!params.empty() &&
         (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
@@ -676,15 +687,18 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
         auto const&         patternMap = m_material.GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
-        if (patternMap.IsValid() &&
-            SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
-            params = computedParams;
+        if (patternMap.IsValid())
+            {
+            includeParams = true;
+            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+                params = computedParams;
+            }
         }
             
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId);
         newTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -704,7 +718,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId);
             dupTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -732,10 +746,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles, bool includeParams)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles);
+        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -851,6 +865,22 @@ size_t TileNode::GetNodeCount() const
         count += child->GetNodeCount();
 
     return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileNodeCP TileNode::GetRoot() const
+    {
+    auto cur = this;
+    auto parent = cur->GetParent();
+    while (nullptr != parent)
+        {
+        cur = parent;
+        parent = cur->GetParent();
+        }
+
+    return cur;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1133,137 +1163,334 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb), 
-      m_totalTiles(0), m_completedTiles(0), m_totalVolume(0.0), m_completedVolume (0.0)
+      m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache)
+TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel)
     {
-    auto&           host = T_HOST;
+    auto nModels = static_cast<uint32_t>(modelIds.size());
+    if (0 == nModels)
+        return Status::NoGeometry;
 
-    folly::via( &BeFolly::IOThreadPool::GetPool(), [&, leafTolerance, maxPointsPerTile]()
-        {
+    auto nCompletedModels = 0;
+
+    T_HOST.GetFontAdmin().EnsureInitialized();
+    GetDgnDb().Fonts().Update();
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+#endif
+
+    StopWatch timer(true);
+
+    auto status = Status::Success;
+
+    if (!processModelsInParallel)
+        {
+        for (auto const& modelId : modelIds)
+            {
+            m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
+
+            DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+            if (model.IsNull())
+                continue;
+
+            auto beginStatus = collector._BeginProcessModel(*model);
+            switch (beginStatus)
+                {
+                case Status::Success:       break;                  // process this model
+                case Status::Aborted:       return Status::Aborted; // stop all further processing
+                default:                    continue;               // skip this model
+                }
+
+            auto modelStatus = Status::Success;
+
+            auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
+            TileNodePtr root;
+            if (nullptr != generateMeshTiles)
+                modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+            else
+                modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
+
+            if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
+                return Status::Aborted;
+            else if (root.IsValid())
+                m_totalTiles += root->GetNodeCount();
+            }
+        }
+    else
+        {
+        m_totalModels = nModels;
+        m_progressMeter._IndicateProgress(0, nModels);
+
+        auto future = GenerateTiles(collector, modelIds, leafTolerance, maxPointsPerTile);
+        status = future.get();
+
+        m_completedModels.store(0);
+        m_totalModels = 0;
+        }
+
+    m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
+    m_statistics.m_tileCount = m_totalTiles;
+    m_totalTiles.store(0);
+
+    m_progressMeter._IndicateProgress(nModels, nModels);
+
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
+    {
+    std::vector<FutureStatus> modelFutures;
+    for (auto const& modelId : modelIds)
+        {
+        auto model = GetDgnDb().Models().GetModel(modelId);
+        if (model.IsValid())
+            modelFutures.push_back(GenerateTiles(collector, leafTolerance, maxPointsPerTile, *model));
+        }
+
+    return folly::unorderedReduce(modelFutures, Status::Success, [=](Status reduced, Status next)
+        {
+        return Status::Aborted == reduced || Status::Aborted == next ? Status::Aborted : Status::Success;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+    {
+    DgnModelPtr modelPtr(&model);
+    auto pCollector = &collector;
+
+    auto host = &T_HOST;
+
+    auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    if (nullptr != generateMeshTiles)
+        {
+        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+            {
+            ScopedHostAdopter hostScope(*host);
+            auto status = pCollector->_BeginProcessModel(*modelPtr);
+            TileNodePtr root;
+            if (Status::Success == status)
+                {
+                if (root.IsValid())
+                    m_totalTiles += root->GetNodeCount();
+
+                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, *pCollector, GetProgressMeter());
+                }
+
+            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
+            return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
+            });
+        }
+    else
+        {
+        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+            {
+            ScopedHostAdopter hostScope(*host);
+            return pCollector->_BeginProcessModel(*modelPtr);
+            })
+        .then([=](Status status)
+            {
+            ScopedHostAdopter hostScope(*host);
+            if (Status::Success == status)
+                return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr);
+            else
+                return folly::makeFuture(ElementTileResult(status, nullptr));
+            })
+        .then([=](ElementTileResult result)
+            {
+            ScopedHostAdopter hostScope(*host);
+            if (result.m_tile.IsValid())
+                m_totalTiles += result.m_tile->GetNodeCount();
+
+            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
+            return pCollector->_EndProcessModel(*modelPtr, result.m_tile.get(), result.m_status);
+            });
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+    {
+    auto cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
+    ElementTileContext context(*cache, model, collector, leafTolerance, maxPointsPerTile);
+    return PopulateCache(context).then([=](TileGenerator::Status status)
+        {
+        return GenerateTileset(status, context);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext context)
+    {
+    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]
+        {
+        ScopedHostAdopter hostScope(context.m_host);
+    #if defined (BENTLEYCONFIG_PARASOLID) 
         ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
+    #endif
+
+        context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId(), nullptr);
+        bool emptyRange = context.m_cache->GetRange().IsNull();
+        return emptyRange ? Status::NoGeometry : Status::Success;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(Status status, ElementTileContext context)
+    {
+    ScopedHostAdopter hostScope(context.m_host);
+
+    auto& cache = *context.m_cache;
+    if (Status::Success != status)
+        {
+        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
+        return folly::makeFuture(result);
+        }
+
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
+    return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
+    {
+    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+        {
+        ScopedHostAdopter hostScope(context.m_host);
+
+    #if defined (BENTLEYCONFIG_PARASOLID) 
+        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+    #endif
+
+        auto& tile = *parent;
+        auto& collector = *context.m_collector;
+        auto leafTolerance = context.m_leafTolerance;
+        auto maxPointsPerTile = context.m_maxPointsPerTile;
+        auto const& generationCache = *context.m_cache;
 
         double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
         bool            isLeaf = tileTolerance < leafTolerance;
         bool            leafThresholdExceeded = false;
-       
-        DgnPlatformLib::AdoptHost(host);
 
         // This initial collection is done at the (target) leaf tolerance.  If this is not already a leaf (tolerance < leaf tolerance)
         // then collection will only happen until the maxPointsPerTile is exceeded.  If leaf size is exceeded we'll have to add
         // discard this geometry, recollect at tile tolerance and add children (below).   
+//#define PROFILE_DISCARDED_GEOMETRY
+#if defined(PROFILE_DISCARDED_GEOMETRY)
+        StopWatch profileTimer(true);
+#endif
         tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
+#if defined(PROFILE_DISCARDED_GEOMETRY)
+        if (!isLeaf)
+            printf("%f seconds collecting discarded geometry\n", profileTimer.GetCurrentSeconds());
+#endif
+        ElementTileResult result(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
+        auto status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
         if (tile.GetGeometries().empty())
-            {
-            m_completedVolume += tile.GetDgnRange().Volume();
-            m_completedTiles++;
-            return;
-            }
+            return result;
 
-        tile.SetIsEmpty (false);
+        tile.SetIsEmpty(false);
         tile.SetIsLeaf(isLeaf);
 
         if (isLeaf)
             {
-            tile.SetTolerance (leafTolerance);
+            tile.SetTolerance(leafTolerance);
             collector._AcceptTile(tile);
-            m_completedVolume += tile.GetDgnRange().Volume();
+            tile.ClearGeometry();
+
+            return result;
             }
-        else
+
+        size_t              siblingIndex = 0;
+        bvector<DRange3d>   subRanges;
+
+        tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange(), s_splitCount);
+        for (auto& subRange : subRanges)
             {
-            size_t              siblingIndex = 0;
-            bvector<DRange3d>   subRanges;
+            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
 
-            tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
-            for (auto& subRange : subRanges)
-                {
-                ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-
-                m_totalTiles++;
-                tile.GetChildren().push_back (child);
-                ProcessTile (*child, collector, leafTolerance, maxPointsPerTile, generationCache);
-                }
-
-            tile.SetTolerance (tileTolerance);
-            tile.ClearGeometry();     // Discard initial geometry (collected at leaf tolerance).
-            tile.CollectGeometry (generationCache, m_dgndb, nullptr, tileTolerance, 0);
-            collector._AcceptTile(tile);
+            tile.GetChildren().push_back(child);
             }
- 
+
+        tile.SetTolerance(tileTolerance);
+        tile.ClearGeometry();       // Discard initial geometry (collected at leaf tolerance).
+        tile.CollectGeometry(generationCache, m_dgndb, nullptr, tileTolerance, 0);
+
+        collector._AcceptTile(tile);
         tile.ClearGeometry();
-        DgnPlatformLib::ForgetHost();
-        m_completedTiles++;
+
+        result.m_status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
+        return result;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context)
+    {
+    ScopedHostAdopter hostScope(context.m_host);
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
+
+    auto root = static_cast<ElementTileNodeP>(parent->GetRoot());
+    if (parent->GetChildren().empty() || Status::Success != status)
+        return folly::makeFuture(ElementTileResult(status, root));
+
+    std::vector<FutureElementTileResult> childFutures;
+    for (auto& child : parent->GetChildren())
+        {
+        auto elemChild = static_cast<ElementTileNodeP>(child.get());
+        auto childFuture = ProcessParentTile(elemChild, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, elemChild, context); });
+        childFutures.push_back(std::move(childFuture));
+        }
+
+    auto result = ElementTileResult(status, root);
+    return folly::unorderedReduce(childFutures, result, [=](ElementTileResult, ElementTileResult)
+        {
+        return ElementTileResult(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, root);
         });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId)
+TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-#endif
-    
+    auto future = GenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model);
+    auto result = future.get();
 
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    PSolidKernelManager::StartSession();
-    GetDgnDb().Fonts().Update();
-
-    StopWatch               timer(true);
-    TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
-    
-
-    m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
-    m_progressMeter._IndicateProgress(0, 1);
-    generationCache.Populate (GetDgnDb(), modelId, nullptr);
-    m_progressMeter._IndicateProgress(1, 1);
-    m_statistics.m_cachePopulationTime = timer.GetCurrentSeconds();
-
-    DRange3d viewRange = generationCache.GetRange();
-    if (viewRange.IsNull())
-        {
-        root = ElementTileNode::Create(GetTransformFromDgn());
-        return Status::NoGeometry;
-        }
-    
-    m_totalTiles++;
-    m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
-    m_progressMeter._IndicateProgress(0, 1);
-    ElementTileNodePtr  elementRoot =  ElementTileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
-    root = elementRoot;
-    m_completedVolume = 0.0;
-    m_totalVolume = viewRange.Volume();
-
-    ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile, generationCache);
-
-    static const uint32_t s_sleepMillis = 1000.0;
-    do
-        {
-        m_progressMeter._IndicateProgress((uint32_t (100.0) * m_completedVolume / m_totalVolume), 100);
-        BeThreadUtilities::BeSleep(s_sleepMillis);
-        }
-    while (m_completedTiles < m_totalTiles);
-
-    // NB: No longer possible to differentiate between tile collection + tile generation time - they happen simultaneously
-    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
-    m_statistics.m_tileCount = m_totalTiles;
-    m_statistics.m_tileDepth = root->GetMaxDepth();
-
-    return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
+    root = result.m_tile.get();
+    return result.m_status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1833,7 +2060,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                         if (!maxGeometryCountExceeded)
                             elemId = geom->GetEntityId();
 
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, false);
                         }
                     }
                 }
