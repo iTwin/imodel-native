@@ -1120,7 +1120,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
-    RunDTMSTMTriangulateTest();
+  // RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);
@@ -1131,9 +1131,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
    // RunClipPlaneTest();
    // RunClipMeshTest();
-  //  WString stmFileName(argv[1]);
+    WString stmFileName(argv[1]);
     //RunGetMeshParts(stmFileName);
-   // RunUpdateTest(stmFileName);
+    RunUpdateTest(stmFileName);
     std::cout << "THE END" << std::endl;
     return 0;
 }
