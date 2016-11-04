@@ -507,8 +507,9 @@ RelationshipClassEndTableMap const& classMap
         BeAssert(false && "For some reason expecting one table");
         return;
         }
-
+    //WIP*********Following code should figure out the table and not just use the first table****************
     DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
+    //*******************************************************************************************************
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
     classMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlVisitor);
     for (auto const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
