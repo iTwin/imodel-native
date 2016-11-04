@@ -88,21 +88,17 @@ struct TileDisplayParams : RefCountedBase
 private:
     uint32_t                        m_fillColor;
     DgnMaterialId                   m_materialId;
-    DgnCategoryId                   m_categoryId;
-    DgnSubCategoryId                m_subCategoryId;
     mutable TileTextureImagePtr     m_textureImage;
     bool                            m_ignoreLighting;
 
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
-    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId) 
-        : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_categoryId(categoryId), m_subCategoryId(subCategoryId) { }
-    TileDisplayParams (uint32_t fillColor, GeometryParamsCR geometryParams) : 
-        m_fillColor (fillColor), m_ignoreLighting(false), m_materialId (geometryParams.GetMaterialId()), m_categoryId(geometryParams.GetCategoryId()), m_subCategoryId(geometryParams.GetSubCategoryId()) {}
+    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
+    TileDisplayParams (uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor (fillColor), m_ignoreLighting(false), m_materialId (geometryParams.GetMaterialId()) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
     static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
     static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
-    static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting, DgnCategoryId categoryId = DgnCategoryId(), DgnSubCategoryId subCategoryId = DgnSubCategoryId()) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting, categoryId, subCategoryId); }
+    static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
 
     bool operator<(TileDisplayParams const& rhs) const;
@@ -263,9 +259,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles, bool includeParams);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
