@@ -8,11 +8,19 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#if defined(_WIN32) && defined(_MANAGED)
+#define MESHTILE_NO_FOLLY
+#endif
+
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
+
+#if !defined(MESHTILE_NO_FOLLY)
 #include <folly/futures/Future.h>
+#endif
+
 #include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
@@ -647,6 +655,7 @@ private:
             { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
     };
 
+#if !defined(MESHTILE_NO_FOLLY)
     typedef folly::Future<Status> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
@@ -658,6 +667,7 @@ private:
 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
+#endif
 
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
 public:
