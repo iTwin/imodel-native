@@ -617,7 +617,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
+Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
     Utf8String      materialName = Utf8String ("Material_") + suffix;
 
@@ -660,10 +660,10 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             }
         }
 
-    TileTextureImageCP      textureImage;
+    TileTextureImageCP      textureImage = nullptr;
 
     displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
+    if (false != (isTextured = (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
         materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
@@ -853,16 +853,17 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
-    bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
+    bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize, isTextured = false;
 
     attr["indices"] = accIndexId;
-    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh, idStr.c_str());
+    attr["material"] = AddMaterial (rootNode, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
     attr["attributes"]["POSITION"] = accPositionId;
     AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x);
 
-    if (!mesh.Params().empty())
+    BeAssert (isTextured == !mesh.Params().empty());
+    if (!mesh.Params().empty() && isTextured)
         {
         attr["attributes"]["TEXCOORD_0"] = accParamId;
 

@@ -171,7 +171,7 @@ private:
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
 
-    Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
