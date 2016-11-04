@@ -797,6 +797,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
         if (!node->ArePoints3d())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
+            if (dtmP == nullptr) continue;
             assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
             DRange3d tmBox;
             dtmP->GetRange(tmBox);
