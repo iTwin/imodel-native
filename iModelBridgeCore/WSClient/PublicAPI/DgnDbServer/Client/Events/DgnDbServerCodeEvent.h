@@ -13,7 +13,7 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-struct DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
+struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
     {
     private:
         Utf8String m_eventTopic;
