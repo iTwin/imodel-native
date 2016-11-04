@@ -12,6 +12,8 @@
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
+#include <folly/futures/Future.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -40,6 +42,7 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileGenerationCache);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -419,7 +422,7 @@ public:
 //! Caches information used during tile generation.
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct TileGenerationCache
+struct TileGenerationCache : RefCountedBase
 {
     // ###TODO: Put upper limit on sizes of geometry source/list caches...
     // The following options are mutually exclusive
@@ -441,8 +444,10 @@ private:
     Options                     m_options;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
-    TileGenerationCache(Options options = Options::CacheGeometrySources);
+    TileGenerationCache(Options options);
     void Populate(DgnDbR db, DgnModelId modelId, ITileGenerationFilterP filter);
+
+    static TileGenerationCachePtr Create(Options options = Options::CacheGeometrySources) { return new TileGenerationCache(options); }
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
@@ -502,6 +507,8 @@ public:
 
     TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
+    TileNodeCP GetRoot() const;
+    TileNodeP GetRoot() { return const_cast<TileNodeP>(const_cast<TileNodeCP>(this)->GetRoot()); }
     TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
@@ -620,6 +627,37 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     BeAtomic<uint32_t>              m_totalTiles;
+
+    struct ElementTileContext
+    {
+        DgnPlatformLib::Host&   m_host;
+        TileGenerationCachePtr  m_cache;
+        DgnModelCPtr            m_model;
+        ITileCollector*         m_collector;
+        double                  m_leafTolerance;
+        size_t                  m_maxPointsPerTile;
+
+        ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, ITileCollector& collector)
+            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector) { }
+    };
+
+    struct ElementTileResult
+    {
+        ElementTileNodePtr      m_tile;
+        TileGenerator::Status   m_status;
+
+        explicit ElementTileResult(TileGenerator::Status status, ElementTileNodeP tile=nullptr) : m_tile(tile), m_status(status)
+            { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
+    };
+
+    typedef folly::Future<Status> FutureStatus;
+    typedef folly::Future<ElementTileResult> FutureElementTileResult;
+
+    FutureElementTileResult TestGenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
+    FutureStatus PopulateCache(ElementTileContext context);
+    FutureElementTileResult GenerateTileset(Status status, ElementTileContext context);
+    FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
+    FutureElementTileResult ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context);
 
     void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
