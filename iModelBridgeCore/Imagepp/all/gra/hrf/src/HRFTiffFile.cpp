@@ -2844,7 +2844,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         else if (pBitPerSample[0] == 32 && pBitPerSample[1] == 32 && pBitPerSample[2] == 32)
                             pPixelType = new HRPPixelTypeV96R32G32B32();
                         else if (pBitPerSample[0] != pBitPerSample[1] || pBitPerSample[0] != pBitPerSample[2] &&
-                            (pBitPerSample[0] != 8 || pBitPerSample[0] != 16))
+                            (pBitPerSample[0] != 8 && pBitPerSample[0] != 16))
                             throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                         else
                             {

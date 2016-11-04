@@ -172,9 +172,9 @@ void HRFCacheFileCreator::SelectCodecFor(HCLASS_ID  pi_PixelType,
 
                 // Find the index for the specified pixel type
                 uint32_t IndexFound = CountPixelType();
-                for (uint32_t Index=0; (Index < CountPixelType()) && (IndexFound == CountPixelType()); Index++)
-                    if (pi_PixelType == GetPixelType(Index))
-                        IndexFound = Index;
+                for (uint32_t Index2=0; (Index2 < CountPixelType()) && (IndexFound == CountPixelType()); Index2++)
+                    if (pi_PixelType == GetPixelType(Index2))
+                        IndexFound = Index2;
 
                 // Validate the pixel type index
                 HASSERT(IndexFound < m_SelectedCodecs.size());
