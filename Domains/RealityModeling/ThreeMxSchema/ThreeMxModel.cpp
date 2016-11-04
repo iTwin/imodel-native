@@ -407,8 +407,8 @@ struct  PublishTileNode : ModelTileNode
         
         ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles, true); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
@@ -483,7 +483,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                     {
                     builder = found->second;
                     }
-                }
+                }                                   
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
@@ -493,7 +493,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, m_model->GetModelId(), twoSidedTriangles);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, m_model->GetModelId(), twoSidedTriangles, true);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
