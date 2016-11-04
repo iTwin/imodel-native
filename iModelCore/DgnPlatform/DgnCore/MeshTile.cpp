@@ -1174,73 +1174,6 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
     {
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache)
-    {
-    auto&           host = T_HOST;
-
-    folly::via( &BeFolly::IOThreadPool::GetPool(), [&, leafTolerance, maxPointsPerTile]()
-        {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
-        double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
-        bool            isLeaf = tileTolerance < leafTolerance;
-        bool            leafThresholdExceeded = false;
-       
-        ScopedHostAdopter hostScope(host);
-
-        // This initial collection is done at the (target) leaf tolerance.  If this is not already a leaf (tolerance < leaf tolerance)
-        // then collection will only happen until the maxPointsPerTile is exceeded.  If leaf size is exceeded we'll have to add
-        // discard this geometry, recollect at tile tolerance and add children (below).   
-        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
-
-        if (!isLeaf && !leafThresholdExceeded)
-            isLeaf = true;
-
-        if (tile.GetGeometries().empty())
-            {
-            return;
-            }
-
-        tile.SetIsEmpty (false);
-        tile.SetIsLeaf(isLeaf);
-
-        if (isLeaf)
-            {
-            tile.SetTolerance (leafTolerance);
-            collector._AcceptTile(tile);
-            }
-        else
-            {
-            size_t              siblingIndex = 0;
-            bvector<DRange3d>   subRanges;
-
-            tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
-            for (auto& subRange : subRanges)
-                {
-                ElementTileNodePtr      child  = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-
-                m_totalTiles++;
-                tile.GetChildren().push_back (child);
-                ProcessTile (*child, collector, leafTolerance, maxPointsPerTile, generationCache);
-                }
-
-            tile.SetTolerance (tileTolerance);
-            tile.ClearGeometry();     // Discard initial geometry (collected at leaf tolerance).
-            tile.CollectGeometry (generationCache, m_dgndb, nullptr, tileTolerance, 0);
-            collector._AcceptTile(tile);
-            }
- 
-        tile.ClearGeometry();
-        });
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1251,6 +1184,10 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
         return Status::NoGeometry;
 
     auto nCompletedModels = 0;
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+#endif
 
     StopWatch timer(true);
     for (auto const& modelId : modelIds)
@@ -1294,7 +1231,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::TestGenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
     auto cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
     ElementTileContext context(*cache, model, collector, leafTolerance, maxPointsPerTile);
@@ -1449,48 +1386,10 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status s
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-#endif
-
-#define GENERATE_TILES_VIA_FUTURES
-#if defined(GENERATE_TILES_VIA_FUTURES)
-    auto future = TestGenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model);
+    auto future = GenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model);
     auto result = future.get();
     root = result.m_tile.get();
     return result.m_status;
-#else
-
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    PSolidKernelManager::StartSession();
-    GetDgnDb().Fonts().Update();
-
-    TileGenerationCache     generationCache(TileGenerationCache::Options::CacheGeometrySources);
-    
-    generationCache.Populate (GetDgnDb(), model.GetModelId(), nullptr);
-
-    DRange3d viewRange = generationCache.GetRange();
-    if (viewRange.IsNull())
-        {
-        root = ElementTileNode::Create(model, GetTransformFromDgn());
-        return Status::NoGeometry;
-        }
-    
-    m_totalTiles++;
-    ElementTileNodePtr  elementRoot =  ElementTileNode::Create(model, viewRange, GetTransformFromDgn(), 0, 0, nullptr);
-    root = elementRoot;
-
-    ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile, generationCache);
-
-    static const uint32_t s_sleepMillis = 1000.0;
-    do
-        {
-        BeThreadUtilities::BeSleep(s_sleepMillis);
-        }
-    while (/*m_completedTiles < m_totalTiles*/ true);
-
-    return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

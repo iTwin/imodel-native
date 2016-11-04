@@ -653,13 +653,12 @@ private:
     typedef folly::Future<Status> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
-    FutureElementTileResult TestGenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
+    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus PopulateCache(ElementTileContext context);
     FutureElementTileResult GenerateTileset(Status status, ElementTileContext context);
     FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
     FutureElementTileResult ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context);
 
-    void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
