@@ -153,6 +153,17 @@ DgnCode RoadDesignSpeedDefinition::CreateCode(Dgn::DgnDbR dgndb, double speed, U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RoadDesignSpeedDefinition::GetDefaultUserLabel(double speed, Dgn::UnitSystem unitSystem)
+    {
+    if (unitSystem == UnitSystem::Metric)
+        return Utf8PrintfString("%3.0f Km/h", speed);
+    else
+        return Utf8PrintfString("%2.0f mph", speed);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(RoadDesignSpeedDefinitionModelCR model, double designSpeed, double sideSlopeFrictionFactor,
     double maxTransitionRadius, double desirableSpiralLength, double type1CrestVertical, double type3SagVertical, double crestVerticalPsd, double averageRunningSpeed,
     double maximumRelativeGradient, double crestK_SSD, double sagK_SSD, double ignoreLength)
@@ -160,8 +171,13 @@ RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(RoadDesignSpeedDe
     auto tableCPtr = model.GetModeledDesignSpeedDefinitionTable();
 
     CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), designSpeed, tableCPtr->GetUnitSystem()));
-    return new RoadDesignSpeedDefinition(params, designSpeed, sideSlopeFrictionFactor, maxTransitionRadius, desirableSpiralLength, type1CrestVertical,
+
+    auto retVal = new RoadDesignSpeedDefinition(params, designSpeed, sideSlopeFrictionFactor, maxTransitionRadius, desirableSpiralLength, type1CrestVertical,
         type3SagVertical, crestVerticalPsd, averageRunningSpeed, maximumRelativeGradient, crestK_SSD, sagK_SSD, ignoreLength);
+
+    retVal->SetUserLabel(GetDefaultUserLabel(designSpeed, tableCPtr->GetUnitSystem()).c_str());
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -132,6 +132,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadDesignSpeedDefinition)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, double speed, Dgn::UnitSystem unitSystem);
+    ROADRAILPHYSICAL_EXPORT static Utf8String GetDefaultUserLabel(double speed, Dgn::UnitSystem unitSystem);
     ROADRAILPHYSICAL_EXPORT static RoadDesignSpeedDefinitionPtr Create(RoadDesignSpeedDefinitionModelCR model, double designSpeed, double sideSlopeFrictionFactor, 
         double maxTransitionRadius, double desirableSpiralLength, double type1CrestVertical, double type3SagVertical, double crestVerticalPsd, double averageRunningSpeed, 
         double maximumRelativeGradient, double crestK_SSD, double sagK_SSD, double ignoreLength);
