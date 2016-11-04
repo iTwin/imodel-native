@@ -936,7 +936,7 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
 
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
-    accessor["count"] = nValues;
+    accessor["count"] = nAttributes;
     accessor["type"] = accessorType;
 
     rootNode["bufferViews"][bufferViewId] = bufferViews;
