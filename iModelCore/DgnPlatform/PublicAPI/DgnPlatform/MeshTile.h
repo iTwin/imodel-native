@@ -637,8 +637,8 @@ private:
         double                  m_leafTolerance;
         size_t                  m_maxPointsPerTile;
 
-        ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, ITileCollector& collector)
-            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector) { }
+        ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
+            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile) { }
     };
 
     struct ElementTileResult

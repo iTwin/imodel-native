@@ -1297,7 +1297,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 TileGenerator::FutureElementTileResult TileGenerator::TestGenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
     auto cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext context(*cache, model, collector);
+    ElementTileContext context(*cache, model, collector, leafTolerance, maxPointsPerTile);
     return PopulateCache(context).then([=](TileGenerator::Status status)
         {
         return GenerateTileset(status, context);
@@ -1312,10 +1312,10 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]
         {
         ScopedHostAdopter hostScope(context.m_host);
-    //#if defined (BENTLEYCONFIG_PARASOLID) 
-    //    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    //    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-    //#endif
+    #if defined (BENTLEYCONFIG_PARASOLID) 
+        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+    #endif
 
         context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId(), nullptr);
         bool emptyRange = context.m_cache->GetRange().IsNull();
@@ -1350,10 +1350,10 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         {
         ScopedHostAdopter hostScope(context.m_host);
 
-    //#if defined (BENTLEYCONFIG_PARASOLID) 
-    //    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    //    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-    //#endif
+    #if defined (BENTLEYCONFIG_PARASOLID) 
+        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+    #endif
 
         auto& tile = *parent;
         auto& collector = *context.m_collector;
@@ -1420,10 +1420,10 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status s
     {
     ScopedHostAdopter hostScope(context.m_host);
 
-//#if defined (BENTLEYCONFIG_PARASOLID) 
-//    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-//    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-//#endif
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
 
     auto root = static_cast<ElementTileNodeP>(parent->GetRoot());
     if (parent->GetChildren().empty() || Status::Success != status)
@@ -1432,7 +1432,8 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status s
     std::vector<FutureElementTileResult> childFutures;
     for (auto& child : parent->GetChildren())
         {
-        auto childFuture = ProcessParentTile(static_cast<ElementTileNodeP>(child.get()), context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
+        auto elemChild = static_cast<ElementTileNodeP>(child.get());
+        auto childFuture = ProcessParentTile(elemChild, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, elemChild, context); });
         childFutures.push_back(std::move(childFuture));
         }
 
