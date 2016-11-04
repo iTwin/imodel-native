@@ -48,6 +48,7 @@ enum class ParamId
     GlobeTerrain,
     Standalone,
     NoReplace,
+    SingleThreaded,
     Invalid,
 };
 
@@ -82,6 +83,7 @@ static CommandParam s_paramTable[] =
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
+        { L"st", L"singlethreaded", L"Process models sequentially", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -161,6 +163,7 @@ private:
     bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     bool            m_overwriteExisting = true;
+    bool            m_parallelModels = true;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -177,6 +180,7 @@ public:
     bool WantPolylines() const { return m_polylines; }
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
+    bool GetProcessModelsInParallel() const { return m_parallelModels; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -359,6 +363,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::NoReplace:
                 m_overwriteExisting = false;
                 break;
+            case ParamId::SingleThreaded:
+                m_parallelModels = false;
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -420,11 +427,13 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines, bool parallelModels)
         : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+
+        m_processModelsInParallel = parallelModels;
 
         auto& db = viewController.GetDgnDb();
         for (auto& view : ViewDefinition::MakeIterator(db))
@@ -726,7 +735,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

@@ -627,6 +627,8 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     BeAtomic<uint32_t>              m_totalTiles;
+    uint32_t                        m_totalModels;
+    BeAtomic<uint32_t>              m_completedModels;
 
     struct ElementTileContext
     {

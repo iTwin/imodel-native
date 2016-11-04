@@ -74,6 +74,7 @@ protected:
     bvector<TileNodePtr>    m_modelRoots;
     BeMutex                 m_mutex;
     bool                    m_publishPolylines;
+    bool                    m_processModelsInParallel = true;
 
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 

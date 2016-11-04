@@ -1170,7 +1170,7 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb), 
-      m_totalTiles(0)
+      m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
     }
 
@@ -1231,13 +1231,21 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
         }
     else
         {
+        m_totalModels = nModels;
+        m_progressMeter._IndicateProgress(0, nModels);
+
         auto future = GenerateTiles(collector, modelIds, leafTolerance, maxPointsPerTile);
         status = future.get();
+
+        m_completedModels.store(0);
+        m_totalModels = 0;
         }
 
     m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
     m_statistics.m_tileCount = m_totalTiles;
     m_totalTiles.store(0);
+
+    m_progressMeter._IndicateProgress(nModels, nModels);
 
     return Status::Success;
     }
@@ -1287,8 +1295,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
                 status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, *pCollector, GetProgressMeter());
                 }
 
-            status = pCollector->_EndProcessModel(*modelPtr, root.get(), status);
-            return status;
+            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
+            return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
             });
         }
     else
@@ -1312,6 +1320,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             if (result.m_tile.IsValid())
                 m_totalTiles += result.m_tile->GetNodeCount();
 
+            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
             return pCollector->_EndProcessModel(*modelPtr, result.m_tile.get(), result.m_status);
             });
         }
