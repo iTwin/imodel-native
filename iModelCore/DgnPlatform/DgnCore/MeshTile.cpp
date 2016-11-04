@@ -1177,7 +1177,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
+TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel)
     {
     auto nModels = static_cast<uint32_t>(modelIds.size());
     if (0 == nModels)
@@ -1185,40 +1185,54 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 
     auto nCompletedModels = 0;
 
+    T_HOST.GetFontAdmin().EnsureInitialized();
+    GetDgnDb().Fonts().Update();
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
 #endif
 
     StopWatch timer(true);
-    for (auto const& modelId : modelIds)
+
+    auto status = Status::Success;
+
+    if (!processModelsInParallel)
         {
-        m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
-
-        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsNull())
-            continue;
-
-        auto beginStatus = collector._BeginProcessModel(*model);
-        switch (beginStatus)
+        for (auto const& modelId : modelIds)
             {
-            case Status::Success:       break;                  // process this model
-            case Status::Aborted:       return Status::Aborted; // stop all further processing
-            default:                    continue;               // skip this model
+            m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
+
+            DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+            if (model.IsNull())
+                continue;
+
+            auto beginStatus = collector._BeginProcessModel(*model);
+            switch (beginStatus)
+                {
+                case Status::Success:       break;                  // process this model
+                case Status::Aborted:       return Status::Aborted; // stop all further processing
+                default:                    continue;               // skip this model
+                }
+
+            auto modelStatus = Status::Success;
+
+            auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
+            TileNodePtr root;
+            if (nullptr != generateMeshTiles)
+                modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
+            else
+                modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
+
+            if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
+                return Status::Aborted;
+            else if (root.IsValid())
+                m_totalTiles += root->GetNodeCount();
             }
-
-        auto modelStatus = Status::Success;
-
-        auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(model.get());
-        TileNodePtr root;
-        if (nullptr != generateMeshTiles)
-            modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
-        else
-            modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
-
-        if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
-            return Status::Aborted;
-        else if (root.IsValid())
-            m_totalTiles += root->GetNodeCount();
+        }
+    else
+        {
+        auto future = GenerateTiles(collector, modelIds, leafTolerance, maxPointsPerTile);
+        status = future.get();
         }
 
     m_statistics.m_tileGenerationTime = timer.GetCurrentSeconds();
@@ -1226,6 +1240,81 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     m_totalTiles.store(0);
 
     return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
+    {
+    std::vector<FutureStatus> modelFutures;
+    for (auto const& modelId : modelIds)
+        {
+        auto model = GetDgnDb().Models().GetModel(modelId);
+        if (model.IsValid())
+            modelFutures.push_back(GenerateTiles(collector, leafTolerance, maxPointsPerTile, *model));
+        }
+
+    return folly::unorderedReduce(modelFutures, Status::Success, [=](Status reduced, Status next)
+        {
+        return Status::Aborted == reduced || Status::Aborted == next ? Status::Aborted : Status::Success;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+    {
+    DgnModelPtr modelPtr(&model);
+    auto pCollector = &collector;
+
+    auto host = &T_HOST;
+
+    auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    if (nullptr != generateMeshTiles)
+        {
+        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+            {
+            ScopedHostAdopter hostScope(*host);
+            auto status = pCollector->_BeginProcessModel(*modelPtr);
+            TileNodePtr root;
+            if (Status::Success == status)
+                {
+                if (root.IsValid())
+                    m_totalTiles += root->GetNodeCount();
+
+                status = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, *pCollector, GetProgressMeter());
+                }
+
+            status = pCollector->_EndProcessModel(*modelPtr, root.get(), status);
+            return status;
+            });
+        }
+    else
+        {
+        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+            {
+            ScopedHostAdopter hostScope(*host);
+            return pCollector->_BeginProcessModel(*modelPtr);
+            })
+        .then([=](Status status)
+            {
+            ScopedHostAdopter hostScope(*host);
+            if (Status::Success == status)
+                return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr);
+            else
+                return folly::makeFuture(ElementTileResult(status, nullptr));
+            })
+        .then([=](ElementTileResult result)
+            {
+            ScopedHostAdopter hostScope(*host);
+            if (result.m_tile.IsValid())
+                m_totalTiles += result.m_tile->GetNodeCount();
+
+            return pCollector->_EndProcessModel(*modelPtr, result.m_tile.get(), result.m_status);
+            });
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1388,6 +1477,7 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     {
     auto future = GenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model);
     auto result = future.get();
+
     root = result.m_tile.get();
     return result.m_status;
     }
