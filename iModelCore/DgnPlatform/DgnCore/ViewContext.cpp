@@ -234,12 +234,12 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     Frustum polyhedron = GetFrustum();
 
     // get enclosing bounding box around polyhedron (outside scan range).
-    RangeIndex::Box scanRange(polyhedron.ToRange());
+    RangeIndex::FBox scanRange(polyhedron.ToRange());
 
     if (!Is3dView())
         {
-        scanRange.low.z = -1;
-        scanRange.high.z = 1;
+        scanRange.m_low.z = -1;
+        scanRange.m_high.z = 1;
         }
 
     m_scanCriteria.SetRangeTest(scanRange);
@@ -261,7 +261,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         alongAxes += (fabs(skewVec.z) < 1e-8);
 
         if (alongAxes < 2)
-            m_scanCriteria.SetSkewRangeTest(scanRange, RangeIndex::Box(skewRange), skewVec);
+            m_scanCriteria.SetSkewRangeTest(scanRange, RangeIndex::FBox(skewRange), skewVec);
         }
 
     m_scanRangeValid = true;
@@ -500,7 +500,7 @@ ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ViewContext::_CheckNodeRange(RangeIndex::BoxCR testRange, bool is3d)
+ScanCriteria::Stop ViewContext::_CheckNodeRange(RangeIndex::FBoxCR testRange, bool is3d)
     {
     Frustum box(testRange.ToRange3d());
     return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Stop::No : ScanCriteria::Stop::Yes;
