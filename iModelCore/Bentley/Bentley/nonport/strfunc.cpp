@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/strfunc.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/Bentley.h>
@@ -17,6 +17,7 @@
 #include    <malloc.h>
 #endif
 #include    <string.h>
+#include    <stdlib.h>
 #include    <ctype.h>
 #include    <type_traits>
 #include    "strfunc.h"
@@ -286,7 +287,7 @@ void DoFormat (va_list args)
                         
                         // For now, preserve Microsoft behavior that %s in wchar_t* means wchar_t*.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
-                        if (0 == (flags & FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT))
+                        if (0 == (flags & (FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT)))
                             flags |= FLAGS_HAVE_LONG;
                         
                         // Also for now, allow the conversions below to continue.
@@ -351,7 +352,7 @@ void DoFormat (va_list args)
 
                         // For now, preserve Microsoft behavior that %c in wchar_t* means wchar_t.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
-                        if (0 == (flags & FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT))
+                        if (0 == (flags & (FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT)))
                             flags |= FLAGS_HAVE_LONG;
 
                         // Also for now, allow the conversions below to continue.
@@ -2114,7 +2115,9 @@ int BeStringUtilities::Sscanf (CharCP stringSource, CharCP fmt, ...)
     va_list args;
     va_start (args, fmt);
     StringScanSource sss (stringSource);
-    return doscanf (sss, fmt, args, false);
+    int count = doscanf (sss, fmt, args, false);
+    va_end(args);
+    return count;
     }
 
 int BeStringUtilities::Swscanf (WCharCP stringSource, WCharCP fmt, ...)
@@ -2124,7 +2127,9 @@ int BeStringUtilities::Swscanf (WCharCP stringSource, WCharCP fmt, ...)
     Utf8String usource (stringSource);
     Utf8String ufmt    (fmt);
     StringScanSource sss (usource.c_str());
-    return doscanf (sss, ufmt.c_str(), args, true);
+    int count = doscanf (sss, ufmt.c_str(), args, true);
+    va_end(args);
+    return count;
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

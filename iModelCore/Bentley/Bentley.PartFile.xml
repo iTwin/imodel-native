@@ -5,20 +5,20 @@
     <ProductDirectoryList ListName="Bentley">
         <ProductDirectory Name="PublicAPI"/>
         <ProductDirectory Name="VendorAPI"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="Libs"            Path="Libs"/>
         <ProductDirectory Name="TestBin"         Path="Dlls"/>
     </ProductDirectoryList>
 
-    <!-- This part is designed to be the "ToolsetPart" that is run by bb once, before any other part. 
-          The name of this part must match the ToolsetPart declaration in your buildstrategy. 
+    <!-- This part is designed to be the "ToolsetPart" that is run by bb once, before any other part.
+          The name of this part must match the ToolsetPart declaration in your buildstrategy.
           For example, see DgnClientSdk.BuildStrategy.xml -->
     <Part Name="BootStrapToolset" BentleyBuildMakeFile="BootStrapToolset.mke"/>
 
     <Part Name="BentleyLib" PrgOutputDir="BentleyLib">
         <SubPart PartName="BentleyDll" />
     </Part>
-  
+
     <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
         <!-- BeTest.h includes <gtest/gtest.h> in some builds, and so Bentley depends on gtest, at least for include files. -->
         <SubPart PartName="BeGtest-Includes" Repository="BeGTest" PartFile="BeGTest" />
@@ -43,13 +43,14 @@
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <Bindings>
-            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)Bentley$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
-        <SubPart PartName="Base"/>
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="BentleyDll"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Bentley"/>
         </Bindings>
@@ -78,12 +79,12 @@
         </Bindings>
     </Part>
 
-  <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
-    <SubPart PartName="PrewireForUnitTests" />
-    <Bindings>
-      <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
-    </Bindings>
-  </Part>
+    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
 
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
     <Part Name="Tests">
@@ -112,19 +113,22 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Bentley-Gtest/BentleyTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Bentley" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Bentley-Gtest/BentleyTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Bentley-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BentleyTest.log</Files>
+        </Bindings>
     </Part>
 
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Bentley -dTEST_COLLECTION_PRODUCT=Bentley-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Bentley-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/Bentley/Project" />
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
     </Part>
 
@@ -135,8 +139,11 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Bentley-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="Bentley-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Bentley-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
-    
+
     <!--                ********************** -->
     <!--                **** iOSXCTest **** -->
     <!--                ********************** -->
@@ -187,6 +194,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="Bentley-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Bentley-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
 </BuildContext>

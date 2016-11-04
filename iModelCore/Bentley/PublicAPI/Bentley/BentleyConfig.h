@@ -21,20 +21,26 @@
 
     #define BENTLEYCONFIG_OS_APPLE
     #define BENTLEYCONFIG_OS_UNIX
+    #define BENTLEYCONFIG_DISPLAY_APPLE
 
     #include <TargetConditionals.h>
-    #if defined (TARGET_OS_IPHONE) || defined (TARGET_IPHONE_SIMULATOR)
+    #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
         #define BENTLEYCONFIG_OS_APPLE_IOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGLES
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
-    #else
+        
+        // Do not use OpenCASCADE on DgnDb61-16Q4.
+        // If still see this commented out on Bim0200, please uncomment.
+        // #define BENTLEYCONFIG_OPENCASCADE
+        
+        #define BENTLEYCONFIG_FOLLY
+    #else // MacOS
         #define BENTLEYCONFIG_OS_APPLE_MACOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
+        // WIP_PORT #define BENTLEYCONFIG_OPENCASCADE
+        #define BENTLEYCONFIG_FOLLY
     #endif
-
-    #define BENTLEYCONFIG_DISPLAY_APPLE
-//    #define BENTLEYCONFIG_OPENCASCADE
 
 #elif defined (ANDROID)
 
@@ -43,7 +49,12 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_ANDROID
-//    #define BENTLEYCONFIG_OPENCASCADE
+    
+    // Do not use OpenCASCADE on DgnDb61-16Q4.
+    // If still see this commented out on Bim0200, please uncomment.
+    // #define BENTLEYCONFIG_OPENCASCADE
+
+    #define BENTLEYCONFIG_FOLLY
 
 #elif defined (_WIN32)
 
@@ -51,22 +62,27 @@
     #define BENTLEYCONFIG_OS_WINDOWS
     #define BENTLEYCONFIG_GRAPHICS_DIRECTX
     #define BENTLEYCONFIG_GRAPHICS_HAVE_BACKING_STORE
+    #define BENTLEYCONFIG_VIRTUAL_MEMORY 
+    #define BENTLEYCONFIG_FOLLY
 
     //  BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE is defined if the system supports a real mouse
     //  and DgnView is known to support the mouse properly on the system.
     #define BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE
-
-    #define BENTLEYCONFIG_VIRTUAL_MEMORY 
     
     #if defined (BENTLEY_WINRT)
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
         #define BENTLEYCONFIG_OS_WINRT
         #define BENTLEYCONFIG_DISPLAY_METRO
+        // WIP_PORT #define BENTLEYCONFIG_OPENCASCADE
     #else
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
-//        #define BENTLEYCONFIG_PARASOLIDS
-//        #define BENTLEYCONFIG_OPENCASCADE
+        // #define BENTLEYCONFIG_PARASOLIDS
+        
+        // Do not use OpenCASCADE on DgnDb61-16Q4.
+        // If still see this commented out on Bim0200, please uncomment.
+        // #define BENTLEYCONFIG_OPENCASCADE
+        
         #define BENTLEYCONFIG_DISPLAY_WIN32
     #endif
 
@@ -76,6 +92,8 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_WX
     #define BENTLEYCONFIG_VIRTUAL_MEMORY
+    // WIP_PORT #define BENTLEYCONFIG_OPENCASCADE
+    // WIP_PORT #define BENTLEYCONFIG_FOLLY
 
 #elif defined (__EMSCRIPTEN__)
 

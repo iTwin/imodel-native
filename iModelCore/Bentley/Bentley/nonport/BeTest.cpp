@@ -23,6 +23,7 @@
 #include <regex>
 #include <exception>
 #include <signal.h>
+#include <map>
 #define BETEST_NO_INCLUDE_GTEST
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
@@ -46,6 +47,8 @@ static Utf8String                               s_currentTestCaseName;          
 static Utf8String                               s_currentTestName;                  //  "       "
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 bool BeTest::s_loop = true;
+
+static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                    // MT: s_testCases is populated at code load time (by static constructors), so there is no danger of a race
 
 /*---------------------------------------------------------------------------------**//**
 * Default handler for test test and assertion failures. Handles failures by throwing 
@@ -163,7 +166,7 @@ void BentleyApi::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP mess
         return;
 #endif
 
-    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->fatalv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
 
     #ifndef NDEBUG
         #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -453,6 +456,14 @@ void BeTest::Initialize (Host& host)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool BeTest::IsInitialized()
+    {
+    return s_host.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::Uninitialize ()
     {
     s_host = NULL;
@@ -588,6 +599,12 @@ bool BeTest::EqTol (int    v1, int    v2, int    tol) {return  abs(v1-v2) <= tol
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeTest::EqStr (Utf8CP s1, Utf8CP s2, bool ignoreCase)
     {
+    if (nullptr == s1)              // Amazingly, gtest STREQ supports NULL arguments, so we must emulate that.
+        return (nullptr == s2);
+
+    if (nullptr == s2)
+        return (nullptr == s1);
+
     if (ignoreCase)
         return 0 == BeStringUtilities::Stricmp (s1, s2);
     else
@@ -653,7 +670,7 @@ BeTest::ExpectedResult::~ExpectedResult() THROW_SPECIFIER(CharCP)
     if (m_message.empty())
         return;
     BeTest::IncrementErrorCount ();
-    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s\n", m_message.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->fatalv ("%s\n", m_message.c_str());
     if (m_abortImmediately)
         {
         if (BeTest::GetBreakOnFailure())
@@ -718,7 +735,7 @@ BeTest::ExpectedResult& BeTest::ExpectedResult::operator<< (uint32_t val)
     return *this;
     }
 
-#ifdef __clang__
+#if defined(__clang__) && defined(__APPLE__)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -912,13 +929,19 @@ void    BeTest::RecordFailedTest (testing::Test const& t)
     Utf8String tname = t.GetTestCaseNameA();
     tname.append (".");
     tname.append (t.GetTestNameA());
-    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s FAILED\n", tname.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->fatalv ("%s FAILED\n", tname.c_str());
     s_failedTests.insert (tname);
     }
 
 bset<Utf8String> const& BeTest::GetFailedTests()
     {
     return s_failedTests;
+    }
+
+void   BeTest::SetNameOfCurrentTestInternal(Utf8CP tc, Utf8CP tn)
+    {
+    s_currentTestCaseName = tc;
+    s_currentTestName = tn;
     }
 
 Utf8CP BeTest::GetNameOfCurrentTestCaseInternal()
@@ -989,8 +1012,8 @@ void testing::Test::Run()
     s_hadAssertOnAnotherThread = false;
     s_bentleyCS.unlock();
     
-    s_currentTestCaseName = GetTestCaseNameA();
-    s_currentTestName = GetTestNameA();
+    BeAssert(s_currentTestCaseName.Equals(GetTestCaseNameA()));
+    BeAssert(s_currentTestName.Equals(GetTestNameA()));
 
     BE_TEST_SEH_TRY
         {
@@ -1040,6 +1063,78 @@ void testing::Test::Run()
 
     s_currentTestCaseName.clear();
     s_currentTestName.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_TearDownFunc t)
+    {
+    if (nullptr == s_testCases)
+        s_testCases = new std::map<Utf8String, BeTest::TestCaseInfo*>();
+
+    auto& tci = (*s_testCases)[tcname];
+    if (nullptr == tci)
+        {
+        tci = new TestCaseInfo;
+        tci->m_setUp = s;
+        tci->m_tearDown = t;
+        tci->m_count = 0;
+        }
+
+    return tci;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetUpTestCase(Utf8CP tcname)
+    {
+    if (0 == strcmp("Bspline", tcname))
+        printf ("got here\n");
+    if (nullptr == s_testCases)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto itci = s_testCases->find(tcname);
+    if (s_testCases->end() == itci)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto tci = itci->second;
+    if (0 == tci->m_count++)
+        {
+        tci->m_setUp();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::TearDownTestCase(Utf8CP tcname)
+    {
+    if (nullptr == s_testCases)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto itci = s_testCases->find(tcname);
+    if (s_testCases->end() == itci)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto tci = itci->second;
+    if (1 == tci->m_count--)
+        {
+        itci->second->m_tearDown();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

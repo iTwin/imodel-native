@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeTimeUtilities_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -18,25 +18,25 @@ USING_NAMESPACE_BENTLEY
 // @betest                                      Shaun.Sewall                    09/11
 //---------------------------------------------------------------------------------------
 TEST (BeTimeUtilitiesTests, QueryMillisecondsCounterUInt32)
-{
+    {
     uint32_t t1 = BeTimeUtilities::QueryMillisecondsCounterUInt32 ();
     uint32_t t2 = BeTimeUtilities::QueryMillisecondsCounterUInt32 ();
     
     ASSERT_GE (t2, t1);
     SUCCEED ();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    09/11
 //---------------------------------------------------------------------------------------
 TEST (BeTimeUtilitiesTests, QueryMillisecondsCounter)
-{
+    {
     uint64_t t1 = BeTimeUtilities::QueryMillisecondsCounter ();
     uint64_t t2 = BeTimeUtilities::QueryMillisecondsCounter ();
     
     ASSERT_GE (t2, t1);
     SUCCEED ();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                      09/13

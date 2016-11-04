@@ -23,7 +23,7 @@
         #define BENTLEY_CPLUSPLUS 201103L
     #elif defined (__clang__)
         #define CLANG_VERSION (__clang_major__ * 1000 + __clang_minor__ * 10)
-        #if (CLANG_VERSION < 4010 && !defined (__EMSCRIPTEN__))
+        #if (CLANG_VERSION < 4010 && !defined (__EMSCRIPTEN__) && !defined(ANDROID))
             #error upgrade to XCode version 4.5
         #endif
         #define BENTLEY_CPLUSPLUS 201103L
@@ -162,6 +162,13 @@
   #define END_BENTLEY_NAMESPACE   }
   #define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
 
+  // Since C# does not have a preprocessor, there is no convenient way to put a version into the namespace names.
+  // Therefore, when we create namespaces in managed C++, we want to use BEGIN_UNVERSIONED_BENTLEY_NAMESPACE rather than BEGIN_BENTLEY_NAMESPACE
+  #define BEGIN_UNVERSIONED_BENTLEY_NAMESPACE namespace Bentley {
+  #define END_UNVERSIONED_BENTLEY_NAMESPACE   }
+  #define USING_NAMESPACE_UNVERSIONED_BENTLEY using namespace Bentley
+
+
   // create the Bentley namespace
   BEGIN_BENTLEY_NAMESPACE
   END_BENTLEY_NAMESPACE
@@ -198,7 +205,7 @@
       #if (BENTLEY_CPLUSPLUS <= 199711L) || defined(_MANAGED)
           #define NULL    0
       #else
-          // nullptr is part C++11
+          // nullptr is C++11
           #define NULL nullptr
       #endif
   #endif
@@ -213,8 +220,6 @@
   #define USING_NAMESPACE_BENTLEY
 
 #endif  // mdl_resource_compiler
-
-
 
 #if !defined (NO_BENTLEY_PUBLIC)
 #define Public
@@ -264,6 +269,7 @@
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
+
 enum BentleyTrueFalse
     {
     TRUE  = 1,
@@ -326,6 +332,24 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 //__PUBLISH_SECTION_END__
 #endif
 
+//__PUBLISH_SECTION_START__
 
+#ifdef _MSC_VER
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
+        __pragma(warning(push))\
+        __pragma(warning(disable:ERRORS_TO_IGNORE))
+    
+    #define POP_MSVC_IGNORE\
+        __pragma(warning(pop))
+    
+    #include <codeanalysis/warnings.h>
+    #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
+    #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
+#else
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
+    #define POP_MSVC_IGNORE
+    #define PUSH_MSVC_IGNORE_ANALYZE
 
-
+    // Microsoft SAL macros that we use to help silence static analysis warnings.
+    #define _Out_writes_z_(size)
+#endif

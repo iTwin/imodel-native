@@ -50,6 +50,10 @@ TEST_F (Base64UtilitiesTests, EncodeString)
     Utf8String encoded;
     ASSERT_EQ(SUCCESS, Base64Utilities::Encode(encoded, (Byte*)input.data(), input.size()));
     ASSERT_STREQ(expected, encoded.c_str());
+
+    // encode empty
+    Utf8String inputEmptry("");
+    ASSERT_EQ(0, Base64Utilities::Encode(inputEmptry).size());
     }
 
 //---------------------------------------------------------------------------------------
@@ -124,5 +128,33 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeBlob)
     int64_t actualNumber = INT64_C(-1);
     memcpy(&actualNumber, decodedBlob.data(), sizeof(actualNumber));
     ASSERT_EQ(expectedNumber, actualNumber);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Umar.Hayat                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(Base64UtilitiesTests, EncodeDecodeByteStream)
+    {
+    Utf8String expectedString("Foo123!");
+
+    Utf8String encoded = Base64Utilities::Encode(expectedString);
+    ASSERT_STREQ("Rm9vMTIzIQ==", encoded.c_str());
+
+    ByteStream decodedStream;
+    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedStream, encoded.c_str(), encoded.size()));
+    Utf8String decodedString((CharCP)decodedStream.GetData(), expectedString.size());
+    ASSERT_STREQ(expectedString.c_str(), decodedString.c_str());
+
+    // Decode empty
+    ByteStream decodedEmpty;
+    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedStream, nullptr, 0));
+    EXPECT_TRUE(0 == decodedEmpty.GetSize());
+    
+    // Decode partial
+    ByteStream decodedPartial;
+    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedPartial, "Rm9vMTIzIQ==Garbage", 12));
+    Utf8String decodedPartialString((CharCP)decodedPartial.GetData(), expectedString.size());
+    ASSERT_STREQ(expectedString.c_str(), decodedPartialString.c_str());
+
     }
 

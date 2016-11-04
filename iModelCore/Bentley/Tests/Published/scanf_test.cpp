@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/scanf_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -18,6 +18,7 @@ static void ok (bool b, CharCP fmt, ...)
     va_list args;
     va_start (args, fmt);
     vsprintf (buf, fmt, args);
+    va_end(args);
     FAIL() << buf;
     }
 

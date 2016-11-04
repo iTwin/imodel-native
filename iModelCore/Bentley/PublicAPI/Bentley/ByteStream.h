@@ -10,6 +10,8 @@
 
 #include "Bentley.h"
 #include "BeAssert.h"
+#include <utility>
+#include <string.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -45,6 +47,7 @@ public:
     uint8_t* GetDataP() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
     bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
     void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
+    uint8_t* ExtractData() { uint8_t* data = m_data; m_data = nullptr; m_size = m_allocSize = 0; return data; }
 
     //! Reserve memory for this ByteStream. The stream capacity will change but not its size.
     //! @param[in] size the number of bytes to reserve
@@ -71,6 +74,25 @@ public:
             m_size += size;
             }
         }
+
+    bool empty() const { return !HasData(); }
+    size_t size() const { return GetSize(); }
+    size_t capacity() const { return GetAllocSize(); }
+    void reserve(size_t size) { Reserve(static_cast<uint32_t>(size)); }
+    void resize(size_t newSize) { Resize(static_cast<uint32_t>(newSize)); }
+    void clear() { Clear(); }
+    uint8_t const* data() const { return GetData(); }
+    uint8_t* data() { return GetDataP(); }
+
+    typedef uint8_t* iterator;
+    typedef uint8_t const* const_iterator;
+
+    iterator begin() { return data(); }
+    iterator end() { return data() + size(); }
+    const_iterator begin() const { return data(); }
+    const_iterator end() const { return data() + size(); }
+    uint8_t const& operator[](size_t i) const { return data()[i]; }
+    uint8_t& operator[](size_t i) { return data()[i]; }
 };
 
 END_BENTLEY_NAMESPACE

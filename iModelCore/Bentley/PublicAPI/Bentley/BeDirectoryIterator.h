@@ -19,9 +19,14 @@ struct DirectoryWalkerImpl;
 //! @ingroup GROUP_File
 struct FileNamePattern
     {
-    //! Call this to parse an expression that might contain a combination of a filepath and a wildcard expression
+    //! Call this to parse an expression that might contain a combination of a filepath and a wildcard expression.
+    //! @param[out] dir The directory portion of the path. Note that dir will not have a trailing path separator.
+    //! @param[out] glob The portion of the path following the last separator
+    //! @param[in] pathAndPattern The path and pattern expression to parse
     BENTLEYDLL_EXPORT static void Parse (BeFileName& dir, WString& glob, BeFileNameCR pathAndPattern);
     //! Call this to test if a filename is matched by a wildcard expression
+    //! @param name the filename to test
+    //! @param glob the wildcard expression to use
     BENTLEYDLL_EXPORT static bool MatchesGlob (BeFileNameCR name, WCharCP glob);
     };
 

@@ -12,18 +12,16 @@
 #include "RefCounted.h"
 #include "WString.h"
 
-BEGIN_BENTLEY_NAMESPACE
-
-//=======================================================================================
-//
-// All of this miserable crap is here only because the stupid C++/CLI compiler doesn't support std::threads.
-// Until we can get rid of the whole Windows "managed" abomination, we're stuck with this nonsense.
-//
-// BEMUTEX_DATA_ARRAY_LENGTH = sizeof (std::recursive_mutex) / sizeof (void*)
-// BECONDITIONVARIABLE_DATA_ARRAY_LENGTH = sizeof (std::condition_variable_any) / sizeof (void*)
-// Array of void* is used to force pointer type alignment
-//=======================================================================================
-#if defined (_WIN32)
+#if defined (_WIN32) && defined(_MANAGED)
+    //=======================================================================================
+    //
+    // All of this miserable crap is here only because the stupid C++/CLI compiler doesn't support std::threads.
+    // Until we can get rid of the whole Windows "managed" abomination, we're stuck with this nonsense.
+    //
+    // BEMUTEX_DATA_ARRAY_LENGTH = sizeof (std::recursive_mutex) / sizeof (void*)
+    // BECONDITIONVARIABLE_DATA_ARRAY_LENGTH = sizeof (std::condition_variable_any) / sizeof (void*)
+    // Array of void* is used to force pointer type alignment
+    //=======================================================================================
     #if (_MSC_VER >= 1900)
         #if defined(_M_X64)
             #define BEMUTEX_DATA_ARRAY_LENGTH (80 / sizeof(void*))
@@ -36,23 +34,17 @@ BEGIN_BENTLEY_NAMESPACE
         #define BEMUTEX_DATA_ARRAY_LENGTH 1
         #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
     #endif
-#elif defined (ANDROID)
-    #define BEMUTEX_DATA_ARRAY_LENGTH (4 / sizeof(void*))
-    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH (12 / sizeof(void*))
-#elif defined (__linux) && defined (__LP64__)
-    #define BEMUTEX_DATA_ARRAY_LENGTH (40 /*__SIZEOF_PTHREAD_MUTEX_T*/ / sizeof(void*))
-    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH ((48 /*__SIZEOF_PTHREAD_COND_T*/ + 40 /*__SIZEOF_PTHREAD_MUTEX_T*/) / sizeof(void*))
-#elif defined (__APPLE__)
-    #if defined (__LP64__)
-        #define BEMUTEX_DATA_ARRAY_LENGTH 8
-        #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 8
-    #else
-        #define BEMUTEX_DATA_ARRAY_LENGTH 11
-        #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 9
-    #endif
 #else
-    #error unknown platform: must define BEMUTEX_DATA_ARRAY_LENGTH and BECONDITIONVARIABLE_DATA_ARRAY_LENGTH
+    //=======================================================================================
+    // Sane platforms...
+    //=======================================================================================
+    #include <mutex>
+    #include <condition_variable>
+    #define BEMUTEX_DATA_ARRAY_LENGTH sizeof(std::recursive_mutex) / sizeof(void*)
+    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH sizeof(std::condition_variable_any) / sizeof(void*)
 #endif
+
+BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
 //! A synchronization primitive that can be used to protect shared data from being simultaneously accessed by multiple threads.
@@ -196,7 +188,7 @@ public:
     BENTLEYDLL_EXPORT void notify_all();
 };
 
-#if defined (__APPLE__) || defined (ANDROID) || defined (__linux)
+#if defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
     typedef void* (*T_ThreadStart)(void*);
     #define THREAD_MAIN_IMPL void*
 #elif defined (_WIN32) // Windows && WinRT
@@ -228,35 +220,11 @@ struct  BeThreadUtilities
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();
+
+    //! see documentation for std::thread::hardware_concurrency()
+    BENTLEYDLL_EXPORT static uint32_t GetHardwareConcurrency();
 };
 
-//=======================================================================================
-//  @bsiclass
-//=======================================================================================
-struct BeThread : IRefCounted
-{
-private:
-    intptr_t    m_threadId;
-    Utf8String  m_threadName;
-
-private:
-    static void RunThread(void* arg);
-#if defined (__unix__)
-    static void* RunPlatformThread(void* arg) { RunThread(arg); return nullptr; }
-#else
-    static unsigned __stdcall RunPlatformThread(void* arg) { RunThread(arg); return 0; }
-#endif
-
-protected:
-    BENTLEYDLL_EXPORT BeThread(Utf8CP threadName = nullptr);
-    virtual void _Run() = 0;
-
-public:
-    virtual ~BeThread() {}
-    intptr_t GetThreadId() const { return m_threadId; }
-    BENTLEYDLL_EXPORT Utf8CP GetThreadName() const;
-    BENTLEYDLL_EXPORT void Start();
-};
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================

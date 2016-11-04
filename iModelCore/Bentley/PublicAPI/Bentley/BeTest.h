@@ -46,11 +46,6 @@
     #endif
 
 
-    #define BETEST_DECLARE_TC_SETUP    public: static void SetUpTestCase ();
-    #define BETEST_DECLARE_TC_TEARDOWN public: static void TearDownTestCase ();
-    #define BETEST_TC_SETUP(TC)        void TC :: SetUpTestCase ()
-    #define BETEST_TC_TEARDOWN(TC)     void TC :: TearDownTestCase ()
-
 
 #else
 
@@ -67,6 +62,8 @@
             virtual void TestBody() {;}
             virtual void InvokeTestBody() { TestBody(); }
           public:
+            static void SetUpTestCase() {;}
+            static void TearDownTestCase() {;}
             Test() {;}
             virtual ~Test() {;}
             BENTLEYDLL_EXPORT void Run();
@@ -75,20 +72,29 @@
             };
         }
 
-    #define BETEST_DECLARE_TC_SETUP
-    #define BETEST_DECLARE_TC_TEARDOWN
-
     #define BETEST_TEST_CLASS_NAME(testCaseName, testName) TEST_##testCaseName##_##testName
     #define BETEST_TEST_RUNNER_FUNC(testCaseName, testName) run_TEST_##testCaseName##_##testName
 
-    #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)\
-        struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                                                                   \
-        {                                                                                                                               \
-            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
-            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
-            virtual void TestBody () override;                                                                                          \
-        };                                                                                                                              \
-    extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { BETEST_TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \
+    #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)                   \
+        struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                \
+        {                                                                                   \
+            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }         \
+            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }             \
+            virtual void TestBody () override;                                              \
+            static BeTest::TestCaseInfo* s_superClassTestCaseInfo;                          \
+        };                                                                                  \
+    BeTest::TestCaseInfo* BETEST_TEST_CLASS_NAME(testCaseName,testName)::s_superClassTestCaseInfo = BeTest::RegisterTestCase(#testCaseName, & superTestName :: SetUpTestCase, & superTestName :: TearDownTestCase);\
+    extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) ()       \
+        {                                                                                   \
+        size_t e = BeTest::GetErrorCount();                                                 \
+        if (BeTest::ShouldRunTest (#testCaseName "." #testName))                            \
+            {                                                                               \
+            BeTest::SetNameOfCurrentTestInternal(#testCaseName,#testName);                  \
+            BETEST_TEST_CLASS_NAME(testCaseName,testName) t;                                \
+            t.Run();                                                                        \
+            }                                                                               \
+        return BeTest::GetErrorCount() > e;                                                 \
+        }                                                                                   \
     void BETEST_TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
 
 
@@ -99,9 +105,6 @@
         #undef  TEST
         #define TEST(testCaseName, testName) DEFINE_BETEST_INTERNAL(testing::Test,testCaseName,testName)
     
-        // note: the below macros are used by $(SrcRoot)bsicommon/build/DetectUnitTests.py
-        #define BETEST_TC_SETUP(TC)        extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ()
-        #define BETEST_TC_TEARDOWN(TC)     extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ()
     #endif
 
     #define RUN_ALL_TESTS BeTest::RunAllTests
@@ -158,6 +161,9 @@ public:
     BENTLEYDLL_EXPORT void GetFrameworkSqlangFiles(BeFileName& path);
     };
 
+//! Query if BeTest is running
+BENTLEYDLL_EXPORT static bool IsInitialized();
+
 //! Get the test harness host
 BENTLEYDLL_EXPORT static Host&  GetHost ();
 
@@ -169,6 +175,21 @@ BENTLEYDLL_EXPORT static Host&  GetHost ();
 //! -- sets the default IGetDataRoots helper (which can be overridden -- see SetIGetDataRoots)
 //! @param[in] host     The test runner host
 BENTLEYDLL_EXPORT static void Initialize (Host& host);
+
+///@name TestCase setup/teardown
+///@{
+
+typedef void(*T_SetUpFunc)(void);
+typedef void(*T_TearDownFunc)(void);
+
+struct TestCaseInfo
+    {
+    int m_count;
+    T_SetUpFunc m_setUp;
+    T_TearDownFunc m_tearDown;
+    };
+
+///@}
 
 struct IFailureHandler 
     {
@@ -240,6 +261,7 @@ static Utf8CP GetNameOfCurrentTestCase()
     }
 
 
+BENTLEYDLL_EXPORT static void   SetNameOfCurrentTestInternal(Utf8CP tc, Utf8CP tn);
 BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestInternal();
 BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestCaseInternal();
 
@@ -284,27 +306,46 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 
 #if !defined (USE_GTEST)
 
-#if defined (EXPERIMENT_COMMENT_OFF)
-    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), true,  #expected, #actual, __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NE(expected,actual,fatal)       BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), false, #expected, #actual, __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STREQ(expected,actual,fatal)    BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), true,  #expected, #actual, __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRNE(expected,actual,fatal)    BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), false, #expected, #actual, __FILE__ , __LINE__,fatal)
-#else
-    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       BeTest::ExpectedResult ((expected) == (actual),          #expected, #actual,      __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             BeTest::ExpectedResult ((val1) != (val2),                #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          BeTest::ExpectedResult (BeTest::EqStr(val1,val2,false),  #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)      BeTest::ExpectedResult (BeTest::EqStr(val1,val2,true),   #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          BeTest::ExpectedResult (!BeTest::EqStr(val1,val2,false), #val1,     #val2,        __FILE__ , __LINE__,fatal)
-#endif //defined (EXPERIMENT_COMMENT_OFF)
-    #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)          BeTest::ExpectedResult ((expression) != 0,            "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)         BeTest::ExpectedResult ((expression) == 0,            "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_LE(val1,val2,fatal)             BeTest::ExpectedResult ((val1) <= (val2),             #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_LT(val1,val2,fatal)             BeTest::ExpectedResult ((val1) <  (val2),             #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_GE(val1,val2,fatal)             BeTest::ExpectedResult ((val1) >= (val2),             #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_GT(val1,val2,fatal)             BeTest::ExpectedResult ((val1) >  (val2),             #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,fatal)     BeTest::ExpectedResult (BeTest::EqTol(val1,val2,tol), #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NEAR_(val1, val2, fatal)        BeTest::ExpectedResult (BeTest::EqNear(val1,val2),    #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_FAIL()                          BeTest::ExpectedResult (false,                        "SUCCESS", "FAIL",       __FILE__ , __LINE__,true)
+///@name Test case setup/teardown
+///@{
+BENTLEYDLL_EXPORT static TestCaseInfo* RegisterTestCase(Utf8CP, T_SetUpFunc, T_TearDownFunc);
+BENTLEYDLL_EXPORT static void SetUpTestCase(Utf8CP);
+BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
+///@}
+
+
+    // NB: the macros expand to 
+    //  if(test) ; else ExpectedResult(...) 
+    // to mimic the gtest implementation. Note that the error handling is the in else clause and has no trailing ;
+    // The main reason for doing it this way is that whatever comes after the test macro must be evaluated only if the expression is false. For example,
+    // In the test
+    //  ASSERT_TRUE(expression) << generateErrorMessage()
+    // The call to generateErrorMessage() should only be made if expression is false.
+    // We have the error handling in the else clause because tests do things like this:
+    // if (entry.GetId() == mat3->GetMaterialId())
+    //      EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
+    // else
+    //      FAIL() << "This material should not exisit";
+    // We don't want the test's own else to become attached to the EXPECT_STREQ's internal if-test.
+    // Also, note that, when evaluating a test macro, don't assume that in checking for failure we can invert the sense of the original test.
+    // For example, TEST_EQ(expr1, expr2)
+    // must NOT be simplified to : if ((expr1) != (expr2))
+    // That is because expr1 and expr2 might be objects, and we don't know that their class defines the != operator as well as the == operator.
+    // Note that the ExpectedResult's destructor is where the error is reported. That gives it time to accumulate the << messages that follow the macro.
+    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       if ((expected) == (actual))          {} else BeTest::ExpectedResult (false, #expected, #actual,      __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             if ((val1) != (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          if (BeTest::EqStr(val1,val2,false))  {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)      if (BeTest::EqStr(val1,val2,true))   {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          if (!BeTest::EqStr(val1,val2,false)) {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)          if (expression)                      {} else BeTest::ExpectedResult (false, "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)         if (!(expression))                   {} else BeTest::ExpectedResult (false, "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_LE(val1,val2,fatal)             if ((val1) <= (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_LT(val1,val2,fatal)             if ((val1) <  (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_GE(val1,val2,fatal)             if ((val1) >= (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_GT(val1,val2,fatal)             if ((val1) >  (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,fatal)     if (BeTest::EqTol(val1,val2,tol))    {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NEAR_(val1, val2, fatal)        if (BeTest::EqNear(val1,val2))       {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_FAIL()                                                                  BeTest::ExpectedResult (false, "SUCCESS", "FAIL",       __FILE__ , __LINE__,true)
 
     // These macro names match those defined in <gtest.h>
     #define ASSERT_EQ(expected,actual)   BE_TEST_EXPECTED_RESULT_EQ(expected,actual,true)
@@ -339,41 +380,6 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     ///@name Test utilities
     ///@{
 
-#if defined (EXPERIMENT_COMMENT_OFF)
-    //! Captures any/all primitive types.
-    struct PrimitiveValueUnion
-        {
-        enum Type {INTEGRAL=0, TYPE_BOOL, UINTEGRAL, VOIDSTAR, CHARCP, WCHARCP, DOUBLE};
-
-        union
-            {
-            uint64_t m_ivalue;
-            double  m_dvalue;
-            void*   m_pvalue;
-            };
-        Byte m_type;
-
-        PrimitiveValueUnion PromoteTo (Type) const;
-
-        BENTLEYDLL_EXPORT PrimitiveValueUnion ( bool  v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion ( int8_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (uint8_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion ( int16_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (uint16_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion ( int32_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (uint32_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion ( int64_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (uint64_t v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (double v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (void const* v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (CharCP v);
-        BENTLEYDLL_EXPORT PrimitiveValueUnion (WCharCP v);
-
-        BENTLEYDLL_EXPORT bool operator==(PrimitiveValueUnion const& rhs) const;
-        BENTLEYDLL_EXPORT Utf8String ToString () const;
-        };
-#endif //defined (EXPERIMENT_COMMENT_OFF)
-
     //! Captures the result of testing a condition.
     struct ExpectedResult
         {
@@ -383,7 +389,7 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
         BENTLEYDLL_EXPORT ExpectedResult (bool isAsExpected, CharCP actualValue, CharCP expectedValue, bool expectedEq, CharCP actualExpression, CharCP expectedExpression, CharCP fileName, size_t  lineNum, bool abortImmediately);
         BENTLEYDLL_EXPORT ~ExpectedResult() THROW_SPECIFIER(CharCP);
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (WCharCP msg);
-#ifdef __clang__
+#if defined(__clang__) && defined(__APPLE__)
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (size_t val);
 #endif
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (int32_t val);
@@ -425,9 +431,6 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     BENTLEYDLL_EXPORT static void SetRunFilters (bvector<Utf8String> const& toignore, bvector<Utf8String> const& torun);
     //! Should this test be run?
     BENTLEYDLL_EXPORT static bool ShouldRunTest (CharCP fullTestName);
-#if defined (EXPERIMENT_COMMENT_OFF)
-    BENTLEYDLL_EXPORT static ExpectedResult CheckResultEQ (PrimitiveValueUnion const& a, PrimitiveValueUnion const& x, bool expectEq, CharCP aexp, CharCP xexp, CharCP file, uint32_t ln, bool fatal);
-#endif
 
     private:
         static bvector<Utf8String>         s_runList;
@@ -468,6 +471,15 @@ public:
 
 };
 
+#define EXPECT_CONTAINS(container, value)                                       \
+    EXPECT_FALSE (std::find (container.begin (), container.end (), value) == container.end ())
+
+#define EXPECT_NCONTAIN(container, value)                                       \
+    EXPECT_TRUE (std::find (container.begin (), container.end (), value) == container.end ())
+
+#define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
+    EXPECT_LE (smallerValue, value);                                            \
+    EXPECT_GE (biggerValue, value)
 
 END_BENTLEY_NAMESPACE
 

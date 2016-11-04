@@ -2,7 +2,7 @@
 #
 #  $Source: BentleyLibTestDll.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -43,8 +43,6 @@ DLM_EXPORT_DEST     = $(o)
 DLM_SYMB_DEST       = $(o)
 DLM_MAP_DEST        = $(o)
 DLM_NO_SIGN         = 1
-DLM_NO_DEF          = 1
-DLM_NO_DLS          = 1
 DLM_NOENTRY         = 0
 DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
 LINKER_LIBRARIES   =   $(BuildContext)SubParts/Libs/$(libprefix)Bentley$(libext) \

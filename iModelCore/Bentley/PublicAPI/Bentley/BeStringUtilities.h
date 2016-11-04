@@ -208,6 +208,10 @@ public:
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
     BENTLEYDLL_EXPORT static BentleyStatus Utf8ToUtf16 (Utf16BufferR, Utf8CP, size_t count = AsManyAsPossible);
 
+    //! Converts a UTF-8 string to a pointer. The Microsoft scanf method does not support the "%p" format specifier, so this method is needed to return the correct size pointer in 32- and 64- bit environments.
+    //! @param[in]  inChar     Input string; this must be NULL-terminated. It must be of the form produced by using "0x%p" as the format specifier in an sprintf or similar statement (something like 0x1dab0310 in 32-bit or 0x000000014dab4008 in a 64-bit environment)
+    BENTLEYDLL_EXPORT static void* Utf8ToPointer (Utf8CP inChar);
+
     //! Converts a UTF-16 string to a UTF-8 string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.
@@ -322,8 +326,9 @@ public:
     //! @param format           The formatting to apply
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than destArraySize; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., destArray[destArraySize-1] = 0;)
+    // Vsnprintf ensures the output buffer is terminated; mark it as such to prevent repeated static analysis warnings.
     template <size_t destArraySize>
-    static int Snprintf (char (&destArray)[destArraySize], CharCP format, ...)
+    static int Snprintf (_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], CharCP format, ...)
         {
         va_list args;
         va_start (args, format);
@@ -572,6 +577,12 @@ public:
     //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
     //! @param[in]      auxDelimiters (optional) Each character in the string Will be used as a delimiter in addition to whitespace.
     BENTLEYDLL_EXPORT static void ParseArguments (bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters = NULL);
+
+    //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
+    //! @param[out]     subStrings   The resulting sub strings will be added to this collection
+    //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
+    //! @param[in]      auxDelimiters (optional) Each character in the string Will be used as a delimiter in addition to whitespace.
+    BENTLEYDLL_EXPORT static void ParseArguments (bvector<Utf8String>& subStrings, Utf8CP inString, Utf8CP auxDelimiters = NULL);
 
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[in]      inString        The string to tokenize; cannot be NULL or empty

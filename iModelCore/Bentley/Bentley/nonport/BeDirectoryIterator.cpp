@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeDirectoryIterator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -100,7 +100,7 @@ void BentleyApi::FileNamePattern::Parse (BeFileName& dir, WString& glob, BeFileN
 
     if (endPath)                              // pathAndPattern includes a path
         {
-        dir.SetName (WString (pathAndPattern, endPath-pathAndPattern));
+        dir.SetName (WString (pathAndPattern.c_str(), endPath-pathAndPattern.c_str()));
         glob = endPath+1;
         }
     else

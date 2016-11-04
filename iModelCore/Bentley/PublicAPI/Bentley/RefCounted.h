@@ -43,17 +43,26 @@ public:
 // You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
 // Warning: the Release method implementation decreases the value of m_refCount atomically and must not use any member variables after that - other
 // threads see the decreased value and can potentially delete the object.
+// Memory ordering notes:
+//  AddRef() uses std::memory_order_relaxed because the only requirement is atomicity of the ref-count - ordering/visibility of side effects not relevant
+//  Release() conceptually uses acquire-release in order to ensure that any modifications made to this object by one releasing thread are visible to another
+//  releasing thread which also ends up deleting the object.
+//  We avoid the potentially-expensive acquire semantics in the common case in which the object is not deleted by separating it out into an atomic_thread_fence
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
 private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();} \
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre(std::memory_order_relaxed);} \
     uint32_t Release() const                            \
         {                                               \
-        uint32_t countWas = m_refCount.DecrementAtomicPost(); REFCOUNT_RELASE_CHECK(countWas); \
+        uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);  \
+        REFCOUNT_RELASE_CHECK(countWas);                \
         if (1 == countWas)                              \
+            {                                           \
+            std::atomic_thread_fence(std::memory_order_acquire);    \
             delete this;                                \
+            }                                           \
         return countWas-1;                              \
         ;}
 

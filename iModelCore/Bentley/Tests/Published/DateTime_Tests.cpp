@@ -827,13 +827,13 @@ TEST (DateTimeTests, GetCurrentTimeTests)
     EXPECT_EQ ((int) DateTime::Kind::Local, (int) currentTimeLocal.GetInfo ().GetKind ());
     EXPECT_EQ ((int) DateTime::Component::DateAndTime, (int) currentTimeLocal.GetInfo ().GetComponent ());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE (static_cast<int> (currentTimeLocal.GetYear ()), 2013);
+    EXPECT_GE (static_cast<int> (currentTimeLocal.GetYear ()), 2013) << Utf8PrintfString("CurrentTime is %s", currentTimeLocal.ToUtf8String().c_str()).c_str();
 
     DateTime currentTimeUtc = DateTime::GetCurrentTimeUtc ();
     EXPECT_EQ ((int) DateTime::Kind::Utc, (int) currentTimeUtc.GetInfo ().GetKind ());
     EXPECT_EQ ((int) DateTime::Component::DateAndTime, (int) currentTimeUtc.GetInfo ().GetComponent ());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE (static_cast<int> (currentTimeUtc.GetYear ()), 2013);
+    EXPECT_GE (static_cast<int> (currentTimeUtc.GetYear ()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToUtf8String().c_str()).c_str();
     }
 
 //---------------------------------------------------------------------------------------

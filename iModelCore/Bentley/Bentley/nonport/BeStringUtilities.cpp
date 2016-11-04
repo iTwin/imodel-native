@@ -291,6 +291,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
     // Worst case, this will need to double twice (e.g. each input UChar goes to a 4-byte UCS-4 character).
     outStringBuff.resize(unicodeBufferLength);
     
+    // *** NEEDS WORK: It looks like outStringBufferLength is not really used. We could get rid of it, right?
     int32_t outStringBufferLength = 0;
 
     for (;;)
@@ -962,18 +963,22 @@ Utf8PrintfString::Utf8PrintfString(Utf8CP format, ...) : Utf8String()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString::Utf8PrintfString(Utf8CP format, va_list args) : Utf8String()
+Utf8PrintfString Utf8PrintfString::CreateFromVaList(Utf8CP format, va_list args)
     {
-    auto result = BeUtf8StringSprintf(*this, format, args);
-    if (result < 0)
-        return;
+    Utf8PrintfString str;
 
-    if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
+    auto result = BeUtf8StringSprintf(str, format, args);
+    if (result < 0)
+        return str;
+
+    if (result > (int)str.size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        result = BeUtf8StringSprintf(*this, format, args, result);
+        result = BeUtf8StringSprintf(str, format, args, result);
         if (result < 0)
-            return;
+            return str;
         }
+    
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1354,21 +1359,27 @@ Utf8String BeStringUtilities::Join(bvector<Utf8CP> const& strings, Utf8CP delim)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool charIsInString(WCharCP str, WChar ch) { return nullptr != wcschr(str, ch); }
+static bool charIsInString(Utf8CP str, Utf8Char ch) { return nullptr != strchr(str, ch); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     parseIntoArgcArgv
+template<typename T> static void     parseIntoArgcArgv
 (
-WCharCP        inString,        //  => pointer to string to be parsed
-WChar        **argv,            // <=> where to build argv array; NULL means don't build array
-WCharP         args,            // <=> where to place argument text; NULL means don't store text
+T const*       inString,        //  => pointer to string to be parsed
+T            **argv,            // <=> where to build argv array; NULL means don't build array
+T*             args,            // <=> where to place argument text; NULL means don't store text
 uint32_t      *numargs,         // <=  returns number of argv entries created
 uint32_t      *numchars,        // <=  number of characters used in args buffer
-WCharCP        allDelimiters    // =>  the characters that can be used as separators/delimiters
+T const*       allDelimiters    // =>  the characters that can be used as separators/delimiters
 )
     {
-    WCharCP p;
-    int     inquote;        // 1 = inside quotes
-    int     copychar;       /* 1 = copy char to *args */
+    T const*     p;
+    int          inquote;        // 1 = inside quotes
+    int          copychar;       /* 1 = copy char to *args */
     unsigned int numslash;       /* num of backslashes seen */
 
     *numchars = *numargs = 0;
@@ -1390,7 +1401,7 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
         {
         if (*p)
             {
-            while (' ' == *p  || L'\t' == *p)
+            while (' ' == *p  || '\t' == *p)
                 ++p;
             }
 
@@ -1410,7 +1421,7 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
                2N+1 backslashes + " ==> N backslashes + literal "
                N backslashes ==> N backslashes */
             numslash = 0;
-            while (*p == L'\\')
+            while (*p == '\\')
                 {
                 /* count number of backslashes for use below */
                 ++p;
@@ -1443,7 +1454,7 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
             while (numslash--)
                 {
                 if (args)
-                    *args++ = L'\\';
+                    *args++ = '\\';
                 ++*numchars;
                 }
 
@@ -1453,13 +1464,13 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
 
             if (nullptr != allDelimiters)
                 {
-                if (!inquote && (nullptr != wcschr(allDelimiters, *p)))
+                if (!inquote && charIsInString(allDelimiters, *p))
                     {
                     ++p;
                     break;
                     }
                 }
-            else if (!inquote && (L' ' == *p || L'\t' == *p))
+            else if (!inquote && (' ' == *p || '\t' == *p))
                 {
                 ++p;
                 break;
@@ -1478,9 +1489,41 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
 
         /* null-terminate the argument */
         if (args)
-            *args++ = L'\0';             /* terminate string */
+            *args++ = '\0';             /* terminate string */
         ++*numchars;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename C, typename S> static void parseArguments(bvector<S>& subStrings, C const* inString, C const* auxDelimiters)
+    {
+    uint32_t argc, numchars;
+    C   **argv, *argStrings;
+
+    // if there are auxDelimiters, add them to the usual space and tab.
+    C const* allDelimiters = nullptr;
+    S allDelimiterString;
+    if (nullptr != auxDelimiters)
+        {
+        allDelimiterString.append(1, ' ').append(1, '\t');
+        allDelimiterString.append(auxDelimiters);
+        allDelimiters = allDelimiterString.c_str();
+        }
+
+    // Determine the space needed for argc/argv
+    parseIntoArgcArgv<C>(inString, nullptr, nullptr, &argc, &numchars, allDelimiters);
+    argv        = (C**)_alloca((argc+1) * sizeof(C*) );
+    argStrings  = (C*)_alloca((numchars+1) * sizeof(C) );
+
+    // Actually split up the arguments
+    parseIntoArgcArgv<C>(inString, argv, argStrings, &argc, &numchars, allDelimiters);
+
+    for (uint32_t iArg = 0; iArg < argc; iArg++)
+PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
+        subStrings.push_back(argv[iArg]);
+POP_MSVC_IGNORE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1488,29 +1531,15 @@ WCharCP        allDelimiters    // =>  the characters that can be used as separa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BeStringUtilities::ParseArguments(bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters)
     {
-    uint32_t argc, numchars;
-    WChar   **argv, *argStrings;
+    parseArguments(subStrings, inString, auxDelimiters);
+    }
 
-    // if there are auxDelimiters, add them to the usual space and tab.
-    WCharCP allDelimiters = nullptr;
-    WString allDelimiterString;
-    if (nullptr != auxDelimiters)
-        {
-        allDelimiterString.assign(L" \t");
-        allDelimiterString.append(auxDelimiters);
-        allDelimiters = allDelimiterString.c_str();
-        }
-
-    // Determine the space needed for argc/argv
-    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, allDelimiters);
-    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
-    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
-
-    // Actually split up the arguments
-    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, allDelimiters);
-
-    for (uint32_t iArg = 0; iArg < argc; iArg++)
-        subStrings.push_back(argv[iArg]);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            BeStringUtilities::ParseArguments(bvector<Utf8String>& subStrings, Utf8CP inString, Utf8CP auxDelimiters)
+    {
+    parseArguments(subStrings, inString, auxDelimiters);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1523,12 +1552,12 @@ uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t num
     WChar  **argv, *argStrings;
 
     // Determine the space needed for argc/argv
-    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, NULL);
+    parseIntoArgcArgv<WChar>(inString, nullptr, nullptr, &argc, &numchars, nullptr);
     argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
     argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
     // Actually split up the arguments
-    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, NULL);
+    parseIntoArgcArgv<WChar>(inString, argv, argStrings, &argc, &numchars, nullptr);
 
     /* localization block for processing variable arguments */
         {
@@ -1543,7 +1572,9 @@ uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t num
             outStr = va_arg(args, WStringP);
 
             if (NULL != outStr)
+PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
                 outStr->assign(argv[iArg]);
+POP_MSVC_IGNORE
             }
 
         numParsed = iArg;
@@ -1563,18 +1594,18 @@ void            BeStringUtilities::ParseDelimitedString (bvector<WString>& subSt
     WChar   **argv, *argStrings;
 
     // Determine the space needed for argc/argv
-    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, delimiters);
+    parseIntoArgcArgv<WChar>(inString, nullptr, nullptr, &argc, &numchars, delimiters);
     argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
     argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
     // Actually split up the arguments
-    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, delimiters);
+    parseIntoArgcArgv<WChar>(inString, argv, argStrings, &argc, &numchars, delimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
+PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
         subStrings.push_back(argv[iArg]);
-
+POP_MSVC_IGNORE
     }
-
 
 #if defined (__unix__)
 /*---------------------------------------------------------------------------------**//**
@@ -1740,7 +1771,9 @@ int BeStringUtilities::Snprintf(CharP buffer, size_t numCharsInBuffer, CharCP fo
     {
     va_list args;
     va_start(args, format);
-    return Bevsnprintf(buffer, numCharsInBuffer, format, args);
+    int count = Bevsnprintf(buffer, numCharsInBuffer, format, args);
+    va_end(args);
+    return count;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1758,7 +1791,9 @@ int BeStringUtilities::Snwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP
     {
     va_list args;
     va_start(args, format);
-    return Bevsnwprintf(buffer, numCharsInBuffer, format, args);
+    int count = Bevsnwprintf(buffer, numCharsInBuffer, format, args);
+    va_end(args);
+    return count;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2289,25 +2324,22 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
     if ( (nullptr == inWChar) || (0 == *inWChar) )
         return NULL;
 
-    if (8 == sizeof (void*))
-        {
-        int64_t output;
-        swscanf (inWChar, L"%I64x", &output);
-        return (void*)output;
-        }
-    else if (4 == sizeof (void*))
-        {
-        void*   output = nullptr;
-        swscanf (inWChar, L"%x", (unsigned int*)&output);
-        return output;
-        }
-    else
-        {
-        // unexpected pointer size!
-        BeAssert (false);
-        }
+    uintptr_t v;
+    BE_STRING_UTILITIES_SWSCANF(inWChar, L"%" SCNxPTR, &v);
+    return (void*)v;
+    }
 
-    return nullptr;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void*   BeStringUtilities::Utf8ToPointer (Utf8CP inChar)
+    {
+    if ( (nullptr == inChar) || (0 == *inChar) )
+        return NULL;
+
+    uintptr_t v;
+    sscanf(inChar, "%" SCNxPTR, &v);
+    return (void*)v;
     }
 
 /*---------------------------------------------------------------------------------**//**

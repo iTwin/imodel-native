@@ -1,17 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
@@ -22,6 +14,10 @@
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
     <ClCompile Include="NonPublished\consoleatp.cpp" />
     <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="Performance\bmap_performanceTest.cpp" />
+    <ClCompile Include="Performance\bvector_performanceTest.cpp" />
+    <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
+    <ClCompile Include="Performance\WString_performanceTest.cpp" />
     <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
     <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
     <ClCompile Include="Published\BeFileName_test.cpp" />
@@ -38,6 +34,7 @@
     <ClCompile Include="Published\DateTimeTestDataset.cpp" />
     <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
     <ClCompile Include="Published\DateTime_Tests.cpp" />
+    <ClCompile Include="Published\DirectoryObserverTests.cpp" />
     <ClCompile Include="Published\Md5_Test.cpp" />
     <ClCompile Include="Published\OsEnvUnitTests.cpp" />
     <ClCompile Include="Published\printf_test.cpp" />
@@ -47,43 +44,60 @@
     <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
     <ClCompile Include="Published\SHA1_Test.cpp" />
     <ClCompile Include="Published\shared_mutex.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
+    <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\Utf8PrintfStringTests.cpp" />
     <ClCompile Include="Published\Utf8String_test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
     <ClCompile Include="Published\VersionTests.cpp" />
     <ClCompile Include="Published\WString_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="BentleyUnitTests.PartFile.xml" />
+    <None Include="BuildTests.mke" />
     <None Include="ignore_list.txt" />
+    <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Published\bunique_ptr_test.h" />
     <ClInclude Include="Published\DateTimeTestDataset.h" />
     <ClInclude Include="Published\DateTimeTestHelpers.h" />
+    <ClInclude Include="Published\DirectoryObserverTests.h" />
     <ClInclude Include="Published\shared_mutex.h" />
+    <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
+    <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
+    <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
+    <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
+    <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
+    <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
+    <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
+    <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
     <ClInclude Include="Published\VersionTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Published\datetimedstanalysis.logging.config.xml" />
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -94,44 +108,31 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\PublishedBentleyUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\NonPublished\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\NonPublishedBentleyUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BentleyUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c &amp; bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c</NMakeCleanCommandLine>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Bentley-Gtest\BentleyTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)\Winx64\BuildContexts\Bentley\PublicAPI\;$(OutRoot)\Winx64\build\UnitTests\Bentley\PublishedBentleyUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\NonPublished\;$(OutRoot)\Winx64\build\UnitTests\Bentley\NonPublishedBentleyUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(OutRoot)\Winx64\BuildContexts\BentleyUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c &amp; bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c</NMakeCleanCommandLine>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>BentleyUnitTests.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re Bentley-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeOutput>BentleyUnitTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
