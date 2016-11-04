@@ -794,8 +794,8 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
-    if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->AddGeomElement(*geom);
+    if (nullptr != geom)
+        m_rangeIndex->AddElement(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -808,7 +808,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
-        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(geom->CalculateRange3d(), element.GetElementId()));
+        m_rangeIndex->RemoveElement(element.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,11 +834,8 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
         return;
 
     auto id = original.GetElementId();
-    if (origBox.IsValid())
-        m_rangeIndex->RemoveElement(RangeIndex::Tree::Entry(origBox, id));
-
-    if (newBox.IsValid())
-        m_rangeIndex->AddElement(RangeIndex::Tree::Entry(newBox, id));  // origGeom has the address that will be used after update completes
+    m_rangeIndex->RemoveElement(id);
+    m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1463,7 +1460,7 @@ void DgnModel::_FillModel()
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      01/10
+* @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GeometricModel::DisplayInfo::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
