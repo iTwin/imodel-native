@@ -37,8 +37,16 @@
         <SubProduct ProductName="DgnV8Converter" PartFile="DgnDbSync" Repository="DgnDbSync"/>
     </Part>
 
-    <Part Name="LinkDgnDbPublisherIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
-        <SubPart PartName="DgnV8Converter" LibType="Dynamic"/>
+    <!-- 
+        This part can be reached as both static and dynamic; because the
+        Product directory is agnostic, we should just funnel to a single
+        version.
+    -->
+    <Part Name="LinkDgnDbPublisherIntoToolContext" OnlyPlatforms="x64,x86">
+        <SubPart PartName="__LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
+    </Part>
+    <Part Name="__LinkDgnDbPublisherIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
+        <SubPart PartName="DgnV8Converter"/>
     </Part>
 
     <ProductDirectoryList ListName="BeTestDocumentsDirList">
