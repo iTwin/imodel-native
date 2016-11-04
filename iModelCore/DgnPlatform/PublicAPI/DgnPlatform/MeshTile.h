@@ -303,8 +303,6 @@ private:
     Transform               m_transform;
     DRange3d                m_tileRange;
     BeInt64Id               m_entityId;
-    size_t                  m_facetCount;
-    double                  m_facetCountDensity;
     bool                    m_isCurved;
     bool                    m_hasTexture;
 
@@ -315,6 +313,7 @@ protected:
     virtual T_TilePolyfaces _GetPolyfaces (IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
     virtual bool _IsPolyface() const = 0;
+    virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
 
     void SetFacetCount(size_t numFacets);
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
@@ -324,8 +323,7 @@ public:
     DRange3dCR GetTileRange() const { return m_tileRange; }
     BeInt64Id GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
 
-    size_t GetFacetCount() const { return m_facetCount; }
-    double GetFacetCountDensity() const { return m_facetCountDensity; }
+    double GetFacetCountDensity(IFacetOptionsR options) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
@@ -335,9 +333,9 @@ public:
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an IBRepEntity
-    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, DgnDbR db);
 };
 
 //=======================================================================================
@@ -556,6 +554,7 @@ public:
         { return new ElementTileNode(model, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void SetTolerance(double tolerance) { m_tolerance = tolerance; }
+    void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 

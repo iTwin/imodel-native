@@ -930,11 +930,14 @@ TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometry::SetFacetCount(size_t numFacets)
+double TileGeometry::GetFacetCountDensity(IFacetOptionsR options) const
     {
-    m_facetCount = numFacets;
     double rangeVolume = m_tileRange.DiagonalDistance();
-    m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
+    if (0.0 == rangeVolume)
+        return 0.0;
+    
+    FacetCounter counter(options);
+    return static_cast<double>(_GetFacetCount(counter)) / rangeVolume;
     }
 
 //=======================================================================================
@@ -945,21 +948,18 @@ struct PrimitiveTileGeometry : TileGeometry
 private:
     IGeometryPtr        m_geometry;
 
-    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry)
-        {
-        FacetCounter counter(facetOptions);
-        SetFacetCount(counter.GetFacetCount(geometry));
-        }
+    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+        : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     virtual bool _IsPolyface () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
 
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
 public:
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
         {
-        return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, facetOptions, isCurved, db);
+        return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, isCurved, db);
         }
 };
 
@@ -972,38 +972,34 @@ private:
     IBRepEntityPtr   m_entity;
     BeMutex                 m_mutex;
 
-    SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
-        {
-        FacetCounter counter(facetOptions);
-        SetFacetCount(counter.GetFacetCount(solid));
-        }
+    SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, DgnDbR db)
+        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
     virtual bool _IsPolyface() const override { return false; }
-
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
-    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, DgnDbR db)
         {
-        return new SolidKernelTileGeometry(solid, tf, range, elemId, params, facetOptions, db);
+        return new SolidKernelTileGeometry(solid, tf, range, elemId, params, db);
         }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
     {
-    return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, facetOptions, isCurved, db);
+    return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, isCurved, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, DgnDbR db)
     {
-    return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, facetOptions, db);
+    return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, db);
     }
 
 
@@ -1394,22 +1390,15 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         bool            isLeaf = tileTolerance < leafTolerance;
         bool            leafThresholdExceeded = false;
 
-        // This initial collection is done at the (target) leaf tolerance.  If this is not already a leaf (tolerance < leaf tolerance)
-        // then collection will only happen until the maxPointsPerTile is exceeded.  If leaf size is exceeded we'll have to add
-        // discard this geometry, recollect at tile tolerance and add children (below).   
-//#define PROFILE_DISCARDED_GEOMETRY
-#if defined(PROFILE_DISCARDED_GEOMETRY)
-        StopWatch profileTimer(true);
-#endif
+        // Always collect geometry at the target leaf tolerance.
+        // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
+        // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
+        // elements too small to be included in this tile)
         tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
 
-#if defined(PROFILE_DISCARDED_GEOMETRY)
-        if (!isLeaf)
-            printf("%f seconds collecting discarded geometry\n", profileTimer.GetCurrentSeconds());
-#endif
         ElementTileResult result(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
         auto status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
         if (tile.GetGeometries().empty())
@@ -1438,9 +1427,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
             tile.GetChildren().push_back(child);
             }
 
-        tile.SetTolerance(tileTolerance);
-        tile.ClearGeometry();       // Discard initial geometry (collected at leaf tolerance).
-        tile.CollectGeometry(generationCache, m_dgndb, nullptr, tileTolerance, 0);
+        tile.AdjustTolerance(tileTolerance);
 
         collector._AcceptTile(tile);
         tile.ClearGeometry();
@@ -1448,6 +1435,24 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         result.m_status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
         return result;
         });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementTileNode::AdjustTolerance(double newTolerance)
+    {
+    if (newTolerance <= GetTolerance())
+        return;
+
+    // Change the tolerance at which _GetPolyface() will facet
+    SetTolerance(newTolerance);
+
+    // Remove any geometries too small for inclusion in this tile
+    double minRangeDiagonal = s_minRangeBoxSize * newTolerance;
+    auto eraseAt = std::remove_if(m_geometries.begin(), m_geometries.end(), [=](TileGeometryPtr const& geom) { return geom->GetTileRange().DiagonalDistance() < minRangeDiagonal; });
+    if (eraseAt != m_geometries.end())
+        m_geometries.erase(eraseAt, m_geometries.end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1786,14 +1791,14 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     if (BelowMinRange(geom.GetTileRange()))
         return;
 
-    if (nullptr != m_leafThresholdExceeded)
+    if (nullptr != m_leafThresholdExceeded && !(*m_leafThresholdExceeded))
         {
         DRange3d intersection = DRange3d::FromIntersection (geom.GetTileRange(), m_tileRange, true);
 
         if (intersection.IsNull())
             return;
 
-        m_leafCount += intersection.DiagonalDistance() * geom.GetFacetCountDensity();
+        m_leafCount += intersection.DiagonalDistance() * geom.GetFacetCountDensity(*m_targetFacetOptions);
         *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
         }
         
@@ -1805,12 +1810,6 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, DRange3dCR dgnRange)
     {
-    DRange3d    tileRange;
-
-    m_transformFromDgn.Multiply (tileRange, dgnRange);
-    if ((nullptr != m_leafThresholdExceeded && *m_leafThresholdExceeded) || BelowMinRange(tileRange))
-        return;
-
     try
         {
         m_curElemGeometries.clear();
@@ -1846,7 +1845,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
 
-    AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, m_dgndb));
     return true;
     }
 
@@ -1906,7 +1905,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
 
     IGeometryPtr geom = IGeometry::Create(clone);
-    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, m_dgndb));
 
     return true;
     }
@@ -1925,7 +1924,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
 
-    AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, *m_targetFacetOptions, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
     return true;
     }
