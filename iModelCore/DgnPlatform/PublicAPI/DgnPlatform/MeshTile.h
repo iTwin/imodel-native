@@ -8,8 +8,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#if defined(_WIN32) && defined(_MANAGED)
-#define MESHTILE_NO_FOLLY
+#if defined(_WIN32)
+    #if defined(_MANAGED) || (_MSC_VER < 1900)  // visual studio 2015
+        #define MESHTILE_NO_FOLLY
+    #endif
 #endif
 
 #include "Render.h"
