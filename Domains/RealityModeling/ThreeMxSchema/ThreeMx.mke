@@ -56,11 +56,8 @@ CPchOpts =
 #   Third-party code
 #----------------------------------------------------------------------
 
-# Prefer to disable warnings in third-party code vs. editing it.
-%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
-    OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
-    LLVMCommonCompOpts + -w
-%endif
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
@@ -76,11 +73,10 @@ $(o)compressMG2$(oext) : $(SrcOpenCtm)compressMG2.c ${threeMxDepends} ${MultiCom
 $(o)compressRAW$(oext) : $(SrcOpenCtm)compressRAW.c ${threeMxDepends} ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
-nonportObjs=%$(MultiCompileObjectList)
 
-%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
-    LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
-%endif
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+
+nonportObjs=%$(MultiCompileObjectList)
 
 CCPchOpts =
 CPchOpts =
