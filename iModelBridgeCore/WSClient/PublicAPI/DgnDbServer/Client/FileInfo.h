@@ -37,6 +37,7 @@ private:
     Utf8String  m_userUploaded;
     DateTime    m_uploadedDate;
     bool        m_areFileDetailsAvailable;
+    bool        m_initialized;
 
     FileInfo(BeGuid fileId);
     FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
@@ -64,5 +65,6 @@ public:
     DGNDBSERVERCLIENT_EXPORT uint64_t     GetSize() const; //!< Size of the file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const; //!< Name of the user that uploaded the file.
     DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetUploadedDate() const; //!< Date when the file was uploaded.
+    DGNDBSERVERCLIENT_EXPORT bool         GetInitialized() const; //!< Flag if file is initialized.
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
