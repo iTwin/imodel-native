@@ -40,7 +40,6 @@
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
     <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
-    <ClCompile Include="ECInstanceId.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />

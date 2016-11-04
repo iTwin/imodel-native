@@ -24,13 +24,6 @@ public:
 
 public:
     explicit ECInstanceId(BeBriefcaseBasedId id) : ECInstanceId(id.GetValue()) {}
-
-    //! Converts the ECInstanceId string to an ECInstanceId.
-    //! @remarks In order to parse correctly, the ECInstanceId string must contain an unsigned number in decimal format.
-    //! @param[out] ecInstanceId resulting ECInstanceId
-    //! @param[in] ecInstanceIdString ECInstanceId string to convert
-    //! @return SUCCESS if the string could be converted to a valid ECInstanceId. ERROR otherwise.
-    ECDB_EXPORT static BentleyStatus FromString(ECInstanceId& ecInstanceId, Utf8CP ecInstanceIdString);
     };
 
 //=======================================================================================

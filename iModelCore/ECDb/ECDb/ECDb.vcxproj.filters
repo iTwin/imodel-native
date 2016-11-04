@@ -617,9 +617,6 @@
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
-    <ClCompile Include="ECInstanceId.cpp">
-      <Filter>ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
