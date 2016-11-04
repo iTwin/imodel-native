@@ -144,7 +144,7 @@ public:
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
 
     Utf8String GetName() const { return GetCode().GetValue(); }
-    void SetName(Utf8CP value) { T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
     

@@ -312,13 +312,13 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     DgnElementCR groupElement2 = *(m_db->Elements().GetElement(group2->GetElementId()));
 
     // Insert Elements
-    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member1->ToDgnElement(), 1));
-    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member2->ToDgnElement(), 2));
-    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement2, *member1->ToDgnElement(), 2));
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member1, 1));
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member2, 2));
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement2, *member1, 2));
 
     // Verify MemberPriority
-    EXPECT_EQ(1, ElementGroupsMembers::QueryMemberPriority(groupElement, *member1->ToDgnElement()));
-    EXPECT_EQ(2, ElementGroupsMembers::QueryMemberPriority(groupElement2, *member1->ToDgnElement()));
+    EXPECT_EQ(1, ElementGroupsMembers::QueryMemberPriority(groupElement, *member1));
+    EXPECT_EQ(2, ElementGroupsMembers::QueryMemberPriority(groupElement2, *member1));
 
     //  Query
     EXPECT_TRUE(2 == ElementGroupsMembers::QueryMembers(groupElement).size());
@@ -343,14 +343,14 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
         }
 
     // Delete Members
-    EXPECT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Delete(groupElement, *member2->ToDgnElement()));
+    EXPECT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Delete(groupElement, *member2));
     EXPECT_TRUE(1 == ElementGroupsMembers::QueryMembers(groupElement).size());
 
     // Has member
-    EXPECT_TRUE(ElementGroupsMembers::HasMember(groupElement, *member1->ToDgnElement()));
-    EXPECT_FALSE(ElementGroupsMembers::HasMember(groupElement, *member2->ToDgnElement()));
+    EXPECT_TRUE(ElementGroupsMembers::HasMember(groupElement, *member1));
+    EXPECT_FALSE(ElementGroupsMembers::HasMember(groupElement, *member2));
 
     // Query Groups of element
-    DgnElementIdSet allGroups = ElementGroupsMembers::QueryGroups(*member1->ToDgnElement());
+    DgnElementIdSet allGroups = ElementGroupsMembers::QueryGroups(*member1);
     EXPECT_TRUE(2 == allGroups.size());
     }

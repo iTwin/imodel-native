@@ -10,38 +10,9 @@
 
 #include "DgnDomain.h"
 
-DGNPLATFORM_TYPEDEFS(ICodedEntity);
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_AuthorityHandler {struct Model; struct Partition; struct Session;};
-
-//=======================================================================================
-//! Interface adopted by an object which possesses an authority-issued DgnCode, such as a DgnModel or DgnElement.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ICodedEntity
-{
-protected:
-    virtual DgnDbR _GetDgnDb() const = 0;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const = 0; //!< Return whether this object supports codes issued by the specified authority.
-    virtual DgnCode _GenerateDefaultCode() const = 0; //!< Generate a code for this object on insertion, when no code has yet been assigned
-    virtual DgnCode const& _GetCode() const = 0; //!< Return this object's Code
-    virtual DgnDbStatus _SetCode(DgnCode const& code) = 0; //!< Set the code directly if permitted. Do not perform any validation of the code itself.
-    virtual DgnElementCP _ToDgnElement() const { return nullptr; }
-    virtual DgnModelCP _ToDgnModel() const { return nullptr; }
-public:
-    DgnDbR GetDgnDb() const { return _GetDgnDb(); }
-    bool SupportsCodeAuthority(DgnAuthorityCR authority) const { return _SupportsCodeAuthority(authority); }
-    DgnCode GenerateDefaultCode() const { return _GenerateDefaultCode(); }
-    DgnCode const& GetCode() const { return _GetCode(); }
-    DgnElementCP ToDgnElement() const { return _ToDgnElement(); }
-    DgnModelCP ToDgnModel() const { return _ToDgnModel(); }
-
-    DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCode const& newCode);
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
-    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
-};
 
 //=======================================================================================
 //! A DgnAuthority issues and validates DgnCodes for coded objects like elements and models.
@@ -88,8 +59,8 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _CloneCodeForImport(DgnCodeR clonedCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedEntityCR codedEntity) const;
-    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedEntityCR codedEntity) const { regeneratedCode = codedEntity.GetCode(); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnElementCR element) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, DgnElementCR element) const;
 
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
@@ -104,8 +75,8 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedEntityCR entity) const;
-    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedEntityCR entity) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
+    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
@@ -161,7 +132,6 @@ struct ModelAuthority : DgnAuthority
     friend struct dgn_AuthorityHandler::Model;
 
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
     ModelAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -178,7 +148,7 @@ struct PartitionAuthority : DgnAuthority
     friend struct dgn_AuthorityHandler::Partition;
 
 protected:
-    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
     PartitionAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -207,7 +177,7 @@ struct CategoryAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    virtual DgnDbStatus _ValidateCode(DgnElementCR) const override;
 public:
     CategoryAuthority(CreateParams const& params) : T_Super(params) {}
 
@@ -255,8 +225,6 @@ public:
 struct GeometryPartAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     GeometryPartAuthority(CreateParams const& params) : T_Super(params) {}
 
@@ -275,7 +243,6 @@ struct SessionAuthority : DgnAuthority
     friend struct dgn_AuthorityHandler::Session;
 
 protected:
-    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
     SessionAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:

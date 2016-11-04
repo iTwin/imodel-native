@@ -2827,15 +2827,44 @@ DgnDbStatus DgnElement::_OnChildDrop(DgnElementCR) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_SetCode(DgnCode const& code)
+DgnDbStatus DgnElement::SetCode(DgnCodeCR newCode)
     {
+    DgnCode oldCode = GetCode();
+    if (oldCode == newCode)
+        return DgnDbStatus::Success;
+
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCode))
         return DgnDbStatus::MissingHandler;
 
-    m_code = code;
-    return DgnDbStatus::Success;
+    m_code = newCode;
+
+    DgnDbStatus status = ValidateCode();
+    if (DgnDbStatus::Success != status)
+        m_code = oldCode;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityCPtr DgnElement::GetCodeAuthority() const
+    {
+    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::ValidateCode() const
+    {
+    DgnAuthorityCPtr auth = GetCodeAuthority();
+    if (auth.IsNull() || !SupportsCodeAuthority(*auth))
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return auth->ValidateCode(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
