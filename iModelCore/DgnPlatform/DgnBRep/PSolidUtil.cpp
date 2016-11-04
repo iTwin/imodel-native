@@ -203,6 +203,22 @@ BentleyStatus PSolidUtil::GetPlanarFaceData (DPoint3dP pointOut, DVec3dP normalO
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::GetVertex(DPoint3dR point, PK_VERTEX_t vertexTag)
+    {
+    PK_POINT_t      pointTag;
+    PK_POINT_sf_t   pointSf;
+
+    if (SUCCESS != PK_VERTEX_ask_point(vertexTag, &pointTag) || SUCCESS != PK_POINT_ask(pointTag, &pointSf))
+        return ERROR;
+
+    point.Init(pointSf.position.coord[0], pointSf.position.coord[1], pointSf.position.coord[2]);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 PK_BODY_t PSolidUtil::GetBodyForEntity (PK_ENTITY_t entityTag)
@@ -1240,5 +1256,119 @@ BentleyStatus PSolidUtil::TransformBody(PK_BODY_t bodyTag, TransformCR transform
     PK_ENTITY_delete(1, &transfTag);
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransform, bvector<PK_ENTITY_t>& subEntities, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, size_t maxFace, size_t maxEdge, size_t maxVertex, DRay3dCR boresite, double maxEdgeDistance, double maxVertexDistance)
+    {
+    DRay3d      tmpBoresite = boresite;
+    Transform   fwdEntityTrans = bodyTransform, invEntityTrans;
+
+    invEntityTrans.InverseOf (fwdEntityTrans);
+    invEntityTrans.Multiply (tmpBoresite.origin);
+    invEntityTrans.MultiplyMatrixOnly (tmpBoresite.direction);
+    tmpBoresite.direction.Normalize ();
+
+    DVec3d      xCol;
+    RotMatrix   rMatrix;
+
+    invEntityTrans.GetMatrix (rMatrix);
+    rMatrix.GetColumn (xCol, 0);
+    maxEdgeDistance *= xCol.Magnitude ();
+    maxVertexDistance *= xCol.Magnitude ();
+
+    PK_AXIS1_sf_t           ray;
+    PK_BODY_pick_topols_o_t options;
+    PK_BODY_pick_topols_r_t picked;
+
+    ray.location.coord[0] = tmpBoresite.origin.x;
+    ray.location.coord[1] = tmpBoresite.origin.y;
+    ray.location.coord[2] = tmpBoresite.origin.z;
+
+    ray.axis.coord[0] = tmpBoresite.direction.x;
+    ray.axis.coord[1] = tmpBoresite.direction.y;
+    ray.axis.coord[2] = tmpBoresite.direction.z;
+
+    PK_BODY_pick_topols_o_m (options);
+
+    options.max_faces    = (int) maxFace;
+    options.max_edges    = (int) maxEdge;
+    options.max_vertices = (int) maxVertex;
+
+    options.ignore_back_faces = PK_LOGICAL_false;
+    options.max_edge_dist     = maxEdgeDistance;
+    options.max_vertex_dist   = maxVertexDistance;
+
+    int blah = 0;
+    if (SUCCESS != (blah = PK_BODY_pick_topols (1, &bodyTag, NULL, &ray, &options, &picked)))
+        return false;
+
+    for (int i=0; i < picked.n_vertices; i++)
+        {
+        DPoint3d  intersectPt = *((DPoint3dCP) &picked.vertices[i].intersect);
+
+        PSolidUtil::GetVertex(intersectPt, picked.vertices[i].entity); // <- Return vertex point not ray point...
+        fwdEntityTrans.Multiply (intersectPt);
+
+        subEntities.push_back (picked.vertices[i].entity);
+        intersectPts.push_back (intersectPt);
+        intersectParams.push_back (DPoint2d::From (0.0, 0.0));
+        }
+
+    for (int i=0; i < picked.n_edges; i++)
+        {
+        DPoint3d  intersectPt = *((DPoint3dCP) &picked.edges[i].intersect);
+        DPoint2d  intersectParam = DPoint2d::From (0.0, 0.0);
+
+        PK_TOPOL_range_vector_o_t   optionsTopo;
+        PK_range_result_t           result;
+        PK_range_1_r_t              range;
+
+        PK_TOPOL_range_vector_o_m (optionsTopo);
+
+        if (SUCCESS == PK_TOPOL_range_vector (picked.edges[i].entity, picked.edges[i].intersect, &optionsTopo, &result, &range))
+            {
+            intersectPt.Init(range.end.vector.coord[0], range.end.vector.coord[1], range.end.vector.coord[2]); // <- Return point on edge not ray...
+            intersectParam.x = range.end.parameters[0];
+            }
+
+        fwdEntityTrans.Multiply (intersectPt);
+
+        subEntities.push_back (picked.edges[i].entity);
+        intersectPts.push_back (intersectPt);
+        intersectParams.push_back (intersectParam);
+        }
+    
+    for (int i=0; i < picked.n_faces; i++)
+        {
+        DPoint3d  intersectPt = *((DPoint3dCP) &picked.faces[i].intersect);
+        DPoint2d  intersectParam = DPoint2d::From (0.0, 0.0);
+
+        PK_TOPOL_range_vector_o_t   optionsTopo;
+        PK_range_result_t           result;
+        PK_range_1_r_t              range;
+
+        PK_TOPOL_range_vector_o_m (optionsTopo);
+
+        if (SUCCESS == PK_TOPOL_range_vector (picked.faces[i].entity, picked.faces[i].intersect, &optionsTopo, &result, &range))
+            {
+            intersectParam.x = range.end.parameters[0];
+            intersectParam.y = range.end.parameters[1];
+            }
+
+        fwdEntityTrans.Multiply (intersectPt);
+
+        subEntities.push_back (picked.faces[i].entity);
+        intersectPts.push_back (intersectPt);
+        intersectParams.push_back (intersectParam);
+        }
+    
+    bool    hitFound = (picked.n_faces || picked.n_edges || picked.n_vertices);
+
+    PK_BODY_pick_topols_r_f (&picked);
+
+    return hitFound;
     }
 
