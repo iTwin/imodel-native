@@ -10,6 +10,7 @@
 
 #ifdef _MSC_VER
 __pragma(warning(disable:6385))
+__pragma(warning(disable:6386))
 #endif
 
 /*____________________________________________________________________________
