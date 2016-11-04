@@ -164,7 +164,7 @@ private:
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001), m_standalone(true) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }

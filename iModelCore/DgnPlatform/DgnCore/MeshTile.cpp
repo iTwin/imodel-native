@@ -436,11 +436,7 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
     m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
     {
     if (nullptr != geometryParams)
-        {
         m_materialId = geometryParams->GetMaterialId();
-        m_categoryId = geometryParams->GetCategoryId();
-        m_subCategoryId = geometryParams->GetSubCategoryId();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,11 +446,8 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_categoryId.GetValueUnchecked(), rhs.m_categoryId.GetValueUnchecked());
-    COMPARE_VALUES (m_subCategoryId.GetValueUnchecked(), rhs.m_subCategoryId.GetValueUnchecked());
 
     // No need to compare textures -- if materials match then textures must too.
-
     return false;
     }
 
@@ -661,7 +654,7 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool alwaysIncludeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -677,7 +670,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
-    bool                    isTextured = false;
+    bool                    includeParams = alwaysIncludeParams;
 
     if (!params.empty() &&
         (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
@@ -687,7 +680,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
         if (patternMap.IsValid())
             {
-            isTextured = true;
+            includeParams = true;
             if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
@@ -696,7 +689,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !isTextured || params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId);
         newTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -716,7 +709,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId);
             dupTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -744,10 +737,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles, bool includeParams)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles);
+        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1867,7 +1860,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                         if (!maxGeometryCountExceeded)
                             elemId = geom->GetEntityId();
 
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, false);
                         }
                     }
                 }

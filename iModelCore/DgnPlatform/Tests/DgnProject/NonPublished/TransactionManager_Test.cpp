@@ -483,6 +483,62 @@ static void testSettings(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void testRangeIndex()
+    {
+    bvector<RangeIndex::Entry> entries;
+
+    double fuzz = 1.00231326341;
+    size_t count = 10000;
+    for (int i=0; i<count; ++i)
+        {
+        double v = ((double)(i) - 5000.) * 10.0 * fuzz;
+        DRange3d range = DRange3d::From(v, v+1.0, v+2, v+3, v+4, v+5);
+        RangeIndex::FBox box(range);
+        ASSERT_TRUE(box.m_low.x <= range.low.x);
+        ASSERT_TRUE(box.m_low.y <= range.low.y);
+        ASSERT_TRUE(box.m_low.y <= range.low.y);
+        ASSERT_TRUE(box.m_high.x >= range.high.x);
+        ASSERT_TRUE(box.m_high.y >= range.high.y);
+        ASSERT_TRUE(box.m_high.y >= range.high.y);
+
+        DRange3d range2 = box.ToRange3d();
+        ASSERT_TRUE(box.m_low.x == range2.low.x);
+        ASSERT_TRUE(box.m_low.y == range2.low.y);
+        ASSERT_TRUE(box.m_low.y == range2.low.y);
+        ASSERT_TRUE(box.m_high.x == range2.high.x);
+        ASSERT_TRUE(box.m_high.y == range2.high.y);
+        ASSERT_TRUE(box.m_high.y == range2.high.y);
+
+        entries.push_back(RangeIndex::Entry(box, DgnElementId((uint64_t)i+1), DgnCategoryId((uint64_t)i+10023)));
+        }
+
+    RangeIndex::Tree tree(true, 20);
+    for (auto& entry : entries)
+        tree.AddEntry(entry);
+
+    ASSERT_TRUE(tree.DebugElementCount() == count);
+    ASSERT_TRUE(tree.GetCount() == count);
+    ASSERT_TRUE(tree.FindElement(DgnElementId((uint64_t) count+1)) == nullptr);
+
+    for (auto& entry : entries)
+        {
+        auto found = tree.FindElement(entry.m_id);
+        ASSERT_TRUE(found != nullptr);
+        ASSERT_TRUE(found->m_id == entry.m_id);
+        ASSERT_TRUE(found->m_category == entry.m_category);
+        ASSERT_TRUE(0==memcmp(&found->m_range, &entry.m_range, sizeof(entry.m_range)));
+        }
+
+    for (auto& entry : entries)
+        ASSERT_TRUE(SUCCESS == tree.RemoveElement(entry.m_id));
+
+    ASSERT_TRUE(tree.DebugElementCount() == 0);
+    ASSERT_TRUE(tree.GetCount() == 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
     {
     SetupSeedProject();
@@ -491,7 +547,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
 
     TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "", 101.0);
 
-    ASSERT_TRUE(!txns.IsUndoPossible()); // with no changes, you can't undo or redo
     ASSERT_TRUE(!txns.IsRedoPossible());
 
     DgnElementCPtr el1 = templateEl->Insert();
@@ -503,7 +558,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(el1->IsPersistent());
     auto stat = txns.ReverseSingleTxn();
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    ASSERT_TRUE(!txns.IsUndoPossible());     // we can now redo but not undo
     ASSERT_TRUE(txns.IsRedoPossible());
 
     DgnElementCPtr afterUndo= m_db->Elements().GetElement(el1->GetElementId());
@@ -573,6 +627,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
 
     testModelUndoRedo(*m_db);
     testSettings(*m_db);
+    testRangeIndex();
     }
 
 /*---------------------------------------------------------------------------------**//**
