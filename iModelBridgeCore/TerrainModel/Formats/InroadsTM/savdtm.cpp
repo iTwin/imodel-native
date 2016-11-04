@@ -769,12 +769,12 @@ static int aecDTM_saveTriangles
       aecDTM_convertPtrToIndex ( (size_t *)&tin.n23, pi, epi, &sizt );
       aecDTM_convertPtrToIndex ( (size_t *)&tin.n31, pi, epi, &sizt );
 
-      tin.op1 = (long)tin.p1;
-      tin.op2 = (long)tin.p2;
-      tin.op3 = (long)tin.p3;
-      tin.on12 = (long)tin.n12;
-      tin.on23 = (long)tin.n23;
-      tin.on31 = (long)tin.n31;
+      tin.op1 = (long)(size_t)tin.p1;
+      tin.op2 = (long)(size_t)tin.p2;
+      tin.op3 = (long)(size_t)tin.p3;
+      tin.on12 = (long)(size_t)tin.n12;
+      tin.on23 = (long)(size_t)tin.n23;
+      tin.on31 = (long)(size_t)tin.n31;
       if ( fwrite ( &tin, CIVdtmtinSize, 1, handleP ) != 1 )
         sts = DTM_M_WRFILF;
       else if ( npnt + ntin + nftr )
@@ -829,9 +829,9 @@ static int aecDTM_saveFeatures
 
           if ( srf->version > 8 )
           {
-          ftr.p[0] = (long)ftr.p1;
-          ftr.p[1] = (long)ftr.s1;
-          ftr.p[2] = (long)ftr.pay;
+          ftr.p[0] = (long)(size_t)ftr.p1;
+          ftr.p[1] = (long)(size_t)ftr.s1;
+          ftr.p[2] = (long)(size_t)ftr.pay;
             if ( fwrite ( &ftr, CIVdtmftrSize, 1, handleP ) != 1 )
               sts = DTM_M_WRFILF;
           }
@@ -845,9 +845,9 @@ static int aecDTM_saveFeatures
             wcstombs ( ftrV8.nam, ftr.nam, CIV_C_NAMSIZ-1 );
             wcstombs ( ftrV8.des, ftr.des, CIV_C_DESSIZ-1 );
             wcstombs ( ftrV8.par, ftr.par, CIV_C_NAMSIZ-1 );
-            ftrV8.p[0] = (long)ftr.p1;
-            ftrV8.p[1] = (long)ftr.s1;
-            ftrV8.p[2] = (long)ftr.pay;
+            ftrV8.p[0] = (long)(size_t)ftr.p1;
+            ftrV8.p[1] = (long)(size_t)ftr.s1;
+            ftrV8.p[2] = (long)(size_t)ftr.pay;
             ftrV8.numPnts = ftr.numPnts;
             ftrV8.numStyles = ftr.numStyles;
             ftrV8.numPayItems = ftr.numPayItems;
@@ -867,8 +867,8 @@ static int aecDTM_saveFeatures
             wcstombs ( ftrV7.nam, ftr.nam, CIV_C_NAMSIZ-1 );
             wcstombs ( ftrV7.des, ftr.des, CIV_C_DESSIZ-1 );
             wcstombs ( ftrV7.par, ftr.par, CIV_C_NAMSIZ-1 );
-            ftrV7.p[0] = (long)ftr.p1;
-            ftrV7.p[1] = (long)ftr.s1;
+            ftrV7.p[0] = (long)(size_t)ftr.p1;
+            ftrV7.p[1] = (long)(size_t)ftr.s1;
             ftrV7.numPnts = ftr.numPnts;
             ftrV7.numStyles = ftr.numStyles;
             ftrV7.pntDensity = ftr.pntDensity;

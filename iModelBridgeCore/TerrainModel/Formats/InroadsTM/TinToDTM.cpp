@@ -417,22 +417,22 @@ static int aecDTM_sendAllTrianglesCallback
     ULong
 )
 {
-    CMapPtrToPtr *mapDtmTinsByIndexP = (CMapPtrToPtr*)datP;
+    CMapPtrToPtr *mapDtmTinsByIndex = (CMapPtrToPtr*)datP;
 
     if ( tinP->n12 == (CIVdtmtin*)-1 )
         tinP->n12 = NULL;
     else
-        mapDtmTinsByIndexP->Lookup(tinP->n12, (void*&)tinP->n12);
+        mapDtmTinsByIndex->Lookup(tinP->n12, (void*&)tinP->n12);
 
     if ( tinP->n23 == (CIVdtmtin*)-1 )
         tinP->n23 = NULL;
     else
-        mapDtmTinsByIndexP->Lookup(tinP->n23, (void*&)tinP->n23);
+        mapDtmTinsByIndex->Lookup(tinP->n23, (void*&)tinP->n23);
 
     if ( tinP->n31 == (CIVdtmtin*)-1 )
         tinP->n31 = NULL;
     else
-        mapDtmTinsByIndexP->Lookup(tinP->n31, (void*&)tinP->n31);
+        mapDtmTinsByIndex->Lookup(tinP->n31, (void*&)tinP->n31);
 
     return( SUCCESS );
 }

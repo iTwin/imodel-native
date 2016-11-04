@@ -160,9 +160,9 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
               return ( sts );
 
           num++;
-          if ( npntlstP ) (*pntlstPP)[(*npntlstP)++] = (long) npntP;
-          if ( ntinlstP ) (*tinlstPP)[(*ntinlstP)++] = (long) ntinP;
-          if ( nnbrlstP ) (*nbrlstPP)[(*nnbrlstP)++] = (long) ((pind == 0) ? ntinP->n31 : *(&ntinP->n12 + pind - 1));
+          if ( npntlstP ) (*pntlstPP)[(*npntlstP)++] = (long)(size_t) npntP;
+          if ( ntinlstP ) (*tinlstPP)[(*ntinlstP)++] = (long)(size_t)ntinP;
+          if ( nnbrlstP ) (*nbrlstPP)[(*nnbrlstP)++] = (long)(size_t)((pind == 0) ? ntinP->n31 : *(&ntinP->n12 + pind - 1));
 
           sts = aecDTM_rotateAroundPoint ( &npntP, &ntinP, &pind, (int *)0, pntP, ntinP, dir );
 
@@ -170,7 +170,7 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
           {
             for ( int i = 0; i < *ntinlstP && !bFinished; i++ )
             {
-                if ( (*tinlstPP)[i] == (long)ntinP )
+                if ( (*tinlstPP)[i] == (long)(size_t)ntinP )
                     bFinished = TRUE;
             }
           }
