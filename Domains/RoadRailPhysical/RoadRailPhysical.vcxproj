@@ -33,6 +33,7 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\CrossSection.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\LinearReferencing.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
@@ -46,6 +47,7 @@
     <ClCompile Include="CrossSection.cpp" />
     <ClCompile Include="ElementAspects.cpp" />
     <ClCompile Include="LinearReferencing.cpp" />
+    <ClCompile Include="RoadClass.cpp" />
     <ClCompile Include="RoadDesignSpeed.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />

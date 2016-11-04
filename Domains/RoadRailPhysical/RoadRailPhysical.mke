@@ -49,6 +49,8 @@ $(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDep
 
 $(o)LinearReferencing$(oext) : $(_MakeFilePath)LinearReferencing.cpp ${MultiCompileDepends} $(appPublicApi)LinearReferencing.h
 
+$(o)RoadClass$(oext) : $(_MakeFilePath)RoadClass.cpp ${MultiCompileDepends} $(appPublicApi)RoadClass.h
+
 $(o)RoadDesignSpeed$(oext) : $(_MakeFilePath)RoadDesignSpeed.cpp ${MultiCompileDepends} $(appPublicApi)RoadDesignSpeed.h
 
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h

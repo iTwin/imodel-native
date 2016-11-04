@@ -67,6 +67,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Models
 #define BRRP_CLASS_CrossSectionBreakDownModel                       "CrossSectionBreakDownModel"
 #define BRRP_CLASS_CrossSectionDefinitionModel                      "CrossSectionDefinitionModel"
+#define BRRP_CLASS_RoadClassDefinitionModel                         "RoadClassDefinitionModel"
+#define BRRP_CLASS_RoadClassDefinitionTableModel                    "RoadClassDefinitionTableModel"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionModel                   "RoadDesignSpeedDefinitionModel"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionTableModel              "RoadDesignSpeedDefinitionTableModel"
 #define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
@@ -83,6 +85,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_RailRange                                        "RailRange"
 #define BRRP_CLASS_RegularSegmentElement                            "RegularSegmentElement"
 #define BRRP_CLASS_RoadCrossSection                                 "RoadCrossSection"
+#define BRRP_CLASS_RoadClass                                        "RoadClass"
+#define BRRP_CLASS_RoadClassDefinition                              "RoadClassDefinition"
+#define BRRP_CLASS_RoadClassDefinitionTable                         "RoadClassDefinitionTable"
+#define BRRP_CLASS_RoadClassStandards                               "RoadClassStandards"
 #define BRRP_CLASS_RoadDesignSpeed                                  "RoadDesignSpeed"
 #define BRRP_CLASS_RoadDesignSpeedDefinition                        "RoadDesignSpeedDefinition"
 #define BRRP_CLASS_RoadDesignSpeedDefinitionTable                   "RoadDesignSpeedDefinitionTable"
@@ -121,8 +127,11 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Authority names
 //-----------------------------------------------------------------------------------------
 #define BRRP_AUTHORITY_RoadCrossSection                             "RoadCrossSection"
+#define BRRP_AUTHORITY_RoadClassDefinition                          "RoadClassDefinition"
+#define BRRP_AUTHORITY_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
 #define BRRP_AUTHORITY_RoadDesignSpeedDefinition                    "RoadDesignSpeedDefinition"
 #define BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable               "RoadDesignSpeedDefinitionTable"
+
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
@@ -191,6 +200,11 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ElevatedRoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadCrossSection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinitionTable)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinitionTableModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassStandards)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedDefinitionTable)
@@ -199,6 +213,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeedStandards)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RailRange)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClass)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadSegment)
@@ -214,6 +229,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
 #include "ElementAspects.h"
 #include "LinearReferencing.h"
 #include "RoadDesignSpeed.h"
+#include "RoadClass.h"
 #include "SegmentRange.h"
 #include "CrossSection.h"
 #include "Segment.h"

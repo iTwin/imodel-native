@@ -489,7 +489,65 @@
             <Class class="RoadDesignSpeed"/>
         </Target>
     </ECRelationshipClass-->
-    <!-- END General Aspects classes -->
+    <!-- END Road Design-Speed classes -->
+
+    <!-- BEGIN RoadClass classes -->
+    <ECEntityClass typeName="RoadClassStandards">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionTableModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionTable">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinition">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClass" modifier="Sealed"  displayLabel="Classification" description="Linearly located property of a RoadRange specifying road-class along it." >
+        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="RoadClassDefinition" relationshipName="RoadClassRefersToDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadClassRefersToDefinition" strength="referencing" strengthDirection="Backward">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N road-classes">
+            <Class class="RoadClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+            <Class class="RoadClassDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <!--ECRelationshipClass typeName="RoadRangeHasRoadClasses" strength="embedding">
+        <BaseClass>lr:ILinearEntityHasILinearlyLocatedProperties</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="roadrail:RoadRange"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="RoadClass"/>
+        </Target>
+    </ECRelationshipClass-->
+    <!-- END RoadClass classes -->
 
     <!-- BEGIN CrossSection Element classes -->
     <ECEnumeration typeName="CrossSectionComponent_Type" backingTypeName="int" isStrict="true">

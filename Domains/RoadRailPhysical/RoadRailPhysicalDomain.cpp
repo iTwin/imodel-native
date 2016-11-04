@@ -26,6 +26,14 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TransitionSegmentElementHandler::GetHandler());
     
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
+
+    RegisterHandler(RoadClassStandardsHandler::GetHandler());
+    RegisterHandler(RoadClassDefinitionTableModelHandler::GetHandler());
+    RegisterHandler(RoadClassDefinitionTableHandler::GetHandler());
+    RegisterHandler(RoadClassDefinitionModelHandler::GetHandler());
+    RegisterHandler(RoadClassDefinitionHandler::GetHandler());
+    RegisterHandler(RoadClassHandler::GetHandler());
+
     RegisterHandler(RoadDesignSpeedStandardsHandler::GetHandler());
     RegisterHandler(RoadDesignSpeedDefinitionTableModelHandler::GetHandler());
     RegisterHandler(RoadDesignSpeedDefinitionTableHandler::GetHandler());
@@ -89,6 +97,22 @@ DgnDbStatus createCrossSectionsPartition(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus createRoadClassModelHierarchy(RoadwayStandardsModelCR roadwayStandardsModel)
+    {
+    DgnDbStatus status;
+
+    auto roadClassStandardsPtr = RoadClassStandards::Create(roadwayStandardsModel);
+
+    RoadClassDefinitionTableModelPtr roadClassDefTableModelPtr;
+    if (roadClassStandardsPtr->Insert(roadClassDefTableModelPtr, &status).IsNull())
+        return status;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus createRoadDesignSpeedModelHierarchy(RoadwayStandardsModelCR roadwayStandardsModel)
     {
     DgnDbStatus status;
@@ -118,6 +142,10 @@ DgnDbStatus createRoadwayStandardsPartition(DgnDbR db)
         roadwayStandardsPartitionPtr->GetElementId(), DefinitionModel::CreateModelCode("Roadway Standards Model")));
 
     if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
+        return status;
+
+    if (DgnDbStatus::Success != (status = createRoadClassModelHierarchy(
+        *dynamic_cast<RoadwayStandardsModelCP>(roadwayStandardsModelPtr.get()))))
         return status;
 
     if (DgnDbStatus::Success != (status = createRoadDesignSpeedModelHierarchy(
@@ -160,6 +188,22 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     BeAssert(trackCategory.GetCategoryId().IsValid());
 
     auto authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadCrossSection, dgndb);
+    BeAssert(authorityPtr.IsValid());
+    if (authorityPtr.IsValid())
+        {
+        authorityPtr->Insert();
+        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        }
+
+    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb);
+    BeAssert(authorityPtr.IsValid());
+    if (authorityPtr.IsValid())
+        {
+        authorityPtr->Insert();
+        BeAssert(authorityPtr->GetAuthorityId().IsValid());
+        }
+
+    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadClassDefinition, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {
