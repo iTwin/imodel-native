@@ -601,13 +601,7 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    IndicateProgress()
     {
-    static double       s_progressInterval = 1.0;
-
-    if (m_progressTimer.GetCurrentSeconds() > s_progressInterval)
-        {
-        m_progressMeter._IndicateProgress (m_completedTiles, m_totalTiles);
-        m_progressTimer.Start();
-        }
+    // No.
     }
 
 /*---------------------------------------------------------------------------------**//**
