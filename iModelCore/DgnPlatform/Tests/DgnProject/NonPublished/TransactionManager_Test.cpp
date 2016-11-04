@@ -490,7 +490,7 @@ static void testRangeIndex()
 
     double fuzz = 1.00231326341;
     size_t count = 10000;
-    for (int i=0; i<count; ++i)
+    for (size_t i=0; i<count; ++i)
         {
         double v = ((double)(i) - 5000.) * 10.0 * fuzz;
         DRange3d range = DRange3d::From(v, v+1.0, v+2, v+3, v+4, v+5);
