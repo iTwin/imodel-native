@@ -563,6 +563,47 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     VerifyTestInstance (deserializedInstance.get(), false);
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(InstanceDeserializationTest, DeserializeManagedXmlWithBinary)
+    {
+    Utf8CP schemaXml = 
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" version=\"1.0\" nameSpacePrefix=\"ts\" schemaName=\"TestSchema\">"
+            "<ECClass isDomainClass=\"True\" typeName=\"Foo\">"
+                "<ECProperty typeName=\"binary\" propertyName=\"BinProp\" />"
+            "</ECClass>"
+        "</ECSchema>";
+
+    Utf8CP instanceXml = 
+        "<Foo xmlns=\"TestSchema.01.00\">"
+            "<BinProp>YWJjZGU=</BinProp>"
+        "</Foo>";
+
+    ECSchemaPtr nativeSchema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECN::SchemaReadStatus readStatus = ECN::ECSchema::ReadFromXmlString(nativeSchema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus);
+
+    ECN::IECInstancePtr  nativeInstance;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*nativeSchema);
+    ECN::IECInstance::ReadFromXmlString(nativeInstance, instanceXml, *instanceContext);
+
+    ECValue         binaryMember;
+    ASSERT_EQ(ECObjectsStatus::Success, nativeInstance->GetValue(binaryMember, "BinProp"));
+
+    Byte sourceBinaryData[] = {'a', 'b', 'c', 'd', 'e'};
+    size_t      numBytes;
+    const Byte* byteData;
+    if (NULL != (byteData = binaryMember.GetBinary(numBytes)))
+        {
+        ASSERT_EQ(_countof(sourceBinaryData), numBytes);
+        //for (int index = 0; index <_countof(sourceBinaryData); index++)
+        //    EXPECT_EQ(sourceBinaryData[index], byteData[index]);
+        }
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
