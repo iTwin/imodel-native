@@ -1400,7 +1400,6 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
             isLeaf = true;
 
         ElementTileResult result(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
-        auto status = m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
         if (tile.GetGeometries().empty())
             return result;
 

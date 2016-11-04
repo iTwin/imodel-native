@@ -90,12 +90,6 @@ public:
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);
 
-    //! Look up a model by its name
-    template<typename T> static RefCountedPtr<T> GetModelByName(DgnDbR db, Utf8StringCR cmname)
-        {
-        return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
-        }
-
     //! Query for the first GeometricModel in the specified DgnDb
     //! @note Only to be used as a last resort
     static DgnModelId QueryFirstGeometricModelId(DgnDbR);
