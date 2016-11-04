@@ -78,11 +78,15 @@ bool PointCloudScene::IsPwFile()
         FILE* pFile = fopen(&fileNameChar[0], "rb");
         if (pFile != 0)
             {
-            char FileIdentification[8];
-           FileIdentification[7] = 0;
+            char FileIdentification[9];
 
-            if (fread(FileIdentification, 1, 8, pFile) == 8 && strncmp(FileIdentification, "PTPODTMP", 8) == 0)
-                m_isPWFile = true;    // it's a fake pod file
+            if (fread(FileIdentification, 1, 8, pFile) == 8)
+                {
+                FileIdentification[8] = 0;
+                if (strncmp(FileIdentification, "PTPODTMP", 8) == 0)
+                    m_isPWFile = true;    // it's a fake pod file
+                }
+
             fclose(pFile);
             }
         m_isPWfileInitialized = true;
