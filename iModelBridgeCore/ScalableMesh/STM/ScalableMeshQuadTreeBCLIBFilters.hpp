@@ -391,6 +391,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
     if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
         {
         std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+#if FILTER_DBG_WHEN_NODE_HAS_NO_FACE
         for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
             {
             if (subNodes[indexNodes] != NULL)
@@ -406,6 +407,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 fclose(_meshFile);
                 }
             }
+#endif
         }
     return true;
     }
