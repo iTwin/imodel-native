@@ -285,10 +285,14 @@ struct RangeTreeNode
 #endif
 };
 
+#if !defined(MESHTILE_NO_FOLLY)
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
+#endif
 static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
+#if !defined(MESHTILE_NO_FOLLY)
 static const double s_minToleranceRatio = 100.0;
+#endif
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
