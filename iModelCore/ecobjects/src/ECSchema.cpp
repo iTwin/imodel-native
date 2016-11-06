@@ -1553,9 +1553,15 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
     if (schemaIterator == m_refSchemaList.end())
         return ECObjectsStatus::SchemaNotFound;
 
-    // Can only remove the reference if nothing actually references it.
-
+    // Check for referenced schema in custom attribute 
     ECSchemaPtr foundSchema = schemaIterator->second;
+    for (auto ca : GetCustomAttributes(false))
+        {
+        if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+            return ECObjectsStatus::SchemaInUse;
+        }
+
+    // Can only remove the reference if nothing actually references it.
     for (ECClassP ecClass: GetClasses())
         {
         // First, check each base class to see if the base class uses that schema
@@ -1567,22 +1573,49 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 }
             }
 
+        for (auto ca : ecClass->GetCustomAttributes(false))
+            {
+            if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                return ECObjectsStatus::SchemaInUse;
+            }
+
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
         if (NULL != relClass)
             {
-            for (auto target : relClass->GetTarget().GetConstraintClasses())
+            ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
+            if (targetConstraint.IsAbstractConstraintDefinedLocally())
                 {
-                if ((ECSchemaP) &(target->GetClass().GetSchema()) == foundSchema.get())
-                    {
+                if ((ECSchemaP) &(targetConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
                     return ECObjectsStatus::SchemaInUse;
+                }
+
+            if (targetConstraint.AreConstraintClassesDefinedLocally())
+                {
+                for (auto target : relClass->GetTarget().GetConstraintClasses())
+                    {
+                    if ((ECSchemaP) &(target->GetClass().GetSchema()) == foundSchema.get())
+                        {
+                        return ECObjectsStatus::SchemaInUse;
+                        }
                     }
                 }
-            for (auto source : relClass->GetSource().GetConstraintClasses())
+
+            ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
+            if (sourceConstraint.IsAbstractConstraintDefinedLocally())
                 {
-                if ((ECSchemaP) &(source->GetClass().GetSchema()) == foundSchema.get())
-                    {
+                if ((ECSchemaP) &(sourceConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
                     return ECObjectsStatus::SchemaInUse;
+                }
+
+            if (sourceConstraint.AreConstraintClassesDefinedLocally())
+                {
+                for (auto source : relClass->GetSource().GetConstraintClasses())
+                    {
+                    if ((ECSchemaP) &(source->GetClass().GetSchema()) == foundSchema.get())
+                        {
+                        return ECObjectsStatus::SchemaInUse;
+                        }
                     }
                 }
             }
@@ -1590,6 +1623,13 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         // And make sure that there are no struct types from another schema
         for (ECPropertyP prop: ecClass->GetProperties(false))
             {
+            // Check Custom Attributes before checking property type
+            for (auto ca : prop->GetCustomAttributes(false))
+                {
+                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                    return ECObjectsStatus::SchemaInUse;
+                }
+
             ECClassCP typeClass;
             if (prop->GetIsStruct())
                 {
@@ -1598,6 +1638,10 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             else if (prop->GetIsStructArray())
                 {
                 typeClass = prop->GetAsStructArrayProperty()->GetStructElementType();
+                }
+            else if (prop->GetIsNavigation())
+                {
+                typeClass = prop->GetAsNavigationProperty()->GetRelationshipClass();
                 }
             else
                 {
