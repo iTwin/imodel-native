@@ -8,6 +8,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/ECSchema.h>
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <Bentley/Base64Utilities.h>
 
 DEFINE_KEY_METHOD(ECN::IECRelationshipInstance)
 
@@ -2349,29 +2350,8 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (in
 +---------------+---------------+---------------+---------------+---------------+------*/
 void              convertByteArrayToString (Utf8StringR outString, const Byte *byteData, size_t numBytes)
     {
-    static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
-
-    WString tmpString;
-    outString.clear();
-
-    // from each 3 bytes we get 4 output characters, rounded up.
-    for (size_t iByte=0; iByte < numBytes; iByte += 3)
-        {
-        uint32_t    nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
-
-        for (size_t jPos=0; jPos < 4; jPos++)
-            {
-            Byte sixBits = nextThreeBytes & 0x3f;
-
-            if ( (iByte + jPos) < (numBytes + 1) )
-                tmpString.append (1, base64Chars[sixBits]);
-            else
-                tmpString.append (1, L'=');
-            
-            nextThreeBytes = nextThreeBytes >> 6;
-            }
-        }
-    BeStringUtilities::WCharToUtf8(outString, tmpString.c_str());
+    // NB: Encode() always returns SUCCESS...return type is misleading.
+    Base64Utilities::Encode(outString, byteData, numBytes);
     }
 
 typedef bvector<Byte>   T_ByteArray;
@@ -2380,57 +2360,7 @@ typedef bvector<Byte>   T_ByteArray;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   convertStringToByteArray (T_ByteArray& byteData, Utf8CP stringData)
     {
-    WString str;
-    str.AssignUtf8(stringData);
-
-    // the length of stringData should be a multiple of four.
-    size_t  stringLen = wcslen (str.c_str());
-    if (0 != (stringLen % 4))
-        return false;
-
-    // from each 4 characters we get 3 byte values.
-    for (size_t iPos=0; iPos < stringLen; iPos+= 4)
-        {
-        int32_t nextThreeBytes = 0;
-        int     numBytesToPush = 3;
-        int     shift;
-        int     jPos;
-        for (jPos=0, shift=0; jPos < 4; jPos++, shift += 6)
-            {
-            wchar_t charValue = str[iPos+jPos];
-            if ( (charValue >= L'A') && (charValue <= L'Z') )
-                nextThreeBytes |= ((charValue - L'A') << shift);
-            else if ((charValue >= L'a') && (charValue <= L'z') )
-                nextThreeBytes |= ( ((charValue - L'a') + 26) << shift);
-            else if ((charValue >= L'0') && (charValue <= L'9') )
-                nextThreeBytes |= ( ((charValue - L'0') + 52) << shift);
-            else if (charValue == L'+')
-                nextThreeBytes |= ( 62 << shift);
-            else if (charValue == L'/')
-                nextThreeBytes |= ( 63 << shift);
-            else if (charValue == L'=')
-                {
-                // = should only appear in the last two characters of the string.
-                if (stringLen - (iPos + jPos) > 2)
-                    return false;
-                numBytesToPush = jPos-1;
-                break;
-                }
-            else
-                {
-                return false;
-                }
-            }
-
-        Byte*   bytes = (Byte*)&nextThreeBytes;
-        byteData.push_back (*bytes);
-        if (numBytesToPush > 1)
-            byteData.push_back (*(bytes+1));
-        if (numBytesToPush > 2)
-            byteData.push_back (*(bytes+2));
-        }
-
-    return true;
+    return SUCCESS == Base64Utilities::Decode(byteData, stringData, strlen(stringData));
     }
 
 //--------------------------------------------------------------------------------------

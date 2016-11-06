@@ -1664,6 +1664,24 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+int ECSchema::RemoveUnusedSchemaReferences()
+    {
+    bvector<SchemaKey> refSchemaKeys;
+    for (auto refSchema : GetReferencedSchemas())
+        refSchemaKeys.push_back(refSchema.first);
+
+    int numRemovedSchema = 0;
+    for (auto key : refSchemaKeys)
+        {
+        if (ECObjectsStatus::Success == RemoveReferencedSchema(key))
+            ++numRemovedSchema;
+        }
+    return numRemovedSchema;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

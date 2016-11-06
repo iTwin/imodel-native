@@ -467,6 +467,47 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @bsimethod
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "rs", 5, 5, 5);
+
+    ECSchemaPtr unusedRefSchema;
+    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "urs", 42, 42, 42);
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*unusedRefSchema));
+
+    ECEntityClassP baseClass;
+    refSchema->CreateEntityClass(baseClass, "Banana");
+    ECEntityClassP derivedClass;
+    schema->CreateEntityClass(derivedClass, "Apple");
+    derivedClass->AddBaseClass(*baseClass);
+
+    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
+
+    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find UnusedRefSchema in reference list";
+
+    EXPECT_EQ(1, schema->RemoveUnusedSchemaReferences()) << "Expected RemoveUnusedSchemaReferences to remove one schema";
+
+    schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list after removing unused schemas";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_TRUE(schemaIterator == refList.end()) << "Found UnusedRefSchema in reference list after removing unused schemas";
+
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
