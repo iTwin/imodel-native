@@ -91,7 +91,6 @@ HANDLER_DEFINE_MEMBERS(Authority)
 HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
 HANDLER_DEFINE_MEMBERS(Material)
-HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Partition)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
@@ -207,7 +206,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Partition::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());

@@ -529,9 +529,9 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
+void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName, bool specifyPropertyValues) const
     {
-    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(modelCode));
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 

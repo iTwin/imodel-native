@@ -136,7 +136,7 @@ void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP d
 
     Utf8String  labelStr = el->GetDisplayLabel();
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetCode().GetValue());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetName());
 
     if (!labelStr.empty())
         {

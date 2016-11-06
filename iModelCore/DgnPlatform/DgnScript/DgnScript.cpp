@@ -995,11 +995,11 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initialize
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-ScriptLibraryModelPtr ScriptLibraryModel::Create(DefinitionPartitionCR partition, DgnCodeCR code, Utf8CP sourceUrl)
+ScriptLibraryModelPtr ScriptLibraryModel::Create(DefinitionPartitionCR partition, Utf8CP sourceUrl)
     {
     DgnDbR db = partition.GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
-    CreateParams mcparams(db, classId, partition.GetElementId(), code);
+    CreateParams mcparams(db, classId, partition.GetElementId());
     auto model = new ScriptLibraryModel(mcparams);
     if (nullptr == model)
         return nullptr;
