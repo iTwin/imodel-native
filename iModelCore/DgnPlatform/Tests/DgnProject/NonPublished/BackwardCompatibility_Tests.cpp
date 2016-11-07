@@ -95,29 +95,7 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
         DgnModelPtr model = m_db->Models().GetModel(modelEntry.GetModelId());
         //printf("modelName: %s \n", model->GetCode().GetValue().c_str());
         if (!model.IsValid())
-            {
-            status = CompatibilityStatus::ERROR_BadModel;
-            break;
-            }
-        model->FillModel();
-        if (!model->IsFilled())
-            {
-            status = CompatibilityStatus::ERROR_ModelFillFailed;
-            break;
-            }
-
-        DgnElementMap elements = model->GetElements();
-        for (auto element : elements)
-            {
-            //printf("elementDisplayLabel: %s \n", element.second->GetDisplayLabel().c_str());
-            DgnElementId elementId = element.first;
-            DgnElementCPtr elementCPtr = m_db->Elements().GetElement(elementId);
-            if (!elementCPtr.IsValid())
-                {
-                status = CompatibilityStatus::ERROR_BadElement;
-                break;
-                }
-            }
+            return CompatibilityStatus::ERROR_BadModel;
         }
     return status;
     }

@@ -23,8 +23,6 @@ struct DgnModelTests : public DgnDbTestFixture
         DgnModelId modelId = m_db->Models().QuerySubModelId(partitionCode);
         m_model =  m_db->Models().GetModel(modelId);
         BeAssert(m_model.IsValid());
-        if (m_model.IsValid())
-            m_model->FillModel();
         }
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
@@ -59,55 +57,13 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetGraphicElements)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
-    ASSERT_NE(graphicElementCount, 0);
-    ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
-    int count = 0;
-    for (auto const& elm : *m_model)
-        {
-        EXPECT_TRUE(elm.second->GetModel() == m_model);
-        ++count;
-        }
-    EXPECT_EQ(graphicElementCount, count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, EmptyList)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    m_model->EmptyModel();
-    ASSERT_TRUE(0 == m_model->GetElements().size());
-
-    m_model->FillModel();
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, GetRange)
     {
     SetupSeedProject();
     DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
     InsertElement(*m_db, model->GetModelId(), true, true);
 
-    LoadModel("RangeTest");
-
-    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d range = model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(0.00000000000000000, -0.00050000000000000001, -0.00050000000000000001);
     DPoint3d high; high.Init(1.00000000000000000, 0.00050000000000000001, 0.00050000000000000001);
@@ -357,64 +313,6 @@ TEST_F(DgnModelTests, AbandonChanges)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppData : DgnModel::AppData
-    {
-    bool isFilled;
-    virtual DropMe _OnFilled(DgnModelCR model) override
-        {
-        isFilled = true;
-        return DropMe::No;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for adding AppData on a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, AddAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-
-    // Add Appdata
-    static DgnModel::AppData::Key key;
-    TestAppData *AppData = new TestAppData();
-    m1->AddAppData(key, AppData);
-    m1->FillModel();
-    EXPECT_TRUE(AppData->isFilled);
-    EXPECT_TRUE(m1->FindAppData(key) != nullptr);
-
-    // Add appdata again with same key
-     //TestAppData *AppData2 = new TestAppData();
-     //m1->AddAppData(key, AppData2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for dropping AppData from a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, DropAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-
-    static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData();
-    m1->AddAppData(m_key, m_AppData);
-    m1->FillModel();
-    EXPECT_TRUE(m_AppData->isFilled);
-    StatusInt status = m1->DropAppData(m_key);
-    EXPECT_TRUE(status == 0);
-    EXPECT_TRUE(m1->FindAppData(m_key) == nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, ReplaceInvalidCharacter)
@@ -445,5 +343,5 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     // Adding the test so that this doesn't happen again
     GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
     }
