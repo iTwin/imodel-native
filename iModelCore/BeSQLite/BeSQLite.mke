@@ -56,27 +56,13 @@ objs +% $(MultiCompileObjectList)
 
 CCompFpOpts=precise
 
-# Prefer to disable warnings in third-party code vs. editing it.
-%if $(BUILD_TOOLSET) == "APPLE_CLANG"
-    OriginalLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
-
-    # Disables all warnings (and implicitly warnings as errors)
-    LLVMCommonCompOpts + -w
-%elif (" " != $[@findstring VS, $(BUILD_TOOLSET)])
-    # This is the one piece of this library that is third party... need to opt-out of static security analysis.
-    # Cannot just set IS_THIRD_PARTY_LIBRARY because it must be controlled half-way through this file.
-    OriginalMsvcCCompOpts =% $(CCompOpts)
-    CCompOpts + -analyze-
-%endif
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
             $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)closure.c 
 
-%if $(BUILD_TOOLSET) == "APPLE_CLANG"
-    LLVMCommonCompOpts =% $(OriginalLLVMCommonCompOpts)
-%elif (" " != $[@findstring VS, $(BUILD_TOOLSET)])
-    CCompOpts =% $(OriginalMsvcCCompOpts)
-%endif
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
 objs + $(o)SQLite$(oext)
 
