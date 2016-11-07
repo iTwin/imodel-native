@@ -73,7 +73,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    m_defaultModelId = m_db->Models().QueryModelId(s_seedFileInfo.modelCode);
+    m_defaultModelId = m_db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
     ASSERT_TRUE(m_defaultModelId.IsValid());
 
     m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, GetDgnDb());

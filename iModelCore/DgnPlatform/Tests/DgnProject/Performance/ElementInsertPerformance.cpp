@@ -115,7 +115,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Instances");
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
@@ -179,7 +179,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Instances");
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
@@ -250,7 +250,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Instances");
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 

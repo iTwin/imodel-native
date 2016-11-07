@@ -46,15 +46,11 @@ void BaseChangeEntry::_ExtractChanges()
     if (!m_sqlChange.IsValid())
         {
         m_instanceId = ECInstanceId();
-        m_oldCode = m_newCode = DgnCode();
         return;
         }
 
     m_dbOpcode = ExtractDbOpcode();
     m_instanceId = ExtractInstanceId();
-
-    m_oldCode = (m_dbOpcode == DbOpcode::Insert) ? DgnCode() : ExtractCode(Changes::Change::Stage::Old);
-    m_newCode = (m_dbOpcode == DbOpcode::Delete) ? DgnCode() : ExtractCode(Changes::Change::Stage::New);
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,7 +83,7 @@ ECInstanceId BaseChangeEntry::ExtractInstanceId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     03/2016
 //---------------------------------------------------------------------------------------
-DgnCode BaseChangeEntry::ExtractCode(Changes::Change::Stage stage) const
+DgnCode ElementChangeEntry::ExtractCode(Changes::Change::Stage stage) const
     {
     DbValue codeAuthorityIdDbVal = m_sqlChange.GetValue(m_parent.m_codeAuthorityIdColumnMap.GetIndex(), stage);
     DbValue codeValueDbVal = m_sqlChange.GetValue(m_parent.m_codeValueColumnMap.GetIndex(), stage);
@@ -171,9 +167,6 @@ BaseChangeIterator::BaseChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet, ECC
 void BaseChangeIterator::_Initialize()
     {
     m_instanceIdColumnMap = m_tableMap->GetColumn("ECInstanceId");
-    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("CodeAuthorityId");
-    m_codeNamespaceColumnMap = m_tableMap->GetColumn("CodeNamespace");
-    m_codeValueColumnMap = m_tableMap->GetColumn("CodeValue");
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,11 +185,15 @@ void ElementChangeEntry::_ExtractChanges()
     if (!m_sqlChange.IsValid())
         {
         m_oldModelId = m_newModelId = DgnModelId();
+        m_oldCode = m_newCode = DgnCode();
         return;
         }
 
     m_oldModelId = (m_dbOpcode == DbOpcode::Insert) ? DgnModelId() : ExtractModelId(Changes::Change::Stage::Old);
     m_newModelId = (m_dbOpcode == DbOpcode::Delete) ? DgnModelId() : ExtractModelId(Changes::Change::Stage::New);
+
+    m_oldCode = (m_dbOpcode == DbOpcode::Insert) ? DgnCode() : ExtractCode(Changes::Change::Stage::Old);
+    m_newCode = (m_dbOpcode == DbOpcode::Delete) ? DgnCode() : ExtractCode(Changes::Change::Stage::New);
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,6 +240,9 @@ void ElementChangeIterator::_Initialize()
     {
     T_Super::_Initialize();
     m_modelIdColumnMap = m_tableMap->GetColumn("ModelId");
+    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("CodeAuthorityId");
+    m_codeNamespaceColumnMap = m_tableMap->GetColumn("CodeNamespace");
+    m_codeValueColumnMap = m_tableMap->GetColumn("CodeValue");
     }
 
 //---------------------------------------------------------------------------------------

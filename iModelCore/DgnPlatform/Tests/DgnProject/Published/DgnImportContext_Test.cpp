@@ -129,9 +129,9 @@ static DgnElementCPtr getSingleElementInModel(DgnModelR model)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, DgnElementId newModeledElementId, Utf8CP newName)
+static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, DgnElementId newModeledElementId)
     {
-    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, newModeledElementId, DgnModel::CreateModelCode(newName)).get());
+    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, newModeledElementId).get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ TEST_F(ImportTest, ImportGroups)
     // ******************************
     //  Create model1
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
@@ -192,25 +192,25 @@ TEST_F(ImportTest, ImportGroups)
     //  Create model2 as a copy of model1
     if (true)
     {
-        PhysicalPartitionCPtr partition2 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Partition2");
+        PhysicalPartitionCPtr partition2 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Model2");
         ASSERT_TRUE(partition2.IsValid());
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, partition2->GetElementId(), "Model2");
+        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, partition2->GetElementId());
         ASSERT_TRUE(model2.IsValid());
 
         checkGroupHasOneMemberInModel(*model2);
     }
 
     //  ******************************
-    //  You can't "Import" a model into the same DgnDb. For one thing, the name will conflict.
+    //  Test "importing" a model into the same DgnDb.
     if (true)
     {
         DgnImportContext import3(*m_db, *m_db);
-        PhysicalPartitionCPtr partition3 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Partition3");
+        PhysicalPartitionCPtr partition3 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Model3");
         ASSERT_TRUE(partition3.IsValid());
         DgnDbStatus stat;
         PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3, *partition3);
-        ASSERT_TRUE(!model3.IsValid());
-        ASSERT_NE(DgnDbStatus::Success, stat);
+        ASSERT_TRUE(model3.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, stat);
     }
 
     //  *******************************
@@ -422,7 +422,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnSubCategoryId sourceSubCategory2Id = sourceSubCategory2->GetSubCategoryId();
 
     //  Create the source model
-    PhysicalModelPtr sourcemod = DgnDbTestUtils::InsertPhysicalModel(*sourceDb, DgnModel::CreateModelCode("sourcemod"));
+    PhysicalModelPtr sourcemod = DgnDbTestUtils::InsertPhysicalModel(*sourceDb, "sourcemod");
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
@@ -453,7 +453,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
             ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
             }
 
-        PhysicalModelPtr destmod = DgnDbTestUtils::InsertPhysicalModel(*destDb, DgnModel::CreateModelCode("destmod"));
+        PhysicalModelPtr destmod = DgnDbTestUtils::InsertPhysicalModel(*destDb, "destmod");
         ASSERT_TRUE( destmod.IsValid() );
 
         DgnImportContext importContext(*sourceDb, *destDb);
@@ -518,7 +518,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create model1
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
 
     // Put an element with an Item into moddel1
     {
@@ -578,7 +578,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     // ******************************
     //  Create model1
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
 
     // Create 2 elements and make the first depend on the second
     {
@@ -604,7 +604,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     {
         PhysicalPartitionCPtr partition2 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Partition2");
         ASSERT_TRUE(partition2.IsValid());
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, partition2->GetElementId(), "Model2");
+        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, partition2->GetElementId());
         ASSERT_TRUE(model2.IsValid());
 
         m_db->SaveChanges();

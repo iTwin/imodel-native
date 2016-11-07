@@ -148,8 +148,7 @@ public:
     virtual bool _HasChildren() const = 0;
 
     //! Get the array of children for this Tile.
-    //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. 
-    //!                   Otherwise create them now.
+    //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
 
     //! Draw the Graphics of this Tile into args.
@@ -161,7 +160,6 @@ public:
     virtual Utf8String _GetTileName() const = 0;
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
-    //!
     virtual double _GetMaximumSize() const = 0;
 };
 

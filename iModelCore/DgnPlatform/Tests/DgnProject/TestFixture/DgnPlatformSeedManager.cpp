@@ -85,9 +85,9 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
 
     SeedDbInfo info;
     info.id = SeedDbId::OneSpatialModel;
+    info.physicalPartitionCode = PartitionAuthority::CreatePartitionCode("DefaultModel", DgnElementId(1ULL)); // Root Subject
     info.options = options;
     info.fileName.SetName(WPrintfString(L"DgnPlatformSeedManager_OneSpatialModel%ls.bim", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
-    info.modelCode = DgnModel::CreateModelCode("DefaultModel");
     info.categoryName = "DefaultCategory";
 
     if (info.options.cameraView)
@@ -98,8 +98,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = CreateDgnDb(info.fileName, true, true);
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, info.modelCode);
-    EXPECT_TRUE(model.IsValid());
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, info.physicalPartitionCode.GetValueCP());
     DgnDbTestUtils::InsertCategory(*db, info.categoryName.c_str());
     
     if (info.options.cameraView)

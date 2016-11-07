@@ -74,7 +74,7 @@ void ChangeTestFixture::_CreateDgnDb()
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("TestModel"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "TestModel");
     m_testModelId = model->GetModelId();
 
     m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
@@ -103,7 +103,9 @@ void ChangeTestFixture::OpenDgnDb()
 
     if (!m_testModelId.IsValid())
         {
-        m_testModelId = m_testDb->Models().QueryModelId(DgnModel::CreateModelCode("TestModel"));
+        DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
+        DgnElementId partitionId = m_testDb->Elements().QueryElementIdByCode(partitionCode);
+        m_testModelId = DgnModelId(partitionId.GetValue());
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 

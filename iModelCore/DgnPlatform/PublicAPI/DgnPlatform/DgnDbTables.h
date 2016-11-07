@@ -61,7 +61,6 @@
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
 #define BIS_CLASS_Model                     "Model"
-#define BIS_CLASS_ModelAuthority            "ModelAuthority"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
 #define BIS_CLASS_PartitionAuthority        "PartitionAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
@@ -213,22 +212,12 @@ public:
     struct Iterator : ECSqlStatementIterator<Entry>
     {
     public:
-        enum class Include
-        {
-            Elements = 1 << 0,
-            Models = 1 << 1,
-            Both = Elements | Models
-        };
-
         struct Options
         {
         private:
-            Include m_include;
             bool    m_includeEmpty;
         public:
-            Options(Include include, bool includeEmpty=false) : m_include(include), m_includeEmpty(includeEmpty) {}
-            Options() : Options(Include::Both) {}
-
+            Options(bool includeEmpty=false) : m_includeEmpty(includeEmpty) {}
             Utf8CP GetECSql() const;
         };
 
@@ -240,8 +229,6 @@ public:
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
-
-ENUM_IS_FLAGS(DgnCode::Iterator::Include);
 
 typedef bset<DgnCode> DgnCodeSet;
 
@@ -318,7 +305,6 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnElementId m_modeledElementId;
-        BeSQLite::BeGuid m_federationGuid;
         DgnCode m_code;
         bool m_inGuiList = true;
         bool m_isTemplate = false;
@@ -333,7 +319,6 @@ public:
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
-        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
         DgnCode const& GetCode() const {return m_code;}
@@ -341,7 +326,6 @@ public:
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
         bool GetIsTemplate() const {return m_isTemplate;}
     }; // Model
 
@@ -362,12 +346,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT DgnCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
-            DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
             DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-            DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
             DGNPLATFORM_EXPORT bool GetIsTemplate() const;
 
             Entry const& operator*() const {return *this;}
@@ -382,8 +363,6 @@ public:
     };
 
 public:
-    static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
-
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! Ths supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
@@ -410,21 +389,12 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(DgnCode& code, DgnModelId id) const;
 
-    //! Find the ModelId of the model with the specified code.
-    //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
+    //! Query for a DgnModelId by the DgnCode of the element that it is modeling
+    DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
-    //@}
-
-    //! Generate a model name that is not currently in use in this file
-    //! @param[in]  baseName base model name to start with (optional)
-    //! @return unique name that was generated
-    DGNPLATFORM_EXPORT Utf8String GetUniqueModelName(Utf8CP baseName);
-    //@}
 
     //! Get a string containing the list of characters that may NOT appear in model names.
     static Utf8CP GetIllegalCharacters() {return "\\/:*?<>|\"\t\n,=&";}
