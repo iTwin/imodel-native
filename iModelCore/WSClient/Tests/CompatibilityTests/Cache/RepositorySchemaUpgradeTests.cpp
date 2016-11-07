@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Cache/RepositorySchemaUpgradeTests.cpp $
+|     $Source: Tests/CompatibilityTests/Cache/RepositorySchemaUpgradeTests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,8 +12,8 @@
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <Bentley/BeFileListIterator.h>
 
-#include <prg.h>
-static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
+#include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
+#include "../TestUtils/TestsHelper.h"
 
 StubLocalState s_localState;
 IHttpHandlerPtr s_proxy;
@@ -70,7 +70,6 @@ INSTANTIATE_TEST_CASE_P(, RepositorySchemaUpgradeTests, ::testing::ValuesIn(GetT
 
 void RepositorySchemaUpgradeTests::SetUpTestCase()
     {
-    WSClientBaseTest::SetUpTestCase();
     }
 
 void RepositorySchemaUpgradeTests::SetUp()

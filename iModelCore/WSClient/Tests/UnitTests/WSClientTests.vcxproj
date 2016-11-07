@@ -234,7 +234,6 @@
     <ClCompile Include="Published\Utils\Http\MockHttpHandler.cpp" />
     <ClCompile Include="Published\Utils\Http\WebTestsHelper.cpp" />
     <ClCompile Include="Published\Utils\MobileUtilsTestHost.cpp" />
-    <ClCompile Include="Published\Utils\TestAppPathProvider.cpp" />
     <ClCompile Include="Published\Utils\TestMain.cpp" />
     <ClCompile Include="Published\Utils\TestsHelper.cpp" />
     <ClCompile Include="Published\Utils\Threading\AsyncResultTests.cpp" />

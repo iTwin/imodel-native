@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: Tests/IntegrationTests/IntegrationTests.mke $
+#     $Source: Tests/CompatibilityTests/CompatibilityTests.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -8,18 +8,14 @@
 
 %include mdl.mki
 
-wsClientUnitTestsDir = $(SrcRoot)WSClient/Tests/UnitTests/Published/
-
 #---------------------------------------------------------------------------------------+
 #   Compile unit tests
 #---------------------------------------------------------------------------------------+
 
-BEGTEST_NAME = WSClientIntegrationTests
+BEGTEST_NAME = WSClientCompatibilityTests
 BEGTEST_INPUT = $(baseDir)
 BEGTEST_OUTPUT = $(OutputRootDir)build/
 
-dirToSearch = $(wsClientUnitTestsDir)Utils/
-%include cincapnd.mki
 dirToSearch = $(OutRoot)Winx64/Product/MobileDgnSdk-Winx64/include
 %include cincapnd.mki
 
@@ -29,27 +25,6 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
-
-#---------------------------------------------------------------------------------------+
-#   Compile test utilities
-#---------------------------------------------------------------------------------------+
-
-# Compile rule
-MultiCompileDepends = $(_MakeFileSpec)
-%include MultiCppCompileRule.mki
-
-# Sources to compile
-$(o)StubInstances$(oext)            : $(wsClientUnitTestsDir)Utils/StubInstances.cpp ${MultiCompileDepends}
-
-$(o)ValuePrinter$(oext)             : $(wsClientUnitTestsDir)Utils/ValuePrinter.cpp ${MultiCompileDepends}
-
-$(o)WebServicesTestsHelper$(oext)   : $(wsClientUnitTestsDir)Utils/WebServicesTestsHelper.cpp ${MultiCompileDepends}
-
-$(o)WSClientBaseTest$(oext)         : $(wsClientUnitTestsDir)Utils/WSClientBaseTest.cpp ${MultiCompileDepends}
-
-$(o)CachingTestsHelper$(oext)       : $(wsClientUnitTestsDir)WebServices/Cache/CachingTestsHelper.cpp ${MultiCompileDepends}
-
-%include MultiCppCompileGo.mki
 
 #---------------------------------------------------------------------------------------+
 #   Deliver MobileDGNSdk
