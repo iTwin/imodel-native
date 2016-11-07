@@ -1,0 +1,37 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#pragma once
+
+#include <Bentley/BeTest.h>
+
+class TestsHost : public RefCounted<BeTest::Host>
+    {
+    private:
+        BeFileName m_programDir;
+        BeFileName m_outputDir;
+
+    private:
+        void InitLibs();
+        void SetupTestEnvironment();
+        void InitLibraries();
+        void InitLogging();
+
+    protected:
+        TestsHost(const char* programPath);
+
+        virtual void* _InvokeP(const char* function_and_args) override;
+
+        virtual void _GetDocumentsRoot(BeFileName& path) override;
+        virtual void _GetDgnPlatformAssetsDirectory(BeFileName& path) override;
+        virtual void _GetOutputRoot(BeFileName& path) override;
+        virtual void _GetTempDir(BeFileName& path) override;
+
+    public:
+        static RefCountedPtr<TestsHost> Create(const char* programPath);
+    };

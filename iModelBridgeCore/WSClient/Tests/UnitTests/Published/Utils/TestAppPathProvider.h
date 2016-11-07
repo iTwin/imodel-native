@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/TestAppPathProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,21 @@ struct TestAppPathProvider : MobileDgn::IApplicationPathsProvider
         BeFileName m_temporaryDirectory;
         BeFileName m_platformAssetsDirectory;
         BeFileName m_localStateDirectory;
+
+    private:
+        void InitPaths(BeFileNameCR programDir, BeFileNameCR outputDir)
+            {
+            m_platformAssetsDirectory = programDir;
+
+            m_temporaryDirectory = outputDir;
+            m_temporaryDirectory.AppendToPath(L"AppTemp").AppendSeparator();
+
+            m_documentsDirectory = outputDir;
+            m_documentsDirectory.AppendToPath(L"AppDocuments").AppendSeparator();
+
+            m_localStateDirectory = outputDir;
+            m_localStateDirectory.AppendToPath(L"AppLocalState").AppendSeparator();
+            }
 
     protected:
         virtual BeFileNameCR _GetDocumentsDirectory() const  override
@@ -53,7 +68,20 @@ struct TestAppPathProvider : MobileDgn::IApplicationPathsProvider
             }
 
     public:
-        TestAppPathProvider();
+        TestAppPathProvider()
+            {
+            BeFileName programDir;
+            BeTest::GetHost().GetDgnPlatformAssetsDirectory(programDir);
+            BeFileName outputDir;
+            BeTest::GetHost().GetOutputRoot(outputDir);
+
+            InitPaths(programDir, outputDir);
+            }
+
+        TestAppPathProvider(BeFileNameCR programDir, BeFileNameCR outputDir)
+            {
+            InitPaths(programDir, outputDir);
+            }
     };
 
 END_WSCLIENT_UNITTESTS_NAMESPACE

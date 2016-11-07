@@ -236,7 +236,6 @@
     <ClCompile Include="Published\Utils\Threading\WorkerThreadTests.cpp" />
     <ClCompile Include="Published\Utils\FSTest.cpp" />
     <ClCompile Include="Published\Utils\MobileUtilsTestHost.cpp" />
-    <ClCompile Include="Published\Utils\TestAppPathProvider.cpp" />
     <ClCompile Include="Published\Utils\TestMain.cpp" />
     <ClCompile Include="Published\Utils\TestsHelper.cpp" />
     <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpFileBodyTests.cpp" />
