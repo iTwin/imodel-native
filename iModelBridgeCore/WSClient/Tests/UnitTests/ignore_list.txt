@@ -38,3 +38,6 @@ CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_Ret
     # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
     # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
     # [  FAILED  ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (798 ms)
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # bim0200, NDEBUG, x64, random, firebug hang
