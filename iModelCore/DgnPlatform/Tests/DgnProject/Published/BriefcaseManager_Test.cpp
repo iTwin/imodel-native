@@ -1516,11 +1516,10 @@ struct DoubleBriefcaseTest : LocksManagerTest
 
     bool LookupElementIds(DgnElementId* ids, DgnModelR model)
         {
-        model.FillModel();
         uint32_t nElemsFound = 0;
-        for (auto const& elem : model)
+        for (auto const& elems : model.MakeIterator())
             {
-            ids[nElemsFound++] = elem.first;
+            ids[nElemsFound++] = elems.GetId();
             if (2 == nElemsFound)
                 return true;
             }

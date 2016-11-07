@@ -17,10 +17,10 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UnitTestLineStyleAdmin : public DgnPlatformLib::Host::LineStyleAdmin
     {
-    bool    _GetLocalLineStylePaths     (WStringR str) override
+    bool    _GetLocalLineStylePaths(WStringR str) override
         {
         BeFileName path;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory (path);
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
         str = path.GetName();
         return true;
         }
@@ -31,27 +31,27 @@ struct UnitTestLineStyleAdmin : public DgnPlatformLib::Host::LineStyleAdmin
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LoggingNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
 {
-    virtual StatusInt _OutputMessage (NotifyMessageDetails const& msg) override
+    virtual StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
         {
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv ("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
+        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
         return SUCCESS;
         }
 
-    virtual NotificationManager::MessageBoxValue _OpenMessageBox (NotificationManager::MessageBoxType t, Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
+    virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
         {
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv ("MESSAGEBOX: %s\n", msg);
-        printf ("<<NOTIFICATION MessageBox: %s >>\n", msg);
+        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
+        printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
         return NotificationManager::MESSAGEBOX_VALUE_Ok;
         }
 
-    virtual void      _OutputPrompt (Utf8CP msg) override
-        { // Log this as an error because we cannot prompt while running a unit test!
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv ("PROMPT (IGNORED): %s\n", msg);
+    virtual void      _OutputPrompt(Utf8CP msg) override
+        {// Log this as an error because we cannot prompt while running a unit test!
+        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
         }
 
     virtual bool _GetLogSQLiteErrors() override 
         {
-        return NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled (NativeLogging::LOG_INFO);
+        return NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(NativeLogging::LOG_INFO);
         }
 };
 
@@ -65,12 +65,12 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 
     TestingConfigurationAdmin() 
         {
-        BeTest::GetHost ().GetTempDir (m_tmp);
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory (m_appDir);
+        BeTest::GetHost().GetTempDir(m_tmp);
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(m_appDir);
         }
 
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName () override {return m_tmp;}
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory () override {return m_appDir;}
+    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tmp;}
+    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_appDir;}
     };
 
 //=======================================================================================
@@ -99,7 +99,7 @@ struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
 
     RepositoryAdmin* m_impl;
 
-    ProxyRepositoryAdmin() : m_impl(nullptr) { }
+    ProxyRepositoryAdmin() : m_impl(nullptr) {}
     virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
         return nullptr != m_impl ? m_impl->_CreateBriefcaseManager(db) : T_Super::_CreateBriefcaseManager(db);
@@ -124,7 +124,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     ScopedDgnHostImpl();
     ~ScopedDgnHostImpl();
     LineStyleAdmin& _SupplyLineStyleAdmin() override;
-    NotificationAdmin& _SupplyNotificationAdmin () override;
+    NotificationAdmin& _SupplyNotificationAdmin() override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *new ProxyRepositoryAdmin();}
@@ -133,7 +133,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
     void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
-    DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() { return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl; }
+    DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() {return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl;}
 };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -180,11 +180,11 @@ DgnPlatformLib::Host::RepositoryAdmin* ScopedDgnHost::GetRepositoryAdmin()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScopedDgnHostImpl::ScopedDgnHostImpl()  : m_isInitialized (false)
+ScopedDgnHostImpl::ScopedDgnHostImpl()  : m_isInitialized(false)
     {
     DgnPlatformLib::StaticInitialize();
     
-    BeAssert ((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
+    BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this,true);
     m_isInitialized = true;
@@ -203,23 +203,23 @@ ScopedDgnHostImpl::~ScopedDgnHostImpl()
 // @bsimethod                                                   MattGooding     02/13
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::LineStyleAdmin&       ScopedDgnHostImpl::_SupplyLineStyleAdmin() {return *new UnitTestLineStyleAdmin();}
-DgnPlatformLib::Host::NotificationAdmin&    ScopedDgnHostImpl::_SupplyNotificationAdmin () {return *new LoggingNotificationAdmin();}
+DgnPlatformLib::Host::NotificationAdmin&    ScopedDgnHostImpl::_SupplyNotificationAdmin() {return *new LoggingNotificationAdmin();}
 DgnPlatformLib::Host::IKnownLocationsAdmin& ScopedDgnHostImpl::_SupplyIKnownLocationsAdmin() {return *new TestingConfigurationAdmin();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TestDataManager::FindTestData (BeFileName& fullFileName, WCharCP fileName, BeFileName const& searchLeafDir)
+StatusInt TestDataManager::FindTestData(BeFileName& fullFileName, WCharCP fileName, BeFileName const& searchLeafDir)
     {
     BeFileName dir;
-    BeTest::GetHost().GetDocumentsRoot (dir);
-    dir.AppendToPath (searchLeafDir);
+    BeTest::GetHost().GetDocumentsRoot(dir);
+    dir.AppendToPath(searchLeafDir);
 
     for (;;)
         {
         fullFileName = dir;
-        fullFileName.AppendToPath (fileName);
-        if (BeFileName::DoesPathExist (fullFileName))
+        fullFileName.AppendToPath(fileName);
+        if (BeFileName::DoesPathExist(fullFileName))
             return SUCCESS;
 
         dir.PopDir();
@@ -228,12 +228,13 @@ StatusInt TestDataManager::FindTestData (BeFileName& fullFileName, WCharCP fileN
         }
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
     {
-    DgnModelPtr dgnModel = db.Models().GetModel (modelID);
+    DgnModelPtr dgnModel = db.Models().GetModel(modelID);
     if (dgnModel == NULL)
         return NULL;
 
@@ -242,6 +243,7 @@ static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
 
     return  dgnModel;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
@@ -264,7 +266,7 @@ void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
+BentleyStatus   TestDataManager::OpenTestFile(bool needBriefcase)
     {
     DbResult stat;
     DgnDb::OpenParams params(m_openMode);
@@ -273,13 +275,13 @@ BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
         {
         if (stat == BE_SQLITE_ERROR_ProfileTooOld || stat == BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite)
             {
-            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"HORNSWAGGLED! \"%ls\"", m_fileName.c_str());
-            BeAssert (false && "HORNSWAGGLED!");
+            NativeLogging::LoggingManager::GetLogger(L"BeTest")->errorv(L"HORNSWAGGLED! \"%ls\"", m_fileName.c_str());
+            BeAssert(false && "HORNSWAGGLED!");
             }
         else
             {
-            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to open project fullFileName=\"%ls\" (status=%x)", m_fileName.c_str(), stat);
-            BeAssert (false && "failed to open test input project file");
+            NativeLogging::LoggingManager::GetLogger(L"BeTest")->errorv(L"failed to open project fullFileName=\"%ls\" (status=%x)", m_fileName.c_str(), stat);
+            BeAssert(false && "failed to open test input project file");
             }
         return ERROR;
         }
@@ -289,15 +291,15 @@ BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
 
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
-        DgnModelPtr dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), m_fill);
+        DgnModelPtr dgnModel = m_dgndb->Models().GetModel(entry.GetModelId());
         if (m_model == NULL)
             m_model = dgnModel.get();
         }
 
     if (NULL == m_model)
         {
-        NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to load any model from project \"%ls\"", m_fileName.c_str());
-        BeAssert (false && "failed to load any model from test input project file");
+        NativeLogging::LoggingManager::GetLogger(L"BeTest")->errorv(L"failed to load any model from project \"%ls\"", m_fileName.c_str());
+        BeAssert(false && "failed to load any model from test input project file");
         return ERROR;
         }
 
@@ -307,7 +309,7 @@ BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    TestDataManager::CloseTestFile ()
+void    TestDataManager::CloseTestFile()
     {
     m_model = nullptr;
     m_dgndb = nullptr;
@@ -316,20 +318,20 @@ void    TestDataManager::CloseTestFile ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needBriefcase, bool fill)
+TestDataManager::TestDataManager(WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needBriefcase, bool fill)
     {
     m_model     = NULL;
     m_fileName  = fullFileName;
     m_openMode  = dbOpenMode;
     m_fill      = fill;
 
-    OpenTestFile (needBriefcase);
+    OpenTestFile(needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::~TestDataManager ()
+TestDataManager::~TestDataManager()
     {
     m_dgndb = NULL;   // then release/close the project
     }
