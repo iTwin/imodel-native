@@ -2360,7 +2360,9 @@ typedef bvector<Byte>   T_ByteArray;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   convertStringToByteArray (T_ByteArray& byteData, Utf8CP stringData)
     {
-    return SUCCESS == Base64Utilities::Decode(byteData, stringData, strlen(stringData));
+    // NB: Decode() always returns SUCCESS regardless of what garbage we hand it...so manually check that the input consists only
+    // of characters in the base-64 alphabet.
+    return Base64Utilities::MatchesAlphabet(stringData) && SUCCESS == Base64Utilities::Decode(byteData, stringData, strlen(stringData));
     }
 
 //--------------------------------------------------------------------------------------
