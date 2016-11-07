@@ -46,11 +46,7 @@ TEST_F(ValueTests, StringToECValue)
     EXPECT_TRUE (value.IsString());
     EXPECT_STREQ (value.GetUtf8CP(), unicharutf8.c_str());
     
-    //All these strings decode into same byte array
-    //Byte array is onverted into one of these strings
-    checkBinary("AEgADg==", value);
-    checkBinary("AEgADw==", value);
-    checkBinary("AEgADA==", value);
+    checkBinary("AAECAw==", value);
     
     Utf8CP boolString[] = {"True", "False", "true", "FALSE", "1", "0"};
     bool boolResults[] = {true, false, true, false, true, false};
@@ -109,7 +105,7 @@ TEST_F(ValueTests, StringToIGeometry)
     ECValue value;
     const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     
-    EXPECT_EQ (value.SetUtf8CP("AEgADw=="), SUCCESS);
+    EXPECT_EQ (value.SetUtf8CP("AAECAw=="), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_IGeometry));
     EXPECT_TRUE (value.IsBinary());
     size_t sizeOut;
