@@ -31,7 +31,7 @@ public:
 private:
     bool m_testSkewScan = false;
     bool m_testCategory = false;
-    DgnModelP m_model = nullptr;
+    GeometricModelP m_model = nullptr;
     DPoint3d m_skewVector;
     RangeIndex::FBox m_skewRange;
     RangeIndex::FBox m_range;
@@ -45,7 +45,7 @@ private:
 public:
     RangeIndex::FBoxCR GetScanRange() const {return m_range;}
     DPoint3dCR GetSkewVector() const {return m_skewVector;}
-    DgnModelP GetDgnModelP() {return m_model;}
+    GeometricModelP GetDgnModel() {return m_model;}
 
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
@@ -59,7 +59,7 @@ public:
 
     //! Sets the DgnModel that is to be scanned.
     //! @param[in] model The model to be scanned.
-    void SetDgnModel(DgnModelR model) {m_model = &model;}
+    void SetDgnModel(GeometricModelR model) {m_model = &model;}
 
     //! Sets the function that is to be called for each acceptable element when the #Scan method is called.
     void SetCallback(Callback& callback) {m_callback = &callback;}

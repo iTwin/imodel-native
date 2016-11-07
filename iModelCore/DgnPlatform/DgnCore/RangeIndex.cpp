@@ -60,7 +60,6 @@ static void extendRange(FBoxR thisRange, FBoxCR range)
         thisRange.m_high.z = range.m_high.z;
     }
 
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
@@ -639,24 +638,6 @@ Tree::Tree(bool is3d, size_t leafSize) : m_is3d(is3d)
         leafSize = 20;
 
     SetNodeSizes(8, leafSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::LoadTree(DgnModelCR dgnModel)
-    {
-    BeAssert(nullptr == m_root);
-    BeAssert(0 != m_internalNodeSize);
-    BeAssert(0 != m_leafNodeSize);
-    m_root = AllocateLeafNode();
-
-    for (auto const& element : dgnModel.GetElements())
-        {
-        GeometrySourceCP geom = element.second->ToGeometrySource();
-        if (nullptr != geom)
-            AddEntry(Entry(geom->CalculateRange3d(), element.second->GetElementId(), geom->GetCategoryId()));
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
