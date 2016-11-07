@@ -107,9 +107,6 @@ TEST_F(DgnScriptTest, TestEga)
     ASSERT_TRUE( project != NULL );
 
     PhysicalModelPtr model = GetDefaultPhysicalModel();
-#if defined (NEEDS_WORK_RANGE_INDEX)
-    model->FillModel();
-#endif
 
     RefCountedPtr<DgnElement> el;
         {
@@ -256,9 +253,6 @@ TEST_F(DgnScriptTest, RunScripts)
     ASSERT_TRUE(project != NULL);
 
     PhysicalModelPtr model = GetDefaultPhysicalModel();
-#if defined (NEEDS_WORK_RANGE_INDEX)
-    model->FillModel();
-#endif
 
     PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*project, "NewModel");
     ASSERT_TRUE(newModel.IsValid());
