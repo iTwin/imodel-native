@@ -30,19 +30,17 @@ bool is_base64(Byte c) { return (isalnum (c) || (c == '+') || (c == '/')); }
 Utf8String Base64Utilities::Encode(Utf8CP byteArray, size_t byteCount)
     {
     Utf8String encodedString;
-    if (SUCCESS != Encode(encodedString, reinterpret_cast<Byte const*> (byteArray), byteCount))
-        return Utf8String();
-
+    Encode(encodedString, reinterpret_cast<Byte const*> (byteArray), byteCount);
     return encodedString;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, size_t byteCount)
+void Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, size_t byteCount)
     {
     if (byteArray == nullptr || byteCount == 0)
-        return SUCCESS;
+        return;
 
     size_t nEncodedBytes = static_cast<size_t>(4.0 * ((byteCount + 2) / 3.0));
     encodedString.reserve(nEncodedBytes);
@@ -84,10 +82,7 @@ BentleyStatus Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byt
 
         while ((i++ < 3))
             encodedString += '=';
-
         }
-
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -96,19 +91,20 @@ BentleyStatus Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byt
 Utf8String Base64Utilities::Decode(Utf8CP encodedString, size_t encodedStringLength)
     {
     bvector<Byte> byteArray;
-    if (SUCCESS != Decode(byteArray, encodedString, encodedStringLength) || byteArray.empty())
+    Decode(byteArray, encodedString, encodedStringLength);
+    if (byteArray.empty())
         return Utf8String();
-
-    return Utf8String((Utf8CP) byteArray.data(), byteArray.size());
+    else
+        return Utf8String((Utf8CP) byteArray.data(), byteArray.size());
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-template<typename T> static BentleyStatus base64_decode(T& byteArray, Utf8CP encodedString, size_t encodedStringLength)
+template<typename T> static void base64_decode(T& byteArray, Utf8CP encodedString, size_t encodedStringLength)
     {
     if (Utf8String::IsNullOrEmpty(encodedString) || encodedStringLength == 0)
-        return SUCCESS;
+        return;
 
     int i = 0;
     int j = 0;
@@ -150,16 +146,14 @@ template<typename T> static BentleyStatus base64_decode(T& byteArray, Utf8CP enc
         for (j = 0; (j < i - 1); j++)
             byteArray.push_back(byte_array_3[j]);
         }
-
-    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength)
+void Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength)
     {
-    return base64_decode(byteArray, encodedString, encodedStringLength);
+    base64_decode(byteArray, encodedString, encodedStringLength);
     }
 
 //=======================================================================================
@@ -187,16 +181,32 @@ struct ByteStreamAdapter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Base64Utilities::Decode(ByteStream& dest, Utf8CP src, size_t srcLen)
+void Base64Utilities::Decode(ByteStream& dest, Utf8CP src, size_t srcLen)
     {
     if (0 == srcLen || Utf8String::IsNullOrEmpty(src))
-        return SUCCESS;
+        return;
 
     ByteStreamAdapter proxy(dest, srcLen);
-    return base64_decode(proxy, src, srcLen);
+    base64_decode(proxy, src, srcLen);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR Base64Utilities::Alphabet() { return base64_chars; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Base64Utilities::MatchesAlphabet(Utf8CP input)
+    {
+    if (Utf8String::IsNullOrEmpty(input))
+        return true;
+
+    for (Utf8CP ch = input; 0 != *ch; ++ch)
+        if (!is_base64(*ch) && *ch != '=')
+            return false;
+
+    return true;
+    }
+
