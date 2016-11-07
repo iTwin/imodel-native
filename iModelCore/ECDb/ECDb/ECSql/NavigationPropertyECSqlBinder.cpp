@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "NavigationPropertyECSqlBinder.h"
+#include "SystemPropertyECSqlBinder.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -15,11 +16,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, false, false), IECSqlStructBinder()
+    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
     {
     Initialize();
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
@@ -32,21 +32,17 @@ void NavigationPropertyECSqlBinder::Initialize()
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
-    std::unique_ptr<ECSqlBinder> idBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navIdPropMap, ECSqlSystemPropertyKind::NavigationId);
+    m_idBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navIdPropMap, ECSqlSystemPropertyKind::NavigationId);
 
-    int mappedSqliteParameterCount = idBinder->GetMappedSqlParameterCount();
+    int mappedSqliteParameterCount = m_idBinder->GetMappedSqlParameterCount();
     BeAssert(mappedSqliteParameterCount == 1);
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
 
-    m_memberBinders.push_back(std::move(idBinder));
-
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap->GetRelECClassIdPropertyMap();
-    std::unique_ptr<ECSqlBinder> relClassIdBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navRelClassIdPropMap, ECSqlSystemPropertyKind::NavigationRelECClassId);
+    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navRelClassIdPropMap, ECSqlSystemPropertyKind::NavigationRelECClassId);
 
-    mappedSqliteParameterCount = relClassIdBinder->GetMappedSqlParameterCount();
+    mappedSqliteParameterCount = m_relECClassIdBinder->GetMappedSqlParameterCount();
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
-
-    m_memberBinders.push_back(std::move(relClassIdBinder));
 
     SetMappedSqlParameterCount(totalMappedSqliteParameterCount);
     }
@@ -56,15 +52,34 @@ void NavigationPropertyECSqlBinder::Initialize()
 //---------------------------------------------------------------------------------------
 void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex)
     {
-    if (ecsqlParameterComponentIndex > 1)
-        {
-        BeAssert(false);
-        return;
-        }
+    if (ecsqlParameterComponentIndex == 0)
+        m_idBinder->SetSqliteIndex((size_t) ecsqlParameterComponentIndex);
+    else if (ecsqlParameterComponentIndex == 1)
+        m_relECClassIdBinder->SetSqliteIndex((size_t) ecsqlParameterComponentIndex);
 
-    std::unique_ptr<ECSqlBinder>& memberBinder = m_memberBinders[(size_t) ecsqlParameterComponentIndex];
-    BeAssert(memberBinder != nullptr);
-    memberBinder->SetSqliteIndex(sqliteParameterIndex);
+    BeAssert(false);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus NavigationPropertyECSqlBinder::_OnBeforeStep()
+    {
+    ECSqlStatus stat = m_idBinder->OnBeforeStep();
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    return m_relECClassIdBinder->OnBeforeStep();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+void NavigationPropertyECSqlBinder::_OnClearBindings()
+    {
+    m_idBinder->OnClearBindings();
+    m_relECClassIdBinder->OnClearBindings();
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,14 +87,11 @@ void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentI
 //---------------------------------------------------------------------------------------
 ECSqlStatus NavigationPropertyECSqlBinder::_BindNull()
     {
-    for (std::unique_ptr<ECSqlBinder>& memberBinder : m_memberBinders)
-        {
-        ECSqlStatus stat = memberBinder->BindNull();
-        if (!stat.IsSuccess())
-            return stat;
-        }
+    ECSqlStatus stat = m_idBinder->BindNull();
+    if (!stat.IsSuccess())
+        return stat;
 
-    return ECSqlStatus::Success;
+    return m_relECClassIdBinder->BindNull();
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,20 +117,21 @@ IECSqlArrayBinder& NavigationPropertyECSqlBinder::_BindArray(uint32_t initialCap
 //---------------------------------------------------------------------------------------
 IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(Utf8CP navPropMemberPropertyName)
     {
-    size_t memberIndex = 0;
     if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, navPropMemberPropertyName) == 0)
-        memberIndex = ID_MEMBER_INDEX;
-    else if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME, navPropMemberPropertyName) == 0)
-        memberIndex = RELECCLASSID_MEMBER_INDEX;
-    else
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to NavigationECProperty member. Member %s is not valid. Only %s and %s are valid members.", 
-                                                           navPropMemberPropertyName, ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
-        return NoopECSqlBinder::Get();
+        BeAssert(m_idBinder != nullptr);
+        return *m_idBinder;
         }
 
-    BeAssert(m_memberBinders[memberIndex] != nullptr);
-    return *m_memberBinders[memberIndex];
+    if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME, navPropMemberPropertyName) == 0)
+        {
+        BeAssert(m_relECClassIdBinder != nullptr);
+        return *m_relECClassIdBinder;
+        }
+
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to NavigationECProperty member. Member %s is not valid. Only %s and %s are valid members.",
+                                                       navPropMemberPropertyName, ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -126,19 +139,20 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(Utf8CP navPropMemberProp
 //---------------------------------------------------------------------------------------
 IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(ECN::ECPropertyId navPropMemberPropertyId)
     {
-    size_t memberIndex = 0;
     if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationId)->GetId())
-        memberIndex = ID_MEMBER_INDEX;
-    else if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationRelECClassId)->GetId())
-        memberIndex = RELECCLASSID_MEMBER_INDEX;
-    else
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to NavigationECProperty member. Member with property index %s is not valid. Only %s and %s are valid members.",
-                                                          navPropMemberPropertyId.ToString().c_str(), ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
-        return NoopECSqlBinder::Get();
+        BeAssert(m_idBinder != nullptr);
+        return *m_idBinder;
         }
 
-    BeAssert(m_memberBinders[memberIndex] != nullptr);
-    return *m_memberBinders[memberIndex];
+    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationRelECClassId)->GetId())
+        {
+        BeAssert(m_relECClassIdBinder != nullptr);
+        return *m_relECClassIdBinder;
+        }
+
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to NavigationECProperty member. Member with property index %s is not valid. Only %s and %s are valid members.",
+                                                       navPropMemberPropertyId.ToString().c_str(), ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    return NoopECSqlBinder::Get();
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

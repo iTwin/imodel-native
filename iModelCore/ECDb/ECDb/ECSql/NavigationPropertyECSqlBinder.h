@@ -10,16 +10,19 @@
 #include "ECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct IdECSqlBinder;
+
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
 struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
     {
     private:
-        static const size_t ID_MEMBER_INDEX = 0;
-        static const size_t RELECCLASSID_MEMBER_INDEX = 1;
+        std::unique_ptr<IdECSqlBinder> m_idBinder;
+        std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder;
 
-        std::vector<std::unique_ptr<ECSqlBinder>> m_memberBinders;
+        virtual ECSqlStatus _OnBeforeStep() override;
+        virtual void _OnClearBindings() override;
 
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;

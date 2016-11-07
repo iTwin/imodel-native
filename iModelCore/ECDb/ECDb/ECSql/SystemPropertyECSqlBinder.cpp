@@ -17,8 +17,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
 IdECSqlBinder::IdECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, bool isNoop) 
-    : ECSqlBinder(ecsqlStatement, typeInfo, isNoop ? 0 : 1, true, true), m_sqliteIndex(-1), m_isNoop(isNoop)
+    : ECSqlBinder(ecsqlStatement, typeInfo, isNoop ? 0 : 1, true, true), m_sqliteIndex(-1), m_isNoop(isNoop), m_isNull(true)
     {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus IdECSqlBinder::_OnBeforeStep()
+    {
+    if (!m_isNoop && m_isNull)
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. No value bound to Id parameter.");
+        return ECSqlStatus::Error;
+        }
+
+    return ECSqlStatus::Success;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
@@ -51,6 +65,7 @@ ECSqlStatus IdECSqlBinder::_BindNull()
             return ReportError(sqliteStat, "ECSqlStatement::BindNull against id property.");
         }
 
+    m_isNull = true;
     return ECSqlStatus::Success;
     }
 
@@ -163,6 +178,7 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
     if (onBindEventHandler != nullptr)
         onBindEventHandler(ECInstanceId((uint64_t) value));
 
+    m_isNull = false;
     return ECSqlStatus::Success;
     }
 
@@ -202,6 +218,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
         onBindEventHandler(id);
         }
 
+    m_isNull = false;
     return ECSqlStatus::Success;
     }
 

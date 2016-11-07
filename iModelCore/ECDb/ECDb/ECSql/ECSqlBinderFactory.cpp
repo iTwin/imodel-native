@@ -95,7 +95,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
+std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
     {
     if (!Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropertyKind))
         {
@@ -131,7 +131,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBa
             }
         }
 
-    return std::unique_ptr<ECSqlBinder>(new IdECSqlBinder(ecsqlStatement, ECSqlTypeInfo(propMap), isNoopBinder));
+    return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ecsqlStatement, ECSqlTypeInfo(propMap), isNoopBinder));
     }
 
 

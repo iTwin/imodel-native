@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlBinder;
+struct IdECSqlBinder;
 struct ECSqlStatementBase;
 
 //=======================================================================================
@@ -30,7 +31,7 @@ struct ECSqlBinderFactory
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp);
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap) { return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap)); }
 
-        static std::unique_ptr<ECSqlBinder> CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const&, ECSqlSystemPropertyKind);
+        static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const&, ECSqlSystemPropertyKind);
 
     };
 
