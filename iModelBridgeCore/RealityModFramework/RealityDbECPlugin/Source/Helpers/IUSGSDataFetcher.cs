@@ -112,7 +112,8 @@ namespace IndexECPlugin.Source.Helpers
 
         private readonly List<string> m_blacklist = new List<string>
         {
-            "581d0533e4b08da350d5250b"
+            "581d0533e4b08da350d5250b",
+            "581d0534e4b08da350d52519"
         };
 
         ECQuery m_query;

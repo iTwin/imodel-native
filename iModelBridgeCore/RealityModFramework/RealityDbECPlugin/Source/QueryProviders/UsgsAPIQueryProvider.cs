@@ -1347,7 +1347,15 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         if(m_usgsDataFetcher.Blacklist.Any(id => id == instance.InstanceId))
                             {
-                            //This Id is blacklisted. We don't add it to the instanceList
+                            //This Id is blacklisted. We don't add it to the instanceList.
+                            continue;
+                            }
+
+                        string downloadURL = jtoken.TryToGetString("downloadURL");
+
+                        if ( (downloadURL != null) && (downloadURL.Contains("arcgis")) && (downloadURL.Contains("rest")) && (downloadURL.Contains("services")))
+                            {
+                            //This is a server entry. We don't add it to the instanceList.
                             continue;
                             }
 
