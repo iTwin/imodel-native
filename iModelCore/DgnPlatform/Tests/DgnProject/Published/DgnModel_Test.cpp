@@ -23,10 +23,6 @@ struct DgnModelTests : public DgnDbTestFixture
         DgnModelId modelId = m_db->Models().QuerySubModelId(partitionCode);
         m_model =  m_db->Models().GetModel(modelId);
         BeAssert(m_model.IsValid());
-#if defined (NEEDS_WORK_RANGE_INDEX)
-        if (m_model.IsValid())
-            m_model->FillModel();
-#endif
         }
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
@@ -58,51 +54,6 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
     ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetGraphicElements)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-
-    uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
-    ASSERT_NE(graphicElementCount, 0);
-    ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
-    int count = 0;
-    for (auto const& elm : *m_model)
-        {
-        EXPECT_TRUE(elm.second->GetModel() == m_model);
-        ++count;
-        }
-    EXPECT_EQ(graphicElementCount, count);
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-#if defined (NEEDS_WORK_RANGE_INDEX)
-TEST_F(DgnModelTests, EmptyList)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    m_model->EmptyModel();
-    ASSERT_TRUE(0 == m_model->GetElements().size());
-
-    m_model->FillModel();
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -112,9 +63,7 @@ TEST_F(DgnModelTests, GetRange)
     DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
     InsertElement(*m_db, model->GetModelId(), true, true);
 
-    LoadModel("RangeTest");
-
-    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d range = model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(0.00000000000000000, -0.00050000000000000001, -0.00050000000000000001);
     DPoint3d high; high.Init(1.00000000000000000, 0.00050000000000000001, 0.00050000000000000001);
@@ -394,5 +343,5 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     // Adding the test so that this doesn't happen again
     GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
     }

@@ -668,8 +668,8 @@ public:
             m_roundoffRatio = 0;
             m_formatterBaseDir = 0;
             m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, "m");
-            m_masterUnit = m_subUnit;
+            m_masterUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMeters);
+            m_subUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMillimeters);
             }
 
         void FromJson(Json::Value const& inValue);
@@ -773,7 +773,7 @@ protected:
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
     DGNPLATFORM_EXPORT void _OnLoadedElement(DgnElementCR el) override;
     DGNPLATFORM_EXPORT void _OnDeletedElement(DgnElementCR element) override;
     DGNPLATFORM_EXPORT void _OnReversedAddElement(DgnElementCR element) override;
@@ -813,6 +813,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
@@ -830,6 +831,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };

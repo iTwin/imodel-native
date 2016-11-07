@@ -130,11 +130,11 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
-DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
-bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(1)); }
-DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(2);}
-DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(3);}
-bool            DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(4));}
+DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
+bool         DgnModels::Iterator::Entry::GetInGuiList() const {Verify(); return (0 != m_sql->GetValueInt(1));}
+DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(2);}
+DgnElementId DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(3);}
+bool         DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(4));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -157,15 +157,15 @@ ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
-CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) { return FindClassInfo(model).GetInsertStmt(m_dgndb); }
-CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
+CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) {return FindClassInfo(model).GetSelectStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue()));}
+CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) {return FindClassInfo(model).GetInsertStmt(m_dgndb);}
+CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindClassInfo(model).GetUpdateStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue()));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_inGuiList(params.m_inGuiList),
-    m_isTemplate(params.m_isTemplate), m_persistent(false), m_filled(false)
+    m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     }
 
@@ -174,7 +174,7 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnModel::GetName() const
     {
-    // WIP: keep this method around to avoid having to change too much source code.  Use the display label of the modeled element as this model's name.
+    // WIP: keep this method around to avoid having to change too much source code. Use the display label of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
     return modeledElement.IsValid() ? modeledElement->GetDisplayLabel() : Utf8String();
@@ -723,7 +723,7 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
         DPoint2d low = stmt->GetValuePoint2d(4);
         DPoint2d high = stmt->GetValuePoint2d(5);
 
-        Placement2d placement (stmt->GetValuePoint2d(2),
+        Placement2d placement(stmt->GetValuePoint2d(2),
                               AngleInDegrees::FromDegrees(stmt->GetValueDouble(3)),
                               ElementAlignedBox2d(low.x, low.y, high.x, high.y));
 
@@ -786,26 +786,6 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_RegisterElement(DgnElementCR element)
-    {
-    if (m_filled)
-        m_elements.Add(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_RegisterElement(DgnElementCR element)
-    {
-    T_Super::_RegisterElement(element);
-    AddToRangeIndex(element);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -829,24 +809,6 @@ DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     return DgnDbStatus::Success;
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnInsertedElement(DgnElementCR el) 
-    {
-    RegisterElement(el);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedDeleteElement(DgnElementCR el) 
-    {
-    RegisterElement(el);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -867,17 +829,6 @@ void GeometricModel::_OnDeletedElement(DgnElementCR element)
     T_Super::_OnDeletedElement(element);
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeletedElement(DgnElementCR element)
-    {
-    if (m_filled)
-        m_elements.erase(element.GetElementId());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -886,17 +837,6 @@ void GeometricModel::_OnReversedAddElement(DgnElementCR element)
     RemoveFromRangeIndex(element);
     T_Super::_OnReversedAddElement(element);
     }
-
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedAddElement(DgnElementCR element)
-    {
-    if (m_filled)
-        m_elements.erase(element.GetElementId());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -924,17 +864,6 @@ void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementC
     {
     UpdateRangeIndex(modified, original);
     }
-
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnModel::FindElementById(DgnElementId id)
-    {
-    auto it = m_elements.find(id);
-    return it == m_elements.end() ? nullptr : it->second.get();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1302,38 +1231,6 @@ DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
     return dgnModel.IsValid() ? dgnModel : LoadDgnModel(modelId);
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Sam.Wilson                      04/13
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
-//    {
-//    Utf8String tmpStr(baseName);
-//
-//    if (!tmpStr.empty() && !m_dgndb.Models().QueryModelId(DgnModel::CreateModelCode(tmpStr)).IsValid())
-//        return tmpStr;
-//
-//    bool addDash = !tmpStr.empty();
-//    int index = 0;
-//    size_t lastDash = tmpStr.find_last_of('-');
-//    if (lastDash != Utf8String::npos)
-//        {
-//        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
-//            addDash = false;
-//        else
-//            index = 0;
-//        }
-//
-//    Utf8String uniqueModelName;
-//    do  {
-//        uniqueModelName.assign(tmpStr);
-//        if (addDash)
-//            uniqueModelName.append("-");
-//        uniqueModelName.append(Utf8PrintfString("%d", ++index));
-//        } while (m_dgndb.Models().QueryModelId(DgnModel::CreateModelCode(uniqueModelName)).IsValid());
-//
-//    return uniqueModelName;
-//    }
-//
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
@@ -1341,56 +1238,10 @@ void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
     {
     for (auto iter : m_models)
         {
-        if(iter.second.IsValid())
+        if (iter.second.IsValid())
             iter.second->_DropGraphicsForViewport(viewport);
         }        
     }
-
-#if defined (NEEDS_WORK_RANGE_INDEX)
-struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_FillModel()
-    {
-    if (IsFilled())
-        return;
-
-    enum Column : int {Id=0,ClassId=1,CodeAuthorityId=2,CodeNamespace=3,CodeValue=4,UserLabel=5,ParentId=6};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
-    stmt.BindId(1, m_modelId);
-
-    _SetFilled();
-
-    auto& elements = m_dgndb.Elements();
-    BeDbMutexHolder _v(elements.m_mutex);
-
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
-        DgnElementCP el = elements.FindElement(id);
-        if (nullptr != el)  // already loaded?
-            {
-            RegisterElement(*el);
-            continue;
-            }
-
-        DgnCode code;
-        code.From(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::CodeValue), stmt.GetValueText(Column::CodeNamespace));
-        DgnElement::CreateParams createParams(m_dgndb, m_modelId,
-            stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            code,
-            stmt.GetValueText(Column::UserLabel),
-            stmt.GetValueId<DgnElementId>(Column::ParentId));
-
-        createParams.SetElementId(id);
-
-        elements.LoadElement(createParams, true);
-        }
-
-    CallAppData(FilledCaller());
-    }
-#endif
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -1441,7 +1292,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
-    {    
+    {   
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElementId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
@@ -1568,7 +1419,7 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d GeometricModel::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
     {
     Statement stmt(m_dgndb,
         "SELECT DGN_bbox_union("
@@ -1580,6 +1431,35 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement3d) " As g"
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
+
+    stmt.BindId(1, GetModelId());
+    auto rc = stmt.Step();
+    if (rc!=BE_SQLITE_ROW)
+        {
+        BeAssert(false);
+        return AxisAlignedBox3d();
+        }
+
+    int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/11
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
+    {
+    Statement stmt(m_dgndb,
+        "SELECT DGN_bbox_union("
+            "DGN_placement_aabb("
+                "DGN_placement("
+                    "DGN_point(g.Origin_X,g.Origin_Y,0),"
+                    "DGN_angles(0,0,g.Rotation),"
+                    "DGN_bbox("
+                        "g.BBoxLow_X,g.BBoxLow_Y,0,"
+                        "g.BBoxHigh_X,g.BBoxHigh_Y,0))))"
+        " FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement2d) " As g"
         " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
@@ -1956,7 +1836,7 @@ DgnModelPtr SessionModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& i
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
     {
-    struct Pair { Utf8CP name; uint64_t value; };
+    struct Pair {Utf8CP name; uint64_t value;};
     static const Pair s_pairs[] =
         {
             {"insertelement", InsertElement},
