@@ -220,11 +220,27 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
             }
         }
 
-
-    NativeSqlBuilder selectSql;
-    selectSql.Append(classIdentifier, propMap.GetAccessString().c_str());
-    nativeSqlSnippets.push_back(selectSql);
-    //PrepareDefault(nativeSqlSnippets, ecsqlType, exp, propMap, classIdentifier);
+    if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
+        {
+        if (columnVisitor.AreResultingColumnsAreVirtual())
+            {
+            ToSqlPropertyMapVisitor toSql(columnVisitor.GetSingleColumn()->GetTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
+            propMap.AcceptVisitor(toSql);
+            nativeSqlSnippets.push_back(toSql.GetResultSet().front().GetSqlBuilder());
+            }
+        else
+            {
+            NativeSqlBuilder selectSql;
+            selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());
+            nativeSqlSnippets.push_back(selectSql);
+            }
+        }
+    else
+        {
+        NativeSqlBuilder selectSql;
+        selectSql.Append(classIdentifier, propMap.GetAccessString().c_str());
+        nativeSqlSnippets.push_back(selectSql);
+        }
     return ECSqlStatus::Success;
     }
 

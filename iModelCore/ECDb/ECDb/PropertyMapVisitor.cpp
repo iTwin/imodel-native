@@ -183,15 +183,15 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
 
     Result& result = Record(*vmap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
-    if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+    if (m_target == SqlTarget::View)
         {
-        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+        result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
         }
     else
         {
-        if (m_target == SqlTarget::View)
+        if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
             {
-            result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
+            result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
             }
         else
             {
@@ -200,6 +200,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
             result.GetSqlBuilderR().Append(classIdStr);
             }
         }
+        
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {

@@ -644,6 +644,7 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
         return nullptr;
         }
 
+    column->GetConstraintsR().SetNotNullConstraint();
     if (!canEdit)
         table->GetEditHandleR().EndEdit();
 

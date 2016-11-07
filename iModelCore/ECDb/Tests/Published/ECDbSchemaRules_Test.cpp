@@ -584,7 +584,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             aStmt.Reset();
 
             ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId) VALUES (?)"));
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId.Id) VALUES (?)"));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
             bStmt.ClearBindings();
@@ -649,7 +649,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             aStmt.Reset();
 
             ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId) VALUES (?)"));
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId.Id) VALUES (?)"));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
             bStmt.ClearBindings();
