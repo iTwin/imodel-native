@@ -187,8 +187,6 @@ $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp
 
 $(o)IssueReporter$(oext):                                     $(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceId$(oext):                                      $(baseDir)ECInstanceId.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECDbSchemaPersistenceHelper$(oext):                       $(baseDir)ECDbSchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaReader$(oext):                                  $(baseDir)ECDbSchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
