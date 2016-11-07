@@ -759,7 +759,7 @@ bool ECSchema::Validate(bool resolveIssues)
 
         if (!IsECVersion(ECVersion::V3_0))
             {
-            LOG.warningv("ECSchemaXML did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0");
+            LOG.warningv("ECSchemaXML for %s did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0", GetName().c_str());
 
             // Failed to validate for a 3.1 schema. Downgraded to a 3.0 schema in memory.
             m_ecVersion = ECVersion::V3_0;
