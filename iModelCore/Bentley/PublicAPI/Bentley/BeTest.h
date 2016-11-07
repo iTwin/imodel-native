@@ -60,6 +60,7 @@
             virtual void SetUp() {;}
             virtual void TearDown() {;}
             virtual void TestBody() {;}
+            virtual void InvokeTestBody() { TestBody(); }
           public:
             static void SetUpTestCase() {;}
             static void TearDownTestCase() {;}

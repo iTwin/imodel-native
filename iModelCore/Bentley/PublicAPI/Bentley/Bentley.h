@@ -332,6 +332,8 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 //__PUBLISH_SECTION_END__
 #endif
 
+//__PUBLISH_SECTION_START__
+
 #ifdef _MSC_VER
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
         __pragma(warning(push))\
@@ -340,18 +342,16 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define POP_MSVC_IGNORE\
         __pragma(warning(pop))
     
-    #if defined(BSI_MSVC_ANALYZE)
-        #include <codeanalysis/warnings.h>
-        #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
-        #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
-    #else
-        #define PUSH_MSVC_IGNORE_ANALYZE
-        #define POP_MSVC_IGNORE_ANALYZE
-    #endif
+    #include <codeanalysis/warnings.h>
+    #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
+    #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
 #else
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
     #define POP_MSVC_IGNORE
     #define PUSH_MSVC_IGNORE_ANALYZE
+
+    // Microsoft SAL macros that we use to help silence static analysis warnings.
+    #define _Out_writes_z_(size)
 #endif
 
 #ifdef __clang__

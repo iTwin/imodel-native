@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bc___rb_tree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,6 +87,8 @@
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Warray-bounds"
 #endif
+// And when running MSVC static analysis, the same ignore must be done...
+PUSH_MSVC_IGNORE(6201)
 
 // BENTLEY_CHANGE
 #include <Bentley/stdcxx/rw/bpair.h>
@@ -887,6 +889,7 @@ NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 #if defined (__clang__)
     #pragma clang diagnostic pop // disable -Warray-bounds
 #endif
+POP_MSVC_IGNORE // 6201
 
 #endif   // _RWSTD_RW_TREE_H_INCLUDED
 
