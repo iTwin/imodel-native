@@ -895,8 +895,10 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     ASSERT_TRUE (model2 != nullptr);
     EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
     model2->FillModel();
     EXPECT_TRUE (model2->IsFilled());
+#endif
     m_db->SaveChanges("changeSet3");
 
     PhysicalModelPtr model3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Model3"));

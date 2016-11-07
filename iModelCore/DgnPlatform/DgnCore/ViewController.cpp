@@ -171,8 +171,8 @@ DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 AxisAlignedBox3d ViewController2d::_GetViewedExtents(DgnViewportCR vp) const
     {
     GeometricModelP target = GetViewedModel();
-    if (target && target->GetRangeIndexP(false))
-        return AxisAlignedBox3d(target->GetRangeIndexP(false)->GetExtents()->ToRange3d());
+    if (target && target->GetRangeIndex())
+        return AxisAlignedBox3d(target->GetRangeIndex()->GetExtents().ToRange3d());
 
     return AxisAlignedBox3d();
     }
@@ -1704,9 +1704,8 @@ void ViewController2d::_DrawView(ViewContextR context)
     auto model = GetViewedModel();
     if (nullptr == model)
         return;
-    if (!model->IsFilled())
-        model->FillModel();
-    context.VisitDgnModel(model);
+
+    context.VisitDgnModel(*model);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1736,10 +1735,8 @@ void SheetViewController::_DrawView(ViewContextR context)
     auto model = GetViewedModel();
     if (nullptr == model)
         return;
-    if (!model->IsFilled())
-        model->FillModel();
 
-    context.VisitDgnModel(model);
+    context.VisitDgnModel(*model);
 
     // Find and draw the view attachments.
     // While we know that the model is filled, and therefore we could iterate it to find the attachments, we won't do that.

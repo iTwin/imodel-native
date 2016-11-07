@@ -382,7 +382,9 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         struct ProjectProperties
             {
+#if defined (NEEDS_WORK_RANGE_INDEX)
             uint32_t elmCount;
+#endif
             uint32_t modelCount;
             size_t categoryCount;
             size_t viewCount;
@@ -394,13 +396,18 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         void getProjectProperties(DgnDbPtr& project, ProjectProperties& properties)
             {
             DgnModels& modelTable = project->Models();
+#if defined (NEEDS_WORK_RANGE_INDEX)
             properties.elmCount = 0;
+#endif
             properties.modelCount = 0;
             for (DgnModels::Iterator::Entry const& entry: modelTable.MakeIterator())
                 {
+                UNUSED_VARIABLE(entry);
+#if defined (NEEDS_WORK_RANGE_INDEX)
                 DgnModelPtr model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
                 properties.elmCount += (int) model->GetElements().size();
+#endif
                 properties.modelCount++;
                 }
             properties.viewCount = ViewDefinition::QueryCount(*project);
@@ -416,7 +423,9 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         void compareProjectProperties(ProjectProperties& projProp, ProjectProperties& projPropV)
             {
+#if defined (NEEDS_WORK_RANGE_INDEX)
             EXPECT_EQ(projProp.elmCount, projPropV.elmCount)<<"Element count does not match";
+#endif
             EXPECT_EQ(projProp.modelCount, projPropV.modelCount)<<"Model count does not match";
             EXPECT_EQ(projProp.categoryCount, projPropV.categoryCount)<<"Category count does not match";
             EXPECT_EQ(projProp.viewCount, projPropV.viewCount)<<"View count does not match";

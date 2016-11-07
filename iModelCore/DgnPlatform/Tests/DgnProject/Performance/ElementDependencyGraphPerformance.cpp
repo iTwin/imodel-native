@@ -202,7 +202,9 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
+#if defined (NEEDS_WORK_RANGE_INDEX)
     GetDefaultModel().FillModel();
+#endif
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 }
@@ -245,7 +247,9 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
+#if defined (NEEDS_WORK_RANGE_INDEX)
     GetDefaultModel().FillModel();
+#endif
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 }

@@ -22,8 +22,10 @@ struct DgnModelTests : public DgnDbTestFixture
         DgnModels& modelTable = m_db->Models();
         DgnModelId id = modelTable.QueryModelId(DgnModel::CreateModelCode(name));
         m_model = modelTable.GetModel(id);
+#if defined (NEEDS_WORK_RANGE_INDEX)
         if (m_model.IsValid())
             m_model->FillModel();
+#endif
         }
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
@@ -55,6 +57,7 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
     ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -68,6 +71,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
     InsertElement(*m_db, model->GetModelId(), true, true);
 
     LoadModel("Splines");
+
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
@@ -79,6 +83,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
         }
     EXPECT_EQ(graphicElementCount, count);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
@@ -105,6 +110,7 @@ TEST_F(DgnModelTests, GetName)
     EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str()) == 0);
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -125,6 +131,7 @@ TEST_F(DgnModelTests, EmptyList)
     m_model->FillModel();
     ASSERT_TRUE(0 != m_model->GetElements().size());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   10/16
@@ -424,72 +431,6 @@ TEST_F(DgnModelTests, AbandonChanges)
     EXPECT_TRUE(rzlt == 0);
     EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
     EXPECT_FALSE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppData : DgnModel::AppData
-    {
-    bool isFilled;
-    virtual DropMe _OnFilled(DgnModelCR model) override
-        {
-        isFilled = true;
-        return DropMe::No;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for adding AppData on a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, AddAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    m1->Insert();
-    EXPECT_TRUE(m1 != nullptr);
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-
-    // Add Appdata
-    static DgnModel::AppData::Key key;
-    TestAppData *AppData = new TestAppData();
-    m1->AddAppData(key, AppData);
-    m1->FillModel();
-    EXPECT_TRUE(AppData->isFilled);
-    EXPECT_TRUE(m1->FindAppData(key) != nullptr);
-
-    // Add appdata again with same key
-     //TestAppData *AppData2 = new TestAppData();
-     //m1->AddAppData(key, AppData2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for dropping AppData from a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, DropAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    m1->Insert();
-    EXPECT_TRUE(m1 != nullptr);
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-
-    static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData();
-    m1->AddAppData(m_key, m_AppData);
-    m1->FillModel();
-    EXPECT_TRUE(m_AppData->isFilled);
-    StatusInt status = m1->DropAppData(m_key);
-    EXPECT_TRUE(status == 0);
-    EXPECT_TRUE(m1->FindAppData(m_key) == nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

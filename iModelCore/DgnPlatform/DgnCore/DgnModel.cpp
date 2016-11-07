@@ -106,12 +106,6 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
-    for (auto iter : m_models)
-        {
-        iter.second->EmptyModel();
-        iter.second->m_persistent = false;
-        }
-
     m_dgndb.Elements().Destroy(); // Has to be called before models are released.
     m_models.clear();
     }
@@ -200,19 +194,10 @@ CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) { return FindC
 CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ReleaseAllElements()
-    {
-    m_filled  = false;   // this must be before we release all elementrefs
-    m_elements.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList),
-    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_persistent(false), m_filled(false)
+    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     }
 
@@ -260,32 +245,6 @@ template<class T> void DgnModel::CallAppData(T const& caller) const
         }
     }    
 
-struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnEmptied(model);}};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_EmptyModel()
-    {
-    ClearRangeIndex();
-    T_Super::_EmptyModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_EmptyModel()
-    {
-    if (!m_filled)
-        return;
-
-    for (auto appdata : m_appData)
-        appdata.second->_OnEmpty(*this);
-
-    ReleaseAllElements();
-    CallAppData(EmptiedCaller());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * Destructor for DgnModel. Free all memory allocated to this DgnModel.
 * @bsimethod                                                    KeithBentley    10/00
@@ -293,7 +252,6 @@ void DgnModel::_EmptyModel()
 DgnModel::~DgnModel()
     {
     m_appData.clear();
-    EmptyModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,24 +723,60 @@ DgnDbStatus DgnModel::_OnUpdate()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Allocate and initialize a range tree for this model.
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::AllocateRangeIndex() const
+DgnDbStatus GeometricModel3d::_FillRangeIndex()
     {
-    if (nullptr == m_rangeIndex)
+    if (nullptr != m_rangeIndex)
+        return DgnDbStatus::Success;
+
+    m_rangeIndex.reset(new RangeIndex::Tree(true, 20));
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ModelId=?");
+    stmt->BindId(1, GetModelId());
+    while (BE_SQLITE_ROW == stmt->Step())
         {
-        m_rangeIndex = new RangeIndex::Tree(Is3d(), 20);
-        m_rangeIndex->LoadTree(*this);
+        double yaw   = stmt->GetValueDouble(3);
+        double pitch = stmt->GetValueDouble(4);
+        double roll  = stmt->GetValueDouble(5);
+
+        DPoint3d low = stmt->GetValuePoint3d(6);
+        DPoint3d high = stmt->GetValuePoint3d(7);
+
+        Placement3d placement(stmt->GetValuePoint3d(2),
+                              YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
+                              ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
+
+        m_rangeIndex->AddEntry(RangeIndex::Entry(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), stmt->GetValueId<DgnCategoryId>(1)));
         }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/07
+* @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::ClearRangeIndex()
+DgnDbStatus GeometricModel2d::_FillRangeIndex()
     {
-    DELETE_AND_CLEAR(m_rangeIndex);
+    if (nullptr != m_rangeIndex)
+        return DgnDbStatus::Success;
+
+    m_rangeIndex.reset(new RangeIndex::Tree(false, 20));
+
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ModelId=?");
+    stmt->BindId(1, GetModelId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        DPoint2d low = stmt->GetValuePoint2d(4);
+        DPoint2d high = stmt->GetValuePoint2d(5);
+
+        Placement2d placement (stmt->GetValuePoint2d(2),
+                              AngleInDegrees::FromDegrees(stmt->GetValueDouble(3)),
+                              ElementAlignedBox2d(low.x, low.y, high.x, high.y));
+
+        m_rangeIndex->AddEntry(RangeIndex::Entry(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), stmt->GetValueId<DgnCategoryId>(1)));
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -838,6 +832,7 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -855,13 +850,15 @@ void GeometricModel::_RegisterElement(DgnElementCR element)
     T_Super::_RegisterElement(element);
     AddToRangeIndex(element);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnLoadedElement(DgnElementCR el) 
+void GeometricModel::_OnLoadedElement(DgnElementCR element) 
     {
-    RegisterElement(el);
+    T_Super::_OnLoadedElement(element);
+    AddToRangeIndex(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -878,6 +875,7 @@ DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     return DgnDbStatus::Success;
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -893,6 +891,7 @@ void DgnModel::_OnReversedDeleteElement(DgnElementCR el)
     {
     RegisterElement(el);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -914,6 +913,7 @@ void GeometricModel::_OnDeletedElement(DgnElementCR element)
     T_Super::_OnDeletedElement(element);
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -922,6 +922,7 @@ void DgnModel::_OnDeletedElement(DgnElementCR element)
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
@@ -932,6 +933,7 @@ void GeometricModel::_OnReversedAddElement(DgnElementCR element)
     T_Super::_OnReversedAddElement(element);
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -940,6 +942,7 @@ void DgnModel::_OnReversedAddElement(DgnElementCR element)
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -968,17 +971,7 @@ void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementC
     UpdateRangeIndex(modified, original);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-RangeIndex::TreeP GeometricModel::_GetRangeIndexP(bool create) const
-    {
-    if (nullptr == m_rangeIndex && create)
-        AllocateRangeIndex();
-
-    return m_rangeIndex;
-    }
-
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -987,6 +980,7 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
     auto it = m_elements.find(id);
     return it == m_elements.end() ? nullptr : it->second.get();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1415,6 +1409,7 @@ void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
         }        
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
@@ -1458,6 +1453,7 @@ void DgnModel::_FillModel()
 
     CallAppData(FilledCaller());
     }
+#endif
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -1671,6 +1667,7 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
     stat = model->_SetProperties(properties);
     return (DgnDbStatus::Success == stat)? model : nullptr;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2108,3 +2105,29 @@ DgnDbStatus DgnModel::_SetCode(DgnCode const& code)
     m_code = code;
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModel::ElementIterator::const_iterator DgnModel::ElementIterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?";
+        sqlString = MakeSqlString(sqlString.c_str(), true);
+
+        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
+        m_stmt->BindId(1, m_id);
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+DgnElementId DgnModel::ElementIterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnElementId>(0);}
+Utf8String DgnModel::ElementIterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
+Utf8String DgnModel::ElementIterator::Entry::GetUserLabel() const {Verify(); return m_sql->GetValueText(2);}

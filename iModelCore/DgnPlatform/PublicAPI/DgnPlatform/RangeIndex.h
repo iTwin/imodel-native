@@ -180,8 +180,7 @@ private:
 public:
     size_t DebugElementCount() const {return m_root ? ((InternalNode*) m_root)->GetElementCount() : 0;} //! @private
 
-    void LoadTree(DgnModelCR);
-    FBoxCP GetExtents() {return  m_root ? &m_root->GetRange() : nullptr;}
+    FBox GetExtents() {return m_root ? m_root->GetRange() : FBox();}
     DGNPLATFORM_EXPORT Tree(bool is3d, size_t leafSize);
     Node* GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}
@@ -189,7 +188,20 @@ public:
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
     size_t GetCount() const {return m_leafIdx.size();}
+
+    struct Iterator :  LeafIdx::const_iterator
+    {
+        Iterator(LeafIdx::const_iterator it) : LeafIdx::const_iterator(it) {}
+        DgnElementId GetElementId(){return (*this)->first;}
+        EntryCP GetEntry(){return (*this)->second->FindElement((*this)->first);}
+    };
+
+    typedef Iterator const_iterator;
+    const_iterator begin() const {return m_leafIdx.begin();}
+    const_iterator end() const {return m_leafIdx.end();}
+
     DGNPLATFORM_EXPORT Traverser::Stop Traverse(Traverser&);
+
     DGNPLATFORM_EXPORT void AddEntry(Entry const&);
 
     //! Find an element in the range index and return the Entry information.
