@@ -799,11 +799,22 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
                 std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
                 DgnDbServerHost::Adopt(host);
                 db->CloseDb();
-                BeFileNameStatus status = originalFilePath.BeDeleteFile();
-#if defined (ENABLE_BIM_CRASH_TESTS)
-                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDeleteBriefcase);
-#endif
+                
+                BeFileName backupPath(originalFilePath.GetName());
+                backupPath.AppendExtension(L"back");
 
+                BeFileNameStatus status = BeFileName::BeMoveFile(originalFilePath, backupPath);
+
+#if defined (ENABLE_BIM_CRASH_TESTS)
+                try {
+                    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDeleteBriefcase);
+                    }
+                catch (...)
+                    {
+                    BeFileName::BeMoveFile(backupPath, originalFilePath);
+                    throw;
+                    }
+#endif 
                 if (BeFileNameStatus::Success != status)
                     {
                     finalResult->SetError(DgnDbServerError::Id::Unknown);
@@ -813,10 +824,13 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
                 status = BeFileName::BeMoveFile(downloadPath, originalFilePath);
                 if (BeFileNameStatus::Success != status)
                     {
+                    BeFileName::BeMoveFile(backupPath, originalFilePath);
                     finalResult->SetError(DgnDbServerError::Id::Unknown);
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
                     return;
                     }
+
+                backupPath.BeDeleteFile();
                 finalResult->SetSuccess();
                 });
             });
