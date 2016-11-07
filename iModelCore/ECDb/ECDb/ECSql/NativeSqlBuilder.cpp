@@ -53,6 +53,16 @@ NativeSqlBuilder& NativeSqlBuilder::CopyParameters(NativeSqlBuilder const& sqlBu
     return *this;
     }
 
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    08/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+NativeSqlBuilder& NativeSqlBuilder::Append(ECN::ECClassId id)
+    {
+    Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
+    id.ToString(classIdStr);
+    return Append(classIdStr);
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------

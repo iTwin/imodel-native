@@ -116,10 +116,8 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelE
             result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         else
             {
-            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
-            propertyMap.GetDefaultClassId().ToString(classIdStr);
             result.GetSqlBuilderR()
-                .Append(classIdStr).AppendSpace()
+                .Append(propertyMap.GetDefaultClassId()).AppendSpace()
                 .Append(propertyMap.GetColumn().GetName().c_str());
             }
         }
@@ -195,9 +193,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
             }
         else
             {
-            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
-            propertyMap.GetDefaultECClassId().ToString(classIdStr);
-            result.GetSqlBuilderR().Append(classIdStr);
+            result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
             }
         }
         
@@ -244,9 +240,7 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdProperty
 
         if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             {
-            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
-            propertyMap.GetDefaultECClassId().ToString(classIdStr);
-            result.GetSqlBuilderR().Append(classIdStr);
+            result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
             }
         else
             result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());

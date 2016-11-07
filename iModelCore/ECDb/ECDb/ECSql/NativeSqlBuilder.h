@@ -77,7 +77,7 @@ struct NativeSqlBuilder
 
         NativeSqlBuilder& Append(Utf8CP identifier, bool escape) { return escape ? AppendEscaped(identifier) : Append(identifier); };
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
-
+        NativeSqlBuilder& Append(ECN::ECClassId id);
         NativeSqlBuilder& AppendSpace() { return Append(" "); }
         NativeSqlBuilder& AppendComma() { return Append(","); }
         NativeSqlBuilder& AppendDot() { return Append("."); }
