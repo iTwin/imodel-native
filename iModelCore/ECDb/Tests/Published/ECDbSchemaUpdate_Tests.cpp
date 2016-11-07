@@ -7082,7 +7082,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
         "     <BaseClass>Element</BaseClass>"
@@ -7178,7 +7178,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
         "     <BaseClass>Element</BaseClass>"
@@ -7288,22 +7288,22 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(102, 'Model2')");
 
         //VolumeElement
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(201, 'Code1', 101, 'Volume1')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(202, 'Code2', 102, 'Volume2')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(203, 'Code3', 102, 'Volume3')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, Model.Id, Name) VALUES(201, 'Code1', 101, 'Volume1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, Model.Id, Name) VALUES(202, 'Code2', 102, 'Volume2')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, Model.Id, Name) VALUES(203, 'Code3', 102, 'Volume3')");
 
         //AnnotationElement
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(301, 'Code4', 101, 'Font1')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(302, 'Code5', 102, 'Font2')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(303, 'Code6', 102, 'Font3')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, Model.Id, Font) VALUES(301, 'Code4', 101, 'Font1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, Model.Id, Font) VALUES(302, 'Code5', 102, 'Font2')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, Model.Id, Font) VALUES(303, 'Code6', 102, 'Font3')");
 
         //LinkUrl
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, ModelId, Url) VALUES(401, 'Code7', 101, 'http://www.staufen.de')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, ModelId, Url) VALUES(402, 'Code8', 101, 'http://www.staufen.de')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, Model.Id, Url) VALUES(401, 'Code7', 101, 'http://www.staufen.de')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, Model.Id, Url) VALUES(402, 'Code8', 101, 'http://www.staufen.de')");
 
         //EmbeddedLink
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, ModelId, Name) VALUES(501, 'Code9', 102,'bliblablub')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, ModelId, Name) VALUES(502, 'Code10', 102,'bliblablub')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, Model.Id, Name) VALUES(501, 'Code9', 102,'bliblablub')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, Model.Id, Name) VALUES(502, 'Code10', 102,'bliblablub')");
 
         ECClassId urlLInkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("UrlLink")->GetId();
         ECClassId embeddedLinkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("EmbeddedLink")->GetId();

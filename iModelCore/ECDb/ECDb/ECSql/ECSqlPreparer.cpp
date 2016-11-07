@@ -787,6 +787,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         {
         Utf8CP classRefId = classRefExp->GetId().c_str();
         ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, classRefId);
+        classIdPropertyMap->AcceptVisitor(sqlVisitor);
         BeAssert(sqlVisitor.GetStatus() == SUCCESS);
         nativeSqlSnippet.Append(sqlVisitor.GetResultSet().front().GetSql());
         }

@@ -433,22 +433,21 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Cla
     StorageDescription const& storageDesc = classMap.GetStorageDescription();
     bool isVertical = storageDesc.GetVerticalPartitions().size() > 1;
     std::vector<Partition const*> partitionOfInterest;
-    if (m_isPolymorphic)
+    if (isVertical)
         {
-        if (isVertical)
-            {
-            for (Partition const& partition : storageDesc.GetVerticalPartitions())
-                partitionOfInterest.push_back(&partition);
-            }
-        else
+        for (Partition const& partition : storageDesc.GetVerticalPartitions())
+            partitionOfInterest.push_back(&partition);
+        }
+    else
+        {
+        if (m_isPolymorphic)
             {
             for (Partition const& partition : storageDesc.GetHorizontalPartitions())
                 partitionOfInterest.push_back(&partition);
             }
-        }
-    else
-        {
-        partitionOfInterest.push_back(&storageDesc.GetRootHorizontalPartition());
+        else
+            partitionOfInterest.push_back(&storageDesc.GetRootHorizontalPartition());
+
         }
 
     for (Partition const* partition : partitionOfInterest)
