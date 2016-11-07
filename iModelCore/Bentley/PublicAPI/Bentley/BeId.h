@@ -94,6 +94,13 @@ public:
         ToString(idStrBuffer);
         return Utf8String(idStrBuffer); 
         }
+        
+    //! Tries to parse @p idString into an BeInt64Id
+    //! @remarks In order to parse correctly, the id string must contain an unsigned number in decimal format.
+    //! @param[out] id The resulting BeInt64Id.
+    //! @param[in] idString String to parse
+    //! @return SUCCESS if the string was parsed successfully. ERROR otherwise
+    BENTLEYDLL_EXPORT static BentleyStatus FromString(BeInt64Id& id, Utf8CP idString);
     };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
