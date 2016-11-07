@@ -45,6 +45,8 @@ private:
     void SetDirty();
     BentleyStatus LoadProperties();
 
+    IECInstanceP        _GetAsIECInstance() const;
+
     // ECDBuffer:
     ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
     ECN::ECObjectsStatus _GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
@@ -53,7 +55,7 @@ private:
     bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const { BeAssert(false); return false; }
     void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool, uint32_t, int flagIndex, bool enable) override { BeAssert(false); }
     ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
-    ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
+    ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override;
 
     bool _AcquireData(bool) const override 
         {
