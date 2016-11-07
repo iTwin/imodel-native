@@ -170,7 +170,7 @@ Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilitySt
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     {
-    Utf8String activeStream = "DgnDb61-16Q2";
+    Utf8String activeStream = "DgnDb61-16Q3";
 
     BeFileName compatibilityRoot;
     BeTest::GetHost().GetDocumentsRoot(compatibilityRoot);
