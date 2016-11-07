@@ -386,7 +386,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
-        else
+        else if (m_nodeHeader.m_isTextured)
             {
             auto tex = GetSingleDisplayTexture();
             if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
