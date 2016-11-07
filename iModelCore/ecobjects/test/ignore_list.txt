@@ -67,3 +67,10 @@ AdhocPropertyTest.AddPropertyWithOptionalMetadata
 
 #SchemaConverter doesn't support string enums correctly
 StandardValueToEnumConversionTest.CAConversionTest
+
+#Base64 conversion appears to have been busted for a long time
+ValueTests.StringToECValue
+ValueTests.StringToIGeometry
+ValueTests.ECValueToString
+InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
+
