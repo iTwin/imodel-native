@@ -2350,7 +2350,6 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (in
 +---------------+---------------+---------------+---------------+---------------+------*/
 void              convertByteArrayToString (Utf8StringR outString, const Byte *byteData, size_t numBytes)
     {
-    // NB: Encode() always returns SUCCESS...return type is misleading.
     Base64Utilities::Encode(outString, byteData, numBytes);
     }
 
@@ -2360,7 +2359,11 @@ typedef bvector<Byte>   T_ByteArray;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   convertStringToByteArray (T_ByteArray& byteData, Utf8CP stringData)
     {
-    return SUCCESS == Base64Utilities::Decode(byteData, stringData, strlen(stringData));
+    if (!Base64Utilities::MatchesAlphabet(stringData))
+        return false;
+    
+    Base64Utilities::Decode(byteData, stringData, strlen(stringData));
+    return true;
     }
 
 //--------------------------------------------------------------------------------------

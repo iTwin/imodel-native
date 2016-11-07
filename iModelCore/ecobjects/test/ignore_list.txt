@@ -69,8 +69,5 @@ AdhocPropertyTest.AddPropertyWithOptionalMetadata
 StandardValueToEnumConversionTest.CAConversionTest
 
 #Base64 conversion appears to have been busted for a long time
-ValueTests.StringToECValue
-ValueTests.StringToIGeometry
-ValueTests.ECValueToString
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
 

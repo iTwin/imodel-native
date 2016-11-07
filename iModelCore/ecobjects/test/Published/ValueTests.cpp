@@ -48,7 +48,7 @@ TEST_F(ValueTests, ECValueToString)
     
     EXPECT_EQ (value.SetBinary(binary, sizeof(binary)), SUCCESS);
     //EXPECT_STREQ (value.ToString().c_str(), L"AEgADw==");  //this is probably BASE64 encoded
-    EXPECT_TRUE (std::regex_match (value.ToString().c_str(), std::regex("^AEgAD.==$")));
+    EXPECT_TRUE (std::regex_match (value.ToString().c_str(), std::regex("^AAECA.==$")));
     
     EXPECT_EQ (value.SetBoolean(false), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "False");
