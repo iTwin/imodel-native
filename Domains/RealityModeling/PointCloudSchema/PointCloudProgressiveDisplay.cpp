@@ -74,8 +74,8 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, settings.GetUsePlane());
         if (settings.GetUseIntensity()) //if intensity set to true
             {
-            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settings.GetBrightness () );
-            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settings.GetContrast () );
+            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, (float)settings.GetBrightness () );
+            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, (float)settings.GetContrast () );
             PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settings.GetIntensityRampIdx ());
             BeAssert (settings.GetIntensityRampIdx() != INVALID_RAMP_INDEX);
             }
@@ -84,8 +84,8 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
             {
             PointCloudVortex::ShaderOptioni( PtShaderOptions::PLANE_SHADER_RAMP, settings.GetPlaneRampIdx ());
             BeAssert (settings.GetPlaneRampIdx() != INVALID_RAMP_INDEX);
-            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settings.GetDistance ());
-            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settings.GetOffset ());
+            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, (float)settings.GetDistance ());
+            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, (float)settings.GetOffset ());
 
             //Clamp elevation value
             if (settings.GetClampIntensity())
@@ -107,7 +107,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
                 axis[2]= (float)direction.z;
                 }
             else
-                axis [std::min<uint16_t>(2, settings.GetPlaneAxis ())] = 1.0f;
+                axis [std::min<uint16_t>(2, (uint16_t)settings.GetPlaneAxis ())] = 1.0f;
 
             PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
             }
@@ -116,8 +116,8 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         {
         PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, true);
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
-        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settings.GetBrightness () );
-        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settings.GetContrast () );
+        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, (float)settings.GetBrightness () );
+        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, (float)settings.GetContrast () );
         PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settings.GetIntensityRampIdx ());
         BeAssert (settings.GetIntensityRampIdx() != INVALID_RAMP_INDEX);
         }
@@ -135,8 +135,8 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         else
             PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
 
-        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settings.GetDistance ());
-        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settings.GetOffset ());
+        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, (float)settings.GetDistance ());
+        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, (float)settings.GetOffset ());
 
         float axis [] = {0,0,0};
         if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
@@ -151,7 +151,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
             axis[2]= (float)direction.z;
             }
         else
-            axis [std::min<uint16_t>(2, settings.GetPlaneAxis ())] = 1.0f;
+            axis [std::min<uint16_t>(2, (uint16_t)settings.GetPlaneAxis ())] = 1.0f;
         PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
         }
     else
