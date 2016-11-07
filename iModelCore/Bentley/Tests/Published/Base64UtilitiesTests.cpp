@@ -33,7 +33,7 @@ TEST_F(Base64UtilitiesTests, EncodeEmptyBlob)
     {
     Byte const* blob = nullptr;
     Utf8String encoded;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Encode(encoded, blob, 0));
+    Base64Utilities::Encode(encoded, blob, 0);
     ASSERT_TRUE(encoded.empty());
     }
 
@@ -48,7 +48,7 @@ TEST_F (Base64UtilitiesTests, EncodeString)
     ASSERT_STREQ(expected, Base64Utilities::Encode(input.c_str()).c_str());
     
     Utf8String encoded;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Encode(encoded, (Byte*)input.data(), input.size()));
+    Base64Utilities::Encode(encoded, (Byte*)input.data(), input.size());
     ASSERT_STREQ(expected, encoded.c_str());
 
     // encode empty
@@ -66,9 +66,9 @@ TEST_F (Base64UtilitiesTests, DecodeEmptyString)
     ASSERT_TRUE(Base64Utilities::Decode(nullptr, 0).empty());
 
     bvector<Byte> blob;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Decode(blob, encoded));
+    Base64Utilities::Decode(blob, encoded);
     ASSERT_TRUE(blob.empty());
-    ASSERT_EQ(SUCCESS, Base64Utilities::Decode(blob, nullptr, 0));
+    Base64Utilities::Decode(blob, nullptr, 0);
     ASSERT_TRUE(blob.empty());
     }
 
@@ -83,7 +83,7 @@ TEST_F (Base64UtilitiesTests, Decode)
     ASSERT_STREQ(expectedStr.c_str(), Base64Utilities::Decode(encoded.c_str(), encoded.size()).c_str());
 
     bvector<Byte> byteArray;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Decode(byteArray, encoded));
+    Base64Utilities::Decode(byteArray, encoded);
     ASSERT_EQ(expectedStr.size(), byteArray.size());
     for (size_t i = 0; i < expectedStr.size(); i++)
         {
@@ -117,12 +117,12 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeBlob)
     const size_t expectedBlobSize = sizeof(expectedNumber);
 
     Utf8String encoded;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Encode(encoded, expectedBlob, expectedBlobSize));
+    Base64Utilities::Encode(encoded, expectedBlob, expectedBlobSize);
 
     ASSERT_STREQ("0gKWSQAAAAA=", encoded.c_str());
 
     bvector<Byte> decodedBlob;
-    ASSERT_EQ(SUCCESS, Base64Utilities::Decode(decodedBlob, encoded));
+    Base64Utilities::Decode(decodedBlob, encoded);
     ASSERT_EQ(expectedBlobSize, decodedBlob.size());
     
     int64_t actualNumber = INT64_C(-1);
@@ -141,18 +141,18 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeByteStream)
     ASSERT_STREQ("Rm9vMTIzIQ==", encoded.c_str());
 
     ByteStream decodedStream;
-    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedStream, encoded.c_str(), encoded.size()));
+    Base64Utilities::Decode(decodedStream, encoded.c_str(), encoded.size());
     Utf8String decodedString((CharCP)decodedStream.GetData(), expectedString.size());
     ASSERT_STREQ(expectedString.c_str(), decodedString.c_str());
 
     // Decode empty
     ByteStream decodedEmpty;
-    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedStream, nullptr, 0));
+    Base64Utilities::Decode(decodedStream, nullptr, 0);
     EXPECT_TRUE(0 == decodedEmpty.GetSize());
     
     // Decode partial
     ByteStream decodedPartial;
-    EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedPartial, "Rm9vMTIzIQ==Garbage", 12));
+    Base64Utilities::Decode(decodedPartial, "Rm9vMTIzIQ==Garbage", 12);
     Utf8String decodedPartialString((CharCP)decodedPartial.GetData(), expectedString.size());
     ASSERT_STREQ(expectedString.c_str(), decodedPartialString.c_str());
 
