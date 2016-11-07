@@ -38,6 +38,8 @@ public:
     BENTLEYDLL_EXPORT static BentleyStatus Decode(ByteStream& dest, Utf8CP src, size_t srcLen);
 
     BENTLEYDLL_EXPORT static Utf8StringCR Alphabet();
+
+    BENTLEYDLL_EXPORT static bool MatchesAlphabet(Utf8CP str); 
     };
 
 END_BENTLEY_NAMESPACE

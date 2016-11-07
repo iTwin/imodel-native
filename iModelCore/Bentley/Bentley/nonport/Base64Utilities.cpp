@@ -200,3 +200,19 @@ BentleyStatus Base64Utilities::Decode(ByteStream& dest, Utf8CP src, size_t srcLe
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR Base64Utilities::Alphabet() { return base64_chars; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Base64Utilities::MatchesAlphabet(Utf8CP input)
+    {
+    if (Utf8String::IsNullOrEmpty(input))
+        return true;
+
+    for (Utf8CP ch = input; 0 != *ch; ++ch)
+        if (!is_base64(*ch) && *ch != '=')
+            return false;
+
+    return true;
+    }
+
