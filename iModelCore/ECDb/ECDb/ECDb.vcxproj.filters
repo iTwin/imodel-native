@@ -276,9 +276,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbImpl.h">
       <Filter>ECDb</Filter>
     </ClInclude>
@@ -400,6 +397,9 @@
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\NavigationPropertyECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\IdECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
   </ItemGroup>
@@ -654,9 +654,6 @@
     <ClCompile Include="ECSql\JsonReader.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbImpl.cpp">
       <Filter>ECDb</Filter>
     </ClCompile>
@@ -736,6 +733,9 @@
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\NavigationPropertyECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\IdECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
   </ItemGroup>

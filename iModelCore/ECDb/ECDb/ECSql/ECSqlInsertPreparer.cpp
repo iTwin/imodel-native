@@ -9,7 +9,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include "ECSqlInsertPreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
-#include "SystemPropertyECSqlBinder.h"
+#include "IdECSqlBinder.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC

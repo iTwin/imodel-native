@@ -80,6 +80,7 @@
     <ClCompile Include="ECSql\ExpHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementNoopImpls.cpp" />
+    <ClCompile Include="ECSql\IdECSqlBinder.cpp" />
     <ClCompile Include="ECSql\IECSqlValue.cpp" />
     <ClCompile Include="ECSql\IECSqlBinder.cpp" />
     <ClCompile Include="ECSql\InsertStatementExp.cpp" />
@@ -111,7 +112,6 @@
     <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
@@ -184,6 +184,7 @@
     <ClInclude Include="ECSql\Exp.h" />
     <ClInclude Include="ECSql\ExpHelper.h" />
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
+    <ClInclude Include="ECSql\IdECSqlBinder.h" />
     <ClInclude Include="ECSql\IECSqlPrimitiveBinder.h" />
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
     <ClInclude Include="ECSql\InsertStatementExp.h" />
@@ -217,7 +218,6 @@
     <ClInclude Include="ECSql\StructArrayJsonECSqlField.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
-    <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />

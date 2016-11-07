@@ -103,7 +103,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.h \
                 $(baseDir)ECSql/StructArrayJsonECSqlBinder.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlBinder.h \
-                $(baseDir)ECSql/SystemPropertyECSqlBinder.h \
+                $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointMappedToColumnsECSqlField.h \
@@ -323,7 +323,7 @@ $(o)StructArrayJsonECSqlBinder$(oext):                        $(baseDir)ECSql/St
 
 $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/NavigationPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SystemPropertyECSqlBinder$(oext):                         $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)IdECSqlBinder$(oext):                                     $(baseDir)ECSql/IdECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

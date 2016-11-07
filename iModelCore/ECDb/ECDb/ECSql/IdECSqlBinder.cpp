@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/SystemPropertyECSqlBinder.cpp $
+|     $Source: ECDb/ECSql/IdECSqlBinder.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "SystemPropertyECSqlBinder.h"
+#include "IdECSqlBinder.h"
 #include "ECSqlStatementBase.h"
 
 USING_NAMESPACE_BENTLEY_EC

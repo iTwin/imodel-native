@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "NavigationPropertyECSqlBinder.h"
-#include "SystemPropertyECSqlBinder.h"
+#include "IdECSqlBinder.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
+// @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
     : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
@@ -22,7 +22,7 @@ NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase&
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
+// @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 void NavigationPropertyECSqlBinder::Initialize()
     {
@@ -48,14 +48,21 @@ void NavigationPropertyECSqlBinder::Initialize()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
+// @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex)
     {
     if (ecsqlParameterComponentIndex == 0)
-        m_idBinder->SetSqliteIndex((size_t) ecsqlParameterComponentIndex);
-    else if (ecsqlParameterComponentIndex == 1)
-        m_relECClassIdBinder->SetSqliteIndex((size_t) ecsqlParameterComponentIndex);
+        {
+        m_idBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
+        return;
+        }
+
+    if (ecsqlParameterComponentIndex == 1)
+        {
+        m_relECClassIdBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
+        return;
+        }
 
     BeAssert(false);
     }

@@ -13,7 +13,7 @@
 #include "PrimitiveArrayToColumnECSqlBinder.h"
 #include "StructArrayJsonECSqlBinder.h"
 #include "NavigationPropertyECSqlBinder.h"
-#include "SystemPropertyECSqlBinder.h"
+#include "IdECSqlBinder.h"
 #include "ECSqlStatementBase.h"
 #include "ECSqlBinder.h"
 
