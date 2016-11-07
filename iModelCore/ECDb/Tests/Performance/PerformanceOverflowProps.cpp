@@ -670,8 +670,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 {
                 Utf8CP base64Str = stmt.GetValueText(0);
                 bvector<Byte> blob;
-                if (SUCCESS != Base64Utilities::Decode(blob, base64Str, strlen(base64Str)))
-                    return ERROR;
+                Base64Utilities::Decode(blob, base64Str, strlen(base64Str));
 
                 if (blob.size() != GetTestBlobSize() || memcmp(blob.data(), GetTestBlob(), GetTestBlobSize()) != 0)
                     return ERROR;
@@ -709,8 +708,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 {
                 Utf8CP base64Str = stmt.GetValueText(0);
                 bvector<Byte> fb;
-                if (SUCCESS != Base64Utilities::Decode(fb, base64Str, strlen(base64Str)))
-                    return ERROR;
+                Base64Utilities::Decode(fb, base64Str, strlen(base64Str));
 
                 IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
                 if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
@@ -984,8 +982,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 case PRIMITIVETYPE_Binary:
                 {
                 Utf8String blobStr;
-                if (SUCCESS != Base64Utilities::Encode(blobStr, GetTestBlob(), GetTestBlobSize()))
-                    return ERROR;
+                Base64Utilities::Encode(blobStr, GetTestBlob(), GetTestBlobSize());
                 
                 json.append("\"").append(blobStr).append("\"");
                 break;
@@ -1023,8 +1020,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
                 Utf8String blobStr;
-                if (SUCCESS != Base64Utilities::Encode(blobStr, fb.data(), fb.size()))
-                    return ERROR;
+                Base64Utilities::Encode(blobStr, fb.data(), fb.size());
 
                 json.append("\"").append(blobStr).append("\"");
                 break;
