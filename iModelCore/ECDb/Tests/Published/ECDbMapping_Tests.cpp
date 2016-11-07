@@ -2888,6 +2888,89 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
+	{
+		auto assertECSql = [](Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
+		{
+			ECSqlStatement statement;
+			ASSERT_EQ(sqlStatus, statement.Prepare(ecdb, ecsql));
+			ASSERT_EQ(dbResult, statement.Step());
+			statement.Finalize();
+		};
+
+		SchemaItem testItem(
+			"<?xml version='1.0' encoding='utf-8'?>"
+			"<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+			"<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+			"<ECEntityClass typeName='A' modifier='Abstract' >"
+			"        <ECCustomAttributes>"
+			"            <ClassMap xmlns='ECDbMap.01.00'>"
+			"                <MapStrategy>"
+			"                 <Strategy>SharedTable</Strategy>"
+			"                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+			"                 </MapStrategy>"
+			"            </ClassMap>"
+			"        </ECCustomAttributes>"
+			"   <ECProperty propertyName='A_Prop' typeName='string' />"
+			"</ECEntityClass>"
+			"<ECEntityClass typeName='B' modifier='None' >"
+			"   <BaseClass>A</BaseClass>"
+			"   <ECProperty propertyName='B_Prop' typeName='string' />"
+			"</ECEntityClass>"
+			"<ECEntityClass typeName='C' modifier='None' >"
+			"   <BaseClass>B</BaseClass>"
+			"   <ECProperty propertyName='C_Prop' typeName='string' />"
+			"</ECEntityClass>"
+			"<ECRelationshipClass typeName='AHasA' modifier='Abstract' strength='referencing'>"
+			"        <ECCustomAttributes>"
+			"            <LinkTableRelationshipMap xmlns='ECDbMap.01.00'>"
+			"               <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+			"            </LinkTableRelationshipMap>"
+			"        </ECCustomAttributes>"
+			"    <Source cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'A' />"
+			"    </Source>"
+			"    <Target cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'A' />"
+			"    </Target>"
+			"</ECRelationshipClass>"
+			"<ECRelationshipClass typeName='BHasB' modifier='None' strength='referencing'>"
+			"   <BaseClass>AHasA</BaseClass>"
+			"    <Source cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'B' />"
+			"    </Source>"
+			"    <Target cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'B' />"
+			"    </Target>"
+			"</ECRelationshipClass>"
+			"<ECRelationshipClass typeName='CHasC' modifier='None' strength='referencing'>"
+			"   <BaseClass>AHasA</BaseClass>"
+			"    <Source cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'C' />"
+			"    </Source>"
+			"    <Target cardinality='(1,N)' polymorphic='true'>"
+			"      <Class class = 'C' />"
+			"    </Target>"
+			"</ECRelationshipClass>"
+			"</ECSchema>", true, "");
+
+		ECDb db;
+		bool asserted = false;
+		AssertSchemaImport(db, asserted, testItem, "DuplicateRelationshipsFlagForSubClassesInLinkTable.ecdb");
+		ASSERT_FALSE(asserted);
+
+		ECSqlStatement stmt;
+		assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+		assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+		assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+		assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+		assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+		assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+	}
+
+//---------------------------------------------------------------------------------------
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
