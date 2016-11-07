@@ -75,24 +75,32 @@ namespace IndexECPlugin.Source.Helpers
 
             string[] zipNameSplit = zipName.Split('_');
 
-            //According to the convention, the date of acquisition is located after the first underscore character
-            string newDateString = zipNameSplit[1];
-
-            resolution = zipNameSplit[2].Replace('x', '.');
-
-            resolutionInMeters = resolution.TrimEnd('m');
-            resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
-
-            try
+            if ( zipNameSplit.Count() < 3 )
                 {
-                date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                resolution = null;
+                resolutionInMeters = null;
+                date = null;
                 }
-            catch ( System.FormatException )
+            else
                 {
-                Log.Logger.error(String.Format("Error while filtering USGS High Resolution Orthoimagery entry {0}.", title));
-                throw new OperationFailedException("Error while filtering USGS High Resolution Orthoimagery results.");
-                }
+                //According to the convention, the date of acquisition is located after the first underscore character
+                string newDateString = zipNameSplit[1];
 
+                resolution = zipNameSplit[2].Replace('x', '.');
+
+                resolutionInMeters = resolution.TrimEnd('m');
+                resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
+
+                try
+                    {
+                    date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                catch ( System.FormatException )
+                    {
+                    Log.Logger.error(String.Format("Error while filtering USGS High Resolution Orthoimagery entry {0}.", title));
+                    date = null;
+                    }
+                }
             }
 
         /// <summary>
@@ -130,23 +138,32 @@ namespace IndexECPlugin.Source.Helpers
 
             string[] zipNameSplit = zipName.Split('_');
 
-            //According to the convention, the date of acquisition is located after the first underscore character
-            string newDateString = zipNameSplit[1];
-
-            resolution = zipNameSplit[2].Replace('x', '.');
-
-            resolutionInMeters = resolution.TrimEnd('m');
-            resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
-
-            try
+            if ( zipNameSplit.Count() < 3 )
                 {
-                date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
-                }
-            catch ( System.FormatException )
-                {
+                resolution = null;
+                resolutionInMeters = null;
                 date = null;
                 }
+            else
+                {
+                //According to the convention, the date of acquisition is located after the first underscore character
+                string newDateString = zipNameSplit[1];
 
+                resolution = zipNameSplit[2].Replace('x', '.');
+
+                resolutionInMeters = resolution.TrimEnd('m');
+                resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
+
+                try
+                    {
+                    date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                catch ( System.FormatException )
+                    {
+                    Log.Logger.error(String.Format("Error while filtering USGS High Resolution Orthoimagery entry {0}.", title));
+                    date = null;
+                    }
+                }
             }
         }
 
@@ -183,26 +200,33 @@ namespace IndexECPlugin.Source.Helpers
 
             string[] fileNameSplit = fileName.Split('_');
 
-            string newTokenResolutionChar = fileNameSplit[4];
-            if ( newTokenResolutionChar == "1" )
+            if ( fileNameSplit.Count() < 5 )
                 {
-                resolution = "1.0m";
-                resolutionInMeters = "1.0x1.0";
+                resolution = null;
+                resolutionInMeters = null;
                 }
             else
                 {
-                if ( newTokenResolutionChar == "h" )
+                string newTokenResolutionChar = fileNameSplit[4];
+                if ( newTokenResolutionChar == "1" )
                     {
-                    resolution = "0.5m";
-                    resolutionInMeters = "0.5x0.5";
+                    resolution = "1.0m";
+                    resolutionInMeters = "1.0x1.0";
                     }
                 else
                     {
-                    resolution = null;
-                    resolutionInMeters = null;
+                    if ( newTokenResolutionChar == "h" )
+                        {
+                        resolution = "0.5m";
+                        resolutionInMeters = "0.5x0.5";
+                        }
+                    else
+                        {
+                        resolution = null;
+                        resolutionInMeters = null;
+                        }
                     }
                 }
-
             string dateString = token.TryToGetString("publicationDate");
             try
                 {
@@ -211,7 +235,7 @@ namespace IndexECPlugin.Source.Helpers
             catch ( FormatException )
                 {
                 Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
-                throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+                date = null;
                 }
 
 
@@ -282,23 +306,31 @@ namespace IndexECPlugin.Source.Helpers
 
             string[] fileNameSplit = fileName.Split('_');
 
-            string newTokenResolutionChar = fileNameSplit[4];
-            if ( newTokenResolutionChar == "1" )
+            if ( fileNameSplit.Count() < 5 )
                 {
-                resolution = "1.0m";
-                resolutionInMeters = "1.0x1.0";
+                resolution = null;
+                resolutionInMeters = null;
                 }
             else
                 {
-                if ( newTokenResolutionChar == "h" )
+                string newTokenResolutionChar = fileNameSplit[4];
+                if ( newTokenResolutionChar == "1" )
                     {
-                    resolution = "0.5m";
-                    resolutionInMeters = "0.5x0.5";
+                    resolution = "1.0m";
+                    resolutionInMeters = "1.0x1.0";
                     }
                 else
                     {
-                    resolution = null;
-                    resolutionInMeters = null;
+                    if ( newTokenResolutionChar == "h" )
+                        {
+                        resolution = "0.5m";
+                        resolutionInMeters = "0.5x0.5";
+                        }
+                    else
+                        {
+                        resolution = null;
+                        resolutionInMeters = null;
+                        }
                     }
                 }
             }
@@ -341,7 +373,7 @@ namespace IndexECPlugin.Source.Helpers
             catch ( FormatException )
                 {
                 Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
-                throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+                date = null;
                 }
 
             double lat;
@@ -496,7 +528,7 @@ namespace IndexECPlugin.Source.Helpers
                 catch ( FormatException )
                     {
                     Log.Logger.error(String.Format("Error while filtering USGS entry {0}.", title));
-                    throw new OperationFailedException("Error while filtering USGS results");
+                    date = null;
                     }
                 }
             else
@@ -597,7 +629,8 @@ namespace IndexECPlugin.Source.Helpers
                     break;
                 default:
                     Log.Logger.error(String.Format("Error while filtering USGS National Land Cover Database entry {0}.", title));
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS National Land Cover Database results.");
+                    date = null;
+                    break;
                 }
 
             }

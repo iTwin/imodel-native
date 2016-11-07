@@ -37,6 +37,14 @@ namespace IndexECPlugin.Source.Helpers
             }
 
         /// <summary>
+        /// A list of Ids to exclude from returned instances
+        /// </summary>
+        List<string> Blacklist
+            {
+            get;
+            }
+
+        /// <summary>
         /// Retrieves the data from the sciencebase entry of given ID
         /// </summary>
         /// <param name="sourceID">The ID of the wanted entry in sciencebase</param>
@@ -102,6 +110,11 @@ namespace IndexECPlugin.Source.Helpers
           //new UsgsAPICategory(){Title = "Woodland Tint", SubTitle = "Woodland Tint", Format = "none", Priority = 0, Classification = ""}
         };
 
+        private readonly List<string> m_blacklist = new List<string>
+        {
+            "581d0533e4b08da350d5250b"
+        };
+
         ECQuery m_query;
 
         public USGSDataFetcher (ECQuery query)
@@ -114,6 +127,14 @@ namespace IndexECPlugin.Source.Helpers
             get
                 {
                 return m_categoryTable;
+                }
+            }
+
+        public List<string> Blacklist
+            {
+            get
+                {
+                return m_blacklist;
                 }
             }
 
