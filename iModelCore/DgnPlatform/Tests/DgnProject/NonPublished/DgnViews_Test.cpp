@@ -96,12 +96,11 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void Make4Views()
         {
-        PhysicalModelPtr m1 = InsertPhysicalModel("m1");
-        PhysicalModelPtr m2 = InsertPhysicalModel("m2");
-        PhysicalModelPtr m3 = InsertPhysicalModel("m3");
-        PhysicalModelPtr m4 = InsertPhysicalModel("m4");
+        PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m1");
+        PhysicalModelPtr m2 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m2");
+        PhysicalModelPtr m3 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m3");
+        PhysicalModelPtr m4 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m4");
 
-        ASSERT_TRUE(m1.IsValid() && m2.IsValid() && m3.IsValid() && m4.IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m1, "View 1").IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m2, "View 2").IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m3, "View 3").IsValid());
@@ -266,7 +265,7 @@ TEST_F(DgnViewElemTest, Iterate)
     {
     SetupSeedProject();
 
-    PhysicalModelPtr models[] = { InsertPhysicalModel("A"), InsertPhysicalModel("B") };
+    PhysicalModelPtr models[] = { DgnDbTestUtils::InsertPhysicalModel(*m_db, "A"), DgnDbTestUtils::InsertPhysicalModel(*m_db, "B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };
     static const Utf8CP s_viewSourceNames[] = { "-U", "-G", "-P" };
     static const Utf8CP s_viewDescriptions[] = { "", "generated", "hidden" };
@@ -286,7 +285,7 @@ TEST_F(DgnViewElemTest, Iterate)
         {
         for (auto i = 0; i < _countof(s_viewSources); i++)
             {
-            Utf8String viewName(model->GetCode().GetValue());
+            Utf8String viewName(model->GetName());
             viewName.append(s_viewSourceNames[i]);
             ViewDefinitionCPtr view = AddSpatialView<CameraViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());

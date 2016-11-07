@@ -346,7 +346,7 @@ struct SystemAuthority
         Category = 3LL,
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
-        Model = 6LL,
+        // 6LL is available
         Partition = 7LL,
         Session = 8LL,
 
@@ -408,7 +408,6 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnCategories", SystemAuthority::Category, dgn_AuthorityHandler::Category::GetHandler() },
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
-            { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
             { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
             { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
@@ -527,26 +526,6 @@ DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace)
-    {
-    // ###TODO_CODES: Silently replace illegal characters?
-    Utf8String trimmed(modelName);
-    trimmed.Trim();
-
-    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Model, codeValue, modeledElementId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
     {
     return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
@@ -607,49 +586,9 @@ bool DgnCode::operator<(DgnCode const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ICodedEntity::SetCode(DgnCode const& newCode)
+DgnDbStatus DgnAuthority::_ValidateCode(DgnElementCR element) const
     {
-    DgnCode oldCode = GetCode();
-    if (oldCode == newCode)
-        return DgnDbStatus::Success;
-
-    DgnDbStatus status = _SetCode(newCode);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    status = ValidateCode();
-    if (DgnDbStatus::Success != status)
-        _SetCode(oldCode);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityCPtr ICodedEntity::GetCodeAuthority() const
-    {
-    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ICodedEntity::ValidateCode() const
-    {
-    DgnAuthorityCPtr auth = GetCodeAuthority();
-    if (auth.IsNull() || !SupportsCodeAuthority(*auth))
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return auth->ValidateCode(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnAuthority::_ValidateCode(ICodedEntityCR entity) const
-    {
-    DgnCode const& code = entity.GetCode();
+    DgnCodeCR code = element.GetCode();
     if (!code.IsValid())
         return DgnDbStatus::InvalidName;
 
@@ -661,85 +600,49 @@ DgnDbStatus DgnAuthority::_ValidateCode(ICodedEntityCR entity) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryPartAuthority::_ValidateCode(ICodedEntityCR entity) const
+DgnDbStatus DgnAuthority::_RegenerateCode(DgnCodeR regeneratedCode, DgnElementCR element) const
     {
-    DgnDbStatus status = T_Super::_ValidateCode(entity);
-    if (DgnDbStatus::Success == status && nullptr == entity.ToDgnElement())
-        status = DgnDbStatus::InvalidCodeAuthority;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelAuthority::_ValidateCode(ICodedEntityCR entity) const
-    {
-    auto status = T_Super::_ValidateCode(entity);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    if (nullptr == entity.ToDgnModel())
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    regeneratedCode = element.GetCode(); 
+    return DgnDbStatus::Success; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PartitionAuthority::_ValidateCode(ICodedEntityCR entity) const
+DgnDbStatus PartitionAuthority::_ValidateCode(DgnElementCR element) const
     {
-    DgnDbStatus status = T_Super::_ValidateCode(entity);
+    DgnDbStatus status = T_Super::_ValidateCode(element);
     if (DgnDbStatus::Success != status)
         return status;
-
-    if (nullptr == entity.ToDgnElement())
-        return DgnDbStatus::InvalidCodeAuthority;
 
     // Partitions use the same name validation function as Models
-    return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SessionAuthority::_ValidateCode(ICodedEntityCR entity) const
-    {
-    if (nullptr == entity.ToDgnElement())
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return T_Super::_ValidateCode(entity);
+    return DgnModels::IsValidName(element.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategoryAuthority::_ValidateCode(ICodedEntityCR entity) const
+DgnDbStatus CategoryAuthority::_ValidateCode(DgnElementCR element) const
     {
-    auto status = T_Super::_ValidateCode(entity);
+    auto status = T_Super::_ValidateCode(element);
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto el = entity.ToDgnElement();
-    if (nullptr == el)
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    DgnCode const& code = entity.GetCode();
+    DgnCodeCR code = element.GetCode();
 
     // Reject illegal characters...
     if (!DgnCategory::IsValidName(code.GetValue()))
         return DgnDbStatus::InvalidName;
 
     // Category codes have no namespace
-    DgnCategoryCP cat = dynamic_cast<DgnCategoryCP>(el);
+    DgnCategoryCP cat = dynamic_cast<DgnCategoryCP>(&element);
     if (nullptr != cat)
         return code.GetNamespace().empty() ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
 
     // Only categories and sub-categories are supported...
-    DgnSubCategoryCP subcat = dynamic_cast<DgnSubCategoryCP>(el);
+    DgnSubCategoryCP subcat = dynamic_cast<DgnSubCategoryCP>(&element);
     if (nullptr == subcat)
         return DgnDbStatus::InvalidCodeAuthority;
 
@@ -749,7 +652,7 @@ DgnDbStatus CategoryAuthority::_ValidateCode(ICodedEntityCR entity) const
         return DgnDbStatus::InvalidName;
 
     // ###TODO_CODES? From obsolete DgnSubCategory::_SetCode():
-    if (el->GetElementId().IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
+    if (element.GetElementId().IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
         {
         // default sub-category has same name as category
         DgnCategoryCPtr cat = DgnCategory::QueryCategory(subcat->GetCategoryId(), subcat->GetDgnDb());
@@ -760,15 +663,6 @@ DgnDbStatus CategoryAuthority::_ValidateCode(ICodedEntityCR entity) const
         }
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnModel::_SupportsCodeAuthority(DgnAuthorityCR auth) const
-    {
-    // No reason not to allow customized model code authorities.
-    return SystemAuthority::GetId(SystemAuthority::Local) != auth.GetAuthorityId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -789,9 +683,9 @@ uint64_t DgnAuthority::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnAuthority::ValidateCode(ICodedEntityCR entity) const
+DgnDbStatus DgnAuthority::ValidateCode(DgnElementCR element) const
     {
-    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::ValidateCode) ? DgnDbStatus::MissingHandler : _ValidateCode(entity);
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::ValidateCode) ? DgnDbStatus::MissingHandler : _ValidateCode(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -805,9 +699,9 @@ DgnDbStatus DgnAuthority::CloneCodeForImport(DgnCodeR code, DgnElementCR src, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedEntityCR codedEntity) const
+DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, DgnElementCR element) const
     {
-    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::RegenerateCode) ? DgnDbStatus::MissingHandler : _RegenerateCode(code, codedEntity);
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::RegenerateCode) ? DgnDbStatus::MissingHandler : _RegenerateCode(code, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -817,20 +711,9 @@ Utf8CP DgnCode::Iterator::Options::GetECSql() const
     {
 #define SELECT_CODE_COLUMNS_FROM "SELECT [CodeAuthorityId],[CodeValue],[CodeNamespace],ECInstanceId FROM "
 #define SELECT_ELEMENT_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Element)
-#define SELECT_MODEL_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Model)
-#define SELECT_MODEL_AND_ELEMENT_CODES SELECT_ELEMENT_CODES " UNION ALL " SELECT_MODEL_CODES
 #define EXCLUDE_EMPTY_CODES " WHERE [CodeValue] IS NOT NULL"
-#define SELECT_MODEL_AND_ELEMENT_CODES_EXCLUDE_EMPTY SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES " UNION ALL " SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES
 
-    switch (m_include)
-        {
-        case Include::Elements:
-            return m_includeEmpty ? SELECT_ELEMENT_CODES : SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
-        case Include::Models:
-            return m_includeEmpty ? SELECT_MODEL_CODES : SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES;
-        default:
-            return m_includeEmpty ? SELECT_MODEL_AND_ELEMENT_CODES : SELECT_MODEL_AND_ELEMENT_CODES_EXCLUDE_EMPTY;
-        }
+    return m_includeEmpty ? SELECT_ELEMENT_CODES : SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -840,4 +723,3 @@ DgnCode::Iterator::Iterator(DgnDbR db, Options options)
     {
     Prepare(db, options.GetECSql(), 3);
     }
-

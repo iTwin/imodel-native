@@ -685,7 +685,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             {
             IBRepEntityPtr entityPtr;
 
-            if (SUCCESS == BRepUtil::Create::BodyFromCurveVector(entityPtr, geom, 0L))
+            if (SUCCESS == BRepUtil::Create::BodyFromCurveVector(entityPtr, geom))
                 {
                 if (!doClipping)
                     {
@@ -790,7 +790,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
         {
         IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == BRepUtil::Create::BodyFromSolidPrimitive(entityPtr, geom, 0L))
+        if (SUCCESS == BRepUtil::Create::BodyFromSolidPrimitive(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -906,7 +906,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
         {
         IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == BRepUtil::Create::BodyFromBSurface(entityPtr, geom, 0L))
+        if (SUCCESS == BRepUtil::Create::BodyFromBSurface(entityPtr, geom))
             {
             if (!doClipping)
                 {
@@ -1017,7 +1017,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
         {
         IBRepEntityPtr entityPtr;
 
-        if (SUCCESS == BRepUtil::Create::BodyFromPolyface(entityPtr, geom, 0L))
+        if (SUCCESS == BRepUtil::Create::BodyFromPolyface(entityPtr, geom))
             {
             if (!doClipping)
                 {

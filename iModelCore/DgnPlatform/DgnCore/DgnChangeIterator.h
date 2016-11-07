@@ -31,14 +31,11 @@ private:
 
     DbOpcode ExtractDbOpcode();
     ECInstanceId ExtractInstanceId() const;
-    DgnCode ExtractCode(Changes::Change::Stage stage) const;
 
 protected:
     BeSQLite::Changes::Change m_sqlChange;
     DbOpcode m_dbOpcode;
     ECInstanceId m_instanceId;
-    DgnCode m_oldCode;
-    DgnCode m_newCode;
 
     DbDupValue GetDbValue(Utf8StringCR columnName) const;
     BaseChangeEntry& operator++();
@@ -52,8 +49,6 @@ public:
 
     DbOpcode GetDbOpcode() const { return m_dbOpcode; }
     ECInstanceId GetECInstanceId() const { return m_instanceId; }
-    DgnCode GetOldCode() const { return m_oldCode; }
-    DgnCode GetNewCode() const { return m_newCode; }
 };
 
 //=======================================================================================
@@ -64,9 +59,6 @@ struct BaseChangeIterator
     friend struct BaseChangeEntry;
 private:
     ChangeSummary::ColumnMap m_instanceIdColumnMap;
-    ChangeSummary::ColumnMap m_codeAuthorityIdColumnMap;
-    ChangeSummary::ColumnMap m_codeNamespaceColumnMap;
-    ChangeSummary::ColumnMap m_codeValueColumnMap;
 protected:
     DgnDbCR m_dgndb;
     Changes m_changes;
@@ -89,9 +81,13 @@ private:
     DgnModelId m_oldModelId;
     DgnModelId m_newModelId;
 
+    DgnCode ExtractCode(Changes::Change::Stage stage) const;
     DgnModelId ExtractModelId(Changes::Change::Stage stage) const;
 
 protected:
+    DgnCode m_oldCode;
+    DgnCode m_newCode;
+
     virtual void _ExtractChanges() override;
 
 public:
@@ -100,6 +96,8 @@ public:
     DgnElementId GetElementId() const { return DgnElementId(m_instanceId.GetValueUnchecked()); }
     DgnModelId GetOldModelId() const { return m_oldModelId; }
     DgnModelId GetNewModelId() const { return m_newModelId; }
+    DgnCode GetOldCode() const { return m_oldCode; }
+    DgnCode GetNewCode() const { return m_newCode; }
 
     ElementChangeEntry& operator++() {T_Super::operator++(); return *this;}
     ElementChangeEntry const& operator* () const { return *this; }
@@ -119,6 +117,9 @@ struct ElementChangeIterator : BaseChangeIterator
 
 private:
     ChangeSummary::ColumnMap m_modelIdColumnMap;
+    ChangeSummary::ColumnMap m_codeAuthorityIdColumnMap;
+    ChangeSummary::ColumnMap m_codeNamespaceColumnMap;
+    ChangeSummary::ColumnMap m_codeValueColumnMap;
 
 protected:
     virtual void _Initialize() override;

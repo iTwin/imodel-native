@@ -617,7 +617,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
+Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
     Utf8String      materialName = Utf8String ("Material_") + suffix;
 
@@ -660,10 +660,10 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             }
         }
 
-    TileTextureImageCP      textureImage;
+    TileTextureImageCP      textureImage = nullptr;
 
     displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
+    if (false != (isTextured = (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
         materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
@@ -769,7 +769,7 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
 
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
-    accessor["count"] = nValues;
+    accessor["count"] = nAttributes;
     accessor["type"] = accessorType;
 
     rootNode["bufferViews"][bufferViewId] = bufferViews;
@@ -853,16 +853,17 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
-    bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
+    bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize, isTextured = false;
 
     attr["indices"] = accIndexId;
-    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh, idStr.c_str());
+    attr["material"] = AddMaterial (rootNode, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
     attr["attributes"]["POSITION"] = accPositionId;
     AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x);
 
-    if (!mesh.Params().empty())
+    BeAssert (isTextured == !mesh.Params().empty());
+    if (!mesh.Params().empty() && isTextured)
         {
         attr["attributes"]["TEXCOORD_0"] = accParamId;
 
@@ -1203,10 +1204,18 @@ TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileGenerator::Status status)
+TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status)
     {
-    if (TileGenerator::Status::Success != status)
+    if (TileGenerator::Status::Success == status)
+        {
+        BeAssert(nullptr != rootTile);
+        BeMutexHolder lock(m_mutex);
+        m_modelRoots.push_back(rootTile);
+        }
+    else
+        {
         CleanDirectories(GetDataDirForModel(model));
+        }
 
     return status;
     }
@@ -1267,42 +1276,33 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     rootRange = DRange3d::NullRange();
 
-    for (auto& modelId : spatialView->GetViewedModels())
+    static size_t           s_maxPointsPerTile = 250000;
+    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile, m_processModelsInParallel);
+    if (TileGenerator::Status::Success != status)
+        return ConvertStatus(status);
+
+    if (m_modelRoots.empty())
+        return Status::NoGeometry;
+
+    for (auto childRootTile : m_modelRoots)
         {
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
+        Json::Value childRoot;
+        rootRange.Extend(childRootTile->GetTileRange());
+        childRoot["refine"] = "replace";
+        childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
+        TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
 
-        if (viewedModel.IsValid())
-            {
-            TileNodePtr             childRootTile;
+        WString modelRootName;
+        BeFileName modelDataDir = GetDataDirForModel(childRootTile->GetModel(), &modelRootName);
 
-            progressMeter._SetModel (viewedModel.get());
-            progressMeter._IndicateProgress (0, 1);
+        BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+        childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
 
-            static size_t           s_maxPointsPerTile = 250000;
-            if (TileGenerator::Status::Success == generator.GenerateTiles(childRootTile, *this, toleranceInMeters, s_maxPointsPerTile, modelId))
-                {
-                Json::Value         childRoot;
+        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
 
-                rootRange.Extend (childRootTile->GetTileRange());
-                childRoot["refine"] = "replace";
-                childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
-                TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
-
-                WString modelRootName;
-                BeFileName modelDataDir = GetDataDirForModel(*viewedModel, &modelRootName);
-
-                BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
-                childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
-
-                WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-
-                root[JSON_Children].append(childRoot);
-                }
-            }
+        root[JSON_Children].append(childRoot);
         }
 
-    if (!root.isMember(JSON_Children))
-        return Status::NoGeometry;
 
     TilePublisher::WriteBoundingVolume(root, rootRange);
 

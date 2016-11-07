@@ -747,12 +747,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
         /** The ID of this model */
         ModelId: DgnObjectIdP;
-        /** The Code of this model */
-        Code: DgnCodeP;
         /** The DgnDb that contains this model */
         DgnDb: DgnDbP;
-        /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
-        static CreateModelCode(name: Bentley_Utf8String): DgnCodeP;
 
         /**
         * Add any required locks and/or codes to the specified request in preparation for the specified operation

@@ -116,8 +116,7 @@ FunctionalModelPtr FunctionalModel::Create(FunctionalPartitionCR modeledElement)
         return nullptr;
         }
 
-    DgnCode code = DgnModel::CreateModelCode(FUNCTIONAL_SCHEMA(FUNC_CLASS_FunctionalModel), modeledElement.GetElementId());
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
     if (!model.IsValid())
         {
         BeAssert(false);

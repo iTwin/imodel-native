@@ -175,6 +175,7 @@ DgnDbPtr m_dgnDb;
 public:
 
 static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
+static DgnModelId s_modelId;
 
 AnnotationTableTest() { }
 
@@ -189,7 +190,7 @@ DgnDbR                  GetDgnDb()
     return *m_dgnDb;
     }
 
-DgnModelId              GetModelId()            { return GetDgnDb().Models().QueryModelId(DgnModel::CreateModelCode(TEST_MODEL_NAME)); }
+DgnModelId              GetModelId()            { return s_modelId; }
 DgnCategoryId           GetCategoryId()         { return DgnCategory::QueryCategoryId (TEST_CATEGORY_NAME, GetDgnDb()); }
 DgnElementId            GetTextStyleId()        { return AnnotationTextStyle::QueryId (GetDgnDb(), TEST_TEXTSTYLE_NAME); }
 
@@ -330,6 +331,7 @@ static void     VerifyCellsWithMergeBlocks (AnnotationTableCR table, bvector<Mer
 }; // AnnotationTableTest
 
 DgnPlatformSeedManager::SeedDbInfo AnnotationTableTest::s_seedFileInfo;
+DgnModelId AnnotationTableTest::s_modelId;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
@@ -365,9 +367,10 @@ void AnnotationTableTest::SetUpTestCase()
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model
-    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL_NAME);
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode(TEST_MODEL_NAME));
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    s_modelId = drawingModel->GetModelId();
 
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.

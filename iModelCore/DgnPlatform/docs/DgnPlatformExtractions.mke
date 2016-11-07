@@ -30,9 +30,6 @@ $(PublishExtractInput)TransactionManager_Test.cpp : $(_MakeFilePath)../Tests/Dgn
 $(PublishExtractInput)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
-$(PublishExtractInput)Model.sample.cpp : $(_MakeFilePath)samplecode/Model.sample.cpp
-    $(LinkFirstDepToFirstTarget)
-
 $(PublishExtractInput)RefCounted.sample.cpp : $(_MakeFilePath)samplecode/RefCounted.sample.cpp
     $(LinkFirstDepToFirstTarget)
 

@@ -393,7 +393,6 @@ TEST_F(RevisionTestFixture, Codes)
     CodeSet expectedCodes;
     ExpectCodes(expectedCodes, discardedCodes);
 
-    expectedCodes.insert(defaultModel->GetCode());
     expectedCodes.insert(defaultCat->GetCode());
     expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
     expectedCodes.insert(subCat.GetCode());

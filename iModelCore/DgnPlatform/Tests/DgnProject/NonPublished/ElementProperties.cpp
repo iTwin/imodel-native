@@ -27,7 +27,7 @@ struct ElementDisplayProperties : public DgnDbTestFixture
 TEST_F (ElementDisplayProperties, SetGradient)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -82,7 +82,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 TEST_F(ElementDisplayProperties, SetDisplayPattern)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -123,7 +123,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 TEST_F (ElementDisplayProperties, SetTransparency)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -155,7 +155,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 TEST_F (ElementDisplayProperties, SetCategory)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -189,7 +189,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 TEST_F (ElementDisplayProperties, SetDisplayParams)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -224,7 +224,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 TEST_F (ElementDisplayProperties, FillProperties)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, TEST_NAME);
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);

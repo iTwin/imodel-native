@@ -69,8 +69,9 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
     {
+    DgnCode partitionCode = InformationPartitionElement::CreateCode(*project.Elements().GetRootSubject(), "Default");
     DgnModels& modelTable = project.Models ();
-    DgnModelId id = modelTable.QueryModelId (DgnModel::CreateModelCode ("Default"));
+    DgnModelId id = modelTable.QuerySubModelId(partitionCode);
     DgnModelPtr model = modelTable.GetModel (id);
     if (model.IsValid ())
         model->FillModel ();
