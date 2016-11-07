@@ -1396,15 +1396,14 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
+    ecdb.SaveChanges();
     //verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
                   stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(bolt1Key.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for ECSQL " << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));

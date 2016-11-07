@@ -497,6 +497,21 @@ RelationshipClassEndTableMap const& classMap
 
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
     updateBuilder.Append(propertyNamesNativeSqlSnippets, " = ", valuesNativeSqlSnippets);
+    ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    if (ecClassIdPropertyMap->IsPersistedInDb())
+        {
+        if (!ecClassIdPropertyMap->IsMappedToSingleTable())
+            {
+            BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
+            return;
+            }
+
+        auto vmap = ecClassIdPropertyMap->FindDataPropertyMap(*ecClassIdPropertyMap->GetTables().front());
+        BeAssert(vmap != nullptr);
+        Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
+        ecClassIdPropertyMap->GetDefaultECClassId().ToString(classIdStr);
+        updateBuilder.AppendComma().Append(vmap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classIdStr);
+        }
 
     //add WHERE clause so that the right row in the end table is updated
     updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
