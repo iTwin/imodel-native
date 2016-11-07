@@ -136,7 +136,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)   "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
 
         for (Utf8String expectedSql : expectedSqlList)
@@ -201,12 +200,12 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
     DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());
-    
     ASSERT_TRUE(repositoryModel.IsValid());
     ASSERT_TRUE(dictionaryModel.IsValid());
 
-    ASSERT_STREQ(BIS_ECSCHEMA_NAME, repositoryModel->GetCode().GetNamespace().c_str());
-    ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
+    ASSERT_TRUE(m_db->GetRepositoryModel().IsValid());
+    ASSERT_TRUE(m_db->GetRealityDataSourcesModel().IsValid());
+    ASSERT_TRUE(m_db->GetSessionModel().IsValid());
 
     // make sure that Delete against the root Subject fails
         {

@@ -549,10 +549,10 @@ virtual StatusInt _VisitGeometry(GeometrySourceCR source) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override
+virtual StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override
     {
     // Always ignore elements that are not from the context's target dgnDb...
-    if (&inDgnModel->GetDgnDb() != &GetDgnDb())
+    if (&inDgnModel.GetDgnDb() != &GetDgnDb())
         return ERROR;
 
     return T_Super::_VisitDgnModel(inDgnModel);

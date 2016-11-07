@@ -1290,8 +1290,10 @@ void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, IFacetO
     options.control.is_surface_plane_ang = PK_LOGICAL_true;
     options.control.surface_plane_ang    = angleTol;
 
+    int maxPerFace = (PSolidUtil::HasCurvedFaceOrEdge(entityTag) ? facetOptions.GetCurvedSurfaceMaxPerFace() : facetOptions.GetMaxPerFace());
+
     options.control.match                = PK_facet_match_topol_c;
-    options.control.max_facet_sides      = PSolidUtil::HasCurvedFaceOrEdge (entityTag) ? facetOptions.GetCurvedSurfaceMaxPerFace () : facetOptions.GetMaxPerFace ();
+    options.control.max_facet_sides      = (maxPerFace > 3 ? maxPerFace : 3);
     options.control.shape                = facetOptions.GetConvexFacetsRequired () ? PK_facet_shape_convex_c : PK_facet_shape_cut_c;
 
     PK_TOPOL_facet_choice_2_o_m (options.choice);

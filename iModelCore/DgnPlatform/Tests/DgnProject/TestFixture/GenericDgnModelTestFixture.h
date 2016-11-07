@@ -44,43 +44,43 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericDgnModelTestFixture : public GenericBaseFixture
 {
-    public: static void SetUpTestCase();
-    public: static void TearDownTestCase();
-public:
     DEFINE_T_SUPER(GenericBaseFixture);
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
-    GenericDgnModelTestFixture() { }
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
+    static bool Is3d() {return true;}
+
+    GenericDgnModelTestFixture() { }
     virtual ~GenericDgnModelTestFixture() {}
 
-    bool            Is3d() const { return true; }
-
     DgnDbPtr GetDgnDb(){ return T_Super::GetDgnDb(s_seedFileInfo.fileName); }
-
     DgnDbPtr GetDgnDb(WCharCP newName){ return T_Super::GetDgnDb(s_seedFileInfo.fileName, newName); }
 };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                             Umar.Hayat          07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericDgnModel2dTestFixture : public GenericBaseFixture
 {
-    public: static void SetUpTestCase();
-    public: static void TearDownTestCase();
-public:
     DEFINE_T_SUPER(GenericBaseFixture);
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
+    static DgnModelId s_drawingModelId;
 
-    GenericDgnModel2dTestFixture() { }
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
+    static bool Is3d() {return false;}
+    static DgnModelId GetDrawingModelId() {return s_drawingModelId;} //!< Return the DgnModelId of the DrawingModel created during SetUpTestCase
+
+    GenericDgnModel2dTestFixture() {}
     virtual ~GenericDgnModel2dTestFixture() {}
 
-    bool            Is3d() const { return false; }
-
-    DgnDbPtr GetDgnDb(){ return T_Super::GetDgnDb(s_seedFileInfo.fileName); }
-
-    DgnDbPtr GetDgnDb(WCharCP newName){ return T_Super::GetDgnDb(s_seedFileInfo.fileName, newName); }
+    DgnDbPtr GetDgnDb() {return T_Super::GetDgnDb(s_seedFileInfo.fileName);}
+    DgnDbPtr GetDgnDb(WCharCP newName) {return T_Super::GetDgnDb(s_seedFileInfo.fileName, newName);}
 };
+
 END_DGNDB_UNIT_TESTS_NAMESPACE

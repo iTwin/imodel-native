@@ -117,7 +117,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(GeometricModelR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) = 0;
@@ -126,10 +126,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
-    DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
+    DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::BoxCR, bool is3d) override;
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
     DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _OnRangeElementFound(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();
@@ -154,7 +154,7 @@ public:
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-    StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
+    StatusInt VisitDgnModel(GeometricModelR model){return _VisitDgnModel(model);}
     DGNPLATFORM_EXPORT void SetScanReturn();
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}

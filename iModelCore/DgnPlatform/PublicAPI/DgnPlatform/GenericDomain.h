@@ -125,8 +125,8 @@ protected:
     explicit GenericGroupModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static GenericGroupModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static GenericGroupModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static GenericGroupModelPtr Create(DgnElementCR modeledElement);
+    DGNPLATFORM_EXPORT static GenericGroupModelPtr CreateAndInsert(DgnElementCR modeledElement);
 };
 
 //=======================================================================================

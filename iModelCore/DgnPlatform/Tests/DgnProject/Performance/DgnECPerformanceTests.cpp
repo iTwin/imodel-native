@@ -69,11 +69,15 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
     {
+    DgnCode partitionCode = InformationPartitionElement::CreateCode(*project.Elements().GetRootSubject(), "Default");
     DgnModels& modelTable = project.Models ();
-    DgnModelId id = modelTable.QueryModelId (DgnModel::CreateModelCode ("Default"));
+    DgnModelId id = modelTable.QuerySubModelId(partitionCode);
     DgnModelPtr model = modelTable.GetModel (id);
+
+#if defined (NEEDS_WORK_RANGE_INDEX)
     if (model.IsValid ())
         model->FillModel ();
+#endif
 
     ECClassP testClass = schema.GetClassP (TEST_CLASS_NAME);
     // We don't want to time the creation of the elements.  So we create them in one loop, and then insert instances

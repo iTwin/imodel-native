@@ -114,7 +114,7 @@ GenericGroupPtr GenericGroup::Create(GenericGroupModelCR model, DgnCodeCR code)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement)
     {
     ModelHandlerR handler = generic_ModelHandler::GenericGroupModelHandler::GetHandler();
     DgnDbR db = modeledElement.GetDgnDb();
@@ -125,7 +125,7 @@ GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement, DgnC
         return nullptr;
         }
 
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
     if (!model.IsValid())
         {
         BeAssert(false);
@@ -138,9 +138,9 @@ GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement, DgnC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElement)
     {
-    GenericGroupModelPtr model = Create(modeledElement, code);
+    GenericGroupModelPtr model = Create(modeledElement);
     if (!model.IsValid())
         return nullptr;
 

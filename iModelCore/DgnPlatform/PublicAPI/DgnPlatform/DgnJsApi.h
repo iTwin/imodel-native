@@ -614,25 +614,15 @@ struct JsDgnModel : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());
         }
-    JsDgnCodeP GetCode() const 
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsDgnCode(m_model->GetCode());
-        }
     JsDgnDbP GetDgnDb() 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnDb(m_model->GetDgnDb());
         }
-    static JsDgnCodeP CreateModelCode(Utf8StringCR name) 
-        {
-        return new JsDgnCode(DgnModel::CreateModelCode(name));
-        }
 
     RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
-    STUB_OUT_SET_METHOD(Code,JsDgnCodeP)
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
 };
 
