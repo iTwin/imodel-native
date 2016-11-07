@@ -68,9 +68,8 @@ RoadCrossSectionCPtr RoadCrossSection::Insert(CrossSectionBreakDownModelPtr& bre
     if (retVal.IsNull())
         return nullptr;
 
-    Utf8StringCR codeStr = retVal->GetCode().GetValue();
     breakDownModelPtr = CrossSectionBreakDownModel::Create(DgnModel::CreateParams(GetDgnDb(), CrossSectionBreakDownModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId(), CrossSectionBreakDownModel::CreateModelCode(codeStr)));
+        retVal->GetElementId()));
 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))

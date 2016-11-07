@@ -65,7 +65,7 @@ DgnDbStatus createPhysicalPartition(DgnDbR db)
 
     auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
     auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(physicalModelHandlerR),
-        physicalPartitionPtr->GetElementId(), PhysicalModel::CreateModelCode("Physical Model")));
+        physicalPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = physicalModelPtr->Insert()))
         return status;
@@ -86,7 +86,7 @@ DgnDbStatus createCrossSectionsPartition(DgnDbR db)
 
     auto& crossSectionDefModelHandlerR = CrossSectionDefinitionModelHandler::GetHandler();
     auto crossSectionDefModelPtr = crossSectionDefModelHandlerR.Create(DgnModel::CreateParams(db, CrossSectionDefinitionModel::QueryClassId(db),
-        crossSectionsPartitionPtr->GetElementId(), DefinitionModel::CreateModelCode("CrossSection Definition Model")));
+        crossSectionsPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = crossSectionDefModelPtr->Insert()))
         return status;
@@ -139,7 +139,7 @@ DgnDbStatus createRoadwayStandardsPartition(DgnDbR db)
 
     auto& roadwayStandardsModelHandlerR = RoadwayStandardsModelHandler::GetHandler();
     auto roadwayStandardsModelPtr = roadwayStandardsModelHandlerR.Create(DgnModel::CreateParams(db, RoadwayStandardsModel::QueryClassId(db),
-        roadwayStandardsPartitionPtr->GetElementId(), DefinitionModel::CreateModelCode("Roadway Standards Model")));
+        roadwayStandardsPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
         return status;

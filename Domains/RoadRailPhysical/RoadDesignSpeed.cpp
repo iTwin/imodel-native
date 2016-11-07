@@ -42,7 +42,7 @@ RoadDesignSpeedStandardsCPtr RoadDesignSpeedStandards::Insert(RoadDesignSpeedDef
         return nullptr;
 
     breakDownModelPtr = RoadDesignSpeedDefinitionTableModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadDesignSpeedDefinitionTableModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId(), RoadDesignSpeedDefinitionTableModel::CreateModelCode("Roadway Design-Speed Definition Table Model")));
+        retVal->GetElementId()));
 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
@@ -97,9 +97,8 @@ RoadDesignSpeedDefinitionTableCPtr RoadDesignSpeedDefinitionTable::Insert(RoadDe
     if (retVal.IsNull())
         return nullptr;
 
-    Utf8StringCR codeStr = retVal->GetCode().GetValue();
     breakDownModelPtr = RoadDesignSpeedDefinitionModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadDesignSpeedDefinitionModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId(), RoadDesignSpeedDefinitionModel::CreateModelCode(codeStr)));
+        retVal->GetElementId()));
 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))

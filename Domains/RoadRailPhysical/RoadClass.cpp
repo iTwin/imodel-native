@@ -41,7 +41,7 @@ RoadClassStandardsCPtr RoadClassStandards::Insert(RoadClassDefinitionTableModelP
         return nullptr;
 
     breakDownModelPtr = RoadClassDefinitionTableModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadClassDefinitionTableModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId(), RoadClassDefinitionTableModel::CreateModelCode("Roadway Class Definition Table Model")));
+        retVal->GetElementId()));
 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
@@ -87,9 +87,8 @@ RoadClassDefinitionTableCPtr RoadClassDefinitionTable::Insert(RoadClassDefinitio
     if (retVal.IsNull())
         return nullptr;
 
-    Utf8StringCR codeStr = retVal->GetCode().GetValue();
     breakDownModelPtr = RoadClassDefinitionModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadClassDefinitionModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId(), RoadClassDefinitionModel::CreateModelCode(codeStr)));
+        retVal->GetElementId()));
 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
