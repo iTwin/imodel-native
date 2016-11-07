@@ -445,6 +445,7 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         public:
             virtual ~RelECClassIdPropertyMap() {}
             ECN::ECClassId GetDefaultClassId() const { return m_defaultClassId; }
+            bool IsVirtual() const { return GetColumn().GetPersistenceType() == PersistenceType::Virtual; }
         };
 
     private:

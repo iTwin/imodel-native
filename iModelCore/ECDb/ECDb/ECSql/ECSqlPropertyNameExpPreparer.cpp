@@ -96,7 +96,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? static_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
     bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
-    if (columnVisitor.AreResultingColumnsAreVirtual() || isConstraintIdPropertyMap)
+    if (columnVisitor.AllResultingColumnsAreVirtual() || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
@@ -184,7 +184,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     propMap.AcceptVisitor(columnVisitor);
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
-        !propMap.IsMappedToClassMapTables() && !columnVisitor.AreResultingColumnsAreVirtual())
+        !propMap.IsMappedToClassMapTables() && !columnVisitor.AllResultingColumnsAreVirtual())
         {
         if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
             {
@@ -222,7 +222,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
 
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
-        if (columnVisitor.AreResultingColumnsAreVirtual())
+        if (columnVisitor.AllResultingColumnsAreVirtual())
             {
             ToSqlPropertyMapVisitor toSql(columnVisitor.GetSingleColumn()->GetTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
             propMap.AcceptVisitor(toSql);

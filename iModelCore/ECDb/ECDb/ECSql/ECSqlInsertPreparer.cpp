@@ -467,6 +467,16 @@ std::vector<size_t> const& expIndexSkipList,
 RelationshipClassEndTableMap const& classMap
 )
     {
+    //WIP*********Following code should figure out the table and not just use the first table****************
+    ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    if (ecClassIdPropertyMap->IsMappedToSingleTable())
+        {
+        BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
+        return;
+        }
+
+    DbTable const& contextTable = *classMap.GetForeignEndECInstanceIdPropMap()->GetTables().front();
+
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
     //properties, the list will only contain one snippet, but for multi-dimensional properties (points, structs)
     //the list will contain more than one snippet. Consequently the list of ECSQL expressions is translated
@@ -476,38 +486,24 @@ RelationshipClassEndTableMap const& classMap
     auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
 
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
-    updateBuilder.Append(propertyNamesNativeSqlSnippets, " = ", valuesNativeSqlSnippets);
-    ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
-    if (ecClassIdPropertyMap->IsPersistedInDb())
+    updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
+    if (!ecClassIdPropertyMap->IsVirtual(contextTable))
         {
-        if (!ecClassIdPropertyMap->IsMappedToSingleTable())
-            {
-            BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
-            return;
-            }
-
-        auto vmap = ecClassIdPropertyMap->FindDataPropertyMap(*ecClassIdPropertyMap->GetTables().front());
-        BeAssert(vmap != nullptr);
+        //class id is persisted so determine the class id literal and append it to the SQL
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* dataPropMap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
+        BeAssert(dataPropMap != nullptr);
         Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
         ecClassIdPropertyMap->GetDefaultECClassId().ToString(classIdStr);
-        updateBuilder.AppendComma().Append(vmap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classIdStr);
+        updateBuilder.AppendComma().Append(dataPropMap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classIdStr);
         }
 
     //add WHERE clause so that the right row in the end table is updated
-    updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
+    updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, "=", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    if (classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().size() != 1)
-        {
-        BeAssert(false && "For some reason expecting one table");
-        return;
-        }
-    //WIP*********Following code should figure out the table and not just use the first table****************
-    DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
-    //*******************************************************************************************************
-    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
+    ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
     classMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlVisitor);
-    for (auto const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
+    for (ToSqlPropertyMapVisitor::Result const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
         {
         updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");
         }

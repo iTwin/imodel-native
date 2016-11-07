@@ -27,6 +27,7 @@ struct SystemPropertyMap : PropertyMap
 
         public:
             virtual ~PerTablePrimitivePropertyMap() {}
+
             static RefCountedPtr<PerTablePrimitivePropertyMap> CreateInstance(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
             };
 
@@ -56,15 +57,6 @@ struct SystemPropertyMap : PropertyMap
         PerTablePrimitivePropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
         PerTablePrimitivePropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
         std::vector<PerTablePrimitivePropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
-        //! Is there atleast one instance where this property is persisted to db
-        bool IsPersistedInDb() const
-            {
-            for (PerTablePrimitivePropertyMap const* prop : m_dataPropMapList)
-                if (prop->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
-                    return true;
-
-            return false;
-            }
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
@@ -103,6 +95,7 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
 
     public:
         virtual ~ECClassIdPropertyMap() {}
+        bool IsVirtual(DbTable const& table) const;
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
         static RefCountedPtr<ECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
     };
@@ -124,6 +117,8 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
 
     public:
         virtual ~ConstraintECClassIdPropertyMap() {}
+
+        bool IsVirtual(DbTable const& table) const;
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
      

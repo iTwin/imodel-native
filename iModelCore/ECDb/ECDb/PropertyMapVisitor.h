@@ -37,7 +37,7 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         ~GetColumnsPropertyMapVisitor() {}
         void Reset() { m_columns.clear(); }
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
-        bool AreResultingColumnsAreVirtual() const
+        bool AllResultingColumnsAreVirtual() const
             {
             BeAssert(!GetColumns().empty());
             bool isVirtual = true;
@@ -210,7 +210,7 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
     private:
         Result& Record(SingleColumnDataPropertyMap const& propertyMap) const;
         bool IsAlienTable(DbTable const& table) const;
-        SingleColumnDataPropertyMap const* FindSystemPropertyMapForTable(SystemPropertyMap const& systemPropertyMap) const;
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* FindDataPropertyMapForTable(SystemPropertyMap const& systemPropertyMap) const;
         VisitorFeedback ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const;
         VisitorFeedback ToNativeSql(ConstraintECInstanceIdPropertyMap const& propertyMap) const;
@@ -275,21 +275,4 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
         void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
     };
 
-//=======================================================================================
-// @bsiclass                                                   Krischan.Eberle      11/16
-//+===============+===============+===============+===============+===============+======
-struct IsVirtualPropertyMapVisitor final : IPropertyMapVisitor
-    {
-    private:
-        mutable bool m_isVirtualPropertyMap;
-
-        virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
-        virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override { m_isVirtualPropertyMap = false; return VisitorFeedback::Cancel; }
-
-    public:
-        IsVirtualPropertyMapVisitor() : IPropertyMapVisitor(), m_isVirtualPropertyMap(false) {}
-        ~IsVirtualPropertyMapVisitor() {}
-
-        bool IsVirtualPropertyMap() const { return m_isVirtualPropertyMap; }
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

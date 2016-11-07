@@ -112,10 +112,23 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBa
         }
     else
         {
-        IsVirtualPropertyMapVisitor isVirtualVisitor;
-        propMap.AcceptVisitor(isVirtualVisitor);
+        switch (propMap.GetType())
+            {
+                case PropertyMap::Type::ConstraintECClassId:
+                    //WIP_TABLECONTEXT
+                    isNoopBinder = static_cast<ConstraintECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
+                    break;
+                case PropertyMap::Type::ECClassId:
+                    //WIP_TABLECONTEXT
+                    isNoopBinder = static_cast<ECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
+                    break;
+                case PropertyMap::Type::NavigationRelECClassId:
+                    isNoopBinder = static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap).IsVirtual();
+                    break;
 
-        isNoopBinder = isVirtualVisitor.IsVirtualPropertyMap();
+                default:
+                    break;
+            }
         }
 
     return std::unique_ptr<ECSqlBinder>(new IdECSqlBinder(ecsqlStatement, ECSqlTypeInfo(propMap), isNoopBinder));
