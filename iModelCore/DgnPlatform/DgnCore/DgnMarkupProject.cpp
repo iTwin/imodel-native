@@ -409,7 +409,7 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
 
     //  Draw additional redline models
     for (auto rdlModel : m_otherRdlsInView)
-        context.VisitDgnModel(rdlModel);
+        context.VisitDgnModel(*rdlModel);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -704,9 +704,11 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, Redline
         return nullptr;
         }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
     redlineModel->FillModel();
+#endif
 
     return new RedlineViewController(rdlViewDef);
     }

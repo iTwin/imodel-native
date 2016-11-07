@@ -220,23 +220,15 @@ StatusInt ScanCriteria::Scan()
     BeAssert(m_model != nullptr);
     BeAssert(m_callback != nullptr);
 
-    TreeP rangeIndex;
-    if (nullptr != (rangeIndex = m_model->GetRangeIndexP(true)))
+    m_model->FillRangeIndex();
+
+    TreeP rangeIndex = m_model->GetRangeIndex();
+    if (nullptr == rangeIndex)
         {
-        rangeIndex->Traverse(*this);
-        return SUCCESS;
+        BeAssert(false);
+        return ERROR;
         }
 
-    for (auto curr : *m_model)
-        {
-        DgnElementCR el = *curr.second.get();
-        if (ScanCriteria::Stop::No != CheckElement(el, true))
-            continue;
-
-        if (Stop::Yes == m_callback->_OnRangeElementFound(el))
-            break;
-        }
-
+    rangeIndex->Traverse(*this);
     return SUCCESS;
     }
-

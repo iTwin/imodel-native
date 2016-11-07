@@ -692,12 +692,17 @@ virtual DRange3d _GetSubEntityRange() const override
     {
     if (m_range.IsNull())
         {
-        GeometricPrimitiveCPtr geom = _GetGeometry();
+        PK_BOX_t box;
+        DPoint3d point;
 
-        if (geom.IsValid())
-            geom->GetRange(m_range);
+        if (PK_ERROR_no_errors == PK_TOPOL_find_box(m_entityTag, &box)) // <- takes care of face and edge...not vertex...
+            m_range.InitFrom(box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+        else if (SUCCESS == PSolidUtil::GetVertex(point, m_entityTag))
+            m_range.InitFrom(point);
         else
             m_range.InitFrom(DPoint3d::FromZero()); // Don't keep calling _GetGeometry, should maybe set to an "empty" range?
+
+        m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(m_range, m_range);
         }
 
     return m_range;

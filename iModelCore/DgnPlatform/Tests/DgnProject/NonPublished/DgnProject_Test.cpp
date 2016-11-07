@@ -382,7 +382,6 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         struct ProjectProperties
             {
-            uint32_t elmCount;
             uint32_t modelCount;
             size_t categoryCount;
             size_t viewCount;
@@ -394,13 +393,10 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         void getProjectProperties(DgnDbPtr& project, ProjectProperties& properties)
             {
             DgnModels& modelTable = project->Models();
-            properties.elmCount = 0;
             properties.modelCount = 0;
             for (DgnModels::Iterator::Entry const& entry: modelTable.MakeIterator())
                 {
-                DgnModelPtr model = project->Models().GetModel(entry.GetModelId());
-                model->FillModel();
-                properties.elmCount += (int) model->GetElements().size();
+                UNUSED_VARIABLE(entry);
                 properties.modelCount++;
                 }
             properties.viewCount = ViewDefinition::QueryCount(*project);
@@ -416,7 +412,6 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         void compareProjectProperties(ProjectProperties& projProp, ProjectProperties& projPropV)
             {
-            EXPECT_EQ(projProp.elmCount, projPropV.elmCount)<<"Element count does not match";
             EXPECT_EQ(projProp.modelCount, projPropV.modelCount)<<"Model count does not match";
             EXPECT_EQ(projProp.categoryCount, projPropV.categoryCount)<<"Category count does not match";
             EXPECT_EQ(projProp.viewCount, projPropV.viewCount)<<"View count does not match";
