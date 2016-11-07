@@ -1897,6 +1897,35 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
         
         DRange3d extentClipped;
         bvector<DPoint3d> pointsClipped;
+        size_t n = 0;
+        bool noIntersect = true;
+        DRange2d extent2d= DRange2d::From(m_nodeHeader.m_nodeExtent);
+        for (auto&pt : points)
+            {
+            //Don't attempt to clip feature if it is entirely on or outside the box
+            if (m_nodeHeader.m_nodeExtent.IsContainedXY(pt) && fabs(pt.x - m_nodeHeader.m_nodeExtent.low.x) > 1e-5 && 
+                fabs(pt.x -  m_nodeHeader.m_nodeExtent.high.x) > 1e-5 && 
+                fabs(pt.y - m_nodeHeader.m_nodeExtent.low.y) > 1e-5 &&
+                fabs(pt.y - m_nodeHeader.m_nodeExtent.high.y) > 1e-5
+                ) ++n;
+            if (noIntersect && &pt - &points[0] != 0)
+                {
+                DRange3d edgeRange = DRange3d::From(pt, points[&pt - &points[0] - 1]);
+                if (m_nodeHeader.m_nodeExtent.IntersectsWith(edgeRange))
+                    {
+                    double par1, par2;
+                    DPoint2d ptIntersect1, ptIntersect2;
+                    DPoint2d start = DPoint2d::From(points[&pt - &points[0] - 1]);
+                    DPoint3d direction;
+                    direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
+                    DPoint2d dir2d = DPoint2d::From(direction);
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && par1 > 1e-5 && par2 > 1e-5 && par1 < 1+1e-5 && par2 < 1+1e-5)
+                    noIntersect = false;
+                    }
+                }
+            }
+
+        if (noIntersect && n < 2) return 0;
         ClipFeatureDefinition(type, m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, points, extent);
         if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
