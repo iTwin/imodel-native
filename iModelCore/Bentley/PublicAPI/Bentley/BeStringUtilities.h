@@ -358,7 +358,7 @@ public:
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than destArraySize; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
     template <size_t destArraySize>
-    static int Snwprintf (wchar_t (&destArray)[destArraySize], WCharCP format, ...)
+    static int Snwprintf (_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], WCharCP format, ...)
         {
         va_list args;
         va_start (args, format);
