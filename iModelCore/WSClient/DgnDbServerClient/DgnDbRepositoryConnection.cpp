@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+# define MAX_AsyncQueries 10
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
@@ -1524,6 +1525,32 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   julius.cepukenas              10/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeLockSetTaskPtr ProcessCodeLocksQueries(bset<DgnDbServerCodeLockSetTaskPtr>& tasks)
+    {
+    const Utf8String methodName = "DgnDbRepositoryConnection::ProcessCodeLocksQueries";
+
+    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
+    return AsyncTask::WhenAll(tasks)
+        ->Then<DgnDbServerCodeLockSetResult>([=]
+        {
+        for (auto& task : tasks)
+            {
+            if (!task->GetResult().IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, task->GetResult().GetError().GetMessage().c_str());
+                return DgnDbServerCodeLockSetResult::Error(task->GetResult().GetError());
+                }
+
+            auto codeLockSet = task->GetResult().GetValue();
+            finalValue->Insert(codeLockSet);
+            }
+        return DgnDbServerCodeLockSetResult::Success(*finalValue);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksInternal
@@ -1568,6 +1595,8 @@ ICancellationTokenPtr cancellationToken
         tasks.insert(task);
         }
 
+    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
+    int index = 0;
     while (!queryIds.empty())
         {
         WSQuery query(ServerSchema::Schema::Repository, classes);
@@ -1576,27 +1605,29 @@ ICancellationTokenPtr cancellationToken
         auto task = QueryCodesLocksInternal(query, cancellationToken);
 
         tasks.insert(task);
-        }
-
-    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
-
-    return AsyncTask::WhenAll(tasks)
-        ->Then<DgnDbServerCodeLockSetResult>([=]
-        {
-        for (auto& task : tasks)
+        if (MAX_AsyncQueries == index)
             {
-            if (!task->GetResult().IsSuccess())
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, task->GetResult().GetError().GetMessage().c_str());
-                return DgnDbServerCodeLockSetResult::Error(task->GetResult().GetError());
-                }
+            auto result = ProcessCodeLocksQueries(tasks)->GetResult();
+            if (!result.IsSuccess())
+                return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(result.GetError()));
 
-            auto CodeLockSet = task->GetResult().GetValue();
-            finalValue->Insert(CodeLockSet);
+            auto codeLockSet = result.GetValue();
+            finalValue->Insert(codeLockSet);
+
+            tasks.clear();
+            index = 0;
             }
 
-        return DgnDbServerCodeLockSetResult::Success(*finalValue);
-        });
+        index++;
+        }
+    auto result = ProcessCodeLocksQueries(tasks)->GetResult();
+    if (!result.IsSuccess())
+        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(result.GetError()));
+
+    auto codeLockSet = result.GetValue();
+    finalValue->Insert(codeLockSet);
+
+    return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Success(*finalValue));
     }
 
 //---------------------------------------------------------------------------------------
