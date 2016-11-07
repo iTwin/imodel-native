@@ -13,8 +13,20 @@
 #include "GroundDetectionTypes.h"
 #include "GroundDetectionGrid.h"
 #include "IDtmProvider.h"
+#include "PCThreadUtilities.h"
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 #include <Bentley\bset.h>
+
+#include "GroundDetectionGrid.h"
+
+
+GROUND_DETECTION_TYPEDEF(PCGroundTINMT)
+GROUND_DETECTION_TYPEDEF(QueryAllPointsForFirstSeedPointWork)
+GROUND_DETECTION_TYPEDEF(FindFirstSeedPointWork)
+GROUND_DETECTION_TYPEDEF(QueryAllPointsForTriangleWork)
+GROUND_DETECTION_TYPEDEF(DensifyTriangleWork)
+
+
 
 
 BEGIN_GROUND_DETECTION_NAMESPACE
@@ -163,12 +175,10 @@ private:
 
 typedef std::vector<PCGroundTrianglePtr> PCGroundTriangleCollection;
 
-//GDZERO
-#if 0
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
+struct QueryAllPointsForFirstSeedPointWork : RefCounted<PointCloudWork>
     {
     protected:
         GridCellEntryPtr m_pGridCellEntry;
@@ -177,7 +187,7 @@ struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
 
         QueryAllPointsForFirstSeedPointWork(PCGroundTINMT& pcGroundTIN, GridCellEntry& gridCell) :m_PCGroundTin(pcGroundTIN), m_pGridCellEntry(&gridCell) {}
         ~QueryAllPointsForFirstSeedPointWork() {};
-        //virtual void    _DoWork() override;
+        virtual void    _DoWork() override;
         virtual size_t  _GetMemorySize(); //override;
 
     public:
@@ -189,7 +199,7 @@ struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct FindFirstSeedPointWork //: RefCounted<PointCloudWork>
+struct FindFirstSeedPointWork : RefCounted<PointCloudWork>
     {
     protected:
         GridCellEntryPtr m_pGridCellEntry;
@@ -211,7 +221,7 @@ struct FindFirstSeedPointWork //: RefCounted<PointCloudWork>
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct QueryAllPointsForTriangleWork /*: RefCounted<PointCloudWork>*/
+struct QueryAllPointsForTriangleWork : RefCounted<PointCloudWork>
     {
     protected:
         PCGroundTrianglePtr                 m_PCGroundTriangle;
@@ -233,7 +243,7 @@ struct QueryAllPointsForTriangleWork /*: RefCounted<PointCloudWork>*/
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct DensifyTriangleWork /*: RefCounted<PointCloudWork>*/
+struct DensifyTriangleWork : RefCounted<PointCloudWork>
     {
     protected:
         PCGroundTrianglePtr m_PCGroundTriangle;
@@ -254,6 +264,7 @@ struct DensifyTriangleWork /*: RefCounted<PointCloudWork>*/
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
+#if 0  //GDZERO
 struct ClassifyPointCloudWork /*: RefCounted<PointCloudWork>*/
     {
     protected:
@@ -272,7 +283,6 @@ struct ClassifyPointCloudWork /*: RefCounted<PointCloudWork>*/
             }
     };
 #endif
-
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
@@ -387,25 +397,24 @@ public:
 
     static PCGroundTINPtr Create(GroundDetectionParameters& params, ProgressReport& report);
 
-  //  PointCloudThreadPool& GetThreadPool();
+   PointCloudThreadPool& GetThreadPool();
 
 
 private:
-    /*
-    static BeCriticalSection        s_CSPCGroundTIN;
-    static BeCriticalSection        s_newPointToAddCS;
-    static BeCriticalSection        s_dtmLibCS;
+    
+    static BeMutex        s_CSPCGroundTIN;
+    static BeMutex        s_newPointToAddCS;
+    static BeMutex        s_dtmLibCS;
     intptr_t                        m_mainThreadID;
 
 
     PointCloudThreadPoolPtr m_pQueryThreadPool;
-    PointCloudThreadPoolPtr m_pThreadPool;
-    */
+    PointCloudThreadPoolPtr m_pThreadPool;    
 
     PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& report);
     ~PCGroundTINMT();
 
-    /*
+    
     PointCloudThreadPool& GetQueryThreadPool();
     void FlushThreadPoolWork();
 
@@ -421,7 +430,6 @@ private:
     virtual StatusInt _DensifyTIN() override;
     virtual StatusInt _Classify() override;
     virtual void      _IncrementWorkDone() override;
-    */
 
 }; // PCGroundTINMT
 

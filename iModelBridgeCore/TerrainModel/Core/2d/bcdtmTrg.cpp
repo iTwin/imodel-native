@@ -12,6 +12,8 @@
 #include <thread>
 #include <Bentley\BeTimeUtilities.h>
 
+const int MINIMUM_POINTS_PER_SORT_THREAD = 5000;
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -3022,9 +3024,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_sortDtmObject(BC_DTM_OBJ *dtmP)
 */
  if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
 /*
-** Only Multi Thread If More Than 100 Points
+** Only Multi Thread If More Than MINIMUM_POINTS_PER_SORT_THREAD Points
 */
- if( dtmP->numPoints < 100 ) useMultiThread = FALSE ;
+if (dtmP->numPoints < (MINIMUM_POINTS_PER_SORT_THREAD * 2)) useMultiThread = FALSE;
 /*
 ** Only Sort If Dtm In Data State
 */
@@ -3247,20 +3249,39 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   i,n,ofs,*sP,*offsetP,*sortP=nullptr,*tempP=nullptr,feature ;
+ bvector<long> sortArray, tempArray;
  long   startTime ;
  long   numPts,numPts1,numPts2,startPnt1,startPnt2,endPnt1,endPnt2 ;
- DTM_TIN_POINT   dtmPoint,*p1P,*p2P  ;
+ DPoint3d   dtmPoint,*p1P,*p2P  ;
  BC_DTM_FEATURE  *dtmFeatureP=nullptr ;
  long startPoint, numThreadPoints = 0;
+ int numThreads = DTM_NUM_PROCESSORS;
  bvector<long> numThreadArrayPoints;
- std::vector<std::thread> thread;
+ std::vector<std::thread> threads;
  bvector<DTM_MULTI_THREAD> multiThread;
+ /*
+ ** Determine Number Of Points Per Thread
+ */
+ numThreadPoints = dtmP->numPoints / numThreads;
+
+ if (numThreadPoints < MINIMUM_POINTS_PER_SORT_THREAD)
+     numThreadPoints = MINIMUM_POINTS_PER_SORT_THREAD ;
+
+ numThreads = dtmP->numPoints / numThreadPoints;
+
  /*
  ** Resize arrays
  */
- numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
- thread.resize (DTM_NUM_PROCESSORS);;
- multiThread.resize (DTM_NUM_PROCESSORS);
+ numThreadArrayPoints.resize (numThreads);
+ multiThread.resize (numThreads);
+
+ for (n = 0; n < numThreads - 1; n++)
+     numThreadArrayPoints[n] = numThreadPoints;
+
+ numThreadArrayPoints[numThreads - 1] = dtmP->numPoints - ((numThreads - 1) * numThreadPoints);
+
+ if (dbg) bcdtmWrite_message(0, 0, 0, "NumOfThread %d", numThreads);
+ if (dbg) for (n = 0; n < numThreads; ++n) bcdtmWrite_message(0, 0, 0, "Thread[%2ld] ** numPoints = %6ld", n, numThreadArrayPoints[n]);
  /*
 ** Write Entry Message
 */
@@ -3269,27 +3290,21 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
 /*
 ** Allocate Memory For Sort Offset Pointers
 */
- sortP = ( long *  ) malloc(dtmP->numPoints*sizeof(long)) ;
+ sortArray.resize(dtmP->numPoints);
+ sortP = sortArray.data();
  if( sortP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
- tempP = ( long *  ) malloc(dtmP->numPoints*sizeof(long)) ;
+ tempArray.resize(dtmP->numPoints);
+ tempP = tempArray.data();
  if( tempP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
 /*
 ** Initialise Sort Offset Pointer
 */
  for( sP = sortP, ofs = 0 ; sP < sortP + dtmP->numPoints ; ++sP, ++ofs) *sP = ofs ;
 /*
-** Determine Number Of Points Per Thread
-*/
- numThreadPoints = dtmP->numPoints / DTM_NUM_PROCESSORS + 1 ;
- if( dtmP->numPoints % DTM_NUM_PROCESSORS == 0 ) --numThreadPoints ;
- for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n ) numThreadArrayPoints[n] =  numThreadPoints ;
- if( dtmP->numPoints % DTM_NUM_PROCESSORS != 0 ) numThreadArrayPoints[DTM_NUM_PROCESSORS-1] = dtmP->numPoints - (DTM_NUM_PROCESSORS-1) * numThreadPoints ;
- if( dbg ) for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n  ) bcdtmWrite_message(0,0,0,"Thread[%2ld] ** numPoints = %6ld",n,numThreadArrayPoints[n]) ;
-/*
 ** Initialise Multi Thread Sort Array
 */
  startPoint = 0 ;
- for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n )
+ for( n = 0 ; n < numThreads ; ++n )
    {
     multiThread[n].thread          = n ;
     multiThread[n].dtmP            = dtmP ;
@@ -3298,22 +3313,21 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
     multiThread[n].sortOfsP        = sortP ;
     multiThread[n].tempOfsP        = tempP ;
     startPoint = startPoint + numThreadArrayPoints[n] ;
+    BeAssert(startPoint <= dtmP->numPoints);
    }
-/*
+ BeAssert(startPoint == dtmP->numPoints);
+ /*
 ** Create Sorting Threads To Triangulate Dtm Object
 */
- for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n )
-   {
-   thread[n] = std::thread (bcdtmTin_multiThreadSortWorkerDtmObject, &multiThread[n]);
-        //CreateThread(nullptr,0,(LPTHREAD_START_ROUTINE) bcdtmTin_multiThreadSortWorkerDtmObject,&multiThread[n],0,&threadId[n]) ;
-   }
+ for( n = 0 ; n < numThreads - 1 ; ++n )
+   threads.push_back(std::thread(bcdtmTin_multiThreadSortWorkerDtmObject, &multiThread[n]));
+
+ bcdtmTin_multiThreadSortWorkerDtmObject(&multiThread[n]);
 /*
 ** Wait For All Threads To Complete
 */
- for (n = 0; n < DTM_NUM_PROCESSORS; ++n)
-     thread[n].join ();
- //WaitForMultipleObjects(DTM_NUM_PROCESSORS,thread,true,INFINITE) ;
- //for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n ) CloseHandle(thread[n]) ;
+ for (auto& thread : threads)
+     thread.join ();
 /*
 ** Check For Check Stop Termination
 */
@@ -3323,7 +3337,7 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
 */
  if( cdbg )
    {
-    for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n )
+    for( n = 0 ; n < numThreads ; ++n )
       {
        bcdtmWrite_message(0,0,0,"Thread[%2ld] ** Checking Point Sort Order",n) ;
        numPts1   = multiThread[n].numPoints  ;
@@ -3348,7 +3362,7 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
 ** Merge Threaded Sorts
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Merging Threaded Sorts") ;
- for( n = 1 ; n < DTM_NUM_PROCESSORS ; ++n )
+ for( n = 1 ; n < numThreads ; ++n )
    {
     numPts1    = multiThread[0].numPoints  ;
     numPts2    = multiThread[n].numPoints  ;
@@ -3428,8 +3442,6 @@ BENTLEYDTM_Private int bcdtmObject_multiThreadSortDtmObject(BC_DTM_OBJ *dtmP)
 ** Clean Up
 */
  cleanup :
- if( sortP != nullptr ) free(sortP) ;
- if( tempP != nullptr ) free(tempP) ;
 /*
 ** Job Completed
 */
@@ -7600,6 +7612,79 @@ errexit:
     goto cleanup;
     }
 
+
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
+int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
+    {
+    bvector<long> insertedPoints;
+    //Points have been added what to do?
+    for (int pt = 0; pt < dtmP->numPoints; pt++)
+        {
+        auto n = nodeAddrP(dtmP, pt);
+        auto flPtr = n->fPtr;
+        int numberType2 = 0;
+        int numberType1 = 0;
+        while (flPtr != dtmP->nullPtr)
+            {
+            auto flist = flistAddrP(dtmP, flPtr);
+            if (flist->pntType == 2)  // None Feature Point
+                {
+                numberType2++;
+                }
+            else
+                {
+                numberType1++;
+                break;
+                }
+            flPtr = flist->nextPtr;
+            }
+        if (numberType1)
+            continue;// This is a real point but also has been inserted into a triangle we have to fail.
+        if (numberType2 > 2)// This has intersecting triangles, this is okish.
+            continue;
+        if (0 != numberType2)
+            insertedPoints.push_back(pt);
+        }
+
+    bool hasDeletedPoints = false;
+    bool deletedPoint = false;
+    do
+        {
+        bool failedToDeleteAPoint = false;
+        deletedPoint = false;
+        for (auto& pt : insertedPoints)
+            {
+            if (pt == dtmP->nullPtr)
+                continue;
+            if (nodeAddrP(dtmP, pt)->cPtr == dtmP->nullPtr)
+                {
+                pt = dtmP->nullPtr;
+                continue;
+                }
+            if (DTM_SUCCESS == bcdtmEdit_deletePointDtmObject(dtmP, pt, 1))
+                {
+                pt = dtmP->nullPtr;
+                deletedPoint = true;
+                }
+            else
+                {
+                failedToDeleteAPoint = true;
+                }
+            }
+        if (deletedPoint)
+            hasDeletedPoints = true;
+        else if (failedToDeleteAPoint)
+            return DTM_ERROR;
+        }
+    while (deletedPoint);
+
+        if (hasDeletedPoints)
+            bcdtmTin_compactPointAndNodeTablesDtmObject(dtmP);
+        return DTM_SUCCESS;
+    }
+
 double timeSpentTriangulating = 0;
 size_t nOfTriangulations = 0;
 
@@ -7697,6 +7782,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         }
 
     // Triangulate DTM
+    long previousNumPoints = dtmP->numPoints;
     dtmP->edgeOption = 3;
     double prevMaxSide = dtmP->maxSide;
     dtmP->maxSide = dtmP->ppTol;
@@ -7721,11 +7807,16 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     // Remove as much tin edges as we can.
     bcdtmList_removeNoneFeatureHullLinesDtmObject (dtmP);
 
-    // Add voids to hull.
-    //bcdtmObject_addVoidsToTinHullDtmObject (dtmP);
+    // Check if there are inserted points which aren't a triangle point.
+    /*if (previousNumPoints != dtmP->numPoints)
+        {
+        if (DTM_SUCCESS == bcdtmObject_stmFixInsertedPoints(dtmP))
+            bcdtmObject_addVoidsToInternalDtmObject(dtmP);
+        }
+    else*/
+        // Add internal voids.
+        bcdtmObject_addVoidsToInternalDtmObject(dtmP);
 
-    // Add internal voids.
-    bcdtmObject_addVoidsToInternalDtmObject (dtmP);
 
     // Delete all breaklines.
     bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject (dtmP, DTMFeatureType::Breakline);

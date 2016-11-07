@@ -86,7 +86,7 @@ $(o)DiscreetHistogram$(oext) : $(groundDetectSrcDir)DiscreetHistogram.cpp $(grou
 
 $(o)GroundDetectionManager$(oext) : $(groundDetectSrcDir)GroundDetectionManager.cpp ${MultiCompileDepends}
 
-#$(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
+$(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
