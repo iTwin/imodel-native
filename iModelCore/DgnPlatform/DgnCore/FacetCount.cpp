@@ -216,8 +216,6 @@ size_t FacetCounter::GetFacetCount (ISolidPrimitiveCR solidPrimitive) const
         default:
             return 0;
         }
-
-    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
