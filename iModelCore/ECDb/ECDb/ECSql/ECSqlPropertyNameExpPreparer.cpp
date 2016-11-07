@@ -168,10 +168,18 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     ClassMap const& classMap = propMap.GetClassMap();
     ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
                                        ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::View : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
-
+    
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
+        {
+        if (ecsqlType == ECSqlType::Insert)
+            {
+            if (!r.IsColumnPersisted())
+                continue;
+            }
+
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
+        }
     }
 
 //-----------------------------------------------------------------------------------------

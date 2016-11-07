@@ -395,7 +395,6 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
 
             hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*endTable));
             }
-
         }
     else
         {

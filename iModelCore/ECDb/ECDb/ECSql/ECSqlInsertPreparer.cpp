@@ -351,13 +351,13 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
             NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-            Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+            ECClassId classId;
             if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
-                joinedTableStatement->GetClassId().ToString(classIdStr);
+                classId = joinedTableStatement->GetClassId();
             else
-                classMap.GetClass().GetId().ToString(classIdStr);
+                classId = classMap.GetClass().GetId();
 
-            classIdSqliteSnippets[0].Append(classIdStr);
+            classIdSqliteSnippets[0].Append(classId);
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
             }
         }
@@ -487,14 +487,17 @@ RelationshipClassEndTableMap const& classMap
 
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
     updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
+
+    if (!classMap.IsMappedToSingleTable())
+        return;
+
+    DbTable const& contextTable = classMap.GetJoinedTable();
     if (!ecClassIdPropertyMap->IsVirtual(contextTable))
         {
         //class id is persisted so determine the class id literal and append it to the SQL
-        SystemPropertyMap::PerTablePrimitivePropertyMap const* dataPropMap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
-        BeAssert(dataPropMap != nullptr);
-        Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
-        ecClassIdPropertyMap->GetDefaultECClassId().ToString(classIdStr);
-        updateBuilder.AppendComma().Append(dataPropMap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classIdStr);
+        auto vmap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
+        BeAssert(vmap != nullptr);
+        updateBuilder.AppendComma().Append(vmap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(ecClassIdPropertyMap->GetDefaultECClassId());
         }
 
     //add WHERE clause so that the right row in the end table is updated
