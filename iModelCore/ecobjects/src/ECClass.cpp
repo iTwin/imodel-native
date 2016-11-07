@@ -3624,7 +3624,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
         {
         if (validate)
             {
-            // Get the relationship base class and compare it's strength and direction
+            // Get the relationship base class and compare its strength and direction
             ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
             if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
                 !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
@@ -3708,7 +3708,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
-                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than it's Base Class '%s' (%d).",
+                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than its Base Class '%s' (%d).",
                             GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrength());
                 return false;
                 }

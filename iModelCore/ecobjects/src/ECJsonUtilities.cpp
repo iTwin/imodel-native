@@ -26,9 +26,7 @@ BentleyStatus ECJsonUtilities::BinaryToJson(Json::Value& json, Byte const* binar
         }
 
     Utf8String str;
-    if (SUCCESS != Base64Utilities::Encode(str, binary, binarySize))
-        return ERROR;
-
+    Base64Utilities::Encode(str, binary, binarySize);
     json = Json::Value(str);
     return SUCCESS;
     }
@@ -48,7 +46,8 @@ BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value c
         return ERROR;
 
     Utf8String base64Str = json.asString();
-    return Base64Utilities::Decode(binary, base64Str);
+    Base64Utilities::Decode(binary, base64Str);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -441,8 +440,7 @@ BentleyStatus ECRapidJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte cons
         }
 
     Utf8String str;
-    if (SUCCESS != Base64Utilities::Encode(str, binary, binarySize))
-        return ERROR;
+    Base64Utilities::Encode(str, binary, binarySize);
 
     json.SetString(str.c_str(), (rapidjson::SizeType) str.size(), allocator);
     return SUCCESS;
@@ -462,7 +460,8 @@ BentleyStatus ECRapidJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJso
     if (json.IsNull())
         return SUCCESS;
 
-    return Base64Utilities::Decode(binary, json.GetString(), (size_t) json.GetStringLength());
+    Base64Utilities::Decode(binary, json.GetString(), (size_t) json.GetStringLength());
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

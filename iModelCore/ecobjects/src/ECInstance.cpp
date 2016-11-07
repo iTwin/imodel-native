@@ -2350,7 +2350,6 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (in
 +---------------+---------------+---------------+---------------+---------------+------*/
 void              convertByteArrayToString (Utf8StringR outString, const Byte *byteData, size_t numBytes)
     {
-    // NB: Encode() always returns SUCCESS...return type is misleading.
     Base64Utilities::Encode(outString, byteData, numBytes);
     }
 
@@ -2360,9 +2359,11 @@ typedef bvector<Byte>   T_ByteArray;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   convertStringToByteArray (T_ByteArray& byteData, Utf8CP stringData)
     {
-    // NB: Decode() always returns SUCCESS regardless of what garbage we hand it...so manually check that the input consists only
-    // of characters in the base-64 alphabet.
-    return Base64Utilities::MatchesAlphabet(stringData) && SUCCESS == Base64Utilities::Decode(byteData, stringData, strlen(stringData));
+    if (!Base64Utilities::MatchesAlphabet(stringData))
+        return false;
+    
+    Base64Utilities::Decode(byteData, stringData, strlen(stringData));
+    return true;
     }
 
 //--------------------------------------------------------------------------------------
