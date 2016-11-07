@@ -60,7 +60,7 @@ public:
     DimensionStylePtr CreateCopy() const {return MakeCopy<DimensionStyle>();}
 
     Utf8String GetName() const {return GetCode().GetValue();}
-    void SetName(Utf8CP value) {T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) {T_Super::SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
 
     static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCodeFromName(name));}
     static DimensionStyleCPtr Get(DgnDbR db, Utf8CP name) {return Get(db, QueryId(db, name));}

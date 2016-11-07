@@ -260,7 +260,7 @@ TEST_F(DgnScriptTest, RunScripts)
     model->FillModel();
 #endif
 
-    PhysicalModelPtr newModel = InsertPhysicalModel("NewModel");
+    PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*project, "NewModel");
     ASSERT_TRUE(newModel.IsValid());
 
     Json::Value parms = Json::objectValue;
@@ -365,7 +365,7 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
     //  Create a ScriptLibraryModel to hold the scripts
     DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "TestScripts");
     ASSERT_TRUE(partition.IsValid());
-    ScriptLibraryModelPtr scriptLib = ScriptLibraryModel::Create(*partition, DgnModel::CreateModelCode("scripts"));
+    ScriptLibraryModelPtr scriptLib = ScriptLibraryModel::Create(*partition);
     ASSERT_TRUE(scriptLib.IsValid());
     status = scriptLib->Insert();
     ASSERT_EQ(DgnDbStatus::Success, status);

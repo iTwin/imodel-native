@@ -83,17 +83,18 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 TEST_F(DgnAuthoritiesTest, IterateCodes)
     {
     SetupSeedProject();
+    DgnDbR db = GetDgnDb();
 
-    EXPECT_TRUE(CodeExists(GetDgnDb().GetDictionaryModel().GetCode()));
+    EXPECT_TRUE(CodeExists(db.Elements().GetElement(db.Elements().GetDictionaryPartitionId())->GetCode()));
 
-    AnnotationTextStyle style(GetDgnDb());
+    AnnotationTextStyle style(db);
     style.SetName("MyStyle");
     DgnCode originalStyleCode = style.GetCode();
     EXPECT_TRUE(style.Insert().IsValid());
 
     EXPECT_TRUE(CodeExists(originalStyleCode));
 
-    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(GetDgnDb(), "MyStyle")->CreateCopy();
+    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
     pStyle->SetName("RenamedStyle");
     EXPECT_TRUE(pStyle->Update().IsValid());
 
@@ -105,65 +106,11 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
 
     // Test with various options
     DgnCode emptyCode = DgnCode::CreateEmpty();
-    DgnCode modelCode = GetDgnDb().GetDictionaryModel().GetCode();
     DgnCode elementCode = pStyle->GetCode();
 
-    typedef DgnCode::Iterator::Include Include;
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(false)));
 
-    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Both, true)));
-    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Both, false)));
-    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, true)));
-    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, false)));
-    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Elements, true)));
-    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Elements, false)));
-
-    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, false)));
-    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, true)));
-    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, false)));
-    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, true)));
-    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, false)));
-    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, true)));
-
-    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, true)));
-    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, false)));
-    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, true)));
-    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, false)));
-    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, true)));
-    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, false)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(true)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(false)));
     }
-
-/*---------------------------------------------------------------------------------**//**
-* A DgnCode should be unique among all elements AND models within a DgnDb.
-* @bsimethod                                                    Paul.Connelly   06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnAuthoritiesTest, ModelAndElementUniqueness)
-    {
-    SetupSeedProject();
-    auto auth1 = Create("Auth1");
-    auto auth2 = Create("Auth2");
-
-    auto elem = InsertElement()->CopyForEdit();
-    DgnModelPtr model = elem->GetModel();
-
-    // assign model code
-    DgnCode modelCode = auth1->CreateCode("ModelCode");
-    EXPECT_EQ(DgnDbStatus::Success, model->SetCode(modelCode));
-    EXPECT_EQ(DgnDbStatus::Success, model->Update());
-
-    // try to reuse for element
-    EXPECT_EQ(DgnDbStatus::Success, elem->SetCode(modelCode));
-    DgnDbStatus status;
-    EXPECT_TRUE(elem->Update(&status).IsNull());
-    EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
-
-    // assign element code
-    DgnCode elemCode = auth1->CreateCode("ElemCode");
-    EXPECT_EQ(DgnDbStatus::Success, elem->SetCode(elemCode));
-    EXPECT_TRUE(elem->Update(&status).IsValid());
-    EXPECT_EQ(DgnDbStatus::Success, status);
-
-    // try to reuse for model
-    EXPECT_EQ(DgnDbStatus::Success, model->SetCode(elemCode));
-    EXPECT_EQ(DgnDbStatus::DuplicateCode, model->Update());
-    }
-

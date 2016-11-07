@@ -8,10 +8,22 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#if defined(_WIN32)
+    #if defined(_MANAGED) || (_MSC_VER < 1900)  // visual studio 2015
+        #define MESHTILE_NO_FOLLY
+    #endif
+#endif
+
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
+
+#if !defined(MESHTILE_NO_FOLLY)
+#include <folly/futures/Future.h>
+#endif
+
+#include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -40,6 +52,7 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileGenerationCache);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -259,9 +272,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles, bool includeParams);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -300,8 +313,6 @@ private:
     Transform               m_transform;
     DRange3d                m_tileRange;
     BeInt64Id               m_entityId;
-    size_t                  m_facetCount;
-    double                  m_facetCountDensity;
     bool                    m_isCurved;
     bool                    m_hasTexture;
 
@@ -312,6 +323,7 @@ protected:
     virtual T_TilePolyfaces _GetPolyfaces (IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
     virtual bool _IsPolyface() const = 0;
+    virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
 
     void SetFacetCount(size_t numFacets);
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
@@ -321,8 +333,7 @@ public:
     DRange3dCR GetTileRange() const { return m_tileRange; }
     BeInt64Id GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
 
-    size_t GetFacetCount() const { return m_facetCount; }
-    double GetFacetCountDensity() const { return m_facetCountDensity; }
+    double GetFacetCountDensity(IFacetOptionsR options) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
@@ -332,9 +343,9 @@ public:
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an IBRepEntity
-    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, DgnDbR db);
 };
 
 //=======================================================================================
@@ -415,7 +426,7 @@ public:
 //! Caches information used during tile generation.
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct TileGenerationCache
+struct TileGenerationCache : RefCountedBase
 {
     // ###TODO: Put upper limit on sizes of geometry source/list caches...
     // The following options are mutually exclusive
@@ -437,8 +448,10 @@ private:
     Options                     m_options;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
-    TileGenerationCache(Options options = Options::CacheGeometrySources);
+    TileGenerationCache(Options options);
     void Populate(DgnDbR db, DgnModelId modelId, ITileGenerationFilterP filter);
+
+    static TileGenerationCachePtr Create(Options options = Options::CacheGeometrySources) { return new TileGenerationCache(options); }
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
@@ -498,6 +511,8 @@ public:
 
     TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
+    TileNodeCP GetRoot() const;
+    TileNodeP GetRoot() { return const_cast<TileNodeP>(const_cast<TileNodeCP>(this)->GetRoot()); }
     TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
@@ -549,6 +564,7 @@ public:
         { return new ElementTileNode(model, dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void SetTolerance(double tolerance) { m_tolerance = tolerance; }
+    void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
@@ -576,17 +592,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ITileGenerationProgressMonitor
 {
-    enum class TaskName
-    {
-        PopulatingCache,
-        GeneratingTileNodes,
-        CollectingTileMeshes,
-    };
-
     virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
     virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
-    virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
-    virtual void _SetModel (DgnModelCP dgnModel) { }
 };
 
 //=======================================================================================
@@ -610,30 +617,60 @@ struct TileGenerator
         //! Invoked before a model is processed.
         virtual Status _BeginProcessModel(DgnModelCR model) { return Status::Success; }
         //! Invoked after a model is processed, with the result of processing.
-        virtual Status _EndProcessModel(DgnModelCR model, Status status) { return status; }
+        virtual Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, Status status) { return status; }
     };
 
     //! Accumulates statistics during tile generation
     struct Statistics
     {
         size_t      m_tileCount = 0;
-        size_t      m_tileDepth = 0;
-        double      m_collectionTime = 0.0;
-        double      m_tileCreationTime = 0.0;
-        double      m_cachePopulationTime = 0.0;
+        double      m_tileGenerationTime = 0.0;
     };
 private:
     Statistics                      m_statistics;
     ITileGenerationProgressMonitorR m_progressMeter;
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
-    double                          m_totalVolume;
-    double                          m_completedVolume;
     BeAtomic<uint32_t>              m_totalTiles;
-    BeAtomic<uint32_t>              m_completedTiles;
+    uint32_t                        m_totalModels;
+    BeAtomic<uint32_t>              m_completedModels;
 
+    struct ElementTileContext
+    {
+        DgnPlatformLib::Host&   m_host;
+        TileGenerationCachePtr  m_cache;
+        DgnModelCPtr            m_model;
+        ITileCollector*         m_collector;
+        double                  m_leafTolerance;
+        size_t                  m_maxPointsPerTile;
 
-    void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, TileGenerationCacheCR generationCache);
+        ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
+            : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile) { }
+    };
+
+    struct ElementTileResult
+    {
+        ElementTileNodePtr      m_tile;
+        TileGenerator::Status   m_status;
+
+        explicit ElementTileResult(TileGenerator::Status status, ElementTileNodeP tile=nullptr) : m_tile(tile), m_status(status)
+            { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
+    };
+
+#if !defined(MESHTILE_NO_FOLLY)
+    typedef folly::Future<Status> FutureStatus;
+    typedef folly::Future<ElementTileResult> FutureElementTileResult;
+
+    FutureElementTileResult GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
+    FutureStatus PopulateCache(ElementTileContext context);
+    FutureElementTileResult GenerateTileset(Status status, ElementTileContext context);
+    FutureElementTileResult ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context);
+    FutureElementTileResult ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context);
+
+    FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
+    FutureStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
+#endif
+
     Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -643,7 +680,7 @@ public:
     Statistics const& GetStatistics() const { return m_statistics; }
     ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelId modelId);
+    DGNPLATFORM_EXPORT Status GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel);
 };
 
 //=======================================================================================

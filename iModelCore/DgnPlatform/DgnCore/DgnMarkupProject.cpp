@@ -640,7 +640,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
-    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name)));
+    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */));
     if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("SpatialRedlineModel::CreateModel failed");
@@ -651,7 +651,6 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
     UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
     UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
     rdlModel->GetDisplayInfoR().SetUnits(mu, su);
-
     return rdlModel;
     }
 
@@ -913,17 +912,14 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DocumentListModelPtr DgnMarkupProject::GetRedlineListModel()
     {
-    DgnCode modelCode = DgnModel::CreateModelCode("Redlines", MARKUP_SCHEMA_NAME);
-    DgnModelId modelId = Models().QueryModelId(modelCode);
+    DgnCode partitionCode = DocumentPartition::CreateCode(*Elements().GetRootSubject(), "Redlines");
+    DgnModelId modelId = Models().QuerySubModelId(partitionCode);
 
     if (modelId.IsValid())
         return Models().Get<DocumentListModel>(modelId);
 
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Redlines");
-    if (!partition.IsValid())
-        return nullptr;
-
-    return DocumentListModel::CreateAndInsert(*partition, modelCode);
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), partitionCode.GetValueCP());
+    return partition.IsValid() ? DocumentListModel::CreateAndInsert(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -956,8 +952,6 @@ RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR mod
 RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     {
     // DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
-    Utf8String name = doc.GetCode().GetValue();
-    DgnCode code = CreateModelCode(doc.GetCode().GetValue(), doc.GetElementId());
-    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId(), code);
+    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId());
     return new RedlineModel(params);
     }

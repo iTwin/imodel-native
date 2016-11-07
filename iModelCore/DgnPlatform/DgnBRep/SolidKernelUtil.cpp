@@ -509,6 +509,38 @@ BentleyStatus BRepUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_ENTITY_t> tmpIntersectEntityTags;
+    bvector<DPoint3d> tmpIntersectPts;
+    bvector<DPoint2d> tmpIntersectParams;
+    bool hitFound = false;
+
+    if (!PSolidUtil::LocateSubEntities(PSolidUtil::GetEntityTag(entity), entity.GetEntityTransform(), tmpIntersectEntityTags, tmpIntersectPts, tmpIntersectParams, maxFace, maxEdge, maxVertex, boresite, maxEdgeDistance, maxVertexDistance))
+        return false;
+
+    for (size_t iHit = 0; iHit < tmpIntersectEntityTags.size(); ++iHit)
+        {
+        ISubEntityPtr subEntity = PSolidSubEntity::CreateSubEntity(tmpIntersectEntityTags.at(iHit), entity);
+
+        if (!subEntity.IsValid())
+            continue;
+
+        PSolidSubEntity::SetLocation(*subEntity, tmpIntersectPts.at(iHit), tmpIntersectParams.at(iHit));
+        intersectEntities.push_back(subEntity);
+        hitFound = true;
+        }
+
+    return hitFound;
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)

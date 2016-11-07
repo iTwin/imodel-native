@@ -748,7 +748,7 @@ TEST_F(ElementUriTests, Test1)
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
     ASSERT_TRUE(db.IsValid());
 
-    DgnModelId mid = db->Models().QueryModelId(s_seedFileInfo.modelCode);
+    DgnModelId mid = db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
     DgnCategoryId catId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db);
 
     DgnElementCPtr el;

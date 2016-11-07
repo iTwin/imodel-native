@@ -305,9 +305,9 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
-    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, DgnModel::CreateModelCode("DrawingListModel"));
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "TestDrawing");
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("TestDrawingModel"));
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     DgnModelId modelId = drawingModel->GetModelId();
 
     //Add two elements using this GeometryPart

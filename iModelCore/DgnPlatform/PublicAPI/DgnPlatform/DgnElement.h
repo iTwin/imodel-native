@@ -499,7 +499,7 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 {
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -1185,12 +1185,8 @@ protected:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
-    virtual DgnCode const& _GetCode() const override final {return m_code;}
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override {return true;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
-    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const override;
-    virtual DgnElementCP _ToDgnElement() const override final {return this;}
-    virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const {return true;}
+    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const;
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
@@ -1368,10 +1364,13 @@ public:
 
     //! @}
 
-    //! Get the DgnModelId of this DgnElement.
+    //! Get the DgnDb of this DgnElement.
+    DgnDbR GetDgnDb() const {return m_dgndb;}
+
+    //! Get the DgnModelId of the DgnModel that contains this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
 
-    //! Get the DgnModel of this DgnElement.
+    //! Get the DgnModel that contains this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the (optional) DgnModelId of the DgnModel that is modeling this DgnElement.  That is, the DgnModel that is beneath this element in the hierarchy.
@@ -1420,6 +1419,17 @@ public:
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
+
+    //! Return the DgnCode of this DgnElement
+    DgnCodeCR GetCode() const {return m_code;}
+
+    //! Generate a default code for this DgnElement
+    DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
+    bool SupportsCodeAuthority(DgnAuthorityCR authority) const {return _SupportsCodeAuthority(authority);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
@@ -2590,6 +2600,9 @@ protected:
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+
     //! Get the description of this InformationPartitionElement
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
     //! Set the description of this InformationPartitionElement

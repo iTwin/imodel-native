@@ -25,6 +25,7 @@ protected:
     DgnModelId m_drawingModelId;
     DgnModelId m_sheetModelId;
     DgnCategoryId m_attachmentCatId;
+    DgnCategoryId m_annotationCatId;
     DgnViewId m_viewId;
     DgnElementId m_textStyleId;
 public:
@@ -49,7 +50,9 @@ public:
 
     DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
 
+    void AddTextToModel(TextAnnotation2dCPtr&, DgnModelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees=0.0);
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
+    void AddBoxToModel(AnnotationElement2dCPtr&, DgnModelId, DPoint2dCR origin, double width, double height, double boxRotationDegrees=0.0);
     void AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot=0.0);
     template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
 };
@@ -63,21 +66,21 @@ void ViewAttachmentTest::SetUp()
     DgnDbR db = GetDgnDb();
 
     // Set up a sheet to hold attachments
-    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("SheetListModel"));
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, "SheetListModel");
     SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0,1.0,1.0, DgnCode(), "MySheet");
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"));
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
-    DgnCategory cat(DgnCategory::CreateParams(db, "Attachments", DgnCategory::Scope::Annotation));
-    cat.Insert(DgnSubCategory::Appearance());
-    m_attachmentCatId = cat.GetCategoryId();
+    m_attachmentCatId = DgnDbTestUtils::InsertCategory(db, "Attachments", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
     ASSERT_TRUE(m_attachmentCatId.IsValid());
+    m_annotationCatId = DgnDbTestUtils::InsertCategory(db, "Annotations", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    ASSERT_TRUE(m_annotationCatId.IsValid());
 
     // Set up a viewed model
-    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("MyDrawingListModel"));
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, "MyDrawingListModel");
     SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, DgnCode(), "MySectionDrawing");
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("MyDrawingModel"));
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     m_drawingModelId = drawingModel->GetModelId();
 
     // Create a view of our (empty) model
@@ -91,7 +94,7 @@ void ViewAttachmentTest::SetUp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, double viewRot)
+void ViewAttachmentTest::AddTextToModel(TextAnnotation2dCPtr& annoElemOut, DgnModelId modelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees)
     {
     auto& db = GetDgnDb();
     if (!m_textStyleId.IsValid())
@@ -105,12 +108,29 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
         EXPECT_TRUE(m_textStyleId.IsValid());
         }
 
+    ASSERT_TRUE(m_annotationCatId.IsValid());
+
     TextAnnotation anno(db);
     anno.SetText(AnnotationTextBlock::Create(db, m_textStyleId, text).get());
-    TextAnnotation2dPtr annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, drawingId, TextAnnotation2d::QueryDgnClassId(db), m_attachmentCatId));
+    TextAnnotation2dPtr annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, modelId, TextAnnotation2d::QueryDgnClassId(db), m_annotationCatId));
     annoElem->SetAnnotation(&anno);
-    EXPECT_TRUE(annoElem->Insert().IsValid());
 
+    auto placement = annoElem->GetPlacement();
+    placement.GetOriginR() = origin;
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(textRotationDegrees);
+
+    annoElemOut = db.Elements().Insert(*annoElem);
+    ASSERT_TRUE(annoElemOut.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, double viewRot)
+    {
+    auto& db = GetDgnDb();
+    TextAnnotation2dCPtr annoElem;
+    AddTextToModel(annoElem, drawingId, DPoint2d::From(3,2), text);
     DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
     SetupAndSaveViewController(*viewController, *annoElem, drawingId, viewRot);
     }
@@ -118,7 +138,7 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot)
+void ViewAttachmentTest::AddBoxToModel(AnnotationElement2dCPtr& geomElOut, DgnModelId modelId, DPoint2dCR origin, double width, double height, double rot)
     {
     bvector<DPoint3d> pts
         {
@@ -132,18 +152,32 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
 
     auto& db = GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
-    DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
+    DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, modelId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 
     auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
-    geomEl->SetCategoryId(m_attachmentCatId);
-    geomEl->SetPlacement(Placement2d(DPoint2d::From(3,2), AngleInDegrees()));
+    geomEl->SetCategoryId(m_annotationCatId);
+    geomEl->SetPlacement(Placement2d(origin, AngleInDegrees::FromDegrees(rot)));
     GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl);
 
     builder->Append(*curve);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
-    EXPECT_TRUE(el->Insert().IsValid());
 
+    auto persistentEl = db.Elements().Insert(*el);
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    geomElOut = persistentEl->ToAnnotationElement2d();
+    ASSERT_TRUE(geomElOut.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot)
+    {
+    auto& db = GetDgnDb();
+    AnnotationElement2dCPtr geomEl;
+    AddBoxToModel(geomEl, drawingId, DPoint2d::From(3,2), width, height, viewRot);
     DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
     SetupAndSaveViewController(*viewController, *geomEl, drawingId, viewRot);
     }
@@ -163,7 +197,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     flags.SetRenderMode(Render::RenderMode::Wireframe);
     viewController.GetViewDefinition().GetDisplayStyle().SetViewFlags(flags);
 
-    viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
+    viewController.ChangeCategoryDisplay(el.GetCategoryId(), true);
 
 //    viewController.ChangeModelDisplay(modelId, true);
 
@@ -238,7 +272,7 @@ TEST_F(ViewAttachmentTest, Geom)
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
 
     AddTextToDrawing(m_drawingModelId, "Text", drawingViewRot);
-    //AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
+    AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
 
     // Create an attachment
     Placement2d placement(DPoint2d::From(0,0), AngleInDegrees(), ElementAlignedBox2d(0,0,1,1));
@@ -246,16 +280,26 @@ TEST_F(ViewAttachmentTest, Geom)
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
+    TextAnnotation2dCPtr annoElemOnSheet;
+    AddTextToModel(annoElemOnSheet, m_sheetModelId, DPoint2d::From(0,0), "Text on sheet");
+
+    AnnotationElement2dCPtr boxOnSheet; // make a box about the same size as the ViewAttachment, so that we can use it to check the attachment's BB by eye
+    AddBoxToModel(boxOnSheet, m_sheetModelId, DPoint2d::From(0,0), placement.GetElementBox().GetWidth()+0.01, placement.GetElementBox().GetHeight()+0.01);
+
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
 
     DisplayStylePtr noStyle = new DisplayStyle(db,"");
-    CategorySelectorPtr noCats = new CategorySelector(db,"");
-    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *noCats, *noStyle);
+    CategorySelectorPtr cats = new CategorySelector(db,"");
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *cats, *noStyle);
     sheetView.Insert();
 
     SheetViewControllerPtr viewController = sheetView.LoadViewController();
     SetupAndSaveViewController(*viewController, *cpAttach, m_sheetModelId);
+
+    viewController->ChangeCategoryDisplay(m_attachmentCatId, true);
+    viewController->ChangeCategoryDisplay(m_annotationCatId, true);
+    viewController->GetViewDefinition().GetCategorySelector().Update();
 
     db.SaveChanges();
     }

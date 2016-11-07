@@ -108,9 +108,9 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
     {
     SetupSeedProject();
 
-    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, DgnModel::CreateModelCode("SheetListModel"));
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "SheetListModel");
     SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1,1,1, DgnCode(), "TestSheet");
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("TestSheetModel"));
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     DgnModelId sheetModelId = sheetModel->GetModelId();
 
     DgnElementPtr el = TestElement2d::Create(*m_db, sheetModelId, m_defaultCategoryId, DgnCode(), 100);
@@ -133,5 +133,4 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
 
     EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
-
     }

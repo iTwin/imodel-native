@@ -1760,19 +1760,22 @@ void SheetViewController::_DrawView(ViewContextR context)
             continue;
 
         auto const& placement = attachment->GetPlacement();
-        auto x = placement.GetOrigin().x;
-        auto y = placement.GetOrigin().y;
         auto const& box = placement.GetElementBox();
         auto height = box.GetHeight();
         auto width = box.GetWidth();
         DPoint2d pts[4];
-        pts[0] = DPoint2d::From(x       , y);
-        pts[1] = DPoint2d::From(x+width , y);
-        pts[2] = DPoint2d::From(x+width , y+height);
-        pts[3] = DPoint2d::From(x       , y+height);
+        pts[0] = DPoint2d::From(0       , 0);
+        pts[1] = DPoint2d::From(0+width , 0);
+        pts[2] = DPoint2d::From(0+width , 0+height);
+        pts[3] = DPoint2d::From(0       , 0+height);
         auto rot = placement.GetTransform();
         rot.Multiply(pts, pts, _countof(pts));
-        context.DrawStyledLineString2d(_countof(pts), pts, 0, nullptr, true);
+
+        Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+
+        graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2);
+        graphic->AddLineString2d(_countof(pts), pts, 0.0);
+        context.OutputGraphic(*graphic, nullptr);
         }
     }
 

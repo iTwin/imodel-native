@@ -73,9 +73,9 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     DgnCategoryId categoryId = category.GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());
 
-        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "2D Drawing");
-        DrawingModelPtr model = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("2D Model"));
+        DrawingModelPtr model = DgnDbTestUtils::InsertDrawingModel(*drawing);
     modelId = model->GetModelId();
 
     textStyleId = ensureAnnotationTextStyle1(*db);
@@ -253,7 +253,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     DgnCategoryId categoryId = category.GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());
 
-        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode(TEST_NAME));
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, TEST_NAME);
     modelId = model->GetModelId();
 
     textStyleId = ensureAnnotationTextStyle1(*db);

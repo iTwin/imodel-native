@@ -9,5 +9,6 @@
 
 ProductRoot = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/
 
-$(BuildContext)Delivery/UnitTests/Documents : ${UNIT_TESTS_DOCUMENTS_DIR}
-    $(LinkFirstDepToFirstTargetAsDirectory)
+always:
+    ~mkdir $(BuildContext)Delivery/UnitTests/Documents
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py ${UNIT_TESTS_DOCUMENTS_DIR} $(BuildContext)Delivery/UnitTests/Documents --excludePattern=.hg

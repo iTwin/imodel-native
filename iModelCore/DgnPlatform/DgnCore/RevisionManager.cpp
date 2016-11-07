@@ -515,8 +515,6 @@ void DgnRevision::CollectCodesFromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet
 
     auto elems = DgnChangeIterator::MakeElementChangeIterator(dgndb, changeSet);
     collectCodes(m_assignedCodes, m_discardedCodes, elems);
-    auto models = DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet);
-    collectCodes(m_assignedCodes, m_discardedCodes, models);
     }
 
 /*---------------------------------------------------------------------------------**//**
