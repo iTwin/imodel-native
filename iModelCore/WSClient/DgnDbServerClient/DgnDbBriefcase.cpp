@@ -99,7 +99,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
         if (RevisionStatus::Success == mergeStatus)
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Revisions merged successfully.");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Revisions merged successfully.");
             return DgnDbServerRevisionMergeResult::Success(serverRevisions);
             }
 
@@ -325,9 +325,9 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
             size_t pendingRevisions = result.GetValue().size();
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             if (pendingRevisions <= 0)
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "No pending revisions. Briefcase is up to date.");
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "No pending revisions. Briefcase is up to date.");
             else
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "There are %d pending revision(s). Briefcase is not up to date.", pendingRevisions);
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "There are %d pending revision(s). Briefcase is not up to date.", pendingRevisions);
 
             return DgnDbServerBoolResult::Success(pendingRevisions <= 0); //If there are not pending revisions we are up to date
             }
@@ -409,7 +409,7 @@ DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellatio
             return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
             }
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return DgnDbServerEventResult::Success(currentEvent);
         });
     }

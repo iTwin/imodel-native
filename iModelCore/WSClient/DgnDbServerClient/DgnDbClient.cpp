@@ -286,7 +286,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
         return DgnDbServerRepositoriesResult::Success(repositories);
         });
     }
@@ -522,7 +522,7 @@ DgnDbPtr CleanDb(DgnDbCR db)
     tempdb->SaveChanges();
     //NEEDSWORK: end of file cleanup
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
     return tempdb;
     }
 
@@ -608,7 +608,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         })->Then<DgnDbServerRepositoryResult>([=]
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return *finalResult;
             });
     }
@@ -699,7 +699,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
                     if (result.IsSuccess())
                         {
                         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                         finalResult->SetSuccess(briefcase);
                         }
                     else
@@ -712,7 +712,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
             else
                 {
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                 finalResult->SetSuccess(briefcase);
                 }
             });
@@ -990,7 +990,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
                     briefcaseInfo->SetLocalPath(filePath);
                     finalResult->SetSuccess(briefcaseInfo);
                     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Download successful.");
                     }
                 else
                     {
@@ -1052,7 +1052,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
         else
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
             return DgnDbServerStatusResult::Success();
             }
         });
