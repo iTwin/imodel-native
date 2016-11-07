@@ -1949,6 +1949,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
         else
             {
 #endif
+            if (meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.lock();
             RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetSingleDisplayTexture();
             if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                 {
@@ -1977,6 +1978,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                 else assert(false);
 
                 }
+            if (meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.unlock();
             const_cast<SmCachedDisplayTextureData*>(displayTextureDataPtr->GetData())->AddConsumer(meshNode);
             m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
 #ifdef WIP_MESH_IMPORT
@@ -2124,6 +2126,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                            clipDiffSet,
                                            centroid);
 
+#ifndef NDEBUG
                     bool dbg = false;
 
                     if (dbg)
@@ -2148,7 +2151,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         fwrite(toLoadFaceIndexes, sizeof(int32_t), faceCount, meshAfterClip);
                         fclose(meshAfterClip);
                         }
-
+#endif
 
                     for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                         {
@@ -2844,6 +2847,15 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetContentExtent(
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetArePoints3d(bool arePoints3d)
     {
     m_node->m_nodeHeader.m_arePoints3d = arePoints3d;
+    m_node->SetDirty(true);
+    return BSISUCCESS;
+    }
+
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetResolution(float geometricResolution, float textureResolution)
+    {
+    m_node->m_nodeHeader.m_geometricResolution = geometricResolution;
+    m_node->m_nodeHeader.m_textureResolution = textureResolution;
+    m_node->SetDirty(true);
     return BSISUCCESS;
     }
 

@@ -253,8 +253,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            {
+            std::lock_guard<std::mutex> lock(m_displayMeshLock);
+            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
         ISMMTGGraphDataStorePtr nodeGraphStore;
@@ -372,15 +375,18 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            {
+            std::lock_guard<std::mutex> lock(m_displayMeshLock);
+            GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
             {
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
-        else
+        else if (m_nodeHeader.m_isTextured)
             {
             auto tex = GetSingleDisplayTexture();
             if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
@@ -1891,6 +1897,35 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
         
         DRange3d extentClipped;
         bvector<DPoint3d> pointsClipped;
+        size_t n = 0;
+        bool noIntersect = true;
+        DRange2d extent2d= DRange2d::From(m_nodeHeader.m_nodeExtent);
+        for (auto&pt : points)
+            {
+            //Don't attempt to clip feature if it is entirely on or outside the box
+            if (m_nodeHeader.m_nodeExtent.IsContainedXY(pt) && fabs(pt.x - m_nodeHeader.m_nodeExtent.low.x) > 1e-5 && 
+                fabs(pt.x -  m_nodeHeader.m_nodeExtent.high.x) > 1e-5 && 
+                fabs(pt.y - m_nodeHeader.m_nodeExtent.low.y) > 1e-5 &&
+                fabs(pt.y - m_nodeHeader.m_nodeExtent.high.y) > 1e-5
+                ) ++n;
+            if (noIntersect && &pt - &points[0] != 0)
+                {
+                DRange3d edgeRange = DRange3d::From(pt, points[&pt - &points[0] - 1]);
+                if (m_nodeHeader.m_nodeExtent.IntersectsWith(edgeRange))
+                    {
+                    double par1, par2;
+                    DPoint2d ptIntersect1, ptIntersect2;
+                    DPoint2d start = DPoint2d::From(points[&pt - &points[0] - 1]);
+                    DPoint3d direction;
+                    direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
+                    DPoint2d dir2d = DPoint2d::From(direction);
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && par1 > 1e-5 && par2 > 1e-5 && par1 < 1+1e-5 && par2 < 1+1e-5)
+                    noIntersect = false;
+                    }
+                }
+            }
+
+        if (noIntersect && n < 2) return 0;
         ClipFeatureDefinition(type, m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, points, extent);
         if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
@@ -3580,11 +3615,10 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 //              on how to create a raster from image files to be used by this function.
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
-template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform)
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
     if (!IsLoaded()) Load();
-    DRange2d rasterBox = DRange2d::From(sourceRasterP->GetEffectiveShape()->GetExtent().GetXMin(), sourceRasterP->GetEffectiveShape()->GetExtent().GetYMin(),
-                                        sourceRasterP->GetEffectiveShape()->GetExtent().GetXMax(), sourceRasterP->GetEffectiveShape()->GetExtent().GetYMax());
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent(); 
     //get overlap between node and raster extent
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
@@ -3600,6 +3634,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
+#if 0
     double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
     double unitsPerPixelY = (contentExtent.high.y - contentExtent.low.y) / textureHeightInPixels;
     contentExtent.low.x -= 5 * unitsPerPixelX;
@@ -3773,7 +3808,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
         *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
-    PushTexture(pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);     
+#endif
+    bvector<uint8_t> tex;
+    sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
+    DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
+    
+        if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))
+            SplitNodeBasedOnImageRes();
+        if (!tex.empty())
+        PushTexture(tex.data(), tex.size());     
     
     UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
@@ -3822,15 +3865,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     SetDirty(true);
 
-    delete[] pixelBufferP;
-    delete[] pixelBufferPRGBA;
-    pTextureBitmap = 0;
     }
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
-    template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(HIMMosaic* sourceRasterP, Transform unitTransform)
+    template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
 
         TextureFromRaster(sourceRasterP, unitTransform);
@@ -4699,13 +4739,13 @@ template<class POINT, class EXTENT> ISMPointIndexMesher<POINT, EXTENT>* SMMeshIn
     }
 
 
-template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform)
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
     if (m_indexHeader.m_terrainDepth == (size_t)-1)
         {
         m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
         }
-    if (sourceRasterP == nullptr || sourceRasterP->GetEffectiveShape() == nullptr || sourceRasterP->GetEffectiveShape()->IsEmpty()) return;
+    if (sourceRasterP == nullptr) return;
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
    // WaitForThreadStop();
     for (auto& task : m_textureWorkerTasks) task.get();

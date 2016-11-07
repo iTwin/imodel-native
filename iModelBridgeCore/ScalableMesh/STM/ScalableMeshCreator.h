@@ -192,6 +192,7 @@ struct IScalableMeshCreator::Impl
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
 
         StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
+        StatusInt  SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
 
         StatusInt                           Filter                         ();
 

@@ -26,6 +26,8 @@
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 
+#include "..\STM\GeneratorTextureProvider.h"
+
 #include <Bentley\BeDirectoryIterator.h>
 
 USING_NAMESPACE_GROUND_DETECTION
@@ -273,7 +275,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     textureGenerator->SetPixelSize(0.02);
     textureGenerator->SetTextureTempDir(currentTextureDir);
-
+#if 0
     DRange3d covExt = DRange3d::From(m_extractionArea);
 
    // if (!s_deactivateForMultiCoverage)
@@ -315,6 +317,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
         directoryIter.ToNext();
         }
+#endif
 
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
@@ -330,10 +333,21 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         }
 
     status = terrainCreator->Create(true, true);
-    assert(status == SUCCESS);
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;
+//#if 0
+    StatusInt openStatus;
 
+    IScalableMeshPtr smP = IScalableMesh::GetFor(m_smTerrainPath.c_str(), false, true, openStatus);
+    IScalableMeshCreatorPtr creator(IScalableMeshCreator::GetFor(smP, status));
+    DRange3d range;
+    m_scalableMesh->GetRange(range);
+    ITextureProviderPtr genProvider = new GeneratorTextureProvider(textureGenerator, range, 0.05, currentTextureDir);
+    creator->SetTextureProvider(genProvider);
+    creator = nullptr;
+    smP = nullptr;
+//#endif
+    assert(status == SUCCESS);
     s_xyzId++;
 
     if (!s_deactivateForMultiCoverage)

@@ -51,6 +51,8 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
 
         int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
 
+        void SetDataResolution(float resolution);
+
         virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true, bool restrictLevelForPropagation= false) override;
 
     };

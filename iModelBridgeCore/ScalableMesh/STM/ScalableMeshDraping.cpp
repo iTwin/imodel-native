@@ -797,19 +797,32 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
         if (!node->ArePoints3d())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
+            if (dtmP == nullptr) continue;
             assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
-            if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
+            DRange3d tmBox;
+            dtmP->GetRange(tmBox);
+            DRay3d ray = DRay3d::FromOriginAndVector(transformedPt, vecDirection);
+            DSegment3d seg;
+            DRange1d fraction;
+            DPoint3d pt = transformedPt;
+            if (!tmBox.IsContainedXY(pt) && ray.ClipToRange(tmBox, seg, fraction))
                 {
-                if (endPt != nullptr)
-                    {
-                    //if (node->GetContentExtent().IsContained(*endPt))
-                            {
-                            m_transform.Multiply(*endPt);
-                            ret = true;
-                            break;
-                            }
-                    }
+                pt = ray.FractionParameterToPoint(fraction.low);
                 }
+            
+                if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, pt, directionOfVector, slopeOfVector))
+                    {
+                    if (endPt != nullptr)
+                        {
+                        //if (node->GetContentExtent().IsContained(*endPt))
+                                {
+                                m_transform.Multiply(*endPt);
+                                ret = true;
+                                break;
+                                }
+                        }
+                    }
+                
             }
         else
             {

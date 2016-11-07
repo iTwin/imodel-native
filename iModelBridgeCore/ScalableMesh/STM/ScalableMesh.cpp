@@ -54,6 +54,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshEdit.h"
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include "MosaicTextureProvider.h"
 //#include "CGALEdgeCollapse.h"
 
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
@@ -135,9 +136,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {
-    return _TextureFromRaster(mosaicP, unitTransform);
+    return _TextureFromRaster(provider, unitTransform);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -1451,12 +1452,12 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {
     auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(mosaicP,unitTransform);
+    m_scmIndexPtr->TextureFromRaster(provider, unitTransform);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
     m_scmIndexPtr = 0;
@@ -2301,7 +2302,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {}
 
 // Inherited from IDTM   

@@ -128,6 +128,7 @@ void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector
             {
             if (featureDefs[i][j] < nodePoints.size()) feature.push_back(nodePoints[featureDefs[i][j]]);
             }
+        if (feature.empty()) continue;
         if ((DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Void || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Hole
             || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::BreakVoid || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::DrapeVoid)
             {

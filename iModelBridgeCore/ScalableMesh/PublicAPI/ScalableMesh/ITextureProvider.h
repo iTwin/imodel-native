@@ -9,7 +9,7 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMesh.h>
+
 #include <Bentley\Bentley.h>
 #include <Bentley/RefCounted.h>
 
@@ -32,7 +32,7 @@ struct ITextureProvider abstract : virtual public RefCountedBase
 
         virtual DRange2d _GetTextureExtent() = 0;
 
-        virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area) = 0;
+        virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) = 0;
           
     public:
 
@@ -40,7 +40,7 @@ struct ITextureProvider abstract : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT DRange2d GetTextureExtent();
 
-        BENTLEY_SM_EXPORT StatusInt GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area);
+        BENTLEY_SM_EXPORT StatusInt GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area);
     };
 
 

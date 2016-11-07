@@ -305,6 +305,7 @@ $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${
 
 $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores

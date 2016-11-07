@@ -11,10 +11,12 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
+#include <ScalableMesh/ITextureProvider.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
+
 #undef static_assert
 
 #ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
@@ -178,7 +180,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform=Transform::FromIdentity()) = 0;
+        virtual void                               _TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity()) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
@@ -206,7 +208,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
+        void TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 

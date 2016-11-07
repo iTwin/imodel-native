@@ -54,6 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
 #include <ImagePP\all\h\HRFUtility.h>
+#include "MosaicTextureProvider.h"
 
 
 using namespace ISMStore;
@@ -344,7 +345,8 @@ void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
     {
     HFCPtr<HIMMosaic> pMosaic;
     int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetRasterSources(pMosaic);
-    scmPtr->TextureFromRaster(pMosaic);
+    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
+    scmPtr->TextureFromRaster(mosaicPtr);
     assert(BSISUCCESS == status);
     }
 #endif
@@ -797,6 +799,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
                                              resultingClipShapePtr,
                                              fileGCS,
                                              targetScalableMeshData);
+    if (filteredSources.empty()) return BSISUCCESS;
     s_rasterMemPool = new HPMPool(30000, HPMPool::None);
     auto cluster = new HGFHMRStdWorldCluster();
     pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
@@ -862,7 +865,9 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
     HFCPtr<HIMMosaic> pMosaic;
     StatusInt status = GetRasterSources(pMosaic);
     if (BSISUCCESS != status) return BSIERROR;
-    pIndex->TextureFromRaster(pMosaic.GetPtr());
+    if (pMosaic == nullptr) return BSISUCCESS;
+    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
+    pIndex->TextureFromRaster(mosaicPtr);
     return BSISUCCESS;
     }
 

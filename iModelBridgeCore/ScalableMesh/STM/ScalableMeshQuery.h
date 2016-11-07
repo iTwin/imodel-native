@@ -1511,6 +1511,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _SetArePoints3d(bool arePoints3d) override;
 
+        virtual StatusInt _SetResolution(float geometricResolution, float textureResolution) override;
+
         virtual bool _IsHeaderLoaded() const override;
 
         virtual bool _IsMeshLoaded() const override;

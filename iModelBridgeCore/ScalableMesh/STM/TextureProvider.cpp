@@ -14,7 +14,7 @@ DRange2d ITextureProvider::GetTextureExtent()
     return _GetTextureExtent();
     }
 
-StatusInt ITextureProvider::GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d area)
+StatusInt ITextureProvider::GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
     return _GetTextureForArea(texData, width, height, area);
     }

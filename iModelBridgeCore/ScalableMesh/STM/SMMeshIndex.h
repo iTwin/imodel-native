@@ -28,6 +28,7 @@
 #include "SharedTextureManager.h"
 #include "SmCachedDisplayData.h"
 #include "ScalableMeshQuery.h"
+#include <ScalableMesh\ITextureProvider.h>
 
 
 namespace BENTLEY_NAMESPACE_NAME
@@ -301,8 +302,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
-    void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
-    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    void                TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
@@ -462,6 +463,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> AddDisplayMesh(SmCachedDisplayMeshData* smCachedDisplayData, size_t sizeToReserve)
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         assert(smCachedDisplayData != 0);
 
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> customGenericBlobItemPtr(
@@ -517,6 +519,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> GetDisplayMeshes()
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> cachedDisplayMeshItemPtr;
 
         GetMemoryPool()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
@@ -583,6 +586,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void RemoveDisplayMesh()
         {
+        std::lock_guard<std::mutex> lock(m_displayMeshLock);
         GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
         m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
@@ -717,6 +721,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     atomic<size_t> m_nbClips;
 
     std::mutex m_dtmLock;
+    std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
 
@@ -815,7 +820,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         size_t GetNextTextureId();
 
 
-        void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+        void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
         int                 RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes);
 #ifdef ACTIVATE_TEXTURE_DUMP

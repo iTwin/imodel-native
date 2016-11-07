@@ -1020,6 +1020,7 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 
+    if (rootNodePtr == nullptr) return;
     PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
 	int64_t nbObjects = 0;

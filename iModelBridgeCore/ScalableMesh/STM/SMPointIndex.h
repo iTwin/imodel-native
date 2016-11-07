@@ -949,7 +949,7 @@ public:
 #endif
         }
 
-  
+    std::mutex m_sharedTexLock;
 
 protected:
 
@@ -1384,6 +1384,12 @@ public:
         return m_indexHeader.m_isTerrain;
         }
 
+
+    void SetDataResolution(float resolution)
+        {
+        m_indexHeader.m_resolution = resolution;
+        m_indexHeaderDirty = true;
+        }
 
     /**----------------------------------------------------------------------------
     Changes an unbalanced index to a balanced index. If the index is already balanced

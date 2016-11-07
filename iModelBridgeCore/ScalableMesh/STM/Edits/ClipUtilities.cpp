@@ -12,7 +12,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-06-04\\";
+#define SM_TRACE_CLIPS_FULL 0
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-11-02\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -645,7 +646,23 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     }
 
 
-void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap)
+DPoint2d ComputeUVs(DPoint3d pt, DRange3d ext)
+    {
+    DPoint2d uv;
+    size_t textureWidthInPixels = 1024;
+    size_t textureHeightInPixels = 1024;
+    double unitsPerPixelX = (ext.high.x - ext.low.x) / textureWidthInPixels;
+    double unitsPerPixelY = (ext.high.y - ext.low.y) / textureHeightInPixels;
+    ext.low.x -= 5 * unitsPerPixelX;
+    ext.low.y -= 5 * unitsPerPixelY;
+    ext.high.x += 5 * unitsPerPixelX;
+    ext.high.y += 5 * unitsPerPixelY;
+    uv.x = max(0.0, min((pt.x - ext.low.x) / (ext.XLength()), 1.0));
+    uv.y = max(0.0, min((pt.y - ext.low.y) / (ext.YLength()), 1.0));
+    return uv;
+    }
+
+void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap, bmap<int32_t, int32_t>& mapOfIndices)
     {
     vector<int32_t> indices(poly->GetPointIndexCount());
     memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount()*sizeof(int32_t));
@@ -661,28 +678,37 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->Point().push_back(pt);
             }
         }
-    size_t nFaceMisses = 0;
+    //size_t nFaceMisses = 0;
     poly->PointIndex().clear();
     for (size_t i = 0; i < indices.size(); i += 3)
         {
         DPoint2d uvCoords[3];
-        if (!faceToUVMap.GetFacet(&indices[i], uvCoords))
+        int32_t newIndices[3] = { indices[i], indices[i + 1], indices[i + 2] };
+       /* for (size_t j = 0; j < 3; ++j)
+            {
+            if (mapOfIndices.count(indices[i + j]) != 0)
+                {
+                newIndices[j] = mapOfIndices[indices[i + j]];
+                }
+            }
+        if (!faceToUVMap.GetFacet(&newIndices[0], uvCoords))
             {
             if (poly->Param().size() == 0)
                 poly->Param().push_back(DPoint2d::From(0.0, 0.0));
             nFaceMisses++;
-            poly->PointIndex().push_back(allPts[indices[i]] + 1);
-            poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
-            poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
+            poly->PointIndex().push_back(allPts[newIndices[0]] + 1);
+            poly->PointIndex().push_back(allPts[newIndices[ 1]] + 1);
+            poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
             for (size_t uvI = 0; uvI < 3; ++uvI)
                 poly->ParamIndex().push_back(1);
             continue;
-            }
-        poly->PointIndex().push_back(allPts[indices[i]] + 1);
-        poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
-        poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
+            }*/
+        poly->PointIndex().push_back(allPts[newIndices[0]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[1]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
         for (size_t uvI = 0; uvI < 3; ++uvI)
             {
+            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_range);
             if (allUvs.count(uvCoords[uvI]) == 0)
                 {
                 poly->Param().push_back(uvCoords[uvI]);
@@ -824,6 +850,7 @@ size_t s_nclip = 0;
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
+#ifndef NDEBUG
     bool dbg = false;
     if (dbg)
         {
@@ -858,20 +885,31 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fclose(polyCliPFile);
             }
         }
+#endif
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
     long          numRegionTextureIds = 0;
     FaceToUVMap originalFaceMap(m_range);
+    int32_t* toDTMIndexBuffer = 0;
+    DPoint3d* toDTMVertexBuffer = 0;
     if (m_uvBuffer && m_uvIndices)
         {
-        int32_t* toDTMIndexBuffer = new int32_t[m_nIndices];
+        toDTMIndexBuffer = new int32_t[m_nIndices];
         TranslateToDTMIndices(toDTMIndexBuffer, m_vertexBuffer, m_indexBuffer, dtmPtr, m_nIndices);
+        toDTMVertexBuffer = new DPoint3d[dtmPtr->GetBcDTM()->GetPointCount()];
+        for (size_t i = 0; i < (size_t)dtmPtr->GetBcDTM()->GetPointCount(); ++i)
+            {
+            DPoint3d pt;
+            dtmPtr->GetBcDTM()->GetPoint((int)i, pt);
+            toDTMVertexBuffer[i] = pt;
+            }
         originalFaceMap.ReadFrom(toDTMIndexBuffer, m_uvIndices, m_uvBuffer, m_nIndices);
-        delete[] toDTMIndexBuffer;
         }
     if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
     polyfaces.resize(polygons.size() + 1);
+#ifndef NDEBUG
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".tin")).c_str());
+#endif
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
@@ -905,18 +943,36 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             userTag++;
             }
         }
-
+#ifndef NDEBUG
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
+#endif
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(2000000);
+    bmap<int32_t, int32_t> updatedIndices;
+    if (m_uvBuffer && m_uvIndices)
+        {
+        int32_t* newDTMIndexBuffer = new int32_t[m_nIndices];
+        for (size_t i = 0; i < m_nIndices; ++i)
+            {
+            toDTMIndexBuffer[i] += 1;
+            }
+        TranslateToDTMIndices(newDTMIndexBuffer, toDTMVertexBuffer, toDTMIndexBuffer, dtmPtr, m_nIndices);
+        for (size_t i = 0; i < m_nIndices; ++i)
+            {
+            updatedIndices[newDTMIndexBuffer[i]] = toDTMIndexBuffer[i] - 1;
+            }
+        delete[] toDTMIndexBuffer;
+        delete[] newDTMIndexBuffer;
+        }
     size_t no = 0;
     for (PolyfaceQueryP pf : *en)
         {
         PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
         vec->CopyFrom(*pf);
-        if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap);
+        if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
+#ifndef NDEBUG
         if (dbg)
             {
             WString name = WString(s_path) + L"fpostclipmeshnoutsideregion_";
@@ -937,6 +993,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
             fclose(meshAfterClip);
             }
+#endif
         polyfaces[0].push_back(vec);
         }
     for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
@@ -949,8 +1006,8 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             {
             PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
             vec->CopyFrom(*pf);
-            if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap);
-
+            if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
+#ifndef NDEBUG
             if (dbg)
                 {
                 WString name = WString(s_path) + L"fpostclipmeshregion_";
@@ -973,11 +1030,13 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
                 fclose(meshAfterClip);
                 }
+#endif
             ++n2;
             polyfaces[n + 1].push_back(vec);
             }
 
         }
+
     if (textureRegionIdsP != 0)
         {
         free(textureRegionIdsP);
