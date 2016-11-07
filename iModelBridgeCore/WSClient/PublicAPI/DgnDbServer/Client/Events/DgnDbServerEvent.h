@@ -100,7 +100,7 @@ namespace DgnDbServerEvent
     /*--------------------------------------------------------------------------------------+
     * @bsiclass                                              Arvind.Venkateswaran   06/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    struct GenericEvent
+    struct EXPORT_VTABLE_ATTRIBUTE GenericEvent
         {
         public:
             DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType() { return UnknownEventType; }

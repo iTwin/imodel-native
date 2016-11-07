@@ -21,6 +21,8 @@ struct SamlToken
     {
     private:
         Utf8String m_token;
+
+        mutable BeMutex m_domMutex;
         mutable BeXmlDomPtr m_dom;
 
     private:
@@ -32,6 +34,10 @@ struct SamlToken
         WSCLIENT_EXPORT SamlToken();
         //! Construct token from xml string
         WSCLIENT_EXPORT SamlToken(Utf8String token);
+        //! Copy constructor
+        WSCLIENT_EXPORT SamlToken(const SamlToken& other);
+        //! Assignment operator
+        WSCLIENT_EXPORT SamlToken& operator=(const SamlToken& other);
         //! Check whenver given token is empty
         WSCLIENT_EXPORT bool IsEmpty() const;
         //! Check whenver given token is valid xml and supported
