@@ -467,7 +467,6 @@ std::vector<size_t> const& expIndexSkipList,
 RelationshipClassEndTableMap const& classMap
 )
     {
-    //WIP*********Following code should figure out the table and not just use the first table****************
     ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
     if (ecClassIdPropertyMap->IsMappedToSingleTable())
         {
@@ -475,7 +474,7 @@ RelationshipClassEndTableMap const& classMap
         return;
         }
 
-    DbTable const& contextTable = *classMap.GetForeignEndECInstanceIdPropMap()->GetTables().front();
+    DbTable const& contextTable = classMap.GetJoinedTable();
 
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
     //properties, the list will only contain one snippet, but for multi-dimensional properties (points, structs)
@@ -488,10 +487,6 @@ RelationshipClassEndTableMap const& classMap
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
     updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
 
-    if (!classMap.IsMappedToSingleTable())
-        return;
-
-    DbTable const& contextTable = classMap.GetJoinedTable();
     if (!ecClassIdPropertyMap->IsVirtual(contextTable))
         {
         //class id is persisted so determine the class id literal and append it to the SQL

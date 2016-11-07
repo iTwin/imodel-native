@@ -163,7 +163,7 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNes
 StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     : ECValueBindingInfo(Type::Struct, ecsqlParameterIndex)
     {
-    for (auto memberProp : structType.GetProperties(true))
+    for (ECPropertyCP memberProp : structType.GetProperties(true))
         {
         Utf8String memberAccessString;
         if (!Utf8String::IsNullOrEmpty(parentPropertyAccessString))

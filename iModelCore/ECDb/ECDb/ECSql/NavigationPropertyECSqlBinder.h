@@ -16,15 +16,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
     {
     private:
-        int m_idSqliteIndex;
-        int m_relClassIdSqliteIndex;
+        static const size_t ID_MEMBER_INDEX = 0;
+        static const size_t RELECCLASSID_MEMBER_INDEX = 1;
 
-        std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlBinder>> m_memberBinders;
+        std::vector<std::unique_ptr<ECSqlBinder>> m_memberBinders;
 
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
-        virtual void _OnClearBindings() override;
-        virtual ECSqlStatus _OnBeforeStep() override;
 
         //these are needed by the actual binding API
         virtual IECSqlBinder& _GetMember(Utf8CP navPropMemberPropertyName) override;

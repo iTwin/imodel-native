@@ -774,13 +774,12 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
     //SourceECClassId
     RecordPropertyMapIfRequried(*relationMap.GetSourceECClassIdPropMap());
     if (sourceJoinInfo != nullptr)
-        {
         viewSql.AppendComma().Append(sourceJoinInfo->GetNativeConstraintECClassIdSQL(true));
-        }
     else
         {
         sqlVisitor.Reset();
         relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlVisitor);
+        BeAssert(!sqlVisitor.GetResultSet().empty());
         viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
         }
 
@@ -793,13 +792,12 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
     //TargetECClassId
     RecordPropertyMapIfRequried(*relationMap.GetTargetECClassIdPropMap());
     if (targetJoinInfo != nullptr)
-        {
         viewSql.AppendComma().Append(targetJoinInfo->GetNativeConstraintECClassIdSQL(true));
-        }
     else
         {
         sqlVisitor.Reset();
         relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlVisitor);
+        BeAssert(!sqlVisitor.GetResultSet().empty());
         viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
         }
 
