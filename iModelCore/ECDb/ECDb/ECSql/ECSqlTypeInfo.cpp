@@ -42,7 +42,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECStructClassCR structType, bool isArray)
 // @bsimethod                                   Krischan.Eberle                     04/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
-    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
+    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max())
     {
     DetermineTypeInfo(ecProperty);
     }
@@ -51,7 +51,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo(PropertyMap const& propertyMap)
-    : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
+    : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max())
     {
     DetermineTypeInfo(propertyMap.GetProperty());
     }
@@ -165,6 +165,15 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
     if (lhsKind == Kind::Null || rhsKind == Kind::Null)
         return true;
 
+    if ((lhsKind == Kind::Navigation && rhsKind != Kind::Navigation) ||
+        (lhsKind != Kind::Navigation && rhsKind == Kind::Navigation))
+        {
+        if (errorMessage != nullptr)
+            *errorMessage = "Left and right side of expression must both be Navigation properties.";
+
+        return false;
+        }
+
     //now detail checks (kinds are equal on both sides)
 
     bool canCompare = false;
@@ -261,6 +270,15 @@ bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime:
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     {
+    if (ecProperty.GetIsNavigation())
+        {
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
+        BeAssert(!navProp->IsMultiple() && "Should have been caught at schema import time");
+
+        m_kind = Kind::Navigation;
+        return;
+        }
+
     PrimitiveType primitiveType = ECN::PRIMITIVETYPE_Integer;
     ECStructClassCP structType = nullptr;
     bool isArray = ecProperty.GetIsArray();
@@ -286,20 +304,6 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         structType = &ecProperty.GetAsStructProperty()->GetType();
     else if (ecProperty.GetIsPrimitive())
         primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();
-    else if (ecProperty.GetIsNavigation())
-        {
-        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-        primitiveType = navProp->GetType();
-        if (!navProp->IsMultiple())
-            isArray = false;
-        else
-            {
-            isArray = true;
-            RelationshipMultiplicityCR multiplicity = ClassMapper::GetConstraint(*navProp, NavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
-            minOccurs = multiplicity.GetLowerLimit();
-            maxOccurs = multiplicity.GetUpperLimit();
-            }
-        }
 
     if (structType != nullptr)
         {

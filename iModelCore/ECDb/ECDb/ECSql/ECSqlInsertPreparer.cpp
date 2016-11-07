@@ -79,7 +79,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     BeAssert(classMap.IsRelationshipClassMap());
 
     auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
-    if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
+    if (specialTokenMap.IsUnset(ECSqlSystemPropertyKind::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemPropertyKind::TargetECInstanceId))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
         return ECSqlStatus::InvalidECSql;
@@ -100,7 +100,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
     auto const& specialTokenExpIndexMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
 
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
-    const int sourceECClassIdIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemProperty::SourceECClassId);
+    const int sourceECClassIdIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyKind::SourceECClassId);
     if (sourceECClassIdIndex >= 0)
         {
         ValueExp const* sourceClassIdExp = exp.GetValuesExp()->GetValueExp((size_t) sourceECClassIdIndex);
@@ -110,7 +110,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
             return stat;
         }
 
-    const int targetECClassIdIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemProperty::TargetECClassId);
+    const int targetECClassIdIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyKind::TargetECClassId);
     if (targetECClassIdIndex >= 0)
         {
         ValueExp const* targetClassIdExp = exp.GetValuesExp()->GetValueExp((size_t) targetECClassIdIndex);
@@ -138,14 +138,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
     std::vector<size_t> expIndexSkipList;
     //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings
-    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemProperty::ECInstanceId);
+    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyKind::ECInstanceId);
     if (ecinstanceIdExpIndex >= 0)
         expIndexSkipList.push_back((size_t) ecinstanceIdExpIndex);
 
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
-    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
-    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
-    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
+    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECInstanceId : ECSqlSystemPropertyKind::TargetECInstanceId);
+    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId);
+    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId);
     ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
 
     if (foreignEndECInstanceIdIndex >= 0)
@@ -180,10 +180,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
                 }
 
             BeAssert(foreignEndECInstanceIdBinder != nullptr);
-            foreignEndECInstanceIdBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement, classId] (ECInstanceId bindValue)
+            foreignEndECInstanceIdBinder->SetOnBindECInstanceIdEventHandler([preparedStatement, classId] (ECInstanceId bindValue)
                 {
                 BeAssert(preparedStatement != nullptr);
-                preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, ECInstanceId(bindValue.GetValue())));
+                preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, bindValue));
                 });
             }
         else
@@ -214,15 +214,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
         //if this end was parametrized we must turn the respective binder into a no-op binder
         //so that clients binding values to it will not try to access a SQLite parameter which does not exist
-        if (foreignEndClassIdExp->IsParameterExp())
-            {
-            ECSqlBinder* binder = nullptr;
-            preparedStatement->GetParameterMapR().TryGetBinder(binder, static_cast<ParameterExp const*>(foreignEndClassIdExp)->GetParameterIndex());
-            BeAssert(dynamic_cast<SystemPropertyECSqlBinder*> (binder) != nullptr);
-            SystemPropertyECSqlBinder* systemPropBinder = static_cast<SystemPropertyECSqlBinder*> (binder);
-            systemPropBinder->SetIsNoop();
-            }
-        else
+        if (!foreignEndClassIdExp->IsParameterExp())
             {
             ECSqlStatus stat = ValidateConstraintClassId(ctx, *foreignEndClassIdExp, relationshipClassMap.GetConstraintMap(foreignEnd));
             if (!stat.IsSuccess())
@@ -236,22 +228,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     if (referencedEndECClassIdIndex >= 0)
         {
         expIndexSkipList.push_back((size_t) referencedEndECClassIdIndex);
-        //if this end was parametrized we must turn the respective binder into a no-op binder
-        //so that clients binding values to it will not try to access a SQLite parameter which does not exist
         ValueExp const* referencedEndClassIdExp = exp.GetValuesExp()->GetValueExp((size_t) referencedEndECClassIdIndex);
         BeAssert(referencedEndClassIdExp != nullptr);
 
-        //if this end was parametrized we must turn the respective binder into a no-op binder
-        //so that clients binding values to it will not try to access a SQLite parameter which does not exist
-        if (referencedEndClassIdExp->IsParameterExp())
-            {
-            ECSqlBinder* binder = nullptr;
-            preparedStatement->GetParameterMapR().TryGetBinder(binder, static_cast<ParameterExp const*>(referencedEndClassIdExp)->GetParameterIndex());
-            BeAssert(dynamic_cast<SystemPropertyECSqlBinder*> (binder) != nullptr);
-            SystemPropertyECSqlBinder* systemPropBinder = static_cast<SystemPropertyECSqlBinder*> (binder);
-            systemPropBinder->SetIsNoop();
-            }
-        else
+        if (!referencedEndClassIdExp->IsParameterExp())
             {
             ECSqlStatus stat = ValidateConstraintClassId(ctx, *referencedEndClassIdExp, relationshipClassMap.GetConstraintMap(referencedEnd));
             if (!stat.IsSuccess())
@@ -538,7 +518,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
 
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
     auto propNameListExp = exp.GetPropertyNameListExp();
-    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemProperty::ECInstanceId);
+    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyKind::ECInstanceId);
     if (ecinstanceIdExpIndex < 0)
         return ECInstanceIdMode::NotUserProvided; //-> auto-generate
 
@@ -584,18 +564,10 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
 
         BeAssert(ecinstanceidBinder != nullptr);
 
-        if (isEndTableRelationship)
-            {
-            //for end table relationships we ignore the user provided ECInstanceId
-            //as end table relationships don't hve their own ECInstanceId
-            BeAssert(dynamic_cast<SystemPropertyECSqlBinder*> (ecinstanceidBinder) != nullptr);
-            auto systemPropBinder = static_cast<SystemPropertyECSqlBinder*> (ecinstanceidBinder);
-            systemPropBinder->SetIsNoop();
-            }
-        else
+        if (!isEndTableRelationship)
             {
             //capture the bound ecinstanceid in the prepared statement so that it can be returned from Step
-            ecinstanceidBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement] (ECInstanceId bindValue)
+            ecinstanceidBinder->SetOnBindECInstanceIdEventHandler([preparedStatement] (ECInstanceId bindValue)
                 {
                 preparedStatement->GetECInstanceKeyInfo().SetBoundECInstanceId(ECInstanceId(bindValue.GetValue()));
                 });

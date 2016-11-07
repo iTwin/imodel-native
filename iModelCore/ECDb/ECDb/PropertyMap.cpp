@@ -306,7 +306,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
         }
 
     ECDbSchemaManagerCR schemaManger = GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::X);
+    ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::X);
     if (propX == nullptr)
         return ERROR;
 
@@ -317,7 +317,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
     if (InsertMember(xPropertyMap) != SUCCESS)
         return ERROR;
 
-    ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
+    ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::Y);
     if (propY == nullptr)
         return ERROR;
 
@@ -348,7 +348,7 @@ VisitorFeedback Point2dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  v
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
     {
-    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME));
+    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point2dPropertyMap::GetY() const
     {
-    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME));
+    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME));
     }
 
 //************************************Point3dPropertyMap********************
@@ -390,7 +390,7 @@ RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap co
 BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
     ECDbSchemaManagerCR schemaManger = GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::X);
+    ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::X);
     if (propX == nullptr)
         return ERROR;
 
@@ -401,7 +401,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (InsertMember(xPropertyMap) != SUCCESS)
         return ERROR;
 
-    ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Y);
+    ECPropertyCP propY = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::Y);
     if (propY == nullptr)
         return ERROR;
 
@@ -412,7 +412,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
     if (InsertMember(yPropertyMap) != SUCCESS)
         return ERROR;
 
-    ECPropertyCP propZ = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Z);
+    ECPropertyCP propZ = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::Z);
     if (propZ == nullptr)
         return ERROR;
 
@@ -443,7 +443,7 @@ VisitorFeedback Point3dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  v
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
     {
-    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::X_PROPNAME));
+    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -451,7 +451,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetY() const
     {
-    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Y_PROPNAME));
+    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -459,7 +459,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetY() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetZ() const
     {
-    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::Z_PROPNAME));
+    return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME));
     }
 
 //************************************StructPropertyMap********************
@@ -543,7 +543,7 @@ VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&
 NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::GetRelECClassIdPropertyMap() const
     {
     BeAssert(m_isComplete);
-    return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME));
+    return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -552,7 +552,7 @@ NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::Get
 NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdPropertyMap() const
     {
     BeAssert(m_isComplete);
-    return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME));
+    return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -596,7 +596,7 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
 RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationPropertyMap::RelECClassIdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId)
     {
     ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP relECClassIdProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::RelECClassId);
+    ECPropertyCP relECClassIdProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::NavigationRelECClassId);
     if (relECClassIdProp == nullptr)
         return nullptr;
 
@@ -611,7 +611,7 @@ RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationProperty
 RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
     {
     ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
-    ECPropertyCP idProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Id);
+    ECPropertyCP idProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemPropertyKind::NavigationId);
     if (idProp == nullptr)
         return nullptr;
 

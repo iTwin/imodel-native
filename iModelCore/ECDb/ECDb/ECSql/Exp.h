@@ -261,14 +261,14 @@ public:
     struct SystemPropertyExpIndexMap : NonCopyableClass
         {
     private:
-        bmap<ECSqlSystemProperty, size_t> m_indexMap;
+        bmap<ECSqlSystemPropertyKind, size_t> m_indexMap;
 
     public:
         SystemPropertyExpIndexMap() {}
 
-        void AddIndex(ECSqlSystemProperty systemPropertyExp, size_t index);
-        bool IsUnset(ECSqlSystemProperty systemPropertyExp) const;
-        int GetIndex(ECSqlSystemProperty systemPropertyExp) const;
+        void AddIndex(ECSqlSystemPropertyKind systemPropertyExp, size_t index);
+        bool IsUnset(ECSqlSystemPropertyKind systemPropertyExp) const;
+        int GetIndex(ECSqlSystemPropertyKind systemPropertyExp) const;
         };
 
     enum class FinalizeParseStatus {Completed, NotCompleted, Error};

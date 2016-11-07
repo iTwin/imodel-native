@@ -102,7 +102,7 @@ RefCountedPtr<SystemPropertyMap::PerTablePrimitivePropertyMap> SystemPropertyMap
 //static 
 RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemProperty::ECInstanceId);
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemPropertyKind::ECInstanceId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -123,7 +123,7 @@ RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(C
 //static 
 RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemProperty::ECClassId);
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemPropertyKind::ECClassId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -144,7 +144,7 @@ RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMa
 //static 
 RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -165,7 +165,7 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::Cr
 //static
 RefCountedPtr<ConstraintECInstanceIdPropertyMap> ConstraintECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
+    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECInstanceId : ECSqlSystemPropertyKind::TargetECInstanceId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);

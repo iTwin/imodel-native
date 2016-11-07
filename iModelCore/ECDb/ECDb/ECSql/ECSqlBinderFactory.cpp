@@ -12,6 +12,7 @@
 #include "StructToColumnsECSqlBinder.h"
 #include "PrimitiveArrayToColumnECSqlBinder.h"
 #include "StructArrayJsonECSqlBinder.h"
+#include "NavigationPropertyECSqlBinder.h"
 #include "SystemPropertyECSqlBinder.h"
 #include "ECSqlStatementBase.h"
 #include "ECSqlBinder.h"
@@ -21,20 +22,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp,
-                                                         bool targetIsVirtual, bool enforceConstraints)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp)
     {
-    ECSqlTypeInfo const& typeInfo = parameterExp.GetTypeInfo();
     ComputedExp const* targetExp = parameterExp.GetTargetExp();
     if (targetExp != nullptr && targetExp->GetType() == Exp::Type::PropertyName)
         {
         BeAssert(dynamic_cast<PropertyNameExp const*> (targetExp) != nullptr);
         PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (targetExp);
-        if (propNameExp->IsSystemProperty())
-            return std::unique_ptr<ECSqlBinder>(new SystemPropertyECSqlBinder(ecsqlStatement, typeInfo, *propNameExp, targetIsVirtual, enforceConstraints));
+        ECSqlSystemPropertyKind sysPropKind;
+        if (propNameExp->TryGetSystemProperty(sysPropKind) && Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropKind))
+            return CreateIdBinder(ecsqlStatement, propNameExp->GetPropertyMap(), sysPropKind);
         }
 
-    return CreateBinder(ecsqlStatement, typeInfo);
+    return CreateBinder(ecsqlStatement, parameterExp.GetTypeInfo());
     }
 
 //---------------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
 //---------------------------------------------------------------------------------------
 std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
     {
-    auto typeKind = typeInfo.GetKind();
+    ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
     BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
 
     switch (typeKind)
@@ -83,6 +83,8 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
                 return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
                 return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
+            case ECSqlTypeInfo::Kind::Navigation:
+                return std::unique_ptr<ECSqlBinder>(new NavigationPropertyECSqlBinder(ecsqlStatement, typeInfo));
 
             default:
                 BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");
@@ -91,11 +93,33 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
+// @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
     {
-    return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap));
+    if (!Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropertyKind))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    bool isNoopBinder = false;
+    if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && sysPropertyKind == ECSqlSystemPropertyKind::ECInstanceId)
+        {
+        //for end table relationships we ignore the user provided ECInstanceId
+        //as end table relationships don't have their own ECInstanceId
+        isNoopBinder = true;
+        }
+    else
+        {
+        IsVirtualPropertyMapVisitor isVirtualVisitor;
+        propMap.AcceptVisitor(isVirtualVisitor);
+
+        isNoopBinder = isVirtualVisitor.IsVirtualPropertyMap();
+        }
+
+    return std::unique_ptr<ECSqlBinder>(new IdECSqlBinder(ecsqlStatement, ECSqlTypeInfo(propMap), isNoopBinder));
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

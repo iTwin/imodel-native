@@ -25,7 +25,8 @@ struct ECSqlTypeInfo
             Primitive, //!< Primitive type
             Struct, //!< Struct type
             PrimitiveArray, //!< Primitive array type
-            StructArray //!< Struct array type
+            StructArray, //!< Struct array type
+            Navigation //!< Navigation property
             };
     private:
         Kind m_kind;
@@ -76,7 +77,7 @@ struct ECSqlTypeInfo
         bool IsGeometry() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_IGeometry); }
         bool IsStruct() const { return m_kind == Kind::Struct; }
         bool IsArray() const { return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray; }
-
+        bool IsNavigation() const { return m_kind == Kind::Navigation; }
 
         //! Checks whether @p rhs matches the DateTimeInfo of this object.
         //! @remarks This is how matching is defined:

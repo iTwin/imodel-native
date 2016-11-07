@@ -315,7 +315,7 @@ bool Exp::Collection::Replace (ExpCR replacee, std::vector<std::unique_ptr<Exp>>
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void Exp::SystemPropertyExpIndexMap::AddIndex (ECSqlSystemProperty systemPropertyExp, size_t index)
+void Exp::SystemPropertyExpIndexMap::AddIndex (ECSqlSystemPropertyKind systemPropertyExp, size_t index)
     {
     m_indexMap[systemPropertyExp] = index;
     }
@@ -323,7 +323,7 @@ void Exp::SystemPropertyExpIndexMap::AddIndex (ECSqlSystemProperty systemPropert
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-int Exp::SystemPropertyExpIndexMap::GetIndex (ECSqlSystemProperty systemPropertyExp) const
+int Exp::SystemPropertyExpIndexMap::GetIndex (ECSqlSystemPropertyKind systemPropertyExp) const
     {
     auto it = m_indexMap.find (systemPropertyExp);
     if (it == m_indexMap.end ())
@@ -335,7 +335,7 @@ int Exp::SystemPropertyExpIndexMap::GetIndex (ECSqlSystemProperty systemProperty
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Exp::SystemPropertyExpIndexMap::IsUnset (ECSqlSystemProperty systemPropertyExp) const
+bool Exp::SystemPropertyExpIndexMap::IsUnset (ECSqlSystemPropertyKind systemPropertyExp) const
     {
     return GetIndex (systemPropertyExp) == UNSET_CHILDINDEX;
     }

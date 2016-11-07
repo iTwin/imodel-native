@@ -14,23 +14,18 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass                                                Krischan.Eberle      08/2013
+//! @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct SystemPropertyECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
+struct IdECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
     {
 private:
     int m_sqliteIndex;
-    ECSqlSystemProperty m_systemProperty;
-    RelationshipClassMap const* m_constraints;
-    bool m_bindValueIsNull;
     bool m_isNoop;
-    bool IsNoop() const { return m_isNoop; }
 
+public:
     virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
-    virtual ECSqlStatus _OnBeforeStep() override;
-    virtual void _OnClearBindings() override;
 
-    virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
+    virtual IECSqlPrimitiveBinder& _BindPrimitive() override { return *this; }
     virtual IECSqlStructBinder& _BindStruct() override;
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
@@ -43,23 +38,13 @@ private:
     virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
     virtual ECSqlStatus _BindInt(int value) override;
     virtual ECSqlStatus _BindInt64(int64_t value) override;
-    virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
-    virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
+    virtual ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+    virtual ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
     virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
-    bool IsEnsureConstraints() const { return m_constraints != nullptr; }
-
-    ECSqlStatus FailIfConstraintClassIdViolation(ECN::ECClassId constraintClassId) const;
-
-    Utf8CP SystemPropertyToString() const;
-
-public:
-    SystemPropertyECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&, PropertyNameExp const&, bool isNoop, bool enforceConstraints);
-    ~SystemPropertyECSqlBinder() {}
-
-    //!Only called in a single case where ECSQL constains source/target ECClassId, but it does not map
-    //!to a column. In this case the preparer calls this method and all calls to Bind on this binder
-    //!will not be routed down to SQLite.
-    void SetIsNoop() { m_isNoop = true; }
+    public:
+        IdECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&, bool isNoop);
+        ~IdECSqlBinder() {}
     };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

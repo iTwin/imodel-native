@@ -43,7 +43,6 @@ struct ClassMapper final
     public:
         //Navigation property map is not finished. It require a second pass and Nav->Setup() method must be called on it.
         //This method does not create system property maps
-        static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR navProp, NavigationPropertyMap::NavigationEnd end);
         static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8CP propAccessString);
         static PropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
         static PropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);

@@ -101,7 +101,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             {
-            if (ECDbSystemSchemaHelper::IsSystemProperty(propertyMap.GetProperty(), ECSqlSystemProperty::ECClassId))
+            if (ECDbSystemSchemaHelper::IsSystemProperty(propertyMap.GetProperty(), ECSqlSystemPropertyKind::ECClassId))
                 {
                 return true;
                 }

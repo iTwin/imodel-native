@@ -14,19 +14,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-enum class ECSqlSystemProperty
+enum class ECSqlSystemPropertyKind
     {
-    ECInstanceId,
-    ECClassId,
-    SourceECInstanceId,
-    SourceECClassId,
-    TargetECInstanceId,
-    TargetECClassId,
-    Id,
-    RelECClassId,
-    X,
-    Y,
-    Z
+    ECInstanceId = 1,
+    ECClassId = 2,
+    SourceECInstanceId = 4,
+    SourceECClassId = 8,
+    TargetECInstanceId = 16,
+    TargetECClassId = 32,
+    NavigationId = 64,
+    NavigationRelECClassId = 128,
+    X = 256,
+    Y = 512,
+    Z = 1024,
+    IsId = ECInstanceId | ECClassId | SourceECInstanceId | SourceECClassId | TargetECInstanceId | TargetECClassId | NavigationId | NavigationRelECClassId,
     };
 
 //=======================================================================================
@@ -42,11 +43,11 @@ struct ECDbSystemSchemaHelper : NonCopyableClass
         static Utf8CP const SOURCEECCLASSID_PROPNAME;
         static Utf8CP const TARGETECINSTANCEID_PROPNAME;
         static Utf8CP const TARGETECCLASSID_PROPNAME;
-        static Utf8CP const ID_PROPNAME;
-        static Utf8CP const RELECCLASSID_PROPNAME;
-        static Utf8CP const X_PROPNAME;
-        static Utf8CP const Y_PROPNAME;
-        static Utf8CP const Z_PROPNAME;
+        static Utf8CP const NAVPROP_ID_PROPNAME;
+        static Utf8CP const NAVPROP_RELECCLASSID_PROPNAME;
+        static Utf8CP const POINTPROP_X_PROPNAME;
+        static Utf8CP const POINTPROP_Y_PROPNAME;
+        static Utf8CP const POINTPROP_Z_PROPNAME;
 
 private:
     static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
@@ -56,7 +57,7 @@ private:
     ~ECDbSystemSchemaHelper ();
 
     static ECN::ECPropertyCP GetECProperty (ECN::ECClassCR, Utf8CP propertyName);
-    static Utf8CP GetPropertyName (ECSqlSystemProperty);
+    static Utf8CP GetPropertyName (ECSqlSystemPropertyKind);
 
 public:
     //! Gets the ECSqlSystemPropertiesClass ECClass.
@@ -65,17 +66,17 @@ public:
 
     //! Gets the system property of the specified kind from the ECDb_System ECSchema.
     //! @return System property or nullptr in case of errors
-    static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR, ECSqlSystemProperty);
+    static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR, ECSqlSystemPropertyKind);
 
     //! Checks whether the specified property is a system property of the given kind.
     //! @return true, if @p ecProperty is a system property of the given kind. false otherwise
-    static bool IsSystemProperty (ECN::ECPropertyCR, ECSqlSystemProperty);
+    static bool IsSystemProperty (ECN::ECPropertyCR, ECSqlSystemPropertyKind);
 
     //! If @p ecProperty is a system property, returns the kind of system property.
     //! @return true, if the given property is a system property. false, otherwise
-    static bool TryGetSystemPropertyKind (ECSqlSystemProperty&, ECN::ECPropertyCR);
+    static bool TryGetSystemPropertyKind (ECSqlSystemPropertyKind&, ECN::ECPropertyCR);
 
-    static Utf8CP ToString (ECSqlSystemProperty);
+    static Utf8CP ToString (ECSqlSystemPropertyKind);
 
     static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
     };

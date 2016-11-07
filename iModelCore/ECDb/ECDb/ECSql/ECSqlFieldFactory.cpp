@@ -62,6 +62,10 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
                 stat = CreateStructArrayField(field, startColumnIndex, ctx, ecsqlColumnInfo);
                 break;
 
+            case ECSqlTypeInfo::Kind::Navigation:
+                stat = CreateStructFieldForNavigationProperty(field, startColumnIndex, ctx, ecsqlColumnInfo);
+                break;
+
             default:
                 BeAssert(false && "Unhandled property type in value reader factory");
                 return ECSqlStatus::Error;
@@ -115,6 +119,29 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
 ECSqlStatus ECSqlFieldFactory::CreateStructField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECStructClassCR structType)
     {
     return CreateStructMemberFields(field, sqlColumnIndex, ctx, structType, ecsqlColumnInfo);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlFieldFactory::CreateStructFieldForNavigationProperty(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
+    {
+    std::unique_ptr<StructMappedToColumnsECSqlField> newStructField(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo));
+
+    std::unique_ptr<ECSqlField> memberField = nullptr;
+    ECSqlStatus status = CreateStructMemberField(memberField, ctx, sqlColumnIndex, newStructField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationId));
+    if (!status.IsSuccess())
+        return status;
+
+    newStructField->AppendField(std::move(memberField));
+
+    status = CreateStructMemberField(memberField, ctx, sqlColumnIndex, newStructField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationRelECClassId));
+    if (!status.IsSuccess())
+        return status;
+
+    field = std::move(newStructField);
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -199,12 +226,8 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberField(std::unique_ptr<ECSqlFiel
 
     if (structMemberProperty.GetIsNavigation())
         {
-        NavigationECPropertyCP navProp = structMemberProperty.GetAsNavigationProperty();
-        PrimitiveType navPropIdType = navProp->GetType();
-        if (!navProp->IsMultiple())
-            return CreatePrimitiveField(memberField, sqlColumnIndex, ctx, columnInfo, navPropIdType);
-
-        return CreatePrimitiveArrayField(memberField, sqlColumnIndex, ctx, columnInfo, navPropIdType);
+        BeAssert(false && "Navigation properties cannot be used in an ECStruct");
+        return ECSqlStatus::Error;
         }
 
     BeAssert(false && "No ECSqlField instantiated");

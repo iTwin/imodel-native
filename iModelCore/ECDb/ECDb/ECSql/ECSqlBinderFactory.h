@@ -24,10 +24,14 @@ struct ECSqlBinderFactory
         ECSqlBinderFactory();
         ~ECSqlBinderFactory();
 
+
     public:
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints);
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap) { return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap)); }
+
+        static std::unique_ptr<ECSqlBinder> CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const&, ECSqlSystemPropertyKind);
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

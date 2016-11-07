@@ -42,7 +42,7 @@ struct PropertyNameExp : ValueExp
     private:
         PropertyPath m_propertyPath;
         bool m_isSystemProperty;
-        ECSqlSystemProperty m_systemProperty;
+        ECSqlSystemPropertyKind m_systemProperty;
         std::unique_ptr<PropertyRef> m_propertyRef;
 
         Utf8String m_classAlias;
@@ -69,7 +69,7 @@ struct PropertyNameExp : ValueExp
         PropertyMap const& GetPropertyMap() const;
 
         bool IsSystemProperty() const { return m_isSystemProperty; }
-        bool TryGetSystemProperty(ECSqlSystemProperty&) const;
+        bool TryGetSystemProperty(ECSqlSystemPropertyKind&) const;
 
         Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }

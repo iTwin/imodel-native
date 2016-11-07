@@ -22,11 +22,11 @@ Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInst
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME = "TargetECClassId";
-Utf8CP const ECDbSystemSchemaHelper::ID_PROPNAME = "Id";
-Utf8CP const ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME = "RelECClassId";
-Utf8CP const ECDbSystemSchemaHelper::X_PROPNAME = "X";
-Utf8CP const ECDbSystemSchemaHelper::Y_PROPNAME = "Y";
-Utf8CP const ECDbSystemSchemaHelper::Z_PROPNAME = "Z";
+Utf8CP const ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME = "Id";
+Utf8CP const ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME = "RelECClassId";
+Utf8CP const ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME = "X";
+Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME = "Y";
+Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME = "Z";
 
 Utf8CP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = "ECSqlSystemProperties";
 
@@ -45,7 +45,7 @@ ECClassCP ECDbSystemSchemaHelper::GetECSqlSystemPropertiesClass(ECDbSchemaManage
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind)
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyKind kind)
     {
     ECClassCP systemPropsClass = GetECSqlSystemPropertiesClass(schemaManager);
     if (systemPropsClass == nullptr)
@@ -62,7 +62,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schem
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-bool ECDbSystemSchemaHelper::IsSystemProperty(ECPropertyCR ecProperty, ECSqlSystemProperty kind)
+bool ECDbSystemSchemaHelper::IsSystemProperty(ECPropertyCR ecProperty, ECSqlSystemPropertyKind kind)
     {
     Utf8CP requiredPropName = GetPropertyName(kind);
     return ecProperty.GetName().Equals(requiredPropName) && ecProperty.GetClass().GetName().Equals(ECSQLSYSTEMPROPERTIES_CLASSNAME);
@@ -89,32 +89,32 @@ ECPropertyCP ECDbSystemSchemaHelper::GetECProperty(ECClassCR ecClass, Utf8CP pro
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
+Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemPropertyKind kind)
     {
     switch (kind)
         {
-            case ECSqlSystemProperty::ECInstanceId:
+            case ECSqlSystemPropertyKind::ECInstanceId:
                 return ECINSTANCEID_PROPNAME;
-            case ECSqlSystemProperty::ECClassId:
+            case ECSqlSystemPropertyKind::ECClassId:
                 return ECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::SourceECInstanceId:
+            case ECSqlSystemPropertyKind::SourceECInstanceId:
                 return SOURCEECINSTANCEID_PROPNAME;
-            case ECSqlSystemProperty::SourceECClassId:
+            case ECSqlSystemPropertyKind::SourceECClassId:
                 return SOURCEECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::TargetECInstanceId:
+            case ECSqlSystemPropertyKind::TargetECInstanceId:
                 return TARGETECINSTANCEID_PROPNAME;
-            case ECSqlSystemProperty::TargetECClassId:
+            case ECSqlSystemPropertyKind::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::Id:
-                return ID_PROPNAME;
-            case ECSqlSystemProperty::RelECClassId:
-                return RELECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::X:
-                return X_PROPNAME;
-            case ECSqlSystemProperty::Y:
-                return Y_PROPNAME;
-            case ECSqlSystemProperty::Z:
-                return Z_PROPNAME;
+            case ECSqlSystemPropertyKind::NavigationId:
+                return NAVPROP_ID_PROPNAME;
+            case ECSqlSystemPropertyKind::NavigationRelECClassId:
+                return NAVPROP_RELECCLASSID_PROPNAME;
+            case ECSqlSystemPropertyKind::X:
+                return POINTPROP_X_PROPNAME;
+            case ECSqlSystemPropertyKind::Y:
+                return POINTPROP_Y_PROPNAME;
+            case ECSqlSystemPropertyKind::Z:
+                return POINTPROP_Z_PROPNAME;
             default:
                 BeAssert(false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
@@ -125,76 +125,76 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
 // @bsimethod                                 Krischan.Eberle                12/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemProperty& kind, ECN::ECPropertyCR ecProperty)
+bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemPropertyKind& kind, ECN::ECPropertyCR ecProperty)
     {
-    ECSqlSystemProperty candidateKind = ECSqlSystemProperty::ECInstanceId;
+    ECSqlSystemPropertyKind candidateKind = ECSqlSystemPropertyKind::ECInstanceId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::ECClassId;
+    candidateKind = ECSqlSystemPropertyKind::ECClassId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::SourceECInstanceId;
+    candidateKind = ECSqlSystemPropertyKind::SourceECInstanceId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::SourceECClassId;
+    candidateKind = ECSqlSystemPropertyKind::SourceECClassId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::TargetECInstanceId;
+    candidateKind = ECSqlSystemPropertyKind::TargetECInstanceId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::TargetECClassId;
+    candidateKind = ECSqlSystemPropertyKind::TargetECClassId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::Id;
+    candidateKind = ECSqlSystemPropertyKind::NavigationId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
 
-    candidateKind = ECSqlSystemProperty::RelECClassId;
+    candidateKind = ECSqlSystemPropertyKind::NavigationRelECClassId;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
-    candidateKind = ECSqlSystemProperty::X;
+    candidateKind = ECSqlSystemPropertyKind::X;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
-    candidateKind = ECSqlSystemProperty::Y;
+    candidateKind = ECSqlSystemPropertyKind::Y;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
         return true;
         }
-    candidateKind = ECSqlSystemProperty::Z;
+    candidateKind = ECSqlSystemPropertyKind::Z;
     if (IsSystemProperty(ecProperty, candidateKind))
         {
         kind = candidateKind;
@@ -207,7 +207,7 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemProperty& kind,
 // @bsimethod                                 Krischan.Eberle                07/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-Utf8CP ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty systemProperty)
+Utf8CP ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind systemProperty)
     {
     return GetPropertyName(systemProperty);
     }

@@ -133,16 +133,6 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECRelationshipConstraintCR ClassMapper::GetConstraint(ECN::NavigationECPropertyCR navProp, NavigationPropertyMap::NavigationEnd end)
-    {
-    ECRelationshipClassCP relClass = navProp.GetRelationshipClass();
-    return GetConstraintEnd(navProp, end) == ECRelationshipEnd_Source ? relClass->GetSource() : relClass->GetTarget();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      01/2016
-//---------------------------------------------------------------------------------------
-//static
 ECN::ECRelationshipEnd ClassMapper::GetConstraintEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end)
     {
     const ECRelatedInstanceDirection navPropDir = prop.GetDirection();
@@ -501,14 +491,14 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 
     const DbColumn *id = nullptr, *relClassId = nullptr;
     std::vector<DbColumn const*> const* columns;
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::ID_PROPNAME).c_str());
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME).c_str());
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;
         }
 
     id = columns->front();
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME).c_str());
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME).c_str());
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;

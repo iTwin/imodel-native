@@ -89,7 +89,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
-    ECSqlSystemProperty systemPropKind;
+    ECSqlSystemPropertyKind systemPropKind;
     m_isSystemProperty = ECDbSystemSchemaHelper::TryGetSystemPropertyKind(systemPropKind, GetPropertyMap().GetProperty());
     if (m_isSystemProperty)
         m_systemProperty = systemPropKind;
@@ -305,7 +305,7 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyNameExp::TryGetSystemProperty(ECSqlSystemProperty& systemProperty) const
+bool PropertyNameExp::TryGetSystemProperty(ECSqlSystemPropertyKind& systemProperty) const
     {
     if (!IsSystemProperty())
         return false;

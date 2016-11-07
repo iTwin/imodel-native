@@ -399,6 +399,9 @@
     <ClInclude Include="PropertyMapVisitor.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\NavigationPropertyECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -731,6 +734,9 @@
     </ClCompile>
     <ClCompile Include="PropertyMapVisitor.cpp">
       <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\NavigationPropertyECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

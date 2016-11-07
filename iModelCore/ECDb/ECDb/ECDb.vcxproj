@@ -91,6 +91,7 @@
     <ClCompile Include="ECSql\JsonUpdater.cpp" />
     <ClCompile Include="ECSql\ListExp.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp" />
+    <ClCompile Include="ECSql\NavigationPropertyECSqlBinder.cpp" />
     <ClCompile Include="ECSql\OptionsExp.cpp" />
     <ClCompile Include="ECSql\Parser\InternalNode.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="ECSql\JoinExp.h" />
     <ClInclude Include="ECSql\ListExp.h" />
     <ClInclude Include="ECSql\NativeSqlBuilder.h" />
+    <ClInclude Include="ECSql\NavigationPropertyECSqlBinder.h" />
     <ClInclude Include="ECSql\OptionsExp.h" />
     <ClInclude Include="ECSql\Parser\DataType.h" />
     <ClInclude Include="ECSql\Parser\ErrorCondition.h" />

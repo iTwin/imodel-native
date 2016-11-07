@@ -143,6 +143,114 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, Binding)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                       "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                       "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                       "    <ECEntityClass typeName='Model'>"
+                                       "        <ECProperty propertyName='Name' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                       "        <ECCustomAttributes>"
+                                       "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                       "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                       "            </ClassMap>"
+                                       "        </ECCustomAttributes>"
+                                       "        <ECProperty propertyName='Code' typeName='string' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='InfoElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='InfoTag' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='PhysicalElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='Geometry' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "   <ECRelationshipClass typeName='ModelHasElements' strength='Embedding'  modifier='Sealed'>"
+                                       "      <Source multiplicity='(1..1)' polymorphic='False' roleLabel='Model'>"
+                                       "          <Class class ='Model' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding'  modifier='Abstract'>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsPhysicalElements' strength='Embedding'  modifier='Sealed'>"
+                                       "        <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned PhysicalElement'>"
+                                       "          <Class class ='PhysicalElement' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ECClassId modelHasElementsClassId = ecdb.Schemas().GetECClassId("TestSchema", "ModelHasElements");
+    ASSERT_TRUE(modelHasElementsClassId.IsValid());
+
+    ECClassId elementOwnsPhysicalElementsClassId = ecdb.Schemas().GetECClassId("TestSchema", "ElementOwnsPhysicalElements");
+    ASSERT_TRUE(elementOwnsPhysicalElementsClassId.IsValid());
+
+    ECInstanceKey modelKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES('MainModel')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(modelKey));
+    stmt.Finalize();
+    }
+
+    //*** Bind via Nav prop with virtual rel class id
+    ECInstanceKey element1Key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InfoElement(Code,Model) VALUES('InfoElement1',?)"));
+    IECSqlStructBinder& navPropBinder = stmt.BindStruct(1);
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("Id").BindId(modelKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("RelECClassId").BindId(modelHasElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key));
+    }
+
+/*    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element(Code,Model.Id) VALUES('Element1',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element(Code,Model.Id, Model.RelECClassId) VALUES('Element1',?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelHasElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key));
+    stmt.Finalize();
+    */
+
+    //*** Bind via Nav prop with non-virtual rel class id
+    ECInstanceKey element2Key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Model.Id,Code,Parent) VALUES(?,'PhysicalElement1',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    IECSqlStructBinder& navPropBinder = stmt.BindStruct(2);
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("Id").BindId(element1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("RelECClassId").BindId(elementOwnsPhysicalElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element2Key));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping)

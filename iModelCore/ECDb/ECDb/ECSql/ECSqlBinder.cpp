@@ -319,7 +319,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints)
+ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp)
     {
     int ecsqlParameterIndex = 0;
     //unnamed parameters don't have an identity, therefore always add a new binder in that case
@@ -329,7 +329,7 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, Pa
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, parameterExp, targetIsVirtual, enforceConstraints);
+    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, parameterExp);
     if (binder == nullptr)
         return nullptr;
 

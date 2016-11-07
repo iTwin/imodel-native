@@ -3,7 +3,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -28,7 +28,7 @@ Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& 
         {
         auto assignmentExp = GetAssignmentExp (i);
         auto const& prop = assignmentExp->GetPropertyNameExp ()->GetPropertyMap ().GetProperty ();
-        auto systemPropKind = ECSqlSystemProperty::ECInstanceId;
+        auto systemPropKind = ECSqlSystemPropertyKind::ECInstanceId;
         if (ECDbSystemSchemaHelper::TryGetSystemPropertyKind (systemPropKind, prop))
             m_specialTokenExpIndexMap.AddIndex (systemPropKind, i);
         }
@@ -88,7 +88,7 @@ Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext
     for (size_t i = 0; i < childrenCount; i++)
         {
         auto propNameExp = GetPropertyNameExp (i);
-        ECSqlSystemProperty systemPropKind;
+        ECSqlSystemPropertyKind systemPropKind;
         if (propNameExp->TryGetSystemProperty (systemPropKind))
             m_specialTokenExpIndexMap.AddIndex (systemPropKind, i);
         }

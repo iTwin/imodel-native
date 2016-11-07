@@ -20,53 +20,53 @@ struct ECSqlStatementBase;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlBinder : IECSqlBinder
     {
-private:
-    std::function<void (ECInstanceId bindValue)> m_onBindRepositoyBasedIdEventHandler;
-    ECSqlStatementBase& m_ecsqlStatement;
-    ECSqlTypeInfo m_typeInfo;
-    int m_mappedSqlParameterCount;
-    std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers;
-    bool m_hasToCallOnBeforeStep;
-    bool m_hasToCallOnClearBindings;
+    private:
+        std::function<void(ECInstanceId bindValue)> m_onBindECInstanceIdEventHandler;
+        ECSqlStatementBase& m_ecsqlStatement;
+        ECSqlTypeInfo m_typeInfo;
+        int m_mappedSqlParameterCount;
+        std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers;
+        bool m_hasToCallOnBeforeStep;
+        bool m_hasToCallOnClearBindings;
 
-    virtual void _SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex) = 0;
-    virtual ECSqlStatus _OnBeforeStep () { return ECSqlStatus::Success; }
-    virtual void _OnClearBindings () {}
+        virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex) = 0;
+        virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
+        virtual void _OnClearBindings() {}
 
-protected:
-    ECSqlBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-        : m_ecsqlStatement (ecsqlStatement), m_typeInfo (typeInfo), m_mappedSqlParameterCount (mappedSqlParameterCount), m_onBindEventHandlers (nullptr), m_hasToCallOnBeforeStep (hasToCallOnBeforeStep), m_hasToCallOnClearBindings (hasToCallOnClearBindings)
-        {}
+    protected:
+        ECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
+            : m_ecsqlStatement(ecsqlStatement), m_typeInfo(typeInfo), m_mappedSqlParameterCount(mappedSqlParameterCount), m_onBindEventHandlers(nullptr), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+            {}
 
-    //Part of initialization. Must only called in constructor.
-    void SetMappedSqlParameterCount (int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
-        
-    std::function<void (ECInstanceId bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
-    std::vector<IECSqlBinder*>* GetOnBindEventHandlers () { return m_onBindEventHandlers.get(); }
+        //Part of initialization. Must only called in constructor.
+        void SetMappedSqlParameterCount(int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
 
-    ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
+        std::function<void(ECInstanceId bindValue)> GetOnBindECInstanceIdEventHandler() const { return m_onBindECInstanceIdEventHandler; }
+        std::vector<IECSqlBinder*>* GetOnBindEventHandlers() { return m_onBindEventHandlers.get(); }
 
-    Statement& GetSqliteStatementR() const;
-    ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }
-    ECDbCR GetECDb() const;
-    static Statement::MakeCopy ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy);
+        ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
-public:
-    virtual ~ECSqlBinder () {}
+        Statement& GetSqliteStatementR() const;
+        ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }
+        ECDbCR GetECDb() const;
+        static Statement::MakeCopy ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy makeCopy);
 
-    bool HasToCallOnBeforeStep() const { return m_hasToCallOnBeforeStep; }
-    bool HasToCallOnClearBindings() const { return m_hasToCallOnClearBindings; }
+    public:
+        virtual ~ECSqlBinder() {}
 
-    int GetMappedSqlParameterCount () const;
-    void SetSqliteIndex (size_t sqliteIndex);
-    void SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex);
+        bool HasToCallOnBeforeStep() const { return m_hasToCallOnBeforeStep; }
+        bool HasToCallOnClearBindings() const { return m_hasToCallOnClearBindings; }
 
-    ECSqlTypeInfo const& GetTypeInfo () const { return m_typeInfo; }
+        int GetMappedSqlParameterCount() const;
+        void SetSqliteIndex(size_t sqliteIndex);
+        void SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex);
 
-    ECSqlStatus OnBeforeStep ();
-    void OnClearBindings ();
-    ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
-    void SetOnBindBriefcaseBasedIdEventHandler (std::function<void (ECInstanceId bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
+        ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
+
+        ECSqlStatus OnBeforeStep();
+        void OnClearBindings();
+        ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
+        void SetOnBindECInstanceIdEventHandler(std::function<void(ECInstanceId bindValue)> eventHandler) { BeAssert(m_onBindECInstanceIdEventHandler == nullptr); m_onBindECInstanceIdEventHandler = eventHandler; }
     };
 
 //=======================================================================================
@@ -74,44 +74,44 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlParameterMap : NonCopyableClass
     {
-private:
-    std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
-    std::vector<ECSqlBinder*> m_binders;
-    std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
-    std::map<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
+    private:
+        std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
+        std::vector<ECSqlBinder*> m_binders;
+        std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
+        std::map<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
-    std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
-    std::vector<ECSqlBinder*> m_bindersToCallOnStep;
+        std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
+        std::vector<ECSqlBinder*> m_bindersToCallOnStep;
 
-    bool Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const;
+        bool Contains(int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const;
 
-public:
-    ECSqlParameterMap () {}
-    ~ECSqlParameterMap() {}
+    public:
+        ECSqlParameterMap() {}
+        ~ECSqlParameterMap() {}
 
-    size_t Count () const { return m_binders.size(); }
-    //! @remarks only named parameters hav an identity. Therefore each unnamed parameters has its own binder
-    bool TryGetBinder (ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const;
-    //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
-    ECSqlStatus TryGetBinder (ECSqlBinder*& binder, int ecsqlParameterIndex) const;
+        size_t Count() const { return m_binders.size(); }
+        //! @remarks only named parameters have an identity. Therefore each unnamed parameters has its own binder
+        bool TryGetBinder(ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const;
+        //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
+        ECSqlStatus TryGetBinder(ECSqlBinder*& binder, int ecsqlParameterIndex) const;
 
-    //!@param[in] internalBinderIndex Index of the internal binder as stored in the internal binder vector (0-based)
-    ECSqlStatus TryGetInternalBinder (ECSqlBinder*& binder, size_t internalBinderIndex) const;
+        //!@param[in] internalBinderIndex Index of the internal binder as stored in the internal binder vector (0-based)
+        ECSqlStatus TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const;
 
-    //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
-    int GetIndexForName (Utf8CP ecsqlParameterName) const;
+        //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
+        int GetIndexForName(Utf8CP ecsqlParameterName) const;
 
-    ECSqlBinder* AddBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual = false, bool enforceConstraints = false);
-    ECSqlBinder* AddInternalBinder (size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-    ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName );
+        ECSqlBinder* AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp);
+        ECSqlBinder* AddInternalBinder(size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName);
 
-    ECSqlStatus OnBeforeStep ();
+        ECSqlStatus OnBeforeStep();
 
-    //Bindings in SQLite have already been cleared at this point. The method
-    //allows subclasses to clean-up additional resources tied to binding parameters
-    void OnClearBindings ();
+        //Bindings in SQLite have already been cleared at this point. The method
+        //allows subclasses to clean-up additional resources tied to binding parameters
+        void OnClearBindings();
 
-    ECSqlStatus RemapForJoinTable(ECSqlPrepareContext& ctx);
+        ECSqlStatus RemapForJoinTable(ECSqlPrepareContext& ctx);
 
     };
 
@@ -122,13 +122,13 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ArrayConstraintValidator
     {
-private:
-    ArrayConstraintValidator ();
-    ~ArrayConstraintValidator ();
+    private:
+        ArrayConstraintValidator();
+        ~ArrayConstraintValidator();
 
-public:
-    static ECSqlStatus Validate (ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
-    static ECSqlStatus ValidateMaximum(ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
+    public:
+        static ECSqlStatus Validate(ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
+        static ECSqlStatus ValidateMaximum(ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

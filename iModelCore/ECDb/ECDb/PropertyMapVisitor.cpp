@@ -11,9 +11,9 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //************************************GetColumnsPropertyMapVisitor********************
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (Enum::Contains(m_filter, propertyMap.GetType()))
@@ -22,9 +22,9 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
     {
     if (Enum::Contains(m_filter, propertyMap.GetType()))
@@ -33,9 +33,9 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(CompoundDataPropertyMap con
     return VisitorFeedback::NextSibling;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
     if (!Enum::Contains(m_filter, propertyMap.GetType()))
@@ -63,9 +63,9 @@ VisitorFeedback GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& pr
 
 
 //************************************ToSqlPropertyMapVisitor********************
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 bool ToSqlPropertyMapVisitor::IsAlienTable(DbTable const& table) const
     {
     if (&table != &m_tableFilter)
@@ -78,9 +78,9 @@ bool ToSqlPropertyMapVisitor::IsAlienTable(DbTable const& table) const
     return false;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 SingleColumnDataPropertyMap const* ToSqlPropertyMapVisitor::FindSystemPropertyMapForTable(SystemPropertyMap const& systemPropertyMap) const
     {
     SingleColumnDataPropertyMap const* vmap = systemPropertyMap.FindDataPropertyMap(m_tableFilter);
@@ -92,9 +92,10 @@ SingleColumnDataPropertyMap const* ToSqlPropertyMapVisitor::FindSystemPropertyMa
 
     return vmap;
     }
-//=======================================================================================
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDataPropertyMap const& propertyMap) const
     {
     m_resultSetByAccessString[propertyMap.GetAccessString().c_str()] = m_resultSet.size();
@@ -102,9 +103,9 @@ ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDat
     return m_resultSet.back();
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const
     {
     Result& result = Record(propertyMap);
@@ -126,15 +127,11 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelE
 
     return VisitorFeedback::Next;
     }
-//=======================================================================================
-// @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        {
         return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
-        }
 
     Result& result = Record(propertyMap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
@@ -144,9 +141,9 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropertyMap const& propertyMap) const
     {
     SingleColumnDataPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
@@ -170,9 +167,9 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPrope
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& propertyMap) const
     {
     SingleColumnDataPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
@@ -213,9 +210,9 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const&
     }
 
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMap const& propertyMap) const
     {
     SingleColumnDataPropertyMap const* vmap = nullptr;
@@ -262,9 +259,9 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdProperty
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const& propertyMap) const
     {
     SingleColumnDataPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
@@ -289,25 +286,17 @@ VisitorFeedback ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap con
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
     return ToNativeSql(propertyMap);
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
-VisitorFeedback ToSqlPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
-    {
-    return VisitorFeedback::Next;
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
     switch (propertyMap.GetType())
@@ -325,9 +314,9 @@ VisitorFeedback ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propert
     return VisitorFeedback::Cancel;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 const ToSqlPropertyMapVisitor::Result* ToSqlPropertyMapVisitor::Find(Utf8CP accessString) const
     {
     auto itor = m_resultSetByAccessString.find(accessString);
@@ -339,9 +328,9 @@ const ToSqlPropertyMapVisitor::Result* ToSqlPropertyMapVisitor::Find(Utf8CP acce
 
 //************************************SavePropertyMapVisitor*************************************
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
     const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
@@ -357,17 +346,9 @@ VisitorFeedback SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const
     return VisitorFeedback::Next;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
-VisitorFeedback SavePropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
-    {
-    return VisitorFeedback::Next;
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 VisitorFeedback SavePropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
     const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
@@ -384,6 +365,17 @@ VisitorFeedback SavePropertyMapVisitor::_Visit(SystemPropertyMap const& property
         }
 
     return VisitorFeedback::Next;
+    }
+
+//************************************IsVirtualPropertyMapVisitor*************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    11/2016
+//---------------------------------------------------------------------------------------
+VisitorFeedback IsVirtualPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
+    {
+    m_isVirtualPropertyMap = propertyMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual;
+    return VisitorFeedback::Cancel;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

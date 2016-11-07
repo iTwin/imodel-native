@@ -118,7 +118,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         return FinalizeParseStatus::Error;
         }
 
-    if (propertyNameListExp->GetSpecialTokenExpIndexMap().IsUnset(ECSqlSystemProperty::ECInstanceId))
+    if (propertyNameListExp->GetSpecialTokenExpIndexMap().IsUnset(ECSqlSystemPropertyKind::ECInstanceId))
         {
         ClassNameExp const* classNameExp = GetClassNameExp();
         if (classNameExp->GetInfo().GetMap().IsECInstanceIdAutogenerationDisabled())

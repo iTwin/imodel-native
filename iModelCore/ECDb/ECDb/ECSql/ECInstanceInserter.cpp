@@ -138,22 +138,22 @@ void ECInstanceInserter::Impl::Initialize()
 
     if (m_ecClass.IsRelationshipClass())
         {
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECInstanceId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::SourceECInstanceId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECClassId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::SourceECClassId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECClassId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECInstanceId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::TargetECInstanceId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECClassId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::TargetECClassId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECClassId, parameterIndex);
         }

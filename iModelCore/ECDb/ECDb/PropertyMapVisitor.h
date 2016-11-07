@@ -220,7 +220,6 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
 
     private:
         virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
-        virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override;
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const override;
 
     public:
@@ -266,7 +265,6 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
 
     private:
         virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
-        virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override;
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const override;
 
     public:
@@ -275,5 +273,23 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
         BentleyStatus GetStatus() const { return m_status; }
         PropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
         void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
+    };
+
+//=======================================================================================
+// @bsiclass                                                   Krischan.Eberle      11/16
+//+===============+===============+===============+===============+===============+======
+struct IsVirtualPropertyMapVisitor final : IPropertyMapVisitor
+    {
+    private:
+        mutable bool m_isVirtualPropertyMap;
+
+        virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
+        virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const override { m_isVirtualPropertyMap = false; return VisitorFeedback::Cancel; }
+
+    public:
+        IsVirtualPropertyMapVisitor() : IPropertyMapVisitor(), m_isVirtualPropertyMap(false) {}
+        ~IsVirtualPropertyMapVisitor() {}
+
+        bool IsVirtualPropertyMap() const { return m_isVirtualPropertyMap; }
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

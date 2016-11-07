@@ -1039,7 +1039,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp, bool targetIsVirtual, bool enforceConstraints)
+ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp)
     {
     BeAssert(exp->GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
 
@@ -1053,7 +1053,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
         nativeSqlParameterCount = binder->GetMappedSqlParameterCount();
     else
         {
-        binder = ecsqlParameterMap.AddBinder(ctx.GetECSqlStatementR(), *exp, targetIsVirtual, enforceConstraints);
+        binder = ecsqlParameterMap.AddBinder(ctx.GetECSqlStatementR(), *exp);
         if (binder == nullptr)
             return ECSqlStatus::Error;
 
@@ -1583,7 +1583,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             case Exp::Type::LikeRhsValue:
                 return PrepareLikeRhsValueExp(nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
             case Exp::Type::Parameter:
-                return PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), false, false);
+                return PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp));
             case Exp::Type::PropertyName:
                 return ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
             case Exp::Type::SubqueryValue:
@@ -1654,9 +1654,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         ECSqlStatus stat = ECSqlStatus::Success;
         BeAssert(valueExp != nullptr);
 
-        const auto targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
-        //virtual props result in 0 native sql snippets. 
-        const bool targetIsVirtual = targetNativeSqlSnippetCount == 0;
+        const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
 
         NativeSqlBuilder::List nativeSqlSnippets;
 
@@ -1665,11 +1663,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
 
         if (valueExp->IsParameterExp())
             {
-            //Parameter exp needs to be prepared even if target exp is virtual, i.e. doesn't have a column in the SQLite SQL
-            //because we need a (noop) binder for it so that the binding API corresponds to the parameters in the incoming
-            //ECSQL.
             BeAssert(dynamic_cast<ParameterExp const*> (valueExp) != nullptr);
-            stat = PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (valueExp), targetIsVirtual, true);
+            stat = PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (valueExp));
             }
         else if (IsNullExp(*valueExp))
             {
@@ -1723,7 +1718,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings(ECSqlPrepareContext& cont
     //       {2, 2} } // Fourth entry: SQLite index 4 -> Maps to second ECSQL parameter's third component (Z column)
     auto const& parameterIndexMappings = context.GetSqlBuilder().GetParameterIndexMappings();
     auto& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    const auto nativeSqlParameterCount = parameterIndexMappings.size();
+    const size_t nativeSqlParameterCount = parameterIndexMappings.size();
     if (nativeSqlParameterCount == 0)
         return ECSqlStatus::Success;
 
@@ -1733,11 +1728,11 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings(ECSqlPrepareContext& cont
     for (size_t i = 0; i < nativeSqlParameterCount; i++)
         {
         //Parameter indices are 1-based
-        const auto nativeSqlIndex = i + 1;
+        const size_t nativeSqlIndex = i + 1;
         //corresponding ECSQL parameter index
-        const auto ecsqlParameterIndex = parameterIndexMappings[i].GetIndex();
+        const int ecsqlParameterIndex = parameterIndexMappings[i].GetIndex();
         //If ECSQL parameter maps to more than one SQLite parameters, the component index 
-        const auto ecsqlParameterComponentIndex = parameterIndexMappings[i].GetComponentIndex();
+        const int ecsqlParameterComponentIndex = parameterIndexMappings[i].GetComponentIndex();
 
         //if ECSQL parameter index is same as before, we don't need to look up the parameter binder again
         if (isFirstItem || ecsqlParameterIndex != previousECSqlParameterIndex)
