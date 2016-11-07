@@ -35,7 +35,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 
     auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
     auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(db, AlignmentModel::QueryClassId(db),
-        alignmentPartitionPtr->GetElementId(), AlignmentModel::CreateModelCode("Alignment Model")));
+        alignmentPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
         return status;
