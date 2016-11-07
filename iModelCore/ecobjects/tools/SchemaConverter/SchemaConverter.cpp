@@ -28,7 +28,7 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\n\n%s\t%s\n\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
         str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
         " -x --xml 2|3", "convert to the specified ecxmlversion",
         " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
@@ -36,7 +36,8 @@ static void ShowUsage(char* str)
         " -u --include", "include the standard schemas in the converted schemas",
         " -a --all", "convert the entire schema graph",
         " -s --sup", "convert all the supplemental schemas",
-        " -v --ver XX.XX.XX / XX.XX  specify the schema version",
+        " -v --ver XX.XX.XX / XX.XX", "specify the schema version",
+        " --removeUnusedReferences", "remove all schema references that aren't referenced by elements of a schema",
         "Notes:",
         "if the input path is a directory, all files matching '*.ecschema.xml' will be converted",
         "if output directory is the same as the input directory, the files will be overwritten");
@@ -58,6 +59,7 @@ struct ConversionOptions
     bool                IncludeSupplementals = false;
     bool                IncludeAll = false;
     bool                IncludeStandards = false;
+    bool                RemoveUnusedSchemaReferences = false;
 
     bool                ChangeVersion = false;
     uint32_t            MajorVersion = 0;
@@ -121,6 +123,9 @@ static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, C
     if (!ECSchemaConverter::Convert(schema))
         return -1; 
 
+    if (options.RemoveUnusedSchemaReferences)
+        schema.RemoveUnusedSchemaReferences();
+
     if (!TryWriteSchema(schema, options))
         return -1;
 
@@ -146,6 +151,7 @@ static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, C
                 return -1;
             }
         }
+
     return 0;
     }
 
@@ -334,6 +340,10 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                     }
                 }
             }
+        else if (0 == strcmpi(argv[i], "--removeUnusedReferences"))
+            {
+            options.RemoveUnusedSchemaReferences = true;
+            }
         }
     
     return inputDefined && outputDefined;
@@ -361,6 +371,7 @@ int main(int argc, char** argv)
     
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
+    workingDirectory.AppendToPath(L"Assets");
     BeFileName logFilePath(workingDirectory);
     logFilePath.AppendToPath(L"SchemaConverter.logging.config.xml");
     logFilePath.BeGetFullPathName();

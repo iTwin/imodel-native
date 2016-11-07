@@ -467,6 +467,47 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @bsimethod
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "rs", 5, 5, 5);
+
+    ECSchemaPtr unusedRefSchema;
+    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "urs", 42, 42, 42);
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*unusedRefSchema));
+
+    ECEntityClassP baseClass;
+    refSchema->CreateEntityClass(baseClass, "Banana");
+    ECEntityClassP derivedClass;
+    schema->CreateEntityClass(derivedClass, "Apple");
+    derivedClass->AddBaseClass(*baseClass);
+
+    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
+
+    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find UnusedRefSchema in reference list";
+
+    EXPECT_EQ(1, schema->RemoveUnusedSchemaReferences()) << "Expected RemoveUnusedSchemaReferences to remove one schema";
+
+    schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list after removing unused schemas";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_TRUE(schemaIterator == refList.end()) << "Found UnusedRefSchema in reference list after removing unused schemas";
+
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -872,11 +913,17 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     ECEntityClassP class1;
     ECEntityClassP baseClass;
     ECStructClassP structClass;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP navRelClass;
 
     refSchema->CreateEntityClass(baseClass, "BaseClass");
     refSchema->CreateStructClass(structClass, "StructClass");
+    refSchema->CreateRelationshipClass(navRelClass, "NavRelClass");
     schema->CreateEntityClass(class1, "TestClass");
 
+    schema->CreateRelationshipClass(relClass, "RelClass");
+
+    // Test base class in referenced schema
     class1->AddBaseClass(*baseClass);
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
 
@@ -884,13 +931,35 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+
+    // Test Source abstract constraint in referenced schema
+    relClass->GetSource().SetAbstractConstraint(*baseClass);
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    
+    relClass->GetSource().SetAbstractConstraint(*class1);
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    
+    // Test Target abstract constraint in referenced schema
+    relClass->GetTarget().SetAbstractConstraint(*baseClass);
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    
+    relClass->GetTarget().SetAbstractConstraint(*class1);
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
+    NavigationECPropertyP navProp;
 
     PrimitiveArrayECPropertyP primitiveArrayProp;
 
+    navRelClass->GetSource().AddClass(*baseClass);
+    navRelClass->GetTarget().AddClass(*baseClass);
+
     class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
+    class1->CreateNavigationProperty(navProp, "NavProp", *navRelClass, ECRelatedInstanceDirection::Forward, PrimitiveType::PRIMITIVETYPE_Long, false);
 
     class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
@@ -901,6 +970,65 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     class1->RemoveProperty("StructMember");
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     class1->RemoveProperty("NestedArray");
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    class1->RemoveProperty("NavProp");
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUseWithCustomAttributes)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    
+    ECEntityClassP entityClass;
+    PrimitiveECPropertyP prop;
+
+    schema->CreateEntityClass(entityClass, "EntityClass");
+    entityClass->CreatePrimitiveProperty(prop, "Prop");
+
+    ECCustomAttributeClassP schemaCA;
+    ECCustomAttributeClassP classCA;
+    ECCustomAttributeClassP propCA;
+
+    refSchema->CreateCustomAttributeClass(schemaCA, "SchemaCA");
+    refSchema->CreateCustomAttributeClass(classCA, "ClassCA");
+    refSchema->CreateCustomAttributeClass(propCA, "PropertyCA");
+
+    // Test a Custom Attribute at the schema level
+    StandaloneECEnablerPtr enabler = schemaCA->GetDefaultStandaloneEnabler();
+    IECInstancePtr instance = enabler->CreateInstance().get();
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    schema->RemoveCustomAttribute(refSchema->GetName(), schemaCA->GetName());
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+    
+    // Test a Custom Attribute at the class level
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    enabler = classCA->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance().get();
+
+    EXPECT_EQ(ECObjectsStatus::Success, entityClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    entityClass->RemoveCustomAttribute(refSchema->GetName(), classCA->GetName());
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+
+    // Test a Custom Attribute at the property level
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    enabler = propCA->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance().get();
+
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    prop->RemoveCustomAttribute(refSchema->GetName(), propCA->GetName());
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
     }
 
