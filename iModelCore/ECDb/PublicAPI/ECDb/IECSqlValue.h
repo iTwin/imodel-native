@@ -38,7 +38,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
 
 
     public:
-        ECDB_EXPORT virtual ~IECSqlValue() {}
+        virtual ~IECSqlValue() {}
 
         //! Gets the metadata of this value
         //! @return ECSQL column metadata.
@@ -157,6 +157,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! - column data does not hold a BeGuid
         ECDB_EXPORT BeGuid GetGuid() const;
 
+        //! Gets the value as a NavigationECProperty value
+        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance
+        //! @return ECInstanceId of the related ECInstance
+        //! @note Possible errors:
+        //! - column does not refer to a NavigationECProperty
+        ECDB_EXPORT ECInstanceId GetNavigationPropertyValue(ECN::ECClassId* relationshipECClassId) const;
+
         //! Used to access the value if it is a struct value
         //! @return Struct value
         //! @note Possible errors:
@@ -181,9 +188,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructValue : NonCopyableClass
     private:
         virtual int _GetMemberCount() const = 0;
         virtual IECSqlValue const& _GetValue(int  columnIndex) const = 0;
-
+        
     public:
-        ECDB_EXPORT virtual ~IECSqlStructValue() {}
+        virtual ~IECSqlStructValue() {}
 
         //! Returns the number of struct members this struct value has.
         //! @return number of struct members of this struct value.
@@ -192,6 +199,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructValue : NonCopyableClass
         //! Returns the value of the struct member at the given index
         ECDB_EXPORT IECSqlValue const& GetValue(int structMemberIndex) const;
     };
+
 
 //=======================================================================================
 //! Represents the array value of a specific ECSQL column in the current
@@ -238,7 +246,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayValue : NonCopyableClass
         virtual int _GetArrayLength() const = 0;
 
     public:
-        ECDB_EXPORT virtual ~IECSqlArrayValue() {}
+        virtual ~IECSqlArrayValue() {}
 
         //! Gets an iterator for iterating the array
         //! @remarks This invalidates any other already existing iterators of the same IECSqlArrayValue.

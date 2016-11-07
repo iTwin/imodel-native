@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <ECDb/ECInstanceId.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECSqlStatus.h>
 
@@ -46,7 +47,7 @@ private:
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) = 0;
 
 public:
-    ECDB_EXPORT virtual ~IECSqlBinder() {}
+    virtual ~IECSqlBinder() {}
 
     //! Binds an ECSQL @c %NULL to the parameter
     //! @return ECSqlStatus::Success or error codes
@@ -151,6 +152,14 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECSqlStatus BindGuid(BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy) { return guid.IsValid() ? BindBinary(&guid, sizeof(guid), makeCopy) : BindNull(); }
 
+    //! Binds to a NavigationECProperty parameter.
+    //! @param[in] relatedInstanceId ECInstanceId of the related object. The id must be valid.
+    //! @param[in] relationshipECClassId ECClassId of the ECRelationshipClass to navigate to the related ECInstance.
+    //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This will only succeed
+    //!            if the RelationshipECClassId is optional.
+    //! @return ECSqlStatus::Success or error codes
+    ECDB_EXPORT ECSqlStatus BindNavigationPropertyValue(ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId);
+    
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.
     //! @param[in] virtualSet to bind
@@ -185,7 +194,7 @@ private:
     virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) = 0;
 
 public:
-    ECDB_EXPORT virtual ~IECSqlStructBinder() {}
+    virtual ~IECSqlStructBinder() {}
 
     //! Binds a value to the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to
@@ -209,8 +218,7 @@ private:
     virtual IECSqlBinder& _AddArrayElement() = 0;
 
 public:
-
-    ECDB_EXPORT virtual ~IECSqlArrayBinder() {}
+    virtual ~IECSqlArrayBinder() {}
 
     //! Adds a new array element to the array to be bound to the parameter and
     //! returns the new element's binder to bind a value to that element

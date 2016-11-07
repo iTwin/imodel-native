@@ -142,6 +142,25 @@ ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus IECSqlBinder::BindNavigationPropertyValue(ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId)
+    {
+    IECSqlStructBinder& navPropBinder = _BindStruct();
+
+    IECSqlBinder& idBinder = navPropBinder.GetMember(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
+    ECSqlStatus stat = idBinder.BindId(relatedInstanceId);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    if (!relationshipECClassId.IsValid())
+        return ECSqlStatus::Success;
+
+    IECSqlBinder& relClassIdBinder = navPropBinder.GetMember(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    return relClassIdBinder.BindId(relationshipECClassId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& IECSqlBinder::BindStruct()

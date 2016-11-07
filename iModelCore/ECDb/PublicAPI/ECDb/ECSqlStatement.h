@@ -164,6 +164,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindGuid(int parameterIndex, BeSQLite::BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy = IECSqlBinder::MakeCopy::No) { return GetBinder(parameterIndex).BindGuid(guid, makeCopy); }
 
+        //! Binds to a NavigationECProperty parameter.
+        //! @param[in] parameterIndex Parameter index
+        //! @param[in] relatedInstanceId ECInstanceId of the related object. The id must be valid.
+        //! @param[in] relationshipECClassId ECClassId of the ECRelationshipClass to navigate to the related ECInstance.
+        //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This will only succeed
+        //!            if the RelationshipECClassId is optional.
+        //! @return ECSqlStatus::Success or error codes
+        ECSqlStatus BindNavigationPropertyValue(int parameterIndex, ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId) { return GetBinder(parameterIndex).BindNavigationPropertyValue(relatedInstanceId, relationshipECClassId); }
+
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.
         //! @param[in] parameterIndex Parameter index
@@ -374,6 +383,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @note Possible errors:
         //! - column data does not hold a BeGuid
         BeGuid GetValueGuid(int columnIndex) const { return GetValue(columnIndex).GetGuid(); }
+
+        //! Gets the value as a NavigationECProperty value
+        //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
+        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance
+        //! @return ECInstanceId of the related ECInstance
+        //! @note Possible errors:
+        //! - column does not refer to a NavigationECProperty
+        ECInstanceId GetNavigationPropertyValue(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigationPropertyValue(relationshipECClassId); }
 
         //! Gets the array value of the specified column.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

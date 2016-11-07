@@ -162,6 +162,31 @@ BeGuid IECSqlValue::GetGuid() const
     return guid;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle  11/2016
+//---------------------------------------------------------------------------------------
+ECInstanceId IECSqlValue::GetNavigationPropertyValue(ECN::ECClassId* relationshipECClassId) const
+    {
+    ECSqlColumnInfo const& colInfo = GetColumnInfo();
+    if (colInfo.GetProperty() != nullptr || !colInfo.GetProperty()->GetIsNavigation())
+        {
+        LOG.error("ECSqlStatement::GetNavigationPropertyValue> This method can only be called for a NavigationECProperty column.");
+        return ECInstanceId();
+        }
+
+    IECSqlStructValue const& navPropValue = GetStruct();
+    if (relationshipECClassId != nullptr)
+        {
+        IECSqlValue const& relClassIdVal = navPropValue.GetValue(1);
+        if (relClassIdVal.IsNull())
+            *relationshipECClassId = ECN::ECClassId();
+        else
+            *relationshipECClassId = relClassIdVal.GetId<ECN::ECClassId>();
+        }
+
+    return navPropValue.GetValue(0).GetId<ECInstanceId>();
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -194,6 +219,7 @@ IECSqlValue const& IECSqlStructValue::GetValue (int columnIndex) const
     {
     return _GetValue (columnIndex);
     }
+
 
 //********************** IECSqlArrayValue **************************************
 
