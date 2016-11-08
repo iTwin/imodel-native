@@ -1788,6 +1788,43 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_FALSE(elementA->Equals(*elementB, filter)) << " UserLabels should differ";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, DgnElementsIterator)
+    {
+    SetupSeedProject();
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    const int numPhysicalObjects=5;
+
+    for (int i=0; i<numPhysicalObjects; i++)
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        ASSERT_TRUE(element.IsValid());
+        Utf8PrintfString userLabel("UserLabel%d", i);
+        element->SetUserLabel(userLabel.c_str());
+        ASSERT_TRUE(element->Insert().IsValid());
+        }
+
+    DgnElements::Iterator iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject));
+    ASSERT_EQ(numPhysicalObjects, iterator.GetElementIdSet().size());
+
+    iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), "WHERE [UserLabel]='UserLabel1'");
+    ASSERT_EQ(1, iterator.GetElementIdSet().size());
+
+    int count=0;
+    for (DgnElements::Entry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
+        {
+        ASSERT_TRUE(entry.GetElementClassId().IsValid());
+        ASSERT_EQ(entry.GetModelId(), model->GetModelId());
+        Utf8PrintfString userLabel("UserLabel%d", count);
+        ASSERT_STREQ(entry.GetUserLabel(), userLabel.c_str());
+        count++;
+        }
+    ASSERT_EQ(numPhysicalObjects, count);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------

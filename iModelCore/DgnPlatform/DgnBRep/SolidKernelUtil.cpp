@@ -448,22 +448,6 @@ bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& pol
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-    BeAssert(nullptr != shape);
-    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform)
@@ -509,6 +493,436 @@ BentleyStatus BRepUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t BRepUtil::GetBodyFaces(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in)
+    {
+    int         nFaces = 0;
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_FACE_t*  faceTags = NULL;
+
+    PK_BODY_ask_faces(PSolidUtil::GetEntityTag(in), &nFaces, subEntities ? &faceTags : NULL);
+
+    if (subEntities)
+        {
+        for (int iFace = 0; iFace < nFaces; ++iFace)
+            subEntities->push_back(PSolidSubEntity::CreateSubEntity(faceTags[iFace], in));
+
+        PK_MEMORY_free(faceTags);
+        }
+#endif
+
+    return nFaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t BRepUtil::GetBodyEdges(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in)
+    {
+    int         nEdges = 0;
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t*  edgeTags = NULL;
+
+    PK_BODY_ask_edges(PSolidUtil::GetEntityTag(in), &nEdges, subEntities ? &edgeTags : NULL);
+
+    if (subEntities)
+        {
+        for (int iEdge = 0; iEdge < nEdges; ++iEdge)
+            subEntities->push_back(PSolidSubEntity::CreateSubEntity(edgeTags[iEdge], in));
+
+        PK_MEMORY_free(edgeTags);
+        }
+#endif
+
+    return nEdges;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t BRepUtil::GetBodyVertices(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in)
+    {
+    int           nVertex = 0;
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_VERTEX_t*  vertexTags = NULL;
+
+    PK_BODY_ask_vertices(PSolidUtil::GetEntityTag (in), &nVertex, subEntities ? &vertexTags : NULL);
+
+    if (subEntities)
+        {
+        for (int iVertex = 0; iVertex < nVertex; ++iVertex)
+            subEntities->push_back(PSolidSubEntity::CreateSubEntity(vertexTags[iVertex], in));
+
+        PK_MEMORY_free(vertexTags);
+        }
+#endif
+
+    return nVertex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetFaceEdges(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    int           nEntity = 0;
+    PK_ENTITY_t*  entities = NULL;
+
+    if (SUCCESS != PK_FACE_ask_edges(PSolidSubEntity::GetSubEntityTag(subEntity), &nEntity, &entities))
+        return ERROR;
+
+    for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[iEntity], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    PK_MEMORY_free(entities);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetFaceVertices(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    int           nEntity = 0;
+    PK_ENTITY_t*  entities = NULL;
+
+    if (SUCCESS != PK_FACE_ask_vertices(PSolidSubEntity::GetSubEntityTag(subEntity), &nEntity, &entities))
+        return ERROR;
+
+    for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[iEntity], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    PK_MEMORY_free(entities);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetEdgeFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    int           nEntity = 0;
+    PK_ENTITY_t*  entities = NULL;
+
+    if (SUCCESS != PK_EDGE_ask_faces(PSolidSubEntity::GetSubEntityTag(subEntity), &nEntity, &entities))
+        return ERROR;
+
+    for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[iEntity], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    PK_MEMORY_free(entities);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetEdgeVertices(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_ENTITY_t entities[2];
+
+    if (SUCCESS != PK_EDGE_ask_vertices(PSolidSubEntity::GetSubEntityTag(subEntity), entities))
+        return ERROR;
+
+    if (PK_ENTITY_null != entities[0])
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[0], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    if (PK_ENTITY_null != entities[1])
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[1], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetVertexFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    int           nEntity = 0;
+    PK_ENTITY_t*  entities = NULL;
+
+    if (SUCCESS != PK_VERTEX_ask_faces(PSolidSubEntity::GetSubEntityTag(subEntity), &nEntity, &entities))
+        return ERROR;
+
+    for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[iEntity], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    PK_MEMORY_free(entities);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetVertexEdges(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    int           nEntity = 0;
+    PK_ENTITY_t*  entities = NULL;
+
+    if (SUCCESS != PK_VERTEX_ask_oriented_edges(PSolidSubEntity::GetSubEntityTag(subEntity), &nEntity, &entities, NULL))
+        return ERROR;
+
+    for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[iEntity], PSolidSubEntity::GetSubEntityTransform(subEntity)));
+
+    PK_MEMORY_free(entities);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetTangentBlendEdges(bvector <ISubEntityPtr>& smoothEdges, ISubEntityCR edge)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag;
+
+    if (0 == (edgeTag = PSolidSubEntity::GetSubEntityTag(edge)))
+        return ERROR;
+
+    bvector<PK_EDGE_t> edges;
+
+    if (SUCCESS != PSolidTopo::GetTangentBlendEdges(edges, edgeTag))
+        return ERROR;
+    
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(edge);
+
+    for (PK_EDGE_t smoothEdge : edges)
+        smoothEdges.push_back(PSolidSubEntity::CreateSubEntity(smoothEdge, entityTransform));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, ISubEntityCR edge, ISubEntityCR face)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag;
+    PK_FACE_t   faceTag;
+
+    if (0 == (edgeTag = PSolidSubEntity::GetSubEntityTag(edge)) || 0 == (faceTag = PSolidSubEntity::GetSubEntityTag(face)))
+        return ERROR;
+
+    bvector<PK_EDGE_t> edges;
+
+    if (SUCCESS != PSolidTopo::GetLoopEdgesFromEdge(edges, edgeTag, faceTag))
+        return ERROR;
+    
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
+
+    for (PK_EDGE_t loopEdge : edges)
+        loopEdges.push_back(PSolidSubEntity::CreateSubEntity(loopEdge, entityTransform));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetFaceParameterRange(ISubEntityCR subEntity, DRange1dR uRange, DRange1dR vRange)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == faceTag)
+        return ERROR;
+
+    PK_UVBOX_t  uvBox;
+
+    if (SUCCESS != PK_FACE_find_uvbox(faceTag, &uvBox))
+        return ERROR;
+
+    uRange = DRange1d::From(uvBox.param[0], uvBox.param[2]);
+    vRange = DRange1d::From(uvBox.param[1], uvBox.param[3]);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetEdgeParameterRange(ISubEntityCR subEntity, DRange1dR uRange)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == edgeTag)
+        return ERROR;
+
+    PK_CURVE_t  curveTag;
+
+    if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, &uRange.low, &uRange.high, nullptr, edgeTag))
+        return ERROR;
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::EvaluateFace(ISubEntityCR subEntity, DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_VERTEX_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == entityTag || SUCCESS != PSolidUtil::EvaluateFace(point, normal, uDir, vDir, uvParam, entityTag))
+        return ERROR;
+
+    Transform entityTransform = PSolidSubEntity::GetSubEntityTransform(subEntity);
+
+    entityTransform.Multiply(point);
+    entityTransform.MultiplyMatrixOnly(normal);
+    entityTransform.MultiplyMatrixOnly(uDir);
+    entityTransform.MultiplyMatrixOnly(vDir);
+    normal.Normalize();
+    uDir.Normalize();
+    vDir.Normalize();
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::EvaluateEdge(ISubEntityCR subEntity, DPoint3dR point, DVec3dR uDir, double uParam)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_VERTEX_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == entityTag || SUCCESS != PSolidUtil::EvaluateEdge(point, uDir, uParam, entityTag))
+        return ERROR;
+
+    Transform entityTransform = PSolidSubEntity::GetSubEntityTransform(subEntity);
+
+    entityTransform.Multiply(point);
+    entityTransform.MultiplyMatrixOnly(uDir);
+    uDir.Normalize();
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_VERTEX_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == entityTag || SUCCESS != PSolidUtil::GetVertex(point, entityTag))
+        return ERROR;
+
+    PSolidSubEntity::GetSubEntityTransform(subEntity).Multiply(point);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasOnlyPlanarFaces(PSolidUtil::GetEntityTag(entity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsPlanarFace(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::IsPlanarFace(PSolidSubEntity::GetSubEntityTag(subEntity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsSmoothEdge(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::IsSmoothEdge(PSolidSubEntity::GetSubEntityTag(subEntity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance)
@@ -535,6 +949,99 @@ bool BRepUtil::Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntit
         }
 
     return hitFound;
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ISubEntityPtr BRepUtil::ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_ENTITY_t entityTag;
+    double      distance;
+    DPoint2d    param;
+    DPoint3d    point;
+
+    if (!PSolidUtil::ClosestPoint(PSolidUtil::GetEntityTag(entity), entity.GetEntityTransform(), entityTag, point, param, distance, testPt))
+        return nullptr;
+
+    ISubEntityPtr subEntity = PSolidSubEntity::CreateSubEntity(entityTag, entity);
+
+    if (subEntity.IsValid())
+        PSolidSubEntity::SetLocation(*subEntity, point, param);
+
+    return subEntity;
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::ClosestPointToFace(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, DPoint2dR param)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_ENTITY_t faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(subEntity);
+    double      distance;
+
+    return PSolidUtil::ClosestPointToFace(faceTag, entityTransform, point, param, distance, testPt);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, double& param)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_ENTITY_t edgeTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(subEntity);
+    double      distance;
+
+    return PSolidUtil::ClosestPointToEdge(edgeTag, entityTransform, point, param, distance, testPt);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidSubEntity::GetFaceLocation(subEntity, point, param);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidSubEntity::GetEdgeLocation(subEntity, point, uParam);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidSubEntity::GetVertexLocation(subEntity, point);
 #else
     return false;
 #endif
