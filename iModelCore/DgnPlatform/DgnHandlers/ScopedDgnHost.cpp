@@ -228,23 +228,6 @@ StatusInt TestDataManager::FindTestData(BeFileName& fullFileName, WCharCP fileNa
         }
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
-    {
-    DgnModelPtr dgnModel = db.Models().GetModel(modelID);
-    if (dgnModel == NULL)
-        return NULL;
-
-    if (fillCache)
-        dgnModel->FillModel();
-
-    return  dgnModel;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/

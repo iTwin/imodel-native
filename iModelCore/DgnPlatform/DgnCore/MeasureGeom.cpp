@@ -853,7 +853,8 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
             }
         }
 
-    return true;
+    // WIP_MERGE_Brien
+    // return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

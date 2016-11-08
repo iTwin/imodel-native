@@ -59,6 +59,7 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantCreateSubDirectory,
         ErrorWritingScene,
         ErrorWritingNode,
+        CantOpenOutputFile,
         };
 
 
@@ -196,16 +197,59 @@ public:
 //=======================================================================================
 struct TileReader
 {
+private:
+    std::FILE*          m_file;
+    Json::Value         m_scene;
+    Json::Value         m_materialValues;
+    Json::Value         m_accessors;      
+    Json::Value         m_bufferViews;
+    Json::Value         m_batchData;
+    ByteStream          m_binaryData;
+
+
+
+    TileMeshPtr             ReadMeshPrimitive(Json::Value const& primitiveValue);
+    TileDisplayParamsPtr    ReadDisplayParams(Json::Value const& primitiveValue);
+
+    BentleyStatus           GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bufferView, Json::Value const& primitiveValue, const char* accessorName);
+    BentleyStatus           ReadVertexAttributes(bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* attributeName);
+    BentleyStatus           ReadIndices(TileMeshR mesh, Json::Value const& primitiveValue);
+    BentleyStatus           ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
+
+
+    template <typename T> BentleyStatus  TileReader::ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
+        {
+        bvector <double>    values;
+        size_t              nComponents = sizeof(T)/sizeof(double);
+
+        if(SUCCESS != ReadVertexAttributes(values, primitiveValue, nComponents, attributeName))
+            return ERROR;
+
+        size_t              nElements = values.size() / nComponents;
+
+        vertexValues.resize(nElements);
+        memcpy (vertexValues.data(), values.data(), nElements * nComponents * sizeof(double));
+
+        return SUCCESS;
+        }
+
+public:
     enum class Status
         {
         Success = SUCCESS,
         UnableToOpenFile,
         InvalidHeader,
         ReadError,
-        BatchTableError,
+        BatchTableParseError,
+        SceneParseError,
+        SceneDataError,
         };
 
-    TILEPUBLISHER_EXPORT static Status  ReadTileFromGLTF (TileMeshList& meshes, BeFileNameCR file);
+
+    TileReader() : m_file(nullptr) { }
+    ~TileReader();
+    TILEPUBLISHER_EXPORT Status  ReadTile(TileMeshList& meshes, BeFileNameCR file);
+
 };
 
 

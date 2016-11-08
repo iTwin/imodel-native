@@ -124,6 +124,8 @@ DGNPLATFORM_EXPORT static BentleyStatus GetVertexFaces(bvector<PK_FACE_t>& faces
 DGNPLATFORM_EXPORT static BentleyStatus GetVertexEdges(bvector<PK_EDGE_t>& edges, PK_VERTEX_t vertex);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetLoopFins(bvector<PK_FIN_t>& fins, PK_LOOP_t loop);
+DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, PK_EDGE_t edge, PK_FACE_t face);
+DGNPLATFORM_EXPORT static BentleyStatus GetTangentBlendEdges(bvector<PK_EDGE_t>& smoothEdges, PK_EDGE_t edgeTag);
 DGNPLATFORM_EXPORT static BentleyStatus GetCurveOfEdge(PK_CURVE_t& curveTagOut, double* startParamP, double* endParamP, bool* reversedP, PK_EDGE_t edgeTagIn);
 
 }; // PSolidTopo
@@ -236,9 +238,12 @@ DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<Polyfac
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(PK_BODY_t entityTag);
 DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(PK_BODY_t entityTag);
-DGNPLATFORM_EXPORT static bool IsSmoothEdge(PK_ENTITY_t edgeTag);
+DGNPLATFORM_EXPORT static bool IsSmoothEdge(PK_EDGE_t edgeTag);
+DGNPLATFORM_EXPORT static bool IsPlanarFace(PK_FACE_t faceTag);
  
 DGNPLATFORM_EXPORT static BentleyStatus GetPlanarFaceData (DPoint3dP point, DVec3dP normal, PK_FACE_t entityTag);
+DGNPLATFORM_EXPORT static BentleyStatus EvaluateFace(DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam, PK_FACE_t faceTag);
+DGNPLATFORM_EXPORT static BentleyStatus EvaluateEdge(DPoint3dR point, DVec3dR tangent, double uParam, PK_EDGE_t edgeTag);
 DGNPLATFORM_EXPORT static BentleyStatus GetVertex(DPoint3dR point, PK_VERTEX_t vertexTag);
 
 DGNPLATFORM_EXPORT static void ExtractStartAndSweepFromInterval(double& start, double& sweep, PK_INTERVAL_t const& interval, bool reverse);
@@ -271,6 +276,9 @@ DGNPLATFORM_EXPORT static BentleyStatus MassProperties(double* amount, double* p
 
 DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool assignNodeIds = true);
 DGNPLATFORM_EXPORT static bool LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransform, bvector<PK_ENTITY_t>& subEntities, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, size_t maxFace, size_t maxEdge, size_t maxVertex, DRay3dCR boresite, double maxEdgeDistance, double maxVertexDistance);
+DGNPLATFORM_EXPORT static bool ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bodyTransform, PK_ENTITY_t& entityTag, DPoint3dR point, DPoint2dR param, double& distance, DPoint3dCR testPt);
+DGNPLATFORM_EXPORT static bool ClosestPointToFace(PK_FACE_t faceTag, TransformCR bodyTransform, DPoint3dR point, DPoint2dR uvParam, double& distance, DPoint3dCR testPt);
+DGNPLATFORM_EXPORT static bool ClosestPointToEdge(PK_EDGE_t edgeTag, TransformCR bodyTransform, DPoint3dR point, double& uParam, double& distance, DPoint3dCR testPt);
 
 }; // PSolidUtil
 

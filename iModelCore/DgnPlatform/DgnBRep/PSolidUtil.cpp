@@ -92,13 +92,17 @@ bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
 bool PSolidUtil::HasOnlyPlanarFaces (PK_BODY_t entity)
     {
     if (!entity)
-        return true;
+        return false;
 
-    bool        isPlanar = true;
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
 
     PK_BODY_ask_faces (entity, &numFaces, &faces);
+
+    if (0 == numFaces)
+        return false;
+
+    bool        isPlanar = true;
 
     for (int i=0; i < numFaces && isPlanar; i++)
         {
@@ -133,12 +137,20 @@ bool PSolidUtil::HasOnlyPlanarFaces (PK_BODY_t entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
+bool PSolidUtil::IsSmoothEdge(PK_EDGE_t edge)
     {
     PK_LOGICAL_t smooth;
     static double smoothTolerance = 1.0e-5;
 
     return (SUCCESS == PK_EDGE_is_smooth (edge, smoothTolerance, &smooth)) && smooth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::IsPlanarFace(PK_FACE_t face)
+    {
+    return (SUCCESS == PSolidUtil::GetPlanarFaceData(nullptr, nullptr, face) ? true : false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,6 +212,64 @@ BentleyStatus PSolidUtil::GetPlanarFaceData (DPoint3dP pointOut, DVec3dP normalO
         default:
             return ERROR;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/97
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::EvaluateFace(DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam, PK_FACE_t faceTag)
+    {
+    PK_SURF_t     surfaceTag;
+    PK_LOGICAL_t  faceSense;
+
+    if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &faceSense))
+        return ERROR;
+
+    PK_UV_t       uv;
+    PK_VECTOR_t   faceNormal, pointDerivArray[9];
+
+    uv.param[0] = uvParam.x;
+    uv.param[1] = uvParam.y;
+
+    if (SUCCESS != PK_SURF_eval_with_normal(surfaceTag, uv, 1, 1, PK_LOGICAL_true, pointDerivArray, &faceNormal))
+        return ERROR;
+
+    normal.Init(faceNormal.coord[0], faceNormal.coord[1], faceNormal.coord[2]);
+
+    if (PK_LOGICAL_true != faceSense)
+        normal.Negate();
+
+    PK_VECTOR_t* pVector = &(pointDerivArray[0]);
+    point.Init(pVector->coord[0], pVector->coord[1], pVector->coord[2]);
+
+    pVector = &(pointDerivArray[1]);
+    uDir.Init(pVector->coord[0], pVector->coord[1], pVector->coord[2]);
+
+    pVector = &(pointDerivArray[2]); // 2 == number u deriv (1 in this case) + 1...
+    vDir.Init(pVector->coord[0], pVector->coord[1], pVector->coord[2]);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/97
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::EvaluateEdge(DPoint3dR point, DVec3dR tangent, double uParam, PK_EDGE_t edgeTag)
+    {
+    PK_CURVE_t  curveTag;
+
+    if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, nullptr, nullptr, nullptr, edgeTag))
+        return ERROR;
+
+    PK_VECTOR_t pnt, tan;
+
+    if (SUCCESS != PK_CURVE_eval_with_tangent(curveTag, uParam, 0, &pnt, &tan))
+        return ERROR;
+
+    point.Init(pnt.coord[0], pnt.coord[1], pnt.coord[2]);
+    tangent.Init(tan.coord[0], tan.coord[1], tan.coord[2]);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1370,5 +1440,141 @@ bool PSolidUtil::LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransfor
     PK_BODY_pick_topols_r_f (&picked);
 
     return hitFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bodyTransform, PK_ENTITY_t& entityTag, DPoint3dR closePt, DPoint2dR closeParam, double& distance, DPoint3dCR testPt)
+    {
+    DPoint3d    point = testPt;
+    Transform   inverse;
+
+    inverse.InverseOf(bodyTransform);
+    inverse.Multiply(point);
+
+    PK_VECTOR_t inputPt;
+
+    inputPt.coord[0] = point.x;
+    inputPt.coord[1] = point.y;
+    inputPt.coord[2] = point.z;
+
+    PK_TOPOL_range_vector_o_t  options;
+    PK_range_result_t          result;
+    PK_range_1_r_t             range;
+
+    PK_TOPOL_range_vector_o_m(options);
+
+    if (SUCCESS != PK_TOPOL_range_vector(bodyTag, inputPt, &options, &result, &range))
+        return false;
+
+    entityTag = range.end.sub_entity;
+    distance = range.distance;
+
+    closePt.Init(range.end.vector.coord[0], range.end.vector.coord[1], range.end.vector.coord[2]);
+    bodyTransform.Multiply(closePt);
+
+    PK_CLASS_t entityClass;
+
+    PK_ENTITY_ask_class(entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_face:
+            closeParam.Init(range.end.parameters[0], range.end.parameters[1]);
+            break;
+
+        case PK_CLASS_edge:
+            closeParam.Init(range.end.parameters[0], 0.0);
+            break;
+
+        default:
+            closeParam.Zero();
+            break;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::ClosestPointToFace(PK_FACE_t faceTag, TransformCR bodyTransform, DPoint3dR closePt, DPoint2dR closeParam, double& distance, DPoint3dCR testPt)
+    {
+    PK_CLASS_t  entityClass;
+
+    PK_ENTITY_ask_class(faceTag, &entityClass);
+
+    if (PK_CLASS_face != entityClass)
+        return false;
+
+    DPoint3d    point = testPt;
+    Transform   inverse;
+
+    inverse.InverseOf(bodyTransform);
+    inverse.Multiply(point);
+
+    PK_VECTOR_t inputPt;
+
+    inputPt.coord[0] = point.x;
+    inputPt.coord[1] = point.y;
+    inputPt.coord[2] = point.z;
+
+    PK_TOPOL_range_vector_o_t  options;
+    PK_range_result_t          result;
+    PK_range_1_r_t             range;
+
+    PK_TOPOL_range_vector_o_m(options);
+
+    if (SUCCESS != PK_TOPOL_range_vector(faceTag, inputPt, &options, &result, &range))
+        return false;
+
+    distance = range.distance;
+    closeParam.Init(range.end.parameters[0], range.end.parameters[1]);
+    closePt.Init(range.end.vector.coord[0], range.end.vector.coord[1], range.end.vector.coord[2]);
+    bodyTransform.Multiply(closePt);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::ClosestPointToEdge(PK_EDGE_t edgeTag, TransformCR bodyTransform, DPoint3dR closePt, double& closeParam, double& distance, DPoint3dCR testPt)
+    {
+    PK_CLASS_t  entityClass;
+
+    PK_ENTITY_ask_class(edgeTag, &entityClass);
+
+    if (PK_CLASS_edge != entityClass)
+        return false;
+
+    DPoint3d    point = testPt;
+    Transform   inverse;
+
+    inverse.InverseOf(bodyTransform);
+    inverse.Multiply(point);
+
+    PK_VECTOR_t inputPt;
+
+    inputPt.coord[0] = point.x;
+    inputPt.coord[1] = point.y;
+    inputPt.coord[2] = point.z;
+
+    PK_TOPOL_range_vector_o_t  options;
+    PK_range_result_t          result;
+    PK_range_1_r_t             range;
+
+    PK_TOPOL_range_vector_o_m(options);
+
+    if (SUCCESS != PK_TOPOL_range_vector(edgeTag, inputPt, &options, &result, &range))
+        return false;
+
+    distance = range.distance;
+    closeParam = range.end.parameters[0];
+    closePt.Init(range.end.vector.coord[0], range.end.vector.coord[1], range.end.vector.coord[2]);
+    bodyTransform.Multiply(closePt);
+
+    return true;
     }
 

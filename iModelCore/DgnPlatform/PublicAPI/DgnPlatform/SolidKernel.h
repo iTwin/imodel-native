@@ -234,15 +234,122 @@ DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
 //=======================================================================================
 struct BRepUtil
 {
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+//! Query the set of faces of the input body.
+//! @param[out] subEntities An optional vector to hold the sub-entities of type SubEntityType::Face, pass NULL if just interested in count.
+//! @param[in] in The entity to query.
+//! @return A count of the number of faces.
+DGNPLATFORM_EXPORT static size_t GetBodyFaces(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in);
 
+//! Query the set of edges of the input body.
+//! @param[out] subEntities An optional vector to hold the sub-entities of type SubEntityType::Edge, pass NULL if just interested in count.
+//! @param[in] in The entity to query.
+//! @return A count of the number of edges.
+DGNPLATFORM_EXPORT static size_t GetBodyEdges(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in);
+
+//! Query the set of vertices of the input body.
+//! @param[out] subEntities An optional vector to hold the sub-entities of type SubEntityType::Vertex, pass NULL if just interested in count.
+//! @param[in] in The entity to query.
+//! @return A count of the number of vertices.
+DGNPLATFORM_EXPORT static size_t GetBodyVertices(bvector<ISubEntityPtr>* subEntities, IBRepEntityCR in);
+
+//! Query the set of edges for the input face sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Edge.
+//! @param[in] subEntity The face sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceEdges(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of vertices for the input face sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Vertex.
+//! @param[in] subEntity The face sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceVertices(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of faces for the input edge sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Face.
+//! @param[in] subEntity The edge sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetEdgeFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of vertices for the input edge sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Vertex.
+//! @param[in] subEntity The edge sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetEdgeVertices(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of faces for the input vertex sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Face.
+//! @param[in] subEntity The vertex sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetVertexFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of edges for the input vertex sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Edge.
+//! @param[in] subEntity The vertex sub-entity to query.
+//! @return SUCCESS if input entity was the correct type and output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetVertexEdges(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity);
+
+//! Query the set of edges that are connected and tangent to the given edge sub-entity.
+//! @param[out] smoothEdges A vector to hold the sub-entities of type SubEntityType::Edge.
+//! @param[in] edge The edge sub-entity to query smoothly connected edges for.
+//! @return SUCCESS if the output vector was populated.
+//! @note These are the edges that would be included by the propagate option of SolidUtil::Modify::BlendEdges and SolidUtil::Modify::ChamferEdges.
+DGNPLATFORM_EXPORT static BentleyStatus GetTangentBlendEdges(bvector<ISubEntityPtr>& smoothEdges, ISubEntityCR edge);
+
+//! Query the set of edges that comprise a single face loop containing the given edge sub-entity.
+//! @param[out] loopEdges A vector to hold the sub-entities of type SubEntityType::Edge.
+//! @param[in] edge The edge sub-entity that is part of the loop.
+//! @param[in] face The face sub-entity that has the loop as part of it's bounds.
+//! @return SUCCESS if the output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, ISubEntityCR edge, ISubEntityCR face);
+
+//! Get uv face parameter range for the given face sub-entity.
+//! @param[in] subEntity The face sub-entity to query.
+//! @param[out] uRange The u parameter range of the face.
+//! @param[out] vRange The v parameter range of the face.
+//! @return SUCCESS if face parameter range was computedx.
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceParameterRange(ISubEntityCR subEntity, DRange1dR uRange, DRange1dR vRange);
+
+//! Get u edge parameter range for the given edge sub-entity.
+//! @param[in] subEntity The edge sub-entity to query.
+//! @param[out] uRange The u parameter range of the edge.
+//! @return SUCCESS if edge parameter range was computed.
+DGNPLATFORM_EXPORT static BentleyStatus GetEdgeParameterRange(ISubEntityCR subEntity, DRange1dR uRange);
+
+//! Evaluate point, normal, and derivatives at a uv parameter on the surface of the given face sub-entity.
+//! @param[in] subEntity The face sub-entity to query.
+//! @param[out] point The coordinates of the point on the surface at the uv parameter.
+//! @param[out] normal The normalized surface normal at the uv parameter.
+//! @param[out] uDir The first derivative with respect to u at the uv parameter.
+//! @param[out] vDir The first derivative with respect to v at the uv parameter.
+//! @param[in] uvParam The uv parameter pair to evaluate.
+//! @return SUCCESS if the parameter could be evaluated.
+DGNPLATFORM_EXPORT static BentleyStatus EvaluateFace(ISubEntityCR subEntity, DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam);
+
+//! Evaluate point and tangent at a u parameter on the curve of the given edge sub-entity.
+//! @param[in] subEntity The edge sub-entity to query.
+//! @param[out] point The coordinates of the point on the curve at the u parameter.
+//! @param[out] uDir The normalized curve tangent at the u parameter.
+//! @param[in] uParam The u parameter to evaluate.
+//! @return SUCCESS if the parameter could be evaluated.
+DGNPLATFORM_EXPORT static BentleyStatus EvaluateEdge(ISubEntityCR subEntity, DPoint3dR point, DVec3dR uDir, double uParam);
+
+//! Evaluate point of the given vertex sub-entity.
+//! @param[in] subEntity The vertex sub-entity to query.
+//! @param[out] point The coordinates of the point at the given vertex.
+//! @return SUCCESS if vertex point exists.
+DGNPLATFORM_EXPORT static BentleyStatus EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point);
+
+//! Return whether the supplied face has a planar surface.
+DGNPLATFORM_EXPORT static bool IsPlanarFace(ISubEntityCR);
+
+//! Return whether the angle between the normals of the supplied edge's faces never exceeds the internal smooth angle tolerance along the length of the edge.
+DGNPLATFORM_EXPORT static bool IsSmoothEdge(ISubEntityCR);
+
+//! Return whether the supplied sheet or solid entity has all planar faces.
+DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(IBRepEntityCR);
+
+//! Return whether the supplied entity has any edge that is non-linear or any face that is non-planar.
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
-
-DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
-DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
 
 //! Pick face, edge, and vertex sub-entities of a body by their proximity to a ray.
 //! @param[in] entity The entity to pick sub-entities for.
@@ -256,6 +363,52 @@ DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output
 //! @note The returned entities are ordered by increasing distance from ray origin to hit point on entity.
 //! @return true if ray intersected a requested entity type.
 DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance);
+
+//! Find the closest sub-entity on body to a given point.
+//! @param[in] entity The entity to find the closest sub-entity for.
+//! @param[in] testPt The space point.
+//! @return the face, edge, or vertex sub-entity that contains the closest point.
+DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
+
+//! Get the closest point on a face to a given point.
+//! @param[in] subEntity The face to test.
+//! @param[in] testPt The space point.
+//! @param[out] point The closest point on the face.
+//! @param[out] param The uv parameter at the closest point.
+//! @return true if closest point was found.
+DGNPLATFORM_EXPORT static bool ClosestPointToFace(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, DPoint2dR param);
+
+//! Get the closest point on an edge to a given point.
+//! @param[in] subEntity The edge to test.
+//! @param[in] testPt The space point.
+//! @param[out] point The closest point on the edge.
+//! @param[out] param The u parameter at the closest point.
+//! @return true if closest point was found.
+DGNPLATFORM_EXPORT static bool ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, double& param);
+
+//! Get pick location and uv parameter from a sub-entity representing a face. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+DGNPLATFORM_EXPORT static bool GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param);
+
+//! Get pick location and u parameter from a sub-entity representing a edge. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam);
+
+//! Get vertex location from a sub-entity representing a vertex. 
+//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
+//! @note Convenience method for use along with GetFaceLocation and GetEdgeLocation; could use EvaluateVertex instead.
+DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
+
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+
+//! Perform 3d clip of the supplied curve vector.
+DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
+
+//! Perform 3d clip of the supplied sheet or solid entity.
+DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create

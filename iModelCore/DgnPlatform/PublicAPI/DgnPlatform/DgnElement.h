@@ -2842,6 +2842,29 @@ struct DgnElements : DgnDbTable, MemoryConsumer
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
+    //! Entry in a DgnElements::Iterator
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<DgnElements::Entry>;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+    public:
+        DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
+        DGNPLATFORM_EXPORT DgnClassId GetElementClassId() const;
+        DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
+        DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
+        DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+        DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
+        DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
+    };
+
+    //! DgnElement iterator
+    struct Iterator : ECSqlStatementIterator<DgnElements::Entry>
+    {
+        //! Builds a DgnElementIdSet by iterating all entries
+        DGNPLATFORM_EXPORT DgnElementIdSet GetElementIdSet();
+    };
+
 private:
     struct ElementSelectStatement
     {
@@ -2973,6 +2996,12 @@ public:
     //! @see GetElement
     //! @see DgnElement::CopyForEdit
     DGNPLATFORM_EXPORT DgnElementCPtr QueryElementByFederationGuid(BeSQLite::BeGuidCR federationGuid) const;
+
+    //! Make an iterator over elements of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT Iterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}

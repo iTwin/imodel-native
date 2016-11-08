@@ -747,9 +747,9 @@ protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     DisplayInfo  m_displayInfo;
 
-    void AddToRangeIndex(DgnElementCR);
-    void RemoveFromRangeIndex(DgnElementCR);
-    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+    DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
     
     //! Add non-element graphics for this DgnModel to the scene.
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
@@ -774,11 +774,13 @@ protected:
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
-    DGNPLATFORM_EXPORT void _OnLoadedElement(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT void _OnDeletedElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT void _OnReversedAddElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
-    DGNPLATFORM_EXPORT void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
+    void _OnLoadedElement(DgnElementCR element) override {T_Super::_OnLoadedElement(element); AddToRangeIndex(element);}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
+    void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
+    void _OnReversedAddElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnReversedAddElement(element);}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
+    void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnReversedUpdateElement(modified, original);}
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
