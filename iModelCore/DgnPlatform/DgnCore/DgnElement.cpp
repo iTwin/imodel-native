@@ -442,6 +442,26 @@ DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode InformationPartitionElement::CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode code = CreateCode(parentSubject, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = CreateCode(parentSubject, name.c_str());
+        counter++;
+        } while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus InformationPartitionElement::_OnInsert()
     {
     if (!GetParentId().IsValid() || !GetDgnDb().Elements().Get<Subject>(GetParentId()).IsValid())
