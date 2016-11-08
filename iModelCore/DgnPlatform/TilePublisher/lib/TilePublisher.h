@@ -196,16 +196,42 @@ public:
 //=======================================================================================
 struct TileReader
 {
+private:
+    std::FILE*          m_file;
+    Json::Value         m_scene;
+    Json::Value         m_materialValues;
+    Json::Value         m_accessors;      
+    Json::Value         m_bufferViews;
+    ByteStream          m_binaryData;
+
+
+
+    TileMeshPtr             ReadMeshPrimitive (Json::Value const& primitiveValue);
+    TileDisplayParamsPtr    ReadDisplayParams (Json::Value const& primitiveValue);
+
+    BentleyStatus           GetAccessorAndBufferView (Json::Value& accessor, Json::Value& bufferView, Json::Value const& primitiveValue, const char* accessorName);
+    BentleyStatus           ReadMeshVertexAttributes (bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* attributeName);
+    BentleyStatus           ReadIndices (TileMeshR mesh, Json::Value const& primitiveValue);
+    BentleyStatus           ReadPositions (bvector<DPoint3d>& points, Json::Value const& primitiveValue);
+    
+
+public:
     enum class Status
         {
         Success = SUCCESS,
         UnableToOpenFile,
         InvalidHeader,
         ReadError,
-        BatchTableError,
+        BatchTableParseError,
+        SceneParseError,
+        SceneDataError,
         };
 
-    TILEPUBLISHER_EXPORT static Status  ReadTileFromGLTF (TileMeshList& meshes, BeFileNameCR file);
+
+    TileReader() : m_file(nullptr) { }
+    ~TileReader();
+    TILEPUBLISHER_EXPORT Status  ReadTile (TileMeshList& meshes, BeFileNameCR file);
+
 };
 
 

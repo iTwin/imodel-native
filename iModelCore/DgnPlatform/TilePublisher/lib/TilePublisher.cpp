@@ -223,17 +223,12 @@ PublisherContext::Status TilePublisher::Publish()
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
-    static const char s_gltfMagic[] = "glTF";
-    static const uint32_t s_gltfVersion = 1;
-    static const uint32_t s_gltfSceneFormat = 0;
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
     // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
     static const size_t s_b3dmHeaderSize = 24;
-    static const char s_b3dmMagic[] = "b3dm";
-    static const uint32_t s_b3dmVersion = 1;
     uint32_t b3dmNumBatches = m_batchIds.Count(), zero = 0;
     uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
 
@@ -259,9 +254,10 @@ PublisherContext::Status TilePublisher::Publish()
 //#define ROUND_TRIP_DEBUG
 
 #ifdef  ROUND_TRIP_DEBUG
+    TileReader      tileReader;
     TileMeshList    roundTripMeshes;
 
-    TileReader::ReadTileFromGLTF (roundTripMeshes, binaryDataFileName); 
+    tileReader.ReadTile (roundTripMeshes, binaryDataFileName); 
 #endif
 
     return PublisherContext::Status::Success;
@@ -283,6 +279,7 @@ void TilePublisher::ProcessMeshes(Json::Value& val)
         AddMesh(val, *m_meshes[i], i);
         publishedRange.Extend (m_meshes[i]->GetRange());
         }
+
     m_tile.SetPublishedRange (publishedRange);
     }
 
@@ -840,7 +837,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
 
     bvector<uint16_t>   batchIds;
-    Json::Value         attr = Json::objectValue;
+    Json::Value         primitive = Json::objectValue;
 
     if (mesh.ValidIdsPresent())
         {
@@ -848,24 +845,24 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         for (auto const& elemId : mesh.EntityIds())
             batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
-        attr["attributes"]["BATCHID"] = accBatchId;
+        primitive["attributes"]["BATCHID"] = accBatchId;
         }
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
     bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize, isTextured = false;
 
-    attr["indices"] = accIndexId;
-    attr["material"] = AddMaterial (rootNode, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str());
-    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
+    primitive["indices"] = accIndexId;
+    primitive["material"] = AddMaterial (rootNode, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str());
+    primitive["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
-    attr["attributes"]["POSITION"] = accPositionId;
+    primitive["attributes"]["POSITION"] = accPositionId;
     AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x);
 
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
         {
-        attr["attributes"]["TEXCOORD_0"] = accParamId;
+        primitive["attributes"]["TEXCOORD_0"] = accParamId;
 
         DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
         AddMeshVertexAttribute (rootNode, &mesh.Params().front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
@@ -877,11 +874,11 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         {
         DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0); 
 
-        attr["attributes"]["NORMAL"] = accNormalId;
+        primitive["attributes"]["NORMAL"] = accNormalId;
         AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), "VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
         }
 
-    rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
+    rootNode["meshes"]["mesh_0"]["primitives"].append(primitive);
 
     rootNode["bufferViews"][bvIndexId] = Json::objectValue;
     rootNode["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
