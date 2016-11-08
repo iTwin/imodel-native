@@ -46,7 +46,7 @@ enum class ParamId
     GeographicLocation,
     GlobeImagery,
     GlobeTerrain,
-    Standalone,
+    DisplayGlobe,
     NoReplace,
     SingleThreaded,
     Invalid,
@@ -81,7 +81,7 @@ static CommandParam s_paramTable[] =
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
-        { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
+        { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"st", L"singlethreaded", L"Process models sequentially", false, true },
     };
@@ -160,14 +160,14 @@ private:
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
-    bool            m_standalone = false;
+    bool            m_displayGlobe = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     bool            m_overwriteExisting = true;
     bool            m_parallelModels = true;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001), m_standalone(true) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001), m_displayGlobe(false) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -263,7 +263,7 @@ Json::Value  PublisherParams::GetViewerOptions () const
     {
     Json::Value viewerOptions;
 
-    viewerOptions["displayInPlace"] = !m_standalone;
+    viewerOptions["displayInPlace"] = m_displayGlobe;
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
@@ -333,16 +333,18 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
-                m_standalone = false;
+                m_displayGlobe = true;
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
+                m_displayGlobe = true;
                 break;
             case ParamId::GlobeTerrain:
                 m_terrainProvider = Utf8String(arg.m_value.c_str());
+                m_displayGlobe = true;
                 break;
-            case ParamId::Standalone:
-                m_standalone = true;
+            case ParamId::DisplayGlobe:
+                m_displayGlobe = true;
                 break;
             case ParamId::Tolerance:
                 {

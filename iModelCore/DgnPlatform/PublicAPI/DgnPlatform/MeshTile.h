@@ -136,6 +136,7 @@ struct Triangle
 
     explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
     Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
+    Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
 
     void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
@@ -143,7 +144,7 @@ struct Triangle
     bool IsDegenerate() const
         {
         return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2];
-        }
+        }                                   
 };
 
 //=======================================================================================
@@ -154,6 +155,11 @@ struct Triangle
 struct TilePolyline
 {
      bvector <uint32_t>     m_indices;
+
+public:
+    bvector<uint32_t> const& GetIndices() { return m_indices; }
+    void AddIndex (uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back (index); }
+    void Clear() { m_indices.clear(); }
 };  // TilePolyline
 
 
@@ -192,6 +198,10 @@ public:
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<BeInt64Id> const& EntityIds() const { return m_entityIds; } //!< Vertex attribute array specifying the ID of the entity (element or model) from which the vertex was produced
+    bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
+    bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
+    bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<BeInt64Id>& EntityIdsR() { return m_entityIds; }
 
     TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }

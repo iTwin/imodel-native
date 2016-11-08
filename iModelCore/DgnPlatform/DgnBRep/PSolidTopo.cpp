@@ -274,6 +274,87 @@ BentleyStatus   PSolidTopo::GetLoopFins (bvector<PK_FIN_t>& fins, PK_LOOP_t loop
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetTangentBlendEdges(bvector<PK_EDGE_t>& smoothEdges, PK_EDGE_t edgeTag)
+    {
+    int         nBlend = 0;
+    PK_EDGE_t*  blendsP = NULL;
+    PK_EDGE_set_blend_constant_o_t options;
+
+    PK_EDGE_set_blend_constant_o_m(options);
+
+    options.properties.propagate = PK_blend_propagate_yes_c;
+
+    if (SUCCESS != PK_EDGE_set_blend_constant(1, &edgeTag, 1.0, &options, &nBlend, &blendsP))
+        return ERROR;
+
+    for (int i=0; i < nBlend; i++)
+        {
+        smoothEdges.push_back(blendsP[i]);
+        PK_EDGE_remove_blend(blendsP[i]);
+        }
+
+    PK_MEMORY_free(blendsP);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus findEdgeFinForFace(PK_FIN_t& fin, PK_EDGE_t edge, PK_FACE_t face)
+    {
+    bvector<PK_FIN_t> edgeFins;
+    
+    PSolidTopo::GetEdgeFins(edgeFins, edge);
+
+    for (PK_FIN_t testFin : edgeFins)
+        {
+        PK_FACE_t testFace;
+
+        if (SUCCESS == PK_FIN_ask_face(testFin, &testFace) && testFace == face)
+            {
+            fin = testFin;
+
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopo::GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, PK_EDGE_t edgeTag, PK_FACE_t faceTag)
+    {
+    PK_FIN_t    finTag;
+
+    if (SUCCESS != findEdgeFinForFace(finTag, edgeTag, faceTag))
+        return ERROR;
+           
+    PK_LOOP_t   loopTag;
+
+    if (SUCCESS != PK_FIN_ask_loop(finTag, &loopTag))
+        return ERROR;
+
+    int         nEdgeTags;
+    PK_EDGE_t*  edgeTags = NULL;
+
+    if (SUCCESS != PK_LOOP_ask_edges(loopTag, &nEdgeTags, &edgeTags))
+        return ERROR;
+    
+    loopEdges.resize(nEdgeTags);
+    for (int i=0; i < nEdgeTags; i++)
+        loopEdges[i] = edgeTags[i];
+
+    PK_MEMORY_free(edgeTags);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   PSolidTopo::GetCurveOfEdge

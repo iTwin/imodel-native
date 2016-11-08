@@ -358,7 +358,5 @@ BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>
             return SUCCESS;
 #endif
         }
-       
-    return ERROR;
     }
 
