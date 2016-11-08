@@ -96,7 +96,14 @@ ImagePPTestConfig::ImagePPTestConfig()
         bool enable = false;
         pSourceDirNode->GetAttributeBooleanValue(enable, "Enable");
         if (enable)
+            {
             pSourceDirNode->GetAttributeStringValue(m_sourceDir, "Dir");
+            if (!BeFileName::DoesPathExist(m_sourceDir))
+                {
+                fprintf(stderr, "\n\n[ERROR] Failed Source path invalid: %ls\n\n", m_sourceDir.c_str());
+                BeAssert(true);
+                }
+            }
         }
 
     // -- Baseline and validation.
