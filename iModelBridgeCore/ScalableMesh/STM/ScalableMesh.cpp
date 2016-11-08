@@ -971,6 +971,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
     {
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
     m_viewedNodes.clear();
+    ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
         ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
     if (m_scalableMeshDTM[DTMAnalysisType::Precise] != nullptr)
