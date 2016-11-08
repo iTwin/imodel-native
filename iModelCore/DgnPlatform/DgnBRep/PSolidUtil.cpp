@@ -92,13 +92,17 @@ bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
 bool PSolidUtil::HasOnlyPlanarFaces (PK_BODY_t entity)
     {
     if (!entity)
-        return true;
+        return false;
 
-    bool        isPlanar = true;
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
 
     PK_BODY_ask_faces (entity, &numFaces, &faces);
+
+    if (0 == numFaces)
+        return false;
+
+    bool        isPlanar = true;
 
     for (int i=0; i < numFaces && isPlanar; i++)
         {
@@ -133,12 +137,20 @@ bool PSolidUtil::HasOnlyPlanarFaces (PK_BODY_t entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil::IsSmoothEdge (PK_ENTITY_t edge)
+bool PSolidUtil::IsSmoothEdge(PK_EDGE_t edge)
     {
     PK_LOGICAL_t smooth;
     static double smoothTolerance = 1.0e-5;
 
     return (SUCCESS == PK_EDGE_is_smooth (edge, smoothTolerance, &smooth)) && smooth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::IsPlanarFace(PK_FACE_t face)
+    {
+    return (SUCCESS == PSolidUtil::GetPlanarFaceData(nullptr, nullptr, face) ? true : false);
     }
 
 /*---------------------------------------------------------------------------------**//**
