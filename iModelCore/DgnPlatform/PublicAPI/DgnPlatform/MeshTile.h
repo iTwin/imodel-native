@@ -198,6 +198,10 @@ public:
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<BeInt64Id> const& EntityIds() const { return m_entityIds; } //!< Vertex attribute array specifying the ID of the entity (element or model) from which the vertex was produced
+    bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
+    bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
+    bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<BeInt64Id>& EntityIdsR() { return m_entityIds; }
 
     TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
@@ -213,7 +217,7 @@ public:
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId);
+    void AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId);
 };
 
 //=======================================================================================
