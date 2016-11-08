@@ -11,7 +11,7 @@
 
 
 
-#include <../STM/IScalableMeshDataStore.h>
+#include "IScalableMeshDataStore.h"
 /*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/ISMStore.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>

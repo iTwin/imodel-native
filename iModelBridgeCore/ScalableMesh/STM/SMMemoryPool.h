@@ -680,7 +680,7 @@ public:
         {        
         if (m_allocatedSize < (m_nbItems + 1) * sizeof(DataType))
             {
-            reserve(ceil((m_nbItems + 1) * 1.5));
+            reserve((size_t)ceil((m_nbItems + 1) * 1.5));
             }
         ((DataType*)m_data)[m_nbItems] = newObject;
         m_nbItems++;
@@ -701,7 +701,7 @@ public:
 
         if ((m_nbItems + count) * sizeof(DataType) > m_allocatedSize)
             {
-            reserve(ceil((m_nbItems + count) * 1.5));                   
+            reserve((size_t)ceil((m_nbItems + count) * 1.5));                   
             }
 
         memcpy(&((DataType*)m_data)[m_nbItems], newObjects, count * sizeof(DataType));
@@ -995,7 +995,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         {
         if (m_allocatedSize < (m_nbItems + 1) * sizeof(DataType))
             {
-            reserve(ceil((m_nbItems + 1) * 1.5));
+            reserve((size_t)ceil((m_nbItems + 1) * 1.5));
             }
 
         ((DataType*)m_data)[m_nbItems] = newObject;
@@ -1017,7 +1017,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
         if ((m_nbItems + count) * sizeof(DataType) > m_allocatedSize)
             {
-            reserve(ceil((m_nbItems + count) * 1.5));
+            reserve((size_t)ceil((m_nbItems + count) * 1.5));
             }
         size_t addedSize = 0;
         for (size_t i = 0; i < count; ++i)

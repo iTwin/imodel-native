@@ -157,6 +157,7 @@ IDTMSourceCollection& IScalableMeshSourceCreator::EditSources()
     return dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sources;
     }
 
+
 StatusInt IScalableMeshSourceCreator::UpdateLastModified()
     {
     return dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->UpdateLastModified();
@@ -194,6 +195,7 @@ IScalableMeshSourceCreator::Impl::~Impl()
 m_sources.UnregisterEditListener(*this);
 
     }
+
 
 DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* filePath)
     {
@@ -498,7 +500,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             it++;
         }
 
-    //True when only linear feature are imported.
+
     if (pDataIndex->GetRootNode() == 0)
         {
 #ifdef SCALABLE_MESH_ATP
@@ -536,34 +538,6 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
 
-    if (s_stitchFilteredByLevel == false)
-        {
-#ifdef SCALABLE_MESH_ATP    
-        startClock = clock();
-#endif
-
-        if (s_filter)
-            {
-            // Filter data (in order to create sub-resolutions)
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, -1))
-                return BSIERROR;
-            }
-
-#ifdef SCALABLE_MESH_ATP
-        s_getLastFilteringDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
-
-        startClock = clock();
-#endif
-        /*
-        if (BSISUCCESS != Stitch(pointIndex, -1))
-        return BSIERROR;
-        */
-
-#ifdef SCALABLE_MESH_ATP
-        s_getLastStitchingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
-#endif
-        }
-    else    
         {
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = 0;
