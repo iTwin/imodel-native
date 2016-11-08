@@ -1,0 +1,8 @@
+# WIP_MERGE_Donald
+DataCaptureTests.CreateCamera
+DataCaptureTests.ModifyCamera
+DataCaptureTests.DeleteCamera
+DataCaptureTests.CreatePhoto
+DataCaptureTests.ModifyPhoto
+DataCaptureTests.DeletePhoto
+DataCaptureTests.QueryPhotosFromCamera

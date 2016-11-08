@@ -26,7 +26,9 @@ TEST_F(DataCaptureTests, CreateCamera)
     ASSERT_TRUE(cameraPtr.IsValid());
 
     //Change camera properties
+#ifdef WIP_MERGE_Donald
     cameraPtr->SetLabel("BasicCamera1");
+#endif
     cameraPtr->SetFocalLenghtPixels(4798.35);
     ImageDimensionType imgDimension(5456,3632);
     cameraPtr->SetImageDimension(imgDimension); 
@@ -209,7 +211,9 @@ TEST_F(DataCaptureTests, CreatePhoto)
     // Create Camera
     auto cameraPtr = Camera::Create(*spatialModelP);
     ASSERT_TRUE(cameraPtr.IsValid());
+#ifdef WIP_MERGE_Donald
     cameraPtr->SetLabel("BasicCamera1");
+#endif
     cameraPtr->SetFocalLenghtPixels(4798.35);
     ImageDimensionType imgDimension(5456, 3632);
     cameraPtr->SetImageDimension(imgDimension);
@@ -230,7 +234,9 @@ TEST_F(DataCaptureTests, CreatePhoto)
     ASSERT_TRUE(PhotoPtr.IsValid());
 
     //Change Photo properties
+#ifdef WIP_MERGE_Donald
     PhotoPtr->SetLabel("BasicPhoto1");
+#endif
     RotationMatrixType rotation(RotationMatrixType::FromIdentity());
     DPoint3d center = {1.0,2.0,3.0};
     PoseType pose(center,rotation);
