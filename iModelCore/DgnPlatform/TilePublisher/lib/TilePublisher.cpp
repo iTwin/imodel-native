@@ -1300,6 +1300,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         root[JSON_Children].append(childRoot);
         }
 
+    m_modelRoots.clear();
 
     TilePublisher::WriteBoundingVolume(root, rootRange);
 

@@ -44,7 +44,7 @@ struct FBox
         m_high.z = RoundUp(box.high.z);
         }
 
-    void Invalidate() {m_low.x = m_low.y = m_low.z = 1.0; m_high.x = m_high.y = m_high.z = -1.0;}
+    void Invalidate() {m_low.x = m_low.y = m_low.z = std::numeric_limits<float>::max(); m_high.x = m_high.y = m_high.z = -std::numeric_limits<float>::max();}
     FBox(FPoint3d low, FPoint3d high) : m_low(low), m_high(high) {}
     FBox(float xlow, float ylow, float zlow, float xhigh, float yhigh, float zhigh) {m_low.x=xlow; m_low.y=ylow; m_low.z=zlow; m_high.x=xhigh; m_high.y=yhigh; m_high.z=zhigh;}
     FBox() {Invalidate();}
@@ -110,7 +110,7 @@ struct Tree
         bool IsLeaf() const {return nullptr != ToLeaf();}
         bool IsSloppy() const {return m_sloppy;}
         void ClearRange() {m_sloppy=false; m_nodeRange.Invalidate();}
-        void ValidateRange();
+        DGNPLATFORM_EXPORT void ValidateRange();
         FBoxCR GetRange() {ValidateRange(); return m_nodeRange;}
         FBoxCR GetRangeCR() {return m_nodeRange;}
         bool Overlaps(FBoxCR range) const;
@@ -180,8 +180,7 @@ private:
 public:
     size_t DebugElementCount() const {return m_root ? ((InternalNode*) m_root)->GetElementCount() : 0;} //! @private
 
-    void LoadTree(DgnModelCR);
-    FBoxCP GetExtents() {return  m_root ? &m_root->GetRange() : nullptr;}
+    FBox GetExtents() {return m_root ? m_root->GetRange() : FBox();}
     DGNPLATFORM_EXPORT Tree(bool is3d, size_t leafSize);
     Node* GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}
@@ -189,7 +188,20 @@ public:
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
     size_t GetCount() const {return m_leafIdx.size();}
+
+    struct Iterator :  LeafIdx::const_iterator
+    {
+        Iterator(LeafIdx::const_iterator it) : LeafIdx::const_iterator(it) {}
+        DgnElementId GetElementId(){return (*this)->first;}
+        EntryCP GetEntry(){return (*this)->second->FindElement((*this)->first);}
+    };
+
+    typedef Iterator const_iterator;
+    const_iterator begin() const {return m_leafIdx.begin();}
+    const_iterator end() const {return m_leafIdx.end();}
+
     DGNPLATFORM_EXPORT Traverser::Stop Traverse(Traverser&);
+
     DGNPLATFORM_EXPORT void AddEntry(Entry const&);
 
     //! Find an element in the range index and return the Entry information.

@@ -15,19 +15,16 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct DgnModelTests : public DgnDbTestFixture
     {
-    DgnModelPtr m_model;
-
-    void LoadModel(Utf8CP name)
+    DgnModelPtr LoadModel(Utf8CP name)
         {
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), name);
         DgnModelId modelId = m_db->Models().QuerySubModelId(partitionCode);
-        m_model =  m_db->Models().GetModel(modelId);
-        BeAssert(m_model.IsValid());
-        if (m_model.IsValid())
-            m_model->FillModel();
+        DgnModelPtr model =  m_db->Models().GetModel(modelId);
+        BeAssert(model.IsValid());
+        return model;
         }
 
-    void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
+    void InsertElement(DgnDbR, DgnModelId mid, bool is3d, bool expectSuccess);
     };
 
 //---------------------------------------------------------------------------------------
@@ -39,9 +36,15 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
 
     DgnElementPtr gelem;
     if (is3d)
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
+        {
+        Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
+        }
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+        {
+        Placement2d placement(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
+        }
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0))));
@@ -53,47 +56,7 @@ void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool exp
         }
 
     DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetGraphicElements)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
-    ASSERT_NE(graphicElementCount, 0);
-    ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
-    int count = 0;
-    for (auto const& elm : *m_model)
-        {
-        EXPECT_TRUE(elm.second->GetModel() == m_model);
-        ++count;
-        }
-    EXPECT_EQ(graphicElementCount, count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, EmptyList)
-    {
-    SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Splines");
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    m_model->EmptyModel();
-    ASSERT_TRUE(0 == m_model->GetElements().size());
-
-    m_model->FillModel();
-    ASSERT_TRUE(0 != m_model->GetElements().size());
+    ASSERT_TRUE(expectSuccess == (newElem.IsValid() && newElem->GetElementId().IsValid()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -102,30 +65,82 @@ TEST_F(DgnModelTests, EmptyList)
 TEST_F(DgnModelTests, GetRange)
     {
     SetupSeedProject();
-    DgnModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
-    InsertElement(*m_db, model->GetModelId(), true, true);
+    auto model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
 
-    LoadModel("RangeTest");
+    model->FillRangeIndex(); // test maintaining the range index as add elements
 
-    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
+    InsertElement(*m_db, model->GetModelId(), true,  true);
+    InsertElement(*m_db, model->GetModelId(), true,  true);
+    InsertElement(*m_db, model->GetModelId(), true,  true);
+    InsertElement(*m_db, model->GetModelId(), true,  true);
+
+    auto rangeIndex = model->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
+
+    int count = 0;
+    for (auto& el : model->MakeIterator())
+        {
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        ++count;
+        }
+    EXPECT_TRUE(count == 4);
+
+    model->RemoveRangeIndex();  // drop the range index and recreate it from a query
+    model->FillRangeIndex();
+    rangeIndex = model->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
+
+    count = 0;
+    for (auto& el : model->MakeIterator())
+        {
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        ++count;
+        }
+    
+    AxisAlignedBox3d range = model->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
-    DPoint3d low; low.Init(0.00000000000000000, -0.00050000000000000001, -0.00050000000000000001);
-    DPoint3d high; high.Init(1.00000000000000000, 0.00050000000000000001, 0.00050000000000000001);
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+
     AxisAlignedBox3d box(low, high);
+    AxisAlignedBox3d indexbox(rangeIndex->GetExtents().ToRange3d());
 
     EXPECT_TRUE(box.IsEqual(range, .00000001));
-    }
+    EXPECT_TRUE(indexbox.IsEqual(range, .00001));
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, GetRangeOfEmptyModel)
-    {
-    SetupSeedProject();
-    LoadModel("DefaultModel");
-
-    AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
+    // check the range of an empty 3d model
+    auto model2 = LoadModel("DefaultModel");
+    AxisAlignedBox3d thirdRange = model2->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
+
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "TestDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    drawingModel->FillRangeIndex(); // test maintaining the range index as add elements
+
+    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
+    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
+    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
+    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
+    rangeIndex = drawingModel->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
+    count = 0;
+    for (auto& el : drawingModel->MakeIterator())
+        {
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        ++count;
+        }
+    EXPECT_TRUE(count == 4);
+
+    m_db->SaveChanges();
+
+    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
+    EXPECT_TRUE(box.IsEqual(range2d, .00000001));
+    EXPECT_TRUE(indexbox2d.IsEqual(range, .00001));
     }
 
 //---------------------------------------------------------------------------------------
@@ -357,64 +372,6 @@ TEST_F(DgnModelTests, AbandonChanges)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppData : DgnModel::AppData
-    {
-    bool isFilled;
-    virtual DropMe _OnFilled(DgnModelCR model) override
-        {
-        isFilled = true;
-        return DropMe::No;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for adding AppData on a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, AddAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-
-    // Add Appdata
-    static DgnModel::AppData::Key key;
-    TestAppData *AppData = new TestAppData();
-    m1->AddAppData(key, AppData);
-    m1->FillModel();
-    EXPECT_TRUE(AppData->isFilled);
-    EXPECT_TRUE(m1->FindAppData(key) != nullptr);
-
-    // Add appdata again with same key
-     //TestAppData *AppData2 = new TestAppData();
-     //m1->AddAppData(key, AppData2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for dropping AppData from a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, DropAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-
-    static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData();
-    m1->AddAppData(m_key, m_AppData);
-    m1->FillModel();
-    EXPECT_TRUE(m_AppData->isFilled);
-    StatusInt status = m1->DropAppData(m_key);
-    EXPECT_TRUE(status == 0);
-    EXPECT_TRUE(m1->FindAppData(m_key) == nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, ReplaceInvalidCharacter)
@@ -441,9 +398,7 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    // For TFS 473760: The returned label was truncated before the fix i.e. 'm' instead of 'mm'
-    // Adding the test so that this doesn't happen again
     GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
     }

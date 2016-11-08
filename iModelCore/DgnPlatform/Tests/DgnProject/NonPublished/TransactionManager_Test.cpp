@@ -888,8 +888,6 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model2");
     m_db->SaveChanges("changeSet2");
 
-    model2->FillModel();
-    EXPECT_TRUE (model2->IsFilled());
     m_db->SaveChanges("changeSet3");
 
     PhysicalModelPtr model3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model3");

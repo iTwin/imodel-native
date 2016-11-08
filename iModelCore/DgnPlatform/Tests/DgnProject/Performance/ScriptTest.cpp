@@ -114,7 +114,6 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
     m_defaultModelId = m_db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
-    GetDefaultModel().FillModel();
 
     m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *m_db);
     }

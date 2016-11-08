@@ -73,8 +73,6 @@ void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf
     DgnModels& modelTable = project.Models ();
     DgnModelId id = modelTable.QuerySubModelId(partitionCode);
     DgnModelPtr model = modelTable.GetModel (id);
-    if (model.IsValid ())
-        model->FillModel ();
 
     ECClassP testClass = schema.GetClassP (TEST_CLASS_NAME);
     // We don't want to time the creation of the elements.  So we create them in one loop, and then insert instances

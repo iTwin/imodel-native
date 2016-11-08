@@ -27,7 +27,6 @@ public:
         DgnDbPtr db = GetDgnDb(WString(TEST_NAME, true).c_str());
         m_defaultModelP = db->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db));
         ASSERT_TRUE(m_defaultModelP.IsValid());
-        m_defaultModelP->FillModel();
         }
 };
     

@@ -27,7 +27,7 @@ L10N::StringId m_pluralNameKey;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String GetLabel () const
+Utf8String GetLabel() const
     {
     return DgnCoreL10N::GetString(m_labelKey);
     }
@@ -35,7 +35,7 @@ Utf8String GetLabel () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String GetName (bool bSingular) const
+Utf8String GetName(bool bSingular) const
     {
     if (bSingular)
         return DgnCoreL10N::GetString(m_singularNameKey);
@@ -46,32 +46,32 @@ Utf8String GetName (bool bSingular) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition  ToUnitDefinition () const
+UnitDefinition  ToUnitDefinition() const
     {
-    return UnitDefinition (m_base, m_system, m_numerator, m_denominator, GetLabel().c_str());
+    return UnitDefinition(m_base, m_system, m_numerator, m_denominator, GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ScaleFactorMatches (UnitDefinitionCR unitDef) const
+bool    ScaleFactorMatches(UnitDefinitionCR unitDef) const
     {
     if (m_base != unitDef.GetBase())
         return false;
 
-    return (0 == UnitDefinition::CompareRatios (m_numerator, m_denominator, unitDef.GetNumerator(), unitDef.GetDenominator()));
+    return (0 == UnitDefinition::CompareRatios(m_numerator, m_denominator, unitDef.GetNumerator(), unitDef.GetDenominator()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-int     Compare (UnitDefinition const& unitDef) const
+int     Compare(UnitDefinition const& unitDef) const
     {
     if (m_base != unitDef.GetBase())
         return -1;
 
     // returns -1 if this unit is larger than the "info"
-    return UnitDefinition::CompareRatios (m_numerator, m_denominator, unitDef.GetNumerator(), unitDef.GetDenominator());
+    return UnitDefinition::CompareRatios(m_numerator, m_denominator, unitDef.GetNumerator(), unitDef.GetDenominator());
     }
 
 };
@@ -82,57 +82,57 @@ typedef struct StandardUnitTableEntry const*       StandardUnitTableEntryCP;
 static StandardUnitTableEntry   s_standardUnits[] =
     {
     // Meter based
-    { UnitBase::Meter,     UnitSystem::Metric,     1000000000000000.0,       1.0,                     StandardUnit::MetricFemtometers,   DgnCoreL10N::UNIT_LABEL_Femtometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Femtometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Femtometers(), },
-    { UnitBase::Meter,     UnitSystem::Metric,     1000000000000.0,          1.0,                     StandardUnit::MetricPicometers,    DgnCoreL10N::UNIT_LABEL_Picometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Picometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Picometers(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1000000000.0,             1.0,                     StandardUnit::MetricNanometers,    DgnCoreL10N::UNIT_LABEL_Nanometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Nanometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Nanometers(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1000000.0,                1.0,                     StandardUnit::MetricMicrometers,   DgnCoreL10N::UNIT_LABEL_Micrometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Micrometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Micrometers(), },
-    { UnitBase::Meter,     UnitSystem::Metric,     1000.0,                   1.0,                     StandardUnit::MetricMillimeters,   DgnCoreL10N::UNIT_LABEL_Millimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Millimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Millimeters(), },
-    { UnitBase::Meter,     UnitSystem::Metric,     100.0,                    1.0,                     StandardUnit::MetricCentimeters,   DgnCoreL10N::UNIT_LABEL_Centimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Centimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Centimeters(), },
-    { UnitBase::Meter,     UnitSystem::Metric,     10.0,                     1.0,                     StandardUnit::MetricDecimeters,    DgnCoreL10N::UNIT_LABEL_Decimeters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Decimeters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Decimeters(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1.0,                     StandardUnit::MetricMeters,        DgnCoreL10N::UNIT_LABEL_Meters(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Meters(),       DgnCoreL10N::UNIT_PLURAL_NAME_Meters(),      },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      10.0,                    StandardUnit::MetricDekameters,    DgnCoreL10N::UNIT_LABEL_Dekameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Dekameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Dekameters(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      100.0,                   StandardUnit::MetricHectometers,   DgnCoreL10N::UNIT_LABEL_Hectometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Hectometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Hectometers(), },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000.0,                  StandardUnit::MetricKilometers,    DgnCoreL10N::UNIT_LABEL_Kilometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Kilometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Kilometers(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000.0,               StandardUnit::MetricMegameters,    DgnCoreL10N::UNIT_LABEL_Megameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Megameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Megameters(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000.0,            StandardUnit::MetricGigameters,    DgnCoreL10N::UNIT_LABEL_Gigameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Gigameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Gigameters(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000.0,         StandardUnit::MetricTerameters,    DgnCoreL10N::UNIT_LABEL_Terameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Terameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Terameters(),  },
-    { UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000000.0,      StandardUnit::MetricPetameters,    DgnCoreL10N::UNIT_LABEL_Petameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Petameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Petameters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1000000000000000.0,       1.0,                     StandardUnit::MetricFemtometers,   DgnCoreL10N::UNIT_LABEL_Femtometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Femtometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Femtometers(), },
+    {UnitBase::Meter,     UnitSystem::Metric,     1000000000000.0,          1.0,                     StandardUnit::MetricPicometers,    DgnCoreL10N::UNIT_LABEL_Picometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Picometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Picometers(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1000000000.0,             1.0,                     StandardUnit::MetricNanometers,    DgnCoreL10N::UNIT_LABEL_Nanometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Nanometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Nanometers(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1000000.0,                1.0,                     StandardUnit::MetricMicrometers,   DgnCoreL10N::UNIT_LABEL_Micrometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Micrometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Micrometers(), },
+    {UnitBase::Meter,     UnitSystem::Metric,     1000.0,                   1.0,                     StandardUnit::MetricMillimeters,   DgnCoreL10N::UNIT_LABEL_Millimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Millimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Millimeters(), },
+    {UnitBase::Meter,     UnitSystem::Metric,     100.0,                    1.0,                     StandardUnit::MetricCentimeters,   DgnCoreL10N::UNIT_LABEL_Centimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Centimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Centimeters(), },
+    {UnitBase::Meter,     UnitSystem::Metric,     10.0,                     1.0,                     StandardUnit::MetricDecimeters,    DgnCoreL10N::UNIT_LABEL_Decimeters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Decimeters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Decimeters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1.0,                     StandardUnit::MetricMeters,        DgnCoreL10N::UNIT_LABEL_Meters(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Meters(),       DgnCoreL10N::UNIT_PLURAL_NAME_Meters(),      },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      10.0,                    StandardUnit::MetricDekameters,    DgnCoreL10N::UNIT_LABEL_Dekameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Dekameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Dekameters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      100.0,                   StandardUnit::MetricHectometers,   DgnCoreL10N::UNIT_LABEL_Hectometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Hectometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Hectometers(), },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000.0,                  StandardUnit::MetricKilometers,    DgnCoreL10N::UNIT_LABEL_Kilometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Kilometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Kilometers(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000.0,               StandardUnit::MetricMegameters,    DgnCoreL10N::UNIT_LABEL_Megameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Megameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Megameters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000.0,            StandardUnit::MetricGigameters,    DgnCoreL10N::UNIT_LABEL_Gigameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Gigameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Gigameters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000.0,         StandardUnit::MetricTerameters,    DgnCoreL10N::UNIT_LABEL_Terameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Terameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Terameters(),  },
+    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000000.0,      StandardUnit::MetricPetameters,    DgnCoreL10N::UNIT_LABEL_Petameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Petameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Petameters(),  },
 
     // International foot based.
-    { UnitBase::Meter,     UnitSystem::English,    10000000000.0,            254.0,                   StandardUnit::EnglishMicroInches,  DgnCoreL10N::UNIT_LABEL_MicroInches(),  DgnCoreL10N::UNIT_SINGULAR_NAME_MicroInches(),  DgnCoreL10N::UNIT_PLURAL_NAME_MicroInches(), },
-    { UnitBase::Meter,     UnitSystem::English,    10000000.0,               254.0,                   StandardUnit::EnglishMils,         DgnCoreL10N::UNIT_LABEL_Mils(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Mils(),         DgnCoreL10N::UNIT_PLURAL_NAME_Mils(),        },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0 * 72.0,           254.0,                   StandardUnit::EnglishPoints,       DgnCoreL10N::UNIT_LABEL_Points(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Points(),       DgnCoreL10N::UNIT_PLURAL_NAME_Points(),      },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0 * 6.0,            254.0,                   StandardUnit::EnglishPicas,        DgnCoreL10N::UNIT_LABEL_Picas(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Picas(),        DgnCoreL10N::UNIT_PLURAL_NAME_Picas(),       },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0,                   StandardUnit::EnglishInches,       DgnCoreL10N::UNIT_LABEL_Inches(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Inches(),       DgnCoreL10N::UNIT_PLURAL_NAME_Inches(),      },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0,            StandardUnit::EnglishFeet,         DgnCoreL10N::UNIT_LABEL_Feet(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Feet(),         DgnCoreL10N::UNIT_PLURAL_NAME_Feet(),        },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 3.0,      StandardUnit::EnglishYards,        DgnCoreL10N::UNIT_LABEL_Yards(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Yards(),        DgnCoreL10N::UNIT_PLURAL_NAME_Yards(),       },
-    { UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 5280.0,   StandardUnit::EnglishMiles,        DgnCoreL10N::UNIT_LABEL_Miles(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Miles(),        DgnCoreL10N::UNIT_PLURAL_NAME_Miles(),       },
+    {UnitBase::Meter,     UnitSystem::English,    10000000000.0,            254.0,                   StandardUnit::EnglishMicroInches,  DgnCoreL10N::UNIT_LABEL_MicroInches(),  DgnCoreL10N::UNIT_SINGULAR_NAME_MicroInches(),  DgnCoreL10N::UNIT_PLURAL_NAME_MicroInches(), },
+    {UnitBase::Meter,     UnitSystem::English,    10000000.0,               254.0,                   StandardUnit::EnglishMils,         DgnCoreL10N::UNIT_LABEL_Mils(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Mils(),         DgnCoreL10N::UNIT_PLURAL_NAME_Mils(),        },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0 * 72.0,           254.0,                   StandardUnit::EnglishPoints,       DgnCoreL10N::UNIT_LABEL_Points(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Points(),       DgnCoreL10N::UNIT_PLURAL_NAME_Points(),      },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0 * 6.0,            254.0,                   StandardUnit::EnglishPicas,        DgnCoreL10N::UNIT_LABEL_Picas(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Picas(),        DgnCoreL10N::UNIT_PLURAL_NAME_Picas(),       },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0,                   StandardUnit::EnglishInches,       DgnCoreL10N::UNIT_LABEL_Inches(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Inches(),       DgnCoreL10N::UNIT_PLURAL_NAME_Inches(),      },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0,            StandardUnit::EnglishFeet,         DgnCoreL10N::UNIT_LABEL_Feet(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Feet(),         DgnCoreL10N::UNIT_PLURAL_NAME_Feet(),        },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 3.0,      StandardUnit::EnglishYards,        DgnCoreL10N::UNIT_LABEL_Yards(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Yards(),        DgnCoreL10N::UNIT_PLURAL_NAME_Yards(),       },
+    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 5280.0,   StandardUnit::EnglishMiles,        DgnCoreL10N::UNIT_LABEL_Miles(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Miles(),        DgnCoreL10N::UNIT_PLURAL_NAME_Miles(),       },
 
     // US Survey foot based.
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  1000.0,                  StandardUnit::EnglishSurveyInches, DgnCoreL10N::UNIT_LABEL_SurveyInches(), DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyInches(), DgnCoreL10N::UNIT_PLURAL_NAME_SurveyInches(),},
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0,                 StandardUnit::EnglishSurveyFeet,   DgnCoreL10N::UNIT_LABEL_SurveyFeet(),   DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyFeet(),   DgnCoreL10N::UNIT_PLURAL_NAME_SurveyFeet(),  },
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 6.0,           StandardUnit::EnglishFathoms,      DgnCoreL10N::UNIT_LABEL_Fathoms(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Fathoms(),      DgnCoreL10N::UNIT_PLURAL_NAME_Fathoms(),     },
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 16.5,          StandardUnit::EnglishRods,         DgnCoreL10N::UNIT_LABEL_Rods(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Rods(),         DgnCoreL10N::UNIT_PLURAL_NAME_Rods(),        },
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 66.0,          StandardUnit::EnglishChains,       DgnCoreL10N::UNIT_LABEL_Chains(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Chains(),       DgnCoreL10N::UNIT_PLURAL_NAME_Chains(),      },
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 660.0,         StandardUnit::EnglishFurlongs,     DgnCoreL10N::UNIT_LABEL_Furlongs(),     DgnCoreL10N::UNIT_SINGULAR_NAME_Furlongs(),     DgnCoreL10N::UNIT_PLURAL_NAME_Furlongs(),    },
-    { UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 5280.0,        StandardUnit::EnglishSurveyMiles,  DgnCoreL10N::UNIT_LABEL_SurveyMiles(),  DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyMiles(),  DgnCoreL10N::UNIT_PLURAL_NAME_SurveyMiles(), },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  1000.0,                  StandardUnit::EnglishSurveyInches, DgnCoreL10N::UNIT_LABEL_SurveyInches(), DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyInches(), DgnCoreL10N::UNIT_PLURAL_NAME_SurveyInches(),},
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0,                 StandardUnit::EnglishSurveyFeet,   DgnCoreL10N::UNIT_LABEL_SurveyFeet(),   DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyFeet(),   DgnCoreL10N::UNIT_PLURAL_NAME_SurveyFeet(),  },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 6.0,           StandardUnit::EnglishFathoms,      DgnCoreL10N::UNIT_LABEL_Fathoms(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Fathoms(),      DgnCoreL10N::UNIT_PLURAL_NAME_Fathoms(),     },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 16.5,          StandardUnit::EnglishRods,         DgnCoreL10N::UNIT_LABEL_Rods(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Rods(),         DgnCoreL10N::UNIT_PLURAL_NAME_Rods(),        },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 66.0,          StandardUnit::EnglishChains,       DgnCoreL10N::UNIT_LABEL_Chains(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Chains(),       DgnCoreL10N::UNIT_PLURAL_NAME_Chains(),      },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 660.0,         StandardUnit::EnglishFurlongs,     DgnCoreL10N::UNIT_LABEL_Furlongs(),     DgnCoreL10N::UNIT_SINGULAR_NAME_Furlongs(),     DgnCoreL10N::UNIT_PLURAL_NAME_Furlongs(),    },
+    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 5280.0,        StandardUnit::EnglishSurveyMiles,  DgnCoreL10N::UNIT_LABEL_SurveyMiles(),  DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyMiles(),  DgnCoreL10N::UNIT_PLURAL_NAME_SurveyMiles(), },
 
     // No System
-    { UnitBase::Meter,     UnitSystem::Undefined,  10000000000.0,            1.0,                     StandardUnit::NoSystemAngstroms,         DgnCoreL10N::UNIT_LABEL_Angstroms(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Angstroms(),         DgnCoreL10N::UNIT_PLURAL_NAME_Angstroms(),        },
-    { UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      1852.0,                  StandardUnit::NoSystemNauticalMiles,     DgnCoreL10N::UNIT_LABEL_NauticalMiles(),     DgnCoreL10N::UNIT_SINGULAR_NAME_NauticalMiles(),     DgnCoreL10N::UNIT_PLURAL_NAME_NauticalMiles(),    },
-    { UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      149597900000.0,          StandardUnit::NoSystemAstronomicalUnits, DgnCoreL10N::UNIT_LABEL_AstronomicalUnits(), DgnCoreL10N::UNIT_SINGULAR_NAME_AstronomicalUnits(), DgnCoreL10N::UNIT_PLURAL_NAME_AstronomicalUnits(),},
-    { UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      9460730000000000.0,      StandardUnit::NoSystemLightYears,        DgnCoreL10N::UNIT_LABEL_LightYears(),        DgnCoreL10N::UNIT_SINGULAR_NAME_LightYears(),        DgnCoreL10N::UNIT_PLURAL_NAME_LightYears(),       },
-    { UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      30856780000000000.0,     StandardUnit::NoSystemParsecs,           DgnCoreL10N::UNIT_LABEL_Parsecs(),           DgnCoreL10N::UNIT_SINGULAR_NAME_Parsecs(),           DgnCoreL10N::UNIT_PLURAL_NAME_Parsecs(),          },
+    {UnitBase::Meter,     UnitSystem::Undefined,  10000000000.0,            1.0,                     StandardUnit::NoSystemAngstroms,         DgnCoreL10N::UNIT_LABEL_Angstroms(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Angstroms(),         DgnCoreL10N::UNIT_PLURAL_NAME_Angstroms(),        },
+    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      1852.0,                  StandardUnit::NoSystemNauticalMiles,     DgnCoreL10N::UNIT_LABEL_NauticalMiles(),     DgnCoreL10N::UNIT_SINGULAR_NAME_NauticalMiles(),     DgnCoreL10N::UNIT_PLURAL_NAME_NauticalMiles(),    },
+    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      149597900000.0,          StandardUnit::NoSystemAstronomicalUnits, DgnCoreL10N::UNIT_LABEL_AstronomicalUnits(), DgnCoreL10N::UNIT_SINGULAR_NAME_AstronomicalUnits(), DgnCoreL10N::UNIT_PLURAL_NAME_AstronomicalUnits(),},
+    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      9460730000000000.0,      StandardUnit::NoSystemLightYears,        DgnCoreL10N::UNIT_LABEL_LightYears(),        DgnCoreL10N::UNIT_SINGULAR_NAME_LightYears(),        DgnCoreL10N::UNIT_PLURAL_NAME_LightYears(),       },
+    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      30856780000000000.0,     StandardUnit::NoSystemParsecs,           DgnCoreL10N::UNIT_LABEL_Parsecs(),           DgnCoreL10N::UNIT_SINGULAR_NAME_Parsecs(),           DgnCoreL10N::UNIT_PLURAL_NAME_Parsecs(),          },
 
     // Angular
-    { UnitBase::Degree,    UnitSystem::Undefined,  3600.0,                   1.0,                     StandardUnit::AngleSeconds,        DgnCoreL10N::UNIT_LABEL_Seconds(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Seconds(),       DgnCoreL10N::UNIT_PLURAL_NAME_Seconds(), },
-    { UnitBase::Degree,    UnitSystem::Undefined,  60.0,                     1.0,                     StandardUnit::AngleMinutes,        DgnCoreL10N::UNIT_LABEL_Minutes(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Minutes(),       DgnCoreL10N::UNIT_PLURAL_NAME_Minutes(), },
-    { UnitBase::Degree,    UnitSystem::Undefined,  10.0,                     9.0,                     StandardUnit::AngleGrads,          DgnCoreL10N::UNIT_LABEL_Grads(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Grads(),         DgnCoreL10N::UNIT_PLURAL_NAME_Grads(),   },
-    { UnitBase::Degree,    UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::AngleDegrees,        DgnCoreL10N::UNIT_LABEL_Degrees(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Degrees(),       DgnCoreL10N::UNIT_PLURAL_NAME_Degrees(), },
-    { UnitBase::Degree,    UnitSystem::Undefined,  3.1415926535897932846,    180.0,                   StandardUnit::AngleRadians,        DgnCoreL10N::UNIT_LABEL_Radians(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Radians(),       DgnCoreL10N::UNIT_PLURAL_NAME_Radians(), },
+    {UnitBase::Degree,    UnitSystem::Undefined,  3600.0,                   1.0,                     StandardUnit::AngleSeconds,        DgnCoreL10N::UNIT_LABEL_Seconds(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Seconds(),       DgnCoreL10N::UNIT_PLURAL_NAME_Seconds(), },
+    {UnitBase::Degree,    UnitSystem::Undefined,  60.0,                     1.0,                     StandardUnit::AngleMinutes,        DgnCoreL10N::UNIT_LABEL_Minutes(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Minutes(),       DgnCoreL10N::UNIT_PLURAL_NAME_Minutes(), },
+    {UnitBase::Degree,    UnitSystem::Undefined,  10.0,                     9.0,                     StandardUnit::AngleGrads,          DgnCoreL10N::UNIT_LABEL_Grads(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Grads(),         DgnCoreL10N::UNIT_PLURAL_NAME_Grads(),   },
+    {UnitBase::Degree,    UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::AngleDegrees,        DgnCoreL10N::UNIT_LABEL_Degrees(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Degrees(),       DgnCoreL10N::UNIT_PLURAL_NAME_Degrees(), },
+    {UnitBase::Degree,    UnitSystem::Undefined,  3.1415926535897932846,    180.0,                   StandardUnit::AngleRadians,        DgnCoreL10N::UNIT_LABEL_Radians(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Radians(),       DgnCoreL10N::UNIT_PLURAL_NAME_Radians(), },
 
     // No Base
-    { UnitBase::None,      UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::UnitlessWhole,       DgnCoreL10N::UNIT_LABEL_UnitlessWhole(), DgnCoreL10N::UNIT_SINGULAR_NAME_UnitlessWhole(), DgnCoreL10N::UNIT_PLURAL_NAME_UnitlessWhole(),},
+    {UnitBase::None,      UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::UnitlessWhole,       DgnCoreL10N::UNIT_LABEL_UnitlessWhole(), DgnCoreL10N::UNIT_SINGULAR_NAME_UnitlessWhole(), DgnCoreL10N::UNIT_PLURAL_NAME_UnitlessWhole(),},
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -143,7 +143,7 @@ struct StandardUnitTable
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    GetFirst ()
+static StandardUnitTableEntryCP    GetFirst()
     {
     return s_standardUnits;
     }
@@ -151,20 +151,20 @@ static StandardUnitTableEntryCP    GetFirst ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    GetLast ()
+static StandardUnitTableEntryCP    GetLast()
     {
-    return s_standardUnits + _countof (s_standardUnits) - 1;
+    return s_standardUnits + _countof(s_standardUnits) - 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    GetNext (StandardUnitTableEntryCP standardUnit)
+static StandardUnitTableEntryCP    GetNext(StandardUnitTableEntryCP standardUnit)
     {
     if (NULL == standardUnit)
         return NULL;
 
-    if (standardUnit >= s_standardUnits + _countof (s_standardUnits) - 1)
+    if (standardUnit >= s_standardUnits + _countof(s_standardUnits) - 1)
         return NULL;
 
     return ++standardUnit;
@@ -173,7 +173,7 @@ static StandardUnitTableEntryCP    GetNext (StandardUnitTableEntryCP standardUni
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    GetPrevious (StandardUnitTableEntryCP standardUnit)
+static StandardUnitTableEntryCP    GetPrevious(StandardUnitTableEntryCP standardUnit)
     {
     if (NULL == standardUnit)
         return NULL;
@@ -187,12 +187,12 @@ static StandardUnitTableEntryCP    GetPrevious (StandardUnitTableEntryCP standar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    FindByNumber (StandardUnit unitNum)
+static StandardUnitTableEntryCP    FindByNumber(StandardUnit unitNum)
     {
     int                         iUnit;
     StandardUnitTableEntryCP    standardUnit;
 
-    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof (s_standardUnits); iUnit++, standardUnit++)
+    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof(s_standardUnits); iUnit++, standardUnit++)
         {
         if (standardUnit->m_standardNumber == unitNum)
             return standardUnit;
@@ -204,14 +204,14 @@ static StandardUnitTableEntryCP    FindByNumber (StandardUnit unitNum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    FindMatchingScaleFactor (UnitDefinitionCR unitDef)
+static StandardUnitTableEntryCP    FindMatchingScaleFactor(UnitDefinitionCR unitDef)
     {
     int                         iUnit;
     StandardUnitTableEntryCP    standardUnit;
 
-    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof (s_standardUnits); iUnit++, standardUnit++)
+    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof(s_standardUnits); iUnit++, standardUnit++)
         {
-        if (standardUnit->ScaleFactorMatches (unitDef))
+        if (standardUnit->ScaleFactorMatches(unitDef))
             return standardUnit;
         }
 
@@ -221,15 +221,15 @@ static StandardUnitTableEntryCP    FindMatchingScaleFactor (UnitDefinitionCR uni
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    FindByName (Utf8CP name)
+static StandardUnitTableEntryCP    FindByName(Utf8CP name)
     {
     if (NULL == name)
-        { BeAssert (false); return NULL; }
+        {BeAssert(false); return NULL;}
     
     int                         iUnit;
     StandardUnitTableEntryCP    standardUnit;
 
-    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof (s_standardUnits); iUnit++, standardUnit++)
+    for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof(s_standardUnits); iUnit++, standardUnit++)
         {
         // Try to match either the singular or plural name
         if (standardUnit->GetName(true).EqualsI (name) || 
@@ -247,9 +247,9 @@ static StandardUnitTableEntryCP    FindByName (Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition  UnitDefinition::GetStandardUnit (StandardUnit iUnit)
+UnitDefinition  UnitDefinition::GetStandardUnit(StandardUnit iUnit)
     {
-    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber (iUnit);
+    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber(iUnit);
 
     if (NULL == unitEntry)
         return UnitDefinition();
@@ -260,12 +260,12 @@ UnitDefinition  UnitDefinition::GetStandardUnit (StandardUnit iUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition  UnitDefinition::GetStandardUnitByName (Utf8CP name)
+UnitDefinition  UnitDefinition::GetStandardUnitByName(Utf8CP name)
     {
     if (NULL == name)
-        { BeAssert (false); return UnitDefinition (); }
+        {BeAssert(false); return UnitDefinition();}
     
-    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByName (name);
+    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByName(name);
 
     if (NULL == unitEntry)
         return UnitDefinition();
@@ -276,9 +276,9 @@ UnitDefinition  UnitDefinition::GetStandardUnitByName (Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      UnitDefinition::GetStandardLabel (StandardUnit iUnit)
+Utf8String      UnitDefinition::GetStandardLabel(StandardUnit iUnit)
     {
-    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber (iUnit);
+    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber(iUnit);
 
     if (NULL == unitEntry)
         return "";
@@ -289,22 +289,22 @@ Utf8String      UnitDefinition::GetStandardLabel (StandardUnit iUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      UnitDefinition::GetStandardName (StandardUnit iUnit, bool singular)
+Utf8String      UnitDefinition::GetStandardName(StandardUnit iUnit, bool singular)
     {
-    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber (iUnit);
+    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber(iUnit);
 
     if (NULL == unitEntry)
         return "";
 
-    return unitEntry->GetName (singular);
+    return unitEntry->GetName(singular);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardUnit    UnitDefinition::IsStandardUnit () const
+StandardUnit    UnitDefinition::IsStandardUnit() const
     {
-    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindMatchingScaleFactor (*this);
+    StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindMatchingScaleFactor(*this);
 
     if (NULL == unitEntry)
         return StandardUnit::None;
@@ -315,7 +315,7 @@ StandardUnit    UnitDefinition::IsStandardUnit () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitIteratorOptions::UnitIteratorOptions ()
+UnitIteratorOptions::UnitIteratorOptions()
     {
     m_orderAscending        = true;
     m_allowBaseNone         = true;
@@ -335,7 +335,7 @@ UnitIteratorOptions::UnitIteratorOptions ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            UnitIteratorOptions::IsBaseAllowed (UnitBase base) const
+bool            UnitIteratorOptions::IsBaseAllowed(UnitBase base) const
     {
     switch (base)
         {
@@ -344,14 +344,14 @@ bool            UnitIteratorOptions::IsBaseAllowed (UnitBase base) const
         case UnitBase::Degree: return m_allowBaseDegree;
         }
 
-    BeAssert (0);
+    BeAssert(0);
     return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            UnitIteratorOptions::IsSystemAllowed (UnitSystem system) const
+bool            UnitIteratorOptions::IsSystemAllowed(UnitSystem system) const
     {
     switch (system)
         {
@@ -361,20 +361,20 @@ bool            UnitIteratorOptions::IsSystemAllowed (UnitSystem system) const
         case UnitSystem::USSurvey:    return m_allowSystemUSSurvey;
         }
 
-    BeAssert (0);
+    BeAssert(0);
     return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetOrderAscending ()  { m_orderAscending = true;  }
-void            UnitIteratorOptions::SetOrderDescending () { m_orderAscending = false; }
+void            UnitIteratorOptions::SetOrderAscending()  {m_orderAscending = true;  }
+void            UnitIteratorOptions::SetOrderDescending() {m_orderAscending = false;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::DisallowAllBases ()
+void            UnitIteratorOptions::DisallowAllBases()
     {
     m_allowBaseNone   = false;
     m_allowBaseMeter  = false;
@@ -384,7 +384,7 @@ void            UnitIteratorOptions::DisallowAllBases ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowAdditionalBase (UnitBase base)
+void            UnitIteratorOptions::SetAllowAdditionalBase(UnitBase base)
     {
     switch (base)
         {
@@ -393,22 +393,22 @@ void            UnitIteratorOptions::SetAllowAdditionalBase (UnitBase base)
         case UnitBase::Degree: m_allowBaseDegree = true;    return;
         }
 
-    BeAssert (0);
+    BeAssert(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowSingleBase (UnitBase base)
+void            UnitIteratorOptions::SetAllowSingleBase(UnitBase base)
     {
-    DisallowAllBases ();
-    SetAllowAdditionalBase (base);
+    DisallowAllBases();
+    SetAllowAdditionalBase(base);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::DisallowAllSystems ()
+void            UnitIteratorOptions::DisallowAllSystems()
     {
     m_allowSystemNone       = false;
     m_allowSystemMetric     = false;
@@ -419,7 +419,7 @@ void            UnitIteratorOptions::DisallowAllSystems ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowAdditionalSystem (UnitSystem system)
+void            UnitIteratorOptions::SetAllowAdditionalSystem(UnitSystem system)
     {
     switch (system)
         {
@@ -429,25 +429,25 @@ void            UnitIteratorOptions::SetAllowAdditionalSystem (UnitSystem system
         case UnitSystem::USSurvey:      m_allowSystemUSSurvey = true;   return;
         }
 
-    BeAssert (0);
+    BeAssert(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowSingleSystem (UnitSystem system)
+void            UnitIteratorOptions::SetAllowSingleSystem(UnitSystem system)
     {
-    DisallowAllSystems ();
-    SetAllowAdditionalSystem (system);
+    DisallowAllSystems();
+    SetAllowAdditionalSystem(system);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetSizeCriteria (UnitDefinitionCR unitDef, UnitCompareMethod method)
+void            UnitIteratorOptions::SetSizeCriteria(UnitDefinitionCR unitDef, UnitCompareMethod method)
     {
     m_compareUnit = unitDef;
-    SetAllowSingleBase (unitDef.GetBase());
+    SetAllowSingleBase(unitDef.GetBase());
 
     m_allowLarger  = false;
     m_allowSmaller = false;
@@ -478,16 +478,16 @@ void            UnitIteratorOptions::SetSizeCriteria (UnitDefinitionCR unitDef, 
         }
     }
 
-UnitDefinition   StandardUnitCollection::Entry::GetUnitDef()    const { return m_tableP ? m_tableP->ToUnitDefinition() : UnitDefinition(); }
-StandardUnit     StandardUnitCollection::Entry::GetNumber()     const { return m_tableP ? m_tableP->m_standardNumber   : StandardUnit::None; }
-Utf8String       StandardUnitCollection::Entry::GetName(bool singular) const { return m_tableP ? m_tableP->GetName (singular) : ""; }
+UnitDefinition   StandardUnitCollection::Entry::GetUnitDef()    const {return m_tableP ? m_tableP->ToUnitDefinition() : UnitDefinition();}
+StandardUnit     StandardUnitCollection::Entry::GetNumber()     const {return m_tableP ? m_tableP->m_standardNumber   : StandardUnit::None;}
+Utf8String       StandardUnitCollection::Entry::GetName(bool singular) const {return m_tableP ? m_tableP->GetName(singular) : "";}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardUnitCollection::const_iterator::const_iterator (UnitIteratorOptionsCR options)
+StandardUnitCollection::const_iterator::const_iterator(UnitIteratorOptionsCR options)
     :
-    m_options (&options)
+    m_options(&options)
     {
     if (m_options->IsOrderAscending())
         m_entry.m_tableP = StandardUnitTable::GetFirst();
@@ -495,16 +495,16 @@ StandardUnitCollection::const_iterator::const_iterator (UnitIteratorOptionsCR op
         m_entry.m_tableP = StandardUnitTable::GetLast();
 
     // Find the first valid unit
-    if ( ! UnitValidForIterator (m_entry.m_tableP))
+    if ( ! UnitValidForIterator(m_entry.m_tableP))
         ++(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardUnitCollection::const_iterator::const_iterator ()
+StandardUnitCollection::const_iterator::const_iterator()
     :
-    m_options (NULL)
+    m_options(NULL)
     {
     m_entry.m_tableP = NULL;
     }
@@ -512,19 +512,19 @@ StandardUnitCollection::const_iterator::const_iterator ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    StandardUnitCollection::const_iterator::UnitValidForIterator (StandardUnitTableEntryCP tableEntry)
+bool    StandardUnitCollection::const_iterator::UnitValidForIterator(StandardUnitTableEntryCP tableEntry)
     {
-    if ( ! m_options->IsBaseAllowed (tableEntry->m_base))
+    if ( ! m_options->IsBaseAllowed(tableEntry->m_base))
         return false;
 
-    if ( ! m_options->IsSystemAllowed (tableEntry->m_system))
+    if ( ! m_options->IsSystemAllowed(tableEntry->m_system))
         return false;
 
     UnitDefinitionCR compareUnit = m_options->GetCompareUnit();
 
     if (compareUnit.IsValid())
         {
-        int iComparison = tableEntry->Compare (compareUnit);
+        int iComparison = tableEntry->Compare(compareUnit);
 
         // iComp is reversed: positive if candidate is smaller
         if (0 > iComparison && ! m_options->GetCompareAllowLarger())
@@ -548,11 +548,11 @@ StandardUnitCollection::const_iterator& StandardUnitCollection::const_iterator::
     while (NULL != m_entry.m_tableP)
         {
         if (m_options->IsOrderAscending())
-             m_entry.m_tableP = StandardUnitTable::GetNext ( m_entry.m_tableP);
+             m_entry.m_tableP = StandardUnitTable::GetNext( m_entry.m_tableP);
         else
-             m_entry.m_tableP = StandardUnitTable::GetPrevious ( m_entry.m_tableP);
+             m_entry.m_tableP = StandardUnitTable::GetPrevious( m_entry.m_tableP);
 
-        if (NULL ==  m_entry.m_tableP || UnitValidForIterator ( m_entry.m_tableP))
+        if (NULL ==  m_entry.m_tableP || UnitValidForIterator( m_entry.m_tableP))
             break;
         }
 
@@ -578,24 +578,24 @@ StandardUnitCollection::Entry const&  StandardUnitCollection::const_iterator::op
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */      StandardUnitCollection::StandardUnitCollection (UnitIteratorOptionsCR options)
+/* ctor */      StandardUnitCollection::StandardUnitCollection(UnitIteratorOptionsCR options)
     :
-    m_options (options)
+    m_options(options)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardUnitCollection::const_iterator    StandardUnitCollection::begin () const
+StandardUnitCollection::const_iterator    StandardUnitCollection::begin() const
     {
-    return const_iterator (m_options);
+    return const_iterator(m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardUnitCollection::const_iterator    StandardUnitCollection::end () const
+StandardUnitCollection::const_iterator    StandardUnitCollection::end() const
     {
     return const_iterator();
     }
@@ -627,8 +627,8 @@ struct Dgn::UserUnitTableEntry
     Utf8String      m_pluralName;
     Utf8String      m_labels;               // comma-separated list of labels
 
-    UserUnitTableEntry (UnitDefinitionCR unitDef, int unitNum, Utf8CP singularName, Utf8CP pluralName, Utf8String labels)
-        : m_unitDef (unitDef), m_number (unitNum), m_singularName (singularName), m_pluralName (pluralName), m_labels (labels) { }
+    UserUnitTableEntry(UnitDefinitionCR unitDef, int unitNum, Utf8CP singularName, Utf8CP pluralName, Utf8String labels)
+        : m_unitDef(unitDef), m_number(unitNum), m_singularName(singularName), m_pluralName(pluralName), m_labels(labels) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,33 +641,33 @@ private:
     UnitEntryVector         m_unitVector;
     bool                    m_containsStandardUnits;
 
-    UserUnitTable() : m_containsStandardUnits (false)   { }
+    UserUnitTable() : m_containsStandardUnits(false)   {}
 
-    bool                    ParseLine (Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const;
-    StatusInt               AddEntry (UserUnitTableEntryCR newEntry);
+    bool                    ParseLine(Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const;
+    StatusInt               AddEntry(UserUnitTableEntryCR newEntry);
     void                    PopulateFromFile();
     void                    PopulateFromStandardUnits();
 
     static int              GetBasePriority(UnitDefinitionCR unitDef);
-    static DgnHost::Key&    GetHostKey()                                { static DgnHost::Key key; return key; }
+    static DgnHost::Key&    GetHostKey()                                {static DgnHost::Key key; return key;}
 public:
-    bool                    ContainsStandardUnits() const   { return m_containsStandardUnits; }
-    size_t                  GetCount() const            { return m_unitVector.size(); }
+    bool                    ContainsStandardUnits() const   {return m_containsStandardUnits;}
+    size_t                  GetCount() const            {return m_unitVector.size();}
     void                    Dump() const;
 
-    UserUnitTableEntryCP    GetEntry (size_t index) const { return (index < GetCount()) ? &m_unitVector[index] : NULL; }
-    UserUnitTableEntryCP    FindByName (Utf8CP name) const;
-    UserUnitTableEntryCP    FindByScale (UnitDefinitionCR unitDef) const;
-    UserUnitTableEntryCP    FindByNumber (int unitNumber) const;
-    UserUnitTableEntryCP    FindByLabel (Utf8CP label) const;
+    UserUnitTableEntryCP    GetEntry(size_t index) const {return (index < GetCount()) ? &m_unitVector[index] : NULL;}
+    UserUnitTableEntryCP    FindByName(Utf8CP name) const;
+    UserUnitTableEntryCP    FindByScale(UnitDefinitionCR unitDef) const;
+    UserUnitTableEntryCP    FindByNumber(int unitNumber) const;
+    UserUnitTableEntryCP    FindByLabel(Utf8CP label) const;
 
     static UserUnitTable&   GetTable();
 
     template <class V>
-    UserUnitTableEntryCP    VisitUnits (V& v) const
+    UserUnitTableEntryCP    VisitUnits(V& v) const
         {
         FOR_EACH (UserUnitTableEntryCR entry, m_unitVector)
-            if (v.Accept (entry))
+            if (v.Accept(entry))
                 return &entry;
 
         return NULL;
@@ -679,14 +679,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void makeStrippedString (Utf8StringR str, Utf8CP start, Utf8CP end /*inclusive*/)
+static void makeStrippedString(Utf8StringR str, Utf8CP start, Utf8CP end /*inclusive*/)
     {
-    while (*start && isspace (*start))
+    while (*start && isspace(*start))
         ++start;
-    while (*end && end > start && isspace (*end))
+    while (*end && end > start && isspace(*end))
         --end;
 
-    str = Utf8String (start, end+1);
+    str = Utf8String(start, end+1);
     }
 
 namespace UnitVisitors
@@ -694,23 +694,23 @@ namespace UnitVisitors
     struct ByNameFinder
         {
         Utf8CP          m_name;
-        bool            Accept (UserUnitTableEntryCR entry)     { return entry.m_singularName.EqualsI(m_name) || entry.m_pluralName.EqualsI (m_name); }
+        bool            Accept(UserUnitTableEntryCR entry)     {return entry.m_singularName.EqualsI(m_name) || entry.m_pluralName.EqualsI (m_name);}
         };
 
     struct ByLabelFinder
         {
         Utf8CP          m_label;
-        bool            Accept (UserUnitTableEntryCR entry)
+        bool            Accept(UserUnitTableEntryCR entry)
             {
-            Utf8CP      labelList = entry.m_labels.c_str(), endOfList = labelList + strlen (labelList), cur = labelList, next;
+            Utf8CP      labelList = entry.m_labels.c_str(), endOfList = labelList + strlen(labelList), cur = labelList, next;
             Utf8String  thisLabel;
             while (cur < endOfList)
                 {
-                next = ::strchr (cur, ',');
+                next = ::strchr(cur, ',');
                 if (NULL == next)
                     next = endOfList;
 
-                makeStrippedString (thisLabel, cur, next-1);
+                makeStrippedString(thisLabel, cur, next-1);
                 if (thisLabel.EqualsI (m_label))
                     return true;
 
@@ -724,13 +724,13 @@ namespace UnitVisitors
     struct ByScaleFinder
         {
         UnitDefinitionCR    m_unitDef;
-        bool                Accept (UserUnitTableEntryCR entry) { return 0 == m_unitDef.CompareByScale (entry.m_unitDef); }
+        bool                Accept(UserUnitTableEntryCR entry) {return 0 == m_unitDef.CompareByScale(entry.m_unitDef);}
         };
 
     struct ByNumberFinder
         {
         int num;
-        bool Accept (UserUnitTableEntryCR entry)    { return entry.m_number == num; }
+        bool Accept(UserUnitTableEntryCR entry)    {return entry.m_number == num;}
         };
 
     struct ClosestFinder
@@ -738,20 +738,20 @@ namespace UnitVisitors
         UnitDefinitionCR unit;
         bool             ascending;
 
-        bool Accept (UserUnitTableEntryCR entry)
-            { return unit.GetBase() == entry.m_unitDef.GetBase() && unit.GetSystem() == entry.m_unitDef.GetSystem() && 0 < unit.CompareByScale (entry.m_unitDef); }
+        bool Accept(UserUnitTableEntryCR entry)
+            {return unit.GetBase() == entry.m_unitDef.GetBase() && unit.GetSystem() == entry.m_unitDef.GetSystem() && 0 < unit.CompareByScale(entry.m_unitDef);}
 
-        ClosestFinder (UnitDefinitionCR u, bool a) : unit(u), ascending(a) { }
+        ClosestFinder(UnitDefinitionCR u, bool a) : unit(u), ascending(a) {}
         };
 
     struct Dumper
         {
         int iEntry;
-        Dumper() : iEntry(0) { }
+        Dumper() : iEntry(0) {}
 
-        bool Accept (UserUnitTableEntryCR unitEntry)
+        bool Accept(UserUnitTableEntryCR unitEntry)
             {
-            printf ("  %d:\t%d %s (%f / %f)\n", iEntry, unitEntry.m_number, unitEntry.m_pluralName.c_str(), unitEntry.m_unitDef.GetNumerator(), unitEntry.m_unitDef.GetDenominator());
+            printf("  %d:\t%d %s (%f / %f)\n", iEntry, unitEntry.m_number, unitEntry.m_pluralName.c_str(), unitEntry.m_unitDef.GetNumerator(), unitEntry.m_unitDef.GetDenominator());
             iEntry++;
             return false;
             }
@@ -761,47 +761,47 @@ namespace UnitVisitors
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByName (Utf8CP name) const
+UserUnitTableEntryCP UserUnitTable::FindByName(Utf8CP name) const
     {
-    UnitVisitors::ByNameFinder v = { name };
-    return VisitUnits (v);
+    UnitVisitors::ByNameFinder v = {name };
+    return VisitUnits(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByLabel (Utf8CP label) const
+UserUnitTableEntryCP UserUnitTable::FindByLabel(Utf8CP label) const
     {
-    UnitVisitors::ByLabelFinder v = { label };
-    return VisitUnits (v);
+    UnitVisitors::ByLabelFinder v = {label };
+    return VisitUnits(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByScale (UnitDefinitionCR unitDef) const
+UserUnitTableEntryCP UserUnitTable::FindByScale(UnitDefinitionCR unitDef) const
     {
-    UnitVisitors::ByScaleFinder v = { unitDef };
-    return VisitUnits (v);
+    UnitVisitors::ByScaleFinder v = {unitDef };
+    return VisitUnits(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByNumber (int unitNumber) const
+UserUnitTableEntryCP UserUnitTable::FindByNumber(int unitNumber) const
     {
-    UnitVisitors::ByNumberFinder v = { unitNumber };
-    return VisitUnits (v);
+    UnitVisitors::ByNumberFinder v = {unitNumber };
+    return VisitUnits(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    UserUnitTable::Dump () const
+void    UserUnitTable::Dump() const
     {
-    printf ("Dumping units table, %zu entries:\n", m_unitVector.size());
+    printf("Dumping units table, %zu entries:\n", m_unitVector.size());
     UnitVisitors::Dumper v;
-    VisitUnits (v);
+    VisitUnits(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -832,12 +832,12 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
     bool                        found = false;
     UnitEntryVector::iterator   iter;
     UnitDefinitionCR            newUnit = newEntry.m_unitDef;
-    int                         newPriority = GetBasePriority (newUnit);
+    int                         newPriority = GetBasePriority(newUnit);
 
     for (iter = m_unitVector.begin(); iter != m_unitVector.end(); ++iter)
         {
         UnitDefinitionCR    existingUnit = iter->m_unitDef;
-        int                 basePriority = GetBasePriority (existingUnit);
+        int                 basePriority = GetBasePriority(existingUnit);
 
         // Keep the units together by base in order: Meter, Degree, Unitless
         if (basePriority != newPriority)
@@ -848,7 +848,7 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
                 break;
             }
 
-        int iCompare = newUnit.CompareByScale (existingUnit);
+        int iCompare = newUnit.CompareByScale(existingUnit);
 
         // Do not allow multiple equal size units
         if (0 == iCompare)
@@ -865,7 +865,7 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
     if (found)
         return ERROR;
 
-    m_unitVector.insert (iter, newEntry);
+    m_unitVector.insert(iter, newEntry);
     return SUCCESS;
     }
 
@@ -875,21 +875,21 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
 UserUnitTable& UserUnitTable::GetTable()
     {
     DgnHost::Key& key = GetHostKey();
-    UserUnitTableP table = dynamic_cast<UserUnitTableP> (T_HOST.GetHostObject (key));
+    UserUnitTableP table = dynamic_cast<UserUnitTableP> (T_HOST.GetHostObject(key));
     if (NULL == table)
         {
         table = new UserUnitTable();
         table->PopulateFromFile();
 
 #if defined (WIP_CFGVAR) // MS_UNITS_SHOWALL
-        if (ConfigurationManager::IsVariableDefined (MS_UNITS_SHOWALL))
+        if (ConfigurationManager::IsVariableDefined(MS_UNITS_SHOWALL))
 #endif
             table->PopulateFromStandardUnits();
 
-        T_HOST.SetHostObject (key, table);
+        T_HOST.SetHostObject(key, table);
         }
 
-    BeAssert (NULL != table);
+    BeAssert(NULL != table);
     return *table;
     }
 
@@ -899,10 +899,10 @@ UserUnitTable& UserUnitTable::GetTable()
 void UserUnitTable::ResetForTest()
     {
     DgnHost::Key& key = GetHostKey();
-    UserUnitTableP table = static_cast<UserUnitTableP> (T_HOST.GetHostObject (key));
+    UserUnitTableP table = static_cast<UserUnitTableP> (T_HOST.GetHostObject(key));
     if (NULL != table)
         {
-        T_HOST.SetHostObject (key, NULL);
+        T_HOST.SetHostObject(key, NULL);
         delete table;
         }
     }
@@ -913,21 +913,21 @@ void UserUnitTable::ResetForTest()
 void UserUnitTable::PopulateFromStandardUnits()
     {
     m_containsStandardUnits = true;
-    UnitSystem  unitSystem[] = { UnitSystem::Metric, UnitSystem::English, UnitSystem::USSurvey, UnitSystem::Undefined };
-    for (int iSystem = 0; iSystem < _countof (unitSystem); iSystem++)
+    UnitSystem  unitSystem[] = {UnitSystem::Metric, UnitSystem::English, UnitSystem::USSurvey, UnitSystem::Undefined };
+    for (int iSystem = 0; iSystem < _countof(unitSystem); iSystem++)
         {
         UnitIteratorOptions options;
-        options.SetAllowSingleSystem (unitSystem[iSystem]);
+        options.SetAllowSingleSystem(unitSystem[iSystem]);
 
-        StandardUnitCollection collection (options);
+        StandardUnitCollection collection(options);
 
         FOR_EACH (StandardUnitCollection::Entry const& standardUnit, collection)
             {
             UnitDefinition unitDef = standardUnit.GetUnitDef();
-            UserUnitTableEntry  entry (unitDef, (int)standardUnit.GetNumber(),
+            UserUnitTableEntry  entry(unitDef, (int)standardUnit.GetNumber(),
                                     standardUnit.GetName(true).c_str(), standardUnit.GetName(false).c_str(), unitDef.GetLabelCP());
 
-            AddEntry (entry);
+            AddEntry(entry);
             }
         }
     }
@@ -941,26 +941,26 @@ void UserUnitTable::PopulateFromFile()
 
 #if defined (WIP_CFGVAR) // MS_CUSTOMUNITDEF
     WString filename;
-    if (SUCCESS != ConfigurationManager::GetVariable (filename, L"MS_CUSTOMUNITDEF"))
+    if (SUCCESS != ConfigurationManager::GetVariable(filename, L"MS_CUSTOMUNITDEF"))
         return;
 
     BeFileStatus fileOpenStatus;
-    BeTextFilePtr file = BeTextFile::Open (fileOpenStatus, filename.c_str(), TextFileOpenType::Read, TextFileOptions::None);
+    BeTextFilePtr file = BeTextFile::Open(fileOpenStatus, filename.c_str(), TextFileOpenType::Read, TextFileOptions::None);
     if (file.IsNull() || BeFileStatus::Success != fileOpenStatus)
         return;
 
     UnitInfo        unitInfo;
     WString         nameSingular, namePlural, labels;
     int             customUnitIndex = 0;
-    while (SUCCESS == GetNextUserFileUnitDef (unitInfo, nameSingular, namePlural, labels, *file))
+    while (SUCCESS == GetNextUserFileUnitDef(unitInfo, nameSingular, namePlural, labels, *file))
         {
-        UnitDefinition unitDef (unitInfo);
+        UnitDefinition unitDef(unitInfo);
         int unitNumber = unitDef.IsStandardUnit();
         if (StandardUnit::None == unitNumber || StandardUnit::Custom == unitNumber)
             unitNumber = StandardUnit::Custom + 1 + customUnitIndex++;
 
-        UserUnitTableEntry entry (unitDef, unitNumber, nameSingular.c_str(), namePlural.c_str(), labels);
-        AddEntry (entry);
+        UserUnitTableEntry entry(unitDef, unitNumber, nameSingular.c_str(), namePlural.c_str(), labels);
+        AddEntry(entry);
         }
 #endif
     }
@@ -968,23 +968,23 @@ void UserUnitTable::PopulateFromFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserUnitTable::ParseLine (Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const
+bool UserUnitTable::ParseLine(Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const
     {
     static const Utf8Char separator = ';';
     Utf8CP a = input,
-            b = a ? ::strchr (a, separator)   : NULL,
-            c = b ? ::strchr (b+1, separator) : NULL,
-            d = c ? ::strchr (c+1, separator) : NULL,
-            e = d ? ::strchr (d+1, separator) : NULL,
-            f = e ? ::strchr (e+1, separator) : NULL,
-            g = f ? ::strchr (f+1, separator) : NULL;
+            b = a ? ::strchr(a, separator)   : NULL,
+            c = b ? ::strchr(b+1, separator) : NULL,
+            d = c ? ::strchr(c+1, separator) : NULL,
+            e = d ? ::strchr(d+1, separator) : NULL,
+            f = e ? ::strchr(e+1, separator) : NULL,
+            g = f ? ::strchr(f+1, separator) : NULL;
 
     if (NULL == g)
         return false;
 
-    makeStrippedString (labels, a, b-1);
-    makeStrippedString (singularName, b+1, c-1);
-    makeStrippedString (pluralName, c+1, d-1);
+    makeStrippedString(labels, a, b-1);
+    makeStrippedString(singularName, b+1, c-1);
+    makeStrippedString(pluralName, c+1, d-1);
 
     return  1 == BE_STRING_UTILITIES_UTF8_SSCANF (d+1, "%lf", &numerator) &&
             1 == BE_STRING_UTILITIES_UTF8_SSCANF (e+1, "%lf", &denominator) &&
@@ -997,7 +997,7 @@ bool UserUnitTable::ParseLine (Utf8StringR labels, Utf8StringR singularName, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition UserUnitCollection::Entry::GetUnitDef() const
     {
-    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry (m_index);
+    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry(m_index);
     return entry ? entry->m_unitDef : UnitDefinition();
     }
 
@@ -1006,23 +1006,23 @@ UnitDefinition UserUnitCollection::Entry::GetUnitDef() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandardUnit UserUnitCollection::Entry::GetNumber() const
     {
-    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry (m_index);
+    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry(m_index);
     return entry ? (StandardUnit)entry->m_number : StandardUnit::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UserUnitCollection::Entry::GetName (bool singular) const
+Utf8String UserUnitCollection::Entry::GetName(bool singular) const
     {
-    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry (m_index);
+    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry(m_index);
     return entry ? (singular ? entry->m_singularName : entry->m_pluralName) : "";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitCollection::const_iterator::const_iterator (UnitIteratorOptionsCR options) : m_options (&options)
+UserUnitCollection::const_iterator::const_iterator(UnitIteratorOptionsCR options) : m_options(&options)
     {
     UserUnitTableR unitTable = UserUnitTable::GetTable();
     if (m_options->IsOrderAscending())
@@ -1031,14 +1031,14 @@ UserUnitCollection::const_iterator::const_iterator (UnitIteratorOptionsCR option
         m_entry.m_index = unitTable.GetCount() - 1;
 
     // Find the first valid unit
-    if (IndexIsValid (m_entry.m_index) && ! UnitValidForIterator (m_entry.m_index))
+    if (IndexIsValid(m_entry.m_index) && ! UnitValidForIterator(m_entry.m_index))
         ++(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitCollection::const_iterator::const_iterator (bool ascending) : m_options (NULL)
+UserUnitCollection::const_iterator::const_iterator(bool ascending) : m_options(NULL)
     {
     // Create an invalid iterator
     if (ascending)
@@ -1050,20 +1050,20 @@ UserUnitCollection::const_iterator::const_iterator (bool ascending) : m_options 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserUnitCollection::const_iterator::UnitValidForIterator (size_t tableIndex)
+bool UserUnitCollection::const_iterator::UnitValidForIterator(size_t tableIndex)
     {
-    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry (tableIndex);
+    UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry(tableIndex);
     if (NULL == entry)
         return false;
 
     UnitDefinitionCR unit = entry->m_unitDef;
-    if (!m_options->IsBaseAllowed (unit.GetBase()) || !m_options->IsSystemAllowed (unit.GetSystem()))
+    if (!m_options->IsBaseAllowed(unit.GetBase()) || !m_options->IsSystemAllowed(unit.GetSystem()))
         return false;
 
     UnitDefinitionCR compare = m_options->GetCompareUnit();
     if (compare.IsValid())
         {
-        int iComparison = unit.CompareByScale (compare);
+        int iComparison = unit.CompareByScale(compare);
         
         // iComp is reversed: positive if candidate is smaller
         if ((0 > iComparison && !m_options->GetCompareAllowLarger()) ||
@@ -1078,7 +1078,7 @@ bool UserUnitCollection::const_iterator::UnitValidForIterator (size_t tableIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserUnitCollection::IndexIsValid (size_t tableIndex)
+bool UserUnitCollection::IndexIsValid(size_t tableIndex)
     {
     return tableIndex < UserUnitTable::GetTable().GetCount();
     }
@@ -1088,10 +1088,10 @@ bool UserUnitCollection::IndexIsValid (size_t tableIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserUnitCollection::const_iterator& UserUnitCollection::const_iterator::operator ++ ()
     {
-    while (IndexIsValid (m_entry.m_index))
+    while (IndexIsValid(m_entry.m_index))
         {
         m_entry.m_index += m_options->IsOrderAscending() ? 1 : -1;
-        if (!IndexIsValid (m_entry.m_index) || UnitValidForIterator (m_entry.m_index))
+        if (!IndexIsValid(m_entry.m_index) || UnitValidForIterator(m_entry.m_index))
             break;
         }
 
@@ -1109,7 +1109,7 @@ bool UserUnitCollection::const_iterator::operator != (UserUnitCollection::const_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */ UserUnitCollection::UserUnitCollection (UnitIteratorOptionsCR options) : m_options (options)
+/* ctor */ UserUnitCollection::UserUnitCollection(UnitIteratorOptionsCR options) : m_options(options)
     {
     //
     }
@@ -1127,7 +1127,7 @@ UserUnitCollection::Entry UserUnitCollection::const_iterator::operator * () cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserUnitCollection::const_iterator UserUnitCollection::begin() const
     {
-    return const_iterator (m_options);
+    return const_iterator(m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1135,20 +1135,20 @@ UserUnitCollection::const_iterator UserUnitCollection::begin() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserUnitCollection::const_iterator UserUnitCollection::end() const
     {
-    return const_iterator (m_options.IsOrderAscending());
+    return const_iterator(m_options.IsOrderAscending());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetByNumber (int unitNumber, bool alsoStandard)
+UnitDefinition UnitDefinition::GetByNumber(int unitNumber, bool alsoStandard)
     {
     UserUnitTableR unitTable = UserUnitTable::GetTable();
-    UserUnitTableEntryCP entry = unitTable.FindByNumber (unitNumber);
+    UserUnitTableEntryCP entry = unitTable.FindByNumber(unitNumber);
     if (NULL != entry)
         return entry->m_unitDef;
     else if (alsoStandard && !unitTable.ContainsStandardUnits())
-        return UnitDefinition::GetStandardUnit ((StandardUnit)unitNumber);
+        return UnitDefinition::GetStandardUnit((StandardUnit)unitNumber);
     else
         return UnitDefinition();
     }
@@ -1158,28 +1158,28 @@ UnitDefinition UnitDefinition::GetByNumber (int unitNumber, bool alsoStandard)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition UnitDefinition::GetNextLarger() const
     {
-    UnitVisitors::ClosestFinder v (*this, true);
-    UserUnitTableEntryCP found = UserUnitTable::GetTable().VisitUnits (v);
+    UnitVisitors::ClosestFinder v(*this, true);
+    UserUnitTableEntryCP found = UserUnitTable::GetTable().VisitUnits(v);
     return found ? found->m_unitDef : *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetNextSmaller () const
+UnitDefinition UnitDefinition::GetNextSmaller() const
     {
-    UnitVisitors::ClosestFinder v (*this, false);
-    UserUnitTableEntryCP found = UserUnitTable::GetTable().VisitUnits (v);
+    UnitVisitors::ClosestFinder v(*this, false);
+    UserUnitTableEntryCP found = UserUnitTable::GetTable().VisitUnits(v);
     return found ? found->m_unitDef : *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-int UnitDefinition::GetNumber (bool alsoStandard) const
+int UnitDefinition::GetNumber(bool alsoStandard) const
     {
     UserUnitTableR table = UserUnitTable::GetTable();
-    UserUnitTableEntryCP entry = table.FindByScale (*this);
+    UserUnitTableEntryCP entry = table.FindByScale(*this);
     if (NULL != entry)
         return entry->m_number;
     else if (alsoStandard && table.ContainsStandardUnits())
@@ -1191,29 +1191,29 @@ int UnitDefinition::GetNumber (bool alsoStandard) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UnitDefinition::GetName (bool singular, bool alsoStandard) const
+Utf8String UnitDefinition::GetName(bool singular, bool alsoStandard) const
     {
     UserUnitTableR table = UserUnitTable::GetTable();
-    UserUnitTableEntryCP entry = table.FindByScale (*this);
+    UserUnitTableEntryCP entry = table.FindByScale(*this);
     if (NULL != entry)
         return singular ? entry->m_singularName : entry->m_pluralName;
 
     StandardUnit unitNo = (alsoStandard && table.ContainsStandardUnits()) ? IsStandardUnit() : StandardUnit::Custom;
-    return UnitDefinition::GetStandardName (unitNo, singular);
+    return UnitDefinition::GetStandardName(unitNo, singular);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetByName (Utf8CP unitName, bool alsoStandard)
+UnitDefinition UnitDefinition::GetByName(Utf8CP unitName, bool alsoStandard)
     {
     UserUnitTableR table = UserUnitTable::GetTable();
-    UserUnitTableEntryCP entry = table.FindByName (unitName);
+    UserUnitTableEntryCP entry = table.FindByName(unitName);
     if (NULL != entry)
         return entry->m_unitDef;
 
     if (alsoStandard && table.ContainsStandardUnits())
-        return UnitDefinition::GetStandardUnitByName (unitName);
+        return UnitDefinition::GetStandardUnitByName(unitName);
 
     return UnitDefinition();
     }
@@ -1221,16 +1221,16 @@ UnitDefinition UnitDefinition::GetByName (Utf8CP unitName, bool alsoStandard)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetByLabel (Utf8CP label, bool alsoStandard)
+UnitDefinition UnitDefinition::GetByLabel(Utf8CP label, bool alsoStandard)
     {
     UserUnitTableR table = UserUnitTable::GetTable();
-    UserUnitTableEntryCP entry = table.FindByLabel (label);
+    UserUnitTableEntryCP entry = table.FindByLabel(label);
     if (NULL != entry)
         return entry->m_unitDef;
     else if (alsoStandard && table.ContainsStandardUnits())
         {
         UnitIteratorOptions opts;
-        FOR_EACH (StandardUnitCollection::Entry const& standardUnit, StandardUnitCollection (opts))
+        FOR_EACH (StandardUnitCollection::Entry const& standardUnit, StandardUnitCollection(opts))
             {
             UnitDefinition def = standardUnit.GetUnitDef();
             if (def.GetLabel().EqualsI (label))

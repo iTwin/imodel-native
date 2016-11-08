@@ -76,7 +76,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnModels;
     friend struct DgnElement;
     friend struct DgnElements;
-    friend struct QueryModel;
     friend struct dgn_TxnTable::Model;
     friend struct dgn_ModelHandler::Model;
 
@@ -93,21 +92,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         struct Key : NonCopyableClass {};
 
         enum class DropMe {No=0, Yes=1};
-
-        //! Called after DgnModel has been filled.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return DropMe::Yes to be removed from DgnModel
-        virtual DropMe _OnFilled(DgnModelCR model) {return DropMe::No;}
-
-        //! Called when a DgnModel is about to be emptied.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return true to be dropped from model
-        virtual void _OnEmpty(DgnModelCR model) {}
-
-        //! Called after a DgnModel has been emptied.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return DropMe::Yes to be removed from DgnModel
-        virtual DropMe _OnEmptied(DgnModelCR model) {return DropMe::No;}
 
         //! Called when a DgnModel is about to be updated in the DgnDb.
         //! @param[in] model The model to which this AppData is attached
@@ -180,9 +164,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
 private:
     template<class T> void CallAppData(T const& caller) const;
-    void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
-    void ReleaseAllElements();
 
+    void UnloadRangeIndex();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
 
@@ -193,16 +176,11 @@ protected:
     DgnElementId m_modeledElementId;
     bool m_inGuiList;
     bool m_isTemplate;
-    DgnElementMap   m_elements;
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
-    bool m_filled;       // true if the FillModel was called on this DgnModel.
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
-
-    virtual void _SetFilled() {m_filled=true;}
-    virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -239,6 +217,7 @@ protected:
     virtual void _ReadJsonProperties(Json::Value const& value) {}
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
+
     //! Set the properties of this model from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
@@ -271,19 +250,19 @@ protected:
     //! @param[in] element The element that was just loaded.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR element);
+    virtual void _OnLoadedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been inserted into the DgnDb
     //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR element);
+    virtual void _OnInsertedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
     //! @param[in] element The element that was just reinstatted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnReversedDeleteElement(DgnElementCR element);
+    virtual void _OnReversedDeleteElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
@@ -303,40 +282,42 @@ protected:
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
+    virtual void _OnDeletedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been removed by undo
     //! @param[in] element The element that was just deleted by undo.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element);
+    virtual void _OnReversedAddElement(DgnElementCR element) {}
 
     /** @} */
-
-    //! Load all of the DgnElements of this DgnModel into memory.
-    DGNPLATFORM_EXPORT virtual void _FillModel();
-
 
     /** @name Events for a DgnModel */
     /** @{ */
     //! Called when this DgnModel is about to be inserted into the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
+
     //! Called when this DgnModel is about to be updated in the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate();
+
     //! Called when this DgnModel is about to be deleted from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
+
     //! Called after this DgnModel was loaded from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnLoaded();
+
     //! Called after this DgnModel was inserted into the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnInserted();
+
     //! Called after this DgnModel was updated in the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnUpdated();
+
     //! Called after this DgnModel was deleted from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
@@ -409,8 +390,6 @@ protected:
 
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
-    DGNPLATFORM_EXPORT virtual void _EmptyModel();
-    virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() {}
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
@@ -419,29 +398,12 @@ public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
-    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
-    RangeIndex::Tree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
     //! Returns true if this is a 3d model.
     bool Is3d() const {return nullptr != ToGeometricModel3d();}
-
-    DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id); //!< @private
-
-    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, decrementing
-    //! their reference count and potentially freeing them.
-    void EmptyModel() {_EmptyModel();}
-
-    //! Load all elements of this DgnModel.
-    //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
-    //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
-    void FillModel() {_FillModel();}
-
-    //! Determine whether this DgnModel's elements have been "filled" from the DgnDb or not.
-    //! @return true if the DgnModel was filled.
-    //! @see FillModel
-    bool IsFilled() const {return m_filled;}
 
     //! Determine whether this DgnModel is persistent.
     //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
@@ -555,20 +517,6 @@ public:
     //! @see Import
     DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId);
 
-    //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
-    DgnElementMap const& GetElements() const {return m_elements;}
-
-    //! Determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
-    //! or after EmptyModel is called.
-    bool IsEmpty() const {return (begin() == end());}
-
-    typedef DgnElementMap::const_iterator const_iterator;
-
-    //! a const iterator to the start of the loaded elements for this DgnModel.
-    const_iterator begin() const {return m_elements.begin();}
-
-    //! a const iterator to the end of the loaded elements for this DgnModel.
-    const_iterator end() const {return m_elements.end();}
 
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
     //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
@@ -615,6 +563,7 @@ public:
 
     //! Returns the DgnModelId used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() {return DgnModelId((uint64_t)1LL);}
+
 //__PUBLISH_SECTION_END__
     //-------------------------------------------------------------------------------------
     // NOTE: Setting DictionaryId to 16 effectively reserves the IDs below it. 
@@ -635,11 +584,34 @@ public:
     void OnValidate() {_OnValidate();}
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
-    //! @param[in]      request  Request to populate
-    //! @param[in]      opcode   The operation to be performed
+    //! @param[in] request Request to populate
+    //! @param[in] opcode The operation to be performed
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const {return _PopulateRequest(request, opcode);}
+
+    struct ElementIterator : BeSQLite::DbTableIterator
+    {   
+        DgnModelId m_id;
+        ElementIterator(DgnDbCR db, DgnModelId id, Utf8CP where=nullptr) : DbTableIterator((BeSQLite::DbCR) db), m_id(id) {if (where) m_params.SetWhere(where);}
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct ElementIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnElementId GetId() const;
+            DGNPLATFORM_EXPORT Utf8String GetName() const;
+            DGNPLATFORM_EXPORT Utf8String GetUserLabel() const;
+            Entry const& operator* () const {return *this;}
+        };
+
+        typedef Entry const_iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry(nullptr, false);}
+    };
+    ElementIterator MakeIterator(Utf8CP where=nullptr) {return ElementIterator(m_dgndb, GetModelId(), where);}
+
 }; // DgnModel
 
 //=======================================================================================
@@ -696,8 +668,8 @@ public:
             m_roundoffRatio = 0;
             m_formatterBaseDir = 0;
             m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, "m");
-            m_masterUnit = m_subUnit;
+            m_masterUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMeters);
+            m_subUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMillimeters);
             }
 
         void FromJson(Json::Value const& inValue);
@@ -771,20 +743,14 @@ public:
         void SetDisplayInfo(DisplayInfo const& displayInfo) {m_displayInfo = displayInfo;} //!< Set the DisplayInfo
     };
 
-private:
-    mutable RangeIndex::Tree* m_rangeIndex;
+protected:
+    mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     DisplayInfo  m_displayInfo;
 
-    DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
-    void AddToRangeIndex(DgnElementCR);
-    void RemoveFromRangeIndex(DgnElementCR);
-    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+    DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
     
-protected:
-    void ClearRangeIndex();
-
-    virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
-
     //! Add non-element graphics for this DgnModel to the scene.
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add elements that QueryView would normally exclude.
@@ -806,22 +772,27 @@ protected:
 
     virtual void _OnFitView(FitContextR) {}
 
-    DGNPLATFORM_EXPORT virtual RangeIndex::Tree* _GetRangeIndexP(bool create) const override;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
-    DGNPLATFORM_EXPORT virtual void _EmptyModel() override;
-    DGNPLATFORM_EXPORT virtual void _RegisterElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
-    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
-
-    virtual GeometricModelCP _ToGeometricModel() const override final {return this;}
+    virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
+    void _OnLoadedElement(DgnElementCR element) override {T_Super::_OnLoadedElement(element); AddToRangeIndex(element);}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
+    void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
+    void _OnReversedAddElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnReversedAddElement(element);}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
+    void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnReversedUpdateElement(modified, original);}
+    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
 public:
+    DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
+
+    void RemoveRangeIndex() {m_rangeIndex.release();}
+
+    RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
@@ -843,8 +814,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
-    virtual GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
+    GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -858,7 +831,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
@@ -931,7 +906,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
 
 protected:
     RoleModelCP _ToRoleModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit RoleModel(CreateParams const& params) : T_Super(params) { }
 };
 
@@ -946,7 +921,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
 
 protected:
     InformationModelCP _ToInformationModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit InformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -960,7 +935,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
 
@@ -978,7 +953,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DocumentListModel : InformationModel
     friend struct dgn_ModelHandler::DocumentList;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -997,7 +972,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
     friend struct dgn_ModelHandler::GroupInformation;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1013,7 +988,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : InformationModel
 
 protected:
     DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit RepositoryModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1031,9 +1006,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DefinitionModel);
 protected:
-    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
+    DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) {}
 };
@@ -1046,7 +1021,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
 protected:
-    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:

@@ -577,24 +577,24 @@ bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_ScanDgnModel(DgnModelP model)
+StatusInt ViewContext::_ScanDgnModel(GeometricModelR model)
     {
     if (!ValidateScanRange())
         return ERROR;
 
-    m_scanCriteria.SetDgnModel(*model);
+    m_scanCriteria.SetDgnModel(model);
     return m_scanCriteria.Scan();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitDgnModel(DgnModelP modelRef)
+StatusInt ViewContext::_VisitDgnModel(GeometricModelR model)
     {
     if (CheckStop())
         return ERROR;
 
-    return _ScanDgnModel(modelRef);
+    return _ScanDgnModel(model);
     }
 
 /*---------------------------------------------------------------------------------**//**
