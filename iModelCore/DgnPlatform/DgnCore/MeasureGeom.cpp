@@ -985,13 +985,13 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
 
                 for (PK_FACE_t thisFace : faces)
                     {
-                    CurveVectorPtr curve = PSolidUtil::PlanarFaceToCurveVector(face);
+                    CurveVectorPtr curve = PSolidGeom::PlanarFaceToCurveVector(thisFace);
 
                     if (!curve.IsValid())
                         continue;
 
                     curve->TransformInPlace(entityTransform);
-                    builder.AddCurveVector(*curve);
+                    builder.AddCurveVector(*curve, false);
                     }
 
                 return true;
