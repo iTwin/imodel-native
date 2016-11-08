@@ -92,7 +92,7 @@ struct ConstraintECClassIdJoinInfo : NonCopyableClass
         NativeSqlBuilder GetNativeConstraintECClassIdSQL(bool appendAlias) const;
         ~ConstraintECClassIdJoinInfo() {}
         NativeSqlBuilder GetNativeJoinSQL() const;
-        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap);
+        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap, bool ignoreVirtualColumnCheck = false);
         static Ptr Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

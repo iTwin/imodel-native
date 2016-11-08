@@ -777,10 +777,21 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
         viewSql.AppendComma().Append(sourceJoinInfo->GetNativeConstraintECClassIdSQL(true));
     else
         {
-        sqlVisitor.Reset();
-        relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlVisitor);
-        BeAssert(!sqlVisitor.GetResultSet().empty());
-        viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
+        if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetSourceECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
+            {
+            ToSqlPropertyMapVisitor sqlVisitor2(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
+            relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlVisitor2);
+            BeAssert(!sqlVisitor2.GetResultSet().empty());
+            viewSql.AppendComma().Append(sqlVisitor2.GetResultSet().front().GetSqlBuilder());
+            }
+        else
+            {
+            //SourceECClassId = ECClassId, TargetECClassId = ECClassId
+            sqlVisitor.Reset();
+            relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlVisitor);
+            BeAssert(!sqlVisitor.GetResultSet().empty());
+            viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
+            }
         }
 
     //TargetECInstanceid
@@ -795,10 +806,20 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
         viewSql.AppendComma().Append(targetJoinInfo->GetNativeConstraintECClassIdSQL(true));
     else
         {
-        sqlVisitor.Reset();
-        relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlVisitor);
-        BeAssert(!sqlVisitor.GetResultSet().empty());
-        viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
+        if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetTargetECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
+            {
+            ToSqlPropertyMapVisitor sqlVisitor2(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
+            relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlVisitor2);
+            BeAssert(!sqlVisitor2.GetResultSet().empty());
+            viewSql.AppendComma().Append(sqlVisitor2.GetResultSet().front().GetSqlBuilder());
+            }
+        else
+            {
+            sqlVisitor.Reset();
+            relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlVisitor);
+            BeAssert(!sqlVisitor.GetResultSet().empty());
+            viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
+            }
         }
 
     DbTable const* requireJoinTo;
@@ -1064,18 +1085,20 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSQL() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap)
+DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap, bool ignoreVirtualColumnCheck)
     {
     if (!propertyMap.IsMappedToSingleTable())
         return nullptr;
 
     DbTable const* table = propertyMap.GetTables().front();
-    if (table->GetPersistenceType() == PersistenceType::Virtual)
-        return nullptr;
+    if (!ignoreVirtualColumnCheck)
+        if (table->GetPersistenceType() == PersistenceType::Virtual)
+            return nullptr;
 
     SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
-    if (c->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
-        return nullptr;
+    if (!ignoreVirtualColumnCheck)
+        if (c->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+            return nullptr;
 
     if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
         {
