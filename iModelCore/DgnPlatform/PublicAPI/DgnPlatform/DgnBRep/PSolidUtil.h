@@ -124,6 +124,8 @@ DGNPLATFORM_EXPORT static BentleyStatus GetVertexFaces(bvector<PK_FACE_t>& faces
 DGNPLATFORM_EXPORT static BentleyStatus GetVertexEdges(bvector<PK_EDGE_t>& edges, PK_VERTEX_t vertex);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetLoopFins(bvector<PK_FIN_t>& fins, PK_LOOP_t loop);
+DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, PK_EDGE_t edge, PK_FACE_t face);
+DGNPLATFORM_EXPORT static BentleyStatus GetTangentBlendEdges(bvector<PK_EDGE_t>& smoothEdges, PK_EDGE_t edgeTag);
 DGNPLATFORM_EXPORT static BentleyStatus GetCurveOfEdge(PK_CURVE_t& curveTagOut, double* startParamP, double* endParamP, bool* reversedP, PK_EDGE_t edgeTagIn);
 
 }; // PSolidTopo
@@ -236,7 +238,8 @@ DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<Polyfac
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(PK_BODY_t entityTag);
 DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(PK_BODY_t entityTag);
-DGNPLATFORM_EXPORT static bool IsSmoothEdge(PK_ENTITY_t edgeTag);
+DGNPLATFORM_EXPORT static bool IsSmoothEdge(PK_EDGE_t edgeTag);
+DGNPLATFORM_EXPORT static bool IsPlanarFace(PK_FACE_t faceTag);
  
 DGNPLATFORM_EXPORT static BentleyStatus GetPlanarFaceData (DPoint3dP point, DVec3dP normal, PK_FACE_t entityTag);
 DGNPLATFORM_EXPORT static BentleyStatus EvaluateFace(DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam, PK_FACE_t faceTag);
