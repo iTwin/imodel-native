@@ -162,7 +162,8 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
                 return MappingStatus::Error;
         }
 
-    return MappingStatus::Success;
+    // WIP_MERGE_Krischan
+    // return MappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------
