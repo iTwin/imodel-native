@@ -448,22 +448,6 @@ bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& pol
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-    BeAssert(nullptr != shape);
-    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform)
@@ -716,6 +700,108 @@ BentleyStatus BRepUtil::GetVertexEdges(bvector<ISubEntityPtr>& subEntities, ISub
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetTangentBlendEdges(bvector <ISubEntityPtr>& smoothEdges, ISubEntityCR edge)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag;
+
+    if (0 == (edgeTag = PSolidSubEntity::GetSubEntityTag(edge)))
+        return ERROR;
+
+    bvector<PK_EDGE_t> edges;
+
+    if (SUCCESS != PSolidTopo::GetTangentBlendEdges(edges, edgeTag))
+        return ERROR;
+    
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(edge);
+
+    for (PK_EDGE_t smoothEdge : edges)
+        smoothEdges.push_back(PSolidSubEntity::CreateSubEntity(smoothEdge, entityTransform));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, ISubEntityCR edge, ISubEntityCR face)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag;
+    PK_FACE_t   faceTag;
+
+    if (0 == (edgeTag = PSolidSubEntity::GetSubEntityTag(edge)) || 0 == (faceTag = PSolidSubEntity::GetSubEntityTag(face)))
+        return ERROR;
+
+    bvector<PK_EDGE_t> edges;
+
+    if (SUCCESS != PSolidTopo::GetLoopEdgesFromEdge(edges, edgeTag, faceTag))
+        return ERROR;
+    
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
+
+    for (PK_EDGE_t loopEdge : edges)
+        loopEdges.push_back(PSolidSubEntity::CreateSubEntity(loopEdge, entityTransform));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetFaceParameterRange(ISubEntityCR subEntity, DRange1dR uRange, DRange1dR vRange)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == faceTag)
+        return ERROR;
+
+    PK_UVBOX_t  uvBox;
+
+    if (SUCCESS != PK_FACE_find_uvbox(faceTag, &uvBox))
+        return ERROR;
+
+    uRange = DRange1d::From(uvBox.param[0], uvBox.param[2]);
+    vRange = DRange1d::From(uvBox.param[1], uvBox.param[3]);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetEdgeParameterRange(ISubEntityCR subEntity, DRange1dR uRange)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   edgeTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    if (PK_ENTITY_null == edgeTag)
+        return ERROR;
+
+    PK_CURVE_t  curveTag;
+
+    if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, &uRange.low, &uRange.high, nullptr, edgeTag))
+        return ERROR;
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::EvaluateFace(ISubEntityCR subEntity, DPoint3dR point, DVec3dR normal, DVec3dR uDir, DVec3dR vDir, DPoint2dCR uvParam)
@@ -781,6 +867,58 @@ BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
     return SUCCESS;
 #else
     return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasOnlyPlanarFaces(PSolidUtil::GetEntityTag(entity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsPlanarFace(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::IsPlanarFace(PSolidSubEntity::GetSubEntityTag(subEntity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsSmoothEdge(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::IsSmoothEdge(PSolidSubEntity::GetSubEntityTag(subEntity));
+#else
+    return false;
 #endif
     }
 
