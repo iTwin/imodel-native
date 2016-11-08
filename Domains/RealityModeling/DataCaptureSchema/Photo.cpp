@@ -133,13 +133,11 @@ void                PoseType::SetRotation(RotationMatrixTypeCR val) { m_rotation
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECSqlStatus PoseType::BindParameter(IECSqlStructBinder& binder, PoseTypeCR val)
     {
-#ifdef WIP_MERGE_Donald
     if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
         ECSqlStatus::Success != RotationMatrixType::BindParameter(binder.GetMember(Photo_PROPNAME_Pose_Rotation).BindStruct(), val.GetRotation()))
         {
         return ECSqlStatus::Error;
         }
-#endif
     return ECSqlStatus::Success;
     }
 
@@ -158,9 +156,7 @@ PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
 
         if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Center, memberName))
             {
-#ifdef WIP_MERGE_Donald
             pose.SetCenter(memberValue.GetPoint3D());
-#endif
             }
         else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation, memberName))
             {
@@ -179,14 +175,12 @@ PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MERGE_Donald
 void PhotoHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(Photo_PROPNAME_PhotoId);
     params.Add(Photo_PROPNAME_Pose);
     }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -273,7 +267,6 @@ DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MERGE_Donald
 DgnDbStatus Photo::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
@@ -292,7 +285,6 @@ DgnDbStatus Photo::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
         return stat;
     return T_Super::_BindUpdateParams(statement);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016

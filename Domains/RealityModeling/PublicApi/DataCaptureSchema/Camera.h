@@ -176,7 +176,6 @@ protected:
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
-#ifdef WIP_MERGE_Donald
     //! Called to bind the parameters when inserting a new Activity into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
@@ -187,7 +186,6 @@ protected:
     //! @note If the update fails, the original data will be copied back into this Activity.
     //! @note If you override this method, you @em must call T_Super::_BindUpdateParams, forwarding its status.
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
-#endif
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
@@ -239,9 +237,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraHandler : Dgn::dgn_ElementHandler::Geometri
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Camera, Camera, CameraHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
-#ifdef WIP_MERGE_Donald
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
-#endif
 };
 
 END_BENTLEY_DATACAPTURE_NAMESPACE

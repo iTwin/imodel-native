@@ -135,7 +135,6 @@ CameraDistortionType CameraDistortionType::GetValue(BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MERGE_Donald
 void CameraHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
@@ -146,7 +145,6 @@ void CameraHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     params.Add(CAMERA_PROPNAME_AspectRatio);
     params.Add(CAMERA_PROPNAME_Skew);
     }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,7 +182,6 @@ void                    Camera::SetSkew(double val) { m_skew = val; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
-#ifdef WIP_MERGE_Donald
     if (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_FocalLenghtPixels), GetFocalLenghtPixels()) ||
         ECSqlStatus::Success != ImageDimensionType::BindParameter(statement, statement.GetParameterIndex(CAMERA_PROPNAME_ImageDimension),GetImageDimension()) ||
         ECSqlStatus::Success != statement.BindPoint2D(statement.GetParameterIndex(CAMERA_PROPNAME_PrincipalPoint), GetPrincipalPoint()) ||
@@ -194,11 +191,9 @@ DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
         {
         return DgnDbStatus::BadArg;
         }
-#endif
     return DgnDbStatus::Success;
     }
 
-#ifdef WIP_MERGE_Donald
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -220,7 +215,6 @@ DgnDbStatus Camera::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
         return stat;
     return T_Super::_BindUpdateParams(statement);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -233,9 +227,7 @@ DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams con
         //read camera properties
         SetFocalLenghtPixels (stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_FocalLenghtPixels)));
         SetImageDimension(ImageDimensionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_ImageDimension)));
-#ifdef WIP_MERGE_Donald
         SetPrincipalPoint(stmt.GetValuePoint2D(params.GetSelectIndex(CAMERA_PROPNAME_PrincipalPoint))); 
-#endif
         SetDistortion(CameraDistortionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_Distortion)));
         SetAspectRatio(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_AspectRatio)));
         SetSkew(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_Skew)));

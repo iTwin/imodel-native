@@ -185,10 +185,8 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     createDgnDbParams.SetOverwriteExisting(true);
 //     createDgnDbParams.SetRootSubjectLabel("DataCaptureProject");
 //     createDgnDbParams.SetRootSubjectDescription("Created by DataCaptureProjectHost");
-#ifdef WIP_MERGE_Donald
     createDgnDbParams.SetProjectName("DataCaptureProject");
     createDgnDbParams.SetProjectDescription("Created by DataCaptureProjectHost");
-#endif
 //     createDgnDbParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
     DbResult createStatus;
@@ -204,13 +202,11 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     projectPtr->Schemas().CreateECClassViewsInDb();
 
     auto& spatialModelHandlerR = dgn_ModelHandler::Spatial::GetHandler();
-#ifdef WIP_MERGE_Donald
     auto spatialModelPtr = spatialModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(spatialModelHandlerR),
                                                                               DgnModel::CreateModelCode("Test Spatial Model")));
 
     if (DgnDbStatus::Success != spatialModelPtr->Insert())
         return nullptr;
-#endif
 
     return projectPtr;
     }

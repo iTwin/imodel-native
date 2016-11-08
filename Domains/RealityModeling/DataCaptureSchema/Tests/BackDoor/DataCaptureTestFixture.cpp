@@ -154,9 +154,7 @@ void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCamera(Dgn::DgnDbR dgn
 
     // Create Camera
     auto cameraPtr = Camera::Create(*spatialModelP);
-#ifdef WIP_MERGE_Donald
     cameraPtr->SetLabel(cameraLable);
-#endif
     cameraPtr->SetFocalLenghtPixels(4798.35);
     ImageDimensionType imgDimension(5456, 3632);
     cameraPtr->SetImageDimension(imgDimension);
@@ -178,9 +176,7 @@ void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCamera(Dgn::DgnDbR dgn
 
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
-#ifdef WIP_MERGE_Donald
         PhotoPtr->SetLabel(photoLabel.c_str());
-#endif
         RotationMatrixType rotation(RotationMatrixType::FromIdentity());
         DPoint3d center = { 1.0,2.0,3.0 };
         PoseType pose(center, rotation);
