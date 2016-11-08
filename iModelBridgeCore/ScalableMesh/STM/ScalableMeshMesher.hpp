@@ -61,7 +61,6 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
-    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
     if (pointsPtr->size() > 4)
@@ -425,14 +424,14 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 stats.close();
 #endif
 #if 0//SM_OUTPUT_MESHES_STITCHING
-                if (node->GetBlockID().m_integerID == 2702)
-                    {
+               /* if (node->GetBlockID().m_integerID == 2702)
+                    {*/
                     WString nameBefore = LOG_PATH_STR_W + L"postmeshmesh_";
                     LOGSTRING_NODE_INFO_W(node, nameBefore)
                         nameBefore.append(L".m");
                     auto indPtr = node->GetPtsIndicePtr();
-                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &(*indPtr)[0]);
-                    }
+                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &faceIndexes[0]);
+                  //  }
 #endif
                 isMeshingDone = true;
                 if (node->GetPointsPtr()->size() > 10 && node->GetPtsIndicePtr()->size() == 0)
