@@ -468,7 +468,7 @@ RelationshipClassEndTableMap const& classMap
 )
     {
     ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
-    if (ecClassIdPropertyMap->IsMappedToSingleTable())
+    if (!ecClassIdPropertyMap->IsMappedToSingleTable())
         {
         BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
         return;
