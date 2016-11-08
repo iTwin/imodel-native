@@ -8,6 +8,8 @@
 #include <DgnPlatformInternal.h>
 #if defined (BENTLEYCONFIG_OPENCASCADE) 
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#elif defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -626,6 +628,31 @@ bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isF
         }
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static double getBRepTolerance (IBRepEntityCR entity, IFacetOptionsPtr& facetOptions)
+    {
+    double defaultTolerance = 1.0; // 0.99 accuracy. Avoids making the property dialog too slow when bspline surfaces are involved...
+    double requestedTolerance = 0.0;
+
+    if (facetOptions.IsValid())
+        {
+        requestedTolerance = facetOptions->GetChordTolerance();
+
+        if (requestedTolerance > 0.0)
+            {
+            Transform   invTrans;        
+
+            invTrans.InverseOf(entity.GetEntityTransform());
+            invTrans.ScaleDoubleArrayByXColumnMagnitude(&requestedTolerance, 1);
+            }
+        }
+
+    return (requestedTolerance > 0.0 && requestedTolerance < defaultTolerance) ? requestedTolerance : defaultTolerance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -670,6 +697,52 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double& iYZ, double inertia[3][3])
+    {
+    /* Moment conventions - EDL Dec. 17, 2002
+
+        - Solid kernel returns moments relative to centroid. These are returned directly from the arguments of mass properties api.
+
+        - The returned 3x3 matrix is a proper tensor --
+
+            If II is the (global) for coordinate system whose axes are columns of Q, the local tensor in the rotated system is Q * II * Q^T
+
+        - The formulaic matrix with these properties is structured thus:
+
+            [yy+zz  -xy   -xz ]
+            [ -xy  xx+zz  -yz ]
+            [ -xz   -yz  xx+yy] (Note the negatives!!!)
+
+        - Convention elsewhere in Microstation is for the 3x3 matrix to have positive formulas in the off-diagonal products, thus
+
+            [yy+zz   xy    xz ]
+            [  xy  xx+zz   yz ]
+            [  xz    yz  xx+yy]
+
+        THEREFORE the inertia tensor must have off-diagonals negated here.
+    */
+
+    // Turn the offdiagonals into PRODUCTS instead of MOMENTS
+    inertia[0][1] *= -1.0;
+    inertia[0][2] *= -1.0;
+    inertia[1][0] *= -1.0;
+    inertia[1][2] *= -1.0;
+    inertia[2][0] *= -1.0;
+    inertia[2][1] *= -1.0;
+
+    iXY = inertia[0][1];
+    iXZ = inertia[0][2];
+    iYZ = inertia[1][2];
+
+    moments.x = inertia[0][0];
+    moments.y = inertia[1][1];
+    moments.z = inertia[2][2];
+    }
+#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -687,7 +760,32 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
         return true;
         }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
+
+    if (!entityPtr.IsValid())
+        return true;
+
+    Transform   outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
+
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
+
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
+
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
+        }
+
+    return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -711,18 +809,11 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
-#else
-    double      amount = 0;
-    DPoint3d    centroid = DPoint3d::FromZero();
-    RotMatrix   inertia = RotMatrix::FromIdentity();
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
-#endif
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,10 +823,35 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform, graphic))
+    if (GetPreFlattenTransform(flattenTransform, graphic))
         return false; // Facet and flatten...
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
+
+    if (!entityPtr.IsValid())
+        return true;
+
+    Transform   outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
+
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
+
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
+
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateAreaSums(amount, periphery, centroid, moments, iXY, iXZ, iYZ);
+        }
+
+    return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -765,9 +881,11 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
-#endif
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,7 +893,32 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
+
+    if (!entityPtr.IsValid())
+        return true;
+
+    Transform   outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
+
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
+
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
+
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
+        }
+
+    return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE) 
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -805,9 +948,11 @@ bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGr
 
     getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
     AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
-#endif
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,6 +960,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
     switch (m_opType)
         {
         case AccumulateLengths:
@@ -825,12 +971,94 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                 }
             else if (IBRepEntity::EntityType::Sheet == entity.GetEntityType ())
                 {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
+                if (!BRepUtil::HasOnlyPlanarFaces(entity))
+                    return true; // Not valid type for operation...
+
+                bvector<PK_FACE_t> faces;
+
+                // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
+                if (SUCCESS != PSolidTopo::GetBodyFaces(faces, PSolidUtil::GetEntityTag(entity)))
+                    return true;
+
+                Transform entityTransform = entity.GetEntityTransform();
+                GraphicBuilder builder(graphic);
+
+                for (PK_FACE_t thisFace : faces)
+                    {
+                    CurveVectorPtr curve = PSolidUtil::PlanarFaceToCurveVector(face);
+
+                    if (!curve.IsValid())
+                        continue;
+
+                    curve->TransformInPlace(entityTransform);
+                    builder.AddCurveVector(*curve)''
+                    }
+
+                return true;
+                }
+
+            return DoAccumulateLengths (entity, graphic);
+            }
+
+        case AccumulateVolumes:
+            {
+            if (IBRepEntity::EntityType::Solid != entity.GetEntityType ())
+                return true; // Not valid type for operation...
+
+            return DoAccumulateVolumes (entity, graphic);
+            }
+
+        default:
+            {
+            if (IBRepEntity::EntityType::Wire == entity.GetEntityType ())
+                {
+                return true; // Not valid type for operation...
+                }
+            else if (IBRepEntity::EntityType::Solid == entity.GetEntityType ())
+                {
+                // Output as sheet body in order to get area and perimeter...
+                IBRepEntityPtr copyEntity = entity.Clone();
+
+                if (!copyEntity.IsValid())
+                    return true;
+
+                bvector<IBRepEntityPtr> bodies;
+
+                // NOTE: PK_REGION_make_void changes a disjoint body to general instead of sheet...
+                if (SUCCESS != BRepUtil::Modify::DisjoinBody(bodies, *copyEntity))
+                    return true;
+
+                GraphicBuilder builder(graphic);
+
+                for (IBRepEntityPtr thisEntity : bodies)
+                    {
+                    if (SUCCESS != PSolidUtil::ConvertSolidBodyToSheet(PSolidUtil::GetEntityTag(*thisEntity)))
+                        continue;
+
+                    builder.AddBody(*thisEntity);
+                    }
+
+                return true;
+                }
+
+            return DoAccumulateAreas (entity, graphic);
+            }
+        }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    switch (m_opType)
+        {
+        case AccumulateLengths:
+            {
+            if (IBRepEntity::EntityType::Solid == entity.GetEntityType ())
+                {
+                return true; // Not valid type for operation...
+                }
+            else if (IBRepEntity::EntityType::Sheet == entity.GetEntityType ())
+                {
                 TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
                 if (nullptr == shape || OCBRep::HasCurvedFaceOrEdge(*shape))
                     return true; // Not valid type for operation...
-#endif
                 }
 
             return DoAccumulateLengths (entity, graphic);
@@ -852,9 +1080,9 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
             return DoAccumulateAreas (entity, graphic);
             }
         }
-
-    // WIP_MERGE_Brien
-    // return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
