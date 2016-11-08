@@ -46,7 +46,7 @@
         <SubPart PartName="GLEW"            PartFile="opengl"           Repository="libsrc-opengl" LibType="Static"/>
     </Part>
 
-    <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="G06">
+    <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="B02">
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"           Repository="Bentley" />
