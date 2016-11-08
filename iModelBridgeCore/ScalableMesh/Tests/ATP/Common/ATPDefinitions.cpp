@@ -328,13 +328,16 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
                                 
-    clock_t t = clock();            
+    clock_t t = clock();
+	#if 0
+	// NEEDS_WORK_SM: make this compile    
     IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(scalableMeshPtr));        
     
     StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed();                    
-
+    
     if (statusGround != SUCCESS)
         return;
+	#endif
     
     
     t = clock() - t;
