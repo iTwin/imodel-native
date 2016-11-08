@@ -78,13 +78,26 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
                 return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
             case ECSqlTypeInfo::Kind::Struct:
-                return std::unique_ptr<ECSqlBinder>(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
+            {
+            std::unique_ptr<StructToColumnsECSqlBinder> structBinder(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
+            if (SUCCESS != structBinder->Initialize())
+                return nullptr;
+
+            return std::move(structBinder);
+            }
+
             case ECSqlTypeInfo::Kind::PrimitiveArray:
                 return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
                 return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::Navigation:
-                return std::unique_ptr<ECSqlBinder>(new NavigationPropertyECSqlBinder(ecsqlStatement, typeInfo));
+            {
+            std::unique_ptr<NavigationPropertyECSqlBinder> navPropBinder(new NavigationPropertyECSqlBinder(ecsqlStatement, typeInfo));
+            if (SUCCESS != navPropBinder->Initialize())
+                return nullptr;
+
+            return std::move(navPropBinder);
+            }
 
             default:
                 BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");

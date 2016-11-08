@@ -16,15 +16,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
     : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder()
-    {
-    Initialize();
-    }
+    {}
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void StructToColumnsECSqlBinder::Initialize()
+BentleyStatus StructToColumnsECSqlBinder::Initialize()
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
@@ -33,7 +31,10 @@ void StructToColumnsECSqlBinder::Initialize()
     int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
         {
-        auto binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *memberPropMap);
+        std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *memberPropMap);
+        if (binder == nullptr)
+            return ERROR;
+
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount();
 
         auto binderP = binder.get(); //cache raw pointer as it is needed after the unique_ptr has been moved into the collection
@@ -49,6 +50,7 @@ void StructToColumnsECSqlBinder::Initialize()
         }
 
     SetMappedSqlParameterCount(totalMappedSqliteParameterCount);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

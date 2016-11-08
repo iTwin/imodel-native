@@ -73,6 +73,7 @@
 #include "ECSql/PointMappedToColumnsECSqlField.h"
 #include "ECSql/StructMappedToColumnsECSqlField.h"
 #include "ECSql/StructArrayJsonECSqlField.h"
+#include "ECSql/NavigationPropertyECSqlField.h"
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"

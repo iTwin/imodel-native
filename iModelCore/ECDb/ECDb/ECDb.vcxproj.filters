@@ -402,6 +402,9 @@
     <ClInclude Include="ECSql\IdECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\NavigationPropertyECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -734,6 +737,9 @@
     </ClCompile>
     <ClCompile Include="ECSql\IdECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\NavigationPropertyECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

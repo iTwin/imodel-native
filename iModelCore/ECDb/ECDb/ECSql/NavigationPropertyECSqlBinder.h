@@ -17,9 +17,14 @@ struct IdECSqlBinder;
 //+===============+===============+===============+===============+===============+======
 struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
     {
+    friend struct ECSqlBinderFactory;
+
     private:
         std::unique_ptr<IdECSqlBinder> m_idBinder;
         std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder;
+
+        NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
+        BentleyStatus Initialize();
 
         virtual ECSqlStatus _OnBeforeStep() override;
         virtual void _OnClearBindings() override;
@@ -35,10 +40,7 @@ struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         virtual IECSqlStructBinder& _BindStruct() override { return *this; }
         virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
-        void Initialize();
     public:
-        NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
-
         ~NavigationPropertyECSqlBinder() {}
     };
 

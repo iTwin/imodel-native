@@ -15,6 +15,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
     {
+    friend struct ECSqlBinderFactory;
+
     private:
         //=======================================================================================
         //! @bsiclass                                                Krischan.Eberle      03/2014
@@ -40,6 +42,9 @@ struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlBinder>> m_memberBinders;
         std::vector<MemberBinderInfo> m_ecsqlComponentIndexToMemberBinderMapping;
 
+        StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
+        BentleyStatus Initialize();
+
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
         virtual void _OnClearBindings() override;
@@ -53,10 +58,7 @@ struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         virtual IECSqlStructBinder& _BindStruct() override { return *this; }
         virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
-        void Initialize();
     public:
-        StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
-
         ~StructToColumnsECSqlBinder() {}
     };
 

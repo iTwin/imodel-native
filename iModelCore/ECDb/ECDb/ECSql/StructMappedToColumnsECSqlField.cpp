@@ -9,35 +9,18 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//************* StructMappedToColumnsECSqlField *****************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo)
-    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false)
-    {}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
 bool StructMappedToColumnsECSqlField::_IsNull() const
     {
-    for (auto& field : m_structFields)
+    for (std::unique_ptr<ECSqlField> const& field : m_structFields)
         {
         if (!field->IsNull())
             return false;
         }
+
     return true;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct() const
-    {
-    return *this;
     }
 
 //---------------------------------------------------------------------------------------
@@ -65,27 +48,15 @@ IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray() const
 //---------------------------------------------------------------------------------------
 IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue(int columnIndex) const
     {
-    if (!CanRead(columnIndex))
+    if (columnIndex < 0 && columnIndex >= _GetMemberCount())
+        {
+        Utf8String errorMessage;
+        errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
+        ReportError(ECSqlStatus::Error, errorMessage.c_str());
         return NoopECSqlValue::GetSingleton().GetValue(columnIndex);
+        }
 
     return *m_structFields.at(columnIndex);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-int StructMappedToColumnsECSqlField::_GetMemberCount() const
-    {
-    return static_cast<int>(m_structFields.size());
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren() const
-    {
-    return m_structFields;
     }
 
 //---------------------------------------------------------------------------------------
@@ -93,7 +64,11 @@ ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren() con
 //---------------------------------------------------------------------------------------
 void StructMappedToColumnsECSqlField::AppendField(std::unique_ptr<ECSqlField> field)
     {
-    PRECONDITION(field != nullptr, );
+    if (field == nullptr)
+        {
+        BeAssert(false);
+        return;
+        }
 
     if (field->RequiresOnAfterStep())
         m_requiresOnAfterStep = true;
@@ -102,23 +77,7 @@ void StructMappedToColumnsECSqlField::AppendField(std::unique_ptr<ECSqlField> fi
         m_requiresOnAfterReset = true;
 
     m_structFields.push_back(move(field));
-
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-bool StructMappedToColumnsECSqlField::CanRead(int columnindex) const
-    {
-    const bool canRead = columnindex >= 0 && columnindex < _GetMemberCount();
-    if (!canRead)
-        {
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnindex);
-        ReportError(ECSqlStatus::Error, errorMessage.c_str());
-        }
-
-    return canRead;
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

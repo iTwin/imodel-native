@@ -17,22 +17,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
     : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
-    {
-    Initialize();
-    }
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-void NavigationPropertyECSqlBinder::Initialize()
+BentleyStatus NavigationPropertyECSqlBinder::Initialize()
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Navigation);
+    if (typeInfo.GetPropertyMap() == nullptr || typeInfo.GetPropertyMap()->GetType() != PropertyMap::Type::Navigation)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     NavigationPropertyMap const* navPropMap = static_cast<NavigationPropertyMap const*> (typeInfo.GetPropertyMap());
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
     m_idBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navIdPropMap, ECSqlSystemPropertyKind::NavigationId);
+    if (m_idBinder == nullptr)
+        return ERROR;
 
     int mappedSqliteParameterCount = m_idBinder->GetMappedSqlParameterCount();
     BeAssert(mappedSqliteParameterCount == 1);
@@ -40,11 +45,14 @@ void NavigationPropertyECSqlBinder::Initialize()
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap->GetRelECClassIdPropertyMap();
     m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(GetECSqlStatementR(), navRelClassIdPropMap, ECSqlSystemPropertyKind::NavigationRelECClassId);
+    if (m_relECClassIdBinder == nullptr)
+        return ERROR;
 
     mappedSqliteParameterCount = m_relECClassIdBinder->GetMappedSqlParameterCount();
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
 
     SetMappedSqlParameterCount(totalMappedSqliteParameterCount);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -52,21 +60,21 @@ void NavigationPropertyECSqlBinder::Initialize()
 //---------------------------------------------------------------------------------------
 void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex)
     {
-    if (ecsqlParameterComponentIndex == 0)
+    switch (ecsqlParameterComponentIndex)
         {
-        m_idBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
-        return;
-        }
+            case 0:
+                m_idBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
+                return;
 
-    if (ecsqlParameterComponentIndex == 1)
-        {
-        m_relECClassIdBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
-        return;
-        }
+            case 1:
+                m_relECClassIdBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
+                return;
 
-    BeAssert(false);
+            default:
+                BeAssert(false);
+                return;
+        }
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016

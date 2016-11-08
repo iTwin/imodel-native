@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
-#include "IECSqlPrimitiveValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -16,26 +15,26 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct StructMappedToColumnsECSqlField : public ECSqlField, public IECSqlStructValue
     {
-private:
-    std::vector<std::unique_ptr<ECSqlField>> m_structFields;
+    friend struct ECSqlFieldFactory;
 
-    virtual bool _IsNull () const override;
-    virtual IECSqlPrimitiveValue const& _GetPrimitive () const override;
-    virtual IECSqlStructValue const& _GetStruct () const override;
-    virtual IECSqlArrayValue const& _GetArray () const override;
+    private:
+        std::vector<std::unique_ptr<ECSqlField>> m_structFields;
 
-    virtual int _GetMemberCount () const override;
-    virtual IECSqlValue const& _GetValue (int columnIndex) const override;
+        StructMappedToColumnsECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+        //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
+        //Otherwise the flags m_needsInit and m_needsReset might become wrong
+        void AppendField(std::unique_ptr<ECSqlField> field);
 
-    bool CanRead (int columnIndex) const;
-public:
-    StructMappedToColumnsECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&);
+        virtual bool _IsNull() const override;
+        virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
+        virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
+        virtual IECSqlArrayValue const& _GetArray() const override;
 
-    //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
-    //Otherwise the flags m_needsInit and m_needsReset might become wrong
-    void AppendField (std::unique_ptr<ECSqlField> field);
+        virtual int _GetMemberCount() const override { return static_cast<int>(m_structFields.size()); }
+        virtual IECSqlValue const& _GetValue(int columnIndex) const override;
 
-    virtual Collection const& GetChildren () const override;
+    public:
+        virtual Collection const& GetChildren() const override { return m_structFields; }
     };
 
 

@@ -111,6 +111,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.h \
                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.h \
                 $(baseDir)ECSql/StructArrayJsonECSqlField.h \
+                $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
@@ -338,6 +339,8 @@ $(o)PointMappedToColumnsECSqlField$(oext):                    $(baseDir)ECSql/Po
 $(o)StructMappedToColumnsECSqlField$(oext):                   $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructArrayJsonECSqlField$(oext):                         $(baseDir)ECSql/StructArrayJsonECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
