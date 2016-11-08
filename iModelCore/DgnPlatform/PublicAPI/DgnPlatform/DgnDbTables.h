@@ -58,6 +58,7 @@
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_LineStyle                 "LineStyle"
+#define BIS_CLASS_LinkAuthority             "LinkAuthority"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
 #define BIS_CLASS_Model                     "Model"

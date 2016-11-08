@@ -2602,6 +2602,10 @@ protected:
 public:
     //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
     DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+    //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    //! @param[in] parentSubject The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}

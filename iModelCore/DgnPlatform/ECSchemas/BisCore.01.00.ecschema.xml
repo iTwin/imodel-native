@@ -158,6 +158,12 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="LinkAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>

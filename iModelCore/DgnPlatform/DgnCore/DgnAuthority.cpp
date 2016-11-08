@@ -346,7 +346,7 @@ struct SystemAuthority
         Category = 3LL,
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
-        // 6LL is available
+        Link = 6LL,
         Partition = 7LL,
         Session = 8LL,
 
@@ -411,6 +411,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
             { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
+            { "DgnLinks", SystemAuthority::Link, dgn_AuthorityHandler::Link::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -481,6 +482,9 @@ DgnAuthorityId MaterialAuthority::GetMaterialAuthorityId() { return SystemAuthor
 DgnAuthorityId CategoryAuthority::GetCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Category); }
 DgnAuthorityId GeometryPartAuthority::GetGeometryPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeometryPart); }
 DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuthority::GetId(SystemAuthority::TrueColor); }
+DgnAuthorityId LinkAuthority::GetLinkAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Link); }
+DgnAuthorityId PartitionAuthority::GetPartitionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Partition); }
+DgnAuthorityId SessionAuthority::GetSessionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Session); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -513,6 +517,14 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
     {
     // unnamed textures are supported.
     return name.empty() ? DgnCode::CreateEmpty() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_Texture);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode LinkAuthority::CreateLinkCode(Utf8StringCR codeValue, DgnElementId scopeId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Link, codeValue, scopeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
