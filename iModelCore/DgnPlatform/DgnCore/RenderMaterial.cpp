@@ -359,6 +359,7 @@ BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>
 #endif
         }
        
-    return ERROR;
+    // WIP_MERGE_Ray
+    // return ERROR;
     }
 
