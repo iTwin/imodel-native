@@ -25,7 +25,7 @@ struct ECSqlBinderFactory
         ECSqlBinderFactory();
         ~ECSqlBinderFactory();
 
-
+        static bool RequiresNoopBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyKind);
     public:
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext&, ECSqlTypeInfo const& typeInfo);
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext&, ParameterExp const& parameterExp);

@@ -116,53 +116,56 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
         return nullptr;
         }
 
-    bool isNoopBinder = false;
-
-    //noop binder is only needed for INSERT as in that case we don't translate the parameter into a native SQL token.
-    //The ECSQL user however might still bind to the ECSQL parameter which then is a no-op.
-    if (ctx.GetCurrentScope().GetECSqlType() != ECSqlType::Insert)
-        return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx.GetECSqlStatementR(), ECSqlTypeInfo(propMap), isNoopBinder));
-
-    BeAssert(ctx.GetCurrentScope().IsRootScope() && "Nested ECSQL INSERT is not expected to be supported by this code.");
-    if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && sysPropertyKind == ECSqlSystemPropertyKind::ECInstanceId)
-        {
-        //for end table relationships we ignore the user provided ECInstanceId
-        //as end table relationships don't have their own ECInstanceId
-        isNoopBinder = true;
-        }
-    else
-        {
-        switch (propMap.GetType())
-            {
-                case PropertyMap::Type::ConstraintECClassId:
-                {
-                //WIP_TABLECONTEXT
-                ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
-                DbTable const* contextTable = ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/);
-                if (contextTable == nullptr)
-                    {
-                    BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-                    contextTable = &propMap.GetClassMap().GetJoinedTable();
-                    }
-
-                isNoopBinder = constraintClassIdPropMap.IsVirtual(*contextTable);
-                break;
-                }
-                case PropertyMap::Type::ECClassId:
-                    //WIP_TABLECONTEXT
-                    isNoopBinder = static_cast<ECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
-                    break;
-                case PropertyMap::Type::NavigationRelECClassId:
-                    isNoopBinder = static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap).IsVirtual();
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
+    const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyKind);
     return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx.GetECSqlStatementR(), ECSqlTypeInfo(propMap), isNoopBinder));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
+    {
+    //noop binder is only needed for INSERT as in that case we don't translate the parameter into a native SQL token.
+    //The ECSQL user however might still bind to the ECSQL parameter which then is a no-op.
+    if (ctx.GetCurrentScope().GetECSqlType() != ECSqlType::Insert)
+        return false;
 
+    BeAssert(ctx.GetCurrentScope().IsRootScope() && "Nested ECSQL INSERT is not expected to be supported by this code.");
+
+    BeAssert(sysPropertyKind != ECSqlSystemPropertyKind::ECClassId && "Inserting into ECClassId is not supported and should have been caught before");
+
+    if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        //for end table relationships we ignore 
+        //* the user provided ECInstanceId as end table relationships don't have their own ECInstanceId
+        //* this end's class id (foreign end class id) as it is the same the end's class ECClassId. It cannot be set through
+        //an ECSQL INSERT INTO ECRel.
+        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (propMap.GetClassMap());
+        const ECSqlSystemPropertyKind foreignEndClassId = relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId;
+        if (sysPropertyKind == ECSqlSystemPropertyKind::ECInstanceId || sysPropertyKind == foreignEndClassId)
+            return true;
+        }
+
+    switch (propMap.GetType())
+        {
+            case PropertyMap::Type::ConstraintECClassId:
+            {
+            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
+            if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
+                return true;
+
+            BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
+            DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
+            return constraintClassIdPropMap.IsVirtual(*contextTable);
+            }
+            case PropertyMap::Type::ECClassId:
+                //WIP_TABLECONTEXT
+                return static_cast<ECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
+            case PropertyMap::Type::NavigationRelECClassId:
+                return static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap).IsVirtual();
+
+            default:
+                return false;;
+        }
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
