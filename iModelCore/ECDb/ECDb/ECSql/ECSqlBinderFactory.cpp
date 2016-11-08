@@ -97,6 +97,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
 //---------------------------------------------------------------------------------------
 std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
     {
+   
     if (!Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropertyKind))
         {
         BeAssert(false);
@@ -115,9 +116,21 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatement
         switch (propMap.GetType())
             {
                 case PropertyMap::Type::ConstraintECClassId:
-                    //WIP_TABLECONTEXT
+                {
+                //WIP_TABLECONTEXT
+                ConstraintECClassIdPropertyMap const& m = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
+                
+                if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(m, true /*ignoreVirtualColumnCheck*/))
+                    {
+                    isNoopBinder = m.IsVirtual(*table);
+                    }
+                else
+                    {
                     isNoopBinder = static_cast<ConstraintECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
-                    break;
+                    }
+
+                break;
+                }
                 case PropertyMap::Type::ECClassId:
                     //WIP_TABLECONTEXT
                     isNoopBinder = static_cast<ECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
