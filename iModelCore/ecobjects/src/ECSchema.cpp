@@ -1584,6 +1584,12 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         if (NULL != relClass)
             {
             ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
+            for (auto ca : targetConstraint.GetCustomAttributes(false))
+                {
+                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                    return ECObjectsStatus::SchemaInUse;
+                }
+
             if (targetConstraint.IsAbstractConstraintDefinedLocally())
                 {
                 if ((ECSchemaP) &(targetConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
@@ -1602,6 +1608,12 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 }
 
             ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
+            for (auto ca : sourceConstraint.GetCustomAttributes(false))
+                {
+                if ((ECSchemaP) &(ca->GetClass().GetSchema()) == foundSchema.get())
+                    return ECObjectsStatus::SchemaInUse;
+                }
+
             if (sourceConstraint.IsAbstractConstraintDefinedLocally())
                 {
                 if ((ECSchemaP) &(sourceConstraint.GetAbstractConstraint()->GetSchema()) == foundSchema.get())
