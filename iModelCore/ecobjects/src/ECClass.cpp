@@ -3269,18 +3269,18 @@ Utf8String const ECRelationshipConstraint::GetRoleLabel () const
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8String const ECRelationshipConstraint::_GetInvariantRoleLabel() const
     {
-    // WIP_MERGE_Caleb
-    // if (m_roleLabel.length() > 0)
+    if (IsRoleLabelDefinedLocally())
         return m_roleLabel;
 
-    // for (auto const& relBaseClass : m_relClass->GetBaseClasses())
-    //     {
-    //     ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-    //         : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-    //     return baseClassConstraint->GetInvariantRoleLabel();
-    //     }
+    if (m_relClass->HasBaseClasses())
+        {
+        ECRelationshipClassCP relBaseClass = m_relClass->GetBaseClasses()[0]->GetRelationshipClassCP();
+        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
+                                                                    : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+        return baseClassConstraint->GetInvariantRoleLabel();
+        }
 
-    // return m_roleLabel;
+    return m_roleLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
