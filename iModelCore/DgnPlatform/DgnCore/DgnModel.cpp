@@ -174,10 +174,10 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnModel::GetName() const
     {
-    // WIP: keep this method around to avoid having to change too much source code. Use the display label of the modeled element as this model's name.
+    // WIP: keep this method around to avoid having to change too much source code.  Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
-    return modeledElement.IsValid() ? modeledElement->GetDisplayLabel() : Utf8String();
+    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -789,15 +789,6 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnLoadedElement(DgnElementCR element) 
-    {
-    T_Super::_OnLoadedElement(element);
-    AddToRangeIndex(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     if (m_dgndb.IsReadonly())
@@ -821,24 +812,6 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnDeletedElement(DgnElementCR element)
-    {
-    RemoveFromRangeIndex(element);
-    T_Super::_OnDeletedElement(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnReversedAddElement(DgnElementCR element)
-    {
-    RemoveFromRangeIndex(element);
-    T_Super::_OnReversedAddElement(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original)
@@ -847,22 +820,6 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
         return DgnDbStatus::ReadOnly;
 
     return GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
-    {
-    UpdateRangeIndex(modified, original);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
-    {
-    UpdateRangeIndex(modified, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1455,7 +1412,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
             "DGN_placement_aabb("
                 "DGN_placement("
                     "DGN_point(g.Origin_X,g.Origin_Y,0),"
-                    "DGN_angles(0,0,g.Rotation),"
+                    "DGN_angles(g.Rotation,0,0),"
                     "DGN_bbox("
                         "g.BBoxLow_X,g.BBoxLow_Y,0,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,0))))"

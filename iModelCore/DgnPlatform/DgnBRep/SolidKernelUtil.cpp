@@ -975,7 +975,7 @@ ISubEntityPtr BRepUtil::ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt
 
     return subEntity;
 #else
-    return false;
+    return nullptr;
 #endif
     }
 
