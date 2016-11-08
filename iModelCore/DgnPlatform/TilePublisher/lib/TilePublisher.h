@@ -59,6 +59,7 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantCreateSubDirectory,
         ErrorWritingScene,
         ErrorWritingNode,
+        CantOpenOutputFile,
         };
 
 

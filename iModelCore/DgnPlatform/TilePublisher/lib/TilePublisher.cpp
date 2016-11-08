@@ -141,6 +141,12 @@ void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
     {
     Utf8String  metadataStr = Json::FastWriter().write(value);
     auto        outputFile = _wfopen(fileName, L"w");
+   
+    if (nullptr == outputFile)
+        {
+        BeAssert (false && "Unable to open output file");
+        return;
+        }
 
     std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
     std::fclose(outputFile);
@@ -220,6 +226,12 @@ PublisherContext::Status TilePublisher::Publish()
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
     std::FILE*  outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
+
+    if (nullptr == outputFile)
+        {
+        BeAssert (false && "Unable to open output file");
+        return PublisherContext::Status::CantOpenOutputFile;
+        }
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -1284,6 +1296,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto childRootTile : m_modelRoots)
         {
         Json::Value childRoot;
+
         rootRange.Extend(childRootTile->GetTileRange());
         childRoot["refine"] = "replace";
         childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
