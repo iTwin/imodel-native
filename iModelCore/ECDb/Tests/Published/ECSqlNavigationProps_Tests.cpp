@@ -401,22 +401,21 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(info1Key));
     }
 
-    ECInstanceKey phys1Key;
     {
+    ECInstanceKey newKey;
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code,Parent) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, info1Key.GetECInstanceId(), elementOwnsPhysicalElementsClassId));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(phys1Key));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
 
     stmt.Reset();
     stmt.ClearBindings();
 
     bool insertWasValid = false;
-    validateInsert(insertWasValid, ecdb, phys1Key.GetECInstanceId(), info1Key.GetECInstanceId(), elementOwnsPhysicalElementsClassId);
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), elementOwnsPhysicalElementsClassId);
     ASSERT_TRUE(insertWasValid);
 
-    ECInstanceKey newKey;
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2", IECSqlBinder::MakeCopy::No));
     IECSqlStructBinder& navPropBinder = stmt.BindStruct(2);
     ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("Id").BindId(info1Key.GetECInstanceId()));
@@ -457,6 +456,62 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //wrong rel class id
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-7", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, info1Key.GetECInstanceId(), ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000));
+    ASSERT_TRUE(insertWasValid);
+    }
+
+    //expanding ECSQL syntax
+    {
+    ECInstanceKey newKey;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, elementOwnsPhysicalElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    bool insertWasValid = false;
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), elementOwnsPhysicalElementsClassId);
+    ASSERT_TRUE(insertWasValid);
+
+    //now with omitting input
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECClassId()));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    //wrong nav id
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-5", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECInstanceId(info1Key.GetECInstanceId().GetValue() + 1000)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, elementOwnsPhysicalElementsClassId));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_FOREIGNKEY, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    //wrong rel class id -> This doesn't fail, nor is there any validation happening -> apps must ensure this
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-6", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
