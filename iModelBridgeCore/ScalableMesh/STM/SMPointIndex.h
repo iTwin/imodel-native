@@ -1169,7 +1169,7 @@ protected:
 #ifndef VANCOUVER_API
                     new SMStoredMemoryPoolMultiItems<PoolItemType>(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
 #else
-                    SMStoredMemoryPoolMultiItems<TileMesh>::CreateItem(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
+                    SMStoredMemoryPoolMultiItems<PoolItemType>::CreateItem(dataStore, blockID.m_integerID, dataType, (uint64_t)m_SMIndex)
 #endif
                     );
                 SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPool.get());

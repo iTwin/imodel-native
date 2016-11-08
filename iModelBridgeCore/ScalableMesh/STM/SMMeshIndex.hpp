@@ -5,8 +5,9 @@
 #include <ScalableMesh\IScalableMeshQuery.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 
-#include "Stores\SMStreamingDataStore.h"
-#include "TilePublisher\TilePublisher.h"
+#include "Stores/SMStreamingDataStore.h"
+#include "ScalableMesh/IScalableMeshPublisher.h"
+#include "TilePublisher/TilePublisher.h"
 //#include <eigen\Eigen\Dense>
 //#include <PCLWrapper\IDefines.h>
 //#include <PCLWrapper\INormalCalculator.h>
@@ -441,16 +442,17 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node));
             IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
 
-            TileNodePtr tileNode = new ScalableMeshTileNode(nodeP, node->GetNodeExtent(), Transform::FromIdentity(), 0, nullptr);
-            auto meshes = tileNode->GenerateMeshes();
+            IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
+            bvector<Byte> cesiumData;
+            cesiumPublisher->Publish(nodeP, Transform::FromIdentity(), cesiumData);
 
             // Store data
             ISMTileMeshDataStorePtr tileStore;
             bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
             assert(result == true); // problem getting the tile mesh data store
 
-            if (!meshes.empty())
-                tileStore->StoreBlock(&*meshes[0], meshes.size(), node->GetBlockID());
+            if (!cesiumData.empty())
+                tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
 
 
             // need children extent
@@ -3625,31 +3627,6 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
 //NEEDS_WORK_MST : Should use only the GetTexturePtr() with a texture id passed in parameter instead. 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr()
     {
-    #if 0
-    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
-
-    if (!IsTextured())
-        return poolMemBlobItemPtr;
-
-    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
-              
-    if (!m_SMIndex->IsFromCesium())
-        {
-        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::Texture, texID);
-        assert(poolMemBlobItemPtr.IsValid());
-        }
-    else
-        {
-        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, texID).get();
-        // In the cesium format, textures are packaged with the points
-        m_texturePoolItemId = m_pointsPoolItemId;
-        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::Texture);
-        assert(result == true);
-        }
-
-
-    return poolMemBlobItemPtr;
-#endif
     return GetTexturePtr(m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID);
     }
 
@@ -3660,13 +3637,24 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
+    if (!m_SMIndex->IsFromCesium())
+        {
+        SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-    poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, GetBlockID());
-    assert(poolMemBlobItemPtr.IsValid());
+        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, GetBlockID());
+        assert(poolMemBlobItemPtr.IsValid());
 
-        m_textureIds.insert(texID);  
-    ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
+        m_textureIds.insert(texID);
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
+        }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        // In the cesium format, textures are packaged with the points
+        m_texturePoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::Texture);
+        assert(result == true);
+        }
 
         
     return poolMemBlobItemPtr;

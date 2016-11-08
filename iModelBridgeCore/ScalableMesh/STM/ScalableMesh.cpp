@@ -805,8 +805,14 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
                     WString streamingSourcePath;
                     WString cloudIndicator(L"_cloud");
-                    WString datasetName; // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
+                    auto cloud_separator = s_stream_from_wsg ? L"~2F" : L"/";
+
+#ifndef VANCOUVER_API                                       
+                    WString datasetName = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
+#else
+                    // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
                     assert(false);
+#endif
                     if (datasetName.Contains(cloudIndicator))
                         {
                         datasetName.resize(datasetName.length() - cloudIndicator.length());
@@ -814,19 +820,23 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     if (s_stream_from_disk)
                         {
+#ifndef VANCOUVER_API                                       
+                        BeFileName localDataFilesPath(m_baseExtraFilesPath);
+                        localDataFilesPath.PopDir();
+                        localDataFilesPath.AppendToPath(s_stream_using_cesium_3d_tiles_format ? L"cloud_cesium" : L"cloud");
+                        streamingSourcePath = localDataFilesPath;
+#else
                         // NEEDS_WORK_STREAMING: make this build on topaz 
-                        //streamingSourcePath = BeFileName(m_path).GetDirectoryName();
                         assert(false);
-                        streamingSourcePath += L"cloud\\";
-                        streamingSourcePath += datasetName;
+#endif
                         }
-                    else if (s_stream_from_wsg)
+                    else if(s_stream_from_wsg)
                         {
-                        streamingSourcePath = L"scalablemesh" + (L"~2F" + datasetName);
+                        streamingSourcePath = L"scalablemesh" + (cloud_separator + datasetName);
                         }
                     else
                         {
-                        streamingSourcePath = L"scalablemeshtest" + (L"/" + datasetName);
+                        streamingSourcePath = L"scalablemeshtest" + (cloud_separator + datasetName);
                         }
 
 #ifndef VANCOUVER_API                                       
@@ -2114,19 +2124,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
         s_stream_from_disk = true;
-
-        const auto smFileName = BeFileName(this->GetPath());
-        #ifndef VANCOUVER_API
-        path += smFileName.GetDirectoryName();
-        #else
-        BeFileName dirName;
-        dirName = BeFileName(BeFileName::GetDirectoryName(smFileName).c_str());
-        path += dirName;
-        #endif
-        path += L"cloud\\";
-        //NEEDS_WORK_STREAMING: make this work on topaz
-        assert(false);
-        //path += smFileName.GetFileNameWithoutExtension();
+        path = outContainerName;
         }
     
     //s_stream_from_grouped_store = false;

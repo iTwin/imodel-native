@@ -319,6 +319,10 @@ $(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTil
 
 $(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
 
+$(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Stores
 #-----------------------------------------------------------------------

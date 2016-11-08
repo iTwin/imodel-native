@@ -559,7 +559,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
     if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
         {
-        rootTile["content"]["url"] = Utf8String((std::to_string(blockID.m_integerID) + ".b3dm").c_str());
+        rootTile["content"]["url"] = Utf8String(("p_" + std::to_string(blockID.m_integerID) + ".b3dm").c_str());
         //TilePublisher::WriteBoundingVolume(rootTile["content"], header->m_contentExtent); // not required
         }
 
@@ -944,10 +944,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     /* Texture */
     if (header->m_isTextured)
         {
-        header->m_textureID = ISMStore::GetNullNodeID();
+        header->m_textureID = HPMBlockID();
         header->m_ptsIndiceID.resize(2);
         header->m_ptsIndiceID[1] = (int)idx;
-        header->m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;
+        header->m_ptsIndiceID[0] = HPMBlockID();
         header->m_nbTextures = 1;
         header->m_uvsIndicesID.resize(1);
         header->m_uvsIndicesID[0] = idx;
@@ -1224,6 +1224,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
+#ifdef WIP_MESH_IMPORT
+    // NEEDS_WORK_SM_STREAMING: make this work (should return a node store that manipulates byes)
+    //dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+
+    assert(false);
+#endif
+
     dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, nodeHeader);
     
     return true;    
@@ -1250,7 +1257,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<TileMesh, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
     return true;
     }
 
@@ -1358,20 +1365,21 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         {
         Byte* dataToWrite = nullptr;
         uint32_t sizeToWrite = 0;
+        std::wstring extension;
+        bool mustCleanup = false;
         switch (m_dataType)
             {
             case SMStoreDataType::Cesium3DTiles:
                 {
-                BeFileName outDir(m_dataSourceAccount->getPrefixPath().c_str());
-                outDir.AppendToPath(m_dataSourceURL.c_str());
-                PublisherContextPtr context = new PublisherContext(outDir, (/*L"p_" +*/ std::to_wstring(blockID.m_integerID) + L".b3dm").c_str());
-                TilePublisher publisher(context);
-                Utf8String scene;
-                publisher.Publish(*reinterpret_cast<TileMesh*>(DataTypeArray), scene);
-                return blockID;
+                dataToWrite = reinterpret_cast<bvector<Byte>*>(DataTypeArray)->data();
+                sizeToWrite = (uint32_t)countData;
+                extension = L".b3dm";
+                break;
                 }
             default:
                 {
+                extension = L".bin";
+                mustCleanup = true;
                 HCDPacket uncompressedPacket, compressedPacket;
                 size_t bufferSize = countData * sizeof(DATATYPE);
                 uncompressedPacket.SetBuffer(DataTypeArray, bufferSize);
@@ -1399,7 +1407,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         DataSourceStatus writeStatus;
 
         DataSourceURL url (m_dataSourceURL);
-        url.append(L"p_" + std::to_wstring(blockID.m_integerID) + L".bin");
+        url.append(L"p_" + std::to_wstring(blockID.m_integerID) + extension);
 
         DataSource *dataSource = m_dataSourceAccount->createDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
@@ -1415,7 +1423,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
         m_dataSourceAccount->destroyDataSource(dataSource);
 
-        delete[] dataToWrite;
+        if (mustCleanup)
+            {
+            delete[] dataToWrite;
+            }
         }
 
     return blockID;   
@@ -1535,6 +1546,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         block.reset(new StreamingDataBlock());
         block->SetID(blockID.m_integerID);
         block->SetDataSourceURL(m_dataSourceURL);
+        block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
         }
     m_dataCacheMutex.unlock();
     assert(block->GetID() == blockID.m_integerID);
@@ -1607,6 +1619,29 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, SMStoreDataT
                 //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
                 uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
                 DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+                switch (dataType)
+                    {
+                    case SMStoreDataType::Points:
+                        {
+                        m_tileData.numPoints = (uint32_t)this->size() / sizeof(DPoint3d);
+                        break;
+                        }
+                    case SMStoreDataType::TriPtIndices:
+                    case SMStoreDataType::TriUvIndices:
+                        {
+                        m_tileData.numIndices = (uint32_t)this->size() / sizeof(int32_t);
+                        break;
+                        }
+                    case SMStoreDataType::UvCoords:
+                        {
+                        m_tileData.numUvs = (uint32_t)this->size() / sizeof(DPoint2d);
+                        break;
+                        }
+                    default:
+                        {
+                        assert(false); // unknown data block type
+                        }
+                    }
                 }
             else
                 {
@@ -1648,6 +1683,11 @@ void StreamingDataBlock::SetDataSourceURL(const DataSourceURL& pi_URL)
 inline void StreamingDataBlock::SetDataSourcePrefix(const std::wstring & prefix)
     {
     m_pPrefix = prefix;
+    }
+
+inline void StreamingDataBlock::SetDataSourceExtension(const std::wstring & extension)
+    {
+    m_extension = extension;
     }
 
 void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
@@ -1711,10 +1751,7 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     DataSource::DataSize                         readSize;
 
     DataSourceURL    dataSourceURL(m_pDataSourceURL);
-    if (s_stream_using_cesium_3d_tiles_format)
-        dataSourceURL.append(std::to_wstring(m_pID) + L".b3dm");
-    else
-        dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + L".bin");
+    dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + m_extension);
 
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
@@ -1811,9 +1848,9 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     buffer_object_pointer uv_buffer_pointer = { uvAccessor["count"].asUInt(), uvBV["byteLength"].asUInt(), uvBV["byteOffset"].asUInt() };
     buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
 
-    m_tileData.numPoints = point_buffer_pointer.count / 3;
+    m_tileData.numPoints = point_buffer_pointer.count;
     m_tileData.numIndices = indice_buffer_pointer.count;
-    m_tileData.numUvs = uv_buffer_pointer.count / 2;
+    m_tileData.numUvs = uv_buffer_pointer.count;
     m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
 
     this->resize(m_tileData.numIndices*sizeof(int32_t) + m_tileData.numPoints*sizeof(DPoint3d) + m_tileData.numUvs*sizeof(DPoint2d) + m_tileData.textureSize);
@@ -1841,13 +1878,15 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
         // decode matrix is stored as column major
 
-        const DPoint3d scale = DPoint3d::From(decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble());
-        const DPoint3d translate = DPoint3d::From(decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble());
-        
+        //const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[5].asFloat(), decodeMatrixJson[10].asFloat() };
+        //const FPoint3d translate = { decodeMatrixJson[12].asFloat(), decodeMatrixJson[13].asFloat(), decodeMatrixJson[14].asFloat() };
+        const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble() };
+        const DPoint3d translate = { decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble() };
+
         auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
         for (uint32_t i = 0; i < m_tileData.numPoints; i++)
             {
-            m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5) + translate.z);
+            m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
             }
 
         }
@@ -1856,7 +1895,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         auto point_array = (float*)(buffer + point_buffer_pointer.offset);
         for (uint32_t i = 0; i < m_tileData.numPoints; i++)
             {
-            m_tileData.m_pointData[i] = DPoint3d::From((double)point_array[3*i], (double)point_array[3*i+1], (double)point_array[3*i+2]);
+            m_tileData.m_pointData[i] = DPoint3d::From(point_array[3*i], point_array[3*i+1], point_array[3*i+2]);
             }
         }
 
@@ -1867,13 +1906,15 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         auto& decodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
         // decode matrix is stored as column major
 
-        const DPoint2d scale = DPoint2d::From(decodeMatrixJson[0].asDouble(), decodeMatrixJson[4].asDouble());
-        const DPoint2d translate = DPoint2d::From(decodeMatrixJson[6].asDouble(), decodeMatrixJson[7].asDouble());
+        const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[4].asFloat() };
+        const FPoint3d translate = { decodeMatrixJson[6].asFloat(), decodeMatrixJson[7].asFloat() };
+        //const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[4].asDouble() };
+        //const DPoint3d translate = { decodeMatrixJson[6].asDouble(), decodeMatrixJson[7].asDouble() };
 
         auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
         for (uint32_t i = 0; i < m_tileData.numUvs; i++)
             {
-            m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5) + translate.y));
+            m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
             }
 
         }
@@ -1882,7 +1923,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
         for (uint32_t i = 0; i < m_tileData.numUvs; i++)
             {
-            m_tileData.m_uvData[i] = DPoint2d::From((double)uv_array[2 * i], (double)uv_array[2 * i + 1]);
+            m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], uv_array[2 * i + 1]);
             }
         }
 

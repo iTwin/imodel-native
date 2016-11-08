@@ -168,6 +168,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetDataSourcePrefix(const std::wstring& prefix);
 
+        void SetDataSourceExtension(const std::wstring& extension);
+
         void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
 
         DPoint3d* GetPoints();
@@ -191,6 +193,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
         uint64_t m_pID = -1;
         DataSourceURL m_pDataSourceURL;
         std::wstring m_pPrefix = L"p_";
+        std::wstring m_extension = L".bin";
         condition_variable m_pDataBlockCV;
         mutex m_pDataBlockMutex;
 

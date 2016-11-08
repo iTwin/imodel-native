@@ -170,7 +170,7 @@ typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<TileMesh>>  ISMTileMeshDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<bvector<Byte>>>  ISMTileMeshDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Cesium3DTilesBase>>  ISMCesium3DTilesDataStorePtr;
 
 
