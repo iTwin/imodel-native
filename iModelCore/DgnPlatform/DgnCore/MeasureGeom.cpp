@@ -991,7 +991,7 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                         continue;
 
                     curve->TransformInPlace(entityTransform);
-                    builder.AddCurveVector(*curve)''
+                    builder.AddCurveVector(*curve);
                     }
 
                 return true;
