@@ -3275,8 +3275,8 @@ Utf8String const ECRelationshipConstraint::_GetInvariantRoleLabel() const
     if (m_relClass->HasBaseClasses())
         {
         ECRelationshipClassCP relBaseClass = m_relClass->GetBaseClasses()[0]->GetRelationshipClassCP();
-        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                    : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetSource()
+                                                                    : &relBaseClass->GetTarget();
         return baseClassConstraint->GetInvariantRoleLabel();
         }
 
