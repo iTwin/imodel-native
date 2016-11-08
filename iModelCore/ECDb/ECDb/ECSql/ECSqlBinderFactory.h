@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlBinder;
 struct IdECSqlBinder;
-struct ECSqlStatementBase;
+struct ECSqlPrepareContext;
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
@@ -27,11 +27,11 @@ struct ECSqlBinderFactory
 
 
     public:
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp);
-        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap) { return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap)); }
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext&, ECSqlTypeInfo const& typeInfo);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext&, ParameterExp const& parameterExp);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap) { return CreateBinder(ctx, ECSqlTypeInfo(propMap)); }
 
-        static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const&, ECSqlSystemPropertyKind);
+        static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyKind);
 
     };
 

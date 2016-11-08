@@ -1054,7 +1054,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
         nativeSqlParameterCount = binder->GetMappedSqlParameterCount();
     else
         {
-        binder = ecsqlParameterMap.AddBinder(ctx.GetECSqlStatementR(), *exp);
+        binder = ecsqlParameterMap.AddBinder(ctx, *exp);
         if (binder == nullptr)
             return ECSqlStatus::Error;
 

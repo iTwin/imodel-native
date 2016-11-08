@@ -22,7 +22,7 @@ StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus StructToColumnsECSqlBinder::Initialize()
+BentleyStatus StructToColumnsECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
@@ -31,7 +31,7 @@ BentleyStatus StructToColumnsECSqlBinder::Initialize()
     int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
         {
-        std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *memberPropMap);
+        std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, *memberPropMap);
         if (binder == nullptr)
             return ERROR;
 

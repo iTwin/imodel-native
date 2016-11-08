@@ -541,8 +541,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 
     ECInstanceInserter inserter(ecdb, *relClass);
     ASSERT_TRUE(inserter.IsValid());
-    auto insertStatus = inserter.Insert(*relationshipInstance);
-    ASSERT_EQ(SUCCESS, insertStatus);
+    ASSERT_EQ(SUCCESS, inserter.Insert(*relationshipInstance));
 
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));

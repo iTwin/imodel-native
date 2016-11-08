@@ -101,8 +101,8 @@ struct ECSqlParameterMap : NonCopyableClass
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
         int GetIndexForName(Utf8CP ecsqlParameterName) const;
 
-        ECSqlBinder* AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp);
-        ECSqlBinder* AddInternalBinder(size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+        ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const& parameterExp);
+        ECSqlBinder* AddInternalBinder(size_t& index, ECSqlPrepareContext&, ECSqlTypeInfo const& typeInfo);
         ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName);
 
         ECSqlStatus OnBeforeStep();

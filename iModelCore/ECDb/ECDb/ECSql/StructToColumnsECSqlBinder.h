@@ -43,7 +43,7 @@ struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         std::vector<MemberBinderInfo> m_ecsqlComponentIndexToMemberBinderMapping;
 
         StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
-        BentleyStatus Initialize();
+        BentleyStatus Initialize(ECSqlPrepareContext&);
 
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;

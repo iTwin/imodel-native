@@ -24,7 +24,7 @@ struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder;
 
         NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
-        BentleyStatus Initialize();
+        BentleyStatus Initialize(ECSqlPrepareContext&);
 
         virtual ECSqlStatus _OnBeforeStep() override;
         virtual void _OnClearBindings() override;

@@ -319,7 +319,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp)
+ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp const& parameterExp)
     {
     int ecsqlParameterIndex = 0;
     //unnamed parameters don't have an identity, therefore always add a new binder in that case
@@ -329,7 +329,7 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, Pa
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, parameterExp);
+    auto binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
     if (binder == nullptr)
         return nullptr;
 
@@ -355,9 +355,9 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, Pa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddInternalBinder(size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
+ECSqlBinder* ECSqlParameterMap::AddInternalBinder(size_t& index, ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo)
     {
-    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, typeInfo);
+    auto binder = ECSqlBinderFactory::CreateBinder(ctx, typeInfo);
     if (binder == nullptr)
         return nullptr;
 

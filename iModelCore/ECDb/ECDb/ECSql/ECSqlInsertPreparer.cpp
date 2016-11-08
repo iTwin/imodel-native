@@ -293,7 +293,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
 //static
 void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap)
     {
-    const auto ecinstanceIdMode = nativeSqlSnippets.m_ecinstanceIdMode;
+    const ECInstanceIdMode ecinstanceIdMode = nativeSqlSnippets.m_ecinstanceIdMode;
     if (ecinstanceIdMode == ECInstanceIdMode::NotUserProvided || ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull) // auto-generate
         {
         //If ECInstanceId is to be auto-generated we need to add the ECInstanceId to the SQLite statement
@@ -328,10 +328,9 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             }
 
         //add binder for the ecinstanceid parameter
-        auto& ecsqlStmt = ctx.GetECSqlStatementR ();
-        auto preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
+        ECSqlInsertPreparedStatement* preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
         size_t ecinstanceidBinderIndex = 0;
-        auto ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ecsqlStmt, ECSqlTypeInfo(PRIMITIVETYPE_Long));
+        ECSqlBinder* ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ctx, ECSqlTypeInfo(PRIMITIVETYPE_Long));
         if (ecinstanceidBinder == nullptr)
             {
             BeAssert(false && "Failed to create internal ECInstanceId parameter binder.");

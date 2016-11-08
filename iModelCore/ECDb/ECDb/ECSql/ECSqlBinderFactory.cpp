@@ -22,7 +22,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContext& ctx, ParameterExp const& parameterExp)
     {
     ComputedExp const* targetExp = parameterExp.GetTargetExp();
     if (targetExp != nullptr && targetExp->GetType() == Exp::Type::PropertyName)
@@ -31,16 +31,16 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
         PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (targetExp);
         ECSqlSystemPropertyKind sysPropKind;
         if (propNameExp->TryGetSystemProperty(sysPropKind) && Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropKind))
-            return CreateIdBinder(ecsqlStatement, propNameExp->GetPropertyMap(), sysPropKind);
+            return CreateIdBinder(ctx, propNameExp->GetPropertyMap(), sysPropKind);
         }
 
-    return CreateBinder(ecsqlStatement, parameterExp.GetTypeInfo());
+    return CreateBinder(ctx, parameterExp.GetTypeInfo());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo)
     {
     ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
     BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
@@ -59,13 +59,13 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
                     case ECN::PRIMITIVETYPE_Integer:
                     case ECN::PRIMITIVETYPE_Long:
                     case ECN::PRIMITIVETYPE_String:
-                        return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
+                        return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
 
                     case ECN::PRIMITIVETYPE_Point2d:
-                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, false));
+                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, false));
 
                     case ECN::PRIMITIVETYPE_Point3d:
-                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, true));
+                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, true));
 
                     default:
                         BeAssert(false && "Could not create parameter mapping for the given parameter exp.");
@@ -75,25 +75,25 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
             }
             //the rare case of expressions like this: NULL IS ?
             case ECSqlTypeInfo::Kind::Null:
-                return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
 
             case ECSqlTypeInfo::Kind::Struct:
             {
-            std::unique_ptr<StructToColumnsECSqlBinder> structBinder(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
-            if (SUCCESS != structBinder->Initialize())
+            std::unique_ptr<StructToColumnsECSqlBinder> structBinder(new StructToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+            if (SUCCESS != structBinder->Initialize(ctx))
                 return nullptr;
 
             return std::move(structBinder);
             }
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
-                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
-                return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::Navigation:
             {
-            std::unique_ptr<NavigationPropertyECSqlBinder> navPropBinder(new NavigationPropertyECSqlBinder(ecsqlStatement, typeInfo));
-            if (SUCCESS != navPropBinder->Initialize())
+            std::unique_ptr<NavigationPropertyECSqlBinder> navPropBinder(new NavigationPropertyECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+            if (SUCCESS != navPropBinder->Initialize(ctx))
                 return nullptr;
 
             return std::move(navPropBinder);
@@ -108,9 +108,8 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatementBase& ecsqlStatement, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
+std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
     {
-   
     if (!Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropertyKind))
         {
         BeAssert(false);
@@ -118,6 +117,13 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatement
         }
 
     bool isNoopBinder = false;
+
+    //noop binder is only needed for INSERT as in that case we don't translate the parameter into a native SQL token.
+    //The ECSQL user however might still bind to the ECSQL parameter which then is a no-op.
+    if (ctx.GetCurrentScope().GetECSqlType() != ECSqlType::Insert)
+        return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx.GetECSqlStatementR(), ECSqlTypeInfo(propMap), isNoopBinder));
+
+    BeAssert(ctx.GetCurrentScope().IsRootScope() && "Nested ECSQL INSERT is not expected to be supported by this code.");
     if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && sysPropertyKind == ECSqlSystemPropertyKind::ECInstanceId)
         {
         //for end table relationships we ignore the user provided ECInstanceId
@@ -131,17 +137,15 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatement
                 case PropertyMap::Type::ConstraintECClassId:
                 {
                 //WIP_TABLECONTEXT
-                ConstraintECClassIdPropertyMap const& m = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
-                
-                if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(m, true /*ignoreVirtualColumnCheck*/))
+                ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
+                DbTable const* contextTable = ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/);
+                if (contextTable == nullptr)
                     {
-                    isNoopBinder = m.IsVirtual(*table);
-                    }
-                else
-                    {
-                    isNoopBinder = static_cast<ConstraintECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
+                    BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
+                    contextTable = &propMap.GetClassMap().GetJoinedTable();
                     }
 
+                isNoopBinder = constraintClassIdPropMap.IsVirtual(*contextTable);
                 break;
                 }
                 case PropertyMap::Type::ECClassId:
@@ -157,7 +161,7 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlStatement
             }
         }
 
-    return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ecsqlStatement, ECSqlTypeInfo(propMap), isNoopBinder));
+    return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx.GetECSqlStatementR(), ECSqlTypeInfo(propMap), isNoopBinder));
     }
 
 

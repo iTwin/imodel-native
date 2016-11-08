@@ -248,7 +248,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
 
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance, actualUserProvidedInstanceId);
     //now add parameter values for regular properties
-    for (auto const& bindingInfo : m_ecValueBindingInfos)
+    for (ECValueBindingInfo const* bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
         auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo);
