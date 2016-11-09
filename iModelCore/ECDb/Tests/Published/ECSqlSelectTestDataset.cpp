@@ -1471,10 +1471,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT MyPSA.Id, count(*) FROM ecsql.P GROUP BY MyPSA.Id";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT MyPSA.RelECClassId, count(*) FROM ecsql.P GROUP BY MyPSA.RelECClassId";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     return dataset;
     }

@@ -200,14 +200,16 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
     const bool lhsIsStructWithStructArray = (lhsTypeKind == ECSqlTypeInfo::Kind::Struct && ContainsStructArrayProperty(lhsTypeInfo.GetStructType()));
     const bool rhsIsStructWithStructArray = (rhsTypeKind == ECSqlTypeInfo::Kind::Struct && ContainsStructArrayProperty(rhsTypeInfo.GetStructType()));
 
-    //Limit operators for point expressions
+    //Limit operators for non-primitive types
     //cannot assume both sides have same types as one can still represent the SQL NULL or a parameter
     if (lhsTypeInfo.IsPoint() || rhsTypeInfo.IsPoint() ||
         lhsTypeInfo.IsGeometry() || rhsTypeInfo.IsGeometry() ||
         (lhsTypeKind == ECSqlTypeInfo::Kind::Struct && !lhsIsStructWithStructArray) ||
         (rhsTypeKind == ECSqlTypeInfo::Kind::Struct && !rhsIsStructWithStructArray) ||
         lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
-        rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)
+        rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
+        lhsTypeKind == ECSqlTypeInfo::Kind::Navigation ||
+        rhsTypeKind == ECSqlTypeInfo::Kind::Navigation)
         {
         switch (m_op)
             {
@@ -220,7 +222,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
                     return FinalizeParseStatus::Completed;
 
                 default:
-                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with point, geometry, struct or primitive array operands.", ToECSql().c_str());
+                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
             }
         }
