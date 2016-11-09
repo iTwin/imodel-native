@@ -232,7 +232,6 @@ USING_NAMESPACE_BENTLEY
 +---------------+---------------+---------------+---------------+---------------+------*/
     int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
     {
-    int len = 0;
     double ival;
     bool parent = false;
     Utf8Char sign = '+';

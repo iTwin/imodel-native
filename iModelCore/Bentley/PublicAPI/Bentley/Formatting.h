@@ -414,7 +414,6 @@ public:
     Utf8String FormatWhole(DecimalPrecision prec)
     {
         NumericFormat fmt;
-        NumericFormat* fmt1 = new NumericFormat();
         fmt.SetDecimalPrecision(prec);
         return fmt.FormatDouble(GetWhole());
     }
