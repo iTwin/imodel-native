@@ -1777,7 +1777,7 @@ void SheetViewController::_DrawView(ViewContextR context)
         for (auto i=0; i<4; ++i)
             corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
 
-        if (view->Is2d())
+        if (nullptr == dynamic_cast<ViewDefinition3d*>(view.get())) // don't try to generate thumbnail for 3-D views
             {
             #define WIP_SHEETS_SHOW_THUMBNAIL
             #ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
