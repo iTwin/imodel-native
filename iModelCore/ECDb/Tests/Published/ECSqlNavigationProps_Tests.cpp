@@ -652,6 +652,15 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ECInstanceId actualModelId = stmt.GetValueNavigation(0, &actualRelClassId);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
+
+    //alternative API via struct value
+    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
+    IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
+    ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
+    ASSERT_STREQ("Model.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue.GetValue(0).GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_STREQ("Model.RelECClassId", navValue.GetValue(1).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementsClassId.GetValue(), navValue.GetValue(1).GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
     }
 
 //---------------------------------------------------------------------------------------
