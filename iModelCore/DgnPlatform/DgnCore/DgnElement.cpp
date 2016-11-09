@@ -93,7 +93,7 @@ DgnModelId DgnElement::GetSubModelId() const
 DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
     {
     bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
-    BeAssert(isModellable && "Only elements that implement IModellableElement can have SubModels");
+    BeAssert(isModellable && "Only element ECClasses that implement bis:IModellableElement can have SubModels");
     return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
     }
 
@@ -286,23 +286,6 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  10/2016
-//---------------------------------------------------------------------------------------
-DgnElementIdSet Session::QuerySessions(DgnDbR db)
-    {
-    DgnElementIdSet ids;
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Session));
-    if (stmt.IsValid())
-        {
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.insert(stmt->GetValueId<DgnElementId>(0));
-        }
-
-    return ids;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -358,6 +341,14 @@ void Session::SaveVariables() const
     auto& ncThis = const_cast<SessionR>(*this);
     ncThis.SetPropertyValue(str_Variables(), Json::FastWriter::ToString(m_variables).c_str());
     m_dirty = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementIterator Session::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
+    {
+    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Session), whereClause, orderByClause);
     }
 
 /*---------------------------------------------------------------------------------**//**
