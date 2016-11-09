@@ -32,6 +32,9 @@ struct RelatedPropertiesSpecification
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification ();
+        
+        //! Copy constructor.
+        ECOBJECTS_EXPORT RelatedPropertiesSpecification(RelatedPropertiesSpecification const&);
 
         //! Constructor.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification 
@@ -60,10 +63,16 @@ struct RelatedPropertiesSpecification
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
+        //! Set related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
+        ECOBJECTS_EXPORT void                         SetRelatedClassNames(Utf8StringCR);
+
         //! Property names separated by comma. RelatedClasses are required if related properties are specified.
         //! These properties of RelatedClasses will be selected in the ECQuery and shown next to the parent ECInstance (the same row).
         //! If PropertyNames are not specified ALL visible properties will be selected. "_none_" keyword can be used to suppress all properties.
         ECOBJECTS_EXPORT Utf8StringCR                 GetPropertyNames (void) const;
+        
+        //! @see GetPropertyNames
+        ECOBJECTS_EXPORT void                         SetPropertyNames(Utf8StringCR);
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
         ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;
