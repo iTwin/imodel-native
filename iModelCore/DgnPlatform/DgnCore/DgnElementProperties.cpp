@@ -720,6 +720,24 @@ void DgnElements::ClearUpdaterCache()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceP      ElementAutoHandledPropertiesECInstanceAdapter::_GetAsIECInstance () const
+    {
+    return const_cast<ElementAutoHandledPropertiesECInstanceAdapter*>(this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_UpdateCalculatedPropertyDependents(ECValueCR calcedValue, PropertyLayoutCR propLayout)
+    {
+    IECInstanceR thisInstance = *_GetAsIECInstance();
+    CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification(thisInstance, propLayout);
+    return NULL != spec ? spec->UpdateDependentProperties(calcedValue, thisInstance) : ECObjectsStatus::Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
