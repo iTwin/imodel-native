@@ -1088,6 +1088,8 @@ bool BRepUtil::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1113,11 +1115,14 @@ static void transformInertiaTensor(double inertia[3][3], RotMatrixCR rMatrix, do
     inertia[1][2] *= pow(scale, power);
     }
 
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], double tolerance)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
     Transform   entityTransform = entity.GetEntityTransform();
     bool        nonUniform = false;
     double      scale;
@@ -1194,6 +1199,9 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
         transformInertiaTensor(inertia, rMatrix, scale, IBRepEntity::EntityType::Solid == entity.GetEntityType());
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
