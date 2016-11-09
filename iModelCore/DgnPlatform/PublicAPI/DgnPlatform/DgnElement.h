@@ -1801,8 +1801,8 @@ protected:
     virtual Render::GraphicSet& _Graphics() const = 0;
     virtual DgnDbR _GetSourceDgnDb() const = 0;
     virtual DgnElementCP _ToElement() const = 0;
-    virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
-    virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const = 0; // Either this method or _GetAsGeometrySource3d must return non-null.
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const = 0; // Either this method or _GetAsGeometrySource2d must return non-null.
     virtual DgnCategoryId _GetCategoryId() const = 0;
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
@@ -1821,10 +1821,10 @@ public:
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
     DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
     DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
-    GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
-    GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
-    GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
-    GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
+    GeometrySource2dCP GetAsGeometrySource2d() const {return _GetAsGeometrySource2d();}
+    GeometrySource2dP GetAsGeometrySource2dP() {return const_cast<GeometrySource2dP>(_GetAsGeometrySource2d());}
+    GeometrySource3dCP GetAsGeometrySource3d() const {return _GetAsGeometrySource3d();}
+    GeometrySource3dP GetAsGeometrySource3dP() {return const_cast<GeometrySource3dP>(_GetAsGeometrySource3d());}
     DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
     DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
     GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
@@ -1853,7 +1853,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
     virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
@@ -1869,7 +1869,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
     virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement2dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
@@ -1999,7 +1999,7 @@ protected:
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
     Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
@@ -2060,7 +2060,7 @@ protected:
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
+    GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
     Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}

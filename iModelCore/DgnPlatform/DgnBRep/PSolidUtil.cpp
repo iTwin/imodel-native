@@ -1443,6 +1443,84 @@ bool PSolidUtil::LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransfor
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::RayTestFace(PK_FACE_t faceTag, TransformCR bodyTransform, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, DRay3dCR boresite)
+    {
+    PK_BOX_t    box;
+
+    if (PK_ERROR_no_errors != PK_TOPOL_find_box (faceTag, &box))
+        return false;
+
+    DRange3d    range;
+        
+    range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+
+    DRay3d      tmpBoresite = boresite;
+    Transform   fwdEntityTrans = bodyTransform, invEntityTrans;
+
+    invEntityTrans.InverseOf (fwdEntityTrans);
+    invEntityTrans.Multiply (tmpBoresite.origin);
+    invEntityTrans.MultiplyMatrixOnly (tmpBoresite.direction);
+    tmpBoresite.direction.Normalize ();
+
+    double      minRayDistance, maxRayDistance;
+    DPoint3d    minPt, maxPt;
+
+    if (!range.IntersectRay (minRayDistance, maxRayDistance, minPt, maxPt, tmpBoresite.origin, tmpBoresite.direction))
+        return false;
+
+    PK_LINE_t       lineTag = PK_ENTITY_null;
+    PK_LINE_sf_t    lineSf;
+    PK_INTERVAL_t   lineInterval;
+
+    lineSf.basis_set.location.coord[0] = tmpBoresite.origin.x;
+    lineSf.basis_set.location.coord[1] = tmpBoresite.origin.y;
+    lineSf.basis_set.location.coord[2] = tmpBoresite.origin.z;
+    
+    lineSf.basis_set.axis.coord[0] = tmpBoresite.direction.x;
+    lineSf.basis_set.axis.coord[1] = tmpBoresite.direction.y;
+    lineSf.basis_set.axis.coord[2] = tmpBoresite.direction.z;
+
+    if (SUCCESS != PK_LINE_create (&lineSf, &lineTag))
+        return false;
+
+    lineInterval.value[0] = 0.0;
+    lineInterval.value[1] = maxRayDistance + 1.0e-8;
+
+    int                 nHits = 0;
+    PK_VECTOR_t*        pointP = NULL;
+    PK_UV_t*            uvP = NULL;
+    double*             rayParamP = NULL;
+    PK_TOPOL_t*         topologyP = NULL;
+    PK_intersect_fc_t*  typeP = NULL;
+
+    if (SUCCESS == PK_FACE_intersect_curve (faceTag, lineTag, lineInterval, &nHits, &pointP, &uvP, &rayParamP, &topologyP, &typeP))
+        {
+        for (int iHit = 0; iHit < nHits; iHit++)
+            {
+            DPoint3d  intersectPt = *((DPoint3dP) &pointP[iHit]);
+            DPoint2d  intersectParam = *((DPoint2dP) &uvP[iHit]);
+
+            fwdEntityTrans.Multiply (intersectPt);
+
+            intersectPts.push_back (intersectPt);
+            intersectParams.push_back (intersectParam);
+            }
+
+        PK_MEMORY_free (pointP);
+        PK_MEMORY_free (uvP);
+        PK_MEMORY_free (rayParamP);
+        PK_MEMORY_free (topologyP);
+        PK_MEMORY_free (typeP);
+        }
+
+    PK_ENTITY_delete (1, &lineTag);
+
+    return (nHits > 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PSolidUtil::ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bodyTransform, PK_ENTITY_t& entityTag, DPoint3dR closePt, DPoint2dR closeParam, double& distance, DPoint3dCR testPt)
