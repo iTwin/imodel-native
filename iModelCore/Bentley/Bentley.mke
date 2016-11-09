@@ -101,6 +101,8 @@ $(o)BeDebugLog$(oext)           : $(nonportDir)BeDebugLog.cpp $(BentleyAPISrc)Be
 
 $(o)ValueFormat$(oext)          : $(nonportDir)ValueFormat.cpp $(BentleyAPISrc)ValueFormat.h ${MultiCompileDepends}
 
+$(o)Formatting$(oext)          : $(nonportDir)Formatting.cpp $(BentleyAPISrc)Formatting.h ${MultiCompileDepends}
+
 $(o)Base64Utilities$(oext)      : $(nonportDir)Base64Utilities.cpp $(BentleyAPISrc)Base64Utilities.h ${MultiCompileDepends}
 
 $(o)md5$(oext)                  : $(bentleyDir)md5.cpp ${MultiCompileDepends}
