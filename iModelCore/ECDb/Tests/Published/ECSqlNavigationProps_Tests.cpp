@@ -519,6 +519,72 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000));
     ASSERT_TRUE(insertWasValid);
     }
+
+    //expanding ECSQL syntax with literals
+    {
+    ECInstanceKey newKey;
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-1','%s','%s')",
+                  info1Key.GetECInstanceId().ToString().c_str(), elementOwnsPhysicalElementsClassId.ToString().c_str());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    bool insertWasValid = false;
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), elementOwnsPhysicalElementsClassId);
+    ASSERT_TRUE(insertWasValid);
+
+    //now with omitting input
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id) VALUES('Physical-3-2','%s')",
+                  info1Key.GetECInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-3','%s',NULL)",
+                  info1Key.GetECInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code) VALUES('Physical-3-4')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.RelECClassId) VALUES('Physical-3-5','%s')",
+                  elementOwnsPhysicalElementsClassId.ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id, Parent.RelECClassId) VALUES('Physical-3-6',NULL,'%s')",
+                  elementOwnsPhysicalElementsClassId.ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //wrong nav id
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-7','%s','%s')",
+                  ECInstanceId(info1Key.GetECInstanceId().GetValue() + 1000).ToString().c_str(),
+                  elementOwnsPhysicalElementsClassId.ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_FOREIGNKEY, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //wrong rel class id -> This doesn't fail, nor is there any validation happening -> apps must ensure this
+    ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-8','%s','%s')",
+                  info1Key.GetECInstanceId().ToString().c_str(),
+                  ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000).ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
+    stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId(elementOwnsPhysicalElementsClassId.GetValue() + 10000));
+    ASSERT_TRUE(insertWasValid);
+    }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -583,7 +649,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
 
     ECClassId actualRelClassId;
-    ECInstanceId actualModelId = stmt.GetNavigationPropertyValue(0, &actualRelClassId);
+    ECInstanceId actualModelId = stmt.GetValueNavigation(0, &actualRelClassId);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
     }

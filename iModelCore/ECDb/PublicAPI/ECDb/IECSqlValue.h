@@ -158,11 +158,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         ECDB_EXPORT BeGuid GetGuid() const;
 
         //! Gets the value as a NavigationECProperty value
-        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance
+        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance.
+        //!             You can pass nullptr to this parameter if you don't want it to be returned
         //! @return ECInstanceId of the related ECInstance
         //! @note Possible errors:
         //! - column does not refer to a NavigationECProperty
-        ECDB_EXPORT ECInstanceId GetNavigationPropertyValue(ECN::ECClassId* relationshipECClassId) const;
+        ECDB_EXPORT ECInstanceId GetNavigation(ECN::ECClassId* relationshipECClassId) const;
 
         //! Used to access the value if it is a struct value
         //! @return Struct value

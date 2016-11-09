@@ -51,7 +51,7 @@ IECSqlValue const& NavigationPropertyECSqlField::_GetValue(int columnIndex) cons
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& NavigationPropertyECSqlField::_GetPrimitive() const
     {
-    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a NavigationECProperty column. Call GetNavigationPropertyValue instead.");
+    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
     BeAssert(false);
     return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
@@ -61,7 +61,7 @@ IECSqlPrimitiveValue const& NavigationPropertyECSqlField::_GetPrimitive() const
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& NavigationPropertyECSqlField::_GetArray() const
     {
-    ReportError(ECSqlStatus::Error, "GetArray cannot be called for a NavigationECProperty column. Call GetNavigationPropertyValue instead.");
+    ReportError(ECSqlStatus::Error, "GetArray cannot be called for a NavigationECProperty column. Call GetValueNavigation instead.");
     BeAssert(false);
     return NoopECSqlValue::GetSingleton().GetArray();
     }

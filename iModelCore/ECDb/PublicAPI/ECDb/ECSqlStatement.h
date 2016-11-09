@@ -386,11 +386,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
 
         //! Gets the value as a NavigationECProperty value
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
-        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance
+        //! @param[out] relationshipECClassId ECClassId of the ECRelationshipClass used to navigate to the related ECInstance.
+        //!             You can pass nullptr to this parameter if you don't want it to be returned
         //! @return ECInstanceId of the related ECInstance
         //! @note Possible errors:
         //! - column does not refer to a NavigationECProperty
-        ECInstanceId GetNavigationPropertyValue(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigationPropertyValue(relationshipECClassId); }
+        ECInstanceId GetValueNavigation(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigation(relationshipECClassId); }
 
         //! Gets the array value of the specified column.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
