@@ -612,27 +612,24 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
 
         RelationshipClassLinkTableMap const& contextRelationship = static_cast<RelationshipClassLinkTableMap const&>(*classMap);
         RelationshipClassLinkTableMap const* castInto = &contextRelationship == &relationMap ? nullptr : &relationMap;
-        ConstraintECClassIdJoinInfo::Ptr sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), partition.GetTable());
-        ConstraintECClassIdJoinInfo::Ptr targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), partition.GetTable());
-        if (RenderRelationshipClassMap(view, contextRelationship, partition.GetTable(), sourceECClassIdJoinInfo.get(), targetECClassIdJoinInfo.get(), castInto) != SUCCESS)
+        ConstraintECClassIdJoinInfo sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), partition.GetTable());
+        ConstraintECClassIdJoinInfo targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), partition.GetTable());
+        if (RenderRelationshipClassMap(view, contextRelationship, partition.GetTable(), sourceECClassIdJoinInfo, targetECClassIdJoinInfo, castInto) != SUCCESS)
             return ERROR;
 
-        if (sourceECClassIdJoinInfo != nullptr)
-            {
-            view.Append(sourceECClassIdJoinInfo->GetNativeJoinSQL());
-            }
+        if (sourceECClassIdJoinInfo.RequiresJoin())
+            view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
 
-        if (targetECClassIdJoinInfo != nullptr)
-            {
-            view.Append(targetECClassIdJoinInfo->GetNativeJoinSQL());
-            }
+        if (targetECClassIdJoinInfo.RequiresJoin())
+            view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
 
-        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(partition.GetTable()))
+        ECClassIdPropertyMap const* classIdPropMap = relationMap.GetECClassIdPropertyMap();
+        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdDataPropertyMap = classIdPropMap->FindDataPropertyMap(partition.GetTable()))
             {
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
+            if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted && IsECClassIdFilterEnabled())
                 {
                 Utf8String whereClause;
-                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition.GetTable(), classIdPropertyMap->GetColumn(), m_isPolymorphic, true))
+                if (SUCCESS != storageDesc.GenerateECClassIdFilter(whereClause, partition.GetTable(), classIdDataPropertyMap->GetColumn(), m_isPolymorphic, true))
                     return ERROR;
 
                 if (!whereClause.empty())
@@ -676,21 +673,17 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             continue;
 
         NativeSqlBuilder view;
-        ConstraintECClassIdJoinInfo::Ptr sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), *table);
-        ConstraintECClassIdJoinInfo::Ptr targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), *table);
+        ConstraintECClassIdJoinInfo sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), *table);
+        ConstraintECClassIdJoinInfo targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), *table);
 
-        if (RenderRelationshipClassMap(view, relationMap, *table, sourceECClassIdJoinInfo.get(), targetECClassIdJoinInfo.get()) != SUCCESS)
+        if (RenderRelationshipClassMap(view, relationMap, *table, sourceECClassIdJoinInfo, targetECClassIdJoinInfo) != SUCCESS)
             return ERROR;
 
-        if (sourceECClassIdJoinInfo != nullptr)
-            {
-            view.Append(sourceECClassIdJoinInfo->GetNativeJoinSQL());
-            }
+        if (sourceECClassIdJoinInfo.RequiresJoin())
+            view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
 
-        if (targetECClassIdJoinInfo != nullptr)
-            {
-            view.Append(targetECClassIdJoinInfo->GetNativeJoinSQL());
-            }
+        if (targetECClassIdJoinInfo.RequiresJoin())
+            view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
 
         view.Append(" WHERE ").AppendEscaped(relationMap.GetReferencedEndECInstanceIdPropMap()->GetAccessString().c_str()).Append(" IS NOT NULL");
         //! Add Polymorphic Filter if required
@@ -748,7 +741,7 @@ void ViewGenerator::RecordPropertyMapIfRequried(PropertyMap const& propertyMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo, RelationshipClassLinkTableMap const* castInto)
+BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto)
     {
     ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(),false, true);
     viewSql.Append("SELECT ");
@@ -773,8 +766,8 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
 
     //SourceECClassId
     RecordPropertyMapIfRequried(*relationMap.GetSourceECClassIdPropMap());
-    if (sourceJoinInfo != nullptr)
-        viewSql.AppendComma().Append(sourceJoinInfo->GetNativeConstraintECClassIdSQL(true));
+    if (sourceJoinInfo.RequiresJoin())
+        viewSql.AppendComma().Append(sourceJoinInfo.GetNativeConstraintECClassIdSql(true));
     else
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetSourceECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
@@ -802,8 +795,8 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
 
     //TargetECClassId
     RecordPropertyMapIfRequried(*relationMap.GetTargetECClassIdPropMap());
-    if (targetJoinInfo != nullptr)
-        viewSql.AppendComma().Append(targetJoinInfo->GetNativeConstraintECClassIdSQL(true));
+    if (targetJoinInfo.RequiresJoin())
+        viewSql.AppendComma().Append(targetJoinInfo.GetNativeConstraintECClassIdSql(true));
     else
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetTargetECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
@@ -1034,12 +1027,64 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                          11/2016
+//---------------------------------------------------------------------------------------
+//static
+ConstraintECClassIdJoinInfo ConstraintECClassIdJoinInfo::Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable)
+    {
+    ConstraintECClassIdJoinInfo joinInfo;
+
+    DbTable const* primaryTable = RequiresJoinTo(propertyMap);
+    if (primaryTable == nullptr)
+        return joinInfo;
+
+    RelationshipClassMap const& relationshipMap = static_cast<RelationshipClassMap const&>(propertyMap.GetClassMap());
+    if (!relationshipMap.IsMappedTo(contextTable))
+        {
+        BeAssert(false && "Relationship is not mapped to the context table. It must be one of Relationship.GetTables()");
+        return joinInfo;
+        }
+
+    const bool isSource = propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source;
+    ConstraintECInstanceIdPropertyMap const*  constraintId = isSource ? relationshipMap.GetSourceECInstanceIdPropMap() : relationshipMap.GetTargetECInstanceIdPropMap();
+    BeAssert(constraintId != nullptr);
+    SystemPropertyMap::PerTablePrimitivePropertyMap const* releventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
+    if (releventECClassIdPropertyMap == nullptr)
+        {
+        BeAssert(false && "Expecting a property map for given context table");
+        return joinInfo;
+        }
+
+    DbColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* primaryECClassIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* forignECInstanceIdColumn = &releventECClassIdPropertyMap->GetColumn();
+    if (primaryECInstanceIdColumn == nullptr || primaryECClassIdColumn == nullptr || forignECInstanceIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return joinInfo;
+        }
+
+    joinInfo.m_joinIsRequired = true;
+    joinInfo.m_propertyMap = &propertyMap;
+    joinInfo.m_primaryECInstanceIdCol = primaryECInstanceIdColumn;
+    joinInfo.m_primaryECClassIdCol = primaryECClassIdColumn;
+    joinInfo.m_foreignECInstanceIdCol = forignECInstanceIdColumn;
+    return joinInfo;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
 Utf8CP ConstraintECClassIdJoinInfo::GetSqlTableAlias()const
     {
-    return m_propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable";
+    if (!RequiresJoin())
+        {
+        BeAssert(false && "ConstraintECClassIdJoinInfo::GetSqlTableAlias can only be called if RequiresJoin() is true");
+        return nullptr;
+        }
+
+    return m_propertyMap->GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1047,16 +1092,28 @@ Utf8CP ConstraintECClassIdJoinInfo::GetSqlTableAlias()const
 //---------------------------------------------------------------------------------------
 Utf8CP ConstraintECClassIdJoinInfo::GetSqlECClassIdColumnAlias()const
     {
-    return   m_propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+    if (!RequiresJoin())
+        {
+        BeAssert(false && "ConstraintECClassIdJoinInfo::GetSqlECClassIdColumnAlias can only be called if RequiresJoin() is true");
+        return nullptr;
+        }
+
+    return m_propertyMap->GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSQL(bool appendAlias) const
+NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSql(bool appendAlias) const
     {
+    if (!RequiresJoin())
+        {
+        BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSql can only be called if RequiresJoin() is true");
+        return NativeSqlBuilder();
+        }
+
     NativeSqlBuilder sql;
-    sql.AppendEscaped(GetSqlTableAlias()).AppendDot().AppendEscaped(m_primaryECClassId.GetName().c_str());
+    sql.AppendEscaped(GetSqlTableAlias()).AppendDot().AppendEscaped(m_primaryECClassIdCol->GetName().c_str());
     if (appendAlias)
         sql.AppendSpace().Append(GetSqlECClassIdColumnAlias());
     return sql;
@@ -1065,19 +1122,24 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSQL(bo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSQL() const
+NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSql() const
     {
-    NativeSqlBuilder sql;
-    sql.Append(" INNER JOIN ")
-        .AppendEscaped(m_primaryECInstanceId.GetTable().GetName().c_str())
+    if (!RequiresJoin())
+        {
+        BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeJoinSql can only be called if RequiresJoin() is true");
+        return NativeSqlBuilder();
+        }
+
+    NativeSqlBuilder sql(" INNER JOIN ");
+    sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
         .AppendSpace()
         .AppendEscaped(GetSqlTableAlias())
         .Append(" ON ")
         .AppendEscaped(GetSqlTableAlias())
         .AppendDot()
-        .AppendEscaped(m_primaryECInstanceId.GetName().c_str())
+        .AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
         .Append(BooleanSqlOperator::EqualTo)
-        .AppendEscaped(m_forignECInstanceId.GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_forignECInstanceId.GetName().c_str());
+        .AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
 
     return sql;
     }
@@ -1092,19 +1154,17 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 
     DbTable const* table = propertyMap.GetTables().front();
     if (!ignoreVirtualColumnCheck)
-        if (table->GetPersistenceType() == PersistenceType::Virtual)
+        {
+        if (propertyMap.IsVirtual(*table))
             return nullptr;
-
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
-    if (!ignoreVirtualColumnCheck)
-        if (c->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
-            return nullptr;
+        }
 
     if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& map = static_cast<RelationshipClassEndTableMap const&>(propertyMap.GetClassMap());
         if (map.GetConstraintMap(map.GetReferencedEnd()).GetECClassIdPropMap() == &propertyMap)
             {
+            SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
             if (Enum::Contains(c->GetColumn().GetKind(), DbColumn::Kind::ECClassId))
                 return table;
             }
@@ -1116,46 +1176,6 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
         return table;
 
     return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                          11/2016
-//---------------------------------------------------------------------------------------
-ConstraintECClassIdJoinInfo::Ptr ConstraintECClassIdJoinInfo::Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable)
-    {
-    DbTable const* primaryTable = RequiresJoinTo(propertyMap);
-    if (primaryTable == nullptr)
-        return nullptr;
-
-    DbColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* primaryECClassIdColumn = primaryTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
-    DbColumn const* forignECInstanceIdColumn = nullptr;
-    const bool isSource = propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source;
-
-    RelationshipClassMap const& relationshipMap = static_cast<RelationshipClassMap const&>(propertyMap.GetClassMap());
-    if (!relationshipMap.IsMappedTo(contextTable))
-        {
-        BeAssert(false && "Relationship is not mapped to the context table. It must be one of Relationship.GetTables()");
-        return nullptr;
-        }
-
-    ConstraintECInstanceIdPropertyMap const*  constraintId = isSource ? relationshipMap.GetSourceECInstanceIdPropMap() : relationshipMap.GetTargetECInstanceIdPropMap();
-    BeAssert(constraintId != nullptr);
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* relaventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
-    if (relaventECClassIdPropertyMap == nullptr)
-        {
-        BeAssert(false && "Expecting a property map for given context table");
-        return nullptr;
-        }
-
-    forignECInstanceIdColumn = &relaventECClassIdPropertyMap->GetColumn();
-    if (primaryECInstanceIdColumn == nullptr || primaryECClassIdColumn == nullptr || forignECInstanceIdColumn == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return Ptr(new ConstraintECClassIdJoinInfo(propertyMap, *primaryECInstanceIdColumn, *primaryECClassIdColumn, *forignECInstanceIdColumn));
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
