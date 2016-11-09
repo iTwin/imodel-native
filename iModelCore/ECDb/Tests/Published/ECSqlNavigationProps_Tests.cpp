@@ -522,6 +522,73 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                       "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                       "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                       "    <ECEntityClass typeName='Model'>"
+                                       "        <ECProperty propertyName='Name' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                       "        <ECCustomAttributes>"
+                                       "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                       "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                       "            </ClassMap>"
+                                       "        </ECCustomAttributes>"
+                                       "        <ECProperty propertyName='Code' typeName='string' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='InfoElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='InfoTag' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='PhysicalElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='Geometry' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "   <ECRelationshipClass typeName='ModelHasElements' strength='Embedding'  modifier='Sealed'>"
+                                       "      <Source multiplicity='(1..1)' polymorphic='False' roleLabel='Model'>"
+                                       "          <Class class ='Model' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ECClassId modelHasElementsClassId = ecdb.Schemas().GetECClassId("TestSchema", "ModelHasElements");
+    ASSERT_TRUE(modelHasElementsClassId.IsValid());
+
+    ECInstanceKey modelKey;
+    ECInstanceKey elementKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES('MainModel')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(modelKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InfoElement(Code,Model) VALUES('Info-1',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(1, modelKey.GetECInstanceId(), modelHasElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementKey));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Model FROM ts.InfoElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
+
+    ECClassId actualRelClassId;
+    ECInstanceId actualModelId = stmt.GetNavigationPropertyValue(0, &actualRelClassId);
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping)
