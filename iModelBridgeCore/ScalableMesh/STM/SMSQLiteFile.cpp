@@ -23,7 +23,7 @@
 #define READWRITE Db::OpenMode::ReadWrite
 #endif
 
-const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -53,10 +53,10 @@ bool SMSQLiteFile::Close()
     }
 
 
-const SchemaVersion s_listOfReleasedSchemas[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
-const size_t s_numberOfReleasedSchemas = 2;
+const SchemaVersion s_listOfReleasedSchemas[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
+const size_t s_numberOfReleasedSchemas = 3;
 double s_expectedTimeUpdate[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
     [](BeSQLite::Db* database)
         {
         assert(database->TableExists("SMMasterHeader"));
@@ -132,6 +132,13 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
         database->DropTable("SMClipDefinitions");
         database->DropTable("SMGraph");
         s3.Commit();
+        },
+
+        [] (BeSQLite::Db* database)
+        {
+        database->ExecuteSql("ALTER TABLE SMMasterHeader ADD COLUMN DataResolution REAL DEFAULT 0.0");
+        database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN GeometryResolution REAL DEFAULT 0.0");
+        database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN TextureResolution REAL DEFAULT 0.0");
         }
     };
 
