@@ -442,6 +442,26 @@ DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode InformationPartitionElement::CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode code = CreateCode(parentSubject, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = CreateCode(parentSubject, name.c_str());
+        counter++;
+        } while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus InformationPartitionElement::_OnInsert()
     {
     if (!GetParentId().IsValid() || !GetDgnDb().Elements().Get<Subject>(GetParentId()).IsValid())
@@ -1064,7 +1084,7 @@ struct GeomBlobHeader
 GeometrySource2dCP DgnElement::ToGeometrySource2d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    return nullptr == source ? nullptr : source->ToGeometrySource2d();
+    return nullptr == source ? nullptr : source->GetAsGeometrySource2d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,7 +1093,7 @@ GeometrySource2dCP DgnElement::ToGeometrySource2d() const
 GeometrySource3dCP DgnElement::ToGeometrySource3d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    return nullptr == source ? nullptr : source->ToGeometrySource3d();
+    return nullptr == source ? nullptr : source->GetAsGeometrySource3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1111,8 +1131,8 @@ DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform GeometrySource::GetPlacementTransform() const
     {
-    GeometrySource3dCP source3d = _ToGeometrySource3d();
-    return nullptr != source3d ? source3d->GetPlacement().GetTransform() : _ToGeometrySource2d()->GetPlacement().GetTransform();
+    GeometrySource3dCP source3d = _GetAsGeometrySource3d();
+    return nullptr != source3d ? source3d->GetPlacement().GetTransform() : _GetAsGeometrySource2d()->GetPlacement().GetTransform();
     }
 
 /*---------------------------------------------------------------------------------**//**

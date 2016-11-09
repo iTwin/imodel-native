@@ -980,6 +980,47 @@ ISubEntityPtr BRepUtil::ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsPointInsideBody(IBRepEntityCR entity, DPoint3dCR testPoint)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    DPoint3d    solidPoint = testPoint;
+    Transform   dgnToSolid;
+    
+    dgnToSolid.InverseOf(entity.GetEntityTransform());
+    dgnToSolid.Multiply(solidPoint);
+
+    PK_TOPOL_t      topo;
+    PK_VECTOR_t     point;
+    PK_enclosure_t  encl;
+
+    point.coord[0] = solidPoint.x;
+    point.coord[1] = solidPoint.y;
+    point.coord[2] = solidPoint.z;
+
+    if (SUCCESS != PK_BODY_contains_vector(PSolidUtil::GetEntityTag(entity), point, &encl, &topo))
+        return false;
+
+    return (PK_enclosure_outside_c != encl);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::LocateFace(ISubEntityCR subEntity, DRay3dCR boresite, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidUtil::RayTestFace(PSolidSubEntity::GetSubEntityTag(subEntity), PSolidSubEntity::GetSubEntityTransform(subEntity), intersectPts, intersectParams, boresite);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::ClosestPointToFace(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, DPoint2dR param)
@@ -1044,6 +1085,122 @@ bool BRepUtil::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
     return PSolidSubEntity::GetVertexLocation(subEntity, point);
 #else
     return false;
+#endif
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static void transformInertiaTensor(double inertia[3][3], RotMatrixCR rMatrix, double scale, bool isSolid)
+    {
+    // The new inertia tensor that accounts for rotation/scale is I1 = Q * I0 * Q^T...
+    RotMatrix   q = rMatrix, i0, i1;
+
+    memcpy (&i0, inertia, sizeof(i0));
+
+    i1.InitProduct(q, i0);
+    i1.InitProductRotMatrixRotMatrixTranspose(i1, q);
+
+    memcpy(inertia, &i1, sizeof(i1));
+
+    double  power = (isSolid ? 5.0 : 4.0);
+
+    inertia[0][0] *= pow(scale, power);
+    inertia[1][1] *= pow(scale, power);
+    inertia[2][2] *= pow(scale, power);
+    inertia[0][1] *= pow(scale, power);
+    inertia[0][2] *= pow(scale, power);
+    inertia[1][2] *= pow(scale, power);
+    }
+
+#endif
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], double tolerance)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    Transform   entityTransform = entity.GetEntityTransform();
+    bool        nonUniform = false;
+    double      scale;
+    DVec3d      scaleVector;
+    DPoint3d    translation;
+    RotMatrix   rMatrix;
+    Transform   scaleTransform;
+
+    entityTransform.GetTranslation(translation);
+    entityTransform.GetMatrix(rMatrix);
+    rMatrix.NormalizeColumnsOf(rMatrix, scaleVector);
+
+    // Check for non-uniform scaling...it will need to be applied to the body...
+    if (!DoubleOps::WithinTolerance(scaleVector.x, scaleVector.y, 1.0e-12) || !DoubleOps::WithinTolerance(scaleVector.x, scaleVector.z, 1.0e-12))
+        {
+        scale = DoubleOps::MinAbs(scaleVector.x, scaleVector.y, scaleVector.z);
+        scaleVector.Scale(1.0 / scale);
+        scaleTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0.0, 0.0, 0.0), scaleVector.x, scaleVector.y, scaleVector.z);
+
+        entityTransform.InitFrom(rMatrix, translation);
+        nonUniform = true;
+        }
+    else
+        {
+        scale = scaleVector.x;
+        }
+
+    if (SUCCESS != PSolidUtil::MassProperties(amount, periphery, centroid, inertia, PSolidUtil::GetEntityTag(entity), nonUniform ? &scaleTransform : NULL, tolerance))
+        return ERROR;
+
+    switch (entity.GetEntityType())
+        {
+        case IBRepEntity::EntityType::Solid:
+            {
+            if (amount)
+                *amount *= pow(scale, 3.0);
+
+            if (periphery)
+                *periphery *= pow(scale, 2.0);
+
+            break;
+            }
+
+        case IBRepEntity::EntityType::Sheet:
+            {
+            if (amount)
+                *amount *= pow(scale, 2.0);
+
+            if (periphery)
+                *periphery *= pow(scale, 1.0);
+
+            break;
+            }
+
+        case IBRepEntity::EntityType::Wire:
+            {
+            if (amount)
+                *amount *= pow(scale, 1.0);
+
+            if (periphery)
+                *periphery = 0.0;
+
+            break;
+            }
+
+        default:
+            return ERROR;
+        }
+
+    if (centroid)
+        entityTransform.Multiply(*centroid);
+
+    if (inertia)
+        transformInertiaTensor(inertia, rMatrix, scale, IBRepEntity::EntityType::Solid == entity.GetEntityType());
+
+    return SUCCESS;
+#else
+    return ERROR;
 #endif
     }
 
@@ -1267,6 +1424,41 @@ BentleyStatus BRepUtil::Modify::SewBodies (bvector<IBRepEntityPtr>& sewnEntities
 #endif
     }
 
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool        isOwned;
+    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity, &isOwned);
+
+    if (!isOwned)
+        PK_ENTITY_copy(entityTag, &entityTag);
+
+    bvector<PK_BODY_t> bodies;
+
+    if (SUCCESS != PSolidUtil::DisjoinBody(bodies, entityTag))
+        {
+        if (!isOwned)
+            PK_ENTITY_delete(1, &entityTag);
+
+        return ERROR;
+        }
+
+    Transform entityTransform = entity.GetEntityTransform();
+
+    if (isOwned)
+        PSolidUtil::ExtractEntityTag(entity); // Invalidate input entity, will appear first in output bodies vector...
+
+    for (PK_BODY_t thisBody : bodies)
+        output.push_back(PSolidUtil::CreateNewEntity(thisBody, entityTransform, true));
+
+    return ERROR;
+#else
+    return ERROR;
+#endif
+    }
+
 
 

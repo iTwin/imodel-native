@@ -86,9 +86,9 @@ void FitContext::ExtendFitRange(ElementAlignedBox3dCR elementBox, TransformCR pl
 StatusInt FitContext::_VisitGeometry(GeometrySourceCR source) 
     {
     // NOTE: Just use element aligned box instead of drawing geometry.
-    bool is3d = (nullptr != source.ToGeometrySource3d());
-    ExtendFitRange(is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : 
-                          ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()),
+    bool is3d = (nullptr != source.GetAsGeometrySource3d());
+    ExtendFitRange(is3d ? source.GetAsGeometrySource3d()->GetPlacement().GetElementBox() : 
+                          ElementAlignedBox3d(source.GetAsGeometrySource2d()->GetPlacement().GetElementBox()),
                    source.GetPlacementTransform());
 
     return SUCCESS;
