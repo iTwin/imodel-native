@@ -1825,6 +1825,25 @@ TEST_F(DgnElementTests, DgnElementsIterator)
     ASSERT_EQ(numPhysicalObjects, count);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, TestSpatialLocation)
+    {
+    SetupSeedProject();
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
+    SpatialLocationModelPtr physicalModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestPhysicalModel");
+
+    TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
+    ASSERT_TRUE(element1.IsValid());
+    ASSERT_TRUE(element1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
+
+    TestSpatialLocationPtr element2 = TestSpatialLocation::Create(*physicalModel, categoryId);
+    ASSERT_TRUE(element2.IsValid());
+    ASSERT_TRUE(element2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------

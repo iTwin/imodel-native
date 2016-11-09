@@ -38,6 +38,7 @@
 #define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
+#define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalTemplate "TestPhysicalTemplate"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
@@ -197,6 +198,32 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/16
+//=======================================================================================
+struct TestSpatialLocation : Dgn::SpatialLocationElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestSpatialLocation, Dgn::SpatialLocationElement)
+    friend struct TestSpatialLocationHandler;
+
+protected:
+    explicit TestSpatialLocation(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialLocationModelR, Dgn::DgnCategoryId);
+};
+
+typedef RefCountedPtr<TestSpatialLocation> TestSpatialLocationPtr;
+typedef RefCountedCPtr<TestSpatialLocation> TestSpatialLocationCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/16
+//=======================================================================================
+struct TestSpatialLocationHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestSpatialLocation, TestSpatialLocation, TestSpatialLocationHandler, Dgn::dgn_ElementHandler::SpatialLocation, )
 };
 
 //=======================================================================================

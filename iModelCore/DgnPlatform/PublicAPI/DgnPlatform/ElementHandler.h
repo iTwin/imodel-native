@@ -257,6 +257,12 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalPartition, Dgn::PhysicalPartition, PhysicalPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
+
+    //! The ElementHandler for SpatialLocationPartition
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, Dgn::SpatialLocationPartition, SpatialLocationPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
 };
 
 //=======================================================================================

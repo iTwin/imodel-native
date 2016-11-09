@@ -31,7 +31,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;}
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -336,6 +336,7 @@ protected:
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
+    virtual SpatialLocationModelCP _ToSpatialLocationModel() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
@@ -440,6 +441,7 @@ public:
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
+    SpatialLocationModelCP ToSpatialLocationModel() const {return _ToSpatialLocationModel();} //!< more efficient substitute for dynamic_cast<SpatialLocationModelCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
@@ -450,12 +452,14 @@ public:
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
+    SpatialLocationModelP ToSpatialLocationModelP() {return const_cast<SpatialLocationModelP>(_ToSpatialLocationModel());} //!< more efficient substitute for dynamic_cast<SpatialLocationModelP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
     bool IsGeometricModel() const {return nullptr != ToGeometricModel();}
     bool IsSpatialModel() const {return nullptr != ToSpatialModel();}
+    bool IsSpatialLocationModel() const {return nullptr != ToSpatialLocationModel();}
     bool IsPhysicalModel() const {return nullptr != ToPhysicalModel();}
     bool Is2dModel() const {return nullptr != ToGeometricModel2d();}
     bool Is3dModel() const {return nullptr != ToGeometricModel3d();}
@@ -897,6 +901,28 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationModel : SpatialModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationModel, SpatialModel);
+    friend struct dgn_ModelHandler::SpatialLocation;
+
+private:
+    static SpatialLocationModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
+
+protected:
+    SpatialLocationModelCP _ToSpatialLocationModel() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR) override;
+    explicit SpatialLocationModel(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPartitionCR modeledElement);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    09/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
@@ -1158,6 +1184,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SpatialLocationModel
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : Spatial
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationModel, SpatialLocationModel, SpatialLocation, Spatial, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for PhysicalModel

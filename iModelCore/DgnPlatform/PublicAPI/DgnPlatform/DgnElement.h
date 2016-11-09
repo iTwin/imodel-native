@@ -43,7 +43,7 @@ namespace dgn_ElementHandler
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
     struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
-    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
     struct Role;
@@ -2727,6 +2727,35 @@ public:
     //! @param[in] description Optional description for this PhysicalPartition
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! A SpatialLocationPartition provides a starting point for a SpatialLocationModel hierarchy
+//! @note SpatialLocationPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::SpatialLocationPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit SpatialLocationPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================

@@ -408,10 +408,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
 SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     SubjectPtr subject = Create(parentSubject, label, description);
-    if (!subject.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject);
+    return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,10 +502,7 @@ DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8
 DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DefinitionPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,10 +536,7 @@ DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8CP n
 DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DocumentPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -584,10 +575,41 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     GroupInformationPartitionPtr partition = Create(parentSubject, label, description);
-    if (!partition.IsValid())
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialLocationPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // Only SpatialLocationModels can model a SpatialLocationPartition
+    return model.IsSpatialLocationModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::SpatialLocationPartition::GetHandler());
+    if (!createParams.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition);
+    SpatialLocationPartitionPtr partition = new SpatialLocationPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    SpatialLocationPartitionPtr partition = Create(parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SpatialLocationPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,8 +617,6 @@ GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(Subject
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
     {
-    // WIP: A PhysicalPartition can only be modeled by a SpatialModel?
-    // WIP: Should we add a SpatialPartition and then restrict PhysicalPartition to sub PhysicalModels?
     return model.IsSpatialModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
 
@@ -622,10 +642,7 @@ PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8CP n
 PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     PhysicalPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
