@@ -2886,54 +2886,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     ASSERT_FALSE(asserted);
     }
 
-    //Mapping of a class containing both the Key property and a Foreign Key column is expected to fail 
-    {
-    SetupECDb("existingtablekeyproperty.ecdb");
-
-    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, FooId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
-
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
-        "<ECEntityClass typeName='Foo' modifier='None' >"
-        "   <ECProperty propertyName='FooProp' typeName='int' />"
-        "</ECEntityClass>"
-        "<ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>ExistingTable</Strategy>"
-        "                 </MapStrategy>"
-        "                <TableName>TestTable</TableName>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "   <ECProperty propertyName='GooProp' typeName='int' />"
-        "           <Key>"
-        "              <Property name='FooId'/>"
-        "           </Key>"
-        "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
-        "        <ECCustomAttributes>"
-        "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
-        "            </ForeignKeyRelationshipMap>"
-        "        </ECCustomAttributes>"
-        "    <Source cardinality='(0,1)' polymorphic='false'>"
-        "      <Class class = 'Foo' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='false'>"
-        "      <Class class = 'Goo' />"
-        "    </Target>"
-        "</ECRelationshipClass>"
-        "</ECSchema>", false, "ForeignKey column is set only when a key property isn't defined ");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
-    }
+    
     }
 
 //---------------------------------------------------------------------------------------
