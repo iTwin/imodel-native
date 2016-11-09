@@ -155,8 +155,8 @@ public:
     //! Binds to a NavigationECProperty parameter.
     //! @param[in] relatedInstanceId ECInstanceId of the related object. The id must be valid.
     //! @param[in] relationshipECClassId ECClassId of the ECRelationshipClass to navigate to the related ECInstance.
-    //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This will only succeed
-    //!            if the RelationshipECClassId is optional.
+    //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
+    //!            if the relationshipECClassId is optional. ECDb does not validate the input.
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindNavigation(ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId);
     

@@ -168,8 +168,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @param[in] parameterIndex Parameter index
         //! @param[in] relatedInstanceId ECInstanceId of the related object. The id must be valid.
         //! @param[in] relationshipECClassId ECClassId of the ECRelationshipClass to navigate to the related ECInstance.
-        //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This will only succeed
-        //!            if the RelationshipECClassId is optional.
+        //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
+        //!            if the relationshipECClassId is optional. ECDb does not validate the input.
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindNavigationValue(int parameterIndex, ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
 
