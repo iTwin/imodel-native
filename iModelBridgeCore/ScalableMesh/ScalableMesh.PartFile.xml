@@ -384,7 +384,7 @@
   </Product>
   
  
-    <Part Name="ScalableMesh" BentleyBuildMakeFile="Tests/prewire.mke">
+    <!--<Part Name="ScalableMesh" BentleyBuildMakeFile="Tests/prewire.mke">
         <SubPart PartName="ScalableMesh"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
@@ -396,19 +396,19 @@
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
-    </Part>    
+    </Part>    -->
   
   
-      <Product Name="SMTests">
-        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+     <!-- <Product Name="SMTests">
+
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="UnitTests-NonPublished"/>
-        <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+
         <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
         <Directories DirectoryListName="ScalableMeshATP"/>
     </Product>
 
-    <!-- Build a gtest exe to run the tests -->
+
     <Product Name="Gtest-SMTests">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="ScalableMeshATP"/>
@@ -427,7 +427,7 @@
     <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-SMTests/SMTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/SMTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-SMTests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    </Part>
+    </Part>-->
 
   
   </BuildContext>
