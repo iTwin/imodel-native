@@ -1795,7 +1795,7 @@ void SheetViewController::_DrawView(ViewContextR context)
         for (auto i=0; i<4; ++i)
             corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
 
-        auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
+        // unused -- auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
         //graphic->SetSymbology(bgcolor, bgcolor, 4);           *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
         graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
 
