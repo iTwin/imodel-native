@@ -325,6 +325,7 @@
     ### Properties
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
     
+   
     @see @ref ECDbOverview
     */
 
