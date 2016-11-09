@@ -155,7 +155,7 @@ void ViewAttachmentTest::AddBoxToModel(AnnotationElement2dCPtr& geomElOut, DgnMo
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, modelId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 
-    auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
+    auto geomEl = el->ToGeometrySourceP()->GetAsGeometrySource2dP();
     geomEl->SetCategoryId(m_annotationCatId);
     geomEl->SetPlacement(Placement2d(origin, AngleInDegrees::FromDegrees(rot)));
     GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl);
