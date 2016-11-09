@@ -52,7 +52,7 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const override { descr = m_infoString; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DgnDbStatus::Success; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override { return DgnDbStatus::Success; }
     virtual void _SetHilited(DgnElement::Hilited newState) const override { m_hilited = newState; }
