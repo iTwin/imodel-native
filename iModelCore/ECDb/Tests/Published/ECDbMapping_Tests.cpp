@@ -2885,6 +2885,55 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     AssertSchemaImport(asserted, GetECDb(), testItem);
     ASSERT_FALSE(asserted);
     }
+
+    //Mapping of a class containing both the Key property and a Foreign Key column is expected to fail 
+    {
+    SetupECDb("existingtablekeyproperty.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, FooId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "           <Key>"
+        "              <Property name='FooId'/>"
+        "           </Key>"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+        "            </ForeignKeyRelationshipMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,1)' polymorphic='false'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='false'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", false, "ForeignKey column is set only when a key property isn't defined ");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3024,6 +3073,157 @@ TEST_F(ECDbMappingTestFixture, ClassAndPropertyWithSameName)
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("I-Pod", stmt.GetValueText(0));
     stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ECSqlForUnmappedClass)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Product' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "					<Strategy>NotMapped</Strategy>"
+        "					<AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Name'  typeName='string' />"
+        "        <ECProperty propertyName='Price' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "Mapping Strategy NotMapped applied on subclasses is expected to succeed.");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "ECSqlForUnmappedClass.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(db, "SELECT FROM ts.Product WHERE Name='Book'"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
+	{
+	SchemaItem testItem(
+		"<?xml version='1.0' encoding='utf-8'?>"
+		"<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+		"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+		"    <ECEntityClass typeName='Product' modifier='None'>"
+		"        <ECCustomAttributes>"
+		"            <ClassMap xmlns='ECDbMap.01.00'>"
+		"                <MapStrategy>"
+		"                   <Strategy>OwnTable</Strategy>"
+		"                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+		"                </MapStrategy>"
+		"            </ClassMap>"
+		"        </ECCustomAttributes>"
+		"        <ECProperty propertyName='Name' typeName='text' />"
+		"        <ECProperty propertyName='Price' typeName='double' />"
+		"    </ECEntityClass>"
+		"</ECSchema>", true, "Mapping Strategy OwnTable applied to subclasses is expected to succeed.");
+
+	ECDb db;
+	bool asserted = false;
+	AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
+	ASSERT_FALSE(asserted);
+
+	ECSqlStatement stmt;
+	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
+	ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+	stmt.Finalize();
+
+	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECClassId FROM ts.Product"));
+	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+	ASSERT_EQ(db.Schemas().GetECClassId("Test", "Product"), stmt.GetValueId<ECClassId>(0));
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, NotMappedCAForFKRelationships)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>NotMapped</Strategy>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,1)' polymorphic='true'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='true'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "Mapping strategy NotMapped can be applied to FK ECRelationship. ");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "NotMappedCAForFKRelationships.ecdb");
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, NotMappedCAForLinkTable)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <LinkTableRelationshipMap xmlns='ECDbMap.01.00'>"
+        "               <SourceECInstanceIdColumn>FooId</SourceECInstanceIdColumn>"
+        "               <TargetECInstanceIdColumn>GooId</TargetECInstanceIdColumn>"
+        "            </LinkTableRelationshipMap>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>NotMapped</Strategy>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,1)' polymorphic='true'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='true'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "Mapping strategy NotMapped can be applied to LinkTable ECRelationship. ");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "NotMappedCAForLinkTable.ecdb");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------

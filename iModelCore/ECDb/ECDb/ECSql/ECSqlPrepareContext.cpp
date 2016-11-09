@@ -365,11 +365,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             auto param = static_cast<ParameterExp const*>(exp);
-            if (param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
-                {
-                //do nothing
-                }
-            else
+            if (!(param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName())))
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
@@ -379,16 +375,18 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         parentOfJoinedTableECSQL.AppendSpace().Append(bwhere->ToECSql().c_str());
         }
 
+    OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
+    if (optionsExp != nullptr)
+        {
+        joinedTableECSQL.AppendSpace().Append(optionsExp->ToECSql().c_str());
+        parentOfJoinedTableECSQL.AppendSpace().Append(optionsExp->ToECSql().c_str());
+        }
 
     if (!joinedTableProperties.empty())
-        {
         info->m_joinedTableECSql = joinedTableECSQL.ToString();
-        }
 
     if (!parentOfJoinedTableProperties.empty())
-        {
         info->m_parentOfJoinedTableECSql = parentOfJoinedTableECSQL.ToString();
-        }
 
     return info;
     }
