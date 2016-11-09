@@ -48,7 +48,7 @@ struct ViewGenerator
         void RecordPropertyMapIfRequried(PropertyMap const& accessString);
         BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Type filter = PropertyMap::Type::Entity);
         BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
-        BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const* sourceJoinInfo, ConstraintECClassIdJoinInfo const* targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
+        BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
         BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassLinkTableMap const& relationMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
@@ -70,29 +70,34 @@ struct ViewGenerator
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       11/2016
 +===============+===============+===============+===============+===============+======*/
-struct ConstraintECClassIdJoinInfo : NonCopyableClass
+struct ConstraintECClassIdJoinInfo
     {
-    typedef std::unique_ptr<ConstraintECClassIdJoinInfo> Ptr;
     private:
-        DbColumn const& m_primaryECInstanceId;
-        DbColumn const& m_primaryECClassId;
-        DbColumn const& m_forignECInstanceId;
-        ConstraintECClassIdPropertyMap const& m_propertyMap;
+        bool m_joinIsRequired;
+        DbColumn const* m_primaryECInstanceIdCol;
+        DbColumn const* m_primaryECClassIdCol;
+        DbColumn const* m_foreignECInstanceIdCol;
+        ConstraintECClassIdPropertyMap const* m_propertyMap;
+
+        ConstraintECClassIdJoinInfo() : m_joinIsRequired(false), m_primaryECInstanceIdCol(nullptr), m_primaryECClassIdCol(nullptr), m_foreignECInstanceIdCol(nullptr), m_propertyMap(nullptr) {}
+
         Utf8CP GetSqlTableAlias()const;
         Utf8CP GetSqlECClassIdColumnAlias()const;
-        ConstraintECClassIdJoinInfo(ConstraintECClassIdPropertyMap const& propertyMap, DbColumn const& primaryECInstanceId, DbColumn const& primaryECClassId, DbColumn const& forignECClassId)
-            : m_primaryECInstanceId(primaryECInstanceId), m_primaryECClassId(primaryECClassId), m_forignECInstanceId(forignECClassId), m_propertyMap(propertyMap)
-            {}
   
     public:
-        ConstraintECClassIdPropertyMap const& GetConstraintECClassId() const { return m_propertyMap; }
-        DbColumn const& GetPrimaryECInstanceIdColumn() const { return m_primaryECClassId; }
-        DbColumn const& GetPrimaryECClassIdColumn() const { return m_primaryECClassId; }
-        DbColumn const& GetForignECInstanceIdColumn() const { return m_forignECInstanceId; }
-        NativeSqlBuilder GetNativeConstraintECClassIdSQL(bool appendAlias) const;
+
+        static ConstraintECClassIdJoinInfo Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable);
         ~ConstraintECClassIdJoinInfo() {}
-        NativeSqlBuilder GetNativeJoinSQL() const;
+
+        bool RequiresJoin() const { return m_joinIsRequired; }
+        ConstraintECClassIdPropertyMap const& GetConstraintECClassIdPropMap() const { BeAssert(RequiresJoin()); return *m_propertyMap; }
+        DbColumn const& GetPrimaryECInstanceIdColumn() const { BeAssert(RequiresJoin()); return *m_primaryECClassIdCol; }
+        DbColumn const& GetPrimaryECClassIdColumn() const { BeAssert(RequiresJoin()); return *m_primaryECClassIdCol; }
+        DbColumn const& GetForignECInstanceIdColumn() const { BeAssert(RequiresJoin()); return *m_foreignECInstanceIdCol; }
+
+        NativeSqlBuilder GetNativeConstraintECClassIdSql(bool appendAlias) const;
+        NativeSqlBuilder GetNativeJoinSql() const;
+
         static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap, bool ignoreVirtualColumnCheck = false);
-        static Ptr Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
