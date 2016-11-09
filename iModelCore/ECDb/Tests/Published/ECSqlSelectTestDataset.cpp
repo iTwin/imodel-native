@@ -1532,7 +1532,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::InOperatorTests( int rowCountPerClass )
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE IN (1, 2, 3)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA IN (?)";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA IN (123)";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA.Id IN (-11)";

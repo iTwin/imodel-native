@@ -342,10 +342,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf("%s WHERE MyPSA = 11", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
-        ecsql.Sprintf("%s WHERE MyPSA.Id >= 0", pClassECSqlStub.c_str());
+        ecsql.Sprintf("%s WHERE MyPSA.Id IS NULL", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf("%s WHERE MyPSA.RelECClassId >= 0", pClassECSqlStub.c_str());
+        ecsql.Sprintf("%s WHERE MyPSA.RelECClassId IS NULL", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
 
