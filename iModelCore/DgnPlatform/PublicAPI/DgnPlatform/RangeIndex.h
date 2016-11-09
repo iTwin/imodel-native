@@ -44,7 +44,7 @@ struct FBox
         m_high.z = RoundUp(box.high.z);
         }
 
-    void Invalidate() {m_low.x = m_low.y = m_low.z = 1.0; m_high.x = m_high.y = m_high.z = -1.0;}
+    void Invalidate() {m_low.x = m_low.y = m_low.z = std::numeric_limits<float>::max(); m_high.x = m_high.y = m_high.z = -std::numeric_limits<float>::max();}
     FBox(FPoint3d low, FPoint3d high) : m_low(low), m_high(high) {}
     FBox(float xlow, float ylow, float zlow, float xhigh, float yhigh, float zhigh) {m_low.x=xlow; m_low.y=ylow; m_low.z=zlow; m_high.x=xhigh; m_high.y=yhigh; m_high.z=zhigh;}
     FBox() {Invalidate();}
@@ -110,7 +110,7 @@ struct Tree
         bool IsLeaf() const {return nullptr != ToLeaf();}
         bool IsSloppy() const {return m_sloppy;}
         void ClearRange() {m_sloppy=false; m_nodeRange.Invalidate();}
-        void ValidateRange();
+        DGNPLATFORM_EXPORT void ValidateRange();
         FBoxCR GetRange() {ValidateRange(); return m_nodeRange;}
         FBoxCR GetRangeCR() {return m_nodeRange;}
         bool Overlaps(FBoxCR range) const;

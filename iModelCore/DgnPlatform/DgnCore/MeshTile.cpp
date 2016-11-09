@@ -668,7 +668,7 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool alwaysIncludeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool includeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -684,9 +684,9 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
-    bool                    includeParams = alwaysIncludeParams;
 
-    if (!params.empty() &&
+    if (includeParams &&
+        !params.empty() &&
         (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
         {
         auto const&         patternMap = m_material.GetPatternMap();
@@ -694,7 +694,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
         if (patternMap.IsValid())
             {
-            includeParams = true;
+            BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
             if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
@@ -1014,6 +1014,8 @@ TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3
 TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
     PolyfaceHeaderPtr polyface = m_geometry->GetAsPolyfaceHeader();
+    
+
     if (polyface.IsValid())
         {
         if (!HasTexture())
@@ -1078,17 +1080,12 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
     double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
-    IFacetOptionsPtr    pFacetOptions;
+    IFacetOptionsPtr    pFacetOptions = facetOptions.Clone();
     
     if (facetOptions.GetChordTolerance() < minChordTolerance)
-        {
-        pFacetOptions = facetOptions.Clone();
         pFacetOptions->SetChordTolerance (minChordTolerance);
-        }
-    else
-        {
-        pFacetOptions = &facetOptions;
-        }
+
+    pFacetOptions->SetParamsRequired (true);        // Can't rely on HasTexture due to face attached material that may have texture.
 
     TileGeometry::T_TilePolyfaces   tilePolyfaces;
 
@@ -1598,7 +1595,7 @@ private:
 
     virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
     virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
     virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     virtual Placement3dCR _GetPlacement() const override { return m_placement; }
@@ -2040,6 +2037,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
             {
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
+            bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -2071,7 +2069,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                         if (!maxGeometryCountExceeded)
                             elemId = geom->GetEntityId();
 
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, false);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, hasTexture);
                         }
                     }
                 }

@@ -12,7 +12,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_AuthorityHandler {struct Model; struct Partition; struct Session;};
+namespace dgn_AuthorityHandler {struct Link; struct Partition; struct Session;};
 
 //=======================================================================================
 //! A DgnAuthority issues and validates DgnCodes for coded objects like elements and models.
@@ -137,6 +137,24 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT static DgnCode CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetPartitionAuthorityId();
+};
+
+//=======================================================================================
+//! The default code-issuing authority for LinkElements.
+// @bsistruct                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct LinkAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Link;
+
+protected:
+    LinkAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateLinkCode(Utf8StringCR codeValue, DgnElementId scopeId);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetLinkAuthorityId();
 };
 
 //=======================================================================================
@@ -231,6 +249,7 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT static DgnCode CreateSessionCode(Utf8StringCR codeValue);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetSessionAuthorityId();
 };
 
 //=======================================================================================
@@ -277,6 +296,11 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Link : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_LinkAuthority, LinkAuthority, Link, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Partition : Authority

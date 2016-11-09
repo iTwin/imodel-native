@@ -1196,6 +1196,50 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
+    {
+    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId],[ParentId],[UserLabel] FROM %s", className);
+
+    if (whereClause)
+        {
+        sql.append(" ");
+        sql.append(whereClause);
+        }
+
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
+
+    DgnElements::Iterator iterator;
+    iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
+    return iterator;
+    }
+
+DgnElementId DgnElements::Entry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
+DgnClassId DgnElements::Entry::GetElementClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+BeSQLite::BeGuid DgnElements::Entry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
+Utf8CP DgnElements::Entry::GetCodeValue() const {return m_statement->GetValueText(3);}
+DgnModelId DgnElements::Entry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
+DgnElementId DgnElements::Entry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
+Utf8CP DgnElements::Entry::GetUserLabel() const {return m_statement->GetValueText(6);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElements::Iterator::GetElementIdSet()
+    {
+    DgnElementIdSet elementIdSet;
+    for (DgnElements::Entry entry : *this)
+        elementIdSet.insert(entry.GetElementId());
+
+    return elementIdSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::InitNextId()

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/envvutil.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -114,7 +114,7 @@ StatusInt util_readRegistry (WStringR value, WCharCP data)
 
     // __asm int 3;
     // Make a copy of the data to work on. Need orig for error msg.
-    wcscpy (szFromCfg, data);
+    BeStringUtilities::Wcsncpy(szFromCfg, _countof(szFromCfg), data, _TRUNCATE);
     // Crack the string into three parts.
     pLastPart =  ::wcsrchr (szFromCfg, L'\\');
     if (NULL == pLastPart)

@@ -415,7 +415,7 @@ WCharCP                        dmpFileName
         WCharP szMS_TMP = exePath;                               // Reuse the buffer from above to minimize stack consumption
         wcscpy(szMS_TMP, T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName().GetName ());
         
-        _snwprintf (szDumpFile, MAX_PATH, L"%ls%ls", szMS_TMP, L"MiniDump.dmp");
+        BeStringUtilities::Snwprintf(szDumpFile, MAX_PATH, L"%ls%ls", szMS_TMP, L"MiniDump.dmp");
 
         hDumpFile = ::CreateFileW (szDumpFile, GENERIC_WRITE, FILE_SHARE_READ, ___, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, ___);
         }
@@ -748,7 +748,7 @@ WChar   const * const   szDumpFile                              // => Optional
             DWORD     swFlags=0;
             WChar    * pDigitsEnd = NULL;
 
-            wcsncpy (cmdBuf, cfgVariable.c_str(), sizeof cmdBuf/sizeof WChar);
+            BeStringUtilities::Wcsncpy(cmdBuf, (sizeof cmdBuf/sizeof WChar), cfgVariable.c_str(), _TRUNCATE);
 
             // If there is a leading hex number then assume that it is one of the SW_xxx constants.
             swFlags = wcstoul (cmd, &pDigitsEnd, 16);

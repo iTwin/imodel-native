@@ -58,6 +58,7 @@
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_LineStyle                 "LineStyle"
+#define BIS_CLASS_LinkAuthority             "LinkAuthority"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
 #define BIS_CLASS_Model                     "Model"
@@ -305,15 +306,13 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnElementId m_modeledElementId;
-        DgnCode m_code;
         bool m_inGuiList = true;
         bool m_isTemplate = false;
 
     public:
         Model() {}
-        Model(DgnCode code, DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
+        Model(DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid) {}
 
-        void SetCode(DgnCode code) {m_code = code;}
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
@@ -321,7 +320,6 @@ public:
         void SetModelType(DgnClassId classId) {m_classId = classId;}
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
-        DgnCode const& GetCode() const {return m_code;}
         bool GetInGuiList() const {return m_inGuiList;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
@@ -344,8 +342,6 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT DgnCode GetCode() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
             DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
