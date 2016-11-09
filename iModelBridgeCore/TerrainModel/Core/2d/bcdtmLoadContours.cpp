@@ -1138,7 +1138,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
                      cv.notify_one();
                      return -1;
                      }
-                 return nextCount;
+                 return index;
                  }
 
              //=======================================================================================
