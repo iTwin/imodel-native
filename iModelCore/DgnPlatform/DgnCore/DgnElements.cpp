@@ -1198,9 +1198,9 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
+DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId],[ParentId],[UserLabel] FROM %s", className);
+    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId,ParentId,UserLabel FROM %s", className);
 
     if (whereClause)
         {
@@ -1219,8 +1219,8 @@ DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereCl
     return iterator;
     }
 
-DgnElementId DgnElements::Entry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
-DgnClassId DgnElements::Entry::GetElementClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+DgnElementId DgnElements::Entry::GetId() const {return m_statement->GetValueId<DgnElementId>(0);}
+DgnClassId DgnElements::Entry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 BeSQLite::BeGuid DgnElements::Entry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
 Utf8CP DgnElements::Entry::GetCodeValue() const {return m_statement->GetValueText(3);}
 DgnModelId DgnElements::Entry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
@@ -1234,7 +1234,7 @@ DgnElementIdSet DgnElements::Iterator::GetElementIdSet()
     {
     DgnElementIdSet elementIdSet;
     for (DgnElements::Entry entry : *this)
-        elementIdSet.insert(entry.GetElementId());
+        elementIdSet.insert(entry.GetId());
 
     return elementIdSet;
     }
@@ -1482,10 +1482,16 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::Delete(DgnElementCR element)
+DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
     {
-    if (&element.GetDgnDb() != &m_dgndb || !element.IsPersistent())
-        return DgnDbStatus::WrongElement;
+    if (&elementIn.GetDgnDb() != &m_dgndb)
+        return DgnDbStatus::WrongDgnDb;
+
+    DgnElementCPtr el = elementIn.IsPersistent() ? &elementIn : GetElement(elementIn.GetElementId());
+    if (!el.IsValid())
+        return DgnDbStatus::BadElement;
+
+    DgnElementCR element = *el;
 
     // Get the next available id now, before we perform any deletes, so if we delete and then undo the last element we don't reuse its id.
     // Otherwise, we may mistake a new element as being a modification to a deleted element in a changeset.

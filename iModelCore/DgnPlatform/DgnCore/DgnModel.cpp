@@ -1810,29 +1810,36 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 
     return T_Super::Parse(name);
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
+* @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::ElementIterator::const_iterator DgnModel::ElementIterator::begin() const
+DgnModel::ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?";
-        sqlString = MakeSqlString(sqlString.c_str(), true);
+    Utf8PrintfString sql("SELECT ECInstanceId,CodeValue,UserLabel,ECClassId,ParentId,FederationGuid,LastMod FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ModelId=?");
 
-        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        m_stmt->BindId(1, m_id);
-        m_params.Bind(*m_stmt);
-        }
-    else
+    if (whereClause)
         {
-        m_stmt->Reset();
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
+
+    DgnModel::ElementIterator iterator;
+    auto stmt = iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
+    stmt->BindId(1, GetModelId());
+
+    return iterator;
     }
 
-DgnElementId DgnModel::ElementIterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnElementId>(0);}
-Utf8String DgnModel::ElementIterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
-Utf8String DgnModel::ElementIterator::Entry::GetUserLabel() const {Verify(); return m_sql->GetValueText(2);}
+DgnElementId DgnModel::IterEntry::GetId() const {return m_statement->GetValueId<DgnElementId>(0);}
+Utf8String DgnModel::IterEntry::GetCodeValue() const {return m_statement->GetValueText(1);}
+Utf8String DgnModel::IterEntry::GetUserLabel() const {return m_statement->GetValueText(2);}
+DgnClassId DgnModel::IterEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(3);}
+DgnElementId DgnModel::IterEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(4);}
+BeSQLite::BeGuid DgnModel::IterEntry::GetFederationGuid() const {return m_statement->GetValueGuid(5);}
+DateTime DgnModel::IterEntry::GetTimeStamp() const {return m_statement->GetValueDateTime(6);}

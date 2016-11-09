@@ -159,7 +159,7 @@ DgnCode DgnElement::_GenerateDefaultCode() const
 DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMode " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMod " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
     stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -2503,7 +2503,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             return DgnDbStatus::Success;
             });
         
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, 
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMod, 
         [](ECValueR value, DgnElementCR el)
             {
             value.SetDateTime(el.QueryTimeStamp());

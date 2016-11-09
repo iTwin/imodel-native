@@ -24,55 +24,63 @@ struct DgnModelTests : public DgnDbTestFixture
         return model;
         }
 
-    void InsertElement(DgnDbR, DgnModelId mid, bool is3d, bool expectSuccess);
+    DgnElementId InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2);
+    DgnElementId InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2);
+
+    void TestRangeIndex3d();
+    void TestRangeIndex2d();
+    void CheckEmptyModel();
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool expectSuccess)
+DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnElementPtr elem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
 
-    DgnElementPtr gelem;
-    if (is3d)
-        {
-        Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
-        }
-    else
-        {
-        Placement2d placement(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
-        }
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
+    builder->Finish(*elem->ToGeometrySourceP());
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
-    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0))));
+    auto newElem = m_db->Elements().Insert(*elem);
+    return newElem.IsValid() ? newElem->GetElementId() : DgnElementId();
+    }
 
-    if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP())) // Won't catch 2d/3d mismatch from just GeometrySource as we don't know a DgnModel...
-        {
-        ASSERT_FALSE(expectSuccess);
-        return;
-        }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+DgnElementId DgnModelTests::InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
+    {
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnElementPtr elem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
 
-    DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_TRUE(expectSuccess == (newElem.IsValid() && newElem->GetElementId().IsValid()));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
+    builder->Finish(*elem->ToGeometrySourceP());
+
+    auto newElem = m_db->Elements().Insert(*elem);
+    return newElem.IsValid() ? newElem->GetElementId() : DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
+* @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetRange)
+void DgnModelTests::TestRangeIndex3d()
     {
-    SetupSeedProject();
     auto model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
 
     model->FillRangeIndex(); // test maintaining the range index as add elements
 
-    InsertElement(*m_db, model->GetModelId(), true,  true);
-    InsertElement(*m_db, model->GetModelId(), true,  true);
-    InsertElement(*m_db, model->GetModelId(), true,  true);
-    InsertElement(*m_db, model->GetModelId(), true,  true);
+    Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
+    DPoint3d pt1 = DPoint3d::FromZero();
+    DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
 
     auto rangeIndex = model->GetRangeIndex();
     EXPECT_TRUE(4 == rangeIndex->GetCount());
@@ -110,24 +118,75 @@ TEST_F(DgnModelTests, GetRange)
     EXPECT_TRUE(box.IsEqual(range, .00000001));
     EXPECT_TRUE(indexbox.IsEqual(range, .00001));
 
+    Placement3d placement2(DPoint3d::FromZero(), YawPitchRollAngles());
+    pt1 = DPoint3d::From(-10.,-10,-10);
+    pt2 = DPoint3d::From(20,20,20);
+    auto id1 = InsertElement3d(model->GetModelId(), placement2, pt1, pt2);
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d());
+    EXPECT_TRUE(indexbox.IsEqual(AxisAlignedBox3d(pt1,pt2), .00001));
+
+    auto el2 = m_db->Elements().GetElement(id1)->CopyForEdit();
+    EXPECT_TRUE(el2.IsValid());
+    
+    placement2 = el2->ToGeometrySource3d()->GetPlacement();
+    placement2.SetOrigin(DPoint3d::From(1,0,0));
+    el2->ToGeometrySource3dP()->SetPlacement(placement2);
+    EXPECT_TRUE(el2->Update().IsValid()); // modify the largest range element in the model. This should cause the range tree extent to change by x=1
+
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d());
+    pt1.x += 1;
+    pt2.x += 1;
+
+    EXPECT_TRUE(indexbox.IsEqual(AxisAlignedBox3d(pt1,pt2), .00001));
+
+    EXPECT_TRUE(DgnDbStatus::Success == el2->Delete());  // deleting the element should remove it from the range index
+    EXPECT_TRUE(nullptr == rangeIndex->FindElement(id1));
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d()); // and the new extent of the model should be back to what it was before we added the large element
+    EXPECT_TRUE(indexbox.IsEqual(range, .00001));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModelTests::CheckEmptyModel()
+    {
     // check the range of an empty 3d model
     auto model2 = LoadModel("DefaultModel");
     AxisAlignedBox3d thirdRange = model2->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
 
+    int count = 0;
+    for (auto& el : model2->MakeIterator())
+        {
+        ++count;
+        }
+
+    EXPECT_TRUE(0 == count);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModelTests::TestRangeIndex2d()
+    {
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "TestDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
-    drawingModel->FillRangeIndex(); // test maintaining the range index as add elements
+    drawingModel->FillRangeIndex(); // test maintaining the range index as we add elements
 
-    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
-    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
-    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
-    InsertElement(*m_db, drawingModel->GetModelId(), false, true);
-    rangeIndex = drawingModel->GetRangeIndex();
+    Placement2d placement(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
+    DPoint3d pt1 = DPoint3d::FromZero();
+    DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+
+    auto rangeIndex = drawingModel->GetRangeIndex();
     EXPECT_TRUE(4 == rangeIndex->GetCount());
     EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
-    count = 0;
+    int count = 0;
     for (auto& el : drawingModel->MakeIterator())
         {
         EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
@@ -137,10 +196,26 @@ TEST_F(DgnModelTests, GetRange)
 
     m_db->SaveChanges();
 
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+    AxisAlignedBox3d box(low, high);
+
     AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
     AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
     EXPECT_TRUE(box.IsEqual(range2d, .00000001));
-    EXPECT_TRUE(indexbox2d.IsEqual(range, .00001));
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d, .00001));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, RangeIndex)
+    {
+    SetupSeedProject();
+
+    TestRangeIndex3d();
+    TestRangeIndex2d();
+    CheckEmptyModel();
     }
 
 //---------------------------------------------------------------------------------------
@@ -233,15 +308,20 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
     if (true)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(db.IsValid());
-        ASSERT_EQ(1, countSheetModels(*db));
+        m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(m_db.IsValid());
+        ASSERT_EQ(1, countSheetModels(*m_db));
 
         // Verify that we can only place drawing elements in a sheet
-        InsertElement(*db, sheetModelId1, false, true);
-        InsertElement(*db, sheetModelId1, true, false);
-        db->SaveChanges();
-        db->CloseDb();
+        Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
+        Placement2d placement2d(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
+        DPoint3d pt1 = DPoint3d::FromZero();
+        DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+        EXPECT_TRUE(!InsertElement3d(sheetModelId1, placement, pt1, pt2).IsValid());
+        EXPECT_TRUE(InsertElement2d(sheetModelId1, placement2d, pt1, pt2).IsValid());
+        m_db->SaveChanges();
+        m_db->CloseDb();
         }
     }
 
@@ -372,11 +452,16 @@ TEST_F(DgnModelTests, AbandonChanges)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Maha Nasir                      07/15
+* @bsimethod                                    Majd.Uddin                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, ReplaceInvalidCharacter)
+TEST_F(DgnModelTests, UnitDefinitionLabel)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+
+    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+    EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
 
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";
@@ -388,17 +473,4 @@ TEST_F(DgnModelTests, ReplaceInvalidCharacter)
     EXPECT_EQ("Invalid Name", (Utf8String) name);
     check = DgnDbTable::IsValidName(name, InvalidChar);
     EXPECT_TRUE(check);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin                      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, UnitDefinitionLabel)
-    {
-    SetupSeedProject();
-    PhysicalModelPtr model = GetDefaultPhysicalModel();
-
-    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
-    EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
     }

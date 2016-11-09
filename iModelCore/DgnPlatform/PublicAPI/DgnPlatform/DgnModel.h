@@ -590,27 +590,29 @@ public:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const {return _PopulateRequest(request, opcode);}
 
-    struct ElementIterator : BeSQLite::DbTableIterator
-    {   
-        DgnModelId m_id;
-        ElementIterator(DgnDbCR db, DgnModelId id, Utf8CP where=nullptr) : DbTableIterator((BeSQLite::DbCR) db), m_id(id) {if (where) m_params.SetWhere(where);}
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct ElementIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnElementId GetId() const;
-            DGNPLATFORM_EXPORT Utf8String GetName() const;
-            DGNPLATFORM_EXPORT Utf8String GetUserLabel() const;
-            Entry const& operator* () const {return *this;}
-        };
+    struct IterEntry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<IterEntry>;
 
-        typedef Entry const_iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
+    private:
+        IterEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+
+    public:
+        DGNPLATFORM_EXPORT DgnElementId GetId() const;
+        DGNPLATFORM_EXPORT Utf8String GetCodeValue() const;
+        DGNPLATFORM_EXPORT Utf8String GetUserLabel() const;
+        DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+        DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
+        DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
+        DGNPLATFORM_EXPORT DateTime GetTimeStamp() const;
     };
-    ElementIterator MakeIterator(Utf8CP where=nullptr) {return ElementIterator(m_dgndb, GetModelId(), where);}
+
+    //! DgnElement iterator
+    struct ElementIterator : ECSqlStatementIterator<IterEntry>
+    {
+    };
+
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
 }; // DgnModel
 

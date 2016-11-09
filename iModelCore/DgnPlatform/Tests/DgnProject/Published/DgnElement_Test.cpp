@@ -1816,7 +1816,7 @@ TEST_F(DgnElementTests, DgnElementsIterator)
     int count=0;
     for (DgnElements::Entry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
         {
-        ASSERT_TRUE(entry.GetElementClassId().IsValid());
+        ASSERT_TRUE(entry.GetClassId().IsValid());
         ASSERT_EQ(entry.GetModelId(), model->GetModelId());
         Utf8PrintfString userLabel("UserLabel%d", count);
         ASSERT_STREQ(entry.GetUserLabel(), userLabel.c_str());

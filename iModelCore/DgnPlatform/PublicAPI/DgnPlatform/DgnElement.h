@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
 #include "MemoryManager.h"
@@ -1341,8 +1340,6 @@ public:
 
     //! @name AppData Management
     //! @{
-    //! Get the HeapZone for the DgnDb of this element.
-
     //! Add Application Data to this element.
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
@@ -1689,18 +1686,21 @@ public:
 
     //! Get a writable reference to the origin of this Placement3d.
     DPoint3dR GetOriginR() {return m_origin;}
+    void SetOrigin(DPoint3dCR origin) {m_origin=origin;}
 
     //! Get the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesCR GetAngles() const {return m_angles;}
 
     //! Get a writable reference to the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesR GetAnglesR() {return m_angles;}
+    void SetAngles(YawPitchRollAnglesCR angles) {m_angles=angles;}
 
     //! Get the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
 
     //! Get a writable reference to the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
+    void SetElementBox(ElementAlignedBox3d const& box) {m_boundingBox = box;}
 
     //! Convert the origin and YawPitchRollAngles of this Placement3d into a Transform.
     Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
@@ -2853,8 +2853,8 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     private:
         Entry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
     public:
-        DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
-        DGNPLATFORM_EXPORT DgnClassId GetElementClassId() const;
+        DGNPLATFORM_EXPORT DgnElementId GetId() const;
+        DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
         DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
         DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
         DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
@@ -3005,7 +3005,7 @@ public:
     //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT Iterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+    DGNPLATFORM_EXPORT Iterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
