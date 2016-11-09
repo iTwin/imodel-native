@@ -18,38 +18,6 @@ struct ECDbProfileUpgrader
 private:
     virtual DbResult _Upgrade(ECDbCR) const = 0;
 
-    static DbResult AlterColumnsInView(ECDbCR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
-    static DbResult AlterColumnsInTable(ECDbCR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
-    static bool IsView(ECDbCR, Utf8CP tableOrViewName);
-    static DbResult RetrieveIndexDdlListForTable(std::vector<Utf8String>& indexDdlList, ECDbCR, Utf8CP tableName);
-
-protected:
-    //! Drops a table or view
-    //! @remarks Does not check whether the table / view exists or not.
-    //! @param[in] ecdb ECDb file handle
-    //! @param[in] tableOrViewName Name of table / view to be dropped
-    //! @return ::BE_SQLITE_OK in case of succes. Error codes otherwise.
-    static DbResult DropTableOrView(ECDbCR ecdb, Utf8CP tableOrViewName);
-
-    //! Modifies column(s) in a table.
-    //! If tableName refers to an empty view, the empty view is modified.
-    //! @param[in] ecdb ECDb file handle
-    //! @param[in] tableName Name of table to be modified
-    //! @param[in] newDdlBody DDL (without CREATE TABLE <tableName>) for how the table looks like after the modification
-    //! @param[in] recreateIndices true, if any indices defined for the table should be recreated after the modification.
-    //!                            false, if indices are not recreated, i.e. any indices present on the table before do no longer
-    //!                            exist after the modification. 
-    //!                            Pass true, if the modified columns do not affect the index definitions.
-    //!                            Pass false, if the modified columns affect the index definition. In this case the index
-    //!                            needs to be recreated separately.
-    //! @param[in] allColumnNamesAfter Comma-separated list of all columns after the modification (used for INSERT statement)
-    //! @param[in] matchingColumnNamesWithOldNames Comma-separated list of the same columns as in @p allColumnNamesAfter but with their names before the modification.
-    //!               Pass nullptr if the modifications don't include a column rename.
-    //! @return BE_SQLITE_OK in case of success. Error codes otherwise.
-    static DbResult AlterColumns(ECDbR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames = nullptr);
-
-//    static DbResult AlterTables(ECDbR, bvector<Utf8String> alterTableSqls);
-//    static BentleyStatus CheckIntegrity(ECDbCR);
 public:
     virtual ~ECDbProfileUpgrader() {}
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }

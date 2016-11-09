@@ -40,7 +40,3 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
-
-# WIP_MERGE_Krischan
-ECDbMappingTestFixture.DuplicateRelationshipsFlagForSubClassesInLinkTable
-ECRelationshipInheritanceTestFixture.RelECClassId

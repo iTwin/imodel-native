@@ -157,13 +157,11 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
 
             case MapStrategy::TablePerHierarchy:
              return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+
             default:
                 BeAssert(false && "should not be called");
                 return MappingStatus::Error;
         }
-
-    // WIP_MERGE_Krischan
-    // return MappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------
