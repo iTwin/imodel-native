@@ -141,7 +141,8 @@ USING_NAMESPACE_BENTLEY
         // now we just need to copy it out
         if (len > (--bufLen))
             len = bufLen;
-        memcpy_s(bufOut, bufLen, &buf[ind], len);
+        // MSVC-only -- memcpy_s(bufOut, bufLen, &buf[ind], len);
+        memcpy(bufOut, &buf[ind], len);
         return len - 1;
     }
 
@@ -223,7 +224,8 @@ USING_NAMESPACE_BENTLEY
 
     if (len > (--bufLen))
         len = bufLen;
-    memcpy_s(bufOut, bufLen, &buf[ind], len);
+    // MSVC-only -- memcpy_s(bufOut, bufLen, &buf[ind], len);
+    memcpy(bufOut, &buf[ind], len);
     return len - 1;
     }
 
@@ -333,7 +335,8 @@ USING_NAMESPACE_BENTLEY
 
     if (ind > bufLen)
         ind = bufLen;
-    memcpy_s(buf, bufLen, locBuf, ind);
+    // MSVC-only -- memcpy_s(buf, bufLen, locBuf, ind);
+    memcpy(buf, locBuf, ind);
     return ind;
     }
 

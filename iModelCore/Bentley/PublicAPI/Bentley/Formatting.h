@@ -12,6 +12,7 @@
 #include "WString.h"
 #include "RefCounted.h"
 #include "ValueFormat.r.h"
+#include <math.h>
 
 BENTLEY_NAMESPACE_TYPEDEFS(Formatting);
 
@@ -266,10 +267,10 @@ struct FormatParameterSet : NumericFormat
 private:
     RoundingType        m_roundType;
     double              m_roundFactor;
-    Utf8Char            m_leftPadding;
-    Utf8Char            m_rightPadding;
-    int                 m_boundaryLength;
-    FieldAlignment      m_alignment;
+    // unused -- Utf8Char            m_leftPadding;
+    // unused -- Utf8Char            m_rightPadding;
+    // unused -- int                 m_boundaryLength;
+    // unused -- FieldAlignment      m_alignment;
 
 public:
 
@@ -277,10 +278,10 @@ public:
     {
         m_roundType = RoundingType::RoundAwayFrom0;
         m_roundFactor = 0.5;
-        m_leftPadding;
-        m_rightPadding;
-        m_boundaryLength;
-        m_alignment;
+        // expression result unused -- m_leftPadding;
+        // expression result unused -- m_rightPadding;
+        // expression result unused -- m_boundaryLength;
+        // expression result unused -- m_alignment;
     }
 };
 
@@ -566,6 +567,8 @@ public:
         AddParameter(new FormatParameter(new Utf8String("LeftAlign"),        ParameterCategory::Alignment,      ParameterCode::LeftAlign,        ParameterDataType::Flag));
         AddParameter(new FormatParameter(new Utf8String("RightAlign"),       ParameterCategory::Alignment,      ParameterCode::RightAlign,       ParameterDataType::Flag));
         AddParameter(new FormatParameter(new Utf8String("MapName"),          ParameterCategory::Mapping,        ParameterCode::MapName,          ParameterDataType::String));
+    
+        return 0;
     }
 
     size_t GetCount() { return m_paramList.size(); }
