@@ -245,8 +245,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
 
     //now with omitting navigation id.
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Info-4", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, ECInstanceId(), ECClassId())) << "Related instance id must be valid";
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << "Related instance id must be valid";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, ECInstanceId(), ECClassId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step(newKey)) << "NavigationProp.Id not bound to " << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
 
@@ -296,10 +296,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
     validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), modelKey.GetECInstanceId(), modelHasElementsClassId);
     ASSERT_TRUE(insertWasValid);
 
-    //omit non-option model id
+    //omit non-optional model id
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Info-2-3", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasElementsClassId));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << ecdb.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step(newKey)) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
@@ -381,15 +381,14 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementId));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         if (expectedParentId.IsValid())
-            {
-            ASSERT_EQ(expectedParentId.GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValueUnchecked()) << "Parent.Id";
-            ASSERT_EQ(expectedRelClassId.GetValue(), stmt.GetValueId<ECClassId>(1).GetValueUnchecked()) << "Parent.RelECClassId";
-            }
+            ASSERT_EQ(expectedParentId.GetValueUnchecked(), stmt.GetValueId<ECInstanceId>(0).GetValueUnchecked()) << "Parent.Id";
         else
-            {
             ASSERT_TRUE(stmt.IsValueNull(0)) << "Parent.Id";
+
+        if (expectedRelClassId.IsValid())
+            ASSERT_EQ(expectedRelClassId.GetValueUnchecked(), stmt.GetValueId<ECClassId>(1).GetValueUnchecked()) << "Parent.RelECClassId";
+        else
             ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId";
-            }
 
         isValid = true;
         };
@@ -431,20 +430,26 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //now with omitting input
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-3", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, info1Key.GetECInstanceId(), ECClassId())) << stmt.GetECSql();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-4", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, ECInstanceId(), ECClassId())) << stmt.GetECSql();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-5", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << "Not calling BindNavigationPropertyValue at all";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Not calling BindNavigationPropertyValue at all";
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
 
     //wrong nav id
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-6", IECSqlBinder::MakeCopy::No));
@@ -485,20 +490,28 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-2", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECClassId()));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-3", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, info1Key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-4", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     //wrong nav id
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-5", IECSqlBinder::MakeCopy::No));
@@ -541,30 +554,45 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id) VALUES('Physical-3-2','%s')",
                   info1Key.GetECInstanceId().ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-3','%s',NULL)",
                   info1Key.GetECInstanceId().ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), info1Key.GetECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code) VALUES('Physical-3-4')"));
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //Parent is not mandatory
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
+    ASSERT_TRUE(insertWasValid);
 
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.RelECClassId) VALUES('Physical-3-5','%s')",
                   elementOwnsPhysicalElementsClassId.ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot check whether rel class id is set without actual id
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), elementOwnsPhysicalElementsClassId);
+    ASSERT_TRUE(insertWasValid);
 
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id, Parent.RelECClassId) VALUES('Physical-3-6',NULL,'%s')",
                   elementOwnsPhysicalElementsClassId.ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << stmt.GetECSql();
+    //ECDb cannot check whether rel class id is set without actual id
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), elementOwnsPhysicalElementsClassId);
+    ASSERT_TRUE(insertWasValid);
 
     //wrong nav id
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-7','%s','%s')",
@@ -661,6 +689,167 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navValue.GetValue(0).GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_STREQ("Model.RelECClassId", navValue.GetValue(1).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), navValue.GetValue(1).GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //Nav prop in where clause
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ts.InfoElement WHERE Model.Id=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValueUnchecked()) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(modelKey.GetECInstanceId().GetValue() + 1000))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+
+    stmt.Finalize();
+
+    //expanding syntax
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Model.Id, Model.RelECClassId FROM ts.InfoElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(1)) << stmt.GetECSql();
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementsClassId.GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << stmt.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                       "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                       "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                       "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                       "        <ECCustomAttributes>"
+                                       "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                       "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                       "            </ClassMap>"
+                                       "        </ECCustomAttributes>"
+                                       "        <ECProperty propertyName='Code' typeName='string' />"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='InfoElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='InfoTag' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='PhysicalElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='Geometry' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding'  modifier='Abstract'>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsPhysicalElements' strength='Embedding'  modifier='Sealed'>"
+                                       "        <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned PhysicalElement'>"
+                                       "          <Class class ='PhysicalElement' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassId elementOwnsPhysicalElementsClassId = ecdb.Schemas().GetECClassId("TestSchema", "ElementOwnsPhysicalElements");
+    ASSERT_TRUE(elementOwnsPhysicalElementsClassId.IsValid());
+
+    ECInstanceKey parentKey;
+    ECInstanceKey elementWithParentKey, elementWithoutParentKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InfoElement(Code) VALUES('Info-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code,Parent) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationPropertyValue(2, parentKey.GetECInstanceId(), elementOwnsPhysicalElementsClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementWithParentKey));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementWithoutParentKey));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Parent FROM ts.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithParentKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
+
+    ECClassId actualRelClassId;
+    ECInstanceId actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), actualParentId.GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
+
+    //alternative API via struct value
+    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
+    IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
+    ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
+    ASSERT_STREQ("Parent.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), navValue.GetValue(0).GetId<ECInstanceId>().GetValueUnchecked()) << stmt.GetECSql();
+    ASSERT_STREQ("Parent.RelECClassId", navValue.GetValue(1).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), navValue.GetValue(1).GetId<ECClassId>().GetValueUnchecked()) << stmt.GetECSql();
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithoutParentKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ASSERT_FALSE(actualParentId.IsValid());
+    ASSERT_FALSE(actualRelClassId.IsValid());
+    stmt.Finalize();
+
+    //Nav prop in where clause
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ts.Element WHERE Parent.Id=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(elementWithParentKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValueUnchecked()) << stmt.GetECSql();
+    //only one row expected
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(parentKey.GetECInstanceId().GetValue() + 1000))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //expanding syntax
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Parent.Id, Parent.RelECClassId FROM ts.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithParentKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(1)) << stmt.GetECSql();
+    ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << stmt.GetECSql();
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithoutParentKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.GetValueId<ECInstanceId>(0).IsValid());
+    ASSERT_FALSE(stmt.GetValueId<ECClassId>(1).IsValid());
     }
 
 //---------------------------------------------------------------------------------------
