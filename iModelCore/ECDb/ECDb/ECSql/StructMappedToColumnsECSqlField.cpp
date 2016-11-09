@@ -48,7 +48,7 @@ IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray() const
 //---------------------------------------------------------------------------------------
 IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue(int columnIndex) const
     {
-    if (columnIndex < 0 && columnIndex >= _GetMemberCount())
+    if (columnIndex < 0 || columnIndex >= _GetMemberCount())
         {
         Utf8String errorMessage;
         errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnIndex);
