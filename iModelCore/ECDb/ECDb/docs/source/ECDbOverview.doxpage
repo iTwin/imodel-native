@@ -118,6 +118,7 @@
     @li @subpage ECDbECSchemaRules
     @li @subpage ECDbRelationshipRules
     @li @subpage ECDbRelationshipInheritanceRules
+    @li @subpage ECDbNavigationProperties
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
@@ -449,6 +450,24 @@
     @see @ref ECDbRelationshipRules
     @see @ref ECDbSchemaMappingCustomization
     @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbNavigationProperties Navigation Properties in ECDb
+    
+    As described in <a href="files/ecdb/ecsql_overview.pdf" target="_blank">ECSQL Overview.pdf</a> @ref BentleyApi::ECN::NavigationECProperty "Navigation Properties"
+    are exposed to ECSQL as structs with the two system members @b Id and @b RelECClassId.
+
+    The RelECClassId is mandatory if the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" backing 
+    the Navigation Property has subclasses. Callers must make sure
+    to set the RelECClassId along with the Id when inserting an ECInstance. ECDb does not enforce that, nor validate the specified
+    values.
+
+    @see BentleyApi::BeSQLite::EC::ECSqlStatement::BindNavigationValue
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbOverview
+    */
 
     /**
     @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
