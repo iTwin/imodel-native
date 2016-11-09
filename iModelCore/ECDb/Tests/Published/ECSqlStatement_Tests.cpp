@@ -2136,6 +2136,56 @@ TEST_F(ECSqlStatementTestFixture, NoECClassIdFilterOption)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ReadonlyPropertiesAreUpdatable)
+    {
+    ECDbR ecdb = SetupECDb("ReadonlyPropertiesAreUpdatable.ecdb", 
+                           SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                               "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                               "    <ECEntityClass typeName='Element'>"
+                               "        <ECCustomAttributes>"
+                               "            <ClassMap xmlns='ECDbMap.01.00'>"
+                               "                <MapStrategy>"
+                               "                    <Strategy>SharedTable</Strategy>"
+                               "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+                               "                   <Options>JoinedTablePerDirectSubclass</Options>"
+                               "                </MapStrategy>"
+                               "            </ClassMap>"
+                               "        </ECCustomAttributes>"
+                               "        <ECProperty propertyName='ReadonlyProp1' typeName='int' readOnly='True' />"
+                               "    </ECEntityClass>"
+                               "    <ECEntityClass typeName='SubElement'>"
+                               "        <BaseClass>Element</BaseClass>"
+                               "        <ECProperty propertyName='ReadonlyProp2' typeName='int' readOnly='True' />"
+                               "    </ECEntityClass>"
+                               "</ECSchema>"),0);
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.SubElement(ReadonlyProp1,ReadonlyProp2) VALUES(1,2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "UPDATE ONLY ts.SubElement SET ReadonlyProp1=10, ReadonlyProp2=20"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ONLY ts.SubElement SET ReadonlyProp1=10, ReadonlyProp2=20 ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //verify update worked
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ReadonlyProp1, ReadonlyProp2 FROM ts.SubElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 struct PropertyPathEntry
