@@ -368,7 +368,7 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
     sprintf(existingEntityBaseQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialEntityBases] WHERE [Name] = '%s'", m_dbName, data.GetName().c_str());
     retCode = ExecuteSQL(existingEntityBaseQuery);
     bool hasExisting = false;
-    SQLINTEGER entityId;
+    SQLINTEGER entityId = 0;
     if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
     {
         SQLBindCol(hStmt, 1, SQL_INTEGER, &entityId, 2, &len);
