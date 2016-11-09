@@ -172,7 +172,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
         {
-        if (ecsqlType == ECSqlType::Insert)
+        if (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList)
             {
             if (!r.IsColumnPersisted())
                 continue;

@@ -779,10 +779,10 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetSourceECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlPropertyMapVisitor sqlVisitor2(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
-            relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(sqlVisitor2);
-            BeAssert(!sqlVisitor2.GetResultSet().empty());
-            viewSql.AppendComma().Append(sqlVisitor2.GetResultSet().front().GetSqlBuilder());
+            ToSqlPropertyMapVisitor constraintSqlVisitor(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
+            relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
+            BeAssert(!constraintSqlVisitor.GetResultSet().empty());
+            viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
             }
         else
             {
@@ -808,10 +808,10 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetTargetECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlPropertyMapVisitor sqlVisitor2(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
-            relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(sqlVisitor2);
-            BeAssert(!sqlVisitor2.GetResultSet().empty());
-            viewSql.AppendComma().Append(sqlVisitor2.GetResultSet().front().GetSqlBuilder());
+            ToSqlPropertyMapVisitor constraintSqlVisitor(*table, ToSqlPropertyMapVisitor::SqlTarget::Table, contextTable.GetName().c_str(), false, true);
+            relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
+            BeAssert(!constraintSqlVisitor.GetResultSet().empty());
+            viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
             }
         else
             {
