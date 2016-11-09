@@ -40,6 +40,3 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
-
-#TFS 368922
-ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
