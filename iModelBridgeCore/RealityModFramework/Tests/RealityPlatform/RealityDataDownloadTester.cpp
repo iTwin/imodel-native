@@ -56,18 +56,6 @@ class RealityDataDownloadTestFixture : public testing::Test
                 BeFileName::EmptyAndRemoveDirectory(directoryname);
             BeFileName::CreateNewDirectory(directoryname);
             }
-
-        //Before each test
-        virtual void SetUp() 
-            {
-            InitTestDirectory(GetDirectory());
-            }
-
-        //After each test
-        virtual void TearDown()
-            {
-            BeFileName::EmptyAndRemoveDirectory(GetDirectory());
-            }
     };
 
 //-------------------------------------------------------------------------------------
@@ -77,6 +65,9 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     {
     AString urlUSGSLink = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip";
     WString filename(GetDirectory());
+    filename.append(L"SimpleDownload");
+    InitTestDirectory(filename.c_str());
+
     RealityDataDownload::ExtractFileName(filename, urlUSGSLink);
 
     bvector<std::pair<AString, WString>> simpleDlList = bvector<std::pair<AString, WString>>();
@@ -89,6 +80,7 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     pDownload->Perform();
     
     ASSERT_TRUE(BeFileName::DoesPathExist(filename.c_str()));
+    BeFileName::EmptyAndRemoveDirectory(filename.c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -102,7 +94,9 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
         "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip",
         };
 
-    WCharCP directory = GetDirectory();
+    WString directory(GetDirectory());
+    directory.append(L"SisterDownload");
+    InitTestDirectory(directory.c_str());
 
     WString filename1(directory);
     RealityDataDownload::ExtractFileName(filename1, urlOSMLink[0]);
@@ -116,7 +110,7 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     for (size_t i = 0; i < urlOSMLink.size(); ++i)
         {
         wchar_t filename[1024];
-        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory, i);
+        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory.c_str(), i);
 
         ufPair.push_back(std::make_pair(urlOSMLink[i], WString(filename)));
         }
@@ -130,6 +124,7 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     pDownload->Perform();
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[0].second.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].second.c_str()));
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -143,7 +138,9 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
         "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip",
         };
 
-    WCharCP directory = GetDirectory();
+    WString directory(GetDirectory());
+    directory.append(L"MirrorDownload");
+    InitTestDirectory(directory.c_str());
 
     WString filename1(directory);
     RealityDataDownload::ExtractFileName(filename1, mirrors[0]);
@@ -156,7 +153,7 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     for (size_t i = 0; i < mirrors.size(); ++i)
         {
         wchar_t filename[1024];
-        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory, i);
+        swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory.c_str(), i);
 
         ufPair.push_back(std::make_pair(mirrors[i], WString(filename)));
         }
@@ -170,11 +167,14 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     pDownload->Perform();
     ASSERT_TRUE(!BeFileName::DoesPathExist(ufPair[0].second.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].second.c_str()));
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
 TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     {
-    WCharCP directory = GetDirectory();
+    WString directory(GetDirectory());
+    directory.append(L"DownloadCacheAndReport");
+    InitTestDirectory(directory.c_str());
 
     WString cachename1(directory);
     RealityDataDownload::ExtractFileName(cachename1, "cache1.zip");
@@ -256,4 +256,5 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
         }
 
     ASSERT_TRUE(fileCount == 3);
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
