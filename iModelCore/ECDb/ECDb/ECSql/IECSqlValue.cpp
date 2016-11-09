@@ -165,12 +165,12 @@ BeGuid IECSqlValue::GetGuid() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle  11/2016
 //---------------------------------------------------------------------------------------
-ECInstanceId IECSqlValue::GetNavigationPropertyValue(ECN::ECClassId* relationshipECClassId) const
+ECInstanceId IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) const
     {
     ECSqlColumnInfo const& colInfo = GetColumnInfo();
     if (colInfo.GetProperty() == nullptr || !colInfo.GetProperty()->GetIsNavigation())
         {
-        LOG.error("ECSqlStatement::GetNavigationPropertyValue> This method can only be called for a NavigationECProperty column.");
+        LOG.error("ECSqlStatement::GetValueNavigation> This method can only be called for a NavigationECProperty column.");
         return ECInstanceId();
         }
 

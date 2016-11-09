@@ -25,7 +25,9 @@ struct NavigationPropertyECSqlField : public ECSqlField, public IECSqlStructValu
             : ECSqlField(stmt, colInfo, false, false), IECSqlStructValue(), m_idField(nullptr), m_relClassIdField(nullptr)
             {}
 
-        virtual bool _IsNull() const override { return m_idField->IsNull() && m_relClassIdField->IsNull(); }
+        //!For a Navigation Property the main information is the Id. So we consider a nav prop value NULL if
+        //!the id is NULL (regardless of what the value of the RelECClassId is)
+        virtual bool _IsNull() const override { return m_idField->IsNull(); }
         virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
         virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
         virtual IECSqlArrayValue const& _GetArray() const override;
