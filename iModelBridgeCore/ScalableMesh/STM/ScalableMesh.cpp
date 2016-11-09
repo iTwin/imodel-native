@@ -407,6 +407,16 @@ IScalableMeshPtr IScalableMesh::GetTerrainSM()
     return _GetTerrainSM();
     }
 
+Transform  IScalableMesh::GetReprojectionTransform()
+    {
+    return _GetReprojectionTransform();
+    }
+
+BentleyStatus   IScalableMesh::SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform)
+    {
+    return _SetReprojection(targetCS, approximateTransform);
+    }
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {
@@ -630,7 +640,8 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     : ScalableMeshBase(smSQLiteFile, path),
     m_areDataCompressed(false),
     m_computeTileBoundary(false),
-    m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT)
+    m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT),
+    m_reprojectionTransform(Transform::FromIdentity())
     { 
     }
 
@@ -1798,10 +1809,22 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     bvector<bvector<DPoint3d>> coverageData;
     m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+
+    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
 
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
-    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
     if (!alsoAddOnTerrain || coverageData.empty())
         {
         m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
@@ -1810,7 +1833,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         {
         if (m_terrainP.IsValid())
             {
-            m_terrainP->AddClip(pts, ptsSize, clipID);
+            m_terrainP->AddClip(targetPts, ptsSize, clipID);
             }
         }
     return true;
@@ -1825,10 +1848,21 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     bvector<DPoint3d> clipData;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
     DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
-    DRange3d extentNew = DRange3d::From(pts, (int)ptsSize);
+
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+    DRange3d extentNew = DRange3d::From(targetPts, (int)ptsSize);
     extent.Extend(extentNew);
 
-    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
     return true;
 
@@ -1872,10 +1906,25 @@ template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector
     m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
     if (!alsoAddOnTerrain || coverageData.empty())
         {
-        DRange3d extent = DRange3d::From(skirt[0][0]);
-        for (auto& vec : skirt) extent.Extend(vec, nullptr);
+        bvector<bvector<DPoint3d>> reprojSkirt;
+        if (!m_reprojectionTransform.IsIdentity())
+            {
+            Transform trans;
+            trans.InverseOf(m_reprojectionTransform);
+            for (auto&vec : skirt)
+                {
+                bvector<DPoint3d> subskirt(vec.size());
+                if (!vec.empty()) trans.Multiply(&subskirt[0], &vec[0], (int)vec.size());
+                reprojSkirt.push_back(subskirt);
+                }
+            }
+        else reprojSkirt = skirt;
+
+
+        DRange3d extent = DRange3d::From(reprojSkirt[0][0]);
+        for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
         if (m_scmIndexPtr->GetClipRegistry()->HasSkirt(clipID)) return false;
-        m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
+        m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
         m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, false);
         }
     else
@@ -1894,9 +1943,23 @@ template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector
 template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr || skirt.size() ==0 || skirt[0].size() ==0) return false;
-    DRange3d extent = DRange3d::From(skirt[0][0]);
-    for (auto& vec : skirt) extent.Extend(vec, nullptr);
-    m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
+
+    bvector<bvector<DPoint3d>> reprojSkirt;
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        for (auto&vec : skirt)
+            {
+            bvector<DPoint3d> subskirt(vec.size());
+            if (!vec.empty()) trans.Multiply(&subskirt[0], &vec[0], (int)vec.size());
+            reprojSkirt.push_back(subskirt);
+            }
+        }
+    else reprojSkirt = skirt;
+    DRange3d extent = DRange3d::From(reprojSkirt[0][0]);
+    for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
+    m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false);
     return true;
     }
@@ -2208,6 +2271,33 @@ template <class POINT> void ScalableMesh<POINT>::_GetAllCoverages(bvector<bvecto
 template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
     {
     return m_terrainP;
+    }
+
+template <class POINT>  Transform  ScalableMesh<POINT>::_GetReprojectionTransform()
+    {
+    return m_reprojectionTransform;
+    }
+
+template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform)
+    {
+    m_reprojectionTransform = approximateTransform;
+    for (size_t i = 0; i < DTMAnalysisType::Qty; ++i)
+        {
+        Transform tr;
+        if (m_scalableMeshDTM[i]->GetTransformation(tr))
+            {
+            tr.FromProduct(tr, approximateTransform);
+            auto mat4d = DMatrix4d::From(tr);
+            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
+            }
+        else
+            {
+            auto mat4d = DMatrix4d::From(approximateTransform);
+            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
+            }
+        }
+
+    return ERROR;
     }
 
 template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)

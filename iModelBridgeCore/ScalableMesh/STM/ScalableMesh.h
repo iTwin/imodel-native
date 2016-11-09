@@ -205,6 +205,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
 
+        Transform                     m_reprojectionTransform; //approximation of reprojection used for live transforms.
+
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
 
@@ -302,6 +304,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override;
         virtual void                               _ImportTerrainSM(WString terrainPath) override;
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
+
+        virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
+        virtual Transform                          _GetReprojectionTransform() override;
 
         virtual BentleyStatus                   _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
@@ -440,6 +445,17 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IScalableMeshPtr                    _GetTerrainSM() override
             {
             return nullptr;
+            }
+
+        virtual Transform                          _GetReprojectionTransform() override
+            {
+            return Transform();
+
+            }
+
+        virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override
+            {
+            return ERROR;
             }
         virtual BentleyStatus                   _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
