@@ -22,6 +22,11 @@ GROUND_DETECTION_TYPEDEF(PointCloudThreadPool)
 GROUND_DETECTION_TYPEDEF(PointCloudWork)
 GROUND_DETECTION_TYPEDEF(PointCloudWorkerThread)
 
+GROUND_DETECTION_TYPEDEF(GroundDetectionWork)
+GROUND_DETECTION_TYPEDEF(GroundDetectionThreadPool)
+
+
+
 //__PUBLISH_SECTION_START__
 
 BEGIN_GROUND_DETECTION_NAMESPACE
@@ -149,6 +154,19 @@ protected:
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
+struct GroundDetectionWork : RefCountedBase
+{
+friend struct GroundDetectionThreadPool;
+//size_t          GetMemorySize() { return _GetMemorySize(); }
+protected:
+    virtual void    _DoWork() = 0;
+    //virtual size_t  _GetMemorySize() = 0;
+};
+
+
+/*=================================================================================**//**
+* @bsiclass                                             Marc.Bedard     09/2015
++===============+===============+===============+===============+===============+======*/
 struct PointCloudWorkerThread : PointCloudThread
 {
     friend struct PointCloudThreadPool;
@@ -255,6 +273,76 @@ public:
     bool WaitUntilWorkDone(uint32_t timeoutMillis) const;
     void WaitUntilQueueIsNotFull() const;
     void Terminate();
+};
+
+/*=================================================================================**//**
+* @bsiclass                                             Marc.Bedard     09/2015
++===============+===============+===============+===============+===============+======*/
+struct EXPORT_VTABLE_ATTRIBUTE GroundDetectionThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
+{       
+    /*
+    friend struct AllThreadsIdlePredicate;
+    friend struct ThreadPoolWorkDonePredicate;
+    friend struct ThreadPoolQueueNotFullPredicate;
+    */
+
+private:
+
+    //int                                 m_maxIdleThreads;
+    int                                 m_numWorkingThreads;    
+    atomic<bool>                        m_run;
+    //mutable BeConditionVariable         m_threadsCV;
+    //mutable BeMutex                     m_workQueueCS;
+    //mutable BeMutex                     m_memoryUsedCS;
+    std::thread*                          m_workingThreads;    
+    //bmap<PointCloudWorkerThread*, bool> m_threads;
+    //GroundDetectionWorkQueue            m_workQueue;
+    bvector<GroundDetectionWorkPtr>       m_workQueue;    
+    std::mutex                            m_workQueueMutex;
+    std::atomic<uint32_t>                 m_currentWorkInd; 
+    //size_t                              m_memoryUsed;
+
+    
+protected:
+
+    GroundDetectionThreadPool(int numWorkingThreads);
+
+    void WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId);
+            
+    //GroundDetectionWorkQueue& GetQueue() { return m_workQueue; }
+    /*
+    virtual void _OnThreadBusy(PointCloudWorkerThread& thread) override;
+    virtual void _OnThreadIdle(PointCloudWorkerThread& thread) override;
+    virtual bool _AssignWork(PointCloudWorkerThread& thread);
+    */
+
+    //PointCloudWorkerThreadPtr CreateThread();
+    //PointCloudWorkerThreadPtr GetIdleThread() const;
+    //bool ShouldCreateNewThread() const;
+    //bool IsTerminating() const {return m_isTerminating;}
+
+    //bool   IsMemoryLimitReached(size_t memoryUsed) const;
+    //void   SetMemoryUsed(size_t memoryUsed);
+    //size_t GetMemoryUsed() const;                
+
+public:
+
+    static GroundDetectionThreadPoolPtr Create(int maxThreads) { return new GroundDetectionThreadPool(maxThreads); }
+    virtual ~GroundDetectionThreadPool();
+    //int  GetThreadsCount() const;
+
+    void ClearQueueWork();
+
+    void QueueWork(GroundDetectionWorkPtr& work);    
+   
+    void Start();
+
+    void WaitAndStop();
+
+    //void WaitUntilAllThreadsIdle() const;
+    //bool WaitUntilWorkDone(uint32_t timeoutMillis) const;
+    //void WaitUntilQueueIsNotFull() const;
+    //void Terminate();
 };
 
 //__PUBLISH_SECTION_START__

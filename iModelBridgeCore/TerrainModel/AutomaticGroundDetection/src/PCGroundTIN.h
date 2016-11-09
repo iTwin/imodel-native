@@ -407,14 +407,17 @@ private:
     static BeMutex        s_dtmLibCS;
     intptr_t                        m_mainThreadID;
 
+    GroundDetectionThreadPoolPtr m_newThreadPool;
+    GroundDetectionThreadPoolPtr GetWorkThreadPool();
 
     PointCloudThreadPoolPtr m_pQueryThreadPool;
     PointCloudThreadPoolPtr m_pThreadPool;    
 
     PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& report);
     ~PCGroundTINMT();
-
     
+
+
     PointCloudThreadPool& GetQueryThreadPool();
     void FlushThreadPoolWork();
 

@@ -1641,9 +1641,22 @@ PointCloudThreadPool& PCGroundTINMT::GetThreadPool()
         }
     return *m_pThreadPool;
     }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+GroundDetectionThreadPoolPtr PCGroundTINMT::GetWorkThreadPool()
+    {
+    if (m_newThreadPool == NULL)
+        {
+        unsigned int num_threads = std::thread::hardware_concurrency();        
+        m_newThreadPool = GroundDetectionThreadPool::Create(num_threads);
+        }
+
+    return m_newThreadPool;
+    } 
+
 PointCloudThreadPool& PCGroundTINMT::GetQueryThreadPool()
     {
     if (m_pQueryThreadPool == NULL)
