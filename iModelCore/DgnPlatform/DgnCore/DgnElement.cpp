@@ -88,6 +88,16 @@ DgnModelId DgnElement::GetSubModelId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
+    {
+    bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
+    BeAssert(isModellable && "Only elements that implement IModellableElement can have SubModels");
+    return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const

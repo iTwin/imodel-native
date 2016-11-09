@@ -53,6 +53,7 @@
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
 #define BIS_CLASS_GroupInformationPartition "GroupInformationPartition"
+#define BIS_CLASS_IModellableElement        "IModellableElement"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"

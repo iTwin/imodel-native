@@ -1109,7 +1109,7 @@ protected:
     //! @param[in] model the new DgnModel
     //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInsert, forwarding its status.
-    virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const;
 
     //! Called after this element has been <i>modeled</i> by a new DgnModel.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInserted.

@@ -10,29 +10,47 @@
 
 #include <DgnPlatform/DgnDomain.h>
 
-DGNPLATFORM_TYPEDEFS(FunctionalPartition)
+DGNPLATFORM_TYPEDEFS(FunctionalComposite)
 DGNPLATFORM_TYPEDEFS(FunctionalModel)
+DGNPLATFORM_TYPEDEFS(FunctionalPartition)
+DGNPLATFORM_TYPEDEFS(FunctionalPortion)
 DGNPLATFORM_TYPEDEFS(FunctionalType)
 
-DGNPLATFORM_REF_COUNTED_PTR(FunctionalPartition)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalComposite)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalModel)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalPartition)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalPortion)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 
 #define FUNCTIONAL_DOMAIN_ECSCHEMA_PATH         L"ECSchemas/Domain/Functional.01.00.ecschema.xml"
 #define FUNCTIONAL_DOMAIN_NAME                  "Functional"
 #define FUNCTIONAL_SCHEMA(className)            FUNCTIONAL_DOMAIN_NAME "." className
 
-#define FUNC_CLASS_FunctionalPartition          "FunctionalPartition"
-#define FUNC_CLASS_FunctionalModel              "FunctionalModel"
-#define FUNC_CLASS_FunctionalElement            "FunctionalElement"
 #define FUNC_CLASS_FunctionalBreakdownElement   "FunctionalBreakdownElement"
 #define FUNC_CLASS_FunctionalComponentElement   "FunctionalComponentElement"
+#define FUNC_CLASS_FunctionalComposite          "FunctionalComposite"
+#define FUNC_CLASS_FunctionalElement            "FunctionalElement"
+#define FUNC_CLASS_FunctionalModel              "FunctionalModel"
+#define FUNC_CLASS_FunctionalPartition          "FunctionalPartition"
+#define FUNC_CLASS_FunctionalPortion            "FunctionalPortion"
 #define FUNC_CLASS_FunctionalType               "FunctionalType"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace func_ModelHandler {struct Functional;};
-namespace func_ElementHandler {struct FunctionalBreakdownElementHandler; struct FunctionalComponentElementHandler; struct FunctionalPartitionHandler; struct FunctionalTypeHandler;};
+namespace func_ModelHandler 
+    {
+    struct Functional;
+    };
+
+namespace func_ElementHandler
+    {
+    struct FunctionalBreakdownElementHandler; 
+    struct FunctionalComponentElementHandler; 
+    struct FunctionalCompositeHandler; 
+    struct FunctionalPartitionHandler; 
+    struct FunctionalPortionHandler; 
+    struct FunctionalTypeHandler;
+    };
 
 //=======================================================================================
 //! The Functional DgnDomain
@@ -139,6 +157,23 @@ protected:
 };
 
 //=======================================================================================
+//! Concrete/generic class for objects that break down the functional structure of something.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalComposite : FunctionalBreakdownElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComposite, FunctionalBreakdownElement)
+    friend struct func_ElementHandler::FunctionalCompositeHandler;
+
+protected:
+    explicit FunctionalComposite(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static FunctionalCompositePtr Create(FunctionalModelR);
+};
+
+//=======================================================================================
 //! Abstract base class for functional components.
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    06/16
@@ -150,6 +185,22 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElement : FunctionalElement
 
 protected:
     explicit FunctionalComponentElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalPortion : FunctionalComponentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalPortion, FunctionalComponentElement)
+    friend struct func_ElementHandler::FunctionalPortionHandler;
+
+protected:
+    explicit FunctionalPortion(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static FunctionalPortionPtr Create(FunctionalModelR);
 };
 
 //=======================================================================================
@@ -199,11 +250,25 @@ namespace func_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalBreakdownElement, FunctionalBreakdownElement, FunctionalBreakdownElementHandler, dgn_ElementHandler::Role, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for FunctionalComposite
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalCompositeHandler : FunctionalBreakdownElementHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComposite, FunctionalComposite, FunctionalCompositeHandler, FunctionalBreakdownElementHandler, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for FunctionalComponentElement
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElementHandler : dgn_ElementHandler::Role
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComponentElement, FunctionalComponentElement, FunctionalComponentElementHandler, dgn_ElementHandler::Role, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for FunctionalPortion
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalPortionHandler : FunctionalComponentElementHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalPortion, FunctionalPortion, FunctionalPortionHandler, FunctionalComponentElementHandler, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for FunctionalType
