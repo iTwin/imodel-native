@@ -317,15 +317,15 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     rangeParams.SetLineColor(DgnViewport::MakeColorTransparency(m_viewport->AdjustColorForContrast(ColorDef::LightGrey(), m_viewport->GetBackgroundColor()), 0x64));
     CookGeometryParams(rangeParams, *rangeGraphic);
 
-    if (nullptr != source.ToGeometrySource3d())
+    if (nullptr != source.GetAsGeometrySource3d())
         {
-        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()));
+        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.GetAsGeometrySource3d()->GetPlacement().GetElementBox()));
 
         rangeGraphic->AddRangeBox(range);
         }
     else
         {
-        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()));
+        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.GetAsGeometrySource2d()->GetPlacement().GetElementBox()));
 
         rangeGraphic->AddRangeBox2d(DRange2d::From(DPoint2d::From(range.low), DPoint2d::From(range.high)), 0.0);
         }

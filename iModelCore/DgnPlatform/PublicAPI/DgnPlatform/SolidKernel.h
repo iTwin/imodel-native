@@ -370,6 +370,20 @@ DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, b
 //! @return the face, edge, or vertex sub-entity that contains the closest point.
 DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
 
+//! Test if a point is inside or on the boundary of the given body.
+//! @param[in] entity The entity to test.
+//! @param[in] testPt The space point.
+//! @return true if point is not outside the body.
+DGNPLATFORM_EXPORT static bool IsPointInsideBody(IBRepEntityCR entity, DPoint3dCR testPt);
+
+//! Get the ray intersection with a face.
+//! @param[in] subEntity The face to intersect.
+//! @param[in] boresite The ray origin and direction.
+//! @param[out] intersectPts The hit points on the face.
+//! @param[out] intersectParams The uv parameters on the face.
+//! @return true if ray intersects face.
+DGNPLATFORM_EXPORT static bool LocateFace(ISubEntityCR subEntity, DRay3dCR boresite, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams);
+
 //! Get the closest point on a face to a given point.
 //! @param[in] subEntity The face to test.
 //! @param[in] testPt The space point.
@@ -409,6 +423,11 @@ DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>&
 
 //! Perform 3d clip of the supplied sheet or solid entity.
 DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
+
+//! Evaluate mass properties of the supplied entity. Used internally by MeasureGeomCollector which is the preferred api to use for all geometric primitive types.
+//! The returned values are interpreted according to entity type, i.e. amount is length for a wire body, area for a sheet, and volume for a solid.
+//! @see MeasureGeomCollector.
+DGNPLATFORM_EXPORT static BentleyStatus MassProperties(IBRepEntityCR, double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], double tolerance);
 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
@@ -476,6 +495,9 @@ struct Modify
     //! @param[in] nIterations To request repeated sew attempts that automatically increase gap up to limit set by gapWidthBound.
     //! @return SUCCESS if some bodies were able to be sewn together.
     DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
+
+    //! 
+    DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity);
     };
 
 }; // BRepUtil

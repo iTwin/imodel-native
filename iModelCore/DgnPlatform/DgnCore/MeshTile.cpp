@@ -1595,7 +1595,7 @@ private:
 
     virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
     virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
     virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     virtual Placement3dCR _GetPlacement() const override { return m_placement; }
