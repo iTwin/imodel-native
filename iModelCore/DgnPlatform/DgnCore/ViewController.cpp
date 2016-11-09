@@ -1762,34 +1762,6 @@ void SheetViewController::_DrawView(ViewContextR context)
 
         Render::GraphicBuilderPtr graphic = context.CreateGraphic();
 
-#define WIP_SHEETS_SHOW_THUMBNAIL
-#ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
-        double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
-
-        auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
-
-        while (imageSize.x > 4096)
-            {
-            imageSize.x /= 10;
-            imageSize.y /= 10;
-            }
-
-        Render::Image image;
-        Render::RenderMode modeUsed;
-        if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
-            continue;
-#else
-        auto imageSource = GetViewDefinition().ReadThumbnail();
-        if (!imageSource.IsValid())
-            continue;
-
-        Render::Image image(imageSource);
-
-#endif
-
-        auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
-        Texture::CreateParams textureParams;
-        auto texture = rsys._CreateTexture(image, textureParams);
         IGraphicBuilder::TileCorners corners;
         //  [2]     [3]
         //  [0]     [1]
@@ -1805,14 +1777,47 @@ void SheetViewController::_DrawView(ViewContextR context)
         for (auto i=0; i<4; ++i)
             corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
 
-        // unused -- auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
-        //graphic->SetSymbology(bgcolor, bgcolor, 4);           *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
-        graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
+        if (view->Is2d())
+            {
+            #define WIP_SHEETS_SHOW_THUMBNAIL
+            #ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
+                double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
 
-        graphic->AddTile(*texture, corners);
+                auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
 
-        //graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
+                while (imageSize.x > 4096)
+                    {
+                    imageSize.x /= 10;
+                    imageSize.y /= 10;
+                    }
 
+                Render::Image image;
+                Render::RenderMode modeUsed;
+                if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
+                    continue;
+            #else
+                auto imageSource = GetViewDefinition().ReadThumbnail();
+                if (!imageSource.IsValid())
+                    continue;
+
+                Render::Image image(imageSource);
+
+            #endif
+
+            auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
+            Texture::CreateParams textureParams;
+            auto texture = rsys._CreateTexture(image, textureParams);
+
+            // auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
+            //graphic->SetSymbology(bgcolor, bgcolor, 4); *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
+            graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
+
+            graphic->AddTile(*texture, corners);
+            }
+        else
+            {
+            graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
+            }
 
         context.OutputGraphic(*graphic, nullptr);
         }
