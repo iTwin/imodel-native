@@ -1741,7 +1741,7 @@ void SheetViewController::_DrawView(ViewContextR context)
     // Find and draw the view attachments.
     // While we know that the model is filled, and therefore we could iterate it to find the attachments, we won't do that.
     // Soon, we'll get rid of the concept of filling a model
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[View] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[View] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId.Id=?");
     attachments->BindId(1, model->GetModelId());
     while (BE_SQLITE_ROW == attachments->Step())
         {

@@ -300,7 +300,7 @@ static Render::GraphicSet s_unusedDummyGraphicSet;
 static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId.Id,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
 #else
 static const Utf8CP s_geometrySource3dNativeSql =
-    "SELECT CategoryId.Id,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
     BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
 #endif
 
