@@ -194,8 +194,6 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
             Utf8CP GetSql() const { return m_sql.ToString(); }
             DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
             DbTable const& GetTable() const { return GetColumn().GetTable(); }
-            bool  IsColumnPersisted() const { return GetColumn().GetPersistenceType() == PersistenceType::Persisted; }
-            bool  IsTablePersisted() const { return GetTable().GetPersistenceType() == PersistenceType::Persisted; }
         };
 
     private:

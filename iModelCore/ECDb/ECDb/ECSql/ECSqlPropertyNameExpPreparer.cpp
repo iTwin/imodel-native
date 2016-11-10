@@ -187,11 +187,13 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
         {
-        if (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList)
-            {
-            if (!r.IsColumnPersisted())
-                continue;
-            }
+        //If is a INSERT prop name list clause and the column is virtual, ignore it, as there is nothing to insert in that case
+        //(we must check for the prop name list clause, because if it shows up in the values list, it must not be ignored)
+        //INSERT INTO Foo(SourceECClassId) -> ignore SourceECClassId if it maps to a virtual column
+        //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
+        if (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList &&
+            r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
 
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
@@ -247,18 +249,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
         if (columnVisitor.AllResultingColumnsAreVirtual())
-            {
             selectSql.Append(propMap.GetDefaultECClassId());
-            }
         else
-            {
             selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());
-            }
         }
     else
-        {
         selectSql.Append(classIdentifier, propMap.GetAccessString().c_str());
-        }
 
     nativeSqlSnippets.push_back(selectSql);
 
