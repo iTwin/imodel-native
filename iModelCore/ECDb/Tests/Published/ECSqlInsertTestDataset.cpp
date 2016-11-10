@@ -15,7 +15,7 @@ BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-const std::vector<Utf8String> ECSqlInsertTestDataset::s_invalidClassIdValues = {Utf8String("NULL"), Utf8String("'bla'"), Utf8String("3.14"), Utf8String("True"), Utf8String("DATE '2013-10-10'")};
+const std::vector<Utf8String> ECSqlInsertTestDataset::s_invalidClassIdValues = {Utf8String("'bla'"), Utf8String("3.14"), Utf8String("True"), Utf8String("DATE '2013-10-10'")};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
@@ -879,10 +879,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR ecdb)
     {
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
-    auto thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
-    auto th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
+    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    ECClassId pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
+    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
+    ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
 
     ECSqlTestDataset dataset;
 
@@ -904,7 +904,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR 
     testRelationshipECSql.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%s, %s)",
                                   psaECInstanceId.ToString().c_str(), p2ECInstanceId.ToString().c_str());
 
-    auto relECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance(ecdb, testRelationshipECSql.c_str());
+    ECInstanceId relECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance(ecdb, testRelationshipECSql.c_str());
 
     if (!psaECInstanceId.IsValid() || !pECInstanceId.IsValid() || !p2ECInstanceId.IsValid() ||
         !thBaseECInstanceId.IsValid() || !th3ECInstanceId.IsValid() || !relECInstanceId.IsValid())
@@ -1008,47 +1008,37 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR 
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
+    //specifying mismatching class ids -> no validation done by ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasOnlyTHBase_0N (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, %s);",
                      psaECInstanceId.ToString().c_str(), th3ECInstanceId.ToString().c_str(), th3ClassId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
-    //specifying mismatching class ids
+    //specifying mismatching class ids -> no validation done by ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, %s);",
                      psaECInstanceId.ToString().c_str(), pECInstanceId.ToString().c_str(), psaClassId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
+    //specifying mismatching class ids -> no validation done by ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%s, %s, %s);",
                      psaECInstanceId.ToString().c_str(), pClassId.ToString().c_str(), pECInstanceId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
+    //specifying mismatching class ids -> no validation done by ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP VALUES (%s, %s, %s, %s);",
                      psaECInstanceId.ToString().c_str(), pClassId.ToString().c_str(), pECInstanceId.ToString().c_str(), psaClassId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
-
-    //specifying invalid class ids
-    for (Utf8StringCR invalidClassIdValue : s_invalidClassIdValues)
-        {
-        Utf8String ecsqlStr;
-        ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%s, %s, %s);",
-                         psaECInstanceId.ToString().c_str(), invalidClassIdValue.c_str(), pECInstanceId.ToString().c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, %s);",
-                         psaECInstanceId.ToString().c_str(), pECInstanceId.ToString().c_str(), invalidClassIdValue.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
-        }
 
     //**** Case:  target class id mandatory as target constraint is ambiguous
 
@@ -1100,25 +1090,26 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR 
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
+    //specifying mismatching class ids is not validated
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, ?);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(pClassId.GetValue())));
     }
 
-    //specifying invalid class ids
-    for (Utf8StringCR invalidClassIdValue : s_invalidClassIdValues)
+    //specifying non-sense class ids. They are not validated and left up to SQLite to handle them - which usually converts them to an integer
+    for (Utf8StringCR nonSenseClassIdValue : s_invalidClassIdValues)
         {
         Utf8String ecsqlStr;
         ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, %s, %s);",
-                         psaECInstanceId.ToString().c_str(), invalidClassIdValue.c_str(), thBaseECInstanceId.ToString().c_str(), thBaseClassId.ToString().c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+                         psaECInstanceId.ToString().c_str(), nonSenseClassIdValue.c_str(), thBaseECInstanceId.ToString().c_str(), thBaseClassId.ToString().c_str());
+        ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
 
         ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%s, %s, %s);",
-                         psaECInstanceId.ToString().c_str(), pECInstanceId.ToString().c_str(), invalidClassIdValue.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+                         psaECInstanceId.ToString().c_str(), pECInstanceId.ToString().c_str(), nonSenseClassIdValue.c_str());
+        ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
         }
 
     return dataset;
@@ -1129,9 +1120,9 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR 
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests(ECDbR ecdb)
     {
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    auto thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
-    auto th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
+    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
+    ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
 
     ECSqlTestDataset dataset;
 
