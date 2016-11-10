@@ -2399,7 +2399,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
         ECEntityClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
         if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
             {
-            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not nor derived from the abstract constraint class '%s' as specified in Class '%s'",
+            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
                         GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                         baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
             return ECObjectsStatus::BaseClassUnacceptable;
@@ -2409,7 +2409,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
 
         if (!m_constraintClasses[0]->GetClass().Is(&baseConstraintClass))
             {
-            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not nor derived from Class '%s' as specified in Class '%s'",
+            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not derived from Class '%s' as specified in Class '%s'",
                        m_constraintClasses[0]->GetClass().GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                        baseConstraintClass.GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
 
