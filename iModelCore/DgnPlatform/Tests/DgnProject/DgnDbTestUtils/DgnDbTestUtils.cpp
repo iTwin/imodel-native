@@ -169,6 +169,21 @@ PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, Utf8CP partition
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+SpatialLocationModelPtr DgnDbTestUtils::InsertSpatialLocationModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    SpatialLocationModelPtr model = SpatialLocationModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
 void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)

@@ -1198,9 +1198,9 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
+ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId,ParentId,UserLabel FROM %s", className);
+    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId],[ParentId],[UserLabel],[LastMod] FROM %s", className);
 
     if (whereClause)
         {
@@ -1214,29 +1214,42 @@ DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereCl
         sql.append(orderByClause);
         }
 
-    DgnElements::Iterator iterator;
+    ElementIterator iterator;
     iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
     return iterator;
     }
 
-DgnElementId DgnElements::Entry::GetId() const {return m_statement->GetValueId<DgnElementId>(0);}
-DgnClassId DgnElements::Entry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
-BeSQLite::BeGuid DgnElements::Entry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
-Utf8CP DgnElements::Entry::GetCodeValue() const {return m_statement->GetValueText(3);}
-DgnModelId DgnElements::Entry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
-DgnElementId DgnElements::Entry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
-Utf8CP DgnElements::Entry::GetUserLabel() const {return m_statement->GetValueText(6);}
+DgnElementId ElementIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
+DgnClassId ElementIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+BeSQLite::BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
+Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(3);}
+DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
+DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
+Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueText(6);}
+DateTime ElementIteratorEntry::GetLastMod() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::Iterator::GetElementIdSet()
+DgnElementIdSet ElementIterator::BuildElementIdSet()
     {
     DgnElementIdSet elementIdSet;
-    for (DgnElements::Entry entry : *this)
-        elementIdSet.insert(entry.GetId());
+    for (ElementIteratorEntry entry : *this)
+        elementIdSet.insert(entry.GetElementId());
 
     return elementIdSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DgnElementId> ElementIterator::BuildElementIdList()
+    {
+    bvector<DgnElementId> elementIdList;
+    for (ElementIteratorEntry entry : *this)
+        elementIdList.push_back(entry.GetElementId());
+
+    return elementIdList;
     }
 
 /*---------------------------------------------------------------------------------**//**

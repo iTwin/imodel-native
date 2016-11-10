@@ -42,7 +42,7 @@ namespace dgn_ElementHandler
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
     struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
-    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
     struct Role;
@@ -218,6 +218,39 @@ public:
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
+};
+
+//=======================================================================================
+//! Entry in an ElementIterator
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementIteratorEntry : ECSqlStatementEntry
+{
+    friend struct ECSqlStatementIterator<ElementIteratorEntry>;
+private:
+    ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+public:
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
+    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());}
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
+    DGNPLATFORM_EXPORT DateTime GetLastMod() const;
+};
+
+//=======================================================================================
+//! DgnElement iterator
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
+{
+    //! Builds a DgnElementIdSet by iterating all entries
+    DGNPLATFORM_EXPORT DgnElementIdSet BuildElementIdSet();
+    //! Builds a bvector of DgnElementId by iterating all entries
+    DGNPLATFORM_EXPORT bvector<DgnElementId> BuildElementIdList();
 };
 
 //=======================================================================================
@@ -1108,7 +1141,7 @@ protected:
     //! @param[in] model the new DgnModel
     //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInsert, forwarding its status.
-    virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const;
 
     //! Called after this element has been <i>modeled</i> by a new DgnModel.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInserted.
@@ -2522,8 +2555,11 @@ public:
 
     DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
 
-    //! Return DgnElementIdSet containing Ids of all Session elements.
-    DGNPLATFORM_EXPORT static DgnElementIdSet QuerySessions(DgnDbR db);
+    //! Make an iterator over all Sessions in the specified DgnDb
+    //! @param[in] db Iterate Sessions in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Get the Json::Value associated with a variable in this Session. If the variable is not present, the returned Json::Value will be "null".
     //! @param[in] name The namespace of the variable 
@@ -2730,6 +2766,35 @@ public:
 };
 
 //=======================================================================================
+//! A SpatialLocationPartition provides a starting point for a SpatialLocationModel hierarchy
+//! @note SpatialLocationPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::SpatialLocationPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit SpatialLocationPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
@@ -2844,29 +2909,6 @@ struct DgnElements : DgnDbTable, MemoryConsumer
         uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
         uint32_t m_reReferenced;   //! number of garbage elements that were referenced
         uint32_t m_purged;         //! number of garbage elements that were purged
-    };
-
-    //! Entry in a DgnElements::Iterator
-    struct Entry : ECSqlStatementEntry
-    {
-        friend struct ECSqlStatementIterator<DgnElements::Entry>;
-    private:
-        Entry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
-    public:
-        DGNPLATFORM_EXPORT DgnElementId GetId() const;
-        DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-        DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
-        DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-        DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-        DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
-        DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
-    };
-
-    //! DgnElement iterator
-    struct Iterator : ECSqlStatementIterator<DgnElements::Entry>
-    {
-        //! Builds a DgnElementIdSet by iterating all entries
-        DGNPLATFORM_EXPORT DgnElementIdSet GetElementIdSet();
     };
 
 private:
@@ -3006,7 +3048,7 @@ public:
     //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT Iterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}

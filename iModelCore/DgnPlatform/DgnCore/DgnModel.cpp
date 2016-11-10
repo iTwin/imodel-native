@@ -344,7 +344,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
     if (!model.IsValid())
         return nullptr;
 
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -356,7 +356,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement
     if (!model.IsValid())
         return nullptr;
 
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -368,7 +368,51 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalTemplateCR modeledElemen
     if (!model.IsValid())
         return nullptr;
 
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::SpatialLocation::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return model->ToSpatialLocationModelP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPartitionCR modeledElement)
+    {
+    SpatialLocationModelPtr model = Create(modeledElement);
+    if (!model.IsValid())
+        return nullptr;
+
+    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialLocationModel::_OnInsertElement(DgnElementR element)
+    {
+    return dynamic_cast<SpatialLocationElement*>(&element) ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -26,12 +26,17 @@ struct DgnDbTestUtils : NonCopyableClass
 {
 public:
     //! Insert a PhysicalModel 
-    //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
+    //! @note Also creates a PhysicalPartition element for the PhysicalModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static PhysicalModelPtr InsertPhysicalModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a SpatialLocationModel 
+    //! @note Also creates a SpatialLocationPartition element for the SpatialLocationModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SpatialLocationModelPtr InsertSpatialLocationModel(DgnDbR, Utf8CP partitionName);
+
     //! Insert a DocumentListModel 
-    //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
+    //! @note Also creates a DocumentPartition element for the DocumentListModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DocumentListModelPtr InsertDocumentListModel(DgnDbR, Utf8CP partitionName);
 
