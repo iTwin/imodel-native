@@ -116,7 +116,7 @@ TEST_F(DgnModelTests, GetRange)
     EXPECT_FALSE(thirdRange.IsValid());
 
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "TestDrawing");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     drawingModel->FillRangeIndex(); // test maintaining the range index as add elements
 
@@ -184,7 +184,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         // Create a sheet
         DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "SheetListModel");
-        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, DgnCode(), "Sheet1");
+        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, "Sheet1");
         SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1);
         sheetModelId1 = sheetModel1->GetModelId();
 
@@ -192,7 +192,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_NE(DgnDbStatus::Success, sheetModel1->Insert()) << "Should be illegal to INSERT a SheetModel that is already persistent";
 
         // Create a second sheet
-        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, DgnCode(), "Sheet2");
+        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, "Sheet2");
         SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2);
         sheetModelId2 = sheetModel2->GetModelId();
 

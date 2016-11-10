@@ -664,55 +664,110 @@ DgnDbStatus RoleElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
+    {
+    return DrawingAuthority::CreateDrawingCode(name, model.GetModeledElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Drawing::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnCode code = CreateCode(model, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = CreateCode(model, name.c_str());
+        counter++;
+        } while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingPtr Drawing::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
+DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new Drawing(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    return new Drawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
+SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Sheet::CreateCode(DocumentListModelCR model, Utf8CP name)
+    {
+    return SheetAuthority::CreateSheetCode(name, model.GetModeledElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Sheet::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnCode code = CreateCode(model, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = CreateCode(model, name.c_str());
+        counter++;
+        } while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetPtr Sheet::Create(DocumentListModelCR model, double scale, double height, double width, 
-                       DgnCodeCR code, Utf8CP userLabel)
+SheetPtr Sheet::Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Sheet::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetHeight(height);
     sheet->SetWidth(width);
@@ -722,18 +777,18 @@ SheetPtr Sheet::Create(DocumentListModelCR model, double scale, double height, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetPtr Sheet::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code, Utf8CP userLabel)
+SheetPtr Sheet::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Sheet::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid())
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
     #ifdef WIP_SHEETS

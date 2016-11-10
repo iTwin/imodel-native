@@ -2403,8 +2403,17 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for a Drawing in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Drawing within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
+
     //! Creates a new Drawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param[in] model Create the Drawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the Drawing element's DgnCode
+    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2420,7 +2429,9 @@ protected:
 
 public:
     //! Creates a new SectionDrawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param[in] model Create the SectionDrawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the SectionDrawing element's DgnCode
+    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2435,25 +2446,29 @@ protected:
     explicit Sheet(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param height The sheet height (meters)
-    //! @param width The sheet width (meters)
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, 
-                                              DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! Create a DgnCode for a Sheet in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
 
     //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param sheetTemplate The sheet template. Maybe in valid if there is no template.
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] height The sheet height (meters)
+    //! @param[in] width The sheet width (meters)
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
 
     //! Get the drawing scale of the sheet
     double GetScale() const {return GetPropertyValueDouble("Scale");}

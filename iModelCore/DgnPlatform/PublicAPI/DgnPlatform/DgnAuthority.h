@@ -12,7 +12,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_AuthorityHandler {struct Link; struct Partition; struct Session;};
+namespace dgn_AuthorityHandler {struct Drawing; struct Link; struct Partition; struct Session; struct Sheet;};
 
 //=======================================================================================
 //! A DgnAuthority issues and validates DgnCodes for coded objects like elements and models.
@@ -155,6 +155,42 @@ protected:
 public:
     DGNPLATFORM_EXPORT static DgnCode CreateLinkCode(Utf8StringCR codeValue, DgnElementId scopeId);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetLinkAuthorityId();
+};
+
+//=======================================================================================
+//! The default code-issuing authority for Drawing elements.
+// @bsistruct                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct DrawingAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Drawing;
+
+protected:
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
+    DrawingAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateDrawingCode(Utf8StringCR codeValue, DgnElementId scopeId);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetDrawingAuthorityId();
+};
+
+//=======================================================================================
+//! The default code-issuing authority for Sheet elements.
+// @bsistruct                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct SheetAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Sheet;
+
+protected:
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
+    SheetAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateSheetCode(Utf8StringCR codeValue, DgnElementId scopeId);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetSheetAuthorityId();
 };
 
 //=======================================================================================
@@ -326,6 +362,16 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Session : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SessionAuthority, SessionAuthority, Session, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_DrawingAuthority, DrawingAuthority, Drawing, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SheetAuthority, SheetAuthority, Sheet, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

@@ -74,7 +74,7 @@ void GenericDgnModel2dTestFixture::SetUpTestCase()
 
     // Create a 2d model
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL2D_NAME);
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, TEST_MODEL2D_NAME);
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     s_drawingModelId = drawingModel->GetModelId();
     

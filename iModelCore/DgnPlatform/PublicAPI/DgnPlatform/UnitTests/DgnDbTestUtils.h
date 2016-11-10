@@ -42,19 +42,19 @@ public:
 
     //! Insert a Drawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static DrawingPtr InsertDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static DrawingPtr InsertDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a SectionDrawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)

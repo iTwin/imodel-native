@@ -100,6 +100,8 @@ HANDLER_DEFINE_MEMBERS(Category)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(Link)
+HANDLER_DEFINE_MEMBERS(Drawing)
+HANDLER_DEFINE_MEMBERS(Sheet)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -218,6 +220,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Link::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Drawing::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Sheet::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
