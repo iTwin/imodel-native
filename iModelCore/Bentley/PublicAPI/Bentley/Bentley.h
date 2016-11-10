@@ -334,7 +334,7 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 
 //__PUBLISH_SECTION_START__
 
-#ifdef _MSC_VER
+#if defined (_MSC_VER) && !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
         __pragma(warning(push))\
         __pragma(warning(disable:ERRORS_TO_IGNORE))
