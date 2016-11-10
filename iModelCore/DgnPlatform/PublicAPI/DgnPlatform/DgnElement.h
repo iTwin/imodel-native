@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
 #include "MemoryManager.h"
@@ -222,7 +221,7 @@ public:
 };
 
 //=======================================================================================
-//! Entry in an ElementIterator
+//! The "current entry" of an ElementIterator
 // @bsiclass                                                     Shaun.Sewall      11/16
 //=======================================================================================
 struct ElementIteratorEntry : ECSqlStatementEntry
@@ -230,26 +229,28 @@ struct ElementIteratorEntry : ECSqlStatementEntry
     friend struct ECSqlStatementIterator<ElementIteratorEntry>;
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+
 public:
-    DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
-    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());}
-    DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
-    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-    DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-    DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
-    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
-    DGNPLATFORM_EXPORT DateTime GetLastMod() const;
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
+    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current DgnElement
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current DgnElement
 };
 
 //=======================================================================================
-//! DgnElement iterator
+//! An iterator over a set of DgnElements, defined by a query.
 // @bsiclass                                                     Shaun.Sewall      11/16
 //=======================================================================================
 struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
 {
     //! Builds a DgnElementIdSet by iterating all entries
     DGNPLATFORM_EXPORT DgnElementIdSet BuildElementIdSet();
+
     //! Builds a bvector of DgnElementId by iterating all entries
     DGNPLATFORM_EXPORT bvector<DgnElementId> BuildElementIdList();
 };
@@ -1300,8 +1301,6 @@ public:
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
 
-    bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
-    bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
     bool IsRoleElement() const {return nullptr != ToRoleElement();}                 //!< Determine whether this element is a RoleElement or not
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
@@ -1374,8 +1373,6 @@ public:
 
     //! @name AppData Management
     //! @{
-    //! Get the HeapZone for the DgnDb of this element.
-
     //! Add Application Data to this element.
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
@@ -1465,7 +1462,7 @@ public:
     bool SupportsCodeAuthority(DgnAuthorityCR authority) const {return _SupportsCodeAuthority(authority);}
 
     //! Query the database for the last modified time of this DgnElement.
-    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
+    DGNPLATFORM_EXPORT DateTime QueryLastModifyTime() const;
 
     //! Return true if this DgnElement has a label.
     bool HasUserLabel() const {return !m_userLabel.empty();}
@@ -1722,18 +1719,21 @@ public:
 
     //! Get a writable reference to the origin of this Placement3d.
     DPoint3dR GetOriginR() {return m_origin;}
+    void SetOrigin(DPoint3dCR origin) {m_origin=origin;}
 
     //! Get the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesCR GetAngles() const {return m_angles;}
 
     //! Get a writable reference to the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesR GetAnglesR() {return m_angles;}
+    void SetAngles(YawPitchRollAnglesCR angles) {m_angles=angles;}
 
     //! Get the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
 
     //! Get a writable reference to the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
+    void SetElementBox(ElementAlignedBox3d const& box) {m_boundingBox = box;}
 
     //! Convert the origin and YawPitchRollAngles of this Placement3d into a Transform.
     Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
@@ -1850,6 +1850,8 @@ protected:
 
     friend struct GeometricElement;
 public:
+    bool Is3d() const {return nullptr != _GetAsGeometrySource3d();}    //!< Determine whether this GeometrySource is 3d or not
+    bool Is2d() const {return nullptr != _GetAsGeometrySource2d();}    //!< Determine whether this GeometrySource is 2d or not
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
     DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
@@ -2937,7 +2939,7 @@ private:
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
     DgnElementId  m_nextAvailableId;
-    struct ElemIdTree* m_tree;
+    std::unique_ptr<struct ElemIdTree> m_tree;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
@@ -2988,8 +2990,9 @@ public:
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @note This method will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+    //! @note This method is rarely needed. You should almost always use GetElement. It will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
+    //! @private
+    DGNPLATFORM_EXPORT DgnElementCP FindLoadedElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
@@ -3062,10 +3065,11 @@ public:
     //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
+
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
@@ -3184,13 +3188,16 @@ protected:
 
 public:
     //! Construct an empty collection
-    DGNPLATFORM_EXPORT DgnEditElementCollector();
+    DgnEditElementCollector() {}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
-    DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    DgnEditElementCollector(DgnEditElementCollector const& rhs) {CopyFrom(rhs);}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
+
     //! Destroy this collection
-    DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+    ~DgnEditElementCollector() {EmptyAll();}
 
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
     DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;

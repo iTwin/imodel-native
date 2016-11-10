@@ -96,7 +96,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 
     auto keyE1 = InsertElement(ep, model->GetModelId());
     DgnElementId E1id = keyE1->GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCP pE1 = m_db->Elements().FindLoadedElement(E1id);
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     GeometryCollection collection(*geomElem);

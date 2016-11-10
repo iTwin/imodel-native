@@ -15,7 +15,7 @@
 #define BIS_ELEMENT_PROP_CodeValue "CodeValue"
 #define BIS_ELEMENT_PROP_UserLabel "UserLabel"
 #define BIS_ELEMENT_PROP_ParentId "ParentId"
-#define BIS_ELEMENT_PROP_LastMode "LastMod"
+#define BIS_ELEMENT_PROP_LastMod "LastMod"
 
 #define GEOM_GeometryStream "GeometryStream"
 #define GEOM_Category "CategoryId"

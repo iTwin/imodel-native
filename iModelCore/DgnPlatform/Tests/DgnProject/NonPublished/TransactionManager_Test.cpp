@@ -622,7 +622,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     stat = txns.ReverseSingleTxn(); // reversing a txn with pending uncommitted changes should abandon them.
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!el2->IsPersistent());
-    ASSERT_TRUE(nullptr == m_db->Elements().FindElement(el2->GetElementId()));
+    ASSERT_TRUE(nullptr == m_db->Elements().FindLoadedElement(el2->GetElementId()));
     ASSERT_TRUE(!m_db->Elements().GetElement(el2->GetElementId()).IsValid());
 
     testModelUndoRedo(*m_db);
@@ -756,8 +756,8 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
 
-    EXPECT_EQ(nullptr, m_db->Elements().FindElement(e1id));
-    EXPECT_EQ(nullptr, m_db->Elements().FindElement(e2id));
+    EXPECT_EQ(nullptr, m_db->Elements().FindLoadedElement(e1id));
+    EXPECT_EQ(nullptr, m_db->Elements().FindLoadedElement(e2id));
 
     //Reinstate transcation.The elements should be back in the model.
     stat = txns.ReinstateTxn();
@@ -766,11 +766,11 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
-    EXPECT_NE(nullptr, m_db->Elements().FindElement(e1id));
+    EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e1id));
 
     DgnElementCPtr e2 = m_db->Elements().GetElement(e2id);
     EXPECT_TRUE(e2 != nullptr);
-    EXPECT_NE(nullptr, m_db->Elements().FindElement(e2id));
+    EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e2id));
 
     //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll(true);
@@ -796,7 +796,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 
     DgnElementId e1id = keyE1->GetElementId();
     EXPECT_TRUE(e1id.IsValid());
-    DgnElementCP pE1 = m_db->Elements().FindElement(e1id);
+    DgnElementCP pE1 = m_db->Elements().FindLoadedElement(e1id);
     EXPECT_NE (nullptr, pE1);
     EXPECT_TRUE(txns.IsUndoPossible());
 
@@ -810,7 +810,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
     EXPECT_TRUE(m_db->Elements().GetElement(e1id) != nullptr);
-    EXPECT_NE(nullptr, m_db->Elements().FindElement(e1id));
+    EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e1id));
 
     //Reinstate transcation. The elements shouldn't be in the model.
     stat = txns.ReinstateTxn();

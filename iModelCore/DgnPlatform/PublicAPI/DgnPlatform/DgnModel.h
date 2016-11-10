@@ -594,28 +594,10 @@ public:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const {return _PopulateRequest(request, opcode);}
 
-    struct ElementIterator : BeSQLite::DbTableIterator
-    {   
-        DgnModelId m_id;
-        ElementIterator(DgnDbCR db, DgnModelId id, Utf8CP where=nullptr) : DbTableIterator((BeSQLite::DbCR) db), m_id(id) {if (where) m_params.SetWhere(where);}
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct ElementIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnElementId GetId() const;
-            DGNPLATFORM_EXPORT Utf8String GetName() const;
-            DGNPLATFORM_EXPORT Utf8String GetUserLabel() const;
-            Entry const& operator* () const {return *this;}
-        };
-
-        typedef Entry const_iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
-    };
-    ElementIterator MakeIterator(Utf8CP where=nullptr) {return ElementIterator(m_dgndb, GetModelId(), where);}
-
+    //! Make an iterator over the elements in this DgnModel
+    //! @param[in] whereClause The optional where clause starting with WHERE (note, ModelId is already specified.)
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 }; // DgnModel
 
 //=======================================================================================

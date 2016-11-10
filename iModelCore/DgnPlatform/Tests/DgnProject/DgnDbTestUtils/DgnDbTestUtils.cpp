@@ -286,7 +286,7 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
     auto& db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
     addAllCategories(db, viewDef->GetCategorySelector());
-    viewDef->Insert();
+    EXPECT_TRUE(viewDef->Insert().IsValid());
     return viewDef;
     }
 
@@ -298,7 +298,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     auto& db = model.GetDgnDb();
     CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
     addAllCategories(db, viewDef.GetCategorySelector());
-    viewDef.Insert();
+    EXPECT_TRUE(viewDef.Insert().IsValid());
     return viewDef.GetViewId();
     }
 
@@ -387,7 +387,7 @@ int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
 bool DgnDbTestUtils::CodeValueExists(DgnDbR db, Utf8CP codeValue)
     {
     ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare(db, "SELECT * FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE [CodeValue]=? LIMIT 1");
+    ECSqlStatus prepareStatus = statement.Prepare(db, "SELECT * FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE CodeValue=? LIMIT 1");
     ECSqlStatus bindStatus = statement.BindText(1, codeValue, IECSqlBinder::MakeCopy::No);
     if ((ECSqlStatus::Success != prepareStatus) || (ECSqlStatus::Success != bindStatus))
         {

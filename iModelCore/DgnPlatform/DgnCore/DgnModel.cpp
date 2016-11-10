@@ -238,12 +238,10 @@ DgnModel::~DgnModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
     {
-    DgnDbStatus status = T_Super::_OnInsertElement(element);
-    if (DgnDbStatus::Success != status)
-        return status;
+    auto geom = element.ToGeometrySource();
 
     // if it is a geometric element, it must be a 2d element.
-    return element.IsGeometricElement() && element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,11 +249,12 @@ DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
     {
-    auto stat = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
-        stat = DgnDbStatus::WrongModel;
+    auto geom = el.ToGeometrySource();
 
-    return stat;
+    if (geom && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
+        return DgnDbStatus::WrongModel;
+
+    return T_Super::_OnInsertElement(el);;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,11 +262,10 @@ DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     {
-    auto status = T_Super::_OnInsertElement(element);
-    if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
-        status = DgnDbStatus::Mismatch2d3d;
+    auto geom = element.ToGeometrySource();
 
-    return status;
+    // if it is a geometric element, it must be a 3d element.
+    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1854,29 +1852,26 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 
     return T_Super::Parse(name);
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
+* @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::ElementIterator::const_iterator DgnModel::ElementIterator::begin() const
+ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?";
-        sqlString = MakeSqlString(sqlString.c_str(), true);
+    Utf8String where("WHERE ModelId=?");
 
-        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        m_stmt->BindId(1, m_id);
-        m_params.Bind(*m_stmt);
-        }
-    else
+    if (whereClause)
         {
-        m_stmt->Reset();
+        Utf8String userWhere(whereClause);
+        userWhere.Trim();
+        if (0 == strncmp(userWhere.c_str(), "WHERE ", 6))
+            userWhere.erase(0,6);
+
+        where.append(" AND ");
+        where.append(userWhere);
         }
 
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    ElementIterator iterator = m_dgndb.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element), where.c_str(), orderByClause);
+    iterator.GetStatement()->BindId(1, GetModelId());
+
+    return iterator;
     }
-
-DgnElementId DgnModel::ElementIterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnElementId>(0);}
-Utf8String DgnModel::ElementIterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
-Utf8String DgnModel::ElementIterator::Entry::GetUserLabel() const {Verify(); return m_sql->GetValueText(2);}
