@@ -70,8 +70,6 @@ ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 CategoryTests.SubCategoryInvariants
-TransactionManagerTests.UndoRedo
-ImportTest.ImportElementsWithAuthorities
 ImportTest.ImportElementsWithDependencies
 ChangeSummaryTestFixture.QueryMultipleSessions
 DgnChangeSummaryTestFixture.ValidateChangeSummaries
