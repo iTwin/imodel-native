@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECDb/ECSqlColumnInfo.h>
+#include <ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

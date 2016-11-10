@@ -40,6 +40,3 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
-
-#Json format need to be change so Nav property is a struct with Id and RelECClassId
-ECSqlNavigationPropertyTestFixture.JsonAdapter

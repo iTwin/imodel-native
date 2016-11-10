@@ -10,7 +10,6 @@
 
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
-#include <ECDb/ECInstanceId.h>
 #include <ECDb/ECDb.h>
 #include <list>
 #include <json/json.h>

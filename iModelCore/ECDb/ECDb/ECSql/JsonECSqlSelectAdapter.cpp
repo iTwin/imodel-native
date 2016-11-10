@@ -1004,18 +1004,10 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
     BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
     if (ecProperty->GetIsPrimitive())
         return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
-    else if (ecProperty->GetIsStruct())
+    else if (ecProperty->GetIsStruct() || ecProperty->GetIsNavigation())
         return JsonFromStruct(jsonValue, ecsqlValue);
     else if (ecProperty->GetIsArray())
         return JsonFromArray(jsonValue, ecsqlValue, *ecProperty);
-    else if (ecProperty->GetIsNavigation())
-        {
-        NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
-        if (!navProp->IsMultiple())
-            return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
-        else
-            return JsonFromPrimitiveArray(jsonValue, ecsqlValue, *ecProperty);
-        }
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
     return false;

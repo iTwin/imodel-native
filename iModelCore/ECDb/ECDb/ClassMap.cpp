@@ -313,6 +313,13 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
         RefCountedPtr<DataPropertyMap> propertyMap = PropertyMapCopier::CreateCopy(*baseClassPropMap, *this);        
         if (propertyMap == nullptr || SUCCESS != GetPropertyMapsR().Insert(propertyMap))
             return MappingStatus::Error;
+
+        if (propertyMap->GetType() == PropertyMap::Type::Navigation)
+            {
+            NavigationPropertyMap& navPropertyMap = static_cast<NavigationPropertyMap&>(*propertyMap);
+            if (!navPropertyMap.IsComplete())
+                ctx.GetClassMapLoadContext().AddNavigationPropertyMap(navPropertyMap);
+            }
         }
 
     GetColumnFactory().Update(false);
@@ -329,7 +336,8 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
         if (property->GetIsNavigation())
             {
             NavigationPropertyMap* navPropertyMap = static_cast<NavigationPropertyMap*>(propMap);
-            ctx.GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
+            if (!navPropertyMap->IsComplete())
+                ctx.GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
             }
         }
 

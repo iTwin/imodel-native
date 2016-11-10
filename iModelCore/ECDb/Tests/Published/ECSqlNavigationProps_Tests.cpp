@@ -1169,20 +1169,20 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     const int rowCount = 3;
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                        "<ECSchema schemaName='np' nameSpacePrefix='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                        "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                        "<ECSchema schemaName='np' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                         "    <ECEntityClass typeName='DgnModel'>"
                                         "        <ECProperty propertyName='Name' typeName='string' />"
                                         "    </ECEntityClass>"
                                         "    <ECEntityClass typeName='DgnElement'>"
                                         "        <ECProperty propertyName='Code' typeName='string' />"
-                                        "        <ECNavigationProperty propertyName='ModelId' relationshipName='ParentHasChildren' direction='Backward' />"
+                                        "        <ECNavigationProperty propertyName='Model' relationshipName='ParentHasChildren' direction='Backward' />"
                                         "    </ECEntityClass>"
                                         "   <ECRelationshipClass typeName='ParentHasChildren' strength='Referencing'  modifier='Sealed'>"
-                                        "      <Source cardinality='(0,1)' polymorphic='False'>"
+                                        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
                                         "          <Class class ='DgnModel' />"
                                         "      </Source>"
-                                        "      <Target cardinality='(0,N)' polymorphic='False'>"
+                                        "      <Target multiplicity='(0..*)' polymorphic='False' roleLabel='Element'>"
                                         "          <Class class ='DgnElement' />"
                                         "      </Target>"
                                         "   </ECRelationshipClass>"
@@ -1209,7 +1209,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     ASSERT_TRUE(elementInserter.IsValid());
 
     Utf8String newElementJsonStr;
-    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%s\"}", modelKey.GetECInstanceId().ToString().c_str());
+    newElementJsonStr.Sprintf("{\"Code\":\"TestCode-1\","
+                              " \"Model\":{\"Id\":\"%s\"}}", modelKey.GetECInstanceId().ToString().c_str());
 
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
@@ -1238,7 +1239,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     }
 
     ECSqlStatement selStmt;
-    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, Code, ModelId FROM np.DgnElement"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, Code, Model FROM np.DgnElement"));
 
     JsonECSqlSelectAdapter selAdapter(selStmt);
     bool verifiedElementWithSetNavProp = false;
@@ -1254,17 +1255,18 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
             {
             verifiedElementWithSetNavProp = true;
 
-            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueInt64(2)) << "ModelId via plain ECSQL";
+            ASSERT_EQ(modelKey.GetECInstanceId(), selStmt.GetValueNavigation(2)) << "Model via plain ECSQL";
 
-            Json::Value const& modelIdJson = json["ModelId"];
-            ASSERT_FALSE(modelIdJson.isNull()) << "ModelId is not expected to be null in the read ECInstance";
-            
+            Json::Value const& modelJson = json["Model"];
+            ASSERT_FALSE(modelJson.isNull()) << "Model is not expected to be null in the read ECInstance";
+            Json::Value const& modelIdJson = modelJson["Id"];
+            ASSERT_FALSE(modelIdJson.isNull()) << "Model.Id is not expected to be null in the read ECInstance";
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), BeJsonUtilities::Int64FromValue(modelIdJson));
             }
         else
             {
-            ASSERT_TRUE(selStmt.IsValueNull(2)) << "ModelId via plain ECSQL";
-            ASSERT_TRUE(json["ModelId"].isNull()) << "ModelId is not expected to be null in the read ECInstance";
+            ASSERT_TRUE(selStmt.IsValueNull(2)) << "Model via plain ECSQL";
+            ASSERT_TRUE(json["Model"].isNull()) << "Model is not expected to be null in the read ECInstance";
             }
         }
 
