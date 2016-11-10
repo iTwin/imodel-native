@@ -214,6 +214,13 @@ public:
     //! Looks up the ID of the category containing the specified sub-category
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId, DgnDbR db);
 
+    //! Make an iterator over sub-categories of the specified category in the specified DgnDb
+    //! @param[in] db The DgnDb
+    //! @param[in] categoryId Iterate sub-categories of this category
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+
     //! Returns a set of sub-category IDs.
     //! @param[in]      db         The DgnDb in which to query.
     //! @param[in]      categoryId If valid, include only sub-categories of the specified category; otherwise, include all sub-categories within the DgnDb.
@@ -375,6 +382,12 @@ public:
 
     //! Sets the appearance of the default SubCategory
     DGNPLATFORM_EXPORT void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
+
+    //! Make an iterator over all categories in the specified DgnDb
+    //! @param[in] db Iterate categories in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Returns the IDs of all categories in the specified DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryIdSet QueryCategories(DgnDbR db);

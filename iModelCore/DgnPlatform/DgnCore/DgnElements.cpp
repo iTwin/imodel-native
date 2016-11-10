@@ -289,7 +289,7 @@ ElemPurge ElemIdLeafNode::_Purge(uint64_t memTarget)
         if (0 == (*curr)->GetRefCount()) // is the element garbage?
             {
             //  Do not kill the element here.  If the element's app data holds a reference to another
-            //  element -- possibly a symbol element -- killing the element here may cause the reference
+            //  element, killing the element here may cause the reference
             //  count of that element to go to zero. We don't want that to happen until the tree is in a
             //  consistent state.
             killed[killedIndex++] = *curr;
@@ -884,7 +884,7 @@ void ElemIdTree::Destroy()
 DgnElements::~DgnElements() 
     {
     Destroy(); 
-    DELETE_AND_CLEAR(m_tree);
+    m_tree.release();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -987,7 +987,7 @@ uint64_t DgnElements::_Purge(uint64_t memTarget)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElements::FindElement(DgnElementId id) const
+DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     return m_tree->FindElement(id, false);
@@ -1040,7 +1040,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
-    m_tree = new ElemIdTree(dgndb);
+    m_tree.reset(new ElemIdTree(dgndb));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1070,7 +1070,7 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
-    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid()) 
         el->_OnReversedAdd(); // Note: this MUST be a DgnElementPtr, since we can't call _OnReversedAdd with an element with a zero ref count
     }
@@ -1085,7 +1085,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
-    DgnElementCPtr el = elements.FindElement(elementId);
+    DgnElementCPtr el = elements.FindLoadedElement(elementId);
     if (el.IsValid())
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
@@ -1170,7 +1170,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     // since we can load elements on more than one thread, we need to check that the element doesn't already exist
     // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
     BeDbMutexHolder _v(m_mutex);
-    DgnElementCP element = FindElement(elementId);
+    DgnElementCP element = FindLoadedElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -1198,9 +1198,10 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
+ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId.Id,ParentId.Id,UserLabel FROM %s", className);
+    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId.Id,ParentId.Id,UserLabel,LastMod FROM ");
+    sql.append(className);
 
     if (whereClause)
         {
@@ -1214,29 +1215,42 @@ DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereCl
         sql.append(orderByClause);
         }
 
-    DgnElements::Iterator iterator;
+    ElementIterator iterator;
     iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
     return iterator;
     }
 
-DgnElementId DgnElements::Entry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
-DgnClassId DgnElements::Entry::GetElementClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
-BeSQLite::BeGuid DgnElements::Entry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
-Utf8CP DgnElements::Entry::GetCodeValue() const {return m_statement->GetValueText(3);}
-DgnModelId DgnElements::Entry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
-DgnElementId DgnElements::Entry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
-Utf8CP DgnElements::Entry::GetUserLabel() const {return m_statement->GetValueText(6);}
+DgnElementId ElementIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
+DgnClassId ElementIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
+Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(3);}
+DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
+DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
+Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueText(6);}
+DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::Iterator::GetElementIdSet()
+DgnElementIdSet ElementIterator::BuildElementIdSet()
     {
     DgnElementIdSet elementIdSet;
-    for (DgnElements::Entry entry : *this)
+    for (ElementIteratorEntry entry : *this)
         elementIdSet.insert(entry.GetElementId());
 
     return elementIdSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DgnElementId> ElementIterator::BuildElementIdList()
+    {
+    bvector<DgnElementId> elementIdList;
+    for (ElementIteratorEntry entry : *this)
+        elementIdList.push_back(entry.GetElementId());
+
+    return elementIdList;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1482,10 +1496,16 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::Delete(DgnElementCR element)
+DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
     {
-    if (&element.GetDgnDb() != &m_dgndb || !element.IsPersistent())
-        return DgnDbStatus::WrongElement;
+    if (&elementIn.GetDgnDb() != &m_dgndb)
+        return DgnDbStatus::WrongDgnDb;
+
+    DgnElementCPtr el = elementIn.IsPersistent() ? &elementIn : GetElement(elementIn.GetElementId());
+    if (!el.IsValid())
+        return DgnDbStatus::BadElement;
+
+    DgnElementCR element = *el;
 
     // Get the next available id now, before we perform any deletes, so if we delete and then undo the last element we don't reuse its id.
     // Otherwise, we may mistake a new element as being a modification to a deleted element in a changeset.

@@ -939,7 +939,7 @@ struct JsDgnElements : RefCountedBaseWithCreate
     JsDgnElements(DgnElements& els) : m_elements(els) {}
 
     JsDgnDbP GetDgnDb() const {return new JsDgnDb(m_elements.GetDgnDb()); }
-    JsDgnElementP FindElement(JsDgnObjectIdP id) const;
+    JsDgnElementP FindLoadedElement(JsDgnObjectIdP id) const;
     JsDgnElementP GetElement(JsDgnObjectIdP id) const;
     JsDgnObjectIdP QueryElementIdByCode(JsDgnCodeP) const;
 

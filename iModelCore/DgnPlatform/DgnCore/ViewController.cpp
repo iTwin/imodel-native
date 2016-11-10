@@ -1813,8 +1813,6 @@ void SheetViewController::_DrawView(ViewContextR context)
 
         //graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
 
-
         context.OutputGraphic(*graphic, nullptr);
         }
     }
-

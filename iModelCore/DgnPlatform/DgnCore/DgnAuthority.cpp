@@ -629,6 +629,9 @@ DgnDbStatus PartitionAuthority::_ValidateCode(DgnElementCR element) const
     if (DgnDbStatus::Success != status)
         return status;
 
+    if (element.GetCode().IsEmpty())
+        return DgnDbStatus::InvalidName; // InformationPartitionElements must have names
+
     // Partitions use the same name validation function as Models
     return DgnModels::IsValidName(element.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
     }

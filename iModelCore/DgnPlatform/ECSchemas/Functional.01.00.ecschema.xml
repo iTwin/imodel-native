@@ -32,6 +32,14 @@
 
     <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
         <BaseClass>FunctionalElement</BaseClass>
+        <BaseClass>bis:ICompositeElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalComposite">
+        <BaseClass>FunctionalBreakdownElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -39,6 +47,14 @@
 
     <ECEntityClass typeName="FunctionalComponentElement" modifier="Abstract">
         <BaseClass>FunctionalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalPortion">
+        <BaseClass>FunctionalComponentElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -64,6 +80,16 @@
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="bis:PhysicalElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="FunctionalElement"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="bis:DrawingGraphic"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
             <Class class="FunctionalElement"/>

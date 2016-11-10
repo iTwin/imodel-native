@@ -143,7 +143,7 @@ protected:
     MemoryManager       m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
-    mutable RevisionManagerP m_revisionManager;
+    mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     DgnQueryQueue m_queryQueue;
 

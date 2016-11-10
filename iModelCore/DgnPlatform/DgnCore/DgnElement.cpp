@@ -88,6 +88,16 @@ DgnModelId DgnElement::GetSubModelId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
+    {
+    bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
+    BeAssert(isModellable && "Only element ECClasses that implement bis:IModellableElement can have SubModels");
+    return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
@@ -156,10 +166,10 @@ DgnCode DgnElement::_GenerateDefaultCode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime DgnElement::QueryTimeStamp() const
+DateTime DgnElement::QueryLastModifyTime() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMode " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMod " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
     stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -276,23 +286,6 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  10/2016
-//---------------------------------------------------------------------------------------
-DgnElementIdSet Session::QuerySessions(DgnDbR db)
-    {
-    DgnElementIdSet ids;
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Session));
-    if (stmt.IsValid())
-        {
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.insert(stmt->GetValueId<DgnElementId>(0));
-        }
-
-    return ids;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -348,6 +341,14 @@ void Session::SaveVariables() const
     auto& ncThis = const_cast<SessionR>(*this);
     ncThis.SetPropertyValue(str_Variables(), Json::FastWriter::ToString(m_variables).c_str());
     m_dirty = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementIterator Session::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
+    {
+    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Session), whereClause, orderByClause);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,10 +409,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
 SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     SubjectPtr subject = Create(parentSubject, label, description);
-    if (!subject.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject);
+    return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,10 +503,7 @@ DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8
 DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DefinitionPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,10 +537,7 @@ DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8CP n
 DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DocumentPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -584,10 +576,41 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     GroupInformationPartitionPtr partition = Create(parentSubject, label, description);
-    if (!partition.IsValid())
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialLocationPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // Only SpatialLocationModels can model a SpatialLocationPartition
+    return model.IsSpatialLocationModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::SpatialLocationPartition::GetHandler());
+    if (!createParams.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition);
+    SpatialLocationPartitionPtr partition = new SpatialLocationPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    SpatialLocationPartitionPtr partition = Create(parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SpatialLocationPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,8 +618,6 @@ GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(Subject
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
     {
-    // WIP: A PhysicalPartition can only be modeled by a SpatialModel?
-    // WIP: Should we add a SpatialPartition and then restrict PhysicalPartition to sub PhysicalModels?
     return model.IsSpatialModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
 
@@ -622,10 +643,7 @@ PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8CP n
 PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     PhysicalPartitionPtr partition = Create(parentSubject, name, description);
-    if (!partition.IsValid())
-        return nullptr;
-
-    return parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2503,10 +2521,10 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             return DgnDbStatus::Success;
             });
         
-    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, 
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMod, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetDateTime(el.QueryTimeStamp());
+            value.SetDateTime(el.QueryLastModifyTime());
             return DgnDbStatus::Success;
             },
         
@@ -2721,7 +2739,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -2740,7 +2758,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -3013,10 +3031,14 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
     {
     Transform   placementTrans;
 
-    if (el.Is3d())
-        placementTrans = el.ToGeometrySource3d()->GetPlacement().GetTransform();
+    auto geom = el.ToGeometrySourceP();
+    if (nullptr == geom)
+        return DgnDbStatus::BadElement;
+
+    if (geom->Is3d())
+        placementTrans = geom->GetAsGeometrySource3d()->GetPlacement().GetTransform();
     else
-        placementTrans = el.ToGeometrySource2d()->GetPlacement().GetTransform();
+        placementTrans = geom->GetAsGeometrySource2d()->GetPlacement().GetTransform();
 
     DPoint3d    originPt;
     RotMatrix   rMatrix;
@@ -3031,45 +3053,22 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
     if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
         return DgnDbStatus::BadArg;
 
-    if (el.Is3d())
+    if (geom->Is3d())
         {
-        Placement3d placement = el.ToGeometrySource3d()->GetPlacement();
+        Placement3d placement = geom->GetAsGeometrySource3d()->GetPlacement();
 
         placement.GetOriginR() = originPt;
         placement.GetAnglesR() = angles;
 
-        return el.ToGeometrySource3dP()->SetPlacement(placement);
+        return geom->GetAsGeometrySource3dP()->SetPlacement(placement);
         }
         
-    Placement2d placement = el.ToGeometrySource2d()->GetPlacement();
+    Placement2d placement = geom->GetAsGeometrySource2d()->GetPlacement();
 
     placement.GetOriginR() = DPoint2d::From(originPt);
     placement.GetAngleR() = angles.GetYaw();
 
-    return el.ToGeometrySource2dP()->SetPlacement(placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::DgnEditElementCollector() 
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::~DgnEditElementCollector() 
-    {
-    EmptyAll();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::DgnEditElementCollector(DgnEditElementCollector const& rhs)
-    {
-    CopyFrom(rhs);
+    return geom->GetAsGeometrySource2dP()->SetPlacement(placement);
     }
 
 /*---------------------------------------------------------------------------------**//**

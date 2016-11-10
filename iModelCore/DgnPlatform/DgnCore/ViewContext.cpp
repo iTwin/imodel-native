@@ -29,7 +29,7 @@ ViewContext::ViewContext()
 StatusInt ViewContext::_VisitElement(DgnElementId elementId, bool allowLoad) 
     {
     DgnElements& pool = m_dgndb->Elements();
-    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
+    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindLoadedElement(elementId);
     if (!el.IsValid())
         {
         BeAssert(!allowLoad);

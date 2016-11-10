@@ -165,6 +165,14 @@ DgnSubCategoryId DgnCategory::GetDefaultSubCategoryId(DgnCategoryId catId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementIterator DgnCategory::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
+    {
+    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Category), whereClause, orderByClause);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryIdSet DgnCategory::QueryCategories(DgnDbR db)
@@ -359,6 +367,29 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
 
     BeAssert(false && "Subcategory has no parent category");
     return DgnCategoryId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause, Utf8CP orderByClause)
+    {
+    BeAssert(categoryId.IsValid());
+
+    Utf8String combinedWhere;
+    if (whereClause)
+        {
+        combinedWhere.append(whereClause);
+        combinedWhere.append(" AND [ParentId]=?");
+        }
+    else
+        {
+        combinedWhere.append("WHERE [ParentId]=?");
+        }
+
+    ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
+    iterator.GetStatement()->BindId(1, categoryId);
+    return iterator;
     }
 
 /*---------------------------------------------------------------------------------**//**
