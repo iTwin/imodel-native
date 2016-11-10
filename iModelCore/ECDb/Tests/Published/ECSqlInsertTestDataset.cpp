@@ -1462,8 +1462,8 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests(EC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests(ECDbR ecdb)
     {
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    auto thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
+    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
 
     ECSqlTestDataset dataset;
 
@@ -1572,28 +1572,28 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests(ECDbR e
     }
 
     {
-    //Must always bind to class id
+    //mandatory class id is not enforced by ECDb
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%s, ?, %s, ?);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
     {
-    //Must always bind to class id
+    //mandatory class id is not enforced by ECDb
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%s, ?, %s, ?);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    auto& testItem = ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(psaClassId.GetValue())));
     }
 
     {
-    //Must always bind to class id
+    //mandatory class id is not enforced by ECDb
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%s, ?, %s, ?);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(thBaseClassId.GetValue())));
     }
@@ -1608,11 +1608,11 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests(ECDbR e
     }
 
     {
-    //Must always bind to ClassId
+    //mandatory class id is not enforced by ECDb
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%s, ?, %s);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);   
     }
 
     {
@@ -1624,11 +1624,11 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests(ECDbR e
     }
 
     {
-    //Must always bind to ClassId
+    //mandatory class id is not enforced by ECDb
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%s, ?, %s, ?);",
                      psaECInstanceId.ToString().c_str(), thBaseECInstanceId.ToString().c_str());
-    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str(), true);
     }
 
     //Link table mapping - class id not optional
