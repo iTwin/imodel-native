@@ -685,7 +685,7 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex()
         return DgnDbStatus::Success;
 
     m_rangeIndex.reset(new RangeIndex::Tree(true, 20));
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ModelId=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId.Id,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ModelId.Id=?");
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -716,7 +716,7 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 
     m_rangeIndex.reset(new RangeIndex::Tree(false, 20));
 
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ModelId=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId.Id,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ModelId.Id=?");
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {

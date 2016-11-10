@@ -349,7 +349,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
         {
         stmt->BindId(1, subCatId);
@@ -370,7 +370,7 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
 
     Utf8String ecsql("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append(" WHERE ParentId=?");
+        ecsql.append(" WHERE ParentId.Id=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
@@ -393,7 +393,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     size_t count = 0;
     Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append(" WHERE ParentId=?");
+        ecsql.append(" WHERE ParentId.Id=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())

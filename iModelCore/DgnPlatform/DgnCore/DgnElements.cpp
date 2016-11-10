@@ -1200,7 +1200,7 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::Iterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId],[ParentId],[UserLabel] FROM %s", className);
+    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId.Id],[ParentIdId],[UserLabel] FROM %s", className);
 
     if (whereClause)
         {

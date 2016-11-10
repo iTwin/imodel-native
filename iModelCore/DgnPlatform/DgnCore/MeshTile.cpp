@@ -297,10 +297,10 @@ static const double s_minToleranceRatio = 100.0;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 #if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
+static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId.Id,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
 #else
 static const Utf8CP s_geometrySource3dNativeSql =
-    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+    "SELECT CategoryId.Id,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
     BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
 #endif
 
@@ -2125,7 +2125,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
 TileModelCategoryFilter::TileModelCategoryFilter(DgnDbR db, DgnModelIdSet const* models, DgnCategoryIdSet const* categories) : m_set(models, categories)
     {
     static const Utf8CP s_sql = "SELECT g.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
-                                " WHERE g.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+                                " WHERE g.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId.Id,g.CategoryId.Id)";
 
     m_stmt = db.GetPreparedECSqlStatement(s_sql);
     }

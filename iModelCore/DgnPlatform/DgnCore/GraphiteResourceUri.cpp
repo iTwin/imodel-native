@@ -641,7 +641,7 @@ static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encod
     if (!authorityId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(CodeAuthorityId=? AND CodeNamespace=? AND CodeValue=?)");
+    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(CodeAuthorityId.Id=? AND CodeNamespace=? AND CodeValue=?)");
     codestmt->BindId(1, authorityId);
     codestmt->BindText(2, ns.c_str(), Statement::MakeCopy::No);
     codestmt->BindText(3, codeValue.c_str(), Statement::MakeCopy::No);

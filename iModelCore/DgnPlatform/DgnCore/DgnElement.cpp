@@ -785,7 +785,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     if (parentId == elemId)
         return true;
 
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId.Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     do
         {
         stmt->BindId(1, parentId);
