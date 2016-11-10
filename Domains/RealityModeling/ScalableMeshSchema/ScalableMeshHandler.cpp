@@ -1143,10 +1143,16 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {    
     assert(m_smPtr == nullptr);
     m_path = smFilename;
+
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
+    size_t nOfModels = allScalableMeshes.size();
+    allScalableMeshes.clear();
+
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
-    clipFileBase.AppendUtf8(std::to_string(GetModelId().GetValue()).c_str());
+    clipFileBase.AppendUtf8(std::to_string(nOfModels-1).c_str());
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
 
@@ -1213,6 +1219,24 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
+
+        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
+            {
+            DRange3d smExtent, smExtentUors;
+            m_smPtr->GetRange(smExtent);
+            Transform trans;
+            trans.InitFromScaleFactors(scale.x, scale.y, scale.z);
+            trans.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
+            if (0 == status || 1 == status)
+                m_smPtr->SetReprojection(*projGCS, approxTransform);
+            }
         }
     else
         {                
@@ -1243,9 +1267,15 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::CloseFile()
     {
+    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+    if (nullptr != m_currentDrawingInfoPtr.get())
+        {
+        m_currentDrawingInfoPtr->m_meshNodes.clear();
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        }
+    m_progressiveQueryEngine = nullptr;
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
-    m_progressiveQueryEngine = nullptr;
     m_tryOpen = false;
     }
 
