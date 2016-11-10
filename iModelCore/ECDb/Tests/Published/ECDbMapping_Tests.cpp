@@ -2805,7 +2805,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     {
     SetupECDb("existingtablenavproperty.ecdb");
 
-    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, navPropId INTEGER");
     ASSERT_TRUE(GetECDb().TableExists("TestTable"));
     GetECDb().SaveChanges();
 
@@ -3109,36 +3109,36 @@ TEST_F(ECDbMappingTestFixture, ECSqlForUnmappedClass)
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
-	{
-	SchemaItem testItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-		"    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-		"    <ECEntityClass typeName='Product' modifier='None'>"
-		"        <ECCustomAttributes>"
-		"            <ClassMap xmlns='ECDbMap.01.00'>"
-		"                <MapStrategy>OwnTable</MapStrategy>"
-		"            </ClassMap>"
-		"        </ECCustomAttributes>"
-		"        <ECProperty propertyName='Name' typeName='text' />"
-		"        <ECProperty propertyName='Price' typeName='double' />"
-		"    </ECEntityClass>"
-		"</ECSchema>", true, "Mapping Strategy OwnTable applied to subclasses is expected to succeed.");
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Product' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>OwnTable</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "Mapping Strategy OwnTable applied to subclasses is expected to succeed.");
 
-	ECDb db;
-	bool asserted = false;
-	AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
-	ASSERT_FALSE(asserted);
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
+    ASSERT_FALSE(asserted);
 
-	ECSqlStatement stmt;
-	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
-	ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-	stmt.Finalize();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
 
-	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECClassId FROM ts.Product"));
-	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-	ASSERT_EQ(db.Schemas().GetECClassId("Test", "Product"), stmt.GetValueId<ECClassId>(0));
-	}
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECClassId FROM ts.Product"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(db.Schemas().GetECClassId("Test", "Product"), stmt.GetValueId<ECClassId>(0));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
@@ -5792,7 +5792,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
                 AssertIndex(ecdb, "ix_ts6_B_AInstanceRelECClassId", false, "ts6_B", {"AInstanceRelECClassId"});
-                AssertIndex(ecdb, "ix_ts6_B_fk_ts6_RelBase_target", false, "ts6_B", {"AInstance"});
+                AssertIndex(ecdb, "ix_ts6_B_fk_ts6_RelBase_target", false, "ts6_B", {"AInstanceId"});
                 AssertIndexExists(ecdb, "uix_ts6_B_fk_ts6_RelSub1_target", false);
                 }
 
@@ -6119,10 +6119,10 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     getDdl(ddl, ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("[AId_Rel0N] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[AId_Rel1N] INTEGER NOT NULL,"));
-    ASSERT_TRUE(ddl.ContainsI("[AId_RelN0] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[AId_RelN1] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[AId_Rel1NId] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[AId_RelN0Id] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[AId_RelN1Id] INTEGER NOT NULL,"));
     }
 
     {

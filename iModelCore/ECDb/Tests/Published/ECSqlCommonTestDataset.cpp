@@ -346,7 +346,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         ecsql.Sprintf("%s WHERE MyPSA.RelECClassId IS NULL", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
 
         //*******************************************************

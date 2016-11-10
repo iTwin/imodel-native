@@ -192,7 +192,7 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
         bvector<ECN::ECSchemaCP> schemas = ecdb.Schemas().GetECSchemas(true);
         for (ECSchemaCP schema : schemas)
             {
-            if (schema->IsStandardSchema() || schema->IsSystemSchema() || schema->GetName().EqualsI("ecdb_fileinfo"))
+            if (schema->IsStandardSchema() || schema->IsSystemSchema() || schema->GetName().EqualsI("ecdb_fileinfo") || schema->GetName().EqualsI("ECDb_System"))
                 continue;
 
             Populate(ecdb, *schema, instanceCountPerClass);

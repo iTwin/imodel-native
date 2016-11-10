@@ -559,7 +559,8 @@ TEST(ECSqlInsertTests, MiscTests)
     //*******************************************************
     // Insert without column clause
     //*******************************************************
-    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P VALUES (True, NULL, 3.1415, TIMESTAMP '2013-10-14T12:00:00', TIMESTAMP '2013-10-14T12:00:00Z', TIMESTAMP '2013-10-14T12:00:00', DATE '2013-10-14', 123, 1234567890, 'bla bla', NULL, NULL)");
+    obj.ecdb.SaveChanges();
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P VALUES (True, NULL, 3.1415, TIMESTAMP '2013-10-14T12:00:00', TIMESTAMP '2013-10-14T12:00:00Z', TIMESTAMP '2013-10-14T12:00:00', DATE '2013-10-14', 123, 1234567890, 'bla bla', NULL, NULL, NULL)");
     STATEMENT_EXECUTE_SUCCESS();
 
     //*******************************************************

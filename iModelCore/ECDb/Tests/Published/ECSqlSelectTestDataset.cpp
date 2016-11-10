@@ -1565,7 +1565,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "select PSA.*, P.* FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 38, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 39, 0);
 
     ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -1646,7 +1646,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select * FROM ecsql.PSA INNER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId INNER JOIN ecsql.P ON P.ECInstanceId = PSAHasP.TargetECInstanceId";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 44, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 45, 0);
 
     //RIGHT JOIN
     ecsql = "select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId";
@@ -1711,10 +1711,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 59, 0);
 
     ecsql = "select PHasSA_11P.*, P.*, SA.* FROM ONLY ecsql.P JOIN ecsql.SA USING ecsql.PHasSA_11P ORDER BY PHasSA_11P.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 30, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 31, 0);
 
     ecsql = "select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 45, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 47, 0);
 
     return dataset;
     }
@@ -1808,11 +1808,8 @@ ECSqlTestDataset ECSqlSelectTestDataset::LikeOperatorTests(int rowCountPerClass)
     testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(DPoint3d::From(1.0, 1.0, 1.0))));
     }
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE MyPSA LIKE '11'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA LIKE '11'";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE MyPSA.Id LIKE '11'";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     return dataset;
     }
@@ -1924,13 +1921,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 24, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 15, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.P WHERE ECInstanceId >= 0";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 15, rowCountPerClass);
 
     ecsql = "SELECT a.* FROM ecsql.P a WHERE a.ECInstanceId >= 0";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 15, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.SA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4, rowCountPerClass);
