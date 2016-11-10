@@ -650,6 +650,9 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECPersistence.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="DgnCore\ElementECInstanceAdapter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">
@@ -666,6 +669,7 @@
     <None Include="DgnCore\Annotations\Annotations.fbs">
       <Filter>DgnCore\Annotations</Filter>
     </None>
+    <None Include="DgnCore\ElementGraphics.fbs" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="DgnPlatform.PartFile.xml" />
@@ -1082,6 +1086,15 @@
       <Filter>DgnHandlers</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DgnElementProperties.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ECSqlClassParams.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ExternalReference.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\FacetCount.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
   </ItemGroup>
