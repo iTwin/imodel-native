@@ -1663,7 +1663,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
         return VisitGeometry(*pSrc);
 
     // Never load elements - but do use them if they're already loaded
-    DgnElementCPtr el = GetDgnDb().Elements().FindElement(elementId);
+    DgnElementCPtr el = GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid())
         {
         GeometrySourceCP geomElem = el->ToGeometrySource();

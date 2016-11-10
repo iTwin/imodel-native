@@ -361,7 +361,7 @@ void SpatialViewController::AddtoSceneQuick(SceneContextR context, QueryResults&
     auto end = results.m_scores.rend();
     for (auto thisScore=results.m_scores.rbegin(); thisScore!=end; ++thisScore)
         {
-        DgnElementCPtr el = pool.FindElement(thisScore->second);
+        DgnElementCPtr el = pool.FindLoadedElement(thisScore->second);
         if (!el.IsValid())
             continue;
 

@@ -41,8 +41,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_units(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
-                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
-                 m_queryQueue(*this)
+                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_queryQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
     }
@@ -58,7 +57,7 @@ void DgnDb::Destroy()
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
     Elements().ClearUpdaterCache();
-    DELETE_AND_CLEAR(m_revisionManager)
+    m_revisionManager.release();
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
         {
@@ -172,7 +171,7 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
 RevisionManagerR DgnDb::Revisions() const
     {
     if (nullptr == m_revisionManager)
-        m_revisionManager = new RevisionManager(const_cast<DgnDbR>(*this));
+        m_revisionManager.reset(new RevisionManager(const_cast<DgnDbR>(*this)));
 
     return *m_revisionManager;
     }

@@ -2880,7 +2880,7 @@ private:
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
     DgnElementId  m_nextAvailableId;
-    struct ElemIdTree* m_tree;
+    std::unique_ptr<struct ElemIdTree> m_tree;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
@@ -2931,8 +2931,9 @@ public:
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @note This method will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+    //! @note This method is rarely needed. You should almost always use GetElement. It will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
+    //! @private
+    DGNPLATFORM_EXPORT DgnElementCP FindLoadedElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;

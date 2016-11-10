@@ -289,7 +289,7 @@ ElemPurge ElemIdLeafNode::_Purge(uint64_t memTarget)
         if (0 == (*curr)->GetRefCount()) // is the element garbage?
             {
             //  Do not kill the element here.  If the element's app data holds a reference to another
-            //  element -- possibly a symbol element -- killing the element here may cause the reference
+            //  element, killing the element here may cause the reference
             //  count of that element to go to zero. We don't want that to happen until the tree is in a
             //  consistent state.
             killed[killedIndex++] = *curr;
@@ -884,7 +884,7 @@ void ElemIdTree::Destroy()
 DgnElements::~DgnElements() 
     {
     Destroy(); 
-    DELETE_AND_CLEAR(m_tree);
+    m_tree.release();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -987,7 +987,7 @@ uint64_t DgnElements::_Purge(uint64_t memTarget)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElements::FindElement(DgnElementId id) const
+DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     return m_tree->FindElement(id, false);
@@ -1040,7 +1040,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
-    m_tree = new ElemIdTree(dgndb);
+    m_tree.reset(new ElemIdTree(dgndb));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1070,7 +1070,7 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
-    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid()) 
         el->_OnReversedAdd(); // Note: this MUST be a DgnElementPtr, since we can't call _OnReversedAdd with an element with a zero ref count
     }
@@ -1085,7 +1085,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
-    DgnElementCPtr el = elements.FindElement(elementId);
+    DgnElementCPtr el = elements.FindLoadedElement(elementId);
     if (el.IsValid())
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
@@ -1170,7 +1170,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     // since we can load elements on more than one thread, we need to check that the element doesn't already exist
     // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
     BeDbMutexHolder _v(m_mutex);
-    DgnElementCP element = FindElement(elementId);
+    DgnElementCP element = FindLoadedElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
     }
 /*---------------------------------------------------------------------------------**//**
