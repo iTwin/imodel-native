@@ -1519,7 +1519,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
         uint32_t nElemsFound = 0;
         for (auto const& elems : model.MakeIterator())
             {
-            ids[nElemsFound++] = elems.GetId();
+            ids[nElemsFound++] = elems.GetElementId();
             if (2 == nElemsFound)
                 return true;
             }

@@ -166,7 +166,7 @@ BentleyStatus TileReader::ReadIndices(TileMeshR mesh, Json::Value const& primiti
             size_t      triangleVertexCount = 3*(indices.size()/3);
 
             for(size_t i=0; i < triangleVertexCount; i+= 3)
-                mesh.AddTriangle(Triangle(indices[i], indices[i+1], indices[i+2], false));
+                mesh.AddTriangle(TileTriangle(indices[i], indices[i+1], indices[i+2], false));
 
             break;
             }
@@ -351,7 +351,8 @@ TileReader::Status  TileReader::ReadTile(TileMeshList& meshes, BeFileNameCR file
 
     bvector<char>       batchTableData(batchTableStrLen);
     Json::Value         batchTableValue;
-    Json::Reader        reader;
+    Json::Reader        reader;                                                                                                                        
+
     
     if(1 != fread(batchTableData.data(), batchTableStrLen, 1, m_file))
         return Status::ReadError;

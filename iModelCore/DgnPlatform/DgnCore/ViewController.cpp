@@ -1822,4 +1822,3 @@ void SheetViewController::_DrawView(ViewContextR context)
         context.OutputGraphic(*graphic, nullptr);
         }
     }
-
