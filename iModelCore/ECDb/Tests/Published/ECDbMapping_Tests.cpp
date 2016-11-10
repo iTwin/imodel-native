@@ -3069,11 +3069,11 @@ TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
 		"    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
 		"    <ECEntityClass typeName='Product' modifier='None'>"
 		"        <ECCustomAttributes>"
-		"            <ClassMap xmlns='ECDbMap.01.00'>"
+		"            <ClassMap xmlns='ECDbMap.02.00'>"
 		"                <MapStrategy>OwnTable</MapStrategy>"
 		"            </ClassMap>"
 		"        </ECCustomAttributes>"
-		"        <ECProperty propertyName='Name' typeName='text' />"
+		"        <ECProperty propertyName='Name' typeName='string' />"
 		"        <ECProperty propertyName='Price' typeName='double' />"
 		"    </ECEntityClass>"
 		"</ECSchema>", true, "Mapping Strategy OwnTable applied to subclasses is expected to succeed.");
