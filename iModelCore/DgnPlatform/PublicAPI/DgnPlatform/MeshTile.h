@@ -29,7 +29,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
 END_BENTLEY_GEOMETRY_NAMESPACE
 
-BENTLEY_RENDER_TYPEDEFS(Triangle);
+BENTLEY_RENDER_TYPEDEFS(TileTriangle);
 BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
 BENTLEY_RENDER_TYPEDEFS(TileMeshBuilder);
@@ -116,7 +116,7 @@ public:
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
 
-    bool operator<(TileDisplayParams const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(TileDisplayParams const& rhs) const;
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
@@ -133,14 +133,14 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct Triangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
 
-    explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
-    Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
-    Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
+    explicit TileTriangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
+    TileTriangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
+    TileTriangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
 
     void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
@@ -161,12 +161,11 @@ struct TilePolyline
      bvector <uint32_t>     m_indices;
 
 public:
-    bvector<uint32_t> const& GetIndices() { return m_indices; }
+    bvector<uint32_t> const& GetIndices() const { return m_indices; }
     void AddIndex (uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back (index); }
     void Clear() { m_indices.clear(); }
 };  // TilePolyline
-
-
+              
 //=======================================================================================
 //! Represents a single mesh of uniform symbology within a TileNode, consisting of
 //! vertex/normal/uv-param/elementID arrays indexed by an array of triangles.
@@ -176,7 +175,7 @@ struct TileMesh : RefCountedBase
 {
 private:
     TileDisplayParamsPtr    m_displayParams;
-    bvector<Triangle>       m_triangles;
+    bvector<TileTriangle>   m_triangles;
     bvector<TilePolyline>   m_polylines;
     bvector<DPoint3d>       m_points;
     bvector<DVec3d>         m_normals;
@@ -190,13 +189,15 @@ private:
 public:
     static TileMeshPtr Create(TileDisplayParamsPtr& params) { return new TileMesh(params); }
 
-    DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
-    DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
+    DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TileTriangleCR triangle) const;
+    DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TileTriangleCR triangle) const;
     DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
+    DGNPLATFORM_EXPORT void RemoveEntityGeometry(bset<BeInt64Id> const& ids);
+
 
     TileDisplayParamsCP GetDisplayParams() const { return m_displayParams.get(); } //!< The mesh symbology
     TileDisplayParamsPtr GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
-    bvector<Triangle> const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
+    bvector<TileTriangle> const& Triangles() const { return m_triangles; } //!< TileTriangles defined as a set of 3 indices into the vertex attribute arrays.
     bvector<TilePolyline> const& Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
@@ -207,11 +208,13 @@ public:
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
     bvector<BeInt64Id>& EntityIdsR() { return m_entityIds; }
 
-    TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
+    TileTriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
     DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     BeInt64Id GetEntityId(uint32_t index) const { auto pId = GetMember(m_entityIds, index); return nullptr != pId ? *pId : BeInt64Id(); }
+    BeInt64Id GetTriangleEntityId (TileTriangleCR triangle) const { return GetEntityId(triangle.m_indices[0]); }
+    BeInt64Id GetPolylineEntityId (TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? BeInt64Id() : GetEntityId(polyline.GetIndices().front()); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     DRange3d GetRange() const { return DRange3d::From (m_points); }
 
@@ -219,10 +222,38 @@ public:
 
     bool ValidIdsPresent() const { return m_validIdsPresent; }
 
-    void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
+    void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
+    DGNPLATFORM_EXPORT void AddMesh (TileMeshCR mesh);
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId);
 };
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     06/2016
++===============+===============+===============+===============+===============+======*/
+struct TileMeshMergeKey
+{
+    TileDisplayParamsCP m_params;                                                                                                                                                     
+    bool                m_hasNormals;
+    bool                m_hasFacets;
+
+    TileMeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets (false) { }
+    TileMeshMergeKey(TileDisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets (hasFacets) { }
+    TileMeshMergeKey(TileMeshCR mesh) : TileMeshMergeKey(*mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
+
+    bool operator<(TileMeshMergeKey const& rhs) const
+        {
+        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+        if (m_hasNormals != rhs.m_hasNormals)
+            return !m_hasNormals;
+
+        if (m_hasFacets != rhs.m_hasFacets)
+            return !m_hasFacets;
+
+        return *m_params < *rhs.m_params;
+        }
+};
+
 
 //=======================================================================================
 //! Builds a single TileMesh to a specified level of detail, optionally applying vertex
@@ -259,23 +290,23 @@ struct TileMeshBuilder : RefCountedBase
             };
         };
 private:
-    struct TriangleKey
+    struct TileTriangleKey
     {
         uint32_t    m_sortedIndices[3];
 
-        TriangleKey() { }
-        explicit TriangleKey(TriangleCR triangle);
+        TileTriangleKey() { }
+        explicit TileTriangleKey(TileTriangleCR triangle);
 
-        bool operator<(TriangleKey const& rhs) const;
+        bool operator<(TileTriangleKey const& rhs) const;
     };
 
     typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
-    typedef bset<TriangleKey> TriangleSet;
+    typedef bset<TileTriangleKey> TileTriangleSet;
 
     TileMeshPtr             m_mesh;
     VertexMap               m_clusteredVertexMap;
     VertexMap               m_unclusteredVertexMap;
-    TriangleSet             m_triangleSet;
+    TileTriangleSet         m_triangleSet;
     double                  m_tolerance;
     double                  m_areaTolerance;
     size_t                  m_triangleIndex;
@@ -286,12 +317,12 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTileTriangles, bool includeParams);
 
-    void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
-    void AddTriangle(TriangleCR triangle);
+    void AddMesh (TileTriangleCR triangle);
+    void AddTriangle(TileTriangleCR triangle);
     uint32_t AddClusteredVertex(VertexKey const& vertex);
     uint32_t AddVertex(VertexKey const& vertex);
 
@@ -510,7 +541,7 @@ protected:
 
 
     virtual TileSource _GetSource() const = 0;
-    virtual TileMeshList _GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const = 0;
+    virtual TileMeshList _GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doPolylines=false) const = 0;
     virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) { }
     virtual void _ClearGeometry() { }
 
@@ -548,8 +579,8 @@ public:
     void  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) { _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }
     TileSource GetSource() const { return _GetSource(); }
-    TileMeshList GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
-        { return _GenerateMeshes(dgndb, normalMode, twoSidedTriangles, doPolylines); }
+    TileMeshList GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTileTriangles=false, bool doPolylines=false) const
+        { return _GenerateMeshes(dgndb, normalMode, twoSidedTileTriangles, doPolylines); }
 };
 
 //=======================================================================================
@@ -617,29 +648,34 @@ struct EXPORT_VTABLE_ATTRIBUTE ITileGenerationProgressMonitor
 struct TileGenerator
 {
     enum class Status
-    {
+        {
         Success = SUCCESS,
         NoGeometry,
+        NoChanges,
         Aborted,
-    };
+        };
 
     //! Interface adopted by an object which collects generated tiles
     struct EXPORT_VTABLE_ATTRIBUTE ITileCollector
-    {
+        {
         //! Invoked from one of several worker threads for each generated tile.
         virtual Status _AcceptTile(TileNodeCR tileNode) = 0;
         //! Invoked before a model is processed.
         virtual Status _BeginProcessModel(DgnModelCR model) { return Status::Success; }
         //! Invoked after a model is processed, with the result of processing.
         virtual Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, Status status) { return status; }
-    };
+        //! Filter invoked during cache generation.
+        virtual ITileGenerationFilterP _GetElementFilter(DgnModelId modelId) const { return nullptr; }
+        };
 
     //! Accumulates statistics during tile generation
     struct Statistics
-    {
+        {
         size_t      m_tileCount = 0;
         double      m_tileGenerationTime = 0.0;
-    };
+        };
+            
+        
 private:
     Statistics                      m_statistics;
     ITileGenerationProgressMonitorR m_progressMeter;
@@ -650,7 +686,7 @@ private:
     BeAtomic<uint32_t>              m_completedModels;
 
     struct ElementTileContext
-    {
+        {
         DgnPlatformLib::Host&   m_host;
         TileGenerationCachePtr  m_cache;
         DgnModelCPtr            m_model;
@@ -660,16 +696,16 @@ private:
 
         ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile) { }
-    };
+        };
 
     struct ElementTileResult
-    {
+        {
         ElementTileNodePtr      m_tile;
         TileGenerator::Status   m_status;
 
         explicit ElementTileResult(TileGenerator::Status status, ElementTileNodeP tile=nullptr) : m_tile(tile), m_status(status)
             { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
-    };
+        };
 
 #if !defined(MESHTILE_NO_FOLLY)
     typedef folly::Future<Status> FutureStatus;

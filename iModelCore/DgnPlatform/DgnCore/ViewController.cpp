@@ -1762,6 +1762,8 @@ void SheetViewController::_DrawView(ViewContextR context)
 
         Render::GraphicBuilderPtr graphic = context.CreateGraphic();
 
+#define WIP_SHEETS_SHOW_THUMBNAIL
+#ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
         double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
 
         auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
@@ -1776,6 +1778,14 @@ void SheetViewController::_DrawView(ViewContextR context)
         Render::RenderMode modeUsed;
         if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
             continue;
+#else
+        auto imageSource = GetViewDefinition().ReadThumbnail();
+        if (!imageSource.IsValid())
+            continue;
+
+        Render::Image image(imageSource);
+
+#endif
 
         auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
         Texture::CreateParams textureParams;
@@ -1803,8 +1813,6 @@ void SheetViewController::_DrawView(ViewContextR context)
 
         //graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
 
-
         context.OutputGraphic(*graphic, nullptr);
         }
     }
-

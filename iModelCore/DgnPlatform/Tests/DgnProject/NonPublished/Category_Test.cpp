@@ -274,6 +274,56 @@ TEST_F (CategoryTests, UpdateCategory)
     EXPECT_TRUE(DgnCategory::Scope::Any == updatedCat->GetScope());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CategoryTests, IterateCategories)
+    {
+    SetupSeedProject();
+    int numCategories = DgnCategory::MakeIterator(*m_db).BuildElementIdSet().size();
+    DgnDbTestUtils::InsertCategory(*m_db, "TestCategory1");
+    DgnDbTestUtils::InsertCategory(*m_db, "TestCategory2");
+    DgnDbTestUtils::InsertCategory(*m_db, "TestCategory3");
+    numCategories += 3;
+    ASSERT_EQ(numCategories, DgnCategory::MakeIterator(*m_db).BuildElementIdList().size());
+
+    bool foundCategory1=false;
+    bool foundCategory2=false;
+    bool foundCategory3=false;
+
+    for (ElementIteratorEntry entry : DgnCategory::MakeIterator(*m_db))
+        {
+        DgnCategoryId categoryId = entry.GetId<DgnCategoryId>();
+        DgnCategoryCPtr category = DgnCategory::QueryCategory(categoryId, *m_db);
+        ASSERT_TRUE(category.IsValid());
+        ASSERT_EQ(entry.GetClassId(), category->GetElementClassId());
+        ASSERT_EQ(entry.GetModelId(), category->GetModelId());
+        ASSERT_STREQ(entry.GetCodeValue(), category->GetCode().GetValueCP());
+        ASSERT_FALSE(entry.GetParentId().IsValid());
+        ASSERT_FALSE(category->GetParentId().IsValid());
+
+        if (0 == strcmp(entry.GetCodeValue(), "TestCategory1"))
+            {
+            foundCategory1 = true;
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            }
+        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory2")) 
+            {
+            foundCategory2 = true;
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            }
+        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory3")) 
+            {
+            foundCategory3 = true;
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            }
+        }
+
+    ASSERT_TRUE(foundCategory1);
+    ASSERT_TRUE(foundCategory2);
+    ASSERT_TRUE(foundCategory3);
+    }
+
 //=======================================================================================
 //! Test for inserting SubCategories and checking their properties.
 // @bsiclass                                                     Maha Nasir      07/15
@@ -714,4 +764,3 @@ TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     EXPECT_TRUE(1 == appearance2.GetTransparency());
     EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
     }
-

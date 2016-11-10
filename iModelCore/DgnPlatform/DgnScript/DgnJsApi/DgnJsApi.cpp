@@ -459,10 +459,10 @@ int32_t JsDgnDb::SaveChanges()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsDgnElementP JsDgnElements::FindElement(JsDgnObjectIdP id) const
+JsDgnElementP JsDgnElements::FindLoadedElement(JsDgnObjectIdP id) const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(id));
-    auto el = m_elements.FindElement(DgnElementId(id->m_id));
+    auto el = m_elements.FindLoadedElement(DgnElementId(id->m_id));
     return (nullptr != el) ? new JsDgnElement(*el->CopyForEdit()): nullptr;
     }
 

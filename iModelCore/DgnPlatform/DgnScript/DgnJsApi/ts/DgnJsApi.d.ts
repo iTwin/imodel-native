@@ -490,7 +490,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @return A pointer to the element, or nullptr if the is not in the pool.
          * @note This method will return null if the element is not currently loaded. That does not mean the element doesn't exist in the database.
          */
-        FindElement(id: DgnObjectIdP): DgnElementP;
+        FindLoadedElement(id: DgnObjectIdP): DgnElementP;
 
         /** Look for the element that has the specified code
           * @param code The DgnCode to look up
@@ -763,7 +763,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     type DgnModelP = cxx_pointer<DgnModel>;
 
-        
+
     /**
      * ColorDef - Projection of BentleyApi::Dgn::ColorDef
      */

@@ -193,8 +193,8 @@ TEST_F(DgnViewElemTest, CRUD)
     Utf8CP drawingDescr = "TestDrawing descr";
 
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, DgnModel::CreateModelCode("DrawingListModel"));
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), drawingName);
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("TestDrawingModel"));
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, drawingName);
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, "TestDrawingModel");
     DrawingViewPtr drawingView = DgnDbTestUtils::InsertDrawingView(*drawingModel, drawingDescr);
 
     PhysicalModelPtr physicalModel = InsertPhysicalModel("TestPhys");
