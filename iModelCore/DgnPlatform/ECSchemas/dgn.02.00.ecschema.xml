@@ -163,10 +163,7 @@
                     <IsNullable>False</IsNullable>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Namespace" typeName="string">
@@ -176,10 +173,7 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Value" displayLabel="Name" typeName="string">
@@ -257,7 +251,11 @@
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECStructProperty>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -269,26 +267,17 @@
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Visibility" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="DependencyIndex" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -437,14 +426,12 @@
                 <PropertyStatementType>
                   <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECStructProperty>                          
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
                 <PropertyStatementType>
                   <StatementTypes>2</StatementTypes>
@@ -453,10 +440,7 @@
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
                 <PropertyStatementType>
                   <StatementTypes>6</StatementTypes>
@@ -482,6 +466,7 @@
                 <PropertyStatementType>
                   <StatementTypes>0</StatementTypes>
                 </PropertyStatementType>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
@@ -624,82 +609,55 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point3d">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Yaw" typeName="double">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Pitch" typeName="double">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Roll" typeName="double">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1241,6 +1199,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1342,28 +1301,19 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Scope" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1372,10 +1322,7 @@
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
                 <PropertyStatementType>
                   <StatementTypes>0</StatementTypes>
