@@ -159,7 +159,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 #define QUERY_ID 0 
 
-static double s_minScreenPixelsPerPoint = 3000;
+static double s_minScreenPixelsPerPoint = 800;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -999,7 +999,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
         {
         for (auto&clip : clipFromCoverageSet)
-            {
+            {            
             context.PushClip(*clip);
             ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
             context.PopTransformClip();
