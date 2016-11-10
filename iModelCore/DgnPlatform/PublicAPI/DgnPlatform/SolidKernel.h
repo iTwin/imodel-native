@@ -25,25 +25,31 @@ typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!
 struct FaceAttachment
 {
 private:
-    bool                m_useColor:1;       //!< true - color does not follow sub-category appearance.
-    bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
-    DgnCategoryId       m_categoryId;       //!< in memory only, can't change from element...
-    DgnSubCategoryId    m_subCategoryId;    //!< in memory only, can't change per-face...
-    ColorDef            m_color;
-    double              m_transparency;
-    DgnMaterialId       m_material;
-    DPoint2d            m_uv;
+
+    bool            m_useColor:1;       //!< true - color/transparency does not follow sub-category appearance.
+    bool            m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
+    ColorDef        m_color;
+    double          m_transparency;
+    DgnMaterialId   m_material;
+    DPoint2d        m_uv;
+
+    mutable bool m_haveGraphicParams = false;
+    mutable Render::GraphicParams m_graphicParams; //!< in memory only, resolved color/transparency/material...
 
 public:
 
-DGNPLATFORM_EXPORT FaceAttachment ();
-DGNPLATFORM_EXPORT FaceAttachment (Render::GeometryParamsCR);
+DGNPLATFORM_EXPORT FaceAttachment();
+DGNPLATFORM_EXPORT FaceAttachment(Render::GeometryParamsCR sourceParams);
 
-//! Input GeometryParams should be initialized from ViewContext::GetCurrentGeometryParams for anything other than color, transparency, material.
-DGNPLATFORM_EXPORT void ToGeometryParams (Render::GeometryParamsR) const; 
+//! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
+//! Cook and resolve FaceAttachment color and material. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsCR baseParams) const;
+//! Return GraphicParams from prior call to CookFaceAttachment. Will return nullptr if CookFaceAttachment has not been called.
+Render::GraphicParamsCP GetGraphicParams() const {return (m_haveGraphicParams ? &m_graphicParams : nullptr);}
 
-DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
-DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
+DGNPLATFORM_EXPORT bool operator == (struct FaceAttachment const&) const;
+DGNPLATFORM_EXPORT bool operator < (struct FaceAttachment const&) const;
 
 }; // FaceAttachment
 
@@ -413,10 +419,11 @@ DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR
 //! @note Convenience method for use along with GetFaceLocation and GetEdgeLocation; could use EvaluateVertex instead.
 DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
 
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+//! Return a PolyfaceHeader created by facetting the supplied sheet or solid body using the specified facet options.
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+
+//! Return a PolyfaceHeader and FaceAttachment for each unique symbology by facetting the supplied sheet or solid body using the specified facet options.
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions);
 
 //! Perform 3d clip of the supplied curve vector.
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);

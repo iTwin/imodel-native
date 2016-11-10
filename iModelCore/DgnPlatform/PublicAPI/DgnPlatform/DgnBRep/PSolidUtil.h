@@ -231,10 +231,10 @@ DGNPLATFORM_EXPORT static BentleyStatus GetEntityRange(DRange3dR range, PK_TOPOL
 DGNPLATFORM_EXPORT static IFaceMaterialAttachmentsPtr CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams);
 DGNPLATFORM_EXPORT static void SetFaceAttachments(IBRepEntityR, IFaceMaterialAttachmentsP);
 
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR entity, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR entity, IFacetOptionsR);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
-DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR entity, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
+DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(PK_BODY_t entityTag);
 DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(PK_BODY_t entityTag);
