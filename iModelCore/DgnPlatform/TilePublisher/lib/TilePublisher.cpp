@@ -1245,6 +1245,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelElementState::ModelElementState(DgnModelCR model)
     {
+#ifdef WIP
     for (auto& it : const_cast<DgnModelR> (model).MakeIterator())
         {
         int64_t         milliseconds;
@@ -1254,6 +1255,7 @@ ModelElementState::ModelElementState(DgnModelCR model)
             SUCCESS == el->QueryTimeStamp().ToUnixMilliseconds (milliseconds)) 
             m_elementTimes.Insert (it.GetId(), milliseconds);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
