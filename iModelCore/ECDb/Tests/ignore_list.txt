@@ -40,3 +40,8 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
+
+#Following test need changes in EC to roundtrip navigation property
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMapping_ECInstanceAdapter
+#Json format need to be change so Nav property is a struct with Id and RelECClassId
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMapping_JsonAdapter
