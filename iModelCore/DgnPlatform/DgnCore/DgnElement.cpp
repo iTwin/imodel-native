@@ -2564,15 +2564,15 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
     params.RegisterPropertyAccessors(layout, GEOM3_Yaw, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()))));
+        SETGEOMPLCPROP(plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Pitch,
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble()))));
+        SETGEOMPLCPROP(plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Roll, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()))));
+        SETGEOMPLCPROP(plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM_Origin, 
         GETGEOMPLCPROPPT3(plc.GetOrigin()),

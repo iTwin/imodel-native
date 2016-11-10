@@ -82,7 +82,7 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
+        DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         void RelocateToDestinationDb(DgnImportContext&);
     };// Appearance
@@ -341,8 +341,6 @@ protected:
     DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
 
-    void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
-
 public:
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 
@@ -381,6 +379,9 @@ public:
 
     //! Returns the ID of the default sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnSubCategoryId GetDefaultSubCategoryId(DgnCategoryId categoryId);
+
+    //! Sets the appearance of the default SubCategory
+    DGNPLATFORM_EXPORT void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
 
     //! Make an iterator over all categories in the specified DgnDb
     //! @param[in] db Iterate categories in this DgnDb
