@@ -93,7 +93,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual IWSRepositoryClientPtr GetClient() const = 0;
         virtual void SetClient(IWSRepositoryClientPtr client) = 0;
 
-        virtual void CancelAllTasksAndWait() = 0;
+        virtual AsyncTaskPtr<void> CancelAllTasks() = 0;
 
         virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) = 0;
 
