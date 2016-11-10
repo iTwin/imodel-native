@@ -788,7 +788,7 @@ SheetPtr Sheet::Create(DocumentListModelCR model, double scale, DgnElementId she
         return nullptr;
         }
 
-    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name));
+    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
     #ifdef WIP_SHEETS
