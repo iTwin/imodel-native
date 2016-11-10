@@ -363,8 +363,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 }
 
             ECPropertyCR prop = propertyMap->GetProperty();
-            NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
-            if (!prop.GetIsPrimitive() && (navProp == nullptr || navProp->IsMultiple()))
+            if (!prop.GetIsPrimitive())
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
                               "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
@@ -373,8 +372,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            //!WIP Indexable columns should not include ClassIds 
-            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable(), PropertyMap::Type::Indexable);
+            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable());
             propertyMap->AcceptVisitor(columnVisitor);
             std::vector<DbColumn const*> const& columns = columnVisitor.GetColumns();
             if (0 == columns.size())

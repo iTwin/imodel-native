@@ -4433,6 +4433,42 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
             testItems.push_back(SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "    <ECEntityClass typeName='DgnModel' modifier='None' >"
+                "        <ECProperty propertyName='Name' typeName='string' />"
+                "    </ECEntityClass>"
+                "    <ECEntityClass typeName='DgnElement' modifier='None' >"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                "            </ClassMap>"
+                "            <DbIndexList xmlns='ECDbMap.02.00'>"
+                "                 <Indexes>"
+                "                   <DbIndex>"
+                "                       <IsUnique>False</IsUnique>"
+                "                       <Name>ix_model</Name>"
+                "                       <Properties>"
+                "                          <string>Model</string>"
+                "                       </Properties>"
+                "                   </DbIndex>"
+                "                 </Indexes>"
+                "            </DbIndexList>"
+                "        </ECCustomAttributes>"
+                "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                "    </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding'>"
+                "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
+                "      <Class class='DgnModel' />"
+                "    </Source>"
+                "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
+                "      <Class class='DgnElement' />"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", false, "Cannot define index on navigation prop"));
+
+            testItems.push_back(SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='Element' modifier='None' >"
@@ -4678,7 +4714,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECClassId baseClassId = db.Schemas().GetECClassId("TestSchema", "Base");
                 Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId<>%llu", baseClassId.GetValue());
+                indexWhereClause.Sprintf("ECClassId<>%s", baseClassId.ToString().c_str());
                 AssertIndex(db, "uix_sub1_code", true, "ts3_Base", {"Code"}, indexWhereClause.c_str());
                 }
 
@@ -5132,6 +5168,52 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(db, "uix_sub2unshared", true, "ts82_Sub2Unshared", {"Sub2UnsharedProp"});
                 }
 
+                    {
+                    SchemaItem testItem(
+                        "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                        "    <ECEntityClass typeName='DgnModel' modifier='None' >"
+                        "        <ECProperty propertyName='Name' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='DgnElement' modifier='None' >"
+                        "        <ECCustomAttributes>"
+                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                        "            </ClassMap>"
+                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+                        "                 <Indexes>"
+                        "                   <DbIndex>"
+                        "                       <IsUnique>False</IsUnique>"
+                        "                       <Name>ix_dgnelement_model_id_code</Name>"
+                        "                       <Properties>"
+                        "                          <string>Model.Id</string>"
+                        "                          <string>Code</string>"
+                        "                       </Properties>"
+                        "                   </DbIndex>"
+                        "                 </Indexes>"
+                        "            </DbIndexList>"
+                        "        </ECCustomAttributes>"
+                        "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                        "        <ECProperty propertyName='Code' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding'>"
+                        "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
+                        "      <Class class='DgnModel' />"
+                        "    </Source>"
+                        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
+                        "      <Class class='DgnElement' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>", true, "");
+
+                    ECDb db;
+                    bool asserted = false;
+                    AssertSchemaImport(db, asserted, testItem, "userdefinedindextest9.ecdb");
+                    ASSERT_FALSE(asserted);
+
+                    AssertIndex(db, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
+                    }
     }
 
 //---------------------------------------------------------------------------------------
