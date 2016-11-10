@@ -493,7 +493,7 @@ void TileDisplayParams::ResolveTextureImage(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d TileMesh::GetTriangleRange(TriangleCR triangle) const
+DRange3d TileMesh::GetTriangleRange(TileTriangleCR triangle) const
     {
     return DRange3d::From (m_points.at (triangle.m_indices[0]), 
                            m_points.at (triangle.m_indices[1]),
@@ -503,7 +503,7 @@ DRange3d TileMesh::GetTriangleRange(TriangleCR triangle) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DVec3d TileMesh::GetTriangleNormal(TriangleCR triangle) const
+DVec3d TileMesh::GetTriangleNormal(TileTriangleCR triangle) const
     {
     return DVec3d::FromNormalizedCrossProductToPoints (m_points.at (triangle.m_indices[0]), 
                                                        m_points.at (triangle.m_indices[1]),
@@ -528,6 +528,48 @@ bool TileMesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    TileMesh::AddMesh (TileMeshCR mesh)
+    {
+    if (mesh.m_points.empty() ||
+        m_normals.empty() != mesh.m_normals.empty() ||
+        m_uvParams.empty() != mesh.m_uvParams.empty() ||
+        m_entityIds.empty() != mesh.m_entityIds.empty())
+        {
+        BeAssert (false && "add mesh empty or not compatible");
+        }
+    size_t      baseIndex = m_points.size();
+
+    m_points.insert (m_points.end(), mesh.m_points.begin(), mesh.m_points.end());
+    if (!mesh.m_normals.empty())
+        m_normals.insert (m_normals.end(), mesh.m_normals.begin(), mesh.m_normals.end());
+
+    if (!mesh.m_uvParams.empty())
+        m_uvParams.insert (m_uvParams.end(), mesh.m_uvParams.begin(), mesh.m_uvParams.end());
+
+    if (!mesh.m_entityIds.empty())
+        m_entityIds.insert (m_entityIds.end(), mesh.m_entityIds.begin(), mesh.m_entityIds.end());
+
+    for (auto& triangle : mesh.m_triangles)
+        AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    TileMesh::RemoveEntityGeometry (bset<BeInt64Id> const& ids)
+    {
+    for (bvector<TileTriangle>::iterator  triangle = m_triangles.begin(); triangle != m_triangles.end(); )
+        {
+        if (ids.find(GetTriangleEntityId(*triangle)) != ids.end())
+            m_triangles.erase (triangle);
+        else
+            triangle++;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId)
@@ -539,11 +581,12 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
+                                                                                                                 
 
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
-    m_validIdsPresent |= (entityId.IsValid());
+    m_validIdsPresent |= entityId.IsValid();
     return index;
     }
 
@@ -586,7 +629,7 @@ bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, Ve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshBuilder::TriangleKey::TriangleKey(TriangleCR triangle)
+TileMeshBuilder::TileTriangleKey::TileTriangleKey(TileTriangleCR triangle)
     {
     // Could just use std::sort - but this should be faster?
     if (triangle.m_indices[0] < triangle.m_indices[1])
@@ -642,7 +685,7 @@ TileMeshBuilder::TriangleKey::TriangleKey(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
+bool TileMeshBuilder::TileTriangleKey::operator<(TileTriangleKey const& rhs) const
     {
     COMPARE_VALUES (m_sortedIndices[0], rhs.m_sortedIndices[0]);
     COMPARE_VALUES (m_sortedIndices[1], rhs.m_sortedIndices[1]);
@@ -654,12 +697,12 @@ bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(TriangleCR triangle)
+void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
     {
     if (triangle.IsDegenerate())
         return;
 
-    TriangleKey key(triangle);
+    TileTriangleKey key(triangle);
 
     if (m_triangleSet.insert(key).second)
         m_mesh->AddTriangle(triangle);
@@ -682,7 +725,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             return;
         }
 
-    Triangle                newTriangle(!visitor.GetTwoSided());
+    TileTriangle            newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
 
     if (includeParams &&
@@ -715,7 +758,8 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     if (visitor.GetTwoSided() && duplicateTwoSidedTriangles)
         {
-        Triangle dupTriangle(false);
+        TileTriangle dupTriangle(false);
+
         for (size_t i = 0; i < 3; i++)
             {
             size_t reverseIndex = 2 - i;
@@ -815,30 +859,6 @@ WString TileNode::GetFileName (WCharCP rootName, WCharCP extension) const
     }
 
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct MeshBuilderKey
-{
-    TileDisplayParamsCP m_params;
-    bool                m_hasNormals;
-    bool                m_hasFacets;
-
-    MeshBuilderKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets (false) { }
-    MeshBuilderKey(TileDisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets (hasFacets) { }
-
-    bool operator<(MeshBuilderKey const& rhs) const
-        {
-        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
-        if (m_hasNormals != rhs.m_hasNormals)
-            return !m_hasNormals;
-
-        if (m_hasFacets != rhs.m_hasFacets)
-            return !m_hasFacets;
-
-        return *m_params < *rhs.m_params;
-        }
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -858,7 +878,7 @@ static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
     return opts;
     }
 
-typedef bmap<MeshBuilderKey, TileMeshBuilderPtr> MeshBuilderMap;
+typedef bmap<TileMeshMergeKey, TileMeshBuilderPtr> MeshBuilderMap;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -1328,8 +1348,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
-    auto cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext context(*cache, model, collector, leafTolerance, maxPointsPerTile);
+    auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
+    ElementTileContext  context(*cache, model, collector, leafTolerance, maxPointsPerTile);
+
     return PopulateCache(context).then([=](TileGenerator::Status status)
         {
         return GenerateTileset(status, context);
@@ -1341,7 +1362,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITile
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext context)
     {
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]
+    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]                                                         
         {
         ScopedHostAdopter hostScope(context.m_host);
     #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -1349,7 +1370,7 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
     #endif
 
-        context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId(), nullptr);
+        context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId(), context.m_collector->_GetElementFilter(context.m_model->GetModelId()));
         bool emptyRange = context.m_cache->GetRange().IsNull();
         return emptyRange ? Status::NoGeometry : Status::Success;
         });
@@ -2042,7 +2063,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
             if (0 == polyface->GetPointCount())
                 continue;
 
-            MeshBuilderKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+            TileMeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
 
             TileMeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
@@ -2082,7 +2103,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 continue;
 
             TileDisplayParamsPtr    displayParams = geom->GetDisplayParams();
-            MeshBuilderKey key(*displayParams, false, false);
+            TileMeshMergeKey key(*displayParams, false, false);
 
             TileMeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
