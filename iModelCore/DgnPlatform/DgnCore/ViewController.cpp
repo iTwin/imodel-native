@@ -1747,13 +1747,11 @@ void SheetViewController::_DrawView(ViewContextR context)
         {
         auto attachmentId = attachments->GetValueId<DgnElementId>(0);
         auto viewId = attachments->GetValueId<DgnViewId>(1);
-        auto view = ViewDefinition::QueryView(viewId, GetDgnDb());
+        ViewDefinitionPtr view = const_cast<ViewDefinition*>(ViewDefinition::QueryView(viewId, GetDgnDb()).get());
         if (view.IsNull())
             continue;
 
-        // *** WIP_VIEW_ATTACHMENT - call GenerateThumbnail on view
-
-        // *** WIP_VIEW_ATTACHMENT - for now, just draw the box
+        // *** WIP_VIEW_ATTACHMENT - for now, show a thumbnail as a placeholder
 
         auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachmentId);
         if (!attachment.IsValid())
@@ -1761,21 +1759,60 @@ void SheetViewController::_DrawView(ViewContextR context)
 
         auto const& placement = attachment->GetPlacement();
         auto const& box = placement.GetElementBox();
-        auto height = box.GetHeight();
-        auto width = box.GetWidth();
-        DPoint2d pts[4];
-        pts[0] = DPoint2d::From(0       , 0);
-        pts[1] = DPoint2d::From(0+width , 0);
-        pts[2] = DPoint2d::From(0+width , 0+height);
-        pts[3] = DPoint2d::From(0       , 0+height);
-        auto rot = placement.GetTransform();
-        rot.Multiply(pts, pts, _countof(pts));
 
         Render::GraphicBuilderPtr graphic = context.CreateGraphic();
 
-        graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2);
-        graphic->AddLineString2d(_countof(pts), pts, 0.0);
+#define WIP_SHEETS_SHOW_THUMBNAIL
+#ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
+        double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
+
+        auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
+
+        while (imageSize.x > 4096)
+            {
+            imageSize.x /= 10;
+            imageSize.y /= 10;
+            }
+
+        Render::Image image;
+        Render::RenderMode modeUsed;
+        if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
+            continue;
+#else
+        auto imageSource = GetViewDefinition().ReadThumbnail();
+        if (!imageSource.IsValid())
+            continue;
+
+        Render::Image image(imageSource);
+
+#endif
+
+        auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
+        Texture::CreateParams textureParams;
+        auto texture = rsys._CreateTexture(image, textureParams);
+        IGraphicBuilder::TileCorners corners;
+        //  [2]     [3]
+        //  [0]     [1]
+        DPoint2d tc[4];
+        auto ll = box.low;
+        auto ur = box.high;
+        tc[0] = DPoint2d::From(ll.x , ll.y);
+        tc[1] = DPoint2d::From(ur.x , ll.y);
+        tc[2] = DPoint2d::From(ll.x , ur.y);
+        tc[3] = DPoint2d::From(ur.x , ur.y);
+        auto rot = placement.GetTransform();
+        rot.Multiply(tc, tc, 4);
+        for (auto i=0; i<4; ++i)
+            corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
+
+        // unused -- auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
+        //graphic->SetSymbology(bgcolor, bgcolor, 4);           *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
+        graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
+
+        graphic->AddTile(*texture, corners);
+
+        //graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
+
         context.OutputGraphic(*graphic, nullptr);
         }
     }
-

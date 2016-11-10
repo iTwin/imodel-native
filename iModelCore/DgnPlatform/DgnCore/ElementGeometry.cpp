@@ -4227,7 +4227,7 @@ BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
 
         GeometrySource3dP source3d;
 
-        if (nullptr == (source3d = source.ToGeometrySource3dP()))
+        if (nullptr == (source3d = source.GetAsGeometrySource3dP()))
             return ERROR;
 
         source3d->SetPlacement(m_placement3d);
@@ -4239,7 +4239,7 @@ BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
 
         GeometrySource2dP source2d;
 
-        if (nullptr == (source2d = source.ToGeometrySource2dP()))
+        if (nullptr == (source2d = source.GetAsGeometrySource2dP()))
             return ERROR;
 
         source2d->SetPlacement(m_placement2d);
@@ -5060,10 +5060,10 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStre
 
     GeometryBuilderPtr builder;
 
-    if (nullptr != source.ToGeometrySource3d())
-        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
+    if (nullptr != source.GetAsGeometrySource3d())
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource3d()->GetPlacement());
     else
-        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource2d()->GetPlacement());
 
     if (!builder.IsValid())
         return nullptr;
@@ -5200,8 +5200,8 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
     if (!categoryId.IsValid())
         return nullptr;
 
-    if (nullptr != source.ToGeometrySource3d())
-        return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
+    if (nullptr != source.GetAsGeometrySource3d())
+        return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource3d()->GetPlacement());
 
-    return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
+    return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource2d()->GetPlacement());
     }

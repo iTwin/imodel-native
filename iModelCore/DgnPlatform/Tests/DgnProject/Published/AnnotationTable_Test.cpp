@@ -368,7 +368,7 @@ void AnnotationTableTest::SetUpTestCase()
 
     // Create a 2d model
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL_NAME);
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, TEST_MODEL_NAME);
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     s_modelId = drawingModel->GetModelId();
 

@@ -26,30 +26,35 @@ struct DgnDbTestUtils : NonCopyableClass
 {
 public:
     //! Insert a PhysicalModel 
-    //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
+    //! @note Also creates a PhysicalPartition element for the PhysicalModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static PhysicalModelPtr InsertPhysicalModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a SpatialLocationModel 
+    //! @note Also creates a SpatialLocationPartition element for the SpatialLocationModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SpatialLocationModelPtr InsertSpatialLocationModel(DgnDbR, Utf8CP partitionName);
+
     //! Insert a DocumentListModel 
-    //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
+    //! @note Also creates a DocumentPartition element for the DocumentListModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DocumentListModelPtr InsertDocumentListModel(DgnDbR, Utf8CP partitionName);
 
     //! Insert a Drawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static DrawingPtr InsertDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static DrawingPtr InsertDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a SectionDrawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)

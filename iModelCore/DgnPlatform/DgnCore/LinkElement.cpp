@@ -365,9 +365,38 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Shaun.Sewall                       11/2016
+//---------------------------------------------------------------------------------------
+DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8CP name)
+    {
+    // LinkElements must have unique names with the scope of the model that contains them
+    return LinkAuthority::CreateLinkCode(name, model.GetModeledElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode RepositoryLink::CreateUniqueCode(LinkModelCR model, Utf8CP baseName)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnCode code = CreateCode(model, baseName);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int counter=1;
+    do  {
+        Utf8PrintfString name("%s-%d", baseName, counter);
+        code = CreateCode(model, name.c_str());
+        counter++;
+        } while (db.Elements().QueryElementIdByCode(code).IsValid());
+
+    return code;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Shaun.Sewall                       09/2016
 //---------------------------------------------------------------------------------------
-RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP label, Utf8CP description)
+RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP name, Utf8CP description)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
@@ -378,8 +407,9 @@ RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP la
         return nullptr;
         }
 
-    CreateParams createParams(model, url, label, description);
+    CreateParams createParams(model, url, name, description);
     createParams.m_classId = classId;
+    createParams.SetCode(CreateCode(model, name));
     return new RepositoryLink(createParams);
     }
 

@@ -67,7 +67,7 @@ void ViewAttachmentTest::SetUp()
 
     // Set up a sheet to hold attachments
     DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, "SheetListModel");
-    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0,1.0,1.0, DgnCode(), "MySheet");
+    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0,1.0,1.0, "MySheet");
     SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     m_sheetModelId = sheetModel->GetModelId();
 
@@ -79,7 +79,7 @@ void ViewAttachmentTest::SetUp()
 
     // Set up a viewed model
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, "MyDrawingListModel");
-    SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, DgnCode(), "MySectionDrawing");
+    SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, "MySectionDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     m_drawingModelId = drawingModel->GetModelId();
 
@@ -155,7 +155,7 @@ void ViewAttachmentTest::AddBoxToModel(AnnotationElement2dCPtr& geomElOut, DgnMo
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, modelId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 
-    auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
+    auto geomEl = el->ToGeometrySourceP()->GetAsGeometrySource2dP();
     geomEl->SetCategoryId(m_annotationCatId);
     geomEl->SetPlacement(Placement2d(origin, AngleInDegrees::FromDegrees(rot)));
     GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl);

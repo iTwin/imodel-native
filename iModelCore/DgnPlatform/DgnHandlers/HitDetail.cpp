@@ -438,7 +438,7 @@ DgnElementCPtr HitDetail::GetElement() const
     if (!m_elementId.IsValid())
         return nullptr;
 
-    return GetDgnDb().Elements().FindElement(m_elementId);
+    return GetDgnDb().Elements().FindLoadedElement(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
