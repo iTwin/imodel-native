@@ -89,7 +89,7 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
                 return ECSqlStatus::Error;
                 }
 
-            if (!r->IsColumnPersisted())
+            if (r->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
                 continue;
 
             propertyNamesToUnsetSqlSnippets.push_back(r->GetSqlBuilder());
