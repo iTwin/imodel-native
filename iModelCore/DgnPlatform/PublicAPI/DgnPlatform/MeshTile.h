@@ -99,6 +99,8 @@ struct TileTextureImage : RefCountedBase
 struct TileDisplayParams : RefCountedBase
 {
 private:
+    DgnCategoryId                   m_categoryId;
+    DgnSubCategoryId                m_subCategoryId;
     uint32_t                        m_fillColor;
     DgnMaterialId                   m_materialId;
     mutable TileTextureImagePtr     m_textureImage;
@@ -116,6 +118,8 @@ public:
 
     DGNPLATFORM_EXPORT bool operator<(TileDisplayParams const& rhs) const;
 
+    DgnCategoryId GetCategoryId() const { return m_categoryId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
     DgnMaterialId GetMaterialId() const { return m_materialId; }
     uint32_t GetFillColor() const { return m_fillColor; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }

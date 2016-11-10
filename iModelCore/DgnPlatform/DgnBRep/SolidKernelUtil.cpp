@@ -15,7 +15,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment ()
+FaceAttachment::FaceAttachment()
     {
     m_useColor = m_useMaterial = false;
     m_color = ColorDef::Black();
@@ -26,46 +26,61 @@ FaceAttachment::FaceAttachment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment (GeometryParamsCR sourceParams)
+FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
     {
-    m_categoryId    = sourceParams.GetCategoryId();
-    m_subCategoryId = sourceParams.GetSubCategoryId();
-    m_transparency  = sourceParams.GetTransparency();
-
-    m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance();
-    m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
+    if (m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance())
+        {
+        m_color = sourceParams.GetLineColor();
+        m_transparency = sourceParams.GetTransparency();
+        }
 
     if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
+        {
         m_material = sourceParams.GetMaterialId();
-
-    m_uv.Init(0.0, 0.0);
+        // NEEDSWORK_WIP_MATERIAL...m_uv???
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToGeometryParams (GeometryParamsR elParams) const
+void FaceAttachment::ToGeometryParams(GeometryParamsR faceParams, GeometryParamsCR baseParams) const
     {
-    elParams.SetCategoryId(m_categoryId);
-    elParams.SetSubCategoryId(m_subCategoryId);
-    elParams.SetTransparency(m_transparency);
+    faceParams = baseParams;
 
     if (m_useColor)
-        elParams.SetLineColor(m_color);
+        {
+        faceParams.SetLineColor(m_color);
+        faceParams.SetTransparency(m_transparency);
+        }
 
     if (m_useMaterial)
-        elParams.SetMaterialId(m_material);
+        {
+        faceParams.SetMaterialId(m_material);
+        // NEEDSWORK_WIP_MATERIAL...m_uv???
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR baseParams) const
+    {
+    GeometryParams faceParams;
+
+    ToGeometryParams(faceParams, baseParams);
+    context.CookGeometryParams(faceParams, m_graphicParams);
+
+    m_haveGraphicParams = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
+bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
     {
     if (m_useColor      != rhs.m_useColor ||
         m_useMaterial   != rhs.m_useMaterial ||
-        m_categoryId    != rhs.m_categoryId ||
-        m_subCategoryId != rhs.m_subCategoryId ||
         m_color         != rhs.m_color ||
         m_transparency  != rhs.m_transparency ||
         m_material      != rhs.m_material ||
@@ -79,12 +94,10 @@ bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
+bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
     {
     return (m_useColor         < rhs.m_useColor ||
             m_useMaterial      < rhs.m_useMaterial ||
-            m_categoryId       < rhs.m_categoryId ||
-            m_subCategoryId    < rhs.m_subCategoryId ||
             m_color.GetValue() < rhs.m_color.GetValue() ||
             m_transparency     < rhs.m_transparency ||
             m_material         < rhs.m_material ||
@@ -325,16 +338,8 @@ IBRepEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
     {
     return OpenCascadeEntity::CreateNewEntity(shape);
     }
-#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::FacetEntity(entity, pixelSize, pixelSizeRange);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
+#if defined (NOT_NOW_FACET) 
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -398,10 +403,9 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, double pixelSize, 
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
-#else
-    return nullptr;
 #endif
-    }
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
@@ -422,21 +426,7 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR fac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::FacetEntity(entity, polyfaces, params, pixelSize, pixelSizeRange);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    return false;
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR facetOptions)
+bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
