@@ -164,7 +164,7 @@ ScanCriteria::Stop ScanCriteria::CheckRange(FBoxCR elemRange, bool is3d) const
 bool ScanCriteria::CheckElementRange(DgnElementCR element) const
     {
     GeometrySourceCP geom = element.ToGeometrySource();
-    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), element.Is3d()) : false;
+    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), geom->Is3d()) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -121,6 +121,13 @@
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="TestSpatialLocation" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+    </ECClass>
+
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />

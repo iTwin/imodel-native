@@ -349,6 +349,8 @@ struct SystemAuthority
         Link = 6LL,
         Partition = 7LL,
         Session = 8LL,
+        Drawing = 9LL,
+        Sheet = 10LL,
 
         // ............     Introduce new BuiltinIds here
         
@@ -412,6 +414,8 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
             { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
             { "DgnLinks", SystemAuthority::Link, dgn_AuthorityHandler::Link::GetHandler() },
+            { "DgnDrawings", SystemAuthority::Drawing, dgn_AuthorityHandler::Drawing::GetHandler() },
+            { "DgnSheets", SystemAuthority::Sheet, dgn_AuthorityHandler::Sheet::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -485,6 +489,8 @@ DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuth
 DgnAuthorityId LinkAuthority::GetLinkAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Link); }
 DgnAuthorityId PartitionAuthority::GetPartitionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Partition); }
 DgnAuthorityId SessionAuthority::GetSessionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Session); }
+DgnAuthorityId DrawingAuthority::GetDrawingAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Drawing); }
+DgnAuthorityId SheetAuthority::GetSheetAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Sheet); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -533,6 +539,22 @@ DgnCode LinkAuthority::CreateLinkCode(Utf8StringCR codeValue, DgnElementId scope
 DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Partition, codeValue, scopeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DrawingAuthority::CreateDrawingCode(Utf8StringCR codeValue, DgnElementId scopeId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Drawing, codeValue, scopeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SheetAuthority::CreateSheetCode(Utf8StringCR codeValue, DgnElementId scopeId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Sheet, codeValue, scopeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -629,8 +651,27 @@ DgnDbStatus PartitionAuthority::_ValidateCode(DgnElementCR element) const
     if (DgnDbStatus::Success != status)
         return status;
 
+    if (element.GetCode().IsEmpty())
+        return DgnDbStatus::InvalidName; // InformationPartitionElements must have names
+
     // Partitions use the same name validation function as Models
     return DgnModels::IsValidName(element.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DrawingAuthority::_ValidateCode(DgnElementCR element) const
+    {
+    return element.GetCode().IsEmpty() ? DgnDbStatus::InvalidName : T_Super::_ValidateCode(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetAuthority::_ValidateCode(DgnElementCR element) const
+    {
+    return element.GetCode().IsEmpty() ? DgnDbStatus::InvalidName : T_Super::_ValidateCode(element);
     }
 
 /*---------------------------------------------------------------------------------**//**

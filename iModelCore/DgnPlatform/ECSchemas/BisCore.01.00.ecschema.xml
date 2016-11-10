@@ -164,6 +164,18 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="DrawingAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SheetAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
@@ -230,6 +242,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model">
+        <BaseClass>SpatialModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialLocationModel" displayLabel="Spatial Location Model">
         <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -334,6 +352,11 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="IModellableElement" modifier="Abstract">
+        <!-- Interface implemented by Elements that can be modeled (by a "sub" Model) -->
+        <!-- Mutually exclusive with ICompositeElement -->
+        <!-- WIP: Need to mark interface as only valid for Elements -->
+    </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
@@ -530,6 +553,7 @@
 
     <ECEntityClass typeName="PhysicalTemplate" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -537,6 +561,7 @@
 
     <ECEntityClass typeName="PhysicalType" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -567,6 +592,7 @@
 
     <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -601,6 +627,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialLocationPartition" modifier="Sealed">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
@@ -666,6 +698,7 @@
 
     <ECEntityClass typeName="RepositoryLink" modifier="Sealed">
         <BaseClass>UrlLink</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -717,6 +750,7 @@
 
     <ECEntityClass typeName="Drawing">
         <BaseClass>Document</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -762,6 +796,7 @@
 
     <ECEntityClass typeName="Sheet">
         <BaseClass>Document</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1283,8 +1318,14 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="ICompositeElement" modifier="Abstract">
+        <!-- Interface implemented by Elements that can composite/own child elements -->
+        <!-- Mutually exclusive with IModellableElement -->
+        <!-- WIP: Need to mark interface as only valid for Elements -->
+    </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
-        <!-- WIP: should be abstract -->
+        <!-- WIP: Should be abstract? -->
+        <!-- WIP: Rename to ElementCompositesElements? -->
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <!-- The Element API will handle cascading the delete -->

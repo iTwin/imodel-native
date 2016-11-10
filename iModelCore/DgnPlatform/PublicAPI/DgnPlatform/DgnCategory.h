@@ -82,7 +82,7 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
+        DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         void RelocateToDestinationDb(DgnImportContext&);
     };// Appearance
@@ -214,6 +214,13 @@ public:
     //! Looks up the ID of the category containing the specified sub-category
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId, DgnDbR db);
 
+    //! Make an iterator over sub-categories of the specified category in the specified DgnDb
+    //! @param[in] db The DgnDb
+    //! @param[in] categoryId Iterate sub-categories of this category
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+
     //! Returns a set of sub-category IDs.
     //! @param[in]      db         The DgnDb in which to query.
     //! @param[in]      categoryId If valid, include only sub-categories of the specified category; otherwise, include all sub-categories within the DgnDb.
@@ -334,8 +341,6 @@ protected:
     DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
 
-    void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
-
 public:
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 
@@ -374,6 +379,15 @@ public:
 
     //! Returns the ID of the default sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnSubCategoryId GetDefaultSubCategoryId(DgnCategoryId categoryId);
+
+    //! Sets the appearance of the default SubCategory
+    DGNPLATFORM_EXPORT void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
+
+    //! Make an iterator over all categories in the specified DgnDb
+    //! @param[in] db Iterate categories in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Returns the IDs of all categories in the specified DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryIdSet QueryCategories(DgnDbR db);

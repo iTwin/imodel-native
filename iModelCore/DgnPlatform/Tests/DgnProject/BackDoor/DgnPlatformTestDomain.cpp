@@ -17,7 +17,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTemplateHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
@@ -25,7 +27,6 @@ HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
-DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
@@ -312,7 +313,7 @@ static CurveVectorPtr computeShape2d(double len)
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode, double length)
-{
+    {
     TestElement2dPtr testElement = new TestElement2d(CreateParams(db, mid, QueryClassId(db), categoryId));
     if (!testElement.IsValid())
         return nullptr;
@@ -321,7 +322,7 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*testElement); // Create at origin...
     EXPECT_TRUE(builder->Append(*computeShape2d(length)));
     return (SUCCESS != builder->Finish(*testElement)) ? nullptr : testElement;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    11/15
@@ -332,6 +333,16 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
     BeAssert(group.IsValid());
     return group;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestSpatialLocationPtr TestSpatialLocation::Create(SpatialLocationModelR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestSpatialLocationHandler::GetHandler());
+    return new TestSpatialLocation(CreateParams(db, model.GetModelId(), classId, categoryId, Placement3d()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,6 +504,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTemplateHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
