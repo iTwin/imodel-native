@@ -1198,9 +1198,10 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause)
+ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,ECClassId,[FederationGuid],[CodeValue],[ModelId],[ParentId],[UserLabel],[LastMod] FROM %s", className);
+    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId,ParentId,UserLabel,LastMod FROM ");
+    sql.append(className);
 
     if (whereClause)
         {
@@ -1221,12 +1222,12 @@ ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, 
 
 DgnElementId ElementIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
 DgnClassId ElementIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
-BeSQLite::BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
+BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
 Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(3);}
 DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
 DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
 Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueText(6);}
-DateTime ElementIteratorEntry::GetLastMod() const {return m_statement->GetValueDateTime(7);}
+DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16

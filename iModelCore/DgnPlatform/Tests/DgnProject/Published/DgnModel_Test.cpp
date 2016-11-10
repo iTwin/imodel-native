@@ -89,7 +89,7 @@ void DgnModelTests::TestRangeIndex3d()
     int count = 0;
     for (auto& el : model->MakeIterator())
         {
-        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
         ++count;
         }
     EXPECT_TRUE(count == 4);
@@ -103,7 +103,7 @@ void DgnModelTests::TestRangeIndex3d()
     count = 0;
     for (auto& el : model->MakeIterator())
         {
-        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
         ++count;
         }
     
@@ -189,7 +189,7 @@ void DgnModelTests::TestRangeIndex2d()
     int count = 0;
     for (auto& el : drawingModel->MakeIterator())
         {
-        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetId()));
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
         ++count;
         }
     EXPECT_TRUE(count == 4);

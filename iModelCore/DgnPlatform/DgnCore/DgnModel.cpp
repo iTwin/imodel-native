@@ -238,12 +238,10 @@ DgnModel::~DgnModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
     {
-    DgnDbStatus status = T_Super::_OnInsertElement(element);
-    if (DgnDbStatus::Success != status)
-        return status;
+    auto geom = element.ToGeometrySource();
 
     // if it is a geometric element, it must be a 2d element.
-    return element.IsGeometricElement() && element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,11 +249,12 @@ DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
     {
-    auto stat = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
-        stat = DgnDbStatus::WrongModel;
+    auto geom = el.ToGeometrySource();
 
-    return stat;
+    if (geom && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
+        return DgnDbStatus::WrongModel;
+
+    return T_Super::_OnInsertElement(el);;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,11 +262,10 @@ DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     {
-    auto status = T_Super::_OnInsertElement(element);
-    if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
-        status = DgnDbStatus::Mismatch2d3d;
+    auto geom = element.ToGeometrySource();
 
-    return status;
+    // if it is a geometric element, it must be a 3d element.
+    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1857,33 +1855,23 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
+ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8PrintfString sql("SELECT ECInstanceId,CodeValue,UserLabel,ECClassId,ParentId,FederationGuid,LastMod FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ModelId=?");
+    Utf8String where("WHERE ModelId=?");
 
     if (whereClause)
         {
-        sql.append(" ");
-        sql.append(whereClause);
+        Utf8String userWhere(whereClause);
+        userWhere.Trim();
+        if (0 == strncmp(userWhere.c_str(), "WHERE ", 6))
+            userWhere.erase(0,6);
+
+        where.append(" AND ");
+        where.append(userWhere);
         }
 
-    if (orderByClause)
-        {
-        sql.append(" ");
-        sql.append(orderByClause);
-        }
-
-    DgnModel::ElementIterator iterator;
-    auto stmt = iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
-    stmt->BindId(1, GetModelId());
+    ElementIterator iterator = m_dgndb.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element), where.c_str(), orderByClause);
+    iterator.GetStatement()->BindId(1, GetModelId());
 
     return iterator;
     }
-
-DgnElementId DgnModel::IterEntry::GetId() const {return m_statement->GetValueId<DgnElementId>(0);}
-Utf8String DgnModel::IterEntry::GetCodeValue() const {return m_statement->GetValueText(1);}
-Utf8String DgnModel::IterEntry::GetUserLabel() const {return m_statement->GetValueText(2);}
-DgnClassId DgnModel::IterEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(3);}
-DgnElementId DgnModel::IterEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(4);}
-BeSQLite::BeGuid DgnModel::IterEntry::GetFederationGuid() const {return m_statement->GetValueGuid(5);}
-DateTime DgnModel::IterEntry::GetTimeStamp() const {return m_statement->GetValueDateTime(6);}

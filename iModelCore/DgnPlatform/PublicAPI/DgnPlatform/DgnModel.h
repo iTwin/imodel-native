@@ -594,30 +594,10 @@ public:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const {return _PopulateRequest(request, opcode);}
 
-    struct IterEntry : ECSqlStatementEntry
-    {
-        friend struct ECSqlStatementIterator<IterEntry>;
-
-    private:
-        IterEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
-
-    public:
-        DGNPLATFORM_EXPORT DgnElementId GetId() const;
-        DGNPLATFORM_EXPORT Utf8String GetCodeValue() const;
-        DGNPLATFORM_EXPORT Utf8String GetUserLabel() const;
-        DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-        DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
-        DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
-        DGNPLATFORM_EXPORT DateTime GetTimeStamp() const;
-    };
-
-    //! DgnElement iterator
-    struct ElementIterator : ECSqlStatementIterator<IterEntry>
-    {
-    };
-
+    //! Make an iterator over the elements in this DgnModel
+    //! @param[in] whereClause The optional where clause starting with WHERE (note, ModelId is already specified.)
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
-
 }; // DgnModel
 
 //=======================================================================================

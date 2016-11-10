@@ -221,7 +221,7 @@ public:
 };
 
 //=======================================================================================
-//! Entry in an ElementIterator
+//! The "current entry" of an ElementIterator
 // @bsiclass                                                     Shaun.Sewall      11/16
 //=======================================================================================
 struct ElementIteratorEntry : ECSqlStatementEntry
@@ -229,26 +229,28 @@ struct ElementIteratorEntry : ECSqlStatementEntry
     friend struct ECSqlStatementIterator<ElementIteratorEntry>;
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+
 public:
-    DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
-    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());}
-    DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
-    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-    DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-    DGNPLATFORM_EXPORT DgnElementId GetParentId() const;
-    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
-    DGNPLATFORM_EXPORT DateTime GetLastMod() const;
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
+    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current DgnElement
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current DgnElement
 };
 
 //=======================================================================================
-//! DgnElement iterator
+//! An iterator over a set of DgnElements, defined by a query.
 // @bsiclass                                                     Shaun.Sewall      11/16
 //=======================================================================================
 struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
 {
     //! Builds a DgnElementIdSet by iterating all entries
     DGNPLATFORM_EXPORT DgnElementIdSet BuildElementIdSet();
+
     //! Builds a bvector of DgnElementId by iterating all entries
     DGNPLATFORM_EXPORT bvector<DgnElementId> BuildElementIdList();
 };
@@ -1299,8 +1301,6 @@ public:
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
 
-    bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
-    bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
     bool IsRoleElement() const {return nullptr != ToRoleElement();}                 //!< Determine whether this element is a RoleElement or not
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
@@ -1462,7 +1462,7 @@ public:
     bool SupportsCodeAuthority(DgnAuthorityCR authority) const {return _SupportsCodeAuthority(authority);}
 
     //! Query the database for the last modified time of this DgnElement.
-    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
+    DGNPLATFORM_EXPORT DateTime QueryLastModifyTime() const;
 
     //! Return true if this DgnElement has a label.
     bool HasUserLabel() const {return !m_userLabel.empty();}
@@ -1850,6 +1850,8 @@ protected:
 
     friend struct GeometricElement;
 public:
+    bool Is3d() const {return nullptr != _GetAsGeometrySource3d();}    //!< Determine whether this GeometrySource is 3d or not
+    bool Is2d() const {return nullptr != _GetAsGeometrySource2d();}    //!< Determine whether this GeometrySource is 2d or not
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
     DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
@@ -3048,10 +3050,11 @@ public:
     //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
+
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
@@ -3170,13 +3173,16 @@ protected:
 
 public:
     //! Construct an empty collection
-    DGNPLATFORM_EXPORT DgnEditElementCollector();
+    DgnEditElementCollector() {}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
-    DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    DgnEditElementCollector(DgnEditElementCollector const& rhs) {CopyFrom(rhs);}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
+
     //! Destroy this collection
-    DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+    ~DgnEditElementCollector() {EmptyAll();}
 
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
     DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;

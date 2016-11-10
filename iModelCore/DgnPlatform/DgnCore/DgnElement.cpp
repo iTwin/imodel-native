@@ -166,7 +166,7 @@ DgnCode DgnElement::_GenerateDefaultCode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime DgnElement::QueryTimeStamp() const
+DateTime DgnElement::QueryLastModifyTime() const
     {
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMod " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
@@ -2524,7 +2524,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMod, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetDateTime(el.QueryTimeStamp());
+            value.SetDateTime(el.QueryLastModifyTime());
             return DgnDbStatus::Success;
             },
         
@@ -2739,7 +2739,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -2758,7 +2758,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -3031,10 +3031,14 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
     {
     Transform   placementTrans;
 
-    if (el.Is3d())
-        placementTrans = el.ToGeometrySource3d()->GetPlacement().GetTransform();
+    auto geom = el.ToGeometrySourceP();
+    if (nullptr == geom)
+        return DgnDbStatus::BadElement;
+
+    if (geom->Is3d())
+        placementTrans = geom->GetAsGeometrySource3d()->GetPlacement().GetTransform();
     else
-        placementTrans = el.ToGeometrySource2d()->GetPlacement().GetTransform();
+        placementTrans = geom->GetAsGeometrySource2d()->GetPlacement().GetTransform();
 
     DPoint3d    originPt;
     RotMatrix   rMatrix;
@@ -3049,45 +3053,22 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform co
     if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
         return DgnDbStatus::BadArg;
 
-    if (el.Is3d())
+    if (geom->Is3d())
         {
-        Placement3d placement = el.ToGeometrySource3d()->GetPlacement();
+        Placement3d placement = geom->GetAsGeometrySource3d()->GetPlacement();
 
         placement.GetOriginR() = originPt;
         placement.GetAnglesR() = angles;
 
-        return el.ToGeometrySource3dP()->SetPlacement(placement);
+        return geom->GetAsGeometrySource3dP()->SetPlacement(placement);
         }
         
-    Placement2d placement = el.ToGeometrySource2d()->GetPlacement();
+    Placement2d placement = geom->GetAsGeometrySource2d()->GetPlacement();
 
     placement.GetOriginR() = DPoint2d::From(originPt);
     placement.GetAngleR() = angles.GetYaw();
 
-    return el.ToGeometrySource2dP()->SetPlacement(placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::DgnEditElementCollector() 
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::~DgnEditElementCollector() 
-    {
-    EmptyAll();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnEditElementCollector::DgnEditElementCollector(DgnEditElementCollector const& rhs)
-    {
-    CopyFrom(rhs);
+    return geom->GetAsGeometrySource2dP()->SetPlacement(placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
