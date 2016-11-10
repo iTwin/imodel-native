@@ -51,7 +51,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_CalledSecondTimeAfterCacheW
     // Create
     auto thread = WorkerThread::Create("DS1");
     auto ds1 = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), thread)->GetResult().GetValue();
-    ASSERT_TRUE(nullptr != ds1);
+    ASSERT_TRUE(nullptr != ds1); 
 
     // Ensure that cache is closed
     ds1 = nullptr;
@@ -100,6 +100,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_DataSourceCacheDbExists_StartsUpdati
     ASSERT_EQ(SUCCESS, db.Close());
 
     auto client = MockWSRepositoryClient::Create();
+    auto token = SimpleCancellationToken::Create();
 
     EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
         .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
@@ -107,7 +108,37 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_DataSourceCacheDbExists_StartsUpdati
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError()))));
 
-    CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->Wait();
+    CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->Wait();
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_NoFileAndCancelled_ReturnsCancellationError)
+    {
+    BeFileName path = StubFilePath();
+    auto client = MockWSRepositoryClient::Create();
+
+    auto token = SimpleCancellationToken::Create();
+    token->SetCanceled();
+
+    auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_FileExistsAndCancelled_ReturnsCancellationError)
+    {
+    BeFileName path = StubFilePath();
+    auto client = MockWSRepositoryClient::Create();
+
+    DataSourceCache db;
+    ASSERT_EQ(SUCCESS, db.Create(path, StubCacheEnvironemnt()));
+    ASSERT_EQ(SUCCESS, db.Close());
+
+    auto token = SimpleCancellationToken::Create();
+    token->SetCanceled();
+
+    auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema)

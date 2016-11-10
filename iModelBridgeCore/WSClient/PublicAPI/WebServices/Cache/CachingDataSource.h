@@ -128,12 +128,19 @@ struct CachingDataSource :
         //!     [Required] MobileDgn {platform specific} ::Initialize()
         //!     [Required] MobileDgnL10N::Initialize() (error message localization needs SQLang file built from HttpError.xliff.h)
         //!     [Optional] HttpClient::InitializeNetworkActivityCallback()
+        //! @param client - used for communicating to server
+        //! @param cacheFilePath - cache database file path to store or open
+        //! @param cacheEnvironment - cache environment to use for file caching
+        //! @param cacheAccessThread - thread to do all I/O on cache
+        //! @param ct - cancellation token to cancel open/creation 
+        //! @return pointer to valid CachingDataSource or error that occurred
         WSCACHE_EXPORT static AsyncTaskPtr<OpenResult> OpenOrCreate
             (
             IWSRepositoryClientPtr client,
             BeFileNameCR cacheFilePath,
             CacheEnvironmentCR cacheEnvironment,
-            WorkerThreadPtr cacheAccessThread = nullptr
+            WorkerThreadPtr cacheAccessThread = nullptr,
+            ICancellationTokenPtr ct = nullptr
             );
 
         //! DO NOT USE for production! Used only for internal testing and may be removed in future.
@@ -149,7 +156,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT IWSRepositoryClientPtr GetClient() const override;
         WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
 
-        WSCACHE_EXPORT void CancelAllTasksAndWait() override;
+        WSCACHE_EXPORT AsyncTaskPtr<void> CancelAllTasks() override;
 
         WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) override;
 

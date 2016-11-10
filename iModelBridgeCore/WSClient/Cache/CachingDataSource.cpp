@@ -60,16 +60,16 @@ m_temporaryDir(temporaryDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
     {
-    CancelAllTasksAndWait();
+    CancelAllTasks()->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingDataSource::CancelAllTasksAndWait()
+AsyncTaskPtr<void> CachingDataSource::CancelAllTasks()
     {
     m_cancellationToken->SetCanceled();
-    m_cacheAccessThread->OnEmpty()->Wait();
+    return m_cacheAccessThread->OnEmpty();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -128,9 +128,13 @@ AsyncTaskPtr<CachingDataSource::OpenResult> CachingDataSource::OpenOrCreate
 IWSRepositoryClientPtr client,
 BeFileNameCR cacheFilePath,
 CacheEnvironmentCR cacheEnvironment,
-WorkerThreadPtr cacheAccessThread
+WorkerThreadPtr cacheAccessThread,
+ICancellationTokenPtr ct
 )
     {
+    if (nullptr == ct)
+        ct = SimpleCancellationToken::Create();
+
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     if (cacheAccessThread == nullptr)
@@ -143,9 +147,15 @@ WorkerThreadPtr cacheAccessThread
 
     return cacheAccessThread->ExecuteAsync([=]
         {
+        if (ct->IsCanceled())
+            {
+            openResult->SetError(Status::Canceled);
+            return;
+            }
+
         LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-                  cacheEnvironment.persistentFileCacheDir.c_str(),
-                  cacheEnvironment.temporaryFileCacheDir.c_str());
+            cacheEnvironment.persistentFileCacheDir.c_str(),
+            cacheEnvironment.temporaryFileCacheDir.c_str());
 
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn_No); // Allow concurrent multiple connection access
@@ -170,6 +180,12 @@ WorkerThreadPtr cacheAccessThread
                 }
             }
 
+        if (ct->IsCanceled())
+            {
+            openResult->SetError(Status::Canceled);
+            return;
+            }
+
         auto cacheTransactionManager = std::make_shared<CacheTransactionManager>(std::move(cache), cacheAccessThread);
         auto infoStore = std::make_shared<RepositoryInfoStore>(cacheTransactionManager.get(), client, cacheAccessThread);
 
@@ -188,7 +204,7 @@ WorkerThreadPtr cacheAccessThread
             return;
             }
 
-        ds->UpdateSchemas(nullptr)
+        ds->UpdateSchemas(ct)
             ->Then(cacheAccessThread, [=] (Result updateResult)
             {
             if (!updateResult.IsSuccess())
@@ -215,7 +231,7 @@ WorkerThreadPtr cacheAccessThread
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
-                      openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
             return *openResult;
             });
@@ -1321,7 +1337,7 @@ SyncOptions options
         std::move(onProgress),
         ct
         );
-        
+
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
