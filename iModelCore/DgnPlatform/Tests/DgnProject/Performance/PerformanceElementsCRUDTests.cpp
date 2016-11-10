@@ -208,7 +208,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "                   <Name>IDX_TMAspect</Name>"
         "                   <IsUnique>False</IsUnique>"
         "                   <Properties>"
-        "                       <string>ElementId</string>"
+        "                       <string>ElementId.Id</string>"
         "                   </Properties>"
         "               </DbIndex>"
         "           </Indexes>"

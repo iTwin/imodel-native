@@ -397,7 +397,7 @@
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthorityId</string>
+                            <string>CodeAuthorityId.Id</string>
                             <string>CodeNamespace</string>
                             <string>CodeValue</string>
                         </Properties>
@@ -1409,7 +1409,7 @@
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <!-- Only one ExternalKey per Authority per Element -->
-                            <string>ElementId</string>
+                            <string>ElementId.Id</string>
                             <string>AuthorityId</string>
                         </Properties>
                     </DbIndex>
