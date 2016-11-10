@@ -859,7 +859,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping)
+TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     {
     const int rowCount = 3;
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
@@ -1051,7 +1051,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping_ECInstanceAdapter)
+TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
     {
     const int rowCount = 3;
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
@@ -1101,7 +1101,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Code", v));
     v.Clear();
     v.SetLong(modelKey.GetECInstanceId().GetValue());
-    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model.Id", v));
+    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", v));
 
     ASSERT_EQ(SUCCESS, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
@@ -1135,6 +1135,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     while (selStmt.Step() == BE_SQLITE_ROW)
         {
         IECInstancePtr inst = selAdapter.GetInstance();
+        ASSERT_TRUE(inst != nullptr);
         ECInstanceId id;
         ASSERT_EQ(SUCCESS, ECInstanceId::FromString(id, inst->GetInstanceId().c_str()));
         if (elementKey.GetECInstanceId() == id)
@@ -1143,7 +1144,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueInt64(3)) << "Model.Id via plain ECSQL";
             ECValue v;
-            ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model.Id"));
+            ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
             ASSERT_FALSE(v.IsNull()) << "Model.Id is not expected to be null in the read ECInstance";
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), v.GetLong());
             }
@@ -1152,7 +1153,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
             ASSERT_TRUE(selStmt.IsValueNull(3)) << "Model.Id via plain ECSQL";
 
             ECValue v;
-            ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model.Id"));
+            ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
             ASSERT_TRUE(v.IsNull());
             }
         }
@@ -1163,7 +1164,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping_JsonAdapter)
+TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     {
     const int rowCount = 3;
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
@@ -1208,7 +1209,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_TRUE(elementInserter.IsValid());
 
     Utf8String newElementJsonStr;
-    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%llu\"}", modelKey.GetECInstanceId().GetValue());
+    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%s\"}", modelKey.GetECInstanceId().ToString().c_str());
 
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
@@ -1273,7 +1274,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable)
+TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     {
     ECDbR ecdb = SetupECDb("ecsqlnavpropsupport_joinedtable.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
