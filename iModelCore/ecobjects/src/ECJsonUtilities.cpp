@@ -365,12 +365,20 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             }
         else if (ecProperty->GetIsNavigation())
             {
+            //JSON structure for nav props:
+            //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
-            PrimitiveType navPropIdType = navProp->GetType();
             if (!navProp->IsMultiple())
                 {
+                if (!childJsonValue.isObject() || !childJsonValue.isMember("Id"))
+                    {
+                    status = ERROR;
+                    continue;
+                    }
+
+                //WIP_NAV_PROP Need to process RelECClassId member
                 ECValue ecValue;
-                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, childJsonValue, navPropIdType))
+                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, childJsonValue["Id"], navProp->GetType()))
                     {
                     status = ERROR;
                     continue;
@@ -383,7 +391,8 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 continue;
                 }
 
-            status = ECArrayValueFromJson(instance, childJsonValue, *navProp, accessString);
+            LOG.error("NavigationECProperties with IsMultiple == true not supported by ECJsonUtilities");
+            status = ERROR;
             continue;
             }
         }
@@ -778,12 +787,21 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             }
         else if (propertyP->GetIsNavigation())
             {
+            //JSON structure for nav props:
+            //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = propertyP->GetAsNavigationProperty();
-            PrimitiveType navPropIdType = navProp->GetType();
             if (!navProp->IsMultiple())
                 {
+                RapidJsonValueCR json = it->value;
+
+                if (!json.IsObject() || !json.HasMember("Id"))
+                    {
+                    status = ERROR;
+                    continue;
+                    }
+
                 ECValue ecValue;
-                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, it->value, navPropIdType))
+                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, json["Id"], navProp->GetType()))
                     {
                     status = ERROR;
                     continue;
@@ -796,9 +814,8 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 continue;
                 }
 
-            if (SUCCESS != ECArrayValueFromJson(instance, it->value, *propertyP, accessString))
-                status = ERROR;
-
+            LOG.error("NavigationECProperties with IsMultiple == true not supported by ECRapidJsonUtilities");
+            status = ERROR;
             continue;
             }
         }
