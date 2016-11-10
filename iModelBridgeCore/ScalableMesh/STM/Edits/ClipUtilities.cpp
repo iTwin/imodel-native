@@ -708,7 +708,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
         for (size_t uvI = 0; uvI < 3; ++uvI)
             {
-            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_range);
+            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_nodeRange);
             if (allUvs.count(uvCoords[uvI]) == 0)
                 {
                 poly->Param().push_back(uvCoords[uvI]);
