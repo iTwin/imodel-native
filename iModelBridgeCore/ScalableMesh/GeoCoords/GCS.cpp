@@ -830,38 +830,38 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 
 
     GCS                             CreateFromBaseCS                   (const WChar*                     wkt,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
     GCS                             CreateFromLocalCS                  (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
     GCS                             CreateFromFittedCS                 (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
 
     GCS                             CreateFromComposedCS               (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
 
     GCS                             Create                             (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
     GCS                             Create                             (const WChar*                     wkt,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const BaseGCS::WktFlavor*              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         SMStatus&                         status) const;
 
@@ -909,7 +909,7 @@ GCSFactory::GCSFactory (const GCSFactory& rhs)
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,                                        
-                                        BaseGCS::WktFlavor      wktFlavor,
+                                        const BaseGCS::WktFlavor*      wktFlavor,
                                         const LocalTransform*   localTransformP,
                                         SMStatus&                 status) const
     {
@@ -917,12 +917,21 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
     WString w_wkt(wkt);
     WString wktWithoutFlavor;
     StatusInt initWarningCode = BSISUCCESS;
+    BaseGCS::WktFlavor targetFlavor;
 
-    ISMStore::WktFlavor wktFlavorInternal = GetWKTFlavor(&wktWithoutFlavor, w_wkt);
-    bool result = MapWktFlavorEnum(wktFlavor, wktFlavorInternal);
-    assert(result == true);
+    if (NULL == wktFlavor) //if supplied we use the WKT flavor parameter
+        {
+        ISMStore::WktFlavor wktFlavorInternal = GetWKTFlavor(&wktWithoutFlavor, w_wkt);
+        bool result = MapWktFlavorEnum(targetFlavor, wktFlavorInternal);
+        assert(result == true);
+        }
+    else
+        {
+        targetFlavor = *wktFlavor;
+        wktWithoutFlavor = w_wkt;
+        }
     
-    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, wktWithoutFlavor.GetWCharCP());
+    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, targetFlavor, wktWithoutFlavor.GetWCharCP());
     
     if (BSISUCCESS != initStatus)
         {
@@ -939,7 +948,7 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::CreateFromLocalCS(const WChar*             wktBegin,
                                         const WChar*             wktEnd,
-                                        BaseGCS::WktFlavor      wktFlavor,
+                                        const BaseGCS::WktFlavor*      wktFlavor,
                                         const LocalTransform*   localTransformP,
                                         SMStatus&                 status) const
     {
@@ -974,7 +983,7 @@ GCS GCSFactory::Impl::CreateFromLocalCS(const WChar*             wktBegin,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::CreateFromComposedCS (const WChar*             wktBegin,
                                             const WChar*             wktEnd,
-                                            BaseGCS::WktFlavor      wktFlavor,
+                                            const BaseGCS::WktFlavor*      wktFlavor,
                                             const LocalTransform*   localTransformP,
                                             SMStatus&                 status) const
     {
@@ -1024,7 +1033,7 @@ GCS GCSFactory::Impl::CreateFromComposedCS (const WChar*             wktBegin,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::CreateFromFittedCS   (const WChar*             wktBegin,
                                             const WChar*             wktEnd,
-                                            BaseGCS::WktFlavor      wktFlavor,
+                                            const BaseGCS::WktFlavor*      wktFlavor,
                                             const LocalTransform*   localTransformP,
                                             SMStatus&                 status) const
     {
@@ -1079,7 +1088,7 @@ GCS GCSFactory::Impl::CreateFromFittedCS   (const WChar*             wktBegin,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::Create   (const WChar*             wktBegin,
                                 const WChar*             wktEnd,
-                                BaseGCS::WktFlavor      wktFlavor,
+                                const BaseGCS::WktFlavor*      wktFlavor,
                                 const LocalTransform*   localTransformP,
                                 SMStatus&                 status) const
     {
@@ -1115,7 +1124,7 @@ GCS GCSFactory::Impl::Create   (const WChar*             wktBegin,
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline GCS GCSFactory::Impl::Create    (const WChar*             wkt,
-                                        BaseGCS::WktFlavor      wktFlavor,
+                                        const BaseGCS::WktFlavor*      wktFlavor,
                                         const LocalTransform*   localTransformP,
                                         SMStatus&                 status) const
     {
@@ -1179,7 +1188,7 @@ GCS GCSFactory::Create (const WChar*  wkt,
     {
     BaseGCS::WktFlavor wktFlavor = BaseGCS::wktFlavorOracle9; 
 
-    return m_implP->Create(wkt, wktFlavor, 0, status);
+    return m_implP->Create(wkt, &wktFlavor, 0, status);
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -1190,7 +1199,7 @@ GCS GCSFactory::Create (const wchar_t*              wkt,
                         BaseGCS::WktFlavor          wktFlavor,
                         SMStatus&                     status) const
     {
-    return m_implP->Create(wkt, wktFlavor, 0, status);
+    return m_implP->Create(wkt, &wktFlavor, 0, status);
     }
 
 
@@ -1203,7 +1212,7 @@ GCS GCSFactory::Create (const WKT&  wkt,
     {
     BaseGCS::WktFlavor wktFlavor = BaseGCS::wktFlavorOracle9; 
 
-    return m_implP->Create(wkt.GetCStr(), wktFlavor, 0, status);
+    return m_implP->Create(wkt.GetCStr(), &wktFlavor, 0, status);
     }
 
 /*---------------------------------------------------------------------------------**//**
