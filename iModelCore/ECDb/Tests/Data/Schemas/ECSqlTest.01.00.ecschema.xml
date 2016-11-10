@@ -129,6 +129,7 @@
         <ECProperty propertyName="S" typeName="string"/>
         <ECProperty propertyName="P2D" typeName="point2d"/>
         <ECProperty propertyName="P3D" typeName="point3d"/>
+        <ECNavigationProperty propertyName="MyPSA" relationshipName="PSAHasP" direction="Backward" />
     </ECEntityClass>
     <ECEntityClass typeName="PA" description="Primitive array">
         <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>

@@ -1427,20 +1427,22 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type,
             m_columnNameGenerator.Generate(generatedName);
             } while (FindColumn(generatedName.c_str()));
 
-            newColumn = std::make_shared<DbColumn>(id, *this, generatedName.c_str(), type, kind, resolvePersistenceType);
+        newColumn = std::make_shared<DbColumn>(id, *this, generatedName.c_str(), type, kind, resolvePersistenceType);
         }
 
-    if (position < 0)
-        m_orderedColumns.push_back(newColumn.get());
-    else
-        m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumn.get());
-
+    DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
+
+    if (position < 0)
+        m_orderedColumns.push_back(newColumnP);
+    else
+        m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
+
 
     for (auto& eh : m_columnEvents)
         eh(ColumnEvent::Created, *newColumn);
 
-    return newColumn.get();
+    return newColumnP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1453,19 +1455,30 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
 
     for (std::unique_ptr<DbConstraint>& constraint : m_constraints)
         {
-        if (constraint->GetType() == DbConstraint::Type::ForeignKey)
+        switch (constraint->GetType())
             {
-            ForeignKeyDbConstraint* fkc = static_cast<ForeignKeyDbConstraint*>(constraint.get());
-            fkc->Remove(col.GetName().c_str(), nullptr);
-            }
-        else if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
-            {
-            PrimaryKeyDbConstraint const* pkc = static_cast<PrimaryKeyDbConstraint const*>(constraint.get());
-            if (pkc->Contains(col))
+                case DbConstraint::Type::ForeignKey:
                 {
-                BeAssert(false && "Cannot delete a column from a PK constraint");
-                return ERROR;
+                ForeignKeyDbConstraint* fkc = static_cast<ForeignKeyDbConstraint*>(constraint.get());
+                fkc->Remove(col.GetName().c_str(), nullptr);
+                break;
                 }
+
+                case DbConstraint::Type::PrimaryKey:
+                {
+                PrimaryKeyDbConstraint const* pkc = static_cast<PrimaryKeyDbConstraint const*>(constraint.get());
+                if (pkc->Contains(col))
+                    {
+                    BeAssert(false && "Cannot delete a column from a PK constraint");
+                    return ERROR;
+                    }
+
+                break;
+                }
+
+                default:
+                    BeAssert(false);
+                    return ERROR;
             }
         }
 
@@ -1521,7 +1534,7 @@ DbColumn* DbTable::FindColumnP(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, PersistenceType persistenceType) const
     {
-    for (auto column : m_orderedColumns)
+    for (DbColumn const* column : m_orderedColumns)
         {
         if (column->GetPersistenceType() == persistenceType)
             columns.push_back(column);
@@ -1535,7 +1548,7 @@ BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& colum
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::GetFilteredColumnList(std::vector<DbColumn const*>& columns, DbColumn::Kind kind) const
     {
-    for (auto column : m_orderedColumns)
+    for (DbColumn const* column : m_orderedColumns)
         {
         if (Enum::Intersects(column->GetKind(), kind))
             columns.push_back(column);

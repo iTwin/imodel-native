@@ -338,6 +338,16 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid,
             "One of the properties does not exist in the target class.");
 
+        //nav props
+        ecsql.Sprintf("%s WHERE MyPSA = 11", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE MyPSA.Id IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE MyPSA.RelECClassId IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
 
         //*******************************************************
         //  Unsupported literals

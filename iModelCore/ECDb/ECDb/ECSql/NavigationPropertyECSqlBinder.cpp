@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
+    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, false, false), IECSqlStructBinder(), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -74,27 +74,6 @@ void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentI
                 BeAssert(false);
                 return;
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2016
-//---------------------------------------------------------------------------------------
-ECSqlStatus NavigationPropertyECSqlBinder::_OnBeforeStep()
-    {
-    ECSqlStatus stat = m_idBinder->OnBeforeStep();
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    return m_relECClassIdBinder->OnBeforeStep();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2016
-//---------------------------------------------------------------------------------------
-void NavigationPropertyECSqlBinder::_OnClearBindings()
-    {
-    m_idBinder->OnClearBindings();
-    m_relECClassIdBinder->OnClearBindings();
     }
 
 //---------------------------------------------------------------------------------------

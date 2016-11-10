@@ -294,9 +294,9 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ValueExp const* groupingValueExp = groupingValueListExp->GetValueExp(i);
         const Exp::Type expType = groupingValueExp->GetType();
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
-        if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsGeometry() || typeInfo.IsArray())
+        if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsGeometry() || typeInfo.IsNavigation() || typeInfo.IsArray())
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants and geometry and array properties are not supported.", ToECSql().c_str());
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants, geometry, navigation and array properties are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -478,7 +478,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     auto const& typeInfo = GetSortExpression()->GetTypeInfo();
     if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
-        ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str());
+        ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

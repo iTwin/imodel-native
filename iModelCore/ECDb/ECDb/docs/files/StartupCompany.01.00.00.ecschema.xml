@@ -19,6 +19,7 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
+        <ECNavigationProperty propertyName="Company" relationshipName="CompanyHasEmployees" direction="Backward" />
         <ECProperty propertyName="JobTitle" typeName="string" displayLabel="Job Title" />
         <ECArrayProperty propertyName="WorkPhones" typeName="string" displayLabel="Work Phone(s)" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="MobilePhones" typeName="string" displayLabel="Mobile Phone(s)" minOccurs="0" maxOccurs="unbounded" />

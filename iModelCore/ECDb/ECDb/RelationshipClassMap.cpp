@@ -1239,10 +1239,17 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     if (singleNavProperty == nullptr)
         return SUCCESS;
 
+    //if not overridden with a PropertyMap CA, the FK column name is implied as <nav prop name>Id.
+    //if nav prop name ends with "Id" already, it is not appended again.
+    Utf8StringCR navPropName = singleNavProperty->GetName();
+    Utf8String defaultFkColName(navPropName);
+    if (!navPropName.EndsWithIAscii("id"))
+        defaultFkColName.append("Id");
+
     bool isNullable, isUnique; //unused
     DbColumn::Constraints::Collation collation;//unused
     Utf8String columnName;
-    if (SUCCESS != ClassMapper::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDb(), *singleNavProperty, singleNavProperty->GetName().c_str()))
+    if (SUCCESS != ClassMapper::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDb(), *singleNavProperty, defaultFkColName.c_str()))
         return ERROR;
 
     ClassMap const* classMap = GetDbMap().GetClassMap(singleNavProperty->GetClass());

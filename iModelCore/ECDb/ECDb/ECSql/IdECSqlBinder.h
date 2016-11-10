@@ -21,12 +21,8 @@ struct IdECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
 private:
     int m_sqliteIndex;
     bool m_isNoop;
-    bool m_isNull;
 
 public:
-    virtual ECSqlStatus _OnBeforeStep() override;
-    virtual void _OnClearBindings() override { m_isNull = true; }
-
     virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
 
     virtual IECSqlPrimitiveBinder& _BindPrimitive() override { return *this; }

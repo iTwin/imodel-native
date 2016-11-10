@@ -2369,6 +2369,53 @@ TEST_F(ECSqlStatementTestFixture, NoECClassIdFilterOption)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ReadonlyPropertiesAreUpdatable)
+    {
+    ECDbR ecdb = SetupECDb("ReadonlyPropertiesAreUpdatable.ecdb", 
+                           SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                               "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                               "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                               "    <ECEntityClass typeName='Element'>"
+                               "        <ECCustomAttributes>"
+                               "            <ClassMap xmlns='ECDbMap.02.00'>"
+                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                               "            </ClassMap>"
+                               "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                               "        </ECCustomAttributes>"
+                               "        <ECProperty propertyName='ReadonlyProp1' typeName='int' readOnly='True' />"
+                               "    </ECEntityClass>"
+                               "    <ECEntityClass typeName='SubElement'>"
+                               "        <BaseClass>Element</BaseClass>"
+                               "        <ECProperty propertyName='ReadonlyProp2' typeName='int' readOnly='True' />"
+                               "    </ECEntityClass>"
+                               "</ECSchema>"),0);
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubElement(ReadonlyProp1,ReadonlyProp2) VALUES(1,2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE ONLY ts.SubElement SET ReadonlyProp1=10, ReadonlyProp2=20"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY ts.SubElement SET ReadonlyProp1=10, ReadonlyProp2=20 ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //verify update worked
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ReadonlyProp1, ReadonlyProp2 FROM ts.SubElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 struct PropertyPathEntry

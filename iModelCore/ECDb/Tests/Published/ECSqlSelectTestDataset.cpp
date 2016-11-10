@@ -1467,6 +1467,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ecsql = "SELECT S, count(*) FROM ecsql.PSA HAVING Length(S) > 1";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Although standard SQL allows, SQLite doesn't support HAVING without GROUP BY.");
 
+    ecsql = "SELECT MyPSA, count(*) FROM ecsql.P GROUP BY MyPSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT MyPSA.Id, count(*) FROM ecsql.P GROUP BY MyPSA.Id";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT MyPSA.RelECClassId, count(*) FROM ecsql.P GROUP BY MyPSA.RelECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+
     return dataset;
     }
 
@@ -1522,6 +1531,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::InOperatorTests( int rowCountPerClass )
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE IN (1, 2, 3)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA IN (123)";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA.Id IN (-11)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
+
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE MyPSA.RelECClassId IN (-11)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     return dataset;
     }
@@ -1705,90 +1723,96 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlSelectTestDataset::LikeOperatorTests( int rowCountPerClass )
+ECSqlTestDataset ECSqlSelectTestDataset::LikeOperatorTests(int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam%'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE I LIKE 'Sam%'";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 10";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE NULL";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam%'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam_le string'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam%' ESCAPE '\\'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
 
     //escaping the wild card % should not return any rows
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam\\%' ESCAPE '\\'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     //escaping the wild card _ should not return any rows
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam\\_le string' ESCAPE '\\'";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     //invalid escape clauses
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam%' ESCAPE";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam%' ESCAPE 10";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam%' ESCAPE ?";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam%' ESCAPE S";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S NOT LIKE 'Sam\\%' {ESCAPE '\\'}";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
-        auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("Samp%")));
-        }
+    {
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
+    auto& testItem = ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue("Samp%")));
+    }
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
-        auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
-        //bind null
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
+    auto& testItem = ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
+    //bind null
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE S NOT LIKE ?";
-        auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
-        //bind null. In SQLite LIKE NULL or NOT LIKE NULL is always false, therefore no rows expected.
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE S NOT LIKE ?";
+    auto& testItem = ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
+    //bind null. In SQLite LIKE NULL or NOT LIKE NULL is always false, therefore no rows expected.
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
-        auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Binding non-string primitive value to parameter in LIKE expression is expected to work as SQLite converts the parameter value implicitly.", 2, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (1)));
-        }
+    {
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
+    auto& testItem = ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Binding non-string primitive value to parameter in LIKE expression is expected to work as SQLite converts the parameter value implicitly.", 2, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(1)));
+    }
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
-        auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DPoint3d::From (1.0, 1.0, 1.0))));
-        }
+    {
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE S LIKE ?";
+    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(DPoint3d::From(1.0, 1.0, 1.0))));
+    }
+
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE MyPSA LIKE '11'";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE MyPSA.Id LIKE '11'";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     return dataset;
     }
@@ -2142,6 +2166,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::OrderByTests (int rowCountPerClass)
 
     ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY PStruct_Array ASC";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "ORDER BY arrays is not supported by ECSQL.");
+
+    ecsql = "SELECT I, S FROM ecsql.P ORDER BY MyPSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "ORDER BY nav props is not supported by ECSQL.");
+
+    ecsql = "SELECT I, S FROM ecsql.P ORDER BY MyPSA.Id";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+
+    ecsql = "SELECT I, S FROM ecsql.P ORDER BY MyPSA.RelECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "select I FROM ecsql.PSA ORDER BY NULLIF(I,123)";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);

@@ -26,9 +26,6 @@ struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
         BentleyStatus Initialize(ECSqlPrepareContext&);
 
-        virtual ECSqlStatus _OnBeforeStep() override;
-        virtual void _OnClearBindings() override;
-
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
 

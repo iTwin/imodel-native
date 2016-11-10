@@ -350,7 +350,7 @@ private:
     PersistenceType m_persistenceType;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
-    std::vector<DbColumn const*> m_orderedColumns;
+    bvector<DbColumn const*> m_orderedColumns;
     std::unique_ptr<PrimaryKeyDbConstraint> m_pkConstraint;
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
@@ -408,7 +408,7 @@ public:
     DbColumn* FindColumnP(Utf8CP name) const;
     std::weak_ptr<DbColumn> FindColumnWeakPtr(Utf8CP name) const;
     bool TryGetECClassIdColumn(DbColumn const*&) const;
-    std::vector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
+    bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
     DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
