@@ -1404,7 +1404,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     }
     ecdb.SaveChanges();
     
-    //UPDATE Category.Id
+    //UPDATE Category.Ideee
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET Category.Id=? WHERE Category.Id IS NULL"));

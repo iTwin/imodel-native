@@ -373,7 +373,8 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable());
+            //!WIP Indexable columns should not include ClassIds 
+            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable(), PropertyMap::Type::Indexable);
             propertyMap->AcceptVisitor(columnVisitor);
             std::vector<DbColumn const*> const& columns = columnVisitor.GetColumns();
             if (0 == columns.size())
