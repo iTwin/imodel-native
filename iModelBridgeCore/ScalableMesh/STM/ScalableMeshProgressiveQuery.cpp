@@ -1051,7 +1051,8 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
     ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
     const DPoint3d*                                                       pQueryExtentPts,
     int                                                                   nbQueryExtentPts,
-    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam)
+    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+    IScalableMesh*                                                        smP)
     {
     //MST More validation is required here.
     assert(queryParam != 0);
@@ -1076,12 +1077,17 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 
     memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
 
+    ClipVectorPtr clipVec = queryParam->GetViewClipVector();
+    Transform trans;
+    trans.InverseOf(smP->GetReprojectionTransform());
+    clipVec->TransformInPlace(trans);
+
     ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
         rootToViewMatrix,
         viewportRotMatrix,
         queryParam->GetViewBox(),
         false,
-        queryParam->GetViewClipVector(),
+        clipVec,
         100000000);
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
@@ -1561,7 +1567,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
 
     ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP;
 
-    BuildQueryObject<DPoint3d>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, queryParam);
+    BuildQueryObject<DPoint3d>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, queryParam, smPtr.get());
 
     assert(queryObjectP != 0);
       
