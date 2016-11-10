@@ -181,25 +181,6 @@ RelationshipConstraintMap::RelationshipConstraintMap(ECDb const& ecdb, ECN::ECCl
     m_anyClassMatches = RelationshipClassMap::ConstraintIncludesAnyClass(m_constraint.GetConstraintClasses());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2014
-//---------------------------------------------------------------------------------------
-bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const
-    {
-    if (m_anyClassMatches)
-        return true;
-
-    bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdb.Schemas().GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(m_relClassId);
-    auto it = constraintClassIds.find(candidateClassId);
-    if (it == constraintClassIds.end())
-        return false;
-
-    const LightweightCache::RelationshipEnd requiredEnd = m_constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-    const LightweightCache::RelationshipEnd actualEnd = it->second;
-    return actualEnd == LightweightCache::RelationshipEnd::Both || actualEnd == requiredEnd;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2016
 //---------------------------------------------------------------------------------------

@@ -238,6 +238,18 @@ private:
     ECN::ECClassId GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
     static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
 
+    bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const
+        {
+        bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdb.Schemas().GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(relClassId);
+        auto it = constraintClassIds.find(candidateClassId);
+        if (it == constraintClassIds.end())
+            return false;
+
+        const LightweightCache::RelationshipEnd requiredEnd = end == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
+        const LightweightCache::RelationshipEnd actualEnd = it->second;
+        return actualEnd == LightweightCache::RelationshipEnd::Both || actualEnd == requiredEnd;
+        }
+
     void RecordInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
     void RecordRelInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
     void RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMap const&);
@@ -1278,9 +1290,10 @@ void ChangeExtractor::ExtractRelInstance(ClassMapCR classMap, ECInstanceId relIn
 //---------------------------------------------------------------------------------------
 void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId)
     {
-    // Check that this end of the relationship matches the actual class found. 
+    // Check that this end of the relationship matches the actual class found.
+    ECClassId relClassId = relClassMap.GetClass().GetId();
     ECN::ECRelationshipEnd foreignEnd = relClassMap.GetForeignEnd();
-    if (!relClassMap.GetConstraintMap(foreignEnd).ClassIdMatchesConstraint(foreignEndClassId))
+    if (!ClassIdMatchesConstraint(relClassId, foreignEnd, foreignEndClassId))
         return;
 
     ECInstanceKey foreignEndInstanceKey(foreignEndClassId, relInstanceId);
@@ -1293,9 +1306,9 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMap 
         return;
 
     // Check if the other end of the relationship matches the actual class found. 
-    if (newReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(newReferencedEndInstanceKey.GetECClassId()))
+    if (newReferencedEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newReferencedEndInstanceKey.GetECClassId()))
         return;
-    if (oldReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(oldReferencedEndInstanceKey.GetECClassId()))
+    if (oldReferencedEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldReferencedEndInstanceKey.GetECClassId()))
         return;
 
     DbOpcode relDbOpcode;
