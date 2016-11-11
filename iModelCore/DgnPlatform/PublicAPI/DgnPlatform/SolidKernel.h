@@ -10,10 +10,6 @@
 
 #include "Render.h"
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-class TopoDS_Shape;
-#endif
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!< Reference counted type to manage the life-cycle of the IFaceMaterialAttachments.
@@ -222,19 +218,6 @@ GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
 }; // ISubEntity
-
-#if defined (BENTLEYCONFIG_OPENCASCADE)    
-//=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
-//! that the entire set of solid kernel includes isn't required for the published api.
-//=======================================================================================
-struct SolidKernelUtil
-{
-DGNPLATFORM_EXPORT static IBRepEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
-DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(IBRepEntityCR);
-DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
-}; // SolidKernelUtil
-#endif
 
 //=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.
