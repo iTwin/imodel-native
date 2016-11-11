@@ -60,7 +60,11 @@ m_temporaryDir(temporaryDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
     {
-    CancelAllTasks()->Wait();
+    // Prevent from hanging when destroyed after failed open/create
+    if (m_open)
+        {
+        CancelAllTasks()->Wait();
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -224,6 +228,7 @@ ICancellationTokenPtr ct
                 }
             txn.Commit();
 
+            ds->m_open = true;
             openResult->SetSuccess(ds);
             });
         })
@@ -1327,7 +1332,7 @@ ICancellationTokenPtr ct,
 SyncOptions options
 )
     {
-    ct = CreateCancellationToken(ct);
+    ct = CreateCancellationToken(ct); 
 
     auto syncTask = std::make_shared<SyncLocalChangesTask>
         (

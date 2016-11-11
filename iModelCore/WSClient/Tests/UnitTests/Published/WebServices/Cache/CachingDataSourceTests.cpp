@@ -86,7 +86,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_OpensAndS
         .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
-        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError()))));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error({}))));
 
     CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->Wait();
     }
@@ -106,7 +106,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_DataSourceCacheDbExists_StartsUpdati
         .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
-        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError()))));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error({}))));
 
     CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->Wait();
     }
@@ -120,6 +120,32 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NoFileAndCancelled_ReturnsCancellati
     token->SetCanceled();
 
     auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_CancelledAndSameThreadUsedInThenTask_DoesNotHang)
+    {
+    BeFileName path = StubFilePath();
+    auto client = MockWSRepositoryClient::Create();
+    auto token = SimpleCancellationToken::Create();
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Invoke([&] (Utf8StringCR, ICancellationTokenPtr)
+        {
+        token->SetCanceled();
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        })); 
+
+    auto thread = WorkerThread::Create("TestCache"); 
+    auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), thread, token)
+        ->Then<CachingDataSource::OpenResult>(thread, [=] (CachingDataSource::OpenResult result)
+        {
+        return result;
+        })->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
     }
@@ -1843,7 +1869,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokensAndCal
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-        .WillByDefault(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError()))));
+        .WillByDefault(Return(CreateCompletedAsyncTask(WSObjectsResult::Error({}))));
 
     InSequence callsInSeq;
 

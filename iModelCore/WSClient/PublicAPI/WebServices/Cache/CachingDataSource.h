@@ -44,6 +44,7 @@ struct CachingDataSource :
         typedef AsyncResult<DataOrigin, Error> DataOriginResult;
 
     private:
+        bool                                        m_open = false;
         IWSRepositoryClientPtr                      m_client;
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
