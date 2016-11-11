@@ -23,8 +23,6 @@ struct SystemPropertyMap : PropertyMap
                 : SingleColumnDataPropertyMap(Type::SystemPerTablePrimitive, parentPropertyMap, ecProperty, column, false)
                 {}
 
-            virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
-
         public:
             virtual ~PerTablePrimitivePropertyMap() {}
 
@@ -44,6 +42,8 @@ struct SystemPropertyMap : PropertyMap
 
             return false;
             }
+
+        virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
 
     protected:
         SystemPropertyMap(Type, ClassMap const&, ECN::PrimitiveECPropertyCR);
@@ -72,8 +72,6 @@ struct ECInstanceIdPropertyMap final : SystemPropertyMap
             : SystemPropertyMap(Type::ECInstanceId, classMap, ecProperty)
             {}
 
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
-
     public:
         virtual ~ECInstanceIdPropertyMap() {}
         static RefCountedPtr<ECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
@@ -90,8 +88,6 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
         ECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId)
             : SystemPropertyMap(Type::ECClassId, classMap, ecProperty), m_defaultECClassId(defaultECClassId)
             {}
-
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
 
     public:
         virtual ~ECClassIdPropertyMap() {}
@@ -112,8 +108,6 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
         ConstraintECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId, ECN::ECRelationshipEnd constraintEnd)
             : SystemPropertyMap(Type::ConstraintECClassId, classMap, ecProperty), m_defaultECClassId(defaultECClassId), m_end(constraintEnd)
             {}
-
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
 
     public:
         virtual ~ConstraintECClassIdPropertyMap() {}
@@ -136,8 +130,6 @@ struct ConstraintECInstanceIdPropertyMap final : SystemPropertyMap
         ConstraintECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECRelationshipEnd constraintEnd)
             : SystemPropertyMap(Type::ConstraintECInstanceId, classMap, ecProperty), m_end(constraintEnd)
             {}
-
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&  visitor)  const override { return visitor.Visit(*this); }
 
     public:
         virtual ~ConstraintECInstanceIdPropertyMap() {}

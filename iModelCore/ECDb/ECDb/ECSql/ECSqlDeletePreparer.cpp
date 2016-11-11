@@ -76,7 +76,7 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
     SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All);
     classMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
-    for (PropertyMap const* propMap : typeVisitor.ResultSet())
+    for (PropertyMap const* propMap : typeVisitor.Results())
         {
         bool isSystem = propMap->IsSystem();
         if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)

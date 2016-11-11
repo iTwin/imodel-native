@@ -787,8 +787,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         {
         Utf8CP classRefId = classRefExp->GetId().c_str();
         ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, classRefId);
-        classIdPropertyMap->AcceptVisitor(sqlVisitor);
-        BeAssert(sqlVisitor.GetStatus() == SUCCESS);
+        if (SUCCESS != classIdPropertyMap->AcceptVisitor(sqlVisitor))
+            {
+            BeAssert(false);
+            return ECSqlStatus::Error;
+            }
+
         nativeSqlSnippet.Append(sqlVisitor.GetResultSet().front().GetSql());
         }
     else
@@ -1295,7 +1299,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::SelectView, fromEP.GetClassNameRef()->GetId().c_str());
     fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
     sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
     sql.Append(" = ");
@@ -1310,7 +1314,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::SelectView, relationshipClassNameExp.GetId().c_str());
     fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
     sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSql());
 
@@ -1332,7 +1336,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::SelectView, toEP.GetClassNameRef()->GetId().c_str());
     toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
     sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
     sql.Append(" = ");
@@ -1347,7 +1351,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::InvalidECSql;
         }
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::SqlTarget::SelectView, relationshipClassNameExp.GetId().c_str());
     toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
     sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSql());
     }

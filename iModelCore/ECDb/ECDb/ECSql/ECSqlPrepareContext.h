@@ -81,7 +81,7 @@ struct ECSqlPrepareContext
                     SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All, /*traverseCompoundProperties = */ true);
                     propertyMap.AcceptVisitor(typeVisitor);
                     Utf8String path;
-                    for (PropertyMap const* m : typeVisitor.ResultSet())
+                    for (PropertyMap const* m : typeVisitor.Results())
                         {
                         AddProperty(m->GetAccessString().c_str());
                         }

@@ -157,17 +157,15 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
+BentleyStatus PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    VisitorFeedback fb = VisitorFeedback::Next;
     for (PropertyMap const* propertyMap : m_directDecendentList)
         {
-        fb = propertyMap->AcceptVisitor(visitor);
-        if (fb == VisitorFeedback::Cancel)
-            return fb;
+        if (SUCCESS != propertyMap->AcceptVisitor(visitor))
+            return ERROR;
         }
 
-    return fb;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -193,21 +191,6 @@ ECN::ECClass const& PropertyMapContainer::GetClass() const { return m_classMap.G
 ECDbCR PropertyMapContainer::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //************************************CompoundDataPropertyMap::Collection********
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-VisitorFeedback CompoundDataPropertyMap::AcceptChildren(IPropertyMapVisitor const&  visitor) const
-    {
-    VisitorFeedback fb = VisitorFeedback::Next;
-    for (DataPropertyMap const* pm : *this)
-        {
-        fb = pm->AcceptVisitor(visitor);
-        if (fb == VisitorFeedback::Cancel)
-            return fb;
-        }
-
-    return fb;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -334,18 +317,6 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback Point2dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
-    {
-    VisitorFeedback fb = visitor.Visit(*this);
-    if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
-        return fb;
-
-    return AcceptChildren(visitor);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
     {
     return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME));
@@ -429,18 +400,6 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-VisitorFeedback Point3dPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
-    {
-    VisitorFeedback fb = visitor.Visit(*this);
-    if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
-        return fb;
-
-    return AcceptChildren(visitor);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
     {
     return static_cast<PrimitivePropertyMap const&>(*Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME));
@@ -477,19 +436,6 @@ RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap cons
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-VisitorFeedback StructPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
-    {
-    VisitorFeedback fb = visitor.Visit(*this);
-    if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
-        return fb;
-
-    return AcceptChildren(visitor);
-    }
-
-
 //************************************PrimitiveArrayPropertyMap********************
 
 //---------------------------------------------------------------------------------------
@@ -521,21 +467,6 @@ RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(Cla
 
 
 //************************************NavigationPropertyMap********************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-VisitorFeedback NavigationPropertyMap::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
-    {
-    if (!m_isComplete)
-        return VisitorFeedback::Cancel;
-
-    VisitorFeedback fb = visitor.Visit(*this);
-    if (fb == VisitorFeedback::Cancel || fb == VisitorFeedback::NextSibling)
-        return fb;
-
-    return AcceptChildren(visitor);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -617,8 +548,6 @@ RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPro
 
     return new IdPropertyMap(parentPropertyMap, *idProp->GetAsPrimitiveProperty(), column);
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle         10/16
@@ -860,4 +789,20 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
             }
         }
     }
+
+//************************************IPropertyMapVisitor********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus IPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
+    {
+    for (DataPropertyMap const* childPropertyMap : propertyMap)
+        {
+        if (SUCCESS != childPropertyMap->AcceptVisitor(*this))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

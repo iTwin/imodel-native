@@ -527,8 +527,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
     for (PropertyMap const* propertyMap : GetPropertyMaps())
         {
         BeAssert(GetClass().GetId() == propertyMap->GetClassMap().GetClass().GetId());
-        propertyMap->AcceptVisitor(saveVisitor);
-        if (saveVisitor.GetStatus() != SUCCESS)
+        if (SUCCESS != propertyMap->AcceptVisitor(saveVisitor))
             return ERROR;
         }
 

@@ -204,11 +204,10 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Reset();
     std::vector<Utf8String> values;
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data); //Only inlcude none-system properties
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data); //Only include none-system properties
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
-    for (PropertyMap const* result: typeVisitor.ResultSet())
+    for (PropertyMap const* result: typeVisitor.Results())
         {
- 
         DataPropertyMap const* derivedPropertyMap = static_cast<DataPropertyMap const*> (derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str()));
         if (derivedPropertyMap == nullptr)
             {
@@ -556,7 +555,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, ClassMap 
 
     viewSql.Append("SELECT ");
     bool first = true;
-    for (PropertyMap const* propertyMap : visitor.ResultSet())
+    for (PropertyMap const* propertyMap : visitor.Results())
         {
         if (first)
             first = false;
@@ -862,7 +861,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
         {
         SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::All, true /*traverse compound properties but compound properties themself is not included*/);
         baseClass->GetPropertyMaps().AcceptVisitor(propertyVisitor);
-        for (PropertyMap const* basePropertyMap : propertyVisitor.ResultSet())
+        for (PropertyMap const* basePropertyMap : propertyVisitor.Results())
             {
             if (!Enum::Contains(filter, basePropertyMap->GetType()))
                 continue;
@@ -900,7 +899,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
         {
         SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::All, true /*traverse compound properties but compound properties themself is not included*/);
         classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
-        for (PropertyMap const* propertyMap : propertyVisitor.ResultSet())
+        for (PropertyMap const* propertyMap : propertyVisitor.Results())
             {
             if (Enum::Contains(filter, propertyMap->GetType()))
                 {
@@ -947,8 +946,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
         if (propertyMap->IsSystem())
             {
             ToSqlPropertyMapVisitor toSqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, systemContextTableAlias, false, true);
-            propertyMap->AcceptVisitor(toSqlVisitor);
-            if (toSqlVisitor.GetStatus() == ERROR || toSqlVisitor.GetResultSet().empty())
+            if (SUCCESS != propertyMap->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
                 return ERROR;
@@ -968,8 +966,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
             if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
                 {
                 ToSqlPropertyMapVisitor toSqlVisitor(*requireJoinToTableForDataProperties, ToSqlPropertyMapVisitor::SqlTarget::Table, requireJoinToTableForDataProperties->GetName().c_str(), false, false);
-                dataProperty->AcceptVisitor(toSqlVisitor);
-                if (toSqlVisitor.GetStatus() == ERROR || toSqlVisitor.GetResultSet().empty())
+                if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                     {
                     BeAssert(false);
                     return ERROR;
@@ -988,8 +985,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
             else
                 {
                 ToSqlPropertyMapVisitor toSqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, systemContextTableAlias, false, false);
-                dataProperty->AcceptVisitor(toSqlVisitor);
-                if (toSqlVisitor.GetStatus() == ERROR || toSqlVisitor.GetResultSet().empty())
+                if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                     {
                     BeAssert(false);
                     return ERROR;

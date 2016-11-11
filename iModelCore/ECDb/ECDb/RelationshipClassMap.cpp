@@ -1090,7 +1090,6 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     PropertyMap const* precedingPropMap = nullptr;
     PropertyMap const* succeedingPropMap = nullptr;
     bool foundNavProp = false;
-    SearchPropertyMapVisitor isSystemOrNavPropertyMapVisitor(Enum::Or(PropertyMap::Type::System, PropertyMap::Type::Navigation));
     for (PropertyMap const* propMap : classMap->GetPropertyMaps())
         {
         if (&propMap->GetProperty() == singleNavProperty)
@@ -1103,9 +1102,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             continue;
             }
 
-        isSystemOrNavPropertyMapVisitor.Reset();
-        propMap->AcceptVisitor(isSystemOrNavPropertyMapVisitor); //Skip system properties and navigation properties
-        if (!isSystemOrNavPropertyMapVisitor.ResultSet().empty())
+        //Skip system properties and navigation properties
+        if (propMap->IsSystem() || propMap->GetType() == PropertyMap::Type::Navigation)
             continue;
 
         if (!foundNavProp)
