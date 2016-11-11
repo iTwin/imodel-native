@@ -237,6 +237,17 @@ std::unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
     {
     std::unique_ptr<RangeClassRefList> rangeClassRefs(new RangeClassRefList());
     FindRangeClassRefs(*rangeClassRefs);
+    SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
+    while (cur != nullptr)
+        {        
+        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
+        if (cur != nullptr)
+            {
+            if (cur->GetFrom() != this)
+                cur->GetFrom()->FindRangeClassRefs(*rangeClassRefs);
+            }
+        }
+
     return rangeClassRefs;
     }
 
