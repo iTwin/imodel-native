@@ -475,7 +475,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    auto const& typeInfo = GetSortExpression()->GetTypeInfo();
+    ECSqlTypeInfo const& typeInfo = GetSortExpression()->GetTypeInfo();
     if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
         ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());

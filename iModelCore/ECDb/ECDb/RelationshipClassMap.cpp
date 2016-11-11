@@ -214,8 +214,7 @@ bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& con
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
-    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, setIsDirty), m_hasKeyPropertyFk(false)
-    {}
+    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, setIsDirty) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         1 / 16
@@ -403,129 +402,72 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
     //! Determine FK column name and map to it or create a column and then map to it.
     //!--------------------------------------------------------------------------------------
-    //! 1. Provided as RelationshipKey property
-    //!     a. Only one key property should be defined.
-    //!     b. DataType must match referencedEndTable PK.
-    //!     c. All class in constraint must have the property.
-    //! 2. Provided as part of CustomAttribute
+    //! 1. Provided as part of CustomAttribute
     //!     a. Column name specified must match or it would be a error.
     //!     b. If column cannot be created in one of the foreign end table its a error.
-    //! 3. Generate foreign key column.
+    //! 2. Generate foreign key column.
     //!     a. Use Nav property column name if exist
     //!     b. Generate a name and create a column that name.
-
-
-    //! 1. Provided as RelationshipKey property
     //! ---------------------------------------
-
-    m_hasKeyPropertyFk = false;
-
-    std::set<DbColumn const*> fkTableFkColSet;
-    if (SUCCESS != TryGetKeyPropertyColumn(fkTableFkColSet, foreignEndConstraint, relClass, GetForeignEnd()))
-        return ERROR;
-
-        {
-        std::set<DbColumn const*> referencedTablePrimaryKeyColSet;
-        if (SUCCESS != TryGetKeyPropertyColumn(referencedTablePrimaryKeyColSet, referencedEndConstraint, relClass, GetReferencedEnd()))
-            return ERROR;
-
-        if (!referencedTablePrimaryKeyColSet.empty())
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s' because a KeyProperty is defined on the %s constraint. "
-                            "A KeyProperty can only be specified on the foreign key end constraint of the ECRelationshipClass (here: %s constraint)",
-                            relClass.GetFullName(),
-                            GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target",
-                            GetForeignEnd() == ECRelationshipEnd_Source ? "source" : "target");
-            return ERROR;
-            }
-        }
 
     //+++ Determine FK column(s) +++
     //Note: The FK column is the column that refers to the referenced end. Therefore the ECRelationshipEnd of the referenced end has to be taken!
     DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
     const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
 
-    Utf8String fkColName;
-    if (!fkTableFkColSet.empty())
+    ForeignKeyColumnInfo fkColInfo;
+    if (SUCCESS != TryGetForeignKeyColumnInfoFromNavigationProperty(fkColInfo, foreignEndConstraint, relClass, GetForeignEnd()))
+        return ERROR;
+
+    Utf8String fkColName = DetermineFkColumnName(classMappingInfo, fkColInfo);
+
+    for (DbTable const* foreignEndTable : foreignEndTables)
         {
-        m_hasKeyPropertyFk = true;
-        for (DbColumn const* fkCol : fkTableFkColSet)
+        DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
+        if (!foreignEndTable->IsOwnedByECDb())
             {
-            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
-                return ERROR;
-
-            ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
-            if (fkColName.empty())
-                fkColName.assign(fkCol->GetName());
-            else
-                {
-                if (!fkColName.EqualsIAscii(fkCol->GetName().c_str()))
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s' because a KeyProperty is defined on the %s constraint which "
-                                    "maps to columns in different tables and the columns don't have the same name.",
-                                    relClass.GetFullName(), GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target");
-
-                    return ERROR;
-                    }
-                }
-            }
-        }
-    else
-        {
-        ForeignKeyColumnInfo fkColInfo;
-        if (SUCCESS != TryGetForeignKeyColumnInfoFromNavigationProperty(fkColInfo, foreignEndConstraint, relClass, GetForeignEnd()))
-            return ERROR;
-
-        fkColName = DetermineFkColumnName(classMappingInfo, fkColInfo);
-
-        for (DbTable const* foreignEndTable : foreignEndTables)
-            {
-            DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
-            if (!foreignEndTable->IsOwnedByECDb())
-                {
-                //for existing tables, the FK column must exist otherwise we fail schema import
-                if (fkCol != nullptr)
-                    {
-                    if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
-                        return ERROR;
-
-                    ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
-                    continue;
-                    }
-
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'. Consider adding a ForeignKeyRelationshipMap CustomAttribute to the relationship class and specify the foreign key column.",
-                                relClass.GetFullName(), foreignEndTable->GetName().c_str(), fkColName.c_str());
-                return ERROR;
-                }
-
-            //table owned by ECDb
+            //for existing tables, the FK column must exist otherwise we fail schema import
             if (fkCol != nullptr)
                 {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
-                                relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
-                return ERROR;
+                if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+                    return ERROR;
+
+                ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
+                continue;
                 }
 
-            int fkColPosition = -1;
-            if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
-                return ERROR;
-
-            const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-            DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
-            if (newFkCol == nullptr)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
-                                relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
-                BeAssert(false && "Could not create FK column for end table mapping");
-                return ERROR;
-                }
-
-            const bool makeFkColNotNull = multiplicityImpliesNotNullOnFkCol && foreignEndTable->HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(foreignEndTable->GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
-            if (makeFkColNotNull)
-                newFkCol->GetConstraintsR().SetNotNullConstraint();
-
-            ColumnLists::push_back(columns.m_fkColumnsPerFkTable, newFkCol);
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'. Consider adding a ForeignKeyRelationshipMap CustomAttribute to the relationship class and specify the foreign key column.",
+                            relClass.GetFullName(), foreignEndTable->GetName().c_str(), fkColName.c_str());
+            return ERROR;
             }
+
+        //table owned by ECDb
+        if (fkCol != nullptr)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
+                            relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+            return ERROR;
+            }
+
+        int fkColPosition = -1;
+        if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
+            return ERROR;
+
+        const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
+        DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+        if (newFkCol == nullptr)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
+                            relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+            BeAssert(false && "Could not create FK column for end table mapping");
+            return ERROR;
+            }
+
+        const bool makeFkColNotNull = multiplicityImpliesNotNullOnFkCol && foreignEndTable->HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(foreignEndTable->GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
+        if (makeFkColNotNull)
+            newFkCol->GetConstraintsR().SetNotNullConstraint();
+
+        ColumnLists::push_back(columns.m_fkColumnsPerFkTable, newFkCol);
         }
 
     BeAssert(columns.m_fkColumnsPerFkTable.size() == foreignEndTables.size());
@@ -1025,13 +967,10 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
     const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
 
-    if (!isUniqueIndex && m_hasKeyPropertyFk)
-        return;
-
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     std::vector<DbColumn const*> referencedEndIdColumns;
 
-    for (SingleColumnDataPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
+    for (SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
         if (persistenceEndTable.GetType() == DbTable::Type::Existing)
@@ -1087,101 +1026,6 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetForeignEnd() const
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetReferencedEnd() const
     {
     return GetForeignEnd() == ECRelationshipEnd_Source ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                      Krischan.Eberle                          06/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void LogKeyPropertyRetrievalError(IssueReporter const& issueReporter, Utf8CP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
-    {
-    issueReporter.Report(ECDbIssueSeverity::Error, "Invalid Key property on %s constraint in ECRelationshipClass '%s': %s",
-                         constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName(), errorDetails);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                      Krischan.Eberle                          06/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbColumn const*>& keyPropertyColumns, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
-    {
-    keyPropertyColumns.clear();
-    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
-    if (constraintClasses.size() == 0)
-        return SUCCESS;
-
-    Utf8String keyPropertyName;
-    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
-        {
-        bvector<Utf8String> const& keys = constraintClass->GetKeys();
-        const size_t keyCount = keys.size();
-
-        if (keyCount == 0)
-            {
-            if (keyPropertyName.empty())
-                continue;
-
-            LogKeyPropertyRetrievalError(Issues(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
-                                         relClass, constraintEnd);
-            return ERROR;
-            }
-
-        if (keyCount > 1 || keys[0].empty())
-            {
-            LogKeyPropertyRetrievalError(Issues(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
-                                         relClass, constraintEnd);
-            return ERROR;
-            }
-
-        if (keyPropertyName.empty())
-            keyPropertyName = keys.front().c_str();
-        else
-            {
-            if (keyPropertyName != keys.front())
-                {
-                LogKeyPropertyRetrievalError(Issues(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
-                                             relClass, constraintEnd);
-                return ERROR;
-                }
-            }
-        }
-
-    if (keyPropertyName.empty())
-        return SUCCESS;
-
-    std::set<ClassMap const*> constraintMaps = GetDbMap().GetClassMapsFromRelationshipEnd(constraint, nullptr);
-    for (auto constraintMap : constraintMaps)
-        {
-        Utf8CP keyPropAccessString = keyPropertyName.c_str();
-        PropertyMap const* keyPropertyMap = constraintMap->GetPropertyMaps().Find(keyPropAccessString);
-        if (keyPropertyMap == nullptr)
-            {
-            Utf8String error;
-            error.Sprintf("Key property '%s' does not exist or is not mapped.", keyPropAccessString);
-            LogKeyPropertyRetrievalError(Issues(), error.c_str(), relClass, constraintEnd);
-            return ERROR;
-            }
-
-        ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
-        if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
-            {
-            Utf8String error;
-            error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", keyPropAccessString);
-            LogKeyPropertyRetrievalError(Issues(), error.c_str(), relClass, constraintEnd);
-            return ERROR;
-            }
-
-        std::vector<DbColumn const*> columns;
-        GetColumnsPropertyMapVisitor columnVisitor(constraintMap->GetJoinedTable());
-        keyPropertyMap->AcceptVisitor(columnVisitor);
-        if (columnVisitor.GetColumns().size() != 1)
-            {
-            BeAssert(false && "Key property map is expected to map to a single column.");
-            return ERROR;
-            }
-
-        keyPropertyColumns.insert(columnVisitor.GetColumns().front());
-        }
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

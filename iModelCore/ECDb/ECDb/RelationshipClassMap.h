@@ -148,8 +148,6 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 PropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
 
-        bool m_hasKeyPropertyFk;
-
         RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const&);
@@ -162,12 +160,6 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         static Utf8String DetermineRelECClassIdColumnName(ECN::ECRelationshipClassCR, Utf8StringCR fkColumnName);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&);
 
-        //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
-        //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.
-        //! @param[in] constraint Constraint
-        //! @return SUCCESS if key property was found or no key property exists on the constraint. ERROR if constraint has more
-        //! than one class or more than one key properties.
-        BentleyStatus TryGetKeyPropertyColumn(std::set<DbColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;
         BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;
         BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
 
