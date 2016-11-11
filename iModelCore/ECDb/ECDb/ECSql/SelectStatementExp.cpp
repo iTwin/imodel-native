@@ -141,21 +141,21 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     RangeClassRefList classExpList;
     FindRangeClassRefs(classExpList);
 
-    RangeClassRefExp const* classExpComparand = nullptr;
-    for (RangeClassRefExp const* classExp : classExpList)
-        {
-        if (classExpComparand == nullptr)
-            {
-            classExpComparand = classExp;
-            continue;
-            }
+    //RangeClassRefExp const* classExpComparand = nullptr;
+    //for (RangeClassRefExp const* classExp : classExpList)
+    //    {
+    //    if (classExpComparand == nullptr)
+    //        {
+    //        classExpComparand = classExp;
+    //        continue;
+    //        }
 
-        if (classExp->GetId().EqualsI(classExpComparand->GetId()))
-            {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-        }
+    //    if (classExp->GetId().EqualsI(classExpComparand->GetId()))
+    //        {
+    //        ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
+    //        return FinalizeParseStatus::Error;
+    //        }
+    //    }
 
     return FinalizeParseStatus::Completed;
     }
