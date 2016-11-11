@@ -1,0 +1,196 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityAdmin/ContextServicesWorkbench.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include <RealityAdmin/ContextServicesWorkbench.h>
+
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Francis Boily                   09/2015
+//+---------------+---------------+---------------+---------------+---------------+------*/
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Francis Boily                   09/2015
+//+---------------+---------------+---------------+---------------+---------------+------*/
+static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
+{
+    size_t written = fwrite(contents, size, nmemb, stream);
+    return written;
+}
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+ContextServicesWorkbench* ContextServicesWorkbench::Create(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params)
+    {
+    return new ContextServicesWorkbench(authorizationToken, params);
+    }
+
+void ContextServicesWorkbench::SetGeoParam(GeoCoordinationParamsCR params)
+    {
+    m_uiParams = params;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+ContextServicesWorkbench::ContextServicesWorkbench(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params)
+    : m_authorizationToken(authorizationToken), m_uiParams(params)
+    {
+    m_errorObj = Json::objectValue;
+    //Getting the cacert.pem file from the current working directory
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+
+    BeFileName caBundlePath(exeDir);
+    
+    m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+CURLcode ContextServicesWorkbench::performCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8StringCR postFields)
+    {
+    BeAssert(nullptr != writeString || nullptr != fp);
+    auto curl = curl_easy_init();
+    if (nullptr == curl)
+        {
+        return CURLcode::CURLE_FAILED_INIT;
+        }
+
+    //Adjusting headers for the POST method
+    struct curl_slist *headers = NULL;
+    if (!postFields.empty())
+        {
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "charsets: utf-8");
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
+        }
+    headers = curl_slist_append(headers, m_authorizationToken.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    if (nullptr != fp)
+        {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        }
+    else
+        {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, writeString);
+        }
+    CURLcode result = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    return result;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails()
+    {
+    //First query to get the whole list of elements
+    CURLcode result = performCurl(createSpatialEntityWithDetailsViewUrl(), &m_spatialEntityWithDetailsJson);
+    if (CURLE_OK != result)
+        {
+        if (result == CURLE_RECV_ERROR)
+            m_errorObj["Error"] = "InvalidProxyCredentials";
+        else
+            m_errorObj["Error"] = "ContextServerUnreachable";
+
+        return BentleyStatus::ERROR;
+        }
+
+    Json::Value regionItems(Json::objectValue);
+    if (!Json::Reader::Parse(m_spatialEntityWithDetailsJson, regionItems) || (!regionItems.isMember("errorMessage") && !regionItems.isMember("instances")))
+        {
+        m_errorObj["Error"] = "ContextServerInvalidResponse";
+        return BentleyStatus::ERROR;
+        }
+
+    if (regionItems.isMember("errorMessage"))
+        {
+        m_errorObj["Error"] = regionItems["errorMessage"].asCString();
+        return BentleyStatus::ERROR;
+        }
+
+    m_downloadedSEWD = true;
+    return BentleyStatus::SUCCESS;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Francis Boily                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl()
+    {
+    Utf8String tempRealityServerUrl;
+    switch(m_uiParams.GetServerType())
+        {
+    case ServerType::DEV:
+        tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
+    case ServerType::PROD:
+        tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.3";
+    default:
+        tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
+        }
+    
+    Utf8String listUrl = tempRealityServerUrl.append("/Repositories/IndexECPlugin--Server/RealityModeling/SpatialEntityWithDetailsView?polygon={points:[");
+    listUrl.append(m_uiParams.GetPolygonAsString(false));
+    listUrl.append("],coordinate_system:'4326'}");
+    listUrl.append(m_uiParams.GetFilterString());
+
+    return listUrl;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+GeoCoordinationParams::GeoCoordinationParams(bvector<GeoPoint2d> params, ServerType serverType, Utf8String filterString)
+    :m_filterPolygon(params), m_serverType(serverType), m_filterString()
+{}
+
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Francis Boily                   09/2015
+//+---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String GeoCoordinationParams::GetPolygonAsString(bool urlEncode) const
+{
+    Utf8String polygon;
+    bool first = true;
+    for (auto& point : GetPolygonVector())
+    {
+        if (first)
+            first = false;
+        else
+            polygon.append(urlEncode ? "%2C" : ",");
+        polygon.append(urlEncode ? "%5B" : "[");
+        polygon.append(Utf8PrintfString("%f%s%f", point.longitude, (urlEncode ? "%2C" : ","), point.latitude));
+        polygon.append(urlEncode ? "%5D" : "]");
+    }
+    return polygon;
+}
+
+END_BENTLEY_REALITYPLATFORM_NAMESPACE

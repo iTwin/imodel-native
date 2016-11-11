@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-#include "PointCloudVortex.h"
+#include <RealityAdmin/PointCloudVortex.h>
 
 #include <Vortex/VortexLicenseCode.h>
 

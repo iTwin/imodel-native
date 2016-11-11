@@ -13,7 +13,7 @@
 
 #include <ImagePP/all/h/HRFPageFileFactory.h>
 #include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
-#include "RealityPlatformUtil.h"
+#include <RealityAdmin/RealityPlatformUtil.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

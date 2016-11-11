@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/RealityPlatformAdmins.h $
+|     $Source: PublicApi/RealityAdmin/RealityPlatformAdmins.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -8,7 +8,7 @@
 #include "stdafx.h"
 //Will ignore non local file format (WMS; GeoRaster, etc...)
 
-#include "RealityPlatformAdmins.h"
+#include <RealityAdmin/RealityPlatformAdmins.h>
 
 #include <ImagePP/all/h/HRFFileFormats.h>
 

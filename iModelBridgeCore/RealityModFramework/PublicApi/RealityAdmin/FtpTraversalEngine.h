@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/FtpTraversalEngine.h $
+|     $Source: PublicApi/RealityAdmin/FtpTraversalEngine.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

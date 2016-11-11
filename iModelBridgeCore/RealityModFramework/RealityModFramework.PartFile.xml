@@ -6,6 +6,7 @@
         <Bindings>
             <PublicAPI Domain="RealityPlatform" />
             <PublicAPI Domain="RealityPackage" />
+            <PublicAPI Domain="RealityAdmin" />
         </Bindings>
     </Part>
     
@@ -13,7 +14,6 @@
 	    <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
@@ -24,11 +24,14 @@
     </Part>
     
     <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke">
+        <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
+        <!--<SubPart PartName="WebServicesCache"           PartFile="WSClient"                  Repository="WSClient" />
+        <SubPart PartName="WebServicesClient"          PartFile="WSClient"                  Repository="WSClient"/>-->
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -252,6 +255,7 @@
         <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
+        <!--<ProductDirectory Name="WSClientAssemblies" Deliver="false" LibType="static"/>-->
 
         <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
@@ -269,6 +273,8 @@
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
+        <!--<ProductDirectory Name="WSClientAssemblies"             Path=""/>-->
+        
 
         <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
@@ -461,6 +467,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityAdminUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityAdmin">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="RealityAdmin" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"     ProductSubDirectory="RealityAdmin" SourceName="Delivery/UnitTests/Objects/RealityAdmin"/>
+        </Bindings>
+    </Part>
+    
     <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=CrawlerLib">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="CrawlerLib"/>
@@ -473,6 +487,7 @@
     <Part Name="Tests">
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
+        <SubPart PartName="RealityAdminUnitTests"/>
         <SubPart PartName="CrawlerLibUnitTests"/>
     </Part>
 

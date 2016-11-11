@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/HttpTraversalEngine.h $
+|     $Source: PublicApi/RealityAdmin/HttpTraversalEngine.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

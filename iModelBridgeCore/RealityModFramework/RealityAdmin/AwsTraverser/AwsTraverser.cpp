@@ -22,7 +22,7 @@
 #include <curl/curl.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include "AwsTraverser.h"
-#include "../ODBCSQLConnection.h"
+#include <RealityAdmin/ODBCSQLConnection.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
