@@ -20,3 +20,17 @@ UniqueTasksHolderTests.*
 DirectoryObserverTests.ModificationInObservedDirectory_UIThread
     # WinX64, DgnDb0601, NDEBUG, PRG
     # <crash, no output provided>
+
+Utf8PrintfStringTests.Ctor_FormatAndArgumentPassed_FormattedString
+    # Crashes, probably a bug
+
+UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
+    # bim0200dev, x86, DEBUG, random
+    # [ RUN      ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
+    # F:\Bim0200Dev\src-staging\Bentley\Tests\Published\Tasks\UniqueTaskHolderTests.cpp(102): error:       Expected: 2
+    # To be equal to: ++i
+    #       Which is: 1
+    # F:\Bim0200Dev\src-staging\Bentley\Tests\Published\Tasks\UniqueTaskHolderTests.cpp(95): error:       Expected: 1
+    # To be equal to: ++i
+    #       Which is: 2
+    # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)

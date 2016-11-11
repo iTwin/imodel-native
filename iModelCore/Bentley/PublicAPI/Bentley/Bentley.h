@@ -332,3 +332,42 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 //__PUBLISH_SECTION_END__
 #endif
 
+//__PUBLISH_SECTION_START__
+
+#ifdef _MSC_VER
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
+        __pragma(warning(push))\
+        __pragma(warning(disable:ERRORS_TO_IGNORE))
+    
+    #define POP_MSVC_IGNORE\
+        __pragma(warning(pop))
+    
+    #include <codeanalysis/warnings.h>
+    #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
+    #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
+#else
+    #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
+    #define POP_MSVC_IGNORE
+    #define PUSH_MSVC_IGNORE_ANALYZE
+
+    // Microsoft SAL macros that we use to help silence static analysis warnings.
+    #define _Out_writes_z_(size)
+#endif
+
+#ifdef __clang__
+    // This is complicated because ignoring warnings for clang is all string-based.
+    // https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
+    #define CLANG_DIAG_STR(s) # s
+    #define CLANG_DIAG_JOINSTR(x,y) CLANG_DIAG_STR(x ## y)
+    #define CLANG_DIAG_DO_PRAGMA(x) _Pragma (#x)
+    #define CLANG_DIAG_PRAGMA(x) CLANG_DIAG_DO_PRAGMA(clang diagnostic x)
+    
+    #define PUSH_CLANG_IGNORE(x)\
+        CLANG_DIAG_PRAGMA(push)\
+        CLANG_DIAG_PRAGMA(ignored CLANG_DIAG_JOINSTR(-W,x))
+    #define POP_CLANG_IGNORE\
+        CLANG_DIAG_PRAGMA(pop)
+#else
+    #define PUSH_CLANG_IGNORE(x)
+    #define POP_CLANG_IGNORE
+#endif
