@@ -274,8 +274,8 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void addAllCategories(DgnDbR db, CategorySelectorR selector)
     {
-    for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        selector.AddCategory(categoryId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+        selector.AddCategory(categoryEntry.GetId<DgnCategoryId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,7 +313,7 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
     DgnCategoryIdSet _categories;
     if (nullptr == categories)
         {
-        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        for (auto const& categoryId : DgnCategory::MakeIterator(db).BuildIdSet<DgnCategoryId>())
             _categories.insert(categoryId);
         categories = &_categories;
         }
