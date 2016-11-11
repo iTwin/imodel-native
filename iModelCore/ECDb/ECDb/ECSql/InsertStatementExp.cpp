@@ -41,10 +41,10 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                 {
                 ClassNameExp const* classNameExp = GetClassNameExp();
 
-                unique_ptr<RangeClassRefList> classList = unique_ptr<RangeClassRefList>(new RangeClassRefList());
-                classList->push_back(classNameExp);
+                RangeClasssInfo::List classList;
+                classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
                 m_finalizeParsingArgCache = move(classList);
-                ctx.PushFinalizeParseArg(m_finalizeParsingArgCache.get());
+                ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
 
                 auto propNameListExp = GetPropertyNameListExpP();
                 if (IsOriginalPropertyNameListUnset())
@@ -67,7 +67,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
                 {
                 ctx.PopFinalizeParseArg();
-                m_finalizeParsingArgCache = nullptr;
+                m_finalizeParsingArgCache.clear();
 
                 return Validate(ctx);
                 }

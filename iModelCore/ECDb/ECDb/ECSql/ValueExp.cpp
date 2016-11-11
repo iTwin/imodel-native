@@ -307,16 +307,16 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
         {
         auto finalizeParseArgs = ctx.GetFinalizeParseArg();
         BeAssert(finalizeParseArgs != nullptr && "ECClassIdFunctionExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-        RangeClassRefList const& rangeClassRefList = *static_cast<RangeClassRefList const*> (finalizeParseArgs);
+        RangeClasssInfo::List const& rangeClassRefList = *static_cast<RangeClasssInfo::List const*> (finalizeParseArgs);
 
         if (HasClassAlias())
             {
             bvector<RangeClassRefExp const*> matchingClassRefExpList;
             //1. Assume that the first entry of the prop path is a property name and not a class alias and directly search it in classrefs
-            for (auto rangeClassRef : rangeClassRefList)
+            for (RangeClasssInfo const& rangeClassRef : rangeClassRefList)
                 {
-                if (rangeClassRef->GetId().Equals(m_classAlias))
-                    matchingClassRefExpList.push_back(rangeClassRef);
+                if (rangeClassRef.GetExp().GetId().Equals(m_classAlias))
+                    matchingClassRefExpList.push_back(&rangeClassRef.GetExp());
                 }
 
             const auto matchCount = matchingClassRefExpList.size();
@@ -347,7 +347,7 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
                 return FinalizeParseStatus::Error;
                 }
 
-            m_classRefExp = rangeClassRefList[0];
+            m_classRefExp = &rangeClassRefList[0].GetExp();
             }
 
         if (m_classRefExp == nullptr)

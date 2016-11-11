@@ -62,8 +62,6 @@ public:
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
 
-typedef std::vector<RangeClassRefExp const*> RangeClassRefList;
-
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======

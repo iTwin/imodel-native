@@ -347,6 +347,30 @@ typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
 
 
+struct RangeClassRefExp;
+struct RangeClasssInfo
+    {
+    typedef std::vector<RangeClasssInfo> List;
+    enum Scope
+        {
+        Nil,
+        Local,
+        Inherited
+        };
+    private:
+        RangeClassRefExp const* m_exp;
+        Scope m_scope;
+
+    public:
+        RangeClasssInfo() :m_exp(nullptr), m_scope(Scope::Nil) {}
+        RangeClasssInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
+        ~RangeClasssInfo() {}
+        Scope GetScope() const { return m_scope; }
+        bool IsLocal() const { return m_scope == Scope::Local; }
+        bool IsInherited() const { return m_scope == Scope::Inherited; }
+        RangeClassRefExp const& GetExp() const { return *m_exp; }
+    };
+
 #define DEFINE_EXPR_TYPE(X) public: virtual Type GetType () const override { return Type::X;} 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
