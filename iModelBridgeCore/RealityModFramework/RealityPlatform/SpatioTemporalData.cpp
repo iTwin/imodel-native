@@ -5,10 +5,11 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
+#include "StdAfx.h"
 #include <RealityPlatform/SpatioTemporalData.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <RealityPlatform/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -125,7 +126,9 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
 const bvector<SpatioTemporalDataPtr>&   SpatioTemporalDataset::GetImageryGroup() const { return m_imageryGroup; }
+bvector<SpatioTemporalDataPtr>&         SpatioTemporalDataset::GetImageryGroupR() { return m_imageryGroup; }
 const bvector<SpatioTemporalDataPtr>&   SpatioTemporalDataset::GetTerrainGroup() const { return m_terrainGroup; }
+bvector<SpatioTemporalDataPtr>&         SpatioTemporalDataset::GetTerrainGroupR() { return m_terrainGroup; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015

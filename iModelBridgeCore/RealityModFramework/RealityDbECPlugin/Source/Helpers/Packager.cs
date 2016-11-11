@@ -982,7 +982,6 @@ namespace IndexECPlugin.Source.Helpers
                     dbCommand.Parameters.Add(param1);
 
                     FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
-                    BinaryReader reader = new BinaryReader(fstream);
 
                     long longLength = fstream.Length;
                     int intLength;

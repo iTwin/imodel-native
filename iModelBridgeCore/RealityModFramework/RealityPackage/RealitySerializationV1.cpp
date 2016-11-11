@@ -452,4 +452,38 @@ RealityPackageStatus RealityDataSerializerV1::_WriteTerrainGroup(BeXmlNodeR node
     return RealityPackageStatus::Success;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+    {
+    // Required fields.
+    UriCR uri = source.GetUri();
+    Utf8String type = source.GetType();
+    if (uri.ToString().empty() || type.empty())
+        return RealityPackageStatus::MissingSourceAttribute;
+
+    BeXmlNodeP pSourceNode = node.AddEmptyElement(PACKAGE_ELEMENT_Source);
+    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.GetSource().c_str());
+    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
+
+    // Optional fields.
+    if (!source.GetCopyright().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
+
+    if (!source.GetId().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
+
+    if (!source.GetProvider().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
+
+    if (0 != source.GetSize())
+        pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Filesize, source.GetSize());
+
+    if (!source.GetMetadata().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
+
+    return RealityPackageStatus::Success;
+    }
+
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

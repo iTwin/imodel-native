@@ -75,10 +75,15 @@
 #define PACKAGE_ELEMENT_Source              "Source"
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
+#define PACKAGE_SOURCE_ATTRIBUTE_Streamed   "streamed"
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
 #define PACKAGE_ELEMENT_TermOfUse           "TermOfUse"
 #define PACKAGE_ELEMENT_Id                  "Id"
 #define PACKAGE_ELEMENT_Provider            "Provider"
+#define PACKAGE_ELEMENT_ServerLoginKey      "ServerLoginKey"
+#define PACKAGE_ELEMENT_ServerLoginMethod   "ServerLoginMethod"
+#define PACKAGE_ELEMENT_ServerRegPage       "ServerRegistrationPage"
+#define PACKAGE_ELEMENT_ServerOrgPage       "ServerOrganisationPage"
 #define PACKAGE_ELEMENT_Size                "Size"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
 #define PACKAGE_ELEMENT_Metadata            "Metadata"
@@ -277,6 +282,7 @@ struct RealityDataSerializerV1 : public RealityDataSerializer
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 
 //=====================================================================================
@@ -308,6 +314,7 @@ struct RealityDataSerializerV2 : public RealityDataSerializer
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
     };
 
 //=====================================================================================

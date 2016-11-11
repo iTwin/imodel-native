@@ -61,6 +61,10 @@ namespace RealityPackageNet
             System::String^ GetSourceType();
             void SetSourceType(System::String^ type);
 
+            //! Get/Set if the uri refers to a streamed source.
+            bool IsStreamed();
+            void SetStreamed(bool isStreamed);
+
             //! Get/Set the id. Might be empty.
             System::String^ GetId();
             void SetId(System::String^ id);
@@ -76,6 +80,22 @@ namespace RealityPackageNet
             //! Get/Set the provider. Might be empty.
             System::String^ GetProvider();
             void SetProvider(System::String^ provider);
+
+            //! Get/Set the server authentication hint. Might be empty.
+            System::String^ GetServerLoginKey();
+            void SetServerLoginKey(System::String^ key);
+
+            //! Get/Set the server authentication hint. Might be empty.
+            System::String^ GetServerLoginMethod();
+            void SetServerLoginMethod(System::String^ method);
+
+            //! Get/Set the server authentication hint. Might be empty.
+            System::String^ GetServerRegistrationPage();
+            void SetServerRegistrationPage(System::String^ link);
+
+            //! Get/Set the server authentication hint. Might be empty.
+            System::String^ GetServerOrganisationPage();
+            void SetServerOrganisationPage(System::String^ link);
 
             //! Get/Set the size in kilobytes. Default to 0.
             uint64_t GetSize();

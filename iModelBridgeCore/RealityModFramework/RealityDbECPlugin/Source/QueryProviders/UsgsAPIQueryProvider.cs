@@ -1024,7 +1024,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( thumbnailURI == null )
                 {
-                throw new OperationFailedException("We have encountered a problem processing the order for the thumbnail of ID " + sourceID);
+                throw new OperationFailedException("We have encountered a problem processing the order for a thumbnail.");
                 }
 
             //The next part enables downloading the thumbnail
@@ -1338,14 +1338,29 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         IECInstance instance = ecClass.CreateInstance();
 
-                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
-
                         InitializePropertiesToNull(instance, ecClass);
 
                         JToken jtoken = item.jToken;
 
                         instance.InstanceId = jtoken.TryToGetString("sourceId");
                         instance["Id"].StringValue = instance.InstanceId;
+
+                        if(m_usgsDataFetcher.Blacklist.Any(id => id == instance.InstanceId))
+                            {
+                            //This Id is blacklisted. We don't add it to the instanceList.
+                            continue;
+                            }
+
+                        string downloadURL = jtoken.TryToGetString("downloadURL");
+
+                        if ( (downloadURL != null) && (downloadURL.Contains("arcgis")) && (downloadURL.Contains("rest")) && (downloadURL.Contains("services")))
+                            {
+                            //This is a server entry. We don't add it to the instanceList.
+                            continue;
+                            }
+
+                        //CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
+
                         instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
                         //instance["Name"].StringValue = jtoken.TryToGetString("title");
@@ -1402,7 +1417,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 foreach (IECInstance cachedInstance in cachedinstanceList)
                     {
-                    if(! instanceList.Any(inst => inst.InstanceId == cachedInstance.InstanceId))
+                    if ( !instanceList.Any(inst => inst.InstanceId == cachedInstance.InstanceId) && !m_usgsDataFetcher.Blacklist.Any(id => id == cachedInstance.InstanceId) )
                         {
                         instanceList.Add(cachedInstance);
                         }
@@ -1412,14 +1427,14 @@ namespace IndexECPlugin.Source.QueryProviders
             catch ( EnvironmentalException )
                 {
                 //USGS returned an error. We will return the results contained in the cache.
-                instanceList = cachedinstanceList;
+                instanceList = cachedinstanceList.Where(inst => !m_usgsDataFetcher.Blacklist.Any(id => id == inst.InstanceId)).ToList();
                 }
             catch ( System.AggregateException ex )
                 {
                 if (ex.InnerExceptions.All(e => e.GetType() == typeof(EnvironmentalException))) 
                     {
                     //USGS returned an error. We will return the results contained in the cache.
-                    instanceList = cachedinstanceList;
+                    instanceList = cachedinstanceList.Where(inst => !m_usgsDataFetcher.Blacklist.Any(id => id == inst.InstanceId)).ToList();
                     }
                 else
                     {
@@ -1723,7 +1738,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             else
                 {
-                throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
+                throw new NotImplementedException("The download of the thumbnail not in http or ftp is not implemented yet.");
                 }
             }
 

@@ -283,6 +283,11 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
         return NULL;
         }
 
+    // Streamed.
+    bool isStreamed;
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pDataSource->SetStreamed(isStreamed);
+
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
@@ -303,9 +308,30 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
 
+    // Server login key.
+    Utf8String serverLoginKey;
+    pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
+    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+
+    // Server login method.
+    Utf8String serverLoginMethod;
+    pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
+    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+
+    // Server registration page.
+    Utf8String serverRegPage;
+    pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
+    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+
+    // Server organisation page.
+    Utf8String serverOrgPage;
+    pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
+    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
+
     // Size.
     uint64_t size;
-    pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
+    if (BeXmlStatus::BEXML_Success != pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize))
+        pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
     pDataSource->SetSize(size);
 
     // Metadata.
@@ -377,6 +403,11 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
         return NULL;
         }
 
+    // Streamed.
+    bool isStreamed;
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pDataSource->SetStreamed(isStreamed);
+
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
@@ -396,6 +427,26 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     Utf8String provider;
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
+
+    // Server login key.
+    Utf8String serverLoginKey;
+    pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
+    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+
+    // Server login method.
+    Utf8String serverLoginMethod;
+    pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
+    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+
+    // Server registration page.
+    Utf8String serverRegPage;
+    pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
+    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+
+    // Server organisation page.
+    Utf8String serverOrgPage;
+    pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
+    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
 
     // Size.
     uint64_t size;
@@ -555,122 +606,7 @@ RealityPackageStatus RealityDataSerializer::_WriteTerrainGroup(BeXmlNodeR node, 
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
     {
-    // Required fields.
-    UriCR uri = source.GetUri();
-    Utf8String type = source.GetType();
-    if (uri.ToString().empty() || type.empty())
-        return RealityPackageStatus::MissingSourceAttribute;
-
-    BeXmlNodeP pSourceNode = node.AddEmptyElement(source.GetElementName());
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, uri.ToString().c_str());
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
-
-    // Optional fields.
-    if (!source.GetCopyright().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
-
-    if (!source.GetTermOfUse().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
-
-    if (!source.GetId().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
-
-    if (!source.GetProvider().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
-
-    if (0 != source.GetSize())
-        pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
-
-    if (!source.GetMetadata().empty())
-        {
-        BeXmlNodeP pMetadataNode = pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
-        pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataType().c_str());
-        }
-
-    if (!source.GetGeoCS().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
-
-    if (!source.GetNoDataValue().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
-
-    if (!source.GetSisterFiles().empty())
-        {
-        BeXmlNodeP pSisterFilesNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_SisterFiles);
-
-        bvector<UriPtr> sisterFiles = source.GetSisterFiles();
-        for (UriPtr const& uri : sisterFiles)
-            {
-            pSisterFilesNode->AddElementStringValue(PACKAGE_ELEMENT_File, uri->ToString().c_str());
-            }
-        }
-
-    // Write specific source data.
-    Utf8String sourceType = source.GetElementName();
-    if (PACKAGE_ELEMENT_WmsSource == sourceType)
-        {
-        // Wms source.
-        WmsDataSourceCP pWmsSource = dynamic_cast<WmsDataSourceCP>(&source);
-
-        if (!pWmsSource->GetMapSettings().empty())
-            {
-            // Create XmlDom from string.
-            BeXmlStatus xmlStatus = BEXML_Success;
-            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pWmsSource->GetMapSettings().c_str());
-            if (BEXML_Success != xmlStatus)
-                return RealityPackageStatus::XmlReadError;
-
-            // Add node.
-            pSourceNode->ImportNode(pXmlDom->GetRootElement());
-            }        
-        } 
-    else if (PACKAGE_ELEMENT_OsmSource == sourceType)
-        {
-        // Osm source.
-        OsmDataSourceCP pOsmSource = dynamic_cast<OsmDataSourceCP>(&source);
-
-        if (!pOsmSource->GetOsmResource().empty())
-            {
-            // Create XmlDom from string.
-            BeXmlStatus xmlStatus = BEXML_Success;
-            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pOsmSource->GetOsmResource().c_str());
-            if (BEXML_Success != xmlStatus)
-                return RealityPackageStatus::XmlReadError;
-
-            // Add node.
-            pSourceNode->ImportNode(pXmlDom->GetRootElement());
-            }        
-        }
-    else if (PACKAGE_ELEMENT_MultiBandSource == sourceType)
-        {
-        // MultiBand source.
-        MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
-
-        if (pMultiBandSource->GetRedBand() != NULL)
-            {
-            BeXmlNodeP pRedBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_RedBand);
-            WriteSource(*pRedBandNode, *pMultiBandSource->GetRedBand());
-            }
-
-        if (pMultiBandSource->GetGreenBand() != NULL)
-            {
-            BeXmlNodeP pGreenBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_GreenBand);
-            WriteSource(*pGreenBandNode, *pMultiBandSource->GetGreenBand());
-            }
-
-        if (pMultiBandSource->GetBlueBand() != NULL)
-            {
-            BeXmlNodeP pBlueBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_BlueBand);
-            WriteSource(*pBlueBandNode, *pMultiBandSource->GetBlueBand());
-            }
-
-        if (pMultiBandSource->GetPanchromaticBand() != NULL)
-            {
-            BeXmlNodeP pPanchromaticBandNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_PanchromaticBand);
-            WriteSource(*pPanchromaticBandNode, *pMultiBandSource->GetPanchromaticBand());
-            }
-        }
-
-    return RealityPackageStatus::Success;
+    return RealityPackageStatus::UnknownError;
     }
 
 //=======================================================================================

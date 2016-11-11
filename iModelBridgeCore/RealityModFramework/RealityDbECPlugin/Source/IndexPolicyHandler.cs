@@ -24,7 +24,9 @@ namespace IndexECPlugin.Source
             builder//.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsMaxResults)
                 //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsResultRangeOffset)
                 //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SortableQueries)
-                   .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.StreamBackable, ApplyStreambackableAssertion);
+            .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.StreamBackable, ApplyStreambackableAssertion)
+            .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.Insertable, ApplyInsertableAssertion)
+            .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.Updateable, ApplyUpdateableAssertion);
 
             }
 
@@ -45,6 +47,26 @@ namespace IndexECPlugin.Source
                 policy.StreamBackable = new FileBackedPolicyAssertion(true);
                 }
 
+            if ( context.ECClass.Name == "DownloadReport" )
+                {
+                policy.StreamBackable = new FileBackedPolicyAssertion(true);
+                }
+            }
+
+        private static void ApplyInsertableAssertion (DefaultPolicyModule sender, PersistenceServicePolicy policy, ECPolicyContext context)
+            {
+            if ( context.ECClass.Name == "PackageRequest" )
+                {
+                policy.Insertable = new InsertablePolicyAssertion(true);
+                }
+            }
+
+        private static void ApplyUpdateableAssertion (DefaultPolicyModule sender, PersistenceServicePolicy policy, ECPolicyContext context)
+            {
+            if ( context.ECClass.Name == "DownloadReport" )
+                {
+                policy.Updateable = new UpdateablePolicyAssertion(true);
+                }
             }
         }
     }
