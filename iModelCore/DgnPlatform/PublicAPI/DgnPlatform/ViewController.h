@@ -565,8 +565,10 @@ public:
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
+        DgnElementId m_abortedElement;
         NonSceneQuery m_rangeQuery;
         SpatialViewControllerR m_view;
+        DgnElementId GetNextId();
         explicit ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };

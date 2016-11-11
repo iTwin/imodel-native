@@ -548,8 +548,8 @@ public:
     //! This is just a convenience method that calls the follow methods, in order:
     //!     -# _CloneForImport
     //!     -# Insert
-    //!     -# _CopyContentsFrom
-    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //!     -# _ImportContentsFrom
+    //! @param[out] stat  Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param[in] sourceModel The model to copy
     //! @param[in] importer Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @param[in] destinationElementToModel after import, the copy of the sourceModel will model this element

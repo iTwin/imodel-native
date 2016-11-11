@@ -577,18 +577,17 @@ public:
     //! Property filter to be use when comparing elements
     struct ComparePropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None      = 0, 
             WriteOnly = 0x02,  //! Ignore properties such as LastMod
             ElementId = 0x10,  //! Ignore ElementIds
-            };
+        };
 
         Ignore m_ignore;
         bset<Utf8String> m_ignoreList;
 
-        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreList(list) {}
-
+        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) : m_ignore(ignore), m_ignoreList(list) {}
         ComparePropertyFilter(bset<Utf8String> const& list) : m_ignore(Ignore::None), m_ignoreList(list) {}
 
         virtual bool _ExcludeElementId() const {return 0 != (Ignore::ElementId & m_ignore);}
@@ -598,25 +597,22 @@ public:
     //! Property filter to be used when setting properties
     struct SetPropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None          = 0, 
             Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
             WriteOnly     = 0x02,  //! Don't set properties such as LastMod
             Null          = 0x08,  //! Don't set the property if the supplied value is null
             ElementId     = 0x10,  //! Don't set ElementId
             WriteOnlyNullBootstrapping = WriteOnly|Null|Bootstrapping|ElementId,
-            };
+        };
 
         Ignore m_ignore;
         bool m_ignoreErrors;
         bset<Utf8String> m_ignoreList;
 
-        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, 
-                       bset<Utf8String> const& ignoreProps = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
-
-        SetPropertyFilter(bset<Utf8String> const& ignore) 
-            : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
+        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, bset<Utf8String> const& ignoreProps = bset<Utf8String>()) : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
+        SetPropertyFilter(bset<Utf8String> const& ignore)  : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
 
         DGNPLATFORM_EXPORT static bool IsBootStrappingProperty(Utf8StringCR);
 
