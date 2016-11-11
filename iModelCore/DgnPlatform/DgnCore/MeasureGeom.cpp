@@ -755,7 +755,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
         {
         // Output edge geometry as CurveVector...
         GraphicBuilder builder(graphic);
-        WireframeGeomUtil::Draw(builder, entity, graphic.GetViewContext(), true, false);
+        WireframeGeomUtil::Draw(builder, entity, &graphic.GetViewContext(), true, false);
 
         return true;
         }

@@ -450,7 +450,11 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
     m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
     {
     if (nullptr != geometryParams)
+        {
+        m_categoryId = geometryParams->GetCategoryId();
+        m_subCategoryId = geometryParams->GetSubCategoryId();
         m_materialId = geometryParams->GetMaterialId();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -460,6 +464,8 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
+    COMPARE_VALUES (m_categoryId.GetValueUnchecked(), rhs.m_categoryId.GetValueUnchecked());
+    COMPARE_VALUES (m_subCategoryId.GetValueUnchecked(), rhs.m_subCategoryId.GetValueUnchecked());
 
     // No need to compare textures -- if materials match then textures must too.
     return false;
@@ -1105,29 +1111,39 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
     if (facetOptions.GetChordTolerance() < minChordTolerance)
         pFacetOptions->SetChordTolerance (minChordTolerance);
 
-    pFacetOptions->SetParamsRequired (true);        // Can't rely on HasTexture due to face attached material that may have texture.
+    pFacetOptions->SetParamsRequired (true); // Can't rely on HasTexture due to face attached material that may have texture.
 
     TileGeometry::T_TilePolyfaces   tilePolyfaces;
 
     if (nullptr != m_entity->GetFaceMaterialAttachments())
         {
-        bvector<PolyfaceHeaderPtr>      polyfaces;
-        bvector<GeometryParams>         params;
+        bvector<PolyfaceHeaderPtr>  polyfaces;
+        bvector<FaceAttachment>     params;
 
-        BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions);
+        if (!BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions))
+            return TileGeometry::T_TilePolyfaces();;
+
+        GeometryParams baseParams;
+
+        // Require valid category/subcategory for sub-category appearance color/material...
+        baseParams.SetCategoryId(GetDisplayParams()->GetCategoryId());
+        baseParams.SetSubCategoryId(GetDisplayParams()->GetSubCategoryId());
 
         for (size_t i=0; i<polyfaces.size(); i++)
             {
-            auto&                       polyface = polyfaces[i];
+            auto&   polyface = polyfaces[i];
 
             if (polyface->HasFacets())
                 {
-                TileDisplayParamsPtr        displayParams = TileDisplayParams::Create (GetDisplayParams()->GetFillColor(), params[i]);
+                GeometryParams faceParams;
+
+                params[i].ToGeometryParams(faceParams, baseParams);
+
+                TileDisplayParamsPtr displayParams = TileDisplayParams::Create (GetDisplayParams()->GetFillColor(), faceParams);
 
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, polyface));
                 }
             }
-
         }
     else
         {
@@ -1137,6 +1153,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
             tilePolyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
 
         }
+
     if (!GetTransform().IsIdentity())
         for (auto& tilePolyface : tilePolyfaces)
             tilePolyface.m_polyface->Transform (GetTransform());

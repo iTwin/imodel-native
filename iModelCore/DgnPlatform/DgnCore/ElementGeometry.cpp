@@ -1063,16 +1063,18 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
         for (FaceAttachment attachment : faceAttachmentsVec)
             {
-            // NOTE: First entry is base symbology, it's redundant with GeometryStream, storing it makes implementing Get easier/cleaner...
             FB::DPoint2d    uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
-            GeometryParams  faceParams;
+            GeometryParams  faceParams, baseParamsIgnored;
 
-            attachment.ToGeometryParams(faceParams);
+            attachment.ToGeometryParams(faceParams, baseParamsIgnored);
 
-            FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
-                                       faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
-                                       faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterialId().GetValueUnchecked(),
-                                       faceParams.GetTransparency(), uv);
+            bool useColor = !faceParams.IsLineColorFromSubCategoryAppearance();
+            bool useMaterial = !faceParams.IsMaterialFromSubCategoryAppearance();
+
+            FB::FaceSymbology  fbSymb(useColor, useMaterial,
+                                      useColor ? faceParams.GetLineColor().GetValue() : 0,
+                                      useMaterial ? faceParams.GetMaterialId().GetValueUnchecked() : 0,
+                                      useColor ? faceParams.GetTransparency() : 0, uv);
 
             fbSymbVec.push_back(fbSymb);
             }
@@ -1148,7 +1150,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
             if (nullptr != attachments)
                 {
                 bvector<PolyfaceHeaderPtr> polyfaces;
-                bvector<GeometryParams> params;
+                bvector<FaceAttachment> params;
 
                 BRepUtil::FacetEntity(entity, polyfaces, params, *facetOpt);
 
@@ -1157,7 +1159,10 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
                     if (0 == polyfaces[i]->GetPointCount())
                         continue;
 
-                    Append(params[i], true);
+                    GeometryParams  faceParams, baseParamsIgnored;
+
+                    params[i].ToGeometryParams(faceParams, baseParamsIgnored);
+                    Append(faceParams, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
                     Append(*polyfaces[i], OpCode::BRepPolyface);
                     }
                 }
@@ -1656,16 +1661,19 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
     for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
         {
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
-
         GeometryParams faceParams;
 
         if (fbSymb->useColor())
+            {
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
+            faceParams.SetTransparency(fbSymb->transparency());
+            }
 
         if (fbSymb->useMaterial())
+            {
             faceParams.SetMaterialId(DgnMaterialId((uint64_t)fbSymb->materialId()));
-
-        faceParams.SetTransparency(fbSymb->transparency());
+            // NEEDSWORK_WIP_MATERIAL...uv???
+            }
 
         if (nullptr == entity->GetFaceMaterialAttachments())
             entity->InitFaceMaterialAttachments(&faceParams);
@@ -3456,6 +3464,17 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     {
                     if (!reader.Get(egOp, entityPtr))
                         break;
+
+                    // Resolve/Cook face attachments...need to do this even when output isn't QVis because it's going to be cached...
+                    IFaceMaterialAttachmentsCP attachments = entityPtr->GetFaceMaterialAttachments();
+
+                    if (nullptr != attachments)
+                        {
+                        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+                        for (FaceAttachment const& attachment : faceAttachmentsVec)
+                            attachment.CookFaceAttachment(context, geomParams);
+                        }
 
                     DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
                     }
