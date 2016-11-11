@@ -1,0 +1,17 @@
+ContextServices Plugin on Connect 	2016.11.07.2   
+
+Lock Web pages		https://inside.bentley.com/bsw/operations/PRG/Lists/DoNotDeleteService/Grouped.aspx
+Build description	http://builddescriptions.bentley.com/
+
+http://builddescriptions.bentley.com/Default?display&Product=RealityContextServices&Version=10.1.2.23
+     
+Version locked	https://inside.bentley.com/bsw/operations/PRG/Lists/DoNotDeleteService/Grouped.aspx
+Version locked with this comment: Used by the release of ContextServices (2016.11.07.2)
+	\builds.bentley.com\prgbuilds\lkgoutput\contextservicesx64\10-1-2-23	
+	\builds.bentley.com\prgbuilds\lkgoutput\ecframework\9-5-2-58	
+	\builds.bentley.com\prgbuilds\lkgoutput\loggingsdk\9-5-2-57	
+	\builds.bentley.com\prgbuilds\lkgoutput\bentleygeometrynet\2-5-2-55	
+	\builds.bentley.com\prgbuilds\lkgoutput\platformtech\9-5-2-58	
+	\builds.bentley.com\prgbuilds\lkgoutput\bentleylib\5-5-2-41	
+	\builds.bentley.com\prgbuilds\lkgoutput\DgnClientSdk\2-0-1-9	
+
