@@ -35,6 +35,7 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
             :m_table(nullptr), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipHorizontalPropertyMaps)
             {}
         ~GetColumnsPropertyMapVisitor() {}
+
         void Reset() { m_columns.clear(); }
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
         bool AllResultingColumnsAreVirtual() const

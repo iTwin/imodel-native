@@ -378,7 +378,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
     if (!alias.empty())
         {
         m_nativeSqlSnippets = snippets;
-        if (m_nativeSqlSnippets.size() == 1LL)
+        if (m_nativeSqlSnippets.size() == 1)
             {
             m_nativeSqlSnippets.front().Reset();
             m_nativeSqlSnippets.front().AppendEscaped(alias.c_str());

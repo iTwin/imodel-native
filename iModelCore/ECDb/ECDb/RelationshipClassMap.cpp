@@ -162,7 +162,7 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
 bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
     {
     ConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (referencedEndClassIdPropertyMap->GetDataPropertyMaps().size() != 1LL)
+    if (referencedEndClassIdPropertyMap->GetDataPropertyMaps().size() != 1)
         {
         BeAssert(false && "Expecting exactly one property map");
         return false;
@@ -300,7 +300,7 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
         }
 
-    if (GetPropertyMapsR().Insert(ecInstanceIdPropMap, 0LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecInstanceIdPropMap, 0) != SUCCESS)
         return MappingStatus::Error;
 
     RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns.m_relECClassIdColumnsPerFkTable);
@@ -310,7 +310,7 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
         }
 
-    if (GetPropertyMapsR().Insert(ecClassIdPropMap, 1LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecClassIdPropMap, 1) != SUCCESS)
         return MappingStatus::Error;
 
     //ForeignEnd ECInstanceId PropMap

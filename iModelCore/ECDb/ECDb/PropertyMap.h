@@ -29,13 +29,14 @@ enum class VisitorFeedback
 //+===============+===============+===============+===============+===============+======
 struct IPropertyMapVisitor
     {
-
     private:
         virtual VisitorFeedback _Visit(SingleColumnDataPropertyMap const& propertyMap) const { return VisitorFeedback::Next; }
         virtual VisitorFeedback _Visit(CompoundDataPropertyMap const& propertyMap) const { return VisitorFeedback::Next; }
         virtual VisitorFeedback _Visit(SystemPropertyMap const& propertyMap) const { return VisitorFeedback::Next; }
 
     public:
+        ~IPropertyMapVisitor() {}
+
         VisitorFeedback Visit(SingleColumnDataPropertyMap const& propertyMap) const { return _Visit(propertyMap); }
         VisitorFeedback Visit(CompoundDataPropertyMap const& propertyMap) const { return _Visit(propertyMap); }
         VisitorFeedback Visit(SystemPropertyMap const& propertyMap) const { return _Visit(propertyMap); }
@@ -66,7 +67,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         bool m_readonly;
 
     private:
-        virtual VisitorFeedback _AcceptVisitor(IPropertyMapVisitor const&)  const override;
+        virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
         PropertyMapContainer(ClassMap const& classMap)
@@ -87,7 +88,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
 // @bsiclass                                                   Affan.Khan          07/16
 // Abstract baseclass of all property map.
 //+===============+===============+===============+===============+===============+======
-struct PropertyMap : RefCountedBase, NonCopyableClass, ISupportsPropertyMapVisitor
+struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableClass
     {
     struct Path
         {

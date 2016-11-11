@@ -588,7 +588,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return ERROR;
         }
 
-    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0) != SUCCESS)
         return ERROR;
 
     mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
@@ -603,7 +603,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return ERROR;
         }
 
-    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1) != SUCCESS)
         return ERROR;
 
     return LoadPropertyMaps(ctx, dbLoadCtx);
@@ -827,10 +827,10 @@ MappingStatus ClassMap::MapSystemColumns()
         return MappingStatus::Error;
         }
 
-    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0) != SUCCESS)
         return MappingStatus::Error;
 
-    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1LL) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1) != SUCCESS)
         return MappingStatus::Error;
 
     return MappingStatus::Success;
