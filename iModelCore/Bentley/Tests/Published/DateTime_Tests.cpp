@@ -1090,3 +1090,87 @@ TEST (DateTimeTestsWhenCETIsSystemTimezone, ConversionTestsDSTCET)
 #endif
 
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, JulianDayToCommonEraTicks)
+    {
+
+    ///1487311632000000000
+    uint64_t expec_ticks = 636121728000000000;
+    uint64_t ticks = DateTime::JulianDayToCommonEraTicks(2123433360000000000); //julian day in hns for date 1026/16/10
+    EXPECT_EQ(expec_ticks, ticks);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, CommonEraTicksToJulianDay)
+    {
+    uint64_t expec_jday = 2123433360000000000;
+    uint64_t jday = DateTime::CommonEraTicksToJulianDay(636121728000000000); //common era ticks in hns for date 1026/16/10
+    EXPECT_EQ(expec_jday, jday);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, CompareDates)
+    {
+    ///Date Only
+    DateTime date1 (2014, 02, 13);
+    DateTime date2 (2014, 04, 13);
+
+    ASSERT_TRUE(date1.IsValid());
+    ASSERT_TRUE(date2.IsValid());
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date1, date2));
+    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date2, date1));
+    date1 = date2;
+    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date2, date1));
+    //EXPECT_EQ((int)DateTime::CompareResult::Error, (int)DateTime::Compare(date1, DateTime(DateTime::Kind::Utc, 2014, 13, 5, 13, 11, 22, 4400000)));
+
+    ///Date and Date Time Objects
+    DateTime date3(DateTime::Kind::Utc, 2014, 13, 13, 22, 3, 12, 8888000);
+    DateTime date4(2014, 04, 13);
+
+    ASSERT_TRUE(date3.IsValid());
+    ASSERT_TRUE(date4.IsValid());
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date3, date4));
+    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date4, date3));
+    date3 = date4;
+    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date4, date3));
+
+    ///DateTime Utc Objects
+    DateTime date5(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 8888000);
+    DateTime date6(DateTime::Kind::Utc, 2015, 10, 13, 22, 3, 12, 8888001);
+
+    ASSERT_TRUE(date5.IsValid());
+    ASSERT_TRUE(date6.IsValid());
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date5, date6));
+    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date6, date5));
+    date5 = date6;
+    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date6, date5));
+
+    ///DateTime Local Objects
+    DateTime date7(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888000);
+    DateTime date8(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888012);
+
+    ASSERT_TRUE(date7.IsValid());
+    ASSERT_TRUE(date8.IsValid());
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date7, date8));
+    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date8, date7));
+    date7 = date8;
+    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date8, date7));
+
+    ///DateTime Unspecified Objects
+    DateTime date9(DateTime::Kind::Unspecified, 2014, 01, 13, 22, 3, 12, 888000);
+    DateTime date10(DateTime::Kind::Unspecified, 2014, 02, 13, 22, 3, 12, 888000);
+
+    ASSERT_TRUE(date5.IsValid());
+    ASSERT_TRUE(date6.IsValid());
+    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date9, date10));
+    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date10, date9));
+    date9 = date10;
+    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date10, date9));
+    }
