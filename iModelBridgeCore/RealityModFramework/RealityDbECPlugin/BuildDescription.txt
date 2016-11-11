@@ -1,3 +1,22 @@
+General Info
+
+  Source on TFS
+	Tests: 	$/beconnect/Main/Source/Tests/Automated/ContextServices
+	Plugin:	$/beconnect/Main/Source/Services/ContextServices
+	DB:	$/beconnect/Main/Source/Services/ContextServicesDB
+	
+  Building project to push on Octopus Dev
+	http://tfs.bentley.com:8080/tfs/BentleyConnect/beconnect/_build
+		ContextServicesTests
+		CXECP, CXECP_DB
+
+  Running Tests "Core Test Execution PLatfrom"
+	http://vilniusctep.bentley.com/
+		Bentley Connect / Context Services
+
+-------------------
+Releases
+-----------------------------------------------------------------------------------------------------------
 ContextServices Plugin on Connect 	2016.11.07.2   
 
 Lock Web pages		https://inside.bentley.com/bsw/operations/PRG/Lists/DoNotDeleteService/Grouped.aspx
@@ -15,3 +34,4 @@ Version locked with this comment: Used by the release of ContextServices (2016.1
 	\builds.bentley.com\prgbuilds\lkgoutput\bentleylib\5-5-2-41	
 	\builds.bentley.com\prgbuilds\lkgoutput\DgnClientSdk\2-0-1-9	
 
+-----------------------------------------------------------------------------------------------------------
