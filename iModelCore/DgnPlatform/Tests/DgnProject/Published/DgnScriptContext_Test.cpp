@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 static DgnCategoryId getFirstCategory(DgnDbR db)
     {
-    return *DgnCategory::QueryCategories(db).begin();
+    return (*DgnCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -435,9 +435,9 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
         //ASSERT_STREQ("", retVal.c_str());
         ASSERT_NE(0, ids.size());
-        auto categories = DgnCategory::QueryCategories(*m_db);
-        ASSERT_EQ(categories.size(), ids.size());
-        ASSERT_TRUE(categories.begin()->GetValue() == ids.begin()->GetValue());
+        ElementIterator iterator = DgnCategory::MakeIterator(*m_db);
+        ASSERT_EQ(iterator.BuildIdSet<DgnCategoryId>().size(), ids.size());
+        ASSERT_EQ((*iterator.begin()).GetElementId().GetValue(), ids.begin()->GetValue());
         }
     }
 

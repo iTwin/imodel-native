@@ -990,7 +990,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectIdSet(DgnCategory::QueryCategories(*db->m_db));
+        return new JsDgnObjectIdSet(DgnCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
         }
 
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
