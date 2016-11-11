@@ -591,10 +591,7 @@ StatusInt ViewContext::_ScanDgnModel(GeometricModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_VisitDgnModel(GeometricModelR model)
     {
-    if (CheckStop())
-        return ERROR;
-
-    return _ScanDgnModel(model);
+    return CheckStop() ? ERROR : _ScanDgnModel(model);
     }
 
 /*---------------------------------------------------------------------------------**//**

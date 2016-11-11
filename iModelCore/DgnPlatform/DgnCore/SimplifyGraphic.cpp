@@ -47,7 +47,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom,
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
     return processor.GetCurveVector();
     }
@@ -60,7 +60,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
     return processor.GetCurveVector();
     }
@@ -73,7 +73,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, IBRepEntityCR geom, Vie
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
     return processor.GetCurveVector();
     }
@@ -1269,7 +1269,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     if (nullptr != entity.GetFaceMaterialAttachments())
         {
         bvector<PolyfaceHeaderPtr> polyfaces;
-        bvector<Render::GeometryParams> params;
+        bvector<FaceAttachment> params;
 
         if (BRepUtil::FacetEntity(entity, polyfaces, params, *m_facetOptions))
             {
@@ -1279,7 +1279,10 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
                     continue;
 
                 GraphicBuilder builder(*this);
-                m_context.CookGeometryParams(params[i], builder);
+                GeometryParams faceParams;
+
+                params[i].ToGeometryParams(faceParams, m_currGeometryParams);
+                m_context.CookGeometryParams(faceParams, builder);
 
                 SimplifyPolyfaceClipper     polyfaceClipper;
                 bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
