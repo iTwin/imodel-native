@@ -8,7 +8,7 @@
 
 
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/WMSCapabilities.h>
+#include <RealityAdmin/WMSCapabilities.h>
 
 USING_NAMESPACE_BENTLEY_WMSPARSER
 

@@ -10,10 +10,10 @@
 #include <BeXml/BeXml.h>
 #include <regex>
 
-#include "HttpTraversalEngine.h"
+#include <RealityAdmin/HttpTraversalEngine.h>
 #include <RealityPlatform/RealityDataDownload.h>
-#include "RealityDataHandler.h"
-#include "RealityPlatformUtil.h"
+#include <RealityAdmin/RealityDataHandler.h>
+#include <RealityAdmin/RealityPlatformUtil.h>
 
 #define THUMBNAIL_WIDTH     512
 #define THUMBNAIL_HEIGHT    512

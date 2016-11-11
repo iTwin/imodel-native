@@ -10,7 +10,7 @@
 
 #include <atlimage.h>
 
-#include "RealityDataHandler.h"
+#include <RealityAdmin/RealityDataHandler.h>
 
 #ifndef BENTLEY_WINRT
 #include <curl/curl.h>

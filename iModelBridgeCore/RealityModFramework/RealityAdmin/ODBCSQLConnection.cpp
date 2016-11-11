@@ -17,7 +17,7 @@
 
 #include <iostream>
 #include <vector>
-#include "ODBCSQLConnection.h"
+#include <RealityAdmin/ODBCSQLConnection.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

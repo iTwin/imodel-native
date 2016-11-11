@@ -12,8 +12,8 @@
 #include <ImagePP/all/h/HRFPageFileFactory.h>
 #include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
 
-#include "RealityDataHandler.h"
-#include "RealityPlatformUtil.h"
+#include <RealityAdmin/RealityDataHandler.h>
+#include <RealityAdmin/RealityPlatformUtil.h>
 
 #define THUMBNAIL_WIDTH     256
 #define THUMBNAIL_HEIGHT    256

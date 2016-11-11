@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-#include "RealityDataHandler.h"
+#include <RealityAdmin/RealityDataHandler.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

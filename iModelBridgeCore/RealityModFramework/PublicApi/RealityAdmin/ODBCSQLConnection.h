@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/ODBCSQLConnection.h $
+|     $Source: PublicApi/RealityAdmin/ODBCSQLConnection.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
