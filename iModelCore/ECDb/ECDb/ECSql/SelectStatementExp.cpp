@@ -141,21 +141,21 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     RangeClassRefList classExpList;
     FindRangeClassRefs(classExpList);
 
-    //RangeClassRefExp const* classExpComparand = nullptr;
-    //for (RangeClassRefExp const* classExp : classExpList)
-    //    {
-    //    if (classExpComparand == nullptr)
-    //        {
-    //        classExpComparand = classExp;
-    //        continue;
-    //        }
+    RangeClassRefExp const* classExpComparand = nullptr;
+    for (RangeClassRefExp const* classExp : classExpList)
+        {
+        if (classExpComparand == nullptr)
+            {
+            classExpComparand = classExp;
+            continue;
+            }
 
-    //    if (classExp->GetId().EqualsI(classExpComparand->GetId()))
-    //        {
-    //        ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
-    //        return FinalizeParseStatus::Error;
-    //        }
-    //    }
+        if (classExp->GetId().EqualsI(classExpComparand->GetId()))
+            {
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
+        }
 
     return FinalizeParseStatus::Completed;
     }
@@ -237,16 +237,16 @@ std::unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
     {
     std::unique_ptr<RangeClassRefList> rangeClassRefs(new RangeClassRefList());
     FindRangeClassRefs(*rangeClassRefs);
-    SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
-    while (cur != nullptr)
-        {        
-        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
-        if (cur != nullptr)
-            {
-            if (cur->GetFrom() != this)
-                cur->GetFrom()->FindRangeClassRefs(*rangeClassRefs);
-            }
-        }
+    //SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
+    //while (cur != nullptr)
+    //    {        
+    //    cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
+    //    if (cur != nullptr)
+    //        {
+    //        if (cur->GetFrom() != this)
+    //            cur->GetFrom()->FindRangeClassRefs(*rangeClassRefs);
+    //        }
+    //    }
 
     return rangeClassRefs;
     }
