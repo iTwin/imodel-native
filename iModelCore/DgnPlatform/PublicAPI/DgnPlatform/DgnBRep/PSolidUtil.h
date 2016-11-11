@@ -230,6 +230,8 @@ DGNPLATFORM_EXPORT static BentleyStatus GetEntityRange(DRange3dR range, PK_TOPOL
 
 DGNPLATFORM_EXPORT static IFaceMaterialAttachmentsPtr CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams);
 DGNPLATFORM_EXPORT static void SetFaceAttachments(IBRepEntityR, IFaceMaterialAttachmentsP);
+DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag);
+DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag);
 
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR entity, IFacetOptionsR);
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions);

@@ -229,10 +229,9 @@ struct ElementIteratorEntry : ECSqlStatementEntry
     friend struct ECSqlStatementIterator<ElementIteratorEntry>;
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
-
 public:
     DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
-    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
     DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
     DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
@@ -248,11 +247,25 @@ public:
 //=======================================================================================
 struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
 {
-    //! Builds a DgnElementIdSet by iterating all entries
-    DGNPLATFORM_EXPORT DgnElementIdSet BuildElementIdSet();
+    //! Iterates all entries to build an unordered IdSet templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> BeSQLite::IdSet<T_ElementId> BuildIdSet()
+        {
+        BeSQLite::IdSet<T_ElementId> idSet;
+        for (ElementIteratorEntry entry : *this)
+            idSet.insert(entry.GetId<T_ElementId>());
 
-    //! Builds a bvector of DgnElementId by iterating all entries
-    DGNPLATFORM_EXPORT bvector<DgnElementId> BuildElementIdList();
+        return idSet;
+        }
+
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass DgnElementId
+    template <class T_ElementId> bvector<T_ElementId> BuildIdList()
+        {
+        bvector<T_ElementId> idList;
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+
+        return idList;
+        }
 };
 
 //=======================================================================================

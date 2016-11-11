@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-#include <DgnPlatform/DgnBRep/OCBRep.h>
-#elif defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
@@ -697,51 +695,6 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double& iYZ, double inertia[3][3])
-    {
-    /* Moment conventions - EDL Dec. 17, 2002
-
-        - Solid kernel returns moments relative to centroid. These are returned directly from the arguments of mass properties api.
-
-        - The returned 3x3 matrix is a proper tensor --
-
-            If II is the (global) for coordinate system whose axes are columns of Q, the local tensor in the rotated system is Q * II * Q^T
-
-        - The formulaic matrix with these properties is structured thus:
-
-            [yy+zz  -xy   -xz ]
-            [ -xy  xx+zz  -yz ]
-            [ -xz   -yz  xx+yy] (Note the negatives!!!)
-
-        - Convention elsewhere in Microstation is for the 3x3 matrix to have positive formulas in the off-diagonal products, thus
-
-            [yy+zz   xy    xz ]
-            [  xy  xx+zz   yz ]
-            [  xz    yz  xx+yy]
-
-        THEREFORE the inertia tensor must have off-diagonals negated here.
-    */
-
-    // Turn the offdiagonals into PRODUCTS instead of MOMENTS
-    inertia[0][1] *= -1.0;
-    inertia[0][2] *= -1.0;
-    inertia[1][0] *= -1.0;
-    inertia[1][2] *= -1.0;
-    inertia[2][0] *= -1.0;
-    inertia[2][1] *= -1.0;
-
-    iXY = inertia[0][1];
-    iXZ = inertia[0][2];
-    iYZ = inertia[1][2];
-
-    moments.x = inertia[0][0];
-    moments.y = inertia[1][1];
-    moments.z = inertia[2][2];
-    }
 #endif
     
 /*---------------------------------------------------------------------------------**//**
@@ -785,32 +738,6 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
         }
 
     return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
-
-    if (nullptr == shapeLocal)
-        return true;
-
-    Transform outputTransform;
-    
-    GetOutputTransform(outputTransform, graphic);
-
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
-
-    GProp_GProps lProps;
-
-    BRepGProp::LinearProperties(shape, lProps);
-
-    double      amount = lProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(lProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(lProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
-
-    return true;
 #else
     return true;
 #endif
@@ -851,38 +778,6 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
         }
 
     return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
-
-    if (nullptr == shapeLocal)
-        return true;
-
-    Transform outputTransform;
-    
-    GetOutputTransform(outputTransform, graphic);
-
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
-
-    GProp_GProps lProps;
-
-    BRepGProp::LinearProperties(shape, lProps);
-
-    double      periphery = lProps.Mass();
-
-    GProp_GProps sProps;
-
-    BRepGProp::SurfaceProperties(shape, sProps);
-
-    double      amount = sProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(sProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(sProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
-
-    return true;
 #else
     return true;
 #endif
@@ -916,38 +811,6 @@ bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGr
         getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
         AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
         }
-
-    return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
-
-    if (nullptr == shapeLocal)
-        return true;
-
-    Transform outputTransform;
-    
-    GetOutputTransform(outputTransform, graphic);
-
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
-
-    GProp_GProps sProps;
-
-    BRepGProp::SurfaceProperties(shape, sProps);
-
-    double      periphery = sProps.Mass();
-
-    GProp_GProps vProps;
-
-    BRepGProp::VolumeProperties(shape, vProps);
-
-    double      amount = vProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(vProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(vProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
 
     return true;
 #else
@@ -1040,42 +903,6 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
 
                 return true;
                 }
-
-            return DoAccumulateAreas (entity, graphic);
-            }
-        }
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
-    switch (m_opType)
-        {
-        case AccumulateLengths:
-            {
-            if (IBRepEntity::EntityType::Solid == entity.GetEntityType ())
-                {
-                return true; // Not valid type for operation...
-                }
-            else if (IBRepEntity::EntityType::Sheet == entity.GetEntityType ())
-                {
-                TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-
-                if (nullptr == shape || OCBRep::HasCurvedFaceOrEdge(*shape))
-                    return true; // Not valid type for operation...
-                }
-
-            return DoAccumulateLengths (entity, graphic);
-            }
-
-        case AccumulateVolumes:
-            {
-            if (IBRepEntity::EntityType::Solid != entity.GetEntityType ())
-                return true; // Not valid type for operation...
-
-            return DoAccumulateVolumes (entity, graphic);
-            }
-
-        default:
-            {
-            if (IBRepEntity::EntityType::Wire == entity.GetEntityType ())
-                return true; // Not valid type for operation...
 
             return DoAccumulateAreas (entity, graphic);
             }
