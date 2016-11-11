@@ -1820,9 +1820,9 @@ public:
      * @return A pointer to the element, or nullptr if the is not in the pool.
      * @note This method will return null if the element is not currently loaded. That does not mean the element doesn't exist in the database.
      */
-    DgnElement^     FindElement (DgnElementId^ elementId)
+    DgnElement^     FindLoadedElement (DgnElementId^ elementId)
         {
-        BDGN::DgnElementCP nativeElement = m_native->FindElement (BDGN::DgnElementId (elementId->Value));
+        BDGN::DgnElementCP nativeElement = m_native->FindLoadedElement (BDGN::DgnElementId (elementId->Value));
         return Convert::DgnElementToManaged (const_cast <BDGN::DgnElementP>(nativeElement));
         }
 
