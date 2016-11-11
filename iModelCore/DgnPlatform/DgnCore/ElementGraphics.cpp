@@ -880,6 +880,8 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
     if (PK_ENTITY_null == entityTag)
         return;
 
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
+
     if (includeEdges)
         {
         int         nEdges = 0;
@@ -889,17 +891,43 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
 
         for (int iEdge = 0; iEdge < nEdges; ++iEdge)
             {
+            if (stopTester && stopTester->_CheckStop())
+                return;
+
+            bool isHiddenEntity = false;
+
+            if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTags[iEdge]) && isHiddenEntity)
+                continue;
+
             ICurvePrimitivePtr curve;
 
             if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTags[iEdge]))
                 break;
 
-            // NEEDSWORK: Get correct symbology from face attachments...
+            PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTags[iEdge]) : PK_ENTITY_null);
+
+            if (PK_ENTITY_null != faceTag)
+                {
+                T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+                T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+                T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
+
+                if (found == faceToSubElemIdMap.end())
+                    {
+                    BeAssert(false); // ERROR - Face not represented in map...
+                    }
+                else
+                    {
+                    FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
+                    Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+
+                    if (nullptr != graphicParams)
+                        graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
+                    }
+                }
+
             curve->TransformInPlace(entity.GetEntityTransform());
             graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-
-            if (stopTester && stopTester->_CheckStop())
-                return;
             }
 
         PK_MEMORY_free(edgeTags);
@@ -907,6 +935,9 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
 
     if (includeFaceIso)
         {
+        if (stopTester && stopTester->_CheckStop())
+            return;
+
         // NEEDSWORK...Do something with face hatch lines???
         }
 

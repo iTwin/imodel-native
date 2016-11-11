@@ -24,6 +24,37 @@ FaceAttachment::FaceAttachment()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
+    {
+    if (m_useColor      != rhs.m_useColor ||
+        m_useMaterial   != rhs.m_useMaterial ||
+        m_color         != rhs.m_color ||
+        m_transparency  != rhs.m_transparency ||
+        m_material      != rhs.m_material ||
+        m_uv.x          != rhs.m_uv.x || 
+        m_uv.y          != rhs.m_uv.y)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
+    {
+    return (m_useColor         < rhs.m_useColor ||
+            m_useMaterial      < rhs.m_useMaterial ||
+            m_color.GetValue() < rhs.m_color.GetValue() ||
+            m_transparency     < rhs.m_transparency ||
+            m_material         < rhs.m_material ||
+            m_uv.x             < rhs.m_uv.x || 
+            m_uv.y             < rhs.m_uv.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
@@ -75,34 +106,34 @@ void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR b
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2012
+* @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
+uint32_t FaceAttachment::GetFaceIdentifierFromSubEntity(ISubEntityCR subEntity)
     {
-    if (m_useColor      != rhs.m_useColor ||
-        m_useMaterial   != rhs.m_useMaterial ||
-        m_color         != rhs.m_color ||
-        m_transparency  != rhs.m_transparency ||
-        m_material      != rhs.m_material ||
-        m_uv.x          != rhs.m_uv.x || 
-        m_uv.y          != rhs.m_uv.y)
-        return false;
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    PK_ENTITY_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
 
-    return true;
-    }
+    if (PK_ENTITY_null == entityTag)
+        return 0;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
-    {
-    return (m_useColor         < rhs.m_useColor ||
-            m_useMaterial      < rhs.m_useMaterial ||
-            m_color.GetValue() < rhs.m_color.GetValue() ||
-            m_transparency     < rhs.m_transparency ||
-            m_material         < rhs.m_material ||
-            m_uv.x             < rhs.m_uv.x || 
-            m_uv.y             < rhs.m_uv.y);
+    PK_CLASS_t  entityClass;
+
+    PK_ENTITY_ask_class(entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_face:
+            return entityTag;
+
+        case PK_CLASS_edge:
+            return PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(entityTag);
+
+        case PK_CLASS_vertex:
+            return PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(entityTag);
+        }
+#endif
+
+    return 0;
     }
 
 #if defined (BENTLEYCONFIG_OPENCASCADE)    
