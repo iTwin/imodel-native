@@ -1,6 +1,5 @@
 #include <SDKDDKVer.h>
 #include "CppUnitTest.h"
-#define BETEST_NO_INCLUDE_BOOST_FOR_EACH
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeFileName.h>
@@ -11,22 +10,6 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-static void doSetUp ()
-    {
-    wchar_t const* home = L"E:\\out\\WinRTx86\\static\\BuildContexts\\BeTestWinRT\\SubParts\\GUnitTests";
-
-    BeTest::Initialize (*BeTestHost::Create (home));
-
-    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
-    NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_ERROR);
-    }
-
-static void doTearDown ()
-    {
-    BeTest::Uninitialize ();
-    }
-
 static void doSetUpL10N ()
     {
     BeFileName frameworkSqlang;
@@ -36,7 +19,31 @@ static void doSetUpL10N ()
         BeSQLite::L10N::Initialize(frameworkSqlang);
     }
 
-static void doTearDownL10N ()
+//static void doTearDownL10N ()
+//    {
+//    BeSQLite::L10N::Shutdown ();
+//    }
+
+static void doSetUp ()
     {
-    BeSQLite::L10N::Shutdown ();
+    if (BeTest::IsInitialized())
+        return;
+
+    BeTest::Initialize (*BeTestHost::Create(nullptr));
+
+    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
+    NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_ERROR);
+
+    doSetUpL10N();
     }
+
+static void doTearDown ()
+    {
+    // BeTest::Uninitialize (); No! CppTest does not call TearDownTestCase as a bookend to each SetUpTestCase method. Instead,
+    //                              it calls SetUpTestCase methods as it goes along and then calls all TearDownTestCase methods
+    //                              at the end, one after another. So, if each TearDownTestCase method were to uninitialize
+    //                              BeTest, then it would be invalid when the next TearDownTestCase method ran. In fact, some
+    //                              TearDownTestCase implementations use the BeTest host.
+    }
+

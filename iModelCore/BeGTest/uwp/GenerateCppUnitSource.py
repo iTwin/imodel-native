@@ -43,6 +43,7 @@ def processDir (dirNameIn, rootDir, listfilename, templateFile):
             print '     $(CPreprocCmd) -I ' + dirName + testClassDefine + templateFile + ' > $@'
             print '     $(baseDir)SearchAndReplace.py $@ __REPO__ ' + repoUT
             print '     $(baseDir)SearchAndReplace.py $@ __FIXTURE__ ' + utClassName
+            print '     $(baseDir)StripEmptyLines.py $@ '
             print '     $(SrcRoot)bsicommon/sharedmki/Cat.py $@ >> ' + testFilePath
             print '     ~time'
             print ''

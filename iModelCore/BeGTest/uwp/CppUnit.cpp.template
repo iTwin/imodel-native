@@ -12,8 +12,8 @@ namespace  BeTestWinRT
         TEST_CLASS(__FIXTURE__)
         {
         public:
-            TEST_METHOD_INITIALIZE (SetUpTest) { doSetUpL10N (); }
-            TEST_METHOD_CLEANUP (TearDownTest) { doTearDownL10N (); }
+            TEST_METHOD_INITIALIZE (SetUpTest) {;}
+            TEST_METHOD_CLEANUP (TearDownTest) {;}
 
             TEST_CLASS_INITIALIZE (SetUpTestCase)
                 {
