@@ -184,6 +184,7 @@ struct PSolidSubEntity
 DGNPLATFORM_EXPORT static ISubEntityPtr CreateSubEntity(PK_ENTITY_t entityTag, TransformCR entityTransform);
 DGNPLATFORM_EXPORT static ISubEntityPtr CreateSubEntity(PK_ENTITY_t entityTag, IBRepEntityCR parent);
 
+DGNPLATFORM_EXPORT static void SetDisplayTangentEdges(ISubEntityR subEntity, bool display); //!< @private LocateSubEntityTool use. Include tangent edges in graphic...
 DGNPLATFORM_EXPORT static void UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntity); //!< @private LocateSubEntityTool use.
 DGNPLATFORM_EXPORT static void SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param); //!< @private param x/y is face u/v, param x is edge u, na for vertex...
 
