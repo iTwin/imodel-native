@@ -80,11 +80,11 @@ protected:
     DRange3d        m_lastRange;    // last view-aligned range tested
 
     void AcceptRangeElement(DgnElementId id);
-    bool IsRangeContained(DRange3dCR range);
+    bool IsRangeContained(RangeIndex::FBoxCR range);
     virtual StatusInt _InitContextForView() override;
     virtual StatusInt _VisitGeometry(GeometrySourceCR source) override;
     virtual bool _ScanRangeFromPolyhedron() override;
-    virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override;
+    virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) override;
 
 public:
     DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);

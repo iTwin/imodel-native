@@ -215,7 +215,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     SetupFunctionalTestDomain();
 
     DgnElementId functionalTypeId[3];
-    DgnElementId componentId;
+    DgnElementId testComponentId;
 
     // insert some sample FunctionalTypes
     for (int32_t i=0; i<_countof(functionalTypeId); i++)
@@ -276,13 +276,13 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         ASSERT_TRUE(component->GetFunctionalTypeId().IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_TRUE(component->Insert().IsValid());
-        componentId = component->GetElementId();
+        testComponentId = component->GetElementId();
         }
 
     // flush cache to make sure the FunctionalComponent's FunctionalType was inserted properly
         {
         m_db->Memory().PurgeUntil(0);
-        TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(componentId);
+        TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_EQ(component->GetFunctionalTypeId().GetValue(), functionalTypeId[0].GetValue());
@@ -294,7 +294,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     // flush cache to make sure the FunctionalComponent's FunctionalType was updated properly
         {
         m_db->Memory().PurgeUntil(0);
-        TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(componentId);
+        TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_EQ(component->GetFunctionalTypeId().GetValue(), functionalTypeId[1].GetValue());
@@ -306,7 +306,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     // flush cache to make sure the FunctionalComponent's FunctionalType was cleared properly
         {
         m_db->Memory().PurgeUntil(0);
-        TestComponentCPtr component = m_db->Elements().Get<TestComponent>(componentId);
+        TestComponentCPtr component = m_db->Elements().Get<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_FALSE(component->GetFunctionalType().IsValid());
         ASSERT_FALSE(component->GetFunctionalTypeId().IsValid());
@@ -314,7 +314,9 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // test CRUD for FunctionalBreakdownElements and FunctionalComponentElements
     DgnElementId breakdownId[2];
-    DgnElementId testComponentId[3];
+    DgnElementId compositeId[3];
+    DgnElementId componentId[3];
+    DgnElementId portionId[3]; 
 
     for (int i=0; i<_countof(breakdownId); i++)
         {
@@ -324,15 +326,31 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         breakdownId[i] = breakdown->GetElementId();
         }
 
-    for (int i=0; i<_countof(testComponentId); i++)
+    for (int i=0; i<_countof(compositeId); i++)
+        {
+        FunctionalCompositePtr composite = FunctionalComposite::Create(*model);
+        ASSERT_TRUE(composite.IsValid());
+        ASSERT_TRUE(composite->Insert().IsValid());
+        compositeId[i] = composite->GetElementId();
+        }
+
+    for (int i=0; i<_countof(componentId); i++)
         {
         TestComponentPtr component = TestComponent::Create(*model, i);
         ASSERT_TRUE(component.IsValid());
         ASSERT_TRUE(component->Insert().IsValid());
-        testComponentId[i] = component->GetElementId();
+        componentId[i] = component->GetElementId();
         }
 
-    // flush cache to make sure the TestBreakdowns and TestComponents were inserted properly
+    for (int i=0; i<_countof(portionId); i++)
+        {
+        FunctionalPortionPtr portion = FunctionalPortion::Create(*model);
+        ASSERT_TRUE(portion.IsValid());
+        ASSERT_TRUE(portion->Insert().IsValid());
+        portionId[i] = portion->GetElementId();
+        }
+
+    // flush cache to make sure the elements were inserted properly
     m_db->Memory().PurgeUntil(0);
 
     for (int i=0; i<_countof(breakdownId); i++)
@@ -342,10 +360,22 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         ASSERT_STREQ(breakdown->GetStringProp1().c_str(), Utf8PrintfString("Breakdown%d", i).c_str());
         }
 
-    for (int i=0; i<_countof(testComponentId); i++)
+    for (int i=0; i<_countof(compositeId); i++)
         {
-        TestComponentCPtr component = m_db->Elements().Get<TestComponent>(testComponentId[i]);
+        FunctionalCompositeCPtr composite = m_db->Elements().Get<FunctionalComposite>(compositeId[i]);
+        ASSERT_TRUE(composite.IsValid());
+        }
+
+    for (int i=0; i<_countof(componentId); i++)
+        {
+        TestComponentCPtr component = m_db->Elements().Get<TestComponent>(componentId[i]);
         ASSERT_TRUE(component.IsValid());
         ASSERT_EQ(component->GetDoubleProp1(), i);
+        }
+
+    for (int i=0; i<_countof(portionId); i++)
+        {
+        FunctionalPortionCPtr portion = m_db->Elements().Get<FunctionalPortion>(portionId[i]);
+        ASSERT_TRUE(portion.IsValid());
         }
     }

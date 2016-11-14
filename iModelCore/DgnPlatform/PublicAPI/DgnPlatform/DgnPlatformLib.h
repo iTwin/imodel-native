@@ -595,6 +595,8 @@ public:
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
+        virtual BeSQLite::DbResult _RenderThumbnail(Render::Image&, Render::RenderMode&, ViewDefinition&, Point2dCR, Render::RenderMode const*, double) {return BeSQLite::BE_SQLITE_ERROR;}
+
         Host()
             {
             m_knownLocationsAdmin = nullptr;

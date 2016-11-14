@@ -264,7 +264,7 @@ double          PSolidUtil::CalculateToleranceFromMinCurvature (PK_CURVE_t curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RichardTrefz    05/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromBCurve (MSBsplineCurveR curve, PK_BCURVE_t curveTag, bool normalizeKnotVector)
+BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromBCurve (MSBsplineCurveR curve, PK_BCURVE_t curveTag, bool normalizeKnotVector)
     {
     PK_PARAM_sf_t   param;
 
@@ -336,7 +336,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromBCurve (MSBsplineCurveR curv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateBCurveFromSPCurve (PK_BCURVE_t& bCurveTag, PK_SPCURVE_t spCurve, PK_INTERVAL_t* intervalP, PK_LOGICAL_t& isExact, bool makeNonPeriodic)
+BentleyStatus   PSolidGeom::CreateBCurveFromSPCurve (PK_BCURVE_t& bCurveTag, PK_SPCURVE_t spCurve, PK_INTERVAL_t* intervalP, PK_LOGICAL_t& isExact, bool makeNonPeriodic)
     {
     PK_INTERVAL_t   interval;
 
@@ -383,7 +383,7 @@ BentleyStatus   PSolidUtil::CreateBCurveFromSPCurve (PK_BCURVE_t& bCurveTag, PK_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromSPCurve (MSBsplineCurveR curve, PK_SPCURVE_t spCurve, PK_INTERVAL_t* intervalP, bool* isExactP)
+BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromSPCurve (MSBsplineCurveR curve, PK_SPCURVE_t spCurve, PK_INTERVAL_t* intervalP, bool* isExactP)
     {
     PK_BCURVE_t     bCurveTag;
     PK_LOGICAL_t    isExact = PK_LOGICAL_true;
@@ -391,7 +391,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromSPCurve (MSBsplineCurveR cur
     if (SUCCESS != CreateBCurveFromSPCurve (bCurveTag, spCurve, intervalP, isExact, false))
         return ERROR;
 
-    BentleyStatus   status = PSolidUtil::CreateMSBsplineCurveFromBCurve (curve, bCurveTag, true);
+    BentleyStatus   status = PSolidGeom::CreateMSBsplineCurveFromBCurve (curve, bCurveTag, true);
 
     PK_ENTITY_delete (1, &bCurveTag);
 
@@ -404,7 +404,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromSPCurve (MSBsplineCurveR cur
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve, PK_CURVE_t curveTag, PK_INTERVAL_t& interval, bool reverse, double tolerance, bool* isExactP)
+BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve, PK_CURVE_t curveTag, PK_INTERVAL_t& interval, bool reverse, double tolerance, bool* isExactP)
     {
     PK_LOGICAL_t    isExact = PK_LOGICAL_true;
     PK_CLASS_t      curveClass;
@@ -502,7 +502,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve
             if (SUCCESS != PK_CURVE_make_bcurve (curveTag, curveRange, PK_LOGICAL_false, PK_LOGICAL_false, tolerance, &bCurveTag, &isExact))
                 return ERROR;
 
-            BentleyStatus   status = PSolidUtil::CreateMSBsplineCurveFromBCurve (curve, bCurveTag, true);
+            BentleyStatus   status = PSolidGeom::CreateMSBsplineCurveFromBCurve (curve, bCurveTag, true);
 
             PK_ENTITY_delete (1, &bCurveTag);
 
@@ -517,7 +517,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve
 
         case PK_CLASS_spcurve:
             {
-            if (SUCCESS != PSolidUtil::CreateMSBsplineCurveFromSPCurve (curve, curveTag, &interval))
+            if (SUCCESS != PSolidGeom::CreateMSBsplineCurveFromSPCurve (curve, curveTag, &interval))
                 return ERROR;
 
             if (reverse)
@@ -543,7 +543,7 @@ BentleyStatus   PSolidUtil::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateCurveFromMSBsplineCurve (PK_CURVE_t* curveP, MSBsplineCurveCR msbCurve)
+BentleyStatus   PSolidGeom::CreateCurveFromMSBsplineCurve (PK_CURVE_t* curveP, MSBsplineCurveCR msbCurve)
     {
     int             i, dim, numKnots, numPoles, index, periodic = false, closed;
     double          *pPoles = NULL, *pW = NULL;
@@ -639,11 +639,11 @@ BentleyStatus   PSolidUtil::CreateCurveFromMSBsplineCurve (PK_CURVE_t* curveP, M
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Nikolay.Shulga  02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateCurveFromMSBsplineCurve2d (PK_CURVE_t* curveP, MSBsplineCurveCR msbCurve)
+BentleyStatus   PSolidGeom::CreateCurveFromMSBsplineCurve2d (PK_CURVE_t* curveP, MSBsplineCurveCR msbCurve)
     {
     int         curveTag;
 
-    if (SUCCESS != PSolidUtil::CreateCurveFromMSBsplineCurve (&curveTag, msbCurve))
+    if (SUCCESS != PSolidGeom::CreateCurveFromMSBsplineCurve (&curveTag, msbCurve))
         return ERROR;
 
     StatusInt       status = ERROR;
@@ -849,7 +849,7 @@ static BentleyStatus createSurfaceFromMSBsplineSurface (PK_BSURF_t* surfaceTag, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateSurfaceFromMSBsplineSurface (PK_BSURF_t* surfaceTag, MSBsplineSurfaceCR surface)
+BentleyStatus   PSolidGeom::CreateSurfaceFromMSBsplineSurface (PK_BSURF_t* surfaceTag, MSBsplineSurfaceCR surface)
     {
     MSBsplineSurfacePtr tmpSurface = MSBsplineSurface::CreatePtr ();
 
@@ -904,7 +904,7 @@ double          tolerance
 
     MSBsplineCurve  curve;
 
-    if (SUCCESS == PSolidUtil::CreateMSBsplineCurveFromBCurve (curve, psBCurveTag))
+    if (SUCCESS == PSolidGeom::CreateMSBsplineCurveFromBCurve (curve, psBCurveTag))
         bspTrimCurve_allocateAndInsertCyclic (loopPP, &curve);
 
     PK_ENTITY_delete (1, &psBCurveTag);
@@ -1022,7 +1022,7 @@ static void     setHoleOrigin (MSBsplineSurfaceR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateBSurfaceFromSurface (PK_BSURF_t& bSurfaceTag, PK_PARAM_sf_t param[2], PK_SURF_t surfTag, bool makeNonPeriodic)
+BentleyStatus   PSolidGeom::CreateBSurfaceFromSurface (PK_BSURF_t& bSurfaceTag, PK_PARAM_sf_t param[2], PK_SURF_t surfTag, bool makeNonPeriodic)
     {
     PK_CLASS_t  surfType = 0;
 
@@ -1092,7 +1092,7 @@ BentleyStatus   PSolidUtil::CreateBSurfaceFromSurface (PK_BSURF_t& bSurfaceTag, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateMSBsplineSurfaceFromSurface
+BentleyStatus   PSolidGeom::CreateMSBsplineSurfaceFromSurface
 (
 MSBsplineSurfaceR    surface,
 PK_SURF_t            surfTag,
@@ -1263,7 +1263,7 @@ bool                 normalizeSurface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateMSBsplineSurfaceFromFace
+BentleyStatus   PSolidGeom::CreateMSBsplineSurfaceFromFace
 (
 MSBsplineSurfaceR   surface,
 PK_FACE_t           faceTag,
@@ -1309,7 +1309,7 @@ double              tolerance
 
     bool    isValid = false;
 
-    if (SUCCESS == PSolidUtil::CreateMSBsplineSurfaceFromSurface (surface, bSurfaceTag, &trimData, geometryP, intervalP, uRules, vRules, tolerance))
+    if (SUCCESS == PSolidGeom::CreateMSBsplineSurfaceFromSurface (surface, bSurfaceTag, &trimData, geometryP, intervalP, uRules, vRules, tolerance))
         {
         if (PK_LOGICAL_false == orientation)
             surface.MakeReversed (0);
@@ -1699,7 +1699,7 @@ int             adaptive
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Nikolay.Shulga  02/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::CreateSheetBodyFromTrimmedSurface
+BentleyStatus   PSolidGeom::CreateSheetBodyFromTrimmedSurface
 (
 PK_ENTITY_t*    bodyTagP,
 PK_ENTITY_t**   spaceCurveEntitiesPP,
@@ -1737,12 +1737,10 @@ int             adaptive
     PK_SESSION_ask_check_continuity (&continuityCheckFlag);
     PK_SESSION_set_check_continuity (PK_LOGICAL_false);
 
-#if defined (NOT_NOW_NEEDSWORK)
     int             rollback = 0;
 
     // set mark; if screwed up, roll back
-    pki_mark_create (&rollback);
-#endif
+    PK_MARK_create  (&rollback);
 
     /*  Generate sp_curves. They have to be stored in trimData.spcurves
         We don't know how many curves will there be. Allocate something to begin with;
@@ -1855,9 +1853,7 @@ clean_up:
 
     if (PK_ERROR_no_errors != status)
         {
-#if defined (NOT_NOW_NEEDSWORK)
-        pki_mark_roll (rollback); // failed somewhere, rollback
-#endif
+        PK_MARK_goto (rollback); // failed somewhere, rollback
         }
     else
         {
@@ -1885,9 +1881,7 @@ clean_up:
 
     freeTrimData (&trimData);
 
-#if defined (NOT_NOW_NEEDSWORK)
-    pki_mark_delete (rollback);
-#endif
+    PK_MARK_delete (rollback);
 
     return (BentleyStatus) status;
     }
@@ -2168,7 +2162,7 @@ double          tolerance
         uvCurvesPP[index] = (PK_ENTITY_t *) malloc ((numCurves + 1) * sizeof (**uvCurvesPP));
 
         for (i=0, pTrim = pBoundary->pFirst; NULL != pTrim; pTrim = pTrim->pNext, i++)
-            PSolidUtil::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], pTrim->curve);
+            PSolidGeom::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], pTrim->curve);
 
         uvCurvesPP[index][numCurves] = 0;
         }
@@ -2193,7 +2187,7 @@ double          tolerance
 
                 for (int i=0; i < numCurves; i++)
                     {
-                    PSolidUtil::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], curvesP[i]);
+                    PSolidGeom::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], curvesP[i]);
 
                     curvesP[i].ReleaseMem ();
                     }
@@ -2223,7 +2217,7 @@ double          tolerance
                 points[1].Init (pPts[i+1].x, pPts[i+1].y, 0.0);
                 curve.InitFromPoints (points, 2);
 
-                PSolidUtil::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], curve);
+                PSolidGeom::CreateCurveFromMSBsplineCurve2d (&uvCurvesPP[index][i], curve);
 
                 curve.ReleaseMem ();
                 }
@@ -2273,7 +2267,7 @@ double          fitTol          // => used to fit in UV space
 
         PK_BODY_t       bodyTag = PK_ENTITY_null;
 
-        if (SUCCESS == PSolidUtil::CreateSheetBodyFromTrimmedSurface (&bodyTag, NULL, uvCurvesPP, 0, NULL, numLoopsInCurrentBody, surfTag, 1.0, true))
+        if (SUCCESS == PSolidGeom::CreateSheetBodyFromTrimmedSurface (&bodyTag, NULL, uvCurvesPP, 0, NULL, numLoopsInCurrentBody, surfTag, 1.0, true))
             tagList.push_back (bodyTag);
         else
             PK_ENTITY_delete (1, &surfTag);
@@ -2354,9 +2348,95 @@ double              fitTol          // => used to fit in UV space
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Josh.Schifter   12/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_wire_body_from_curve
+(
+int             *pBodyTagOut,               /* <= body created */
+int             curveTagIn,                 /* => input surface */
+DPoint2dCR      paramRange                 /* => parameter range (required) */
+)
+    {
+    PK_INTERVAL_t   range;
+
+    range.value[0] = paramRange.x;
+    range.value[1] = paramRange.y;
+
+    return PK_CURVE_make_wire_body (curveTagIn, range, pBodyTagOut);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Josh.Schifter   12/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_sheet_body_from_surface
+(
+int             *pBodyTagOut,               /* <= body created */
+int             surfTagIn,                  /* => input surface */
+DRange2dCR      paramRange                  /* => uv parameter range (required)  */
+)
+    {
+    PK_UVBOX_t  range;
+
+    range.param[0] = paramRange.low.x;
+    range.param[1] = paramRange.low.y;
+    range.param[2] = paramRange.high.x;
+    range.param[3] = paramRange.high.y;
+
+    return PK_SURF_make_sheet_body (surfTagIn, range, pBodyTagOut);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lu.Han          07/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      pki_create_body_from_geometry
+(
+int             *pBodyTagOut,
+int             *pGeomTagIn
+)
+    {
+    int         status;
+    PK_CLASS_t  entClass;
+
+    PK_ENTITY_ask_class (*pGeomTagIn, &entClass);
+
+    if (entClass == PK_CLASS_surf || entClass == PK_CLASS_bsurf)
+        {
+        DRange2d        paramRange;
+        PK_UVBOX_t      range;
+
+        PK_SURF_ask_uvbox (*pGeomTagIn, &range);
+
+        paramRange.low.x = range.param[0];
+        paramRange.low.y = range.param[1];
+        paramRange.high.x = range.param[2];
+        paramRange.high.y = range.param[3];
+
+        status = pki_sheet_body_from_surface (pBodyTagOut, *pGeomTagIn, paramRange);
+        }
+    else if (entClass == PK_CLASS_curve)
+        {
+        DPoint2d        paramRange;
+        PK_INTERVAL_t   range;
+
+        PK_CURVE_ask_interval (*pGeomTagIn, &range);
+
+        paramRange.x = range.value[0];
+        paramRange.y = range.value[1];
+
+        status = pki_wire_body_from_curve (pBodyTagOut, *pGeomTagIn, paramRange);
+        }
+    else
+        {
+        status = ERROR;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidUtil::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface)
+BentleyStatus   PSolidGeom::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface)
     {
     PK_BSURF_t          surfaceTag;
     MSBsplineSurfacePtr tmpSurface = MSBsplineSurface::CreatePtr ();
@@ -2383,23 +2463,17 @@ BentleyStatus   PSolidUtil::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBspl
         {
         bodyTag = tagList.front ();
 
-#if defined (NOT_NOW_NEEDSWORK)
         if (tagList.size () > 1)
             {
             int         numTools = (int) tagList.size () - 1;
             PK_BODY_t*  toolBodies = &tagList[1];
 
-            pki_boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, toolBodies, numTools, PKI_BOOLEAN_OPTION_AllowDisjoint);
+            PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, toolBodies, numTools, PKI_BOOLEAN_OPTION_AllowDisjoint);
             }
-#endif
         }
     else
         {
-#if defined (NOT_NOW_NEEDSWORK)
         if (SUCCESS != pki_create_body_from_geometry (&bodyTag, &surfaceTag))
-#else
-        if (false)
-#endif
             {
             PK_ENTITY_delete (1, &surfaceTag);
 
@@ -2441,7 +2515,7 @@ BentleyStatus   PSolidUtil::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBspl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley     10/2015
 +---------------+---------------+---------------+---------------+--------------+------*/
-StatusInt PSolidUtil::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveVectorPtr& uvBoundaries, PK_FACE_t faceTag)
+StatusInt PSolidGeom::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveVectorPtr& uvBoundaries, PK_FACE_t faceTag)
     {
     PK_LOGICAL_t    isBox;
     PK_UVBOX_t      uvBox;
@@ -2452,7 +2526,7 @@ StatusInt PSolidUtil::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveV
 
     if (SUCCESS != PK_FACE_ask_oriented_surf (faceTag, &surfaceTag, &orientation) ||
         SUCCESS != PK_FACE_is_uvbox (faceTag, &isBox, &uvBox) ||
-       (!isBox && (SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox) || ! (uvBoundaries = PSolidUtil::FaceToUVCurveVector (faceTag, NULL, true)).IsValid())))
+       (!isBox && (SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox) || ! (uvBoundaries = PSolidGeom::FaceToUVCurveVector (faceTag, NULL, true)).IsValid())))
         {
 //      BeAssert (false && "Unable to extract boundaries for surface");
         return ERROR;
@@ -2485,7 +2559,7 @@ StatusInt PSolidUtil::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveV
 
     bSurface = MSBsplineSurface::CreatePtr();
 
-    status = PSolidUtil::CreateMSBsplineSurfaceFromSurface (*bSurface, bSurfaceTag, NULL, geometryP, intervalP, 0, 0, tolerance, false);
+    status = PSolidGeom::CreateMSBsplineSurfaceFromSurface (*bSurface, bSurfaceTag, NULL, geometryP, intervalP, 0, 0, tolerance, false);
 
     // The normalization step should not be necessary - but our (stupid) evaluate function doesn't handle max != 1.0 and I'm afraid to fix it right now...
     DPoint2d        min, max;
@@ -2529,3 +2603,45 @@ StatusInt PSolidUtil::FaceToBSplineSurface(MSBsplineSurfacePtr& bSurface, CurveV
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromBSurface (IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+    {
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    DPoint3d    firstPole;
+
+    if (surface.rational)
+        bsputil_unWeightPoles (&firstPole, surface.poles, surface.weights, 1);
+    else
+        firstPole = surface.poles[0];
+
+    Transform   solidToDgn, dgnToSolid;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &firstPole);
+
+    MSBsplineSurface    tmpSurface;
+
+    if (SUCCESS != tmpSurface.CopyFrom (surface))
+        return ERROR;
+
+    PK_BODY_t   bodyTag;
+
+    if (SUCCESS != tmpSurface.TransformSurface (&dgnToSolid) ||
+        SUCCESS != PSolidGeom::BodyFromMSBsplineSurface (bodyTag, tmpSurface))
+        {
+        tmpSurface.ReleaseMem ();
+
+        return ERROR;
+        }
+
+    tmpSurface.ReleaseMem ();
+
+    if (nodeId)
+        PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+    entityOut = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn);
+
+    return SUCCESS;
+    }

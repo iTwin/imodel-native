@@ -29,6 +29,7 @@ namespace dgn_ModelHandler
 {
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Spatial)
+HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
@@ -78,6 +79,7 @@ HANDLER_DEFINE_MEMBERS(DefinitionPartition)
 HANDLER_DEFINE_MEMBERS(DocumentPartition)
 HANDLER_DEFINE_MEMBERS(GroupInformationPartition)
 HANDLER_DEFINE_MEMBERS(PhysicalPartition)
+HANDLER_DEFINE_MEMBERS(SpatialLocationPartition)
 };
 
 namespace dgn_AspectHandler
@@ -91,13 +93,15 @@ HANDLER_DEFINE_MEMBERS(Authority)
 HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
 HANDLER_DEFINE_MEMBERS(Material)
-HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Partition)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Category)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Session)
+HANDLER_DEFINE_MEMBERS(Link)
+HANDLER_DEFINE_MEMBERS(Drawing)
+HANDLER_DEFINE_MEMBERS(Sheet)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -118,6 +122,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
+    RegisterHandler(dgn_ModelHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
@@ -176,6 +181,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::GroupInformationPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinkPartitionHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialLocationPartition::GetHandler());
 
 #if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
@@ -188,27 +194,34 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::ModelSelectorDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::CategorySelectorDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::DisplayStyleDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::DisplayStyle3dDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::OrthographicViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
+    RegisterHandler(ViewElementHandler::View::GetHandler());
+    RegisterHandler(ViewElementHandler::View2d::GetHandler());
+    RegisterHandler(ViewElementHandler::View3d::GetHandler());
+    RegisterHandler(ViewElementHandler::SpatialView::GetHandler());
+    RegisterHandler(ViewElementHandler::DrawingView::GetHandler());
+    RegisterHandler(ViewElementHandler::SheetView::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewModels::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewCategories::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
+    RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
+    RegisterHandler(ViewElementHandler::CameraView::GetHandler());
+
     RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Partition::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Link::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Drawing::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Sheet::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

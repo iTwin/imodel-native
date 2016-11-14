@@ -225,7 +225,7 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
 
     m_testDb->SaveChanges();
 
-    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "ChangeSummaryModel");
 
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
@@ -625,7 +625,7 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
@@ -856,7 +856,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "ChangeSummaryModel");
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);

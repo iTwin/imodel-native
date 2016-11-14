@@ -20,7 +20,6 @@ DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
-DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
@@ -31,7 +30,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;};
+namespace RangeIndex {struct Tree;}
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -71,12 +71,11 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 {
     friend struct DgnModels;
     friend struct DgnElement;
     friend struct DgnElements;
-    friend struct QueryModel;
     friend struct dgn_TxnTable::Model;
     friend struct dgn_ModelHandler::Model;
 
@@ -93,21 +92,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         struct Key : NonCopyableClass {};
 
         enum class DropMe {No=0, Yes=1};
-
-        //! Called after DgnModel has been filled.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return DropMe::Yes to be removed from DgnModel
-        virtual DropMe _OnFilled(DgnModelCR model) {return DropMe::No;}
-
-        //! Called when a DgnModel is about to be emptied.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return true to be dropped from model
-        virtual void _OnEmpty(DgnModelCR model) {}
-
-        //! Called after a DgnModel has been emptied.
-        //! @param[in] model The model to which this AppData is attached
-        //! @return DropMe::Yes to be removed from DgnModel
-        virtual DropMe _OnEmptied(DgnModelCR model) {return DropMe::No;}
 
         //! Called when a DgnModel is about to be updated in the DgnDb.
         //! @param[in] model The model to which this AppData is attached
@@ -137,8 +121,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         DgnDbR              m_dgndb;
         DgnClassId          m_classId;
         DgnElementId        m_modeledElementId;
-        BeSQLite::BeGuid    m_federationGuid;
-        DgnCode             m_code;
         bool                m_inGuiList;
         bool                m_isTemplate = false;
 
@@ -146,16 +128,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code The code for the DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, bool inGuiList = true) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_code(code), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList)
             {
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
-        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnModel created with this CreateParams
-        void SetCode(DgnCode code) {m_code = code;} //!< Set the DgnCode for models created with this CreateParams
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;} //!< Set the visibility of models created with this CreateParams in model lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -171,9 +150,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
-        static const uint64_t SetCode = Clone << 1; //!< Change this model's DgnCode. "SetCode"
-
-        static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = Clone << 1;      //!< Reserved for future use 
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
@@ -186,9 +164,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
 
 private:
     template<class T> void CallAppData(T const& caller) const;
-    void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
-    void ReleaseAllElements();
 
+    void UnloadRangeIndex();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
 
@@ -197,20 +174,13 @@ protected:
     DgnModelId m_modelId;
     DgnClassId m_classId;
     DgnElementId m_modeledElementId;
-    BeSQLite::BeGuid m_federationGuid;
-    DgnCode m_code;
     bool m_inGuiList;
     bool m_isTemplate;
-    DgnElementMap   m_elements;
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
-    bool            m_filled;       // true if the FillModel was called on this DgnModel.
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
-
-    virtual void _SetFilled() {m_filled=true;}
-    virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -224,19 +194,15 @@ protected:
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params);
 
-    //! Called to bind the model's property values to the ECSqlStatement when inserting
-    //! a new model.  The parameters to bind were the ones specified by this model's Handler.
-    //! @note If you override this method, you should bind your subclass properties
-    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+     //! argument for _BindWriteParams
+    enum class ForInsert : bool {No=false, Yes=true};
 
-    //! Called to bind the model's property values to the ECSqlStatement when updating
-    //! an existing model.  The parameters to bind were the ones specified by this model's Handler
+    //! Called to bind the model's property values to the ECSqlStatement when inserting or updating
+    //! a model.  The parameters to bind were the ones specified by this model's Handler.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    //! Then you @em must call T_Super::_BindWriteParams
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
@@ -251,6 +217,7 @@ protected:
     virtual void _ReadJsonProperties(Json::Value const& value) {}
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
+
     //! Set the properties of this model from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
@@ -283,19 +250,19 @@ protected:
     //! @param[in] element The element that was just loaded.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR element);
+    virtual void _OnLoadedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been inserted into the DgnDb
     //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR element);
+    virtual void _OnInsertedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
     //! @param[in] element The element that was just reinstatted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnReversedDeleteElement(DgnElementCR element);
+    virtual void _OnReversedDeleteElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
@@ -315,40 +282,42 @@ protected:
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
+    virtual void _OnDeletedElement(DgnElementCR element) {}
 
     //! Called after a DgnElement in this DgnModel has been removed by undo
     //! @param[in] element The element that was just deleted by undo.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element);
+    virtual void _OnReversedAddElement(DgnElementCR element) {}
 
     /** @} */
-
-    //! Load all of the DgnElements of this DgnModel into memory.
-    DGNPLATFORM_EXPORT virtual void _FillModel();
-
 
     /** @name Events for a DgnModel */
     /** @{ */
     //! Called when this DgnModel is about to be inserted into the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
+
     //! Called when this DgnModel is about to be updated in the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate();
+
     //! Called when this DgnModel is about to be deleted from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
+
     //! Called after this DgnModel was loaded from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnLoaded();
+
     //! Called after this DgnModel was inserted into the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnInserted();
+
     //! Called after this DgnModel was updated in the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnUpdated();
+
     //! Called after this DgnModel was deleted from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
@@ -367,6 +336,7 @@ protected:
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
+    virtual SpatialLocationModelCP _ToSpatialLocationModel() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
@@ -421,45 +391,20 @@ protected:
 
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
-    DGNPLATFORM_EXPORT virtual void _EmptyModel();
-    virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() {}
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
-    virtual DgnCodeCR _GetCode() const override final {return m_code;}
-    virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
-    virtual DgnModelCP _ToDgnModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
-    DGNPLATFORM_EXPORT virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override;
-    virtual DgnCode _GenerateDefaultCode() const override {return DgnCode();}
 public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
-    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
-    DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
     //! Returns true if this is a 3d model.
     bool Is3d() const {return nullptr != ToGeometricModel3d();}
-
-    DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id); //!< @private
-
-    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, decrementing
-    //! their reference count and potentially freeing them.
-    void EmptyModel() {_EmptyModel();}
-
-    //! Load all elements of this DgnModel.
-    //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
-    //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
-    void FillModel() {_FillModel();}
-
-    //! Determine whether this DgnModel's elements have been "filled" from the DgnDb or not.
-    //! @return true if the DgnModel was filled.
-    //! @see FillModel
-    bool IsFilled() const {return m_filled;}
 
     //! Determine whether this DgnModel is persistent.
     //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
@@ -467,7 +412,7 @@ public:
     bool IsPersistent() const {return m_persistent;}
 
     //! Get the name of this model
-    Utf8String GetName() const {return m_code.GetValue();}
+    DGNPLATFORM_EXPORT Utf8String GetName() const;
     
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -477,12 +422,6 @@ public:
 
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-
-    //! Get the FederationGuid of this DgnModel.
-    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
-    //! Set the FederationGuid for this DgnModel.
-    //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
-    void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
 
     //! Get the visibility in model lists shown to the user
     bool GetInGuiList() const {return m_inGuiList;}
@@ -502,6 +441,7 @@ public:
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
+    SpatialLocationModelCP ToSpatialLocationModel() const {return _ToSpatialLocationModel();} //!< more efficient substitute for dynamic_cast<SpatialLocationModelCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
@@ -512,12 +452,14 @@ public:
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
+    SpatialLocationModelP ToSpatialLocationModelP() {return const_cast<SpatialLocationModelP>(_ToSpatialLocationModel());} //!< more efficient substitute for dynamic_cast<SpatialLocationModelP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
     bool IsGeometricModel() const {return nullptr != ToGeometricModel();}
     bool IsSpatialModel() const {return nullptr != ToSpatialModel();}
+    bool IsSpatialLocationModel() const {return nullptr != ToSpatialLocationModel();}
     bool IsPhysicalModel() const {return nullptr != ToPhysicalModel();}
     bool Is2dModel() const {return nullptr != ToGeometricModel2d();}
     bool Is3dModel() const {return nullptr != ToGeometricModel3d();}
@@ -569,32 +511,16 @@ public:
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
-    //! @param[in] newCode The code for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this DgnModel, it does NOT clone the elements of this DgnModel.
     //! @see CopyModel, Import
-    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnElementId newModeledElementId, DgnCodeCR newCode) const;
+    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnElementId newModeledElementId) const;
 
     //! Make a persitent copy of the specified DgnModel and its contents.
     //! @param[in] model The model to copy
     //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
-    //! @param[in] newCode The DgnCode for the new DgnModel.
     //! @see Import
-    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId, DgnCodeCR newCode);
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId);
 
-    //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
-    DgnElementMap const& GetElements() const {return m_elements;}
-
-    //! Determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
-    //! or after EmptyModel is called.
-    bool IsEmpty() const {return (begin() == end());}
-
-    typedef DgnElementMap::const_iterator const_iterator;
-
-    //! a const iterator to the start of the loaded elements for this DgnModel.
-    const_iterator begin() const {return m_elements.begin();}
-
-    //! a const iterator to the end of the loaded elements for this DgnModel.
-    const_iterator end() const {return m_elements.end();}
 
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
     //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
@@ -622,8 +548,8 @@ public:
     //! This is just a convenience method that calls the follow methods, in order:
     //!     -# _CloneForImport
     //!     -# Insert
-    //!     -# _CopyContentsFrom
-    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //!     -# _ImportContentsFrom
+    //! @param[out] stat  Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param[in] sourceModel The model to copy
     //! @param[in] importer Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @param[in] destinationElementToModel after import, the copy of the sourceModel will model this element
@@ -641,6 +567,7 @@ public:
 
     //! Returns the DgnModelId used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() {return DgnModelId((uint64_t)1LL);}
+
 //__PUBLISH_SECTION_END__
     //-------------------------------------------------------------------------------------
     // NOTE: Setting DictionaryId to 16 effectively reserves the IDs below it. 
@@ -660,18 +587,17 @@ public:
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     void OnValidate() {_OnValidate();}
 
-    //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
-    static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="") {return ModelAuthority::CreateModelCode(modelName, nameSpace);}
-
-    //! Creates a DgnCode for a model with the given code value and a namespace derived from the modeled element.
-    static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId) {return ModelAuthority::CreateModelCode(codeValue, modeledElementId);}
-
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
-    //! @param[in]      request  Request to populate
-    //! @param[in]      opcode   The operation to be performed
+    //! @param[in] request Request to populate
+    //! @param[in] opcode The operation to be performed
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const {return _PopulateRequest(request, opcode);}
+
+    //! Make an iterator over the elements in this DgnModel
+    //! @param[in] whereClause The optional where clause starting with WHERE (note, ModelId is already specified.)
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 }; // DgnModel
 
 //=======================================================================================
@@ -728,8 +654,8 @@ public:
             m_roundoffRatio = 0;
             m_formatterBaseDir = 0;
             m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, "m");
-            m_masterUnit = m_subUnit;
+            m_masterUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMeters);
+            m_subUnit = UnitDefinition::GetStandardUnit(StandardUnit::MetricMillimeters);
             }
 
         void FromJson(Json::Value const& inValue);
@@ -789,11 +715,10 @@ public:
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code The DgnCode for the DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, code, inGuiList), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
@@ -804,20 +729,14 @@ public:
         void SetDisplayInfo(DisplayInfo const& displayInfo) {m_displayInfo = displayInfo;} //!< Set the DisplayInfo
     };
 
-private:
-    mutable DgnRangeTreeP m_rangeIndex;
+protected:
+    mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     DisplayInfo  m_displayInfo;
 
-    DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
-    void AddToRangeIndex(DgnElementCR);
-    void RemoveFromRangeIndex(DgnElementCR);
-    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+    DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
+    DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
     
-protected:
-    void ClearRangeIndex();
-
-    virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
-
     //! Add non-element graphics for this DgnModel to the scene.
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add elements that QueryView would normally exclude.
@@ -839,22 +758,27 @@ protected:
 
     virtual void _OnFitView(FitContextR) {}
 
-    DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
-    DGNPLATFORM_EXPORT virtual void _EmptyModel() override;
-    DGNPLATFORM_EXPORT virtual void _RegisterElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element) override;
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
-    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
-
-    virtual GeometricModelCP _ToGeometricModel() const override final {return this;}
+    virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
+    void _OnLoadedElement(DgnElementCR element) override {T_Super::_OnLoadedElement(element); AddToRangeIndex(element);}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
+    void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
+    void _OnReversedAddElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnReversedAddElement(element);}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
+    void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnReversedUpdateElement(modified, original);}
+    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
 public:
+    DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
+
+    void RemoveRangeIndex() {m_rangeIndex.release();}
+
+    RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
@@ -876,8 +800,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
-    virtual GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
+    GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -891,7 +817,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
@@ -936,21 +864,43 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : SpatialModel
     friend struct dgn_ModelHandler::Physical;
 
 private:
-    static PhysicalModelPtr Create(DgnDbR db, DgnElementId modeledElementId, DgnCodeCR code);
+    static PhysicalModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
 
 protected:
     PhysicalModelCP _ToPhysicalModel() const override final {return this;}
     explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalPartitionCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalPartitionCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationModel : SpatialModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationModel, SpatialModel);
+    friend struct dgn_ModelHandler::SpatialLocation;
+
+private:
+    static SpatialLocationModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
+
+protected:
+    SpatialLocationModelCP _ToSpatialLocationModel() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR) override;
+    explicit SpatialLocationModel(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPartitionCR modeledElement);
 };
 
 //=======================================================================================
@@ -964,7 +914,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
 
 protected:
     RoleModelCP _ToRoleModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit RoleModel(CreateParams const& params) : T_Super(params) { }
 };
 
@@ -979,7 +929,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
 
 protected:
     InformationModelCP _ToInformationModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit InformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -993,7 +943,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
 
@@ -1011,12 +961,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DocumentListModel : InformationModel
     friend struct dgn_ModelHandler::DocumentList;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DocumentPartitionCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DocumentPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DocumentPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DocumentPartitionCR modeledElement);
 };
 
 //=======================================================================================
@@ -1030,7 +980,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
     friend struct dgn_ModelHandler::GroupInformation;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1046,7 +996,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : InformationModel
 
 protected:
     DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit RepositoryModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1064,9 +1014,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DefinitionModel);
 protected:
-    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
+    DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) {}
 };
@@ -1079,7 +1029,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
 protected:
-    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
@@ -1101,7 +1051,7 @@ protected:
 
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element
-    DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
 };
 
 //=======================================================================================
@@ -1159,7 +1109,7 @@ public:
     static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
     //! Create a SheetModel that breaks down the specified Sheet element
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet);
 };
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
@@ -1216,6 +1166,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SpatialLocationModel
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : Spatial
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationModel, SpatialLocationModel, SpatialLocation, Spatial, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for PhysicalModel

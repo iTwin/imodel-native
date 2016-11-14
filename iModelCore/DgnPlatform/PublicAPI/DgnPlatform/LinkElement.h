@@ -74,8 +74,8 @@ public:
     DEFINE_T_SUPER(Dgn::InformationModel::CreateParams);
 
     protected:
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, Dgn::DgnCode code, bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, code, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, inGuiList)
             {}
 
     public:
@@ -86,10 +86,9 @@ public:
         //! Parameters to create a new instance of a LinkModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] code The Code for the DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, Dgn::DgnCode code, bool inGuiList = true) :
-            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, code, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, bool inGuiList = true) :
+            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, inGuiList)
             {}
     };
 
@@ -342,12 +341,9 @@ private:
     Utf8String m_url;
     Utf8String m_description;
 
-    Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
-
 protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:
@@ -423,7 +419,19 @@ protected:
     explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(LinkModelR model, Utf8CP url, Utf8CP label, Utf8CP description = nullptr);
+    //! Create a DgnCode using the specified model (uniqueness scope) and name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(LinkModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(LinkModelCR model, Utf8CP baseName);
+
+    //! Create a RepositoryLink in memory
+    //! @param[in] model Create the RepositoryLink in this DgnModel
+    //! @param[in] url The URL of the RepositoryLink
+    //! @param[in] name The name of the RepositoryLink that will be used to form its DgnCode
+    //! @param[in] description The optional description of the RepositoryLink
+    DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(LinkModelR model, Utf8CP url, Utf8CP name, Utf8CP description = nullptr);
 };
 
 //=======================================================================================
@@ -463,12 +471,9 @@ private:
     Utf8String m_name;
     Utf8String m_description;
 
-    Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
-
 protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
 public:

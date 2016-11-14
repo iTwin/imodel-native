@@ -23,12 +23,7 @@ R"HTML(
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
-<script src="scripts/Bentley/CesiumExtensions.js"></script>
-<script src="scripts/Bentley/BimUtil.js"></script>
-<script src="scripts/Bentley/BimMath.js"></script>
-<script src="scripts/Bentley/Bim.js"></script>
-<script src="scripts/Bentley/BimCamera.js"></script>
-<script src="scripts/Bentley/BimWidgets.js"></script>
+<script data-main="scripts/index.js" src="scripts/require.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -53,12 +48,14 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-var viewset = new Bim.Viewset(viewJsonUrl);
-Cesium.when(viewset.readyPromise).then(function() {
-    var tileset = new Bim.Tileset(viewset);
-    Cesium.when(tileset.readyPromise).then(function() {
-        var viewer = new Bim.Viewer('cesiumContainer', tileset, { 'cesiumViewerOptions': viewset.createCesiumViewerOptions() });
-        viewer.createDefaultToolbar();
+require(['scripts/Bentley/Bim'], function(Bim) {
+    var viewset = new Bim.Viewset(viewJsonUrl);
+    Cesium.when(viewset.readyPromise).then(function() {
+        var tileset = new Bim.Tileset(viewset);
+        Cesium.when(tileset.readyPromise).then(function() {
+            var viewer = new Bim.Viewer('cesiumContainer', tileset, viewset.createCesiumViewerOptions());
+            viewer.createDefaultToolbar();
+        });
     });
 });
 </script>

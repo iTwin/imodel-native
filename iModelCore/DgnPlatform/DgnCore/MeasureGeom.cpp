@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-#include <DgnPlatform/DgnBRep/OCBRep.h>
+#if defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -626,6 +626,31 @@ bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isF
         }
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static double getBRepTolerance (IBRepEntityCR entity, IFacetOptionsPtr& facetOptions)
+    {
+    double defaultTolerance = 1.0; // 0.99 accuracy. Avoids making the property dialog too slow when bspline surfaces are involved...
+    double requestedTolerance = 0.0;
+
+    if (facetOptions.IsValid())
+        {
+        requestedTolerance = facetOptions->GetChordTolerance();
+
+        if (requestedTolerance > 0.0)
+            {
+            Transform   invTrans;        
+
+            invTrans.InverseOf(entity.GetEntityTransform());
+            invTrans.ScaleDoubleArrayByXColumnMagnitude(&requestedTolerance, 1);
+            }
+        }
+
+    return (requestedTolerance > 0.0 && requestedTolerance < defaultTolerance) ? requestedTolerance : defaultTolerance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -670,6 +695,7 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
+#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -682,47 +708,39 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
         {
         // Output edge geometry as CurveVector...
         GraphicBuilder builder(graphic);
-        WireframeGeomUtil::Draw(builder, entity, graphic.GetViewContext(), true, false);
+        WireframeGeomUtil::Draw(builder, entity, &graphic.GetViewContext(), true, false);
 
         return true;
         }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
 
-    if (nullptr == shapeLocal)
+    if (!entityPtr.IsValid())
         return true;
 
-    Transform outputTransform;
+    Transform   outputTransform;
     
     GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
 
-    GProp_GProps lProps;
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
 
-    BRepGProp::LinearProperties(shape, lProps);
-
-    double      amount = lProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(lProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(lProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
-#else
-    double      amount = 0;
-    DPoint3d    centroid = DPoint3d::FromZero();
-    RotMatrix   inertia = RotMatrix::FromIdentity();
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
-#endif
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
+        }
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,42 +750,37 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform, graphic))
+    if (GetPreFlattenTransform(flattenTransform, graphic))
         return false; // Facet and flatten...
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
 
-    if (nullptr == shapeLocal)
+    if (!entityPtr.IsValid())
         return true;
 
-    Transform outputTransform;
+    Transform   outputTransform;
     
     GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
 
-    GProp_GProps lProps;
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
 
-    BRepGProp::LinearProperties(shape, lProps);
-
-    double      periphery = lProps.Mass();
-
-    GProp_GProps sProps;
-
-    BRepGProp::SurfaceProperties(shape, sProps);
-
-    double      amount = sProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(sProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(sProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
-#endif
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateAreaSums(amount, periphery, centroid, moments, iXY, iXZ, iYZ);
+        }
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,39 +788,34 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IBRepEntityPtr entityPtr = PSolidUtil::InstanceEntity(entity);
 
-    if (nullptr == shapeLocal)
+    if (!entityPtr.IsValid())
         return true;
 
-    Transform outputTransform;
+    Transform   outputTransform;
     
     GetOutputTransform(outputTransform, graphic);
+    entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
-    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+    double      tolerance = getBRepTolerance(*entityPtr, m_facetOptions);
+    double      amount, periphery;
+    double      inertia[3][3];
+    DPoint3d    centroid, moments;
 
-    GProp_GProps sProps;
+    if (SUCCESS == BRepUtil::MassProperties(*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
+        {
+        double   iXY, iXZ, iYZ;
 
-    BRepGProp::SurfaceProperties(shape, sProps);
-
-    double      periphery = sProps.Mass();
-
-    GProp_GProps vProps;
-
-    BRepGProp::VolumeProperties(shape, vProps);
-
-    double      amount = vProps.Mass();
-    DPoint3d    centroid = OCBRep::ToDPoint3d(vProps.CentreOfMass());
-    RotMatrix   inertia = OCBRep::ToRotMatrix(vProps.MatrixOfInertia());
-    double      iXY, iXZ, iYZ;
-    DPoint3d    moments;
-
-    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
-    AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
-#endif
+        getBRepMoments(moments, iXY, iXZ, iYZ, inertia);
+        AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
+        }
 
     return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,6 +823,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
     switch (m_opType)
         {
         case AccumulateLengths:
@@ -825,12 +834,30 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                 }
             else if (IBRepEntity::EntityType::Sheet == entity.GetEntityType ())
                 {
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-                TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-
-                if (nullptr == shape || OCBRep::HasCurvedFaceOrEdge(*shape))
+                if (!BRepUtil::HasOnlyPlanarFaces(entity))
                     return true; // Not valid type for operation...
-#endif
+
+                bvector<PK_FACE_t> faces;
+
+                // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
+                if (SUCCESS != PSolidTopo::GetBodyFaces(faces, PSolidUtil::GetEntityTag(entity)))
+                    return true;
+
+                Transform entityTransform = entity.GetEntityTransform();
+                GraphicBuilder builder(graphic);
+
+                for (PK_FACE_t thisFace : faces)
+                    {
+                    CurveVectorPtr curve = PSolidGeom::PlanarFaceToCurveVector(thisFace);
+
+                    if (!curve.IsValid())
+                        continue;
+
+                    curve->TransformInPlace(entityTransform);
+                    builder.AddCurveVector(*curve, false);
+                    }
+
+                return true;
                 }
 
             return DoAccumulateLengths (entity, graphic);
@@ -847,13 +874,42 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
         default:
             {
             if (IBRepEntity::EntityType::Wire == entity.GetEntityType ())
+                {
                 return true; // Not valid type for operation...
+                }
+            else if (IBRepEntity::EntityType::Solid == entity.GetEntityType ())
+                {
+                // Output as sheet body in order to get area and perimeter...
+                IBRepEntityPtr copyEntity = entity.Clone();
+
+                if (!copyEntity.IsValid())
+                    return true;
+
+                bvector<IBRepEntityPtr> bodies;
+
+                // NOTE: PK_REGION_make_void changes a disjoint body to general instead of sheet...
+                if (SUCCESS != BRepUtil::Modify::DisjoinBody(bodies, *copyEntity))
+                    return true;
+
+                GraphicBuilder builder(graphic);
+
+                for (IBRepEntityPtr thisEntity : bodies)
+                    {
+                    if (SUCCESS != PSolidUtil::ConvertSolidBodyToSheet(PSolidUtil::GetEntityTag(*thisEntity)))
+                        continue;
+
+                    builder.AddBody(*thisEntity);
+                    }
+
+                return true;
+                }
 
             return DoAccumulateAreas (entity, graphic);
             }
         }
-
+#else
     return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

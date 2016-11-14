@@ -24,7 +24,9 @@ namespace func_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(FunctionalPartitionHandler)
     HANDLER_DEFINE_MEMBERS(FunctionalBreakdownElementHandler)
+    HANDLER_DEFINE_MEMBERS(FunctionalCompositeHandler)
     HANDLER_DEFINE_MEMBERS(FunctionalComponentElementHandler)
+    HANDLER_DEFINE_MEMBERS(FunctionalPortionHandler)
     HANDLER_DEFINE_MEMBERS(FunctionalTypeHandler)
     }
 
@@ -39,7 +41,9 @@ FunctionalDomain::FunctionalDomain() : DgnDomain(FUNCTIONAL_DOMAIN_NAME, "Functi
 
     RegisterHandler(func_ElementHandler::FunctionalPartitionHandler::GetHandler());
     RegisterHandler(func_ElementHandler::FunctionalBreakdownElementHandler::GetHandler());
+    RegisterHandler(func_ElementHandler::FunctionalCompositeHandler::GetHandler());
     RegisterHandler(func_ElementHandler::FunctionalComponentElementHandler::GetHandler());
+    RegisterHandler(func_ElementHandler::FunctionalPortionHandler::GetHandler());
     RegisterHandler(func_ElementHandler::FunctionalTypeHandler::GetHandler());
     }
 
@@ -116,8 +120,7 @@ FunctionalModelPtr FunctionalModel::Create(FunctionalPartitionCR modeledElement)
         return nullptr;
         }
 
-    DgnCode code = DgnModel::CreateModelCode(FUNCTIONAL_SCHEMA(FUNC_CLASS_FunctionalModel), modeledElement.GetElementId());
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
     if (!model.IsValid())
         {
         BeAssert(false);
@@ -154,4 +157,24 @@ DgnDbStatus FunctionalElement::_OnInsert()
 FunctionalTypeCPtr FunctionalElement::GetFunctionalType() const
     {
     return GetDgnDb().Elements().Get<FunctionalType>(GetFunctionalTypeId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    11/2016
+//---------------------------------------------------------------------------------------
+FunctionalCompositePtr FunctionalComposite::Create(FunctionalModelR model)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(func_ElementHandler::FunctionalCompositeHandler::GetHandler());
+    return new FunctionalComposite(CreateParams(db, model.GetModelId(), classId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    11/2016
+//---------------------------------------------------------------------------------------
+FunctionalPortionPtr FunctionalPortion::Create(FunctionalModelR model)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(func_ElementHandler::FunctionalPortionHandler::GetHandler());
+    return new FunctionalPortion(CreateParams(db, model.GetModelId(), classId));
     }

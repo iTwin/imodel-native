@@ -46,8 +46,10 @@ enum class ParamId
     GeographicLocation,
     GlobeImagery,
     GlobeTerrain,
-    Standalone,
+    DisplayGlobe,
     NoReplace,
+    SingleThreaded,
+    IncrementalPublish,
     Invalid,
 };
 
@@ -80,8 +82,10 @@ static CommandParam s_paramTable[] =
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
-        { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
+        { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
+        { L"st", L"singlethreaded", L"Process models sequentially", false, true },
+        { L"up", L"update", L"Update existing tileset from model changes", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -158,13 +162,15 @@ private:
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
-    bool            m_standalone = false;
+    bool            m_displayGlobe = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     bool            m_overwriteExisting = true;
+    bool            m_parallelModels = true;
+    bool            m_incrementalPublish = false;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001), m_displayGlobe(false) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -177,6 +183,8 @@ public:
     bool WantPolylines() const { return m_polylines; }
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
+    bool GetProcessModelsInParallel() const { return m_parallelModels; }
+    bool GetIncrementalPublish() const { return m_incrementalPublish; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -259,7 +267,7 @@ Json::Value  PublisherParams::GetViewerOptions () const
     {
     Json::Value viewerOptions;
 
-    viewerOptions["displayInPlace"] = !m_standalone;
+    viewerOptions["displayInPlace"] = m_displayGlobe;
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
@@ -329,16 +337,18 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
-                m_standalone = false;
+                m_displayGlobe = true;
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
+                m_displayGlobe = true;
                 break;
             case ParamId::GlobeTerrain:
                 m_terrainProvider = Utf8String(arg.m_value.c_str());
+                m_displayGlobe = true;
                 break;
-            case ParamId::Standalone:
-                m_standalone = true;
+            case ParamId::DisplayGlobe:
+                m_displayGlobe = true;
                 break;
             case ParamId::Tolerance:
                 {
@@ -359,6 +369,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::NoReplace:
                 m_overwriteExisting = false;
                 break;
+            case ParamId::SingleThreaded:
+                m_parallelModels = false;
+                break;
+            case ParamId::IncrementalPublish:
+                m_incrementalPublish = true;
+                break;
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -384,7 +401,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
 //! Publishes the contents of a DgnDb view as a Cesium tileset.
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
+struct TilesetPublisher : PublisherContext
 {
 private:
     TileGeneratorP              m_generator = nullptr;
@@ -393,12 +410,9 @@ private:
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
-    bvector<TileNodeCP>         m_emptyNodes;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
-    virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
-    virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
@@ -414,24 +428,22 @@ private:
     struct ProgressMeter : ITileGenerationProgressMonitor
     {
     private:
-        Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
         uint32_t            m_lastPercentCompleted = 0xffffffff;
-        DgnModelCP          m_model;
         
         virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
     public:
-        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher), m_model (nullptr) { }
-        virtual void _SetModel (DgnModelCP model) { m_model = model; }
-        virtual void _SetTaskName(ITileGenerationProgressMonitor::TaskName task) override;
+        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
-        : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool parallelModels, bool publishIncremental)
+        : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+
+        m_processModelsInParallel = parallelModels;
 
         auto& db = viewController.GetDgnDb();
         for (auto& view : ViewDefinition::MakeIterator(db))
@@ -470,15 +482,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     switch (publisherStatus)
         {
         case Status::Success:
-            break;
-        case Status::NoGeometry:    // ok for tile to have no geometry - but mark as empty so we avoid including in json
-            if (tile.GetChildren().empty())
-                {
-                // Leaf nodes with no children should not be published.
-                // Reality models often contain empty parents with non-empty children - they must be published.
-                BeMutexHolder lock(m_mutex);
-                m_emptyNodes.push_back(&tile);
-                }
+        case Status::NoGeometry:   
             break;
         default:
             m_acceptTileStatus = publisherStatus;
@@ -533,8 +537,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
 
     json["viewerOptions"] = viewerOptions;
 
-    BeFileName jsonFileName = m_outputDir;
-    jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
+    WString     jsonRootName = m_rootName + L"_AppData";
+    BeFileName  jsonFileName (nullptr, m_dataDir.c_str(), jsonRootName.c_str(), L"json");
 
     Utf8String jsonFileNameUtf8(jsonFileName.c_str());
     jsonFileNameUtf8.ReplaceAll("\\", "//");
@@ -554,7 +558,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     if (NULL == htmlFile)
         return Status::CantWriteToBaseDirectory;
 
-    Utf8String jsonFileUrl(m_rootName.c_str());
+    Utf8String jsonFileUrl = Utf8String (m_rootName) + "/" + Utf8String(jsonRootName.c_str());
     jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
     std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);
@@ -576,18 +580,13 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
     {
-    printf("Statistics:\n"
+    printf("\nStatistics:\n"
            "Tile count: %u\n"
-           "Tile depth: %u\n"
-           "Cache population time: %.4f seconds\n"
-           "Tile node generation time: %.4f seconds\n"
-           "Tile publishing: %.4f seconds Average per-tile: %.4f seconds\n",
+           "Tile generation time: %.4f seconds\n"
+           "Average per-tile: %.4f seconds\n",
            static_cast<uint32_t>(stats.m_tileCount),
-           static_cast<uint32_t>(stats.m_tileDepth),
-           stats.m_cachePopulationTime,
-           stats.m_collectionTime,
-           stats.m_tileCreationTime,
-           0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
+           stats.m_tileGenerationTime,
+           0 != stats.m_tileCount ? stats.m_tileGenerationTime / stats.m_tileCount : 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,34 +602,8 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
         }
     else
         {
-        Utf8String  modelNameString;   
-
-        if (nullptr != m_model)
-            modelNameString = " (" +  m_model->GetName() + ")";
-
-        printf("\n%s%s: %u%% (%u/%u)%s", m_taskName.c_str(), modelNameString.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        printf("\nGenerating Tiles: %3u%% (%u/%u models completed)%s", pctComplete, completed, total, completed == total ? "\n" : "");
         m_lastPercentCompleted = pctComplete;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonitor::TaskName task)
-    {
-    Utf8String newTaskName;
-    switch (task)
-        {
-        case ITileGenerationProgressMonitor::TaskName::PopulatingCache:         newTaskName = "Populating cache"; break;
-        case ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes:     newTaskName = "Generating tile tree"; break;
-        case ITileGenerationProgressMonitor::TaskName::CollectingTileMeshes:    newTaskName = "Publishing tiles"; break;
-        default:                                                                BeAssert(false); newTaskName = "Unknown task"; break;
-        }
-
-    if (!m_taskName.Equals(newTaskName))
-        {
-        m_lastPercentCompleted = 0xffffffff;
-        m_taskName = newTaskName;
         }
     }
 
@@ -639,7 +612,7 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonito
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    auto status = Setup();
+    auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;
 
@@ -650,11 +623,14 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    status = PublishViewModels(generator, range, params.GetTolerance(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
+        {
+        CleanDirectories(GetDataDirectory());
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+        }
 
     OutputStatistics(generator.GetStatistics());
 
@@ -767,9 +743,9 @@ int wmain(int ac, wchar_t const** av)
         return 1;
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
-    static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, 
+                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel(), createParams.GetIncrementalPublish());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

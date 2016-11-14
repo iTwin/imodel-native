@@ -74,7 +74,7 @@ EntityType _GetEntityType() const
             return IBRepEntity::EntityType::Wire;
 
         default:
-            return IBRepEntity::EntityType::Minimal;
+            return IBRepEntity::EntityType::Invalid;
         }
     }
 
@@ -102,7 +102,7 @@ virtual bool _IsEqual(IBRepEntityCR entity) const override
     {
     PSolidKernelEntity const* psEntity;
 
-    if (NULL == (psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity)))
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity)))
         return false;
 
     if (m_entityTag != psEntity->GetEntityTag())
@@ -239,8 +239,23 @@ void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned = true)
     {
-    if (NULTAG == entityTag)
+    if (PK_ENTITY_null == entityTag)
         return nullptr;
+
+    PK_BODY_type_t bodyType = PK_BODY_type_unspecified_c;
+
+    PK_BODY_ask_type(entityTag, &bodyType);
+
+    switch (bodyType)
+        {
+        case PK_BODY_type_solid_c:
+        case PK_BODY_type_sheet_c:
+        case PK_BODY_type_wire_c:
+            break; // Don't allow empty, minimal, acorn, general, or compound bodies...has unknown ramifications for down-stream operations...
+
+        default:
+            return nullptr;
+        }
 
     return new PSolidKernelEntity(entityTag, transform, owned);
     }
@@ -250,7 +265,7 @@ static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBRepEntityPtr PSolidUtil::CreateNewEntity(uint32_t entityTag, TransformCR entityTransform, bool owned)
+IBRepEntityPtr PSolidUtil::CreateNewEntity(PK_ENTITY_t entityTag, TransformCR entityTransform, bool owned)
     {
     return PSolidKernelEntity::CreateNewEntity(entityTag, entityTransform, owned);
     }
@@ -266,11 +281,52 @@ IBRepEntityPtr PSolidUtil::InstanceEntity(IBRepEntityCR entity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t PSolidUtil::GetEntityTag(IBRepEntityCR entity)
+PK_ENTITY_t PSolidUtil::GetEntityTag(IBRepEntityCR entity, bool* isOwned)
     {
+    if (isOwned)
+        *isOwned = false;
+
     PSolidKernelEntity const* psEntity = dynamic_cast <PSolidKernelEntity const*> (&entity);
 
-    return (nullptr != psEntity ? psEntity->GetEntityTag() : 0);
+    if (nullptr == psEntity)
+        return PK_ENTITY_null;
+    
+    if (isOwned)
+        *isOwned = psEntity->IsOwnedEntity();
+
+    return psEntity->GetEntityTag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_ENTITY_t PSolidUtil::ExtractEntityTag(IBRepEntityR entity)
+    {
+    PSolidKernelEntity* psEntity;
+
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
+        return PK_ENTITY_null;
+
+    return psEntity->ExtractEntityTag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_ENTITY_t PSolidUtil::GetEntityTagForModify(IBRepEntityR entity)
+    {
+    PSolidKernelEntity* psEntity;
+
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
+        return PK_ENTITY_null;
+
+    PK_ENTITY_t entityTag;
+
+    // *** IMPORTANT *** Extract fails for a non-owning/cached entity ptr. We must create a copy to make sure it's not freed!!!
+    if (PK_ENTITY_null == (entityTag = psEntity->ExtractEntityTag()))
+        PK_ENTITY_copy(psEntity->GetEntityTag(), &entityTag);
+
+    return entityTag;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,7 +335,7 @@ uint32_t PSolidUtil::GetEntityTag(IBRepEntityCR entity)
 IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams)
     {
     int         nFaces;
-    PK_FACE_t*  faces = NULL;
+    PK_FACE_t*  faces = nullptr;
 
     if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faces))
         return nullptr;
@@ -310,11 +366,65 @@ void PSolidUtil::SetFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachment
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_EDGE_ask_faces(edgeTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    int     symbIndex = 0;
+    FaceId  entityId;
+
+    // Prefer a face with the same nodeId as the edge...
+    if (SUCCESS == PSolidTopoId::IdFromEntity(entityId, edgeTag, true))
+        {
+        for (int iFace=0; iFace < nFaces; iFace++)
+            {
+            FaceId  faceId;
+
+            if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, faceTags[iFace], true) || entityId.nodeId != faceId.nodeId)
+                continue;
+
+            symbIndex = iFace;
+            break;
+            }
+        }
+
+    PK_FACE_t faceTag = faceTags[symbIndex];
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_VERTEX_ask_faces(vertexTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    PK_FACE_t faceTag = faceTags[0]; // Might need to change to use face with highest node id...
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt pki_combine_memory_blocks (PK_MEMORY_block_t* pBuffer)
     {
-    if (NULL == pBuffer->next)
+    if (nullptr == pBuffer->next)
         return SUCCESS;
 
     // Create block with single contiguous buffer...
@@ -329,7 +439,7 @@ static StatusInt pki_combine_memory_blocks (PK_MEMORY_block_t* pBuffer)
 
         } while (thisBufferP = thisBufferP->next);
 
-    if (NULL == (tmpBlock.bytes = (char *) malloc (tmpBlock.n_bytes)))
+    if (nullptr == (tmpBlock.bytes = (char *) malloc (tmpBlock.n_bytes)))
         {
         PK_MEMORY_block_f (pBuffer);
 
@@ -403,7 +513,7 @@ PK_MEMORY_block_t*  pBuffer                 // => input buffer
     receiveOptions.transmit_format = PK_transmit_format_binary_c;
 
     int         nParts = 0;
-    PK_PART_t*  parts = NULL;
+    PK_PART_t*  parts = nullptr;
 
     if (PK_ERROR_no_errors != PK_PART_receive_b (*pBuffer, &receiveOptions, &nParts, &parts) || !nParts)
         return ERROR;
@@ -478,4 +588,407 @@ TransformCR     transform
 
     return SUCCESS;
     }
+
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct PSolidTopoSubEntity : public RefCounted<ISubEntity>
+{
+protected:
+
+PK_ENTITY_t                         m_entityTag;
+GeometricPrimitiveCPtr              m_parentGeom; // Needs to be non-owning IBRepEntity to avoid freeing body out from under ElementGeometryTool cache...
+mutable GeometricPrimitiveCPtr      m_entityGeom; // Create on demand...
+mutable DRange3d                    m_range = DRange3d::NullRange(); // Calculate on demand...
+mutable Render::GraphicBuilderPtr   m_graphic; // Create on demand...
+DPoint2d                            m_param = DPoint2d::FromZero(); // Locate param(s) for face/edge...convenient for tools...
+DPoint3d                            m_point = DPoint3d::FromZero(); // Locate point for face/edge/vertex...convenient for tools...
+bool                                m_haveLocation = false; // Whether this sub-entity was created from a locate and point/param are valid...
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PSolidTopoSubEntity(GeometricPrimitiveCR parentGeom, PK_ENTITY_t entityTag) : m_parentGeom(&parentGeom), m_entityTag(entityTag) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GeometricPrimitiveCPtr _GetParentGeometry() const override {return m_parentGeom;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual SubEntityType _GetSubEntityType() const override
+    {
+    PK_CLASS_t  entityClass;
+
+    PK_ENTITY_ask_class(m_entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_face:
+            return ISubEntity::SubEntityType::Face;
+
+        case PK_CLASS_edge:
+            return ISubEntity::SubEntityType::Edge;
+
+        case PK_CLASS_vertex:
+        default:
+            return ISubEntity::SubEntityType::Vertex;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _IsEqual(ISubEntityCR subEntity) const override
+    {
+    if (this == &subEntity)
+        return true;
+
+    PSolidTopoSubEntity const* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
+        return false;
+
+    if (m_entityTag != topoSubEntity->m_entityTag)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _IsParentEqual(GeometricPrimitiveCR parent) const
+    {
+    if (GeometricPrimitive::GeometryType::BRepEntity != parent.GetGeometryType())
+        return false;
+
+    return (PSolidUtil::GetBodyForEntity(m_entityTag) == PSolidUtil::GetEntityTag(*parent.GetAsIBRepEntity()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GeometricPrimitiveCPtr _GetGeometry() const override
+    {
+    if (!m_entityGeom.IsValid())
+        {
+        PK_CLASS_t entityClass;
+
+        PK_ENTITY_ask_class(m_entityTag, &entityClass);
+
+        switch (entityClass)
+            {
+            case PK_CLASS_face:
+                {
+                PK_BODY_t sheetTag = PK_ENTITY_null;
+
+                if (SUCCESS != PK_FACE_make_sheet_body(1, &m_entityTag, &sheetTag))
+                    break;
+
+                m_entityGeom = GeometricPrimitive::Create(PSolidKernelEntity::CreateNewEntity(sheetTag, m_parentGeom->GetAsIBRepEntity()->GetEntityTransform()));
+                break;
+                }
+
+            case PK_CLASS_edge:
+                {
+                ICurvePrimitivePtr curve;
+
+                if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, m_entityTag))
+                    break;
+
+                curve->TransformInPlace(m_parentGeom->GetAsIBRepEntity()->GetEntityTransform());
+                m_entityGeom = GeometricPrimitive::Create(curve);
+                break;
+                }
+
+            case PK_CLASS_vertex:
+                {
+                DPoint3d point;
+
+                if (SUCCESS != PSolidUtil::GetVertex(point, m_entityTag))
+                    break;
+
+                m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(point);
+                m_entityGeom = GeometricPrimitive::Create(ICurvePrimitive::CreatePointString(&point, 1));
+                }
+            }
+        }
+
+    return m_entityGeom;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
+    {
+    if (!m_graphic.IsValid())
+        {
+        m_graphic = context.CreateGraphic(); // Don't supply viewport, graphic has to be independent of view render mode, etc.
+        m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 1); // Expect caller to draw using overrides to control color, weight, and style.
+
+        GeometricPrimitiveCPtr geom = _GetGeometry();
+
+        if (geom.IsValid())
+            geom->AddToGraphic(*m_graphic);
+        }
+
+    return m_graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual DRange3d _GetSubEntityRange() const override
+    {
+    if (m_range.IsNull())
+        {
+        PK_BOX_t box;
+        DPoint3d point;
+
+        if (PK_ERROR_no_errors == PK_TOPOL_find_box(m_entityTag, &box)) // <- takes care of face and edge...not vertex...
+            m_range.InitFrom(box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+        else if (SUCCESS == PSolidUtil::GetVertex(point, m_entityTag))
+            m_range.InitFrom(point);
+        else
+            m_range.InitFrom(DPoint3d::FromZero()); // Don't keep calling _GetGeometry, should maybe set to an "empty" range?
+
+        m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(m_range, m_range);
+        }
+
+    return m_range;
+    }
+
+public:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsValidEntityType(PK_ENTITY_t entityTag)
+    {
+    PK_CLASS_t  entityClass;
+
+    PK_ENTITY_ask_class(entityTag, &entityClass);
+
+    switch (entityClass)
+        {
+        case PK_CLASS_face:
+        case PK_CLASS_edge:
+        case PK_CLASS_vertex:
+            return true;
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static PK_ENTITY_t GetEntityTag(ISubEntityCR subEntity)
+    {
+    PSolidTopoSubEntity const* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
+        return PK_ENTITY_null;
+
+    return topoSubEntity->m_entityTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static Transform GetEntityTransform(ISubEntityCR subEntity)
+    {
+    PSolidTopoSubEntity const* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
+        return Transform::FromIdentity();
+
+    return topoSubEntity->m_parentGeom->GetAsIBRepEntity()->GetEntityTransform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
+    {
+    PSolidTopoSubEntity const* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
+        return false;
+
+    if (!topoSubEntity->m_haveLocation)
+        {
+        PK_CLASS_t entityClass;
+
+        PK_ENTITY_ask_class(topoSubEntity->m_entityTag, &entityClass);
+
+        if (PK_CLASS_vertex != entityClass)
+            return false;
+
+        if (SUCCESS != PSolidUtil::GetVertex(point, topoSubEntity->m_entityTag))
+            return false;
+
+        topoSubEntity->m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(point);
+        param.Zero();
+
+        return true;
+        }
+
+    point = topoSubEntity->m_point;
+    param = topoSubEntity->m_param;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param)
+    {
+    PSolidTopoSubEntity* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity*> (&subEntity)))
+        return;
+
+    topoSubEntity->m_point = point;
+    topoSubEntity->m_param = param;
+    topoSubEntity->m_haveLocation = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateCache(ISubEntityCR donorEntity)
+    {
+    PSolidTopoSubEntity const* donor;
+
+    if (nullptr == (donor = dynamic_cast<PSolidTopoSubEntity const*>(&donorEntity)))
+        return;
+
+    if (!m_entityGeom.IsValid())
+        m_entityGeom = donor->m_entityGeom;
+
+    m_range = donor->m_range;
+    m_graphic = donor->m_graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static ISubEntityPtr CreateSubEntityPtr(PK_ENTITY_t entityTag, GeometricPrimitiveCR parent)
+    {
+    return new PSolidTopoSubEntity(parent, entityTag);
+    }
+
+}; // PSolidTopoSubEntity
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ISubEntityPtr PSolidSubEntity::CreateSubEntity(PK_ENTITY_t entityTag, TransformCR transform)
+    {
+    if (!PSolidTopoSubEntity::IsValidEntityType(entityTag))
+        return nullptr;
+
+    // NOTE: Create non-owning instance, LocateSubEntityTool cache needs to control life-span of parent IBRepEntity...
+    return PSolidTopoSubEntity::CreateSubEntityPtr(entityTag, *GeometricPrimitive::Create(PSolidUtil::CreateNewEntity(PSolidUtil::GetBodyForEntity(entityTag), transform, false)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ISubEntityPtr PSolidSubEntity::CreateSubEntity(PK_ENTITY_t entityTag, IBRepEntityCR parent)
+    {
+    if (!PSolidTopoSubEntity::IsValidEntityType(entityTag))
+        return nullptr;
+
+    // NOTE: Create non-owning instance, LocateSubEntityTool cache needs to control life-span of parent IBRepEntity...
+    return PSolidTopoSubEntity::CreateSubEntityPtr(entityTag, *GeometricPrimitive::Create(PSolidUtil::CreateNewEntity(PSolidUtil::GetEntityTag(parent), parent.GetEntityTransform(), false)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_ENTITY_t PSolidSubEntity::GetSubEntityTag(ISubEntityCR subEntity)
+    {
+    return PSolidTopoSubEntity::GetEntityTag(subEntity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform PSolidSubEntity::GetSubEntityTransform(ISubEntityCR subEntity)
+    {
+    return PSolidTopoSubEntity::GetEntityTransform(subEntity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidSubEntity::UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntity)
+    {
+    PSolidTopoSubEntity* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast<PSolidTopoSubEntity*>(&subEntity)))
+        return;
+
+    topoSubEntity->UpdateCache(donorEntity);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidSubEntity::SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param)
+    {
+    PSolidTopoSubEntity::SetLocation(subEntity, point, param);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidSubEntity::GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
+    {
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return false;
+
+    return PSolidTopoSubEntity::GetLocation(subEntity, point, param);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidSubEntity::GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam)
+    {
+    if (ISubEntity::SubEntityType::Edge != subEntity.GetSubEntityType())
+        return false;
+
+    DPoint2d param;
+
+    if (!PSolidTopoSubEntity::GetLocation(subEntity, point, param))
+        return false;
+
+    uParam = param.x;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidSubEntity::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
+    {
+    if (ISubEntity::SubEntityType::Vertex != subEntity.GetSubEntityType())
+        return false;
+
+    DPoint2d param;
+
+    return PSolidTopoSubEntity::GetLocation(subEntity, point, param);
+    }
+
+
+
 

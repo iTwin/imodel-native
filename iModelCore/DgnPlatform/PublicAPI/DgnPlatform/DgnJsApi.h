@@ -614,25 +614,15 @@ struct JsDgnModel : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());
         }
-    JsDgnCodeP GetCode() const 
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsDgnCode(m_model->GetCode());
-        }
     JsDgnDbP GetDgnDb() 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnDb(m_model->GetDgnDb());
         }
-    static JsDgnCodeP CreateModelCode(Utf8StringCR name) 
-        {
-        return new JsDgnCode(DgnModel::CreateModelCode(name));
-        }
 
     RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
-    STUB_OUT_SET_METHOD(Code,JsDgnCodeP)
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
 };
 
@@ -949,7 +939,7 @@ struct JsDgnElements : RefCountedBaseWithCreate
     JsDgnElements(DgnElements& els) : m_elements(els) {}
 
     JsDgnDbP GetDgnDb() const {return new JsDgnDb(m_elements.GetDgnDb()); }
-    JsDgnElementP FindElement(JsDgnObjectIdP id) const;
+    JsDgnElementP FindLoadedElement(JsDgnObjectIdP id) const;
     JsDgnElementP GetElement(JsDgnObjectIdP id) const;
     JsDgnObjectIdP QueryElementIdByCode(JsDgnCodeP) const;
 
@@ -1000,7 +990,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectIdSet(DgnCategory::QueryCategories(*db->m_db));
+        return new JsDgnObjectIdSet(DgnCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
         }
 
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)

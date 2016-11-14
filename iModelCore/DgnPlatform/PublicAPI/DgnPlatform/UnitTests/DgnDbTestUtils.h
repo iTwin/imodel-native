@@ -9,7 +9,7 @@
 
 //=======================================================================================
 // WARNING: Must be careful of dependencies within this file as it is also included by 
-// WARNING:   DgnDisplayTests, DgnClientFxTests, etc.
+// WARNING:   DgnDisplayTests, DgnClientFxTests, ConstructionPlanningTests, etc.
 //=======================================================================================
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatform.h>
@@ -26,43 +26,48 @@ struct DgnDbTestUtils : NonCopyableClass
 {
 public:
     //! Insert a PhysicalModel 
-    //! @note Also creates a Subject for the PhysicalModel to describe
+    //! @note Also creates a PhysicalPartition element for the PhysicalModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static PhysicalModelPtr InsertPhysicalModel(DgnDbR, DgnCodeCR modelCode);
+    static PhysicalModelPtr InsertPhysicalModel(DgnDbR, Utf8CP partitionName);
+
+    //! Insert a SpatialLocationModel 
+    //! @note Also creates a SpatialLocationPartition element for the SpatialLocationModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SpatialLocationModelPtr InsertSpatialLocationModel(DgnDbR, Utf8CP partitionName);
 
     //! Insert a DocumentListModel 
-    //! @note Also creates a Subject for the DocumentListModel to describe
+    //! @note Also creates a DocumentPartition element for the DocumentListModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static DocumentListModelPtr InsertDocumentListModel(DgnDbR, DgnCodeCR modelCode);
+    static DocumentListModelPtr InsertDocumentListModel(DgnDbR, Utf8CP partitionName);
 
     //! Insert a Drawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static DrawingPtr InsertDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static DrawingPtr InsertDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a SectionDrawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label);
+    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static DrawingModelPtr InsertDrawingModel(DrawingCR, DgnCodeCR modelCode);
+    static DrawingModelPtr InsertDrawingModel(DrawingCR);
 
     //! Insert a SheetModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetModelPtr InsertSheetModel(SheetCR, DgnCode modelCode);
+    static SheetModelPtr InsertSheetModel(SheetCR);
 
     //! Insert a LinkModel
-    //! @note Also creates a Subject for the LinkModel to describe
+    //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static LinkModelPtr InsertLinkModel(DgnDbR, DgnCodeCR modelCode);
+    static LinkModelPtr InsertLinkModel(DgnDbR, Utf8CP partitionName);
 
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
@@ -90,20 +95,18 @@ public:
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);
 
-    //! Look up a model by its name
-    template<typename T> static RefCountedPtr<T> GetModelByName(DgnDbR db, Utf8StringCR cmname)
-        {
-        return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
-        }
-
     //! Query for the first GeometricModel in the specified DgnDb
-    //! @note Only to be used when the DgnCode of the model is not known
+    //! @note Only to be used as a last resort
     static DgnModelId QueryFirstGeometricModelId(DgnDbR);
 
     //! Use ECSql to SELECT COUNT(*) from the specified ECClass name
     static int SelectCountFromECClass(DgnDbR, Utf8CP className);
     //! Use BeSQLite to SELECT COUNT(*) from the specified table
     static int SelectCountFromTable(DgnDbR, Utf8CP tableName);
+
+    //! Return true if any element has the specified CodeValue.
+    //! @note CodeNamespace and CodeAuthorityId are not considered
+    static bool CodeValueExists(DgnDbR, Utf8CP codeValue);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

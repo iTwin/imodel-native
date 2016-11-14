@@ -45,6 +45,11 @@ public:
     void SetMirrorPlane(RotMatrixCR mirrorPlane) {m_mirrorPlane = mirrorPlane, m_haveMirrorPlane = true;}
 };
 
+#define ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
+        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name); }\
+        virtual std::type_info const& _ElementType() const override {return typeid(__classname__);}\
+        DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
+
 // This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
 // @param[in] __ECClassName__ a string with the ECClass this ElementHandler manaages
 // @param[in] __classname__ the name of the C++ class (must be a subclass of DgnElement) this ElementHandler creates
@@ -52,10 +57,14 @@ public:
 // @param[in] __handlersuperclass__ This ElementHandler's C++ superclass' classname
 // @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
+        ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
-        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name); }\
-        virtual std::type_info const& _ElementType() const override {return typeid(__classname__);}\
-        DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
+        public:
+
+#define ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
+        ELEMENTHANDLER_DECLARE_MEMBERS_0(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
+        private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return nullptr;}\
+        public:
 
 //=======================================================================================
 //! @namespace BentleyApi::Dgn::dgn_ElementHandler DgnElement Handlers in the base "Dgn" domain. 
@@ -78,7 +87,7 @@ namespace dgn_ElementHandler
 
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
-        DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR);
+        DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat);
         virtual ElementHandlerP _ToElementHandler() {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
@@ -247,6 +256,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalPartition : InformationPartition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalPartition, Dgn::PhysicalPartition, PhysicalPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SpatialLocationPartition
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, Dgn::SpatialLocationPartition, SpatialLocationPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 };
 

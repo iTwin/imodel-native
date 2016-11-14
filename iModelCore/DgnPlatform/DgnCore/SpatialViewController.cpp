@@ -47,6 +47,7 @@ Frustum::Frustum(DRange3dCR range)
     m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -360,7 +361,7 @@ void SpatialViewController::AddtoSceneQuick(SceneContextR context, QueryResults&
     auto end = results.m_scores.rend();
     for (auto thisScore=results.m_scores.rbegin(); thisScore!=end; ++thisScore)
         {
-        DgnElementCPtr el = pool.FindElement(thisScore->second);
+        DgnElementCPtr el = pool.FindLoadedElement(thisScore->second);
         if (!el.IsValid())
             continue;
 
@@ -900,6 +901,21 @@ int SpatialViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId SpatialViewController::ProgressiveTask::GetNextId()
+    {
+    if (m_abortedElement.IsValid())
+        {
+        DgnElementId id = m_abortedElement;
+        m_abortedElement.Invalidate();
+        return id;
+        }
+
+    return m_rangeQuery.StepRtree();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
@@ -911,12 +927,16 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
     PROGRESSIVE_PRINTF("begin progressive display");
 
     DgnElementId thisId;
-    while ((thisId=m_rangeQuery.StepRtree()).IsValid())
+    while ((thisId=GetNextId()).IsValid())
         {
         if (!m_view.m_scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
             ++m_view.m_scene->m_progressiveTotal;
-            context.VisitElement(thisId, true); // no, draw it now
+            if (SUCCESS != context.VisitElement(thisId, true)) // no, draw it now
+                {
+                m_abortedElement = thisId;
+                break;
+                }
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {

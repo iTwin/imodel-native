@@ -48,13 +48,13 @@ DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, DgnCodeCR modelCode)
+DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a partition to model
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition, modelCode);
+    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
@@ -63,10 +63,10 @@ DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, DgnCodeC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    DrawingPtr drawing = Drawing::Create(model, code, label);
+    DrawingPtr drawing = Drawing::Create(model, name);
     EXPECT_TRUE(drawing.IsValid());
     EXPECT_TRUE(drawing->Insert().IsValid());
     return drawing;
@@ -75,10 +75,10 @@ DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SectionDrawingPtr drawing = SectionDrawing::Create(model, code, label);
+    SectionDrawingPtr drawing = SectionDrawing::Create(model, name);
     EXPECT_TRUE(drawing.IsValid());
     EXPECT_TRUE(drawing->Insert().IsValid());
     return drawing;
@@ -87,10 +87,10 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label)
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, height, width, code, label);
+    SheetPtr sheet = Sheet::Create(model, scale, height, width, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -99,10 +99,10 @@ SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, do
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label)
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, templateId, code, label);
+    SheetPtr sheet = Sheet::Create(model, scale, templateId, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -111,10 +111,10 @@ SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, Dg
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR modelCode)
+DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing)
     {
     MUST_HAVE_HOST(nullptr);
-    DrawingModelPtr model = DrawingModel::Create(drawing, modelCode);
+    DrawingModelPtr model = DrawingModel::Create(drawing);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -125,10 +125,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode)
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet, modelCode);
+    SheetModelPtr model = SheetModel::Create(sheet);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -139,13 +139,13 @@ SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
+LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    LinkPartitionCPtr partition = LinkPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    LinkPartitionCPtr partition = LinkPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, partition->GetElementId(), modelCode));
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, partition->GetElementId()));
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -156,14 +156,28 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelCode)
+PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    Utf8PrintfString partitionLabel("Partition for %s", modelCode.GetValueCP());
-    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, partitionLabel.c_str());
+    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, partitionName);
     EXPECT_TRUE(partition.IsValid());
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition, modelCode);
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+SpatialLocationModelPtr DgnDbTestUtils::InsertSpatialLocationModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    SpatialLocationModelPtr model = SpatialLocationModel::CreateAndInsert(*partition);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
@@ -260,8 +274,8 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void addAllCategories(DgnDbR db, CategorySelectorR selector)
     {
-    for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        selector.AddCategory(categoryId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+        selector.AddCategory(categoryEntry.GetId<DgnCategoryId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,7 +286,7 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
     auto& db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
     addAllCategories(db, viewDef->GetCategorySelector());
-    viewDef->Insert();
+    EXPECT_TRUE(viewDef->Insert().IsValid());
     return viewDef;
     }
 
@@ -284,7 +298,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     auto& db = model.GetDgnDb();
     CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
     addAllCategories(db, viewDef.GetCategorySelector());
-    viewDef.Insert();
+    EXPECT_TRUE(viewDef.Insert().IsValid());
     return viewDef.GetViewId();
     }
 
@@ -299,7 +313,7 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
     DgnCategoryIdSet _categories;
     if (nullptr == categories)
         {
-        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        for (auto const& categoryId : DgnCategory::MakeIterator(db).BuildIdSet<DgnCategoryId>())
             _categories.insert(categoryId);
         categories = &_categories;
         }
@@ -365,4 +379,21 @@ int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
         return -1;
 
     return statement.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    11/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbTestUtils::CodeValueExists(DgnDbR db, Utf8CP codeValue)
+    {
+    ECSqlStatement statement;
+    ECSqlStatus prepareStatus = statement.Prepare(db, "SELECT * FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE CodeValue=? LIMIT 1");
+    ECSqlStatus bindStatus = statement.BindText(1, codeValue, IECSqlBinder::MakeCopy::No);
+    if ((ECSqlStatus::Success != prepareStatus) || (ECSqlStatus::Success != bindStatus))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    return (BE_SQLITE_ROW == statement.Step());
     }

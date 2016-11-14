@@ -54,7 +54,7 @@ struct ScriptLibraryModel : DefinitionModel
     explicit ScriptLibraryModel(CreateParams const& params) : T_Super(params) {}
 
   public:
-    DGNPLATFORM_EXPORT static ScriptLibraryModelPtr Create(DefinitionPartitionCR, DgnCodeCR, Utf8CP sourceUrl="");
+    DGNPLATFORM_EXPORT static ScriptLibraryModelPtr Create(DefinitionPartitionCR, Utf8CP sourceUrl="");
     };
 
 //! @private

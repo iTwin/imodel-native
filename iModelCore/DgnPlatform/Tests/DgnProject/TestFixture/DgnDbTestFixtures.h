@@ -50,9 +50,6 @@ public:
 
     virtual void TearDown(){ SaveDb(); }
     
-    //! Initialize already converted/published bim/ibim file
-    void SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false, bool needTestDomain = false);
-    
     //! Initialize a seed file with the name provided
     void SetupSeedProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     
@@ -72,12 +69,9 @@ public:
             m_db->SaveChanges();
         }
 
-    //! Get the default PhysicalModel created by SetupSeedProject or SetupWithPrePublishedFile
+    //! Get the default PhysicalModel created by SetupSeedProject
     //! @note will fail if a 2d model is the default
     PhysicalModelPtr GetDefaultPhysicalModel();
-
-    //! Insert a new PhysicalModel using the specified name
-    PhysicalModelPtr InsertPhysicalModel(Utf8CP modelName) {return DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), DgnModel::CreateModelCode(modelName));}
 
     //! Get the DgnCategoryId of the default category created by SetupSeedProject
     DgnCategoryId GetDefaultCategoryId() {return m_defaultCategoryId;}

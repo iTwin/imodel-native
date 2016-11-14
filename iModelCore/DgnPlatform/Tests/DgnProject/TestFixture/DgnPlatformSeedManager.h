@@ -46,12 +46,12 @@ struct DgnPlatformSeedManager : NonCopyableClass
     //! Information about a root seed DgnDb
     struct SeedDbInfo
         {
-        SeedDbId    id;             //!< The ID of the seed DgnDb
-        SeedDbOptions options;      //!< The options for the seed DgnDb
-        BeFileName  fileName;       //!< The filename 
-        DgnCode     modelCode;      //!< The DgnCode of the first DgnModel
-        Utf8String  categoryName;   //!< The name of the first Category
-        Utf8String  viewName;       //!< The name of the first view, if any.
+        SeedDbId    id;                 //!< The ID of the seed DgnDb
+        SeedDbOptions options;          //!< The options for the seed DgnDb
+        BeFileName  fileName;           //!< The filename 
+        DgnCode  physicalPartitionCode; //!< The DgnCode of the default PhysicalPartition
+        Utf8String  categoryName;       //!< The name of the first Category
+        Utf8String  viewName;           //!< The name of the first view, if any.
 
         SeedDbInfo() : id(SeedDbId::OneSpatialModel) {}
         };

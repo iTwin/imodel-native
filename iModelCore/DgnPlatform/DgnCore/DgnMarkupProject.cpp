@@ -69,34 +69,10 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+void MarkupExternalLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindInsertParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus MarkupExternalLink::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-    return T_Super::_BindUpdateParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus MarkupExternalLink::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
+    T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -433,7 +409,7 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
 
     //  Draw additional redline models
     for (auto rdlModel : m_otherRdlsInView)
-        context.VisitDgnModel(rdlModel);
+        context.VisitDgnModel(*rdlModel);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -664,7 +640,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
-    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name)));
+    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */));
     if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("SpatialRedlineModel::CreateModel failed");
@@ -675,7 +651,6 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
     UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
     UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
     rdlModel->GetDisplayInfoR().SetUnits(mu, su);
-
     return rdlModel;
     }
 
@@ -728,10 +703,6 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, Redline
         openStatus = DgnDbStatus::NotFound;
         return nullptr;
         }
-
-    //! Always fill a redline model. We never work with a subset of redline graphics.
-    //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
-    redlineModel->FillModel();
 
     return new RedlineViewController(rdlViewDef);
     }
@@ -799,8 +770,8 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     view->GetDisplayStyle().SetViewFlags(flags);
 
     auto& catsel = view->GetCategorySelector();
-    for (auto const& catId : DgnCategory::QueryCategories(db))
-        catsel.AddCategory(catId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+        catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
         
     return view;
     }
@@ -935,17 +906,14 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DocumentListModelPtr DgnMarkupProject::GetRedlineListModel()
     {
-    DgnCode modelCode = DgnModel::CreateModelCode("Redlines", MARKUP_SCHEMA_NAME);
-    DgnModelId modelId = Models().QueryModelId(modelCode);
+    DgnCode partitionCode = DocumentPartition::CreateCode(*Elements().GetRootSubject(), "Redlines");
+    DgnModelId modelId = Models().QuerySubModelId(partitionCode);
 
     if (modelId.IsValid())
         return Models().Get<DocumentListModel>(modelId);
 
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Redlines");
-    if (!partition.IsValid())
-        return nullptr;
-
-    return DocumentListModel::CreateAndInsert(*partition, modelCode);
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), partitionCode.GetValueCP());
+    return partition.IsValid() ? DocumentListModel::CreateAndInsert(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -978,8 +946,6 @@ RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR mod
 RedlineModelPtr RedlineModel::Create(DgnDbStatus* outCreateStatus, Redline& doc)
     {
     // DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
-    Utf8String name = doc.GetCode().GetValue();
-    DgnCode code = CreateModelCode(doc.GetCode().GetValue(), doc.GetElementId());
-    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId(), code);
+    RedlineModel::CreateParams params(doc.GetDgnDb(), QueryClassId(doc.GetDgnDb()), doc.GetElementId());
     return new RedlineModel(params);
     }

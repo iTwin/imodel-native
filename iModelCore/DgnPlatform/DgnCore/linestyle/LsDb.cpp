@@ -594,8 +594,8 @@ DgnDbStatus LineStyleElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
-        Utf8String data = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data));
+        m_description = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
+        m_data = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data));
 
         //  m_data.Init(baseModelId, source, descr);
         }
@@ -621,43 +621,15 @@ void LineStyleElement::_CopyFrom(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+void LineStyleElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
     BeAssert(0 < m_data.size());
-    if (m_data.size() <= 0)
-        return DgnDbStatus::BadArg;
+    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Data), m_data.c_str(), IECSqlBinder::MakeCopy::No);
 
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Data), m_data.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-
-    if (m_description.SizeInBytes() > 0 && ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_description.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    12/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_BindInsertParams(BeSQLite::EC::ECSqlStatement&stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    12/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
+    if (m_description.SizeInBytes() > 0)
+        stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_description.c_str(), IECSqlBinder::MakeCopy::No);
     }
 
 //---------------------------------------------------------------------------------------

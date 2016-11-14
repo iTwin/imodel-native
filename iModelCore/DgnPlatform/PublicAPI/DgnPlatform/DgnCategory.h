@@ -82,7 +82,7 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
+        DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         void RelocateToDestinationDb(DgnImportContext&);
     };// Appearance
@@ -161,11 +161,9 @@ private:
 
     Data m_data;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
@@ -177,7 +175,7 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
-    static CreateParams CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties);
+    static CreateParams CreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus*);
 
 public:
     static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer);
@@ -216,11 +214,12 @@ public:
     //! Looks up the ID of the category containing the specified sub-category
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId, DgnDbR db);
 
-    //! Returns a set of sub-category IDs.
-    //! @param[in]      db         The DgnDb in which to query.
-    //! @param[in]      categoryId If valid, include only sub-categories of the specified category; otherwise, include all sub-categories within the DgnDb.
-    //! @return A set of sub-category IDs, optionally limited to those belonging to a specific category.
-    DGNPLATFORM_EXPORT static DgnSubCategoryIdSet QuerySubCategories(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
+    //! Make an iterator over sub-categories of the specified category in the specified DgnDb
+    //! @param[in] db The DgnDb
+    //! @param[in] categoryId Iterate sub-categories of this category
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
     //! Returns the number of sub-categories of a specific category, or the total number of sub-categories of all categories in the DgnDb.
     //! @param[in]      db         The DgnDb in which to query
@@ -319,11 +318,9 @@ public:
 private:
     Data m_data;
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
@@ -337,8 +334,6 @@ protected:
     
     DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
-
-    void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
 
 public:
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
@@ -379,14 +374,19 @@ public:
     //! Returns the ID of the default sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnSubCategoryId GetDefaultSubCategoryId(DgnCategoryId categoryId);
 
-    //! Returns the IDs of all categories in the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnCategoryIdSet QueryCategories(DgnDbR db);
+    //! Sets the appearance of the default SubCategory
+    DGNPLATFORM_EXPORT void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
 
-    //! Returns the IDs of all categories in the specified DgnDb, in ascending order by name
-    DGNPLATFORM_EXPORT static DgnCategoryIdList QueryOrderedCategories(DgnDbR db);
+    //! Make an iterator over all categories in the specified DgnDb
+    //! @param[in] db Iterate categories in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
-    //! Returns the IDs of all sub-categories of this category
-    DgnSubCategoryIdSet QuerySubCategories() const {return DgnSubCategory::QuerySubCategories(GetDgnDb(), GetCategoryId());}
+    //! Returns an iterator over all sub-categories of this category
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    ElementIterator MakeSubCategoryIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const {return DgnSubCategory::MakeIterator(GetDgnDb(), GetCategoryId(), whereClause, orderByClause);}
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db); //! Returns the number of categories in the DgnDb
     size_t QuerySubCategoryCount() const {return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId());} //! Returns the number of sub-categories belonging to this category
@@ -423,7 +423,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     protected:
-        virtual DgnElementPtr _CreateNewElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR) override;
+        virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat) override;
 
     };
 }

@@ -73,7 +73,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    m_defaultModelId = m_db->Models().QueryModelId(s_seedFileInfo.modelCode);
+    m_defaultModelId = m_db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
     ASSERT_TRUE(m_defaultModelId.IsValid());
 
     m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, GetDgnDb());
@@ -159,44 +159,6 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     ASSERT_EQ( BE_SQLITE_OK , result );
     if (needBriefcase)
         TestDataManager::MustBeBriefcase(db, mode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .bim project file after copying it to out
-* baseProjFile is the existing file and testProjFile is what we get
-* @bsimethod                                     Majd.Uddin                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, bool needTestDomain)
-    {
-    wprintf(L"!!!!!!!!!!!!!!!!!! Test %ls is using a pre-published file. Change this test to create its own file\n", testProjFile); // *** WIP_TEST_DOCUMENTS
-
-
-    //** Force to copy the file in Sub-Directory of TestCase
-    BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
-    testFileName.AppendToPath(testProjFile);
-
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseProjFile, testFileName.c_str(), __FILE__));
-    
-    OpenDb(m_db, outFileName, mode, needBriefcase);
-
-    if (needBriefcase)
-        {
-        ASSERT_TRUE(m_db->IsBriefcase());
-        ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
-        }
-
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode && needTestDomain)
-        {
-        DgnDbStatus status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
-        ASSERT_TRUE(DgnDbStatus::Success == status);
-        }
-
-    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
-    ASSERT_TRUE(m_defaultModelId.IsValid());
-
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
-    ASSERT_TRUE(m_defaultCategoryId.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**

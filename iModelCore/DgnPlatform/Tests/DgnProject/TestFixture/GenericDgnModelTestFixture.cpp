@@ -12,6 +12,7 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 DgnPlatformSeedManager::SeedDbInfo GenericDgnModelTestFixture::s_seedFileInfo;
 DgnPlatformSeedManager::SeedDbInfo GenericDgnModel2dTestFixture::s_seedFileInfo;
+DgnModelId GenericDgnModel2dTestFixture::s_drawingModelId;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Umar.Hayat           06/16
@@ -72,9 +73,10 @@ void GenericDgnModel2dTestFixture::SetUpTestCase()
     ASSERT_TRUE(db.IsValid());
 
     // Create a 2d model
-    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL2D_NAME);
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode(TEST_MODEL2D_NAME));
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, TEST_MODEL2D_NAME);
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    s_drawingModelId = drawingModel->GetModelId();
     
     db->SaveChanges();
     }
@@ -85,16 +87,14 @@ void GenericDgnModel2dTestFixture::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 void GenericDgnModelTestFixture::TearDownTestCase()
     {
-    //DgnPlatformSeedManager::EmptySubDirectory(GenericDgnModelTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
+
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Umar.Hayat             07/2016
 //---------------------------------------------------------------------------------------
 void GenericDgnModel2dTestFixture::TearDownTestCase()
     {
-    //DgnPlatformSeedManager::EmptySubDirectory(GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
-
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

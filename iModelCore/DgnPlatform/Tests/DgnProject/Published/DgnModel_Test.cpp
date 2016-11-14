@@ -15,150 +15,207 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct DgnModelTests : public DgnDbTestFixture
     {
-    DgnModelPtr m_model;
-
-    void LoadModel(Utf8CP name)
+    DgnModelPtr LoadModel(Utf8CP name)
         {
-        DgnModels& modelTable = m_db->Models();
-        DgnModelId id = modelTable.QueryModelId(DgnModel::CreateModelCode(name));
-        m_model = modelTable.GetModel(id);
-        if (m_model.IsValid())
-            m_model->FillModel();
+        DgnCode partitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), name);
+        DgnModelId modelId = m_db->Models().QuerySubModelId(partitionCode);
+        DgnModelPtr model =  m_db->Models().GetModel(modelId);
+        BeAssert(model.IsValid());
+        return model;
         }
 
-    void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
+    DgnElementId InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2);
+    DgnElementId InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2);
+
+    void TestRangeIndex3d();
+    void TestRangeIndex2d();
+    void CheckEmptyModel();
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool expectSuccess)
+DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnElementPtr elem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
 
-    DgnElementPtr gelem;
-    if (is3d)
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
-    else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
+    builder->Finish(*elem->ToGeometrySourceP());
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
-    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0))));
+    auto newElem = m_db->Elements().Insert(*elem);
+    return newElem.IsValid() ? newElem->GetElementId() : DgnElementId();
+    }
 
-    if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP())) // Won't catch 2d/3d mismatch from just GeometrySource as we don't know a DgnModel...
-        {
-        ASSERT_FALSE(expectSuccess);
-        return;
-        }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+DgnElementId DgnModelTests::InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
+    {
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnElementPtr elem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
 
-    DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
+    builder->Finish(*elem->ToGeometrySourceP());
+
+    auto newElem = m_db->Elements().Insert(*elem);
+    return newElem.IsValid() ? newElem->GetElementId() : DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
+* @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetGraphicElements)
+void DgnModelTests::TestRangeIndex3d()
     {
-    SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("Splines");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
-    InsertElement(*m_db, model->GetModelId(), true, true);
+    auto model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "RangeTest");
 
-    LoadModel("Splines");
-    uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
-    ASSERT_NE(graphicElementCount, 0);
-    ASSERT_TRUE(graphicElementCount > 0) << "Please provide model with graphics elements, otherwise this test case makes no sense";
+    model->FillRangeIndex(); // test maintaining the range index as add elements
+
+    Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
+    DPoint3d pt1 = DPoint3d::FromZero();
+    DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement3d(model->GetModelId(), placement, pt1, pt2).IsValid());
+
+    auto rangeIndex = model->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
+
     int count = 0;
-    for (auto const& elm : *m_model)
+    for (auto& el : model->MakeIterator())
         {
-        EXPECT_TRUE(elm.second->GetModel() == m_model);
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
         ++count;
         }
-    EXPECT_EQ(graphicElementCount, count);
-    }
+    EXPECT_TRUE(count == 4);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetName)
-    {
-    SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("Splines");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
-    InsertElement(*m_db, model->GetModelId(), true, true);
+    model->RemoveRangeIndex();  // drop the range index and recreate it from a query
+    model->FillRangeIndex();
+    rangeIndex = model->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
 
-    LoadModel("Splines");
-    Utf8String name = m_model->GetCode().GetValue();
-    EXPECT_TRUE(name.CompareTo("Splines") == 0);
-    Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
-                       " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
-    PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(newName));
-    DgnModelId id = m_db->Models().QueryModelId(DgnModel::CreateModelCode(newName));
-    ASSERT_TRUE(id.IsValid());
-    m_model = m_db->Models().GetModel(id);
-    Utf8String nameToVerify = m_model->GetCode().GetValue();
-    EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str()) == 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, EmptyList)
-    {
-    SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("Splines");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("Splines");
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    m_model->EmptyModel();
-    ASSERT_TRUE(0 == m_model->GetElements().size());
-
-    m_model->FillModel();
-    ASSERT_TRUE(0 != m_model->GetElements().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, GetRange)
-    {
-    SetupSeedProject();
-    //Insert new Model
-    DgnModelPtr model = InsertPhysicalModel("RangeTest");
-    EXPECT_TRUE(model != nullptr);
-    //Insert Element
-    InsertElement(*m_db, model->GetModelId(), true, true);
-
-    LoadModel("RangeTest");
-
-    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
+    count = 0;
+    for (auto& el : model->MakeIterator())
+        {
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
+        ++count;
+        }
+    
+    AxisAlignedBox3d range = model->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
-    DPoint3d low; low.Init(0.00000000000000000, -0.00050000000000000001, -0.00050000000000000001);
-    DPoint3d high; high.Init(1.00000000000000000, 0.00050000000000000001, 0.00050000000000000001);
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+
     AxisAlignedBox3d box(low, high);
+    AxisAlignedBox3d indexbox(rangeIndex->GetExtents().ToRange3d());
 
     EXPECT_TRUE(box.IsEqual(range, .00000001));
+    EXPECT_TRUE(indexbox.IsEqual(range, .00001));
+
+    Placement3d placement2(DPoint3d::FromZero(), YawPitchRollAngles());
+    pt1 = DPoint3d::From(-10.,-10,-10);
+    pt2 = DPoint3d::From(20,20,20);
+    auto id1 = InsertElement3d(model->GetModelId(), placement2, pt1, pt2);
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d());
+    EXPECT_TRUE(indexbox.IsEqual(AxisAlignedBox3d(pt1,pt2), .00001));
+
+    auto el2 = m_db->Elements().GetElement(id1)->CopyForEdit();
+    EXPECT_TRUE(el2.IsValid());
+    
+    placement2 = el2->ToGeometrySource3d()->GetPlacement();
+    placement2.SetOrigin(DPoint3d::From(1,0,0));
+    el2->ToGeometrySource3dP()->SetPlacement(placement2);
+    EXPECT_TRUE(el2->Update().IsValid()); // modify the largest range element in the model. This should cause the range tree extent to change by x=1
+
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d());
+    pt1.x += 1;
+    pt2.x += 1;
+
+    EXPECT_TRUE(indexbox.IsEqual(AxisAlignedBox3d(pt1,pt2), .00001));
+
+    EXPECT_TRUE(DgnDbStatus::Success == el2->Delete());  // deleting the element should remove it from the range index
+    EXPECT_TRUE(nullptr == rangeIndex->FindElement(id1));
+    indexbox = AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d()); // and the new extent of the model should be back to what it was before we added the large element
+    EXPECT_TRUE(indexbox.IsEqual(range, .00001));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, GetRangeOfEmptyModel)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModelTests::CheckEmptyModel()
+    {
+    // check the range of an empty 3d model
+    auto model2 = LoadModel("DefaultModel");
+    AxisAlignedBox3d thirdRange = model2->ToGeometricModel()->QueryModelRange();
+    EXPECT_FALSE(thirdRange.IsValid());
+
+    int count = 0;
+    for (auto& el : model2->MakeIterator())
+        {
+        ++count;
+        }
+
+    EXPECT_TRUE(0 == count);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModelTests::TestRangeIndex2d()
+    {
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    drawingModel->FillRangeIndex(); // test maintaining the range index as we add elements
+
+    Placement2d placement(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
+    DPoint3d pt1 = DPoint3d::FromZero();
+    DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+    EXPECT_TRUE(InsertElement2d(drawingModel->GetModelId(), placement, pt1, pt2).IsValid());
+
+    auto rangeIndex = drawingModel->GetRangeIndex();
+    EXPECT_TRUE(4 == rangeIndex->GetCount());
+    EXPECT_TRUE(4 == rangeIndex->DebugElementCount());
+    int count = 0;
+    for (auto& el : drawingModel->MakeIterator())
+        {
+        EXPECT_TRUE(nullptr != rangeIndex->FindElement(el.GetElementId()));
+        ++count;
+        }
+    EXPECT_TRUE(count == 4);
+
+    m_db->SaveChanges();
+
+    DPoint3d low; low.Init(1.9995000000000001, 2.0000000000000000, -0.00050000000000000001);
+    DPoint3d high; high.Init(2.0005000000000002, 3.0000000000000000, 0.00050000000000000001);
+    AxisAlignedBox3d box(low, high);
+
+    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
+    EXPECT_TRUE(box.IsEqual(range2d, .00000001));
+    EXPECT_TRUE(indexbox2d.IsEqual(range2d, .00001));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, RangeIndex)
     {
     SetupSeedProject();
-    LoadModel("DefaultModel");
 
-    AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
-    EXPECT_FALSE(thirdRange.IsValid());
+    TestRangeIndex3d();
+    TestRangeIndex2d();
+    CheckEmptyModel();
     }
 
 //---------------------------------------------------------------------------------------
@@ -183,10 +240,8 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     {
     SetupSeedProject();
 
-    static Utf8CP s_sheetModel1Name = "SheetModel1";
-    static Utf8CP s_sheetModel1NameUPPER = "SHEETMODEL1";
-    static Utf8CP s_sheetModel2Name = "SheetModel2";
-
+    DgnModelId sheetModelId1, sheetModelId2;
+    
     BeFileName dbFileName;
 
     if (true)
@@ -203,29 +258,20 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         double width2 = 2.2;
 
         // Create a sheet
-        DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("SheetListModel"));
-        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, DgnCode(), "Sheet1");
-        SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1, DgnModel::CreateModelCode(s_sheetModel1Name));
+        DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "SheetListModel");
+        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, "Sheet1");
+        SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1);
+        sheetModelId1 = sheetModel1->GetModelId();
 
         ASSERT_EQ(1, countSheetModels(*db));
         ASSERT_NE(DgnDbStatus::Success, sheetModel1->Insert()) << "Should be illegal to INSERT a SheetModel that is already persistent";
 
-        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
-        ASSERT_EQ(modelId, sheetModel1->GetModelId());
-        ASSERT_EQ(modelId, db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1NameUPPER))) << "Sheet model names should be case-insensitive";
-        ASSERT_EQ(sheetModel1.get(), db->Models().Get<SheetModel>(modelId).get());
-
-        DgnCode modelCode;
-        db->Models().GetModelCode(modelCode, modelId);
-        ASSERT_STREQ(sheetModel1->GetCode().GetValueCP(), modelCode.GetValueCP());
-
         // Create a second sheet
-        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, DgnCode(), "Sheet2");
-        SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2, DgnModel::CreateModelCode(s_sheetModel2Name));
+        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, "Sheet2");
+        SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2);
+        sheetModelId2 = sheetModel2->GetModelId();
 
         ASSERT_EQ(2, countSheetModels(*db));
-        ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name)).IsValid());
-        ASSERT_NE(sheetModel2->GetModelId(), sheetModel1->GetModelId());
 
         ASSERT_EQ(scale1, sheet1->GetScale());
         ASSERT_EQ(scale2, sheet2->GetScale());
@@ -248,17 +294,13 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
 
-        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
-        SheetModelPtr sheetModel1 = db->Models().Get<SheetModel>(modelId);
+        SheetModelPtr sheetModel1 = db->Models().Get<SheetModel>(sheetModelId1);
         ASSERT_TRUE(sheetModel1.IsValid());
-        ASSERT_EQ(modelId, sheetModel1->GetModelId());
-        ASSERT_STREQ(s_sheetModel1Name, sheetModel1->GetCode().GetValueCP());
 
         // Delete Sheet2
         ASSERT_EQ(2, countSheetModels(*db));
-        DgnModelId sheetModel2Id = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name));
-        DgnModelPtr sheet2Model = db->Models().GetModel(sheetModel2Id);
-        ASSERT_EQ(DgnDbStatus::Success, sheet2Model->Delete());
+        DgnModelPtr sheetModel2 = db->Models().GetModel(sheetModelId2);
+        ASSERT_EQ(DgnDbStatus::Success, sheetModel2->Delete());
         ASSERT_EQ(1, countSheetModels(*db));
         db->SaveChanges();
         db->CloseDb();
@@ -266,17 +308,20 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
     if (true)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(db.IsValid());
-        ASSERT_EQ(1, countSheetModels(*db));
-
-        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
+        m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(m_db.IsValid());
+        ASSERT_EQ(1, countSheetModels(*m_db));
 
         // Verify that we can only place drawing elements in a sheet
-        InsertElement(*db, modelId, false, true);
-        InsertElement(*db, modelId, true, false);
-        db->SaveChanges();
-        db->CloseDb();
+        Placement3d placement(DPoint3d::From(2,2,0), YawPitchRollAngles(AngleInDegrees::FromDegrees(90), AngleInDegrees::FromDegrees(0), AngleInDegrees::FromDegrees(0)));
+        Placement2d placement2d(DPoint2d::From(2,2), AngleInDegrees::FromDegrees(90));
+        DPoint3d pt1 = DPoint3d::FromZero();
+        DPoint3d pt2 = DPoint3d::From(1, 0, 0);
+
+        EXPECT_TRUE(!InsertElement3d(sheetModelId1, placement, pt1, pt2).IsValid());
+        EXPECT_TRUE(InsertElement2d(sheetModelId1, placement2d, pt1, pt2).IsValid());
+        m_db->SaveChanges();
+        m_db->CloseDb();
         }
     }
 
@@ -344,24 +389,16 @@ TEST_F(DgnModelTests, ModelsIterator)
     DgnDbR db = GetDgnDb();
 
     //Inserts models
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
     db.SaveChanges("changeSet1");
 
-    PhysicalModelPtr m2 = InsertPhysicalModel("Model2");
-    PhysicalModelPtr m3 = InsertPhysicalModel("Model3");
-    db.SaveChanges("changeSet1");
+    PhysicalModelPtr m2 = DgnDbTestUtils::InsertPhysicalModel(db, "Model2");
+    PhysicalModelPtr m3 = DgnDbTestUtils::InsertPhysicalModel(db, "Model3");
+    db.SaveChanges("changeSet2");
 
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
-
-    DgnModelId m1id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model1"));
-    DgnModelId m2id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model2"));
-    DgnModelId m3id = db.Models().QueryModelId(DgnModel::CreateModelCode("Model3"));
-
-    DgnCode m1_code;
-    BentleyStatus ModelName = db.Models().GetModelCode(m1_code, m1id);
-    EXPECT_EQ(0, ModelName);
+    DgnModelId m1id = m1->GetModelId();
+    DgnModelId m2id = m2->GetModelId();
+    DgnModelId m3id = m3->GetModelId();
 
     DgnModels& models = db.Models();
     DgnModels::Iterator iter = models.MakeIterator();
@@ -370,29 +407,20 @@ TEST_F(DgnModelTests, ModelsIterator)
         {
         if (entry.GetModelId() == m1id)
             {
-            EXPECT_EQ(m1->GetClassId().GetValue(), entry.GetClassId().GetValue());
-            EXPECT_STREQ("Model1", entry.GetCodeValue());
-            EXPECT_EQ(true, entry.GetInGuiList());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
+            EXPECT_EQ (m1->GetClassId().GetValue(), entry.GetClassId().GetValue());
+            EXPECT_EQ (true, entry.GetInGuiList());
             i++;
             }
         else if (entry.GetModelId() == m2id)
             {
-            EXPECT_EQ(m2->GetClassId().GetValue(), entry.GetClassId().GetValue());
-            EXPECT_STREQ("Model2", entry.GetCodeValue());
+            EXPECT_EQ (m2->GetClassId().GetValue(), entry.GetClassId().GetValue());
             EXPECT_EQ(true, entry.GetInGuiList());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
         else if (entry.GetModelId() == m3id)
             {
-            EXPECT_EQ(m3->GetClassId().GetValue(), entry.GetClassId().GetValue());;
-            EXPECT_STREQ("Model3", entry.GetCodeValue());
+            EXPECT_EQ (m3->GetClassId().GetValue(), entry.GetClassId().GetValue());;
             EXPECT_EQ(true, entry.GetInGuiList());
-            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
-            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             i++;
             }
         }
@@ -408,96 +436,32 @@ TEST_F(DgnModelTests, AbandonChanges)
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    EXPECT_TRUE(m1.IsValid());
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
     db.SaveChanges("changeSet1");
 
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-    m1->Delete();
-    EXPECT_FALSE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
+    model1->Delete();
+    EXPECT_FALSE(db.Models().GetModel(model1->GetModelId()).IsValid());
 
-    PhysicalModelPtr model2 = InsertPhysicalModel("Model2");
+    PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(db, "Model2");
 
     //Model 1 should be back. Model 2 shouldnt be in the db anymore.
-    DbResult rzlt = db.AbandonChanges();
-    EXPECT_TRUE(rzlt == 0);
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-    EXPECT_FALSE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
+    DbResult result = db.AbandonChanges();
+    EXPECT_EQ(result, BE_SQLITE_OK);
+    EXPECT_TRUE(db.Models().GetModel(model1->GetModelId()).IsValid());
+    EXPECT_FALSE(db.Models().GetModel(model2->GetModelId()).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Maha Nasir                      07/15
+* @bsimethod                                    Majd.Uddin                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppData : DgnModel::AppData
-    {
-    bool isFilled;
-    virtual DropMe _OnFilled(DgnModelCR model) override
-        {
-        isFilled = true;
-        return DropMe::No;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for adding AppData on a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, AddAppData)
+TEST_F(DgnModelTests, UnitDefinitionLabel)
     {
     SetupSeedProject();
-    DgnDbR db = GetDgnDb();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    m1->Insert();
-    EXPECT_TRUE(m1 != nullptr);
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-
-    // Add Appdata
-    static DgnModel::AppData::Key key;
-    TestAppData *AppData = new TestAppData();
-    m1->AddAppData(key, AppData);
-    m1->FillModel();
-    EXPECT_TRUE(AppData->isFilled);
-    EXPECT_TRUE(m1->FindAppData(key) != nullptr);
-
-    // Add appdata again with same key
-     //TestAppData *AppData2 = new TestAppData();
-     //m1->AddAppData(key, AppData2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-//! Test for dropping AppData from a model.
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, DropAppData)
-    {
-    SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-
-    //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
-    m1->Insert();
-    EXPECT_TRUE(m1 != nullptr);
-    EXPECT_TRUE(db.Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
-
-    static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData();
-    m1->AddAppData(m_key, m_AppData);
-    m1->FillModel();
-    EXPECT_TRUE(m_AppData->isFilled);
-    StatusInt status = m1->DropAppData(m_key);
-    EXPECT_TRUE(status == 0);
-    EXPECT_TRUE(m1->FindAppData(m_key) == nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Maha Nasir                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, ReplaceInvalidCharacter)
-    {
-    SetupSeedProject();
+    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+    EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
 
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";
@@ -510,18 +474,37 @@ TEST_F(DgnModelTests, ReplaceInvalidCharacter)
     check = DgnDbTable::IsValidName(name, InvalidChar);
     EXPECT_TRUE(check);
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin                      06/16
+* @bsimethod                                    Ridha.Malik                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, UnitDefinitionLabel)
+TEST_F(DgnModelTests, CodeUniqueness)
     {
     SetupSeedProject();
-    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnDbR db = GetDgnDb();
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Testcode1");
+    ASSERT_TRUE(model1->IsPhysicalModel());
+    DgnModelId modelid1 = model1->GetModelId();
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "Testcode1"));
+    DgnCode partitionCode1 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "Testcode1");
+    DgnModelId modelId1 = db.Models().QuerySubModelId(partitionCode1);
+    ASSERT_TRUE(modelid1 == modelId1);
 
-    // For TFS 473760: The returned label was truncated before the fix i.e. 'm' instead of 'mm'
-    // Adding the test so that this doesn't happen again
-    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
-    EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
-    }
+    PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Testcode2");
+    ASSERT_TRUE(model2->IsPhysicalModel());
+    DgnModelId modelid2 = model2->GetModelId();
+    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "Testcode2"));
+    DgnCode partitionCode2 = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "Testcode2");
+    DgnModelId modelId2 = db.Models().QuerySubModelId(partitionCode2);
+    ASSERT_TRUE(modelid2 == modelId2);
+
+    // Checking models are identifed by unique DgnCode 
+    DgnElementId eleid=model1->GetModeledElementId();
+    auto ele=m_db->Elements().GetElement(eleid)->CopyForEdit();
+    ASSERT_TRUE("Testcode1" == ele->GetCode().GetValue());
+    DgnCode updatepartitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "Testcode2");
+    ele->SetCode(updatepartitionCode);
+    ASSERT_TRUE(updatepartitionCode == ele->GetCode());
+    DgnDbStatus stat;
+    ASSERT_FALSE(ele->Update(&stat).IsValid());
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
+   }

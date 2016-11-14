@@ -235,26 +235,13 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement1::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void PerformanceElement1::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop1_1"), m_prop1_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop1_2"), m_prop1_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop1_3"), m_prop1_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(stmt, forInsert);
 
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement1::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    stmt.BindText(stmt.GetParameterIndex("Prop1_1"), m_prop1_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindInt64(stmt.GetParameterIndex("Prop1_2"), m_prop1_2);
+    stmt.BindDouble(stmt.GetParameterIndex("Prop1_3"), m_prop1_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,22 +258,6 @@ DgnDbStatus PerformanceElement1::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCl
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement1::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop1_1 = "Element1 - UpdatedValue";
-    m_prop1_2 = 20000000LL;
-    m_prop1_3 = -6.283;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement1Ptr PerformanceElement1::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
@@ -294,7 +265,7 @@ PerformanceElement1Ptr PerformanceElement1::Create(Dgn::DgnDbR db, Dgn::DgnModel
     if (specifyPropertyValues)
         return new PerformanceElement1 (PerformanceElement1::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
 
-        return new PerformanceElement1 (PerformanceElement1::CreateParams (db, modelId, classId, category));
+    return new PerformanceElement1 (PerformanceElement1::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -310,6 +281,10 @@ PerformanceElement1CPtr PerformanceElement1::Insert()
 //---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement1CPtr PerformanceElement1::Update()
     {
+    m_prop1_1 = "Element1 - UpdatedValue";
+    m_prop1_2 = 20000000LL;
+    m_prop1_3 = -6.283;
+
     return GetDgnDb().Elements().Update<PerformanceElement1> (*this);
     }
 
@@ -391,26 +366,13 @@ void PerformanceElement1::ExtendGeometry()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement2::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void PerformanceElement2::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop2_2"), m_prop2_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop2_3"), m_prop2_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(statement, forInsert);
 
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement2::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    statement.BindInt64(statement.GetParameterIndex("Prop2_2"), m_prop2_2);
+    statement.BindDouble(statement.GetParameterIndex("Prop2_3"), m_prop2_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -429,28 +391,12 @@ DgnDbStatus PerformanceElement2::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement2::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop2_1 = "Element2 - UpdatedValue";
-    m_prop2_2 = 40000000LL;
-    m_prop2_3 = 5.43656;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement2Ptr PerformanceElement2::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
         return new PerformanceElement2 (PerformanceElement2::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
-    else
-        return new PerformanceElement2 (PerformanceElement2::CreateParams (db, modelId, classId, category));
+
+    return new PerformanceElement2 (PerformanceElement2::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -466,32 +412,23 @@ PerformanceElement2CPtr PerformanceElement2::Insert()
 //---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement2CPtr PerformanceElement2::Update()
     {
+    m_prop2_1 = "Element2 - UpdatedValue";
+    m_prop2_2 = 40000000LL;
+    m_prop2_3 = 5.43656;
+
     return GetDgnDb().Elements().Update<PerformanceElement2> (*this);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement3::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void PerformanceElement3::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop3_2"), m_prop3_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop3_3"), m_prop3_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(statement, forInsert);
 
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement3::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    statement.BindInt64(statement.GetParameterIndex("Prop3_2"), m_prop3_2);
+    statement.BindDouble(statement.GetParameterIndex("Prop3_3"), m_prop3_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,28 +447,10 @@ DgnDbStatus PerformanceElement3::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement3::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop3_1 = "Element3 - UpdatedValue";
-    m_prop3_2 = 60000000LL;
-    m_prop3_3 = 2.828242;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement3Ptr PerformanceElement3::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
-        return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
-    else
-        return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category));
+        return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);    return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -547,32 +466,22 @@ PerformanceElement3CPtr PerformanceElement3::Insert()
 //---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement3CPtr PerformanceElement3::Update()
     {
+    m_prop3_1 = "Element3 - UpdatedValue";
+    m_prop3_2 = 60000000LL;
+    m_prop3_3 = 2.828242;
     return GetDgnDb().Elements().Update<PerformanceElement3> (*this);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement4::BindParams(BeSQLite::EC::ECSqlStatement& statement)
+void PerformanceElement4::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop4_1"), m_prop4_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
-        (ECSqlStatus::Success != statement.BindInt64(statement.GetParameterIndex("Prop4_2"), m_prop4_2)) ||
-        (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop4_3"), m_prop4_3)))
-        return DgnDbStatus::BadArg;
+    T_Super::_BindWriteParams(statement, forInsert);
 
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement4::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus stat = BindParams(statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return T_Super::_BindInsertParams(statement);
+    statement.BindText(statement.GetParameterIndex("Prop4_1"), m_prop4_1.c_str(), IECSqlBinder::MakeCopy::Yes);
+    statement.BindInt64(statement.GetParameterIndex("Prop4_2"), m_prop4_2);
+    statement.BindDouble(statement.GetParameterIndex("Prop4_3"), m_prop4_3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,28 +500,11 @@ DgnDbStatus PerformanceElement4::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement4::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_prop4_1 = "Element4 - UpdatedValue";
-    m_prop4_2 = 80000000LL;
-    m_prop4_3 = 3.23606797748;
-
-    return BindParams(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement4Ptr PerformanceElement4::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
         return new PerformanceElement4 (PerformanceElement4::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
-    else
-        return new PerformanceElement4 (PerformanceElement4::CreateParams (db, modelId, classId, category));
+    return new PerformanceElement4 (PerformanceElement4::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -628,15 +520,18 @@ PerformanceElement4CPtr PerformanceElement4::Insert()
 //---------------+---------------+---------------+---------------+---------------+-------
 PerformanceElement4CPtr PerformanceElement4::Update()
     {
+    m_prop4_1 = "Element4 - UpdatedValue";
+    m_prop4_2 = 80000000LL;
+    m_prop4_3 = 3.23606797748;
     return GetDgnDb().Elements().Update<PerformanceElement4> (*this);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
+void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName, bool specifyPropertyValues) const
     {
-    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(modelCode));
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 

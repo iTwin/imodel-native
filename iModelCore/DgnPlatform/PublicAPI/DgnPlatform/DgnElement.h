@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
 #include "MemoryManager.h"
@@ -43,7 +42,7 @@ namespace dgn_ElementHandler
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
     struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
-    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
     struct Role;
@@ -222,6 +221,54 @@ public:
 };
 
 //=======================================================================================
+//! The "current entry" of an ElementIterator
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementIteratorEntry : ECSqlStatementEntry
+{
+    friend struct ECSqlStatementIterator<ElementIteratorEntry>;
+private:
+    ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+public:
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current DgnElement
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current DgnElement
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current DgnElement
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current DgnElement
+};
+
+//=======================================================================================
+//! An iterator over a set of DgnElements, defined by a query.
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
+{
+    //! Iterates all entries to build an unordered IdSet templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> BeSQLite::IdSet<T_ElementId> BuildIdSet()
+        {
+        BeSQLite::IdSet<T_ElementId> idSet;
+        for (ElementIteratorEntry entry : *this)
+            idSet.insert(entry.GetId<T_ElementId>());
+
+        return idSet;
+        }
+
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass DgnElementId
+    template <class T_ElementId> bvector<T_ElementId> BuildIdList()
+        {
+        bvector<T_ElementId> idList;
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+
+        return idList;
+        }
+};
+
+//=======================================================================================
 //! The basic element importer. Imports elements and their children.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
@@ -257,14 +304,13 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! Returns all auto- or custom-handled properties on a class that are for the specified type of statements
+//! @private
 // @bsiclass                                                    Sam.Wilson      07/16
 //=======================================================================================
 struct AutoHandledPropertiesCollection
-    {
+{
     ECN::ECPropertyIterable m_props;
     ECN::ECPropertyIterable::const_iterator m_end;
     ECN::ECClassCP m_customHandledProperty;
@@ -295,22 +341,20 @@ struct AutoHandledPropertiesCollection
     typedef Iterator const_iterator;
     const_iterator begin() const {return Iterator(m_props.begin(), *this);}
     const_iterator end() const {return Iterator(m_props.end(), *this);}
-    };
-
-//__PUBLISH_SECTION_START__
+};
 
 //=======================================================================================
 //! Specifies either an invalid value or the index of an item in an array.
 // @bsiclass                                                     Sam.Wilson        10/16
 //=======================================================================================
 struct PropertyArrayIndex
-    {
+{
     bool m_hasIndex;
     uint32_t m_index;
     PropertyArrayIndex() : m_hasIndex(0) {}
     PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
     PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
-    };
+};
 
 //=======================================================================================
 //! Helps with access to an individual element property
@@ -392,14 +436,14 @@ public:
 *   * DgnElement::_CopyFrom must copy member variables from source element. It is used in many different copying operations.
 *   * DgnElement::_Clone must make a copy of an element, suitable for inserting into the DgnDb.
 *   * DgnElement::_CloneForImport must make a copy of an element in a source DgnDb, suitable for inserting into a target DgnDb. 
-*   * DgnElement::_RemapIds must remap any IDs stored in the element or its aspects.
+*   * DgnElement::_RemapIds must remap any IDs stored in the element's member variables or its aspects.
 * 
 * If you define a new subclass of DgnElement, you may need to override one or more of these virtual methods.
 *
 * If subclass ...|It must override ...
 * ---------------|--------------------
 * Defines new member variables|DgnElement::_CopyFrom to copy them.
-* Defines new properties that are IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
+* Defines new member variables that stored IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
 * Stores some of its data in Aspects|DgnElement::_Clone and DgnElement::_CloneForImport, as described below.
 * 
 * Normally, there is no need to override _Clone, as the base class implementation will work for subclasses, as it calls _CopyFrom.
@@ -474,16 +518,13 @@ public:
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
-* the DgnElement::_SetPropertyValue method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
-* Note that _CopyFrom does <em>not</em> always call _SetPropertyValue on each copied property. If the element subclass needs to validate 
-* specific auto-handled properties even during copying, then it must <em>also</em> override _CopyFrom, call the superclass method to do the copying,
-* and then apply validation logic after the copy is done.
+* _OnInsert and _OnUpdate methods to check property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
-* In rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
+* In some cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
 * That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
 * This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
-* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams to load and store
+* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindWriteParams and DgnElement::_ReadSelectParams to load and store
 * the custom-handled properties. The subclass must also override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide name-based get/set support for its custom-handled properties.
 * Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
@@ -505,7 +546,7 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 {
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -549,18 +590,17 @@ public:
     //! Property filter to be use when comparing elements
     struct ComparePropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None      = 0, 
             WriteOnly = 0x02,  //! Ignore properties such as LastMod
             ElementId = 0x10,  //! Ignore ElementIds
-            };
+        };
 
         Ignore m_ignore;
         bset<Utf8String> m_ignoreList;
 
-        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreList(list) {}
-
+        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) : m_ignore(ignore), m_ignoreList(list) {}
         ComparePropertyFilter(bset<Utf8String> const& list) : m_ignore(Ignore::None), m_ignoreList(list) {}
 
         virtual bool _ExcludeElementId() const {return 0 != (Ignore::ElementId & m_ignore);}
@@ -570,25 +610,22 @@ public:
     //! Property filter to be used when setting properties
     struct SetPropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None          = 0, 
             Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
             WriteOnly     = 0x02,  //! Don't set properties such as LastMod
             Null          = 0x08,  //! Don't set the property if the supplied value is null
             ElementId     = 0x10,  //! Don't set ElementId
             WriteOnlyNullBootstrapping = WriteOnly|Null|Bootstrapping|ElementId,
-            };
+        };
 
         Ignore m_ignore;
         bool m_ignoreErrors;
         bset<Utf8String> m_ignoreList;
 
-        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, 
-                       bset<Utf8String> const& ignoreProps = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
-
-        SetPropertyFilter(bset<Utf8String> const& ignore) 
-            : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
+        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, bset<Utf8String> const& ignoreProps = bset<Utf8String>()) : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
+        SetPropertyFilter(bset<Utf8String> const& ignore)  : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
 
         DGNPLATFORM_EXPORT static bool IsBootStrappingProperty(Utf8StringCR);
 
@@ -643,7 +680,7 @@ public:
         virtual DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original){return DgnDbStatus::Success;}
         virtual DgnDbStatus _OnDelete(DgnElementCR el) {return DgnDbStatus::Success;}
 
-        enum class DropMe {No=0, Yes=1};
+        enum class DropMe : bool {No=false, Yes=true};
 
         //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
@@ -747,7 +784,7 @@ public:
         //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
-        //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
+        //! The subclass should override this method if it has <em>custom-handled properties</em> that contain IDs that must be remapped when it is copied (perhaps between DgnDbs)
         virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
     };
 
@@ -877,7 +914,6 @@ public:
 
 
 private:
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
     void LoadUserProperties() const;
@@ -928,7 +964,7 @@ protected:
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() {m_code = DgnCode();} //!< @private
     
-    static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
+    static CreateParams InitCreateParamsFromECInstance(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus*);
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -944,7 +980,7 @@ protected:
     //! You should then extract your subclass custom-handled properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     //! @see ElementProperties
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams);
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -956,13 +992,18 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
+     //! argument for _BindWriteParams
+    enum class ForInsert : bool {No=false, Yes=true};
+
     //! Called to bind the element's custom-handled property values to the ECSqlStatement when inserting
     //! a new element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
+    //! @param[in] statement A statement that has been prepared for either Insert or Update of your class' CustomHandledProperties
+    //! @param[in] forInsert Indicates whether the statemeent is an insert or update statement
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
-    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    //! Then you @em must call T_Super::_BindWriteParams,
     //! @see ElementProperties
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+    DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Override this method if your element needs to do additional Inserts into the database (for example,
     //! insert a relationship between the element and something else).
@@ -986,13 +1027,6 @@ protected:
     //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
-
-    //! Called to bind the element's property values to the ECSqlStatement when updating
-    //! an existing element. The parameters to bind are the ones which are marked in the schema with the CustomHandledProperty CustomAttribute.
-    //! @note If you override this method, you should bind your subclass custom-handled properties
-    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
-    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass custom-handled properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
@@ -1118,7 +1152,7 @@ protected:
     //! @param[in] model the new DgnModel
     //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInsert, forwarding its status.
-    virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const;
 
     //! Called after this element has been <i>modeled</i> by a new DgnModel.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInserted.
@@ -1194,12 +1228,8 @@ protected:
     //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
 
-    virtual DgnCode const& _GetCode() const override final {return m_code;}
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override {return true;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
-    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const override;
-    virtual DgnElementCP _ToDgnElement() const override final {return this;}
-    virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const {return true;}
+    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const;
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
@@ -1223,6 +1253,8 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
 
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
+
+    void RemapAutoHandledNavigationproperties(DgnImportContext&);
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1278,8 +1310,6 @@ public:
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
 
-    bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
-    bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
     bool IsRoleElement() const {return nullptr != ToRoleElement();}                 //!< Determine whether this element is a RoleElement or not
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
@@ -1352,8 +1382,6 @@ public:
 
     //! @name AppData Management
     //! @{
-    //! Get the HeapZone for the DgnDb of this element.
-
     //! Add Application Data to this element.
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
@@ -1375,10 +1403,13 @@ public:
 
     //! @}
 
-    //! Get the DgnModelId of this DgnElement.
+    //! Get the DgnDb of this DgnElement.
+    DgnDbR GetDgnDb() const {return m_dgndb;}
+
+    //! Get the DgnModelId of the DgnModel that contains this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
 
-    //! Get the DgnModel of this DgnElement.
+    //! Get the DgnModel that contains this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the (optional) DgnModelId of the DgnModel that is modeling this DgnElement.  That is, the DgnModel that is beneath this element in the hierarchy.
@@ -1428,8 +1459,19 @@ public:
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
 
+    //! Return the DgnCode of this DgnElement
+    DgnCodeCR GetCode() const {return m_code;}
+
+    //! Generate a default code for this DgnElement
+    DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
+    bool SupportsCodeAuthority(DgnAuthorityCR authority) const {return _SupportsCodeAuthority(authority);}
+
     //! Query the database for the last modified time of this DgnElement.
-    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
+    DGNPLATFORM_EXPORT DateTime QueryLastModifyTime() const;
 
     //! Return true if this DgnElement has a label.
     bool HasUserLabel() const {return !m_userLabel.empty();}
@@ -1534,25 +1576,32 @@ public:
     //! Set a DPoint3d ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a DPoint2d ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a boolean ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a double ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set an integer ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set a string ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
@@ -1679,18 +1728,21 @@ public:
 
     //! Get a writable reference to the origin of this Placement3d.
     DPoint3dR GetOriginR() {return m_origin;}
+    void SetOrigin(DPoint3dCR origin) {m_origin=origin;}
 
     //! Get the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesCR GetAngles() const {return m_angles;}
 
     //! Get a writable reference to the YawPitchRollAngles of this Placement3d.
     YawPitchRollAnglesR GetAnglesR() {return m_angles;}
+    void SetAngles(YawPitchRollAnglesCR angles) {m_angles=angles;}
 
     //! Get the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
 
     //! Get a writable reference to the ElementAlignedBox3d of this Placement3d.
     ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
+    void SetElementBox(ElementAlignedBox3d const& box) {m_boundingBox = box;}
 
     //! Convert the origin and YawPitchRollAngles of this Placement3d into a Transform.
     Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
@@ -1791,8 +1843,8 @@ protected:
     virtual Render::GraphicSet& _Graphics() const = 0;
     virtual DgnDbR _GetSourceDgnDb() const = 0;
     virtual DgnElementCP _ToElement() const = 0;
-    virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
-    virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const = 0; // Either this method or _GetAsGeometrySource3d must return non-null.
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const = 0; // Either this method or _GetAsGeometrySource2d must return non-null.
     virtual DgnCategoryId _GetCategoryId() const = 0;
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
@@ -1807,14 +1859,16 @@ protected:
 
     friend struct GeometricElement;
 public:
+    bool Is3d() const {return nullptr != _GetAsGeometrySource3d();}    //!< Determine whether this GeometrySource is 3d or not
+    bool Is2d() const {return nullptr != _GetAsGeometrySource2d();}    //!< Determine whether this GeometrySource is 2d or not
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
     DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
     DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
-    GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
-    GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
-    GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
-    GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
+    GeometrySource2dCP GetAsGeometrySource2d() const {return _GetAsGeometrySource2d();}
+    GeometrySource2dP GetAsGeometrySource2dP() {return const_cast<GeometrySource2dP>(_GetAsGeometrySource2d());}
+    GeometrySource3dCP GetAsGeometrySource3d() const {return _GetAsGeometrySource3d();}
+    GeometrySource3dP GetAsGeometrySource3dP() {return const_cast<GeometrySource3dP>(_GetAsGeometrySource3d());}
     DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
     DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
     GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
@@ -1843,7 +1897,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
     virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
@@ -1859,7 +1913,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
     virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement2dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
@@ -1916,24 +1970,22 @@ protected:
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnTableName() const = 0;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _OnDeleted() const override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const override;
-    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
-    DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
+    DGNPLATFORM_EXPORT void _OnReversedAdd() const override;
+    DGNPLATFORM_EXPORT void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT void _OnUpdateFinished() const override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
     static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
     DgnDbStatus UpdateGeomStream() const;
@@ -1986,26 +2038,23 @@ protected:
     Placement3d m_placement;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
-    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
-    virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+    bool _IsPlacementValid() const override final {return m_placement.IsValid();}
+    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
+    DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    DgnElementCP _ToElement() const override final {return this;}
+    GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
+    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
+    DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
+    Placement3dCR _GetPlacement() const override final {return m_placement;}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     };
 
 //=======================================================================================
@@ -2051,26 +2100,23 @@ protected:
     Placement2d m_placement;
 
     explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
-    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
-    virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
+    bool _IsPlacementValid() const override final {return m_placement.IsValid();}
+    DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    DgnElementCP _ToElement() const override final {return this;}
+    GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
+    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
+    DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
+    Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
-    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 };
 
 //=======================================================================================
@@ -2368,8 +2414,17 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for a Drawing in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Drawing within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
+
     //! Creates a new Drawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param[in] model Create the Drawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the Drawing element's DgnCode
+    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2385,7 +2440,9 @@ protected:
 
 public:
     //! Creates a new SectionDrawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param[in] model Create the SectionDrawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the SectionDrawing element's DgnCode
+    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2400,25 +2457,29 @@ protected:
     explicit Sheet(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param height The sheet height (meters)
-    //! @param width The sheet width (meters)
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, 
-                                              DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! Create a DgnCode for a Sheet in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
 
     //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param sheetTemplate The sheet template. Maybe in valid if there is no template.
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] height The sheet height (meters)
+    //! @param[in] width The sheet width (meters)
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
     //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
 
     //! Get the drawing scale of the sheet
     double GetScale() const {return GetPropertyValueDouble("Scale");}
@@ -2520,6 +2581,12 @@ public:
 
     DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
 
+    //! Make an iterator over all Sessions in the specified DgnDb
+    //! @param[in] db Iterate Sessions in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+
     //! Get the Json::Value associated with a variable in this Session. If the variable is not present, the returned Json::Value will be "null".
     //! @param[in] name The namespace of the variable 
     JsonValueCR GetVariable(Utf8CP name) const {return m_variables[name];}
@@ -2595,6 +2662,13 @@ protected:
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+    //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
+    //! @param[in] parentSubject The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
+
     //! Get the description of this InformationPartitionElement
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
     //! Set the description of this InformationPartitionElement
@@ -2715,6 +2789,35 @@ public:
     //! @param[in] description Optional description for this PhysicalPartition
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! A SpatialLocationPartition provides a starting point for a SpatialLocationModel hierarchy
+//! @note SpatialLocationPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::SpatialLocationPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit SpatialLocationPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new SpatialLocationPartition
+    //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SpatialLocationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -2845,7 +2948,7 @@ private:
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
     DgnElementId  m_nextAvailableId;
-    struct ElemIdTree* m_tree;
+    std::unique_ptr<struct ElemIdTree> m_tree;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
@@ -2896,8 +2999,9 @@ public:
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @note This method will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+    //! @note This method is rarely needed. You should almost always use GetElement. It will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
+    //! @private
+    DGNPLATFORM_EXPORT DgnElementCP FindLoadedElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
@@ -2938,11 +3042,13 @@ public:
 
     //! Create a new, non-persistent element from the supplied ECInstance.
     //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
-    //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
     //! @param properties The instance that contains all of the element's business properties
+    //! @param stat  Optional. If not null, an error status is returned here if the element cannot be created.
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
     //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
-    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(DgnDbStatus* stat, ECN::IECInstanceCR properties);
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const;
+
+    template<class T> RefCountedPtr<T> Create(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const {return dynamic_cast<T*>(CreateElement(properties,stat).get());}
 
     //! Get a DgnElement from this DgnDb by its DgnElementId.
     //! @remarks The element is loaded from the database if necessary.
@@ -2964,8 +3070,15 @@ public:
     //! @see DgnElement::CopyForEdit
     DGNPLATFORM_EXPORT DgnElementCPtr QueryElementByFederationGuid(BeSQLite::BeGuidCR federationGuid) const;
 
+    //! Make an iterator over elements of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
+
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
+
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
@@ -3084,13 +3197,16 @@ protected:
 
 public:
     //! Construct an empty collection
-    DGNPLATFORM_EXPORT DgnEditElementCollector();
+    DgnEditElementCollector() {}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
-    DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    DgnEditElementCollector(DgnEditElementCollector const& rhs) {CopyFrom(rhs);}
+
     //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
+
     //! Destroy this collection
-    DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+    ~DgnEditElementCollector() {EmptyAll();}
 
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
     DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;

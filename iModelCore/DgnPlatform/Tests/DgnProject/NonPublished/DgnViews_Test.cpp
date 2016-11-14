@@ -19,6 +19,8 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#ifdef WIP_MERGE_Hassan
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,6 +28,39 @@ struct DgnViewElemTest : public DgnDbTestFixture
 {
     typedef ViewDefinition::Iterator Iter;
     typedef Iter::Options IterOpts;
+
+    void SetupTestProject()
+        {
+        SetupSeedProject();
+
+        DgnModelPtr model = AddModel("A");
+        static const DgnViewSource s_viewSources[] = {DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private};
+        static const Utf8CP s_viewSourceNames[] = {"-U", "-G", "-P"};
+        static const Utf8CP s_viewDescriptions[] = {"", "generated", "hidden"};
+        // Create one new view of each source for each new model
+
+        for (auto i = 0; i < _countof(s_viewSources); i++)
+            {
+            Utf8String viewName(model->GetCode().GetValue());
+            viewName.append(s_viewSourceNames[i]);
+            ViewDefinitionCPtr view = AddSpatialView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ASSERT_TRUE(view.IsValid());
+            ASSERT_TRUE(view->GetViewId().IsValid());
+            }
+
+        m_db->SaveChanges();
+        }
+
+    DgnModelPtr AddModel(Utf8StringCR name)
+        {
+        DgnClassId classId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
+        DgnModel::CreateParams params(*m_db, classId, DgnModel::CreateModelCode(name));
+        DgnModelPtr model = new SpatialModel(params);
+        EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+
+        return model;
+        }
+        
     template<typename T> ViewDefinitionCPtr AddSpatialView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
         T view(*m_db, name, *new CategorySelector(*m_db, ""), *new DisplayStyle3d(*m_db, ""), *new ModelSelector(*m_db, ""));
@@ -61,12 +96,11 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void Make4Views()
         {
-        PhysicalModelPtr m1 = InsertPhysicalModel("m1");
-        PhysicalModelPtr m2 = InsertPhysicalModel("m2");
-        PhysicalModelPtr m3 = InsertPhysicalModel("m3");
-        PhysicalModelPtr m4 = InsertPhysicalModel("m4");
+        PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m1");
+        PhysicalModelPtr m2 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m2");
+        PhysicalModelPtr m3 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m3");
+        PhysicalModelPtr m4 = DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), "m4");
 
-        ASSERT_TRUE(m1.IsValid() && m2.IsValid() && m3.IsValid() && m4.IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m1, "View 1").IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m2, "View 2").IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m3, "View 3").IsValid());
@@ -85,10 +119,10 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    EXPECT_EQ(3, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
-    static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
+    static const Utf8CP s_viewNames[] = { "A-U", "A-G", "A-P"};
 
     int i = 0;
     for (auto const& entry : iter)
@@ -97,7 +131,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
         i++;
         }
 
-    EXPECT_EQ(i, 4);
+    ASSERT_EQ(i, 3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,8 +193,8 @@ TEST_F(DgnViewElemTest, CRUD)
     Utf8CP drawingDescr = "TestDrawing descr";
 
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, DgnModel::CreateModelCode("DrawingListModel"));
-    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), drawingName);
-    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("TestDrawingModel"));
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, drawingName);
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, "TestDrawingModel");
     DrawingViewPtr drawingView = DgnDbTestUtils::InsertDrawingView(*drawingModel, drawingDescr);
 
     PhysicalModelPtr physicalModel = InsertPhysicalModel("TestPhys");
@@ -231,7 +265,7 @@ TEST_F(DgnViewElemTest, Iterate)
     {
     SetupSeedProject();
 
-    PhysicalModelPtr models[] = { InsertPhysicalModel("A"), InsertPhysicalModel("B") };
+    PhysicalModelPtr models[] = { DgnDbTestUtils::InsertPhysicalModel(*m_db, "A"), DgnDbTestUtils::InsertPhysicalModel(*m_db, "B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };
     static const Utf8CP s_viewSourceNames[] = { "-U", "-G", "-P" };
     static const Utf8CP s_viewDescriptions[] = { "", "generated", "hidden" };
@@ -251,7 +285,7 @@ TEST_F(DgnViewElemTest, Iterate)
         {
         for (auto i = 0; i < _countof(s_viewSources); i++)
             {
-            Utf8String viewName(model->GetCode().GetValue());
+            Utf8String viewName(model->GetName());
             viewName.append(s_viewSourceNames[i]);
             ViewDefinitionCPtr view = AddSpatialView<CameraViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
@@ -293,3 +327,5 @@ TEST_F(DgnViewElemTest, Iterate)
     EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*m_db));
     ExpectViews(IterOpts(), { "B-U", "B-G", "B-P" });
     }
+
+#endif

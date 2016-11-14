@@ -486,29 +486,27 @@ Utf8CP StreetMapModel::_GetCopyrightMessage() const
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getStreetMapServerDescription(WebMercatorModel::Properties::MapType mapType)
-    {
-    Utf8String descr("Mapbox");   // *** WIP translate
-    if (WebMercatorModel::Properties::MapType::Map == mapType)
-        descr.append(" Map");   // *** WIP translate
-    else
-        descr.append(" Satellite Images"); // *** WIP translate
-
-    return descr;
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Sam.Wilson      04/15
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//static Utf8String getStreetMapServerDescription(WebMercatorModel::Properties::MapType mapType)
+//    {
+//    Utf8String descr("Mapbox");   // *** WIP translate
+//    if (WebMercatorModel::Properties::MapType::Map == mapType)
+//        descr.append(" Map");   // *** WIP translate
+//    else
+//        descr.append(" Satellite Images"); // *** WIP translate
+//
+//    return descr;
+//    }
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props) : T_Super::CreateParams(dgndb,
-    DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), 
-    modeledElementId,
-    DgnModel::CreateModelCode(getStreetMapServerDescription(props.m_mapType))),
+WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props) : 
+    T_Super::CreateParams(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), modeledElementId),
     m_properties(props)
     {
     }

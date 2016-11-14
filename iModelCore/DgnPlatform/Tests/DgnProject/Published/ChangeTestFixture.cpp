@@ -64,7 +64,6 @@ void ChangeTestFixture::_CreateDgnDb()
     BeFileName newName(TEST_NAME, true);
     newName.AppendString(L".ibim");
 
-    //SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
     SetupSeedProject();
     m_testDb = m_db;
     m_testFileName = BeFileName(m_db->GetDbFileName(),true);
@@ -75,7 +74,7 @@ void ChangeTestFixture::_CreateDgnDb()
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("TestModel"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "TestModel");
     m_testModelId = model->GetModelId();
 
     m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
@@ -104,7 +103,9 @@ void ChangeTestFixture::OpenDgnDb()
 
     if (!m_testModelId.IsValid())
         {
-        m_testModelId = m_testDb->Models().QueryModelId(DgnModel::CreateModelCode("TestModel"));
+        DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
+        DgnElementId partitionId = m_testDb->Elements().QueryElementIdByCode(partitionCode);
+        m_testModelId = DgnModelId(partitionId.GetValue());
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
@@ -195,8 +196,8 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        categories->AddCategory(catId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(*m_testDb))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");
     auto flags = style->GetViewFlags();

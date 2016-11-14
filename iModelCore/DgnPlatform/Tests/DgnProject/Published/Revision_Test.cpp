@@ -16,9 +16,10 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
+
 // Turn this on for debugging.
 // #define DUMP_REVISION 1
-
 // #define DUMP_CODES
 
 //=======================================================================================
@@ -37,7 +38,7 @@ protected:
     void ModifyElement(DgnElementId elementId);
 
     DgnRevisionPtr CreateRevision();
-    void DumpRevision(DgnRevisionCR revision);
+    void DumpRevision(DgnRevisionCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
     void RestoreTestFile();
@@ -127,12 +128,14 @@ void RevisionTestFixture::InsertFloor(int xmax, int ymax)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::DumpRevision(DgnRevisionCR revision)
+void RevisionTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
     {
 #ifdef DUMP_REVISION
-    printf("---------------------------------------------------------\n");
+    LOG.infov("---------------------------------------------------------");
+    if (summary != nullptr)
+        LOG.infov(summary);
     revision.Dump(*m_testDb);
-    printf("\n\n");
+    LOG.infov("---------------------------------------------------------");
 #endif
     }
 
@@ -161,10 +164,7 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
     {
     DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
     if (!revision.IsValid())
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
     RevisionStatus status = m_testDb->Revisions().FinishCreateRevision();
     if (RevisionStatus::Success != status)
@@ -216,9 +216,6 @@ TEST_F(RevisionTestFixture, Workflow)
     CreateDgnDb();
     m_testDb->SaveChanges("Created Initial Model");
 
-    m_testModel->FillModel();
-    int initialElementCount = (int) m_testModel->GetElements().size();
-
     // Create an initial revision
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
@@ -253,12 +250,6 @@ TEST_F(RevisionTestFixture, Workflow)
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
  
-    // Check the updated element count
-    m_testModel->FillModel();
-    int mergedElementCount = (int) m_testModel->GetElements().size();
-    int expectedElementCount = dimension * dimension * numRevisions + initialElementCount;
-    ASSERT_EQ(expectedElementCount, mergedElementCount);
-
     // Check the updated revision id
     Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
     ASSERT_TRUE(mergedParentRevId != initialParentRevId);
@@ -266,47 +257,8 @@ TEST_F(RevisionTestFixture, Workflow)
     // Abandon changes, and test that the parent revision and elements do not change
     m_testDb->AbandonChanges();
     
-    m_testModel->FillModel();
-    int abandonedElementCount = (int) m_testModel->GetElements().size();
-    ASSERT_TRUE(abandonedElementCount == mergedElementCount);
-
     Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, ConflictError)
-    {
-    // Setup a model with a few elements
-    CreateDgnDb();
-    DgnElementId elementId = InsertPhysicalElement(*m_testModel, m_testCategoryId, 1, 1, 1);
-    m_testDb->SaveChanges("Created Initial Model");
-
-    // Create an initial revision
-    DgnRevisionPtr initialRevision = CreateRevision();
-    ASSERT_TRUE(initialRevision.IsValid());
-
-    // Create a revision for modifying the above element. 
-    BackupTestFile();
-    ModifyElement(elementId);
-    m_testDb->SaveChanges("Modified the element in revision");
-
-    DgnRevisionPtr revision = CreateRevision();
-    ASSERT_TRUE(revision.IsValid());
-
-    RestoreTestFile();
-
-    // Modify the same element to generate an intentional conflict
-    ModifyElement(elementId);
-    m_testDb->SaveChanges("Modified the element");
-
-    // Merge changes from revision
-    BeTest::SetFailOnAssert(false);
-    RevisionStatus status = m_testDb->Revisions().MergeRevision(*revision);
-    ASSERT_TRUE(status != RevisionStatus::Success);
-    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -428,7 +380,6 @@ TEST_F(RevisionTestFixture, Codes)
     CodeSet expectedCodes;
     ExpectCodes(expectedCodes, discardedCodes);
 
-    expectedCodes.insert(defaultModel->GetCode());
     expectedCodes.insert(defaultCat->GetCode());
     expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
     expectedCodes.insert(subCat.GetCode());
@@ -1010,3 +961,65 @@ TEST_F(DependencyRevisionTest, UpdateCache)
     elB = nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
+    {
+    CreateDgnDb();
+
+    // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
+    DgnElementId rootId = InsertElement(123)->GetElementId();
+    DgnElementId depId = InsertElement(456)->GetElementId();
+    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    ASSERT_TRUE(CreateRevision().IsValid());
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+    BackupTestFile();
+
+    // Create a revision with some direct changes to the dependent property
+    UpdateDependentProperty(depId, 2, 789);
+    VerifyDependentProperties(depId, {456, 0, 789, 0});
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+
+    DgnRevisionPtr directChangesRev = CreateRevision();
+    ASSERT_TRUE(directChangesRev.IsValid());
+    DumpRevision(*directChangesRev, "Direct Changes to Dependency:");
+
+    // Create a revision with some indirect changes to the dependent property
+    RestoreTestFile();
+    UpdateRootProperty(654, rootId);
+    m_testDb->SaveChanges("Revision");
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    DgnRevisionPtr indirectChangesRev = CreateRevision();
+    ASSERT_TRUE(indirectChangesRev.IsValid());
+    DumpRevision(*indirectChangesRev, "Indirect Changes to Dependency:");
+
+    // Make direct changes, and merge the revision with indirect changes
+    RestoreTestFile();
+    UpdateDependentProperty(depId, 2, 789);
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(depId, {456, 0, 123, 0});
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Make indirect changes, and merge the revision with direct changes
+    RestoreTestFile();
+    UpdateRootProperty(654, rootId);
+    m_testDb->SaveChanges("Revision");
+    VerifyRootProperty(rootId, 654);
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*directChangesRev));
+    VerifyDependentProperties(depId, {456, 0, 654, 0});
+
+    // Make no changes, and merge the revision with indirect changes
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
+    DgnRevisionPtr noChangesRevision = CreateRevision();
+    ASSERT_FALSE(noChangesRevision.IsValid());
+    }

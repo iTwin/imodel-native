@@ -38,6 +38,7 @@
 #define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
+#define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalTemplate "TestPhysicalTemplate"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
@@ -87,18 +88,15 @@ protected:
     double      m_doubleProps[4];
     DPoint3d    m_pointProps[4];
 
-    virtual Dgn::DgnDbStatus _InsertInDb() override;
-    virtual Dgn::DgnDbStatus _UpdateInDb() override;
-    virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
-    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
+    Dgn::DgnDbStatus _InsertInDb() override;
+    Dgn::DgnDbStatus _UpdateInDb() override;
+    Dgn::DgnDbStatus _DeleteInDb() const override;
+    Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
+    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
+    Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    void _CopyFrom(Dgn::DgnElementCR el) override;
 
-    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
-    virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual void _CopyFrom(Dgn::DgnElementCR el) override;
-
-    void BindParams(BeSQLite::EC::ECSqlStatement&) const;
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
@@ -200,6 +198,32 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/16
+//=======================================================================================
+struct TestSpatialLocation : Dgn::SpatialLocationElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestSpatialLocation, Dgn::SpatialLocationElement)
+    friend struct TestSpatialLocationHandler;
+
+protected:
+    explicit TestSpatialLocation(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialLocationModelR, Dgn::DgnCategoryId);
+};
+
+typedef RefCountedPtr<TestSpatialLocation> TestSpatialLocationPtr;
+typedef RefCountedCPtr<TestSpatialLocation> TestSpatialLocationCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/16
+//=======================================================================================
+struct TestSpatialLocationHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestSpatialLocation, TestSpatialLocation, TestSpatialLocationHandler, Dgn::dgn_ElementHandler::SpatialLocation, )
 };
 
 //=======================================================================================

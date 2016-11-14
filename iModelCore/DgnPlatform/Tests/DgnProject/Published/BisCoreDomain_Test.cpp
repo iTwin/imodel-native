@@ -104,7 +104,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement2d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ViewId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([View]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -136,7 +136,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)   "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
 
         for (Utf8String expectedSql : expectedSqlList)
@@ -169,7 +168,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ModelId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([UserLabel]) WHERE ([UserLabel] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([CategoryId])");
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([View]) WHERE ([View] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement3d) "]([CategoryId])");
 
         for (Utf8String expectedSql : expectedSqlList)
@@ -201,12 +200,12 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
     DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());
-    
     ASSERT_TRUE(repositoryModel.IsValid());
     ASSERT_TRUE(dictionaryModel.IsValid());
 
-    ASSERT_STREQ(BIS_ECSCHEMA_NAME, repositoryModel->GetCode().GetNamespace().c_str());
-    ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
+    ASSERT_TRUE(m_db->GetRepositoryModel().IsValid());
+    ASSERT_TRUE(m_db->GetRealityDataSourcesModel().IsValid());
+    ASSERT_TRUE(m_db->GetSessionModel().IsValid());
 
     // make sure that Delete against the root Subject fails
         {

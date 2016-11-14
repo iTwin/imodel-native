@@ -23,9 +23,9 @@ StatusInt FitContext::_InitContextForView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FitContext::IsRangeContained(DRange3dCR range)
+bool FitContext::IsRangeContained(RangeIndex::FBoxCR range)
     {
-    Frustum box(range);
+    Frustum box(range.ToRange3d());
     box.Multiply(m_trans);
     m_lastRange = box.ToRange(); // view aligned range
 
@@ -41,12 +41,12 @@ bool FitContext::IsRangeContained(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result FitContext::_CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) 
+ScanCriteria::Stop FitContext::_CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) 
     {
-    if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange(criteria, range, is3d))
-        return ScanCriteria::Result::Fail;
+    if (ScanCriteria::Stop::Yes == T_Super::_CheckNodeRange(range, is3d))
+        return ScanCriteria::Stop::Yes;
 
-    return IsRangeContained(range) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
+    return IsRangeContained(range) ? ScanCriteria::Stop::Yes : ScanCriteria::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,11 +58,11 @@ bool FitContext::_ScanRangeFromPolyhedron()
     if (!m_params.m_limitByVolume)
         {
         // Rather than no range test - use a big range so range tree still gets used (and we can reject nodes).
-        DRange3d bigRange;
+        RangeIndex::FBox bigRange;
         
-        bigRange.low.x = bigRange.low.y = bigRange.low.z = -1.0e20;
-        bigRange.high.x = bigRange.high.y = bigRange.high.z = 1.0e20;
-        m_scanCriteria.SetRangeTest(&bigRange);
+        bigRange.m_low.x = bigRange.m_low.y = bigRange.m_low.z = -1.0e20;
+        bigRange.m_high.x = bigRange.m_high.y = bigRange.m_high.z = 1.0e20;
+        m_scanCriteria.SetRangeTest(bigRange);
 
         return true;
         }
@@ -86,9 +86,9 @@ void FitContext::ExtendFitRange(ElementAlignedBox3dCR elementBox, TransformCR pl
 StatusInt FitContext::_VisitGeometry(GeometrySourceCR source) 
     {
     // NOTE: Just use element aligned box instead of drawing geometry.
-    bool is3d = (nullptr != source.ToGeometrySource3d());
-    ExtendFitRange(is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : 
-                          ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()),
+    bool is3d = (nullptr != source.GetAsGeometrySource3d());
+    ExtendFitRange(is3d ? source.GetAsGeometrySource3d()->GetPlacement().GetElementBox() : 
+                          ElementAlignedBox3d(source.GetAsGeometrySource2d()->GetPlacement().GetElementBox()),
                    source.GetPlacementTransform());
 
     return SUCCESS;

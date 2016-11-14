@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 static DgnCategoryId getFirstCategory(DgnDbR db)
     {
-    return *DgnCategory::QueryCategories(db).begin();
+    return (*DgnCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -107,7 +107,6 @@ TEST_F(DgnScriptTest, TestEga)
     ASSERT_TRUE( project != NULL );
 
     PhysicalModelPtr model = GetDefaultPhysicalModel();
-    model->FillModel();
 
     RefCountedPtr<DgnElement> el;
         {
@@ -254,9 +253,8 @@ TEST_F(DgnScriptTest, RunScripts)
     ASSERT_TRUE(project != NULL);
 
     PhysicalModelPtr model = GetDefaultPhysicalModel();
-    model->FillModel();
 
-    PhysicalModelPtr newModel = InsertPhysicalModel("NewModel");
+    PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*project, "NewModel");
     ASSERT_TRUE(newModel.IsValid());
 
     Json::Value parms = Json::objectValue;
@@ -275,20 +273,6 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.SomeUndefinedFunction", parms);
     ASSERT_NE(0, retstatus);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef COMMENT_OFF_NOT_USED
-static bool areDateTimesEqual(DateTime const& d1, DateTime const& d2)
-    {
-    // TRICKY: avoid problems with rounding.
-    double jd1, jd2;
-    d1.ToJulianDay(jd1);
-    d2.ToJulianDay(jd2);
-    return jd1 == jd2;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      11/2015
@@ -375,7 +359,7 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
     //  Create a ScriptLibraryModel to hold the scripts
     DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "TestScripts");
     ASSERT_TRUE(partition.IsValid());
-    ScriptLibraryModelPtr scriptLib = ScriptLibraryModel::Create(*partition, DgnModel::CreateModelCode("scripts"));
+    ScriptLibraryModelPtr scriptLib = ScriptLibraryModel::Create(*partition);
     ASSERT_TRUE(scriptLib.IsValid());
     status = scriptLib->Insert();
     ASSERT_EQ(DgnDbStatus::Success, status);
@@ -451,9 +435,9 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
         //ASSERT_STREQ("", retVal.c_str());
         ASSERT_NE(0, ids.size());
-        auto categories = DgnCategory::QueryCategories(*m_db);
-        ASSERT_EQ(categories.size(), ids.size());
-        ASSERT_TRUE(categories.begin()->GetValue() == ids.begin()->GetValue());
+        ElementIterator iterator = DgnCategory::MakeIterator(*m_db);
+        ASSERT_EQ(iterator.BuildIdSet<DgnCategoryId>().size(), ids.size());
+        ASSERT_EQ((*iterator.begin()).GetElementId().GetValue(), ids.begin()->GetValue());
         }
     }
 

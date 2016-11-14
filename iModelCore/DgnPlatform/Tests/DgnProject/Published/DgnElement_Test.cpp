@@ -28,11 +28,11 @@ TEST_F (DgnElementTests, ResetStatistics)
     SetupSeedProject();
 
     //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
     EXPECT_TRUE(m1.IsValid());
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
+    DgnModelId m1id = m1->GetModelId();
     EXPECT_TRUE (m1id.IsValid());
 
     //Inserts 2 elements.
@@ -98,14 +98,11 @@ TEST_F (DgnElementTests, UpdateElement)
     SetupSeedProject();
 
     //Inserts a model
-    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
     EXPECT_TRUE(m1.IsValid());
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
-    EXPECT_TRUE(m1id.IsValid());
-
-    auto keyE1 = InsertElement(m1id);
+    auto keyE1 = InsertElement(m1->GetModelId());
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
@@ -986,7 +983,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
             }
 
         DgnDbStatus status;
-        auto ele = m_db->Elements().CreateElement(&status, *testClassInstance);
+        auto ele = m_db->Elements().CreateElement(*testClassInstance, &status);
         ASSERT_TRUE(ele.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, status);
 
@@ -1340,8 +1337,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     SetupSeedProject();
     
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
-    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelA");
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelB");
 
     GenericPhysicalObjectPtr parentA = GenericPhysicalObject::Create(*modelA, categoryId);
     GenericPhysicalObjectPtr parentB = GenericPhysicalObject::Create(*modelB, categoryId);
@@ -1423,7 +1420,7 @@ TEST_F(DgnElementTests, FederationGuid)
     {
     SetupSeedProject();
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestModel");
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
 
     DgnElementId elementId;
@@ -1540,7 +1537,7 @@ TEST_F(DgnElementTests, PhysicalTemplateCRUD)
             ASSERT_TRUE(physicalTemplate.IsValid());
             ASSERT_FALSE(physicalTemplate->GetSubModel().IsValid());
 
-            PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*physicalTemplate, DgnModel::CreateModelCode(physicalTemplate->GetUserLabel()));
+            PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*physicalTemplate);
             ASSERT_TRUE(model.IsValid());
             ASSERT_TRUE(physicalTemplate->GetSubModel().IsValid());
             }
@@ -1613,7 +1610,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     // create a PhysicalElement and set its PhysicalType
         {
         DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
-        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestModel");
 
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
@@ -1713,9 +1710,9 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
     // create a TestElement2d and set its GraphicalType
         {
         DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(GetDgnDb(), "TestCategory");
-        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), DgnModel::CreateModelCode("DrawingListModel"));
-        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "Drawing");
-        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("DrawingModel"));
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), "DrawingListModel");
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
+        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
 
         TestElement2dPtr element = TestElement2d::Create(GetDgnDb(), drawingModel->GetModelId(), categoryId, DgnCode(), 2.0);
         ASSERT_TRUE(element.IsValid());
@@ -1770,8 +1767,8 @@ TEST_F(DgnElementTests, EqualsTests)
     SetupSeedProject();
 
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
-    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelA");
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelB");
 
     GenericPhysicalObjectPtr elementA = GenericPhysicalObject::Create(*modelA, categoryId);
     ASSERT_TRUE(elementA.IsValid());
@@ -1789,6 +1786,64 @@ TEST_F(DgnElementTests, EqualsTests)
 
     elementB->SetUserLabel("label for b");
     ASSERT_FALSE(elementA->Equals(*elementB, filter)) << " UserLabels should differ";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ElementIterator)
+    {
+    SetupSeedProject();
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    const int numPhysicalObjects=5;
+
+    for (int i=0; i<numPhysicalObjects; i++)
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        ASSERT_TRUE(element.IsValid());
+        Utf8PrintfString userLabel("UserLabel%d", i);
+        element->SetUserLabel(userLabel.c_str());
+        ASSERT_TRUE(element->Insert().IsValid());
+        }
+
+    ElementIterator iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject));
+    ASSERT_EQ(numPhysicalObjects, iterator.BuildIdSet<DgnElementId>().size());
+    ASSERT_EQ(numPhysicalObjects, iterator.BuildIdList<DgnElementId>().size());
+
+    iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), "WHERE [UserLabel]='UserLabel1'");
+    ASSERT_EQ(1, iterator.BuildIdSet<DgnElementId>().size());
+    ASSERT_EQ(1, iterator.BuildIdList<DgnElementId>().size());
+
+    int count=0;
+    for (ElementIteratorEntry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
+        {
+        ASSERT_TRUE(entry.GetClassId().IsValid());
+        ASSERT_EQ(entry.GetModelId(), model->GetModelId());
+        Utf8PrintfString userLabel("UserLabel%d", count);
+        ASSERT_STREQ(entry.GetUserLabel(), userLabel.c_str());
+        count++;
+        }
+    ASSERT_EQ(numPhysicalObjects, count);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, TestSpatialLocation)
+    {
+    SetupSeedProject();
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
+    SpatialLocationModelPtr physicalModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestPhysicalModel");
+
+    TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
+    ASSERT_TRUE(element1.IsValid());
+    ASSERT_TRUE(element1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
+
+    TestSpatialLocationPtr element2 = TestSpatialLocation::Create(*physicalModel, categoryId);
+    ASSERT_TRUE(element2.IsValid());
+    ASSERT_TRUE(element2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2085,9 +2140,8 @@ TEST_F(DgnElementTests, DemoArrayProblem)
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
-    DgnDbStatus stat;
-    DgnElementPtr dgnElement = m_db->Elements().CreateElement(&stat, *ecInstance);
-    DgnElementCPtr inserted = dgnElement->Insert(&stat);
+    DgnElementPtr dgnElement = m_db->Elements().CreateElement(*ecInstance);
+    DgnElementCPtr inserted = dgnElement->Insert();
     ASSERT_TRUE(inserted != nullptr);
     }
 

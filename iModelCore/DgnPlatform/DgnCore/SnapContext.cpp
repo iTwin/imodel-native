@@ -686,7 +686,7 @@ SnapStatus      SnapContext::DoTextSnap ()
             if (nullptr == source)
                 return SnapStatus::NotSnappable;
 
-            DPoint3d hitPoint = (nullptr != source->ToGeometrySource3d() ? source->ToGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->ToGeometrySource2d()->GetPlacement().GetOrigin()));
+            DPoint3d hitPoint = (nullptr != source->GetAsGeometrySource3d() ? source->GetAsGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->GetAsGeometrySource2d()->GetPlacement().GetOrigin()));
             
             SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
