@@ -3858,37 +3858,29 @@ TEST_F(ECDbMappingTestFixture, ECSqlForUnmappedClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
 	{
-	SchemaItem testItem(
-		"<?xml version='1.0' encoding='utf-8'?>"
-		"<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-		"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-		"    <ECEntityClass typeName='Product' modifier='None'>"
-		"        <ECCustomAttributes>"
-		"            <ClassMap xmlns='ECDbMap.01.00'>"
-		"                <MapStrategy>"
-		"                   <Strategy>OwnTable</Strategy>"
-		"                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-		"                </MapStrategy>"
-		"            </ClassMap>"
-		"        </ECCustomAttributes>"
-		"        <ECProperty propertyName='Name' typeName='text' />"
-		"        <ECProperty propertyName='Price' typeName='double' />"
-		"    </ECEntityClass>"
-		"</ECSchema>", true, "Mapping Strategy OwnTable applied to subclasses is expected to succeed.");
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Product' modifier='None'>"
+        "        <ECProperty propertyName='Name' typeName='text' />"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "");
 
-	ECDb db;
-	bool asserted = false;
-	AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
-	ASSERT_FALSE(asserted);
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
+    ASSERT_FALSE(asserted);
 
-	ECSqlStatement stmt;
-	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
-	ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-	stmt.Finalize();
+    Statement sqlstmt;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "INSERT INTO ts_Product(Name,Price) VALUES('Book',100)"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, sqlstmt.Step());
+    sqlstmt.Finalize();
 
-	ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECClassId FROM ts.Product"));
-	ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-	ASSERT_EQ(db.Schemas().GetECClassId("Test", "Product"), stmt.GetValueId<ECClassId>(0));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT IsVirtual FROM ec_Column WHERE Name='ECClassId' AND TableId = (SELECT Id FROM ec_Table WHERE Name='ts_Product')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+    ASSERT_EQ(1, sqlstmt.GetValueInt(0));
 	}
 
 //---------------------------------------------------------------------------------------
