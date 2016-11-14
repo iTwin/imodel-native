@@ -1770,7 +1770,14 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     : ScalableMeshNode(nodePtr)
     {    
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
-    //m_cachedDisplayData = meshNode->GetDisplayData();     
+    m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
+    meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData);
+    }
+
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
+    : ScalableMeshNode(nodePtr), m_reprojectionTransform(reprojectionTransform)
+    {
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
     meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData);
     }
@@ -1778,6 +1785,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
     {
     }
+
 
 template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::AddClipVector(ClipVectorPtr& clipVector)
     {
@@ -2250,6 +2258,22 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     if(!newIndices.empty()) finalIndexPtr = newIndices.data();
                     else finalIndexPtr = nullptr;
                     finalIndexNb = newIndices.size();
+                    }
+
+                if (!m_reprojectionTransform.IsIdentity())
+                    {
+                    DPoint3d projectedCentroid = centroid;
+                    m_reprojectionTransform.Multiply(projectedCentroid);
+                    for (size_t idx = 0; idx < finalPointNb; idx += 3)
+                        {
+                        DPoint3d pt = DPoint3d::From(finalPointPtr[idx], finalPointPtr[idx + 1], finalPointPtr[idx + 2]);
+                        pt.SumOf(centroid, pt);
+                        m_reprojectionTransform.Multiply(pt);
+                        finalPointPtr[idx] = pt.x - projectedCentroid.x;
+                        finalPointPtr[idx + 1] = pt.y - projectedCentroid.y;
+                        finalPointPtr[idx + 2] = pt.z - projectedCentroid.z;
+                        }
+                    centroid = projectedCentroid;
                     }
 
                 SmCachedDisplayMesh* cachedDisplayMesh = 0;

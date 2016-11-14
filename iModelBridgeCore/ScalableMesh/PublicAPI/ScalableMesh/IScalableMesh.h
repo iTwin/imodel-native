@@ -195,6 +195,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
+
+        virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
+
+        virtual Transform              _GetReprojectionTransform() = 0;
          
 #ifdef WIP_MESH_IMPORT
         virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
@@ -316,6 +320,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id);
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
+
+        BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
+
+        BENTLEY_SM_EXPORT Transform              GetReprojectionTransform();
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,

@@ -51,6 +51,7 @@ class Clipper
     const DPoint2d* m_uvBuffer;
     const int32_t* m_uvIndices;
     DRange3d m_range;
+    DRange3d m_nodeRange;
 
     enum PointClassification
         {
@@ -65,8 +66,8 @@ class Clipper
     DTMInsertPointCallback GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr);
 
     public:
-        Clipper(const DPoint3d* vertexBuffer, size_t nVertices, const int32_t* indexBuffer, size_t nIndices, DRange3d extent, const DPoint2d* uvBuffer = nullptr, const int32_t* uvIndices = nullptr) :
-            m_vertexBuffer(vertexBuffer), m_nVertices(nVertices), m_indexBuffer(indexBuffer), m_nIndices(nIndices), m_range(extent), m_uvBuffer(uvBuffer), m_uvIndices(uvIndices)
+        Clipper(const DPoint3d* vertexBuffer, size_t nVertices, const int32_t* indexBuffer, size_t nIndices, DRange3d extent, DRange3d nodeRange, const DPoint2d* uvBuffer = nullptr, const int32_t* uvIndices = nullptr) :
+            m_vertexBuffer(vertexBuffer), m_nVertices(nVertices), m_indexBuffer(indexBuffer), m_nIndices(nIndices), m_range(extent), m_nodeRange(nodeRange), m_uvBuffer(uvBuffer), m_uvIndices(uvIndices)
             {}
 
         void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);

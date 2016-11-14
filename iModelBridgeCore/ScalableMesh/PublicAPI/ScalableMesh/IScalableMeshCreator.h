@@ -128,13 +128,6 @@ public:
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&   scmPtr);*/
 
-       /* // TDORAY: For next versions: Add overloads taking as parameters a working dir path and maybe a listing 
-        //         of environment variables. This supplementary information will enable STM relocation without 
-        //         sources relocation (by specifying previous STM dir as working dir). Another solution could
-        //         be to provide a Relocate functionality.
-
-        BENTLEY_SM_EXPORT const IDTMSourceCollection& GetSources                 () const;
-        BENTLEY_SM_EXPORT IDTMSourceCollection&       EditSources                ();*/
 
 
 #ifdef SCALABLE_MESH_ATP

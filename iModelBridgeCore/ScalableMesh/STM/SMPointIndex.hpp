@@ -3771,7 +3771,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
         ))
         SplitNode(GetDefaultSplitPosition());
 
-    if (HasRealChildren()  && propagateRecursively && targetLevel!= -1 && targetLevel > m_nodeHeader.m_level)
+    if (HasRealChildren()  && propagateRecursively && (targetLevel == -1 || targetLevel > m_nodeHeader.m_level))
         {
         if (m_pSubNodeNoSplit != NULL)
             {

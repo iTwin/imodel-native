@@ -29,6 +29,7 @@
 #include "..\STM\GeneratorTextureProvider.h"
 
 #include <Bentley\BeDirectoryIterator.h>
+#include <Bentley\BeConsole.h>
 
 USING_NAMESPACE_GROUND_DETECTION
 
@@ -88,7 +89,8 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
     {
     private : 
 
-        FILE* m_xyzFile;
+        FILE*    m_xyzFile;
+        size_t   m_nbPoints;
 
     protected : 
 
@@ -108,6 +110,8 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 }
 
             fflush(m_xyzFile);
+
+            m_nbPoints += points.size();
             }
 
     public :
@@ -116,6 +120,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             {            
             BeFileName xyzFile(GetTempXyzFilePath());
             m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
+            m_nbPoints = 0;
             }
 
         ~ScalableMeshPointsAccumulator()
@@ -126,6 +131,11 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         void Close()
             {
             fclose(m_xyzFile);
+            }
+
+        size_t GetNbPoints() const 
+            {
+            return m_nbPoints;
             }
 
     };
@@ -234,6 +244,7 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     */
 
 static bool s_deactivateForMultiCoverage = true;
+static bool s_deactivateTexturing = false;
 
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
@@ -260,7 +271,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     sourceImportConfig.SetReplacementSMData(data);
     terrainCreator->EditSources().Add(groundPtsSource);
 
-    //Add texture if any    
+    //Add texture if any        
     BeFileName currentTextureDir(coverageTempDataFolder);
     BeFileName textureSubFolderName;
     BeFileName extraLinearFeatureFileName;
@@ -269,55 +280,58 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     currentTextureDir.AppendString(textureSubFolderName.c_str());    
 
-    IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
-
-    assert(textureGenerator.IsValid());
-
-    textureGenerator->SetPixelSize(0.02);
-    textureGenerator->SetTextureTempDir(currentTextureDir);
-#if 0
-    DRange3d covExt = DRange3d::From(m_extractionArea);
-
-   // if (!s_deactivateForMultiCoverage)
+    if (!s_deactivateTexturing)
         {
-        bvector<bvector<DPoint3d>> polys;
-        m_scalableMesh->GetAllCoverages(polys);
 
-        for (auto& poly : polys)
+        IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
+
+        assert(textureGenerator.IsValid());
+
+        textureGenerator->SetPixelSize(0.02);
+        textureGenerator->SetTextureTempDir(currentTextureDir);
+
+        DRange3d covExt = DRange3d::From(m_extractionArea);
+
+       // if (!s_deactivateForMultiCoverage)
             {
-            DRange3d newRange = DRange3d::From(poly);
-            covExt.Extend(newRange);
+            bvector<bvector<DPoint3d>> polys;
+            m_scalableMesh->GetAllCoverages(polys);
+
+            for (auto& poly : polys)
+                {
+                DRange3d newRange = DRange3d::From(poly);
+                covExt.Extend(newRange);
+                }
             }
-        }
 
     
-    covExt.ScaleAboutCenter(covExt, 1.1);
+        covExt.ScaleAboutCenter(covExt, 1.1);
 
-     //if (!s_deactivateForMultiCoverage)
-        {
-        bvector<DPoint3d> closedPolygonPoints;
-        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
-            DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
-        closedPolygonPoints.assign(rangePts, rangePts + 5);
-
-        textureGenerator->GenerateTexture(closedPolygonPoints);
-        }
-
-    BeDirectoryIterator directoryIter(currentTextureDir);
-
-    BeFileName currentTextureName;
-    bool       isDir;            
-    while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
-        {        
-        if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+         //if (!s_deactivateForMultiCoverage)
             {
-            IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
-            terrainCreator->EditSources().Add(textureSource);                       
-            }        
+            bvector<DPoint3d> closedPolygonPoints;
+            DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
+                DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
+            closedPolygonPoints.assign(rangePts, rangePts + 5);
 
-        directoryIter.ToNext();
+            textureGenerator->GenerateTexture(closedPolygonPoints);
+            }
+
+        BeDirectoryIterator directoryIter(currentTextureDir);
+
+        BeFileName currentTextureName;
+        bool       isDir;            
+        while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
+            {        
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+                {
+                IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
+                terrainCreator->EditSources().Add(textureSource);                       
+                }        
+
+            directoryIter.ToNext();
+            }
         }
-#endif
 
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
@@ -335,7 +349,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     status = terrainCreator->Create(true, true);
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;
-//#if 0
+
+#if 0
     StatusInt openStatus;
 
     IScalableMeshPtr smP = IScalableMesh::GetFor(m_smTerrainPath.c_str(), false, true, openStatus);
@@ -346,7 +361,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     creator->SetTextureProvider(genProvider);
     creator = nullptr;
     smP = nullptr;
-//#endif
+#endif
+
     assert(status == SUCCESS);
     s_xyzId++;
 
@@ -362,6 +378,18 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 //#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
 #define LARGEST_STRUCTURE_SIZE_DEFAULT 30 
 
+static double s_anglePercentile = 30;
+static double s_heightPercentile = 60;
+
+/*NEEDS_WORK_MST : For ground optimization
+static double s_anglePercentile = 65;
+static double s_heightPercentile = 65;
+*/
+static bool   s_useMultiThread = false;
+
+static double s_time;
+static size_t s_nbPoints;
+
 StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {    
     IGroundDetectionServices* serviceP(GroundDetectionManager::GetServices());
@@ -371,8 +399,10 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
     params->SetTriangleEdgeThreshold(0.05);
  
-    params->SetAnglePercentileFactor(30);
-    params->SetHeightPercentileFactor(60);
+    params->SetAnglePercentileFactor(s_anglePercentile);
+    params->SetHeightPercentileFactor(s_heightPercentile);
+
+    params->SetUseMultiThread(s_useMultiThread);        
 
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
@@ -400,10 +430,27 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     StatusInt status = serviceP->_GetSeedPointsFromTIN(seedpoints, *params.get());
     assert(status == SUCCESS);
     */
+
+    clock_t startTime = clock();
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     assert(status == SUCCESS);
 
+    clock_t endTime = clock() - startTime;
+    double duration = (double)endTime / CLOCKS_PER_SEC;
+
+    FILE* logfile = fopen("D:\\MyDoc\\RM - SM - Sprint 15\\OptimizingGroundDetection\\Log.txt","a");
+    s_time = duration;
+    s_nbPoints = ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints();
+
+    if (s_useMultiThread)
+        //fprintf(logfile, "Total MT ground detection executionTime : %f nbGroundPoints %I64 \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+        fprintf(logfile, "Total MT ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+    else
+        fprintf(logfile, "Total ST ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+
+    fclose(logfile);
+        
     IGroundPointsAccumulatorPtr nullAcc;
 
     params->SetGroundPointsAccumulator(nullAcc);
@@ -414,9 +461,22 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     return status;        
     } 
 
+static bool s_fixTest = false;
+
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
     {
-    m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+    if (!s_fixTest)
+        m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+    else
+        {        
+        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
+        m_extractionArea.push_back(DPoint3d::From(194165.08343336626, 243603.61276573580, -3.6304642277846142));
+        m_extractionArea.push_back(DPoint3d::From(194270.10891005833, 243574.39524382990, -4.7820067383618152));
+        m_extractionArea.push_back(DPoint3d::From(194276.55219083698, 243624.66656828567, -4.6135505912207009));
+        m_extractionArea.push_back(DPoint3d::From(194147.68657526391, 243662.26264426752, -3.6141459398750158));
+        m_extractionArea.push_back(DPoint3d::From(194146.39791910816, 243662.47747898742, -3.6220131969348586));
+        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));       
+        }
     return SUCCESS;
     }
 

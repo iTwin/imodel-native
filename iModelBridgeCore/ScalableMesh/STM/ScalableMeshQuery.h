@@ -1394,6 +1394,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;
+            Transform m_reprojectionTransform;
 
 
 
@@ -1450,6 +1451,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
 
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform);
+
             virtual ~ScalableMeshCachedDisplayNode();
 
             void AddClipVector(ClipVectorPtr& clipVector);
@@ -1480,6 +1483,11 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);
+                }
+
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
+                {
+                return new ScalableMeshCachedDisplayNode<POINT>(nodePtr, reprojectionTransform);
                 }
 
             typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;

@@ -328,10 +328,12 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
                                 
-    clock_t t = clock();            
-    IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(scalableMeshPtr));        
+    clock_t t = clock();     
+    WString terrainPath =    smFileName+L"Terrain.3sm";    
+    IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(terrainPath,scalableMeshPtr));        
     
-    StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed();                    
+    BeFileName temp = BeFileName(L"C:\\temp\\");
+    StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed(temp);                    
 
     if (statusGround != SUCCESS)
         return;

@@ -61,7 +61,6 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
-    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
     if (pointsPtr->size() > 4)
@@ -425,14 +424,14 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 stats.close();
 #endif
 #if 0//SM_OUTPUT_MESHES_STITCHING
-                if (node->GetBlockID().m_integerID == 2702)
-                    {
+               /* if (node->GetBlockID().m_integerID == 2702)
+                    {*/
                     WString nameBefore = LOG_PATH_STR_W + L"postmeshmesh_";
                     LOGSTRING_NODE_INFO_W(node, nameBefore)
                         nameBefore.append(L".m");
                     auto indPtr = node->GetPtsIndicePtr();
-                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &(*indPtr)[0]);
-                    }
+                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &faceIndexes[0]);
+                  //  }
 #endif
                 isMeshingDone = true;
                 if (node->GetPointsPtr()->size() > 10 && node->GetPtsIndicePtr()->size() == 0)
@@ -1679,17 +1678,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                                 else
                                     {
                                     current = xyz;
-                                    /*                }
-                                                ++n2;
-                                                }
-                                                }*/
-                                    // bvector<DPoint3d> xyz;
-                                    //   size_t n = 0;
-                                    /* for (; vu2.GetFace(xyz);)
-                                            {
-                                            if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
-                                            else
-                                            {*/
+ 
                                     if (!bsiDPoint3d_pointEqualTolerance(&current.front(), &current.back(), 1e-8)) current.push_back(current.front());
                                     /* {
                                      WString namePoly = L"E:\\output\\scmesh\\2016-01-14\\poly_before_untie_";
@@ -1792,8 +1781,6 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         if (!m_clip.empty())
             {
             HFCPtr<HVE2DShape> clipShape = CreateShapeFromPoints(&m_clip[0], m_clip.size(), new HGF2DCoordSys());
-            //SetClipToDTM(dtmPtr, node->m_nodeHeader.m_contentExtent, *clipShape);
-           // status = dtmPtr->GetBcDTM()->Triangulate();
             bvector<DPoint3d> extVector(5);
             extVector[0] = extVector[4] = node->m_nodeHeader.m_nodeExtent.low;
             extVector[1] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.low.x, node->m_nodeHeader.m_nodeExtent.high.y, node->m_nodeHeader.m_nodeExtent.low.z);
@@ -1891,7 +1878,6 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     node->ReadFeatureDefinitions(features, types);
 
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
-    //node->setNbPointsUsedForMeshIndex(0);
     
     if (newNodePointData == nullptr) return true;
 
@@ -1901,7 +1887,6 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
     if (s_useThreadsInStitching) node->UnlockPts();
 
-   // delete meshGraph;
     size_t removed = 0;
     for (auto& id : componentsPointsId)
         {
@@ -2065,34 +2050,6 @@ return true;
                     faceIndexes.push_back(indexList[i+2]);
                     }
                 }
-           /* MTGGraph* meshGraph = node->GetGraphPtr();
-            MTGMask visitedMask = meshGraph->GrabMask();
-            MTGARRAY_SET_LOOP(edgeID, meshGraph)
-                {
-                bool isComponent = true;
-                int vtx = -1;
-                meshGraph->TryGetLabel(edgeID, 1, vtx);
-                //if (vtx > 0) for (int j = 0; j < componentPointsId.size() && !isComponent; j++) if (componentPointsId[j] == vtx - 1) isComponent = true;
-                if (isComponent && meshGraph->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
-                    {
-                    MTGARRAY_FACE_LOOP(extID, meshGraph, edgeID)
-                        {
-                        if (meshGraph->GetMaskAt(extID, visitedMask) || !meshGraph->GetMaskAt(extID, MTG_EXTERIOR_MASK)) break;
-                        MTGARRAY_FACE_LOOP(faceID, meshGraph, meshGraph->EdgeMate(extID))
-                            {
-                            int vtx2 = -1;
-                            meshGraph->TryGetLabel(faceID, 0, vtx2);
-                            faceIndexes.push_back(vtx2);
-                            }
-                        MTGARRAY_END_FACE_LOOP(faceID, meshGraph, meshGraph->EdgeMate(extID))
-                        meshGraph->SetMaskAt(extID, visitedMask);
-                        }
-                    MTGARRAY_END_FACE_LOOP(extID, meshGraph, edgeID)
-                    }
-                }
-            MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
-                meshGraph->ClearMask(visitedMask);
-                meshGraph->DropMask(visitedMask);*/
             
             if (componentPointsId.size() > 0)
                 {
@@ -2131,12 +2088,7 @@ return true;
     
     //POINT* geometryData = new POINT[stitchedPoints.size()];
     vector<int> faceIndices;
-    /*for (size_t i = 0; i < stitchedPoints.size(); i++)
-        {
-        geometryData[i].x = stitchedPoints[i].x;
-        geometryData[i].y = stitchedPoints[i].y;
-        geometryData[i].z = stitchedPoints[i].z;
-        }*/
+
     int* pointsInTile = new int[stitchedPoints.size()];
     for (size_t i = 0; i < stitchedPoints.size(); i++) pointsInTile[i] = -1;
     MTGMask visitedMask = meshGraphStitched->GrabMask();

@@ -1188,8 +1188,18 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
 
         orderInfos.push_back(orderInfo);                           
         }
-            
-    std::sort(orderInfos.begin(), orderInfos.end(), [](OrderInfo& i,OrderInfo& j){return i.m_zScreen > j.m_zScreen;});            
+	DPoint4d fwd;
+	rootToViewMatrix.GetColumn(fwd, 2);
+	DVec3d vecFwd;
+	vecFwd.XyzOf(fwd);
+    std::sort(orderInfos.begin(), orderInfos.end(), [vecFwd](OrderInfo& i,OrderInfo& j){
+		if (vecFwd.z != 0)
+		{
+			return vecFwd.z > 0 ? i.m_zScreen < j.m_zScreen : i.m_zScreen > j.m_zScreen;
+
+		}
+		return i.m_zScreen > j.m_zScreen;
+	});            
 
      for (size_t nodeInd = 0; nodeInd < numSubNodes; nodeInd++)
         {

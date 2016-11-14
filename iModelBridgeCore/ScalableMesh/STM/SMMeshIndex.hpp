@@ -1090,15 +1090,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
 #endif
                 if (static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->NeedsMeshing())
                     {
-                    /*if (s_useThreadsInMeshing && m_nodeHeader.m_level == 0 && !m_nodeHeader.m_arePoints3d)
-                        {
-                        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node,size_t threadId) ->void
-                            {
-                            node->Mesh();
-                            SetThreadAvailableAsync(threadId);
-                            }, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode])), std::placeholders::_1));
-                        }
-                    else*/ static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Mesh();
+                     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Mesh();
                     }
                 }
 
@@ -1186,67 +1178,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
                 }
             else
                 {
-#if 0
-                bool wait = true;
-                while (wait)
-                    {
-                    for (size_t t = 0; t < 8; ++t)
-                        {
-                        bool expected = false;
-                        if (s_areThreadsBusy[t].compare_exchange_weak(expected, true))
-                            {
-                            wait = false;
-                            size_t threadId = t;
-                            std::atomic<bool>* areThreadsBusy = s_areThreadsBusy;
-                            std::thread* threadP = s_threads;
-                            s_threads[t] = std::thread([threadId, this, areThreadsBusy, threadP] ()
-                                {
-                                bool isStitched;
 
-                                if (this->AreAllNeighbor2_5d() && !this->m_nodeHeader.m_arePoints3d)
-                                    {
-                                    isStitched = this->m_mesher2_5d->Stitch(this);
-                                    }
-                                else
-                                    {
-                                    isStitched = this->m_mesher3d->Stitch(this);
-                                    }
-
-                                if (isStitched)
-                                    this->SetDirty(true);
-                                SetThreadAvailableAsync(threadId);
-                                /*  std::thread t = std::thread([areThreadsBusy, threadId, threadP] ()
-                                      {
-                                      threadP[threadId].join();
-                                      bool expected = true;
-                                      areThreadsBusy[threadId].compare_exchange_strong(expected, false);
-                                      assert(expected);
-                                      });
-                                      t.detach();*/
-                                });
-                            break;
-                            }
-                        }
-                    }
-#elif 0
-                RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId)
-                    {
-                    bool isStitched;
-
-                    if (node->AreAllNeighbor2_5d() && !node->m_nodeHeader.m_arePoints3d)
-                        {
-                        isStitched = node->m_mesher2_5d->Stitch(node);
-                        }
-                    else
-                        {
-                        isStitched = node->m_mesher3d->Stitch(node);
-                        }
-
-                    if (isStitched)
-                        node->SetDirty(true);
-                    SetThreadAvailableAsync(threadId);
-                    },node);
-#else
                 bool isStitched;
 
                 if (AreAllNeighbor2_5d() && !this->m_nodeHeader.m_arePoints3d)
@@ -1260,7 +1192,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 
                 if (isStitched)
                     SetDirty(true);
-#endif
+
                 }
             }
        // }
@@ -3540,36 +3472,6 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
 //NEEDS_WORK_MST : Should use only the GetTexturePtr() with a texture id passed in parameter instead. 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr()
     {
-    #if 0
-    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
-
-    if (!IsTextured())
-        return poolMemBlobItemPtr;
-
-    int64_t texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
-              
-    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
-        {      
-        ISMTextureDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-        assert(result == true);  
-
-        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
- #ifndef VANCOUVER_API
-            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
- #else
-            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
- #endif
-        );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemBlobItemPtr = storedMemoryPoolVector.get();            
-        }
-
-    return poolMemBlobItemPtr;
-#endif
     return GetTexturePtr(m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID);
     }
 
@@ -3634,181 +3536,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
-#if 0
-    double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
-    double unitsPerPixelY = (contentExtent.high.y - contentExtent.low.y) / textureHeightInPixels;
-    contentExtent.low.x -= 5 * unitsPerPixelX;
-    contentExtent.low.y -= 5 * unitsPerPixelY;
-    contentExtent.high.x += 5 * unitsPerPixelX;
-    contentExtent.high.y += 5 * unitsPerPixelY;
-    HPRECONDITION((textureWidthInPixels != 0) && (textureHeightInPixels != 0));
 
-    HFCMatrix<3, 3> transfoMatrix;
-    transfoMatrix[0][0] = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
-    transfoMatrix[0][1] = 0;
-    transfoMatrix[0][2] = contentExtent.low.x;
-    transfoMatrix[1][0] = 0;
-    transfoMatrix[1][1] = -(contentExtent.high.y - contentExtent.low.y) / textureHeightInPixels;
-    transfoMatrix[1][2] = contentExtent.high.y;
-    transfoMatrix[2][0] = 0;
-    transfoMatrix[2][1] = 0;
-    transfoMatrix[2][2] = 1;
-
-    HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
-
-    HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
-
-    if (pSimplifiedModel != 0)
-        {
-        pTransfoModel = pSimplifiedModel;
-        }
-
-    HFCPtr<HRABitmap> pTextureBitmap;
-
-    HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
-
-    HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
-    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 3 + 3 * sizeof(int)];
-    memcpy(pixelBufferP, &textureWidthInPixels, sizeof(int));
-    memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
-    int nOfChannels = 3;
-    memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
-#ifdef VANCOUVER_API
-    pTextureBitmap = new HRABitmap(textureWidthInPixels,
-                                   textureHeightInPixels,
-                                   pTransfoModel.GetPtr(),
-                                   sourceRasterP->GetCoordSys(),
-                                   pPixelType,
-                                   8,
-                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
-                                   pCodec);
-#else
-    pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
-                                   textureHeightInPixels,
-                                   pTransfoModel.GetPtr(),
-                                   sourceRasterP->GetCoordSys(),
-                                   pPixelType,
-                                   8);
-#endif
-    HGF2DExtent minExt, maxExt;
-    sourceRasterP->GetPixelSizeRange(minExt, maxExt);
-    minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
-    if (IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& GetNbPoints() > 0*/)
-        SplitNodeBasedOnImageRes();
-    byte* pixelBufferPRGBA = new byte[textureWidthInPixels * textureHeightInPixels * 4];
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, textureWidthInPixels * textureHeightInPixels * 4);
-    pTextureBitmap->GetPacket()->SetBufferOwnership(false);
-
-    HRAClearOptions clearOptions;
-
-   //green color when no texture is available
-    uint32_t green;
-
-    ((uint8_t*)&green)[0] = 0;
-    ((uint8_t*)&green)[1] = 0x77;
-    ((uint8_t*)&green)[2] = 0;
-
-    clearOptions.SetRawDataValue(&green);
-
-    pTextureBitmap->Clear(clearOptions);
-
-    HRACopyFromOptions copyFromOptions;
-
-    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
-    copyFromOptions.SetAlphaBlend(true);
-
-#ifdef VANCOUVER_API
-    copyFromOptions.SetGridShapeMode(true);
-    pTextureBitmap->CopyFrom(sourceRasterP, copyFromOptions);
-#else
-    pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
-#endif
-#ifdef ACTIVATE_TEXTURE_DUMP
-    WString fileName = L"file://";
-    fileName.append(L"e:\\output\\scmesh\\2016-4-11\\texture_before_");
-    //fileName.append(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\texture_before_"); 
-    fileName.append(std::to_wstring(m_nodeHeader.m_level).c_str());
-    fileName.append(L"_");
-    fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName.append(L"_");
-    fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName.append(L".bmp");
-    HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(fileName));
-    HFCPtr<HRPPixelType> pImageDataPixelType(new HRPPixelTypeV24B8G8R8());
-    byte* pixelBuffer = new byte[1024*1024*3];
-    size_t t = 0;
-    for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
-        {
-        pixelBuffer[t] = *(pixelBufferPRGBA + 3 * sizeof(int) + i);
-        pixelBuffer[t + 1] = *(pixelBufferPRGBA + 3 * sizeof(int) + i + 1);
-        pixelBuffer[t + 2] = *(pixelBufferPRGBA + 3 * sizeof(int) + i + 2);
-        t += 3;
-        }
-    HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
-                                              1024,
-                                              1024,
-                                              pImageDataPixelType,
-                                              pixelBuffer);
-    delete[] pixelBuffer;
-//#ifdef ACTIVATE_TEXTURE_DUMP
-    auto codec = new HCDCodecIJG(1024, 1024, 8 * 4);
-    codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
-    codec->SetQuality(100);
-    codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-    HFCPtr<HCDCodec> pCodec2 = codec;
-    size_t compressedBufferSize = pCodec2->GetSubsetMaxCompressedSize();
-    byte* pCompressedPixelBuffer = new byte[compressedBufferSize];
-    size_t nCompressed = pCodec2->CompressSubset(pixelBufferP + 3 * sizeof(int), 1024 * 1024 * 4 * sizeof(Byte), pCompressedPixelBuffer, compressedBufferSize * sizeof(Byte));
-    byte * pUncompressedPixelBuffer = new byte[1024*1024*4];
-    pCodec2->DecompressSubset(pCompressedPixelBuffer, compressedBufferSize* sizeof(Byte), pUncompressedPixelBuffer, 1024 * 1024 * 4 * sizeof(Byte));
-    /*WString fileName2;
-    fileName2.append(L"e:\\output\\scmesh\\2015-11-19\\texture_compressed_");
-    fileName2.append(std::to_wstring(m_nodeHeader.m_level).c_str());
-    fileName2.append(L"_");
-    fileName2.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName2.append(L"_");
-    fileName2.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName2.append(L".bin");
-    FILE* binCompressed = _wfopen(fileName2.c_str(), L"wb");
-    fwrite(pCompressedPixelBuffer,sizeof(byte),nCompressed, binCompressed);
-    fclose(binCompressed);*/
-    std::string myS = " BUFFER SIZE "+std::to_string(compressedBufferSize) +" DATA SIZE "+ std::to_string(nCompressed);
-    delete[] pCompressedPixelBuffer;
-    WString fileName2 = L"file://";
-    fileName2.append(L"e:\\output\\scmesh\\2015-11-19\\texture_before_compressed_");
-    //fileName2.append(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\texture_before_compressed_");
-    fileName2.append(std::to_wstring(m_nodeHeader.m_level).c_str());
-    fileName2.append(L"_");
-    fileName2.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName2.append(L"_");
-    fileName2.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent)).c_str());
-    fileName2.append(L".bmp");
-    HFCPtr<HFCURL> fileUrl2(HFCURL::Instanciate(fileName2));
-    pixelBuffer = new byte[1024 * 1024 * 3];
-    t = 0;
-    for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
-        {
-        pixelBuffer[t] = *(pUncompressedPixelBuffer + i);
-        pixelBuffer[t + 1] = *(pUncompressedPixelBuffer + i + 1);
-        pixelBuffer[t + 2] = *(pUncompressedPixelBuffer + i + 2);
-        t += 3;
-        }
-    delete[] pUncompressedPixelBuffer;
-    HRFBmpCreator::CreateBmpFileFromImageData(fileUrl2,
-                                              1024,
-                                              1024,
-                                              pImageDataPixelType,
-                                              pixelBuffer);
-    delete[] pixelBuffer;
-#endif
-    Byte *pPixel = pixelBufferP + 3 * sizeof(int);
-    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
-        {
-        *pPixel++ = pixelBufferPRGBA[i * 4];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
-        }
-#endif
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
     DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
@@ -4028,7 +3756,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         const DPoint2d* uvBuffer= uvCoords.IsValid() ? &(*uvCoords)[0] : 0;        
     
 
-        Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, uvBuffer, uvIndices);
+        Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, m_nodeHeader.m_nodeExtent, uvBuffer, uvIndices);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(
