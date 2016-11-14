@@ -1453,5 +1453,170 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     }
     }
 
+
+    //---------------------------------------------------------------------------------------
+    // @bsiclass                                     Krischan.Eberle                 07/16
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdCheck)
+        {
+        ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                                SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                           "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                           "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                           "    <ECEntityClass typeName='Model'>"
+                                           "        <ECProperty propertyName='Name' typeName='string' />"
+                                           "    </ECEntityClass>"
+                                           "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                           "        <ECCustomAttributes>"
+                                           "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                           "            </ClassMap>"
+                                           "        </ECCustomAttributes>"
+                                           "        <ECProperty propertyName='Code' typeName='string' />"
+                                           "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' />"
+                                           "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' />"
+                                           "    </ECEntityClass>"
+                                           "    <ECEntityClass typeName='SubElementA'>"
+                                           "        <BaseClass>Element</BaseClass>"
+                                           "        <ECProperty propertyName='SubProp1' typeName='int' />"
+                                           "    </ECEntityClass>"
+                                           "    <ECEntityClass typeName='SubElementB'>"
+                                           "        <BaseClass>Element</BaseClass>"
+                                           "        <ECProperty propertyName='SubProp2' typeName='int' />"
+                                           "    </ECEntityClass>"
+                                           "   <ECRelationshipClass typeName='ModelHasElement' strength='Embedding'  modifier='Sealed'>"
+                                           "      <Source multiplicity='(1..1)' polymorphic='False' roleLabel='Model'>"
+                                           "          <Class class ='Model' />"
+                                           "      </Source>"
+                                           "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element'>"
+                                           "          <Class class ='Element' />"
+                                           "      </Target>"
+                                           "   </ECRelationshipClass>"
+                                           "   <ECRelationshipClass typeName='ElementOwnsChildElement' strength='Embedding'  modifier='Abstract'>"
+                                           "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
+                                           "          <Class class ='Element' />"
+                                           "      </Source>"
+                                           "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child Element'>"
+                                           "          <Class class ='Element' />"
+                                           "      </Target>"
+                                           "   </ECRelationshipClass>"
+                                           "   <ECRelationshipClass typeName='ElementOwnsSubElementB' strength='Embedding'  modifier='Abstract'>"
+                                           "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                                           "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                           "          <Class class ='Element' />"
+                                           "      </Source>"
+                                           "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned SubElement'>"
+                                           "          <Class class ='SubElementB' />"
+                                           "      </Target>"
+                                           "   </ECRelationshipClass>"
+                                           "   <ECRelationshipClass typeName='SubElementAOwnsSubElementB' strength='Embedding'  modifier='Sealed'>"
+                                           "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                                           "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                           "          <Class class ='SubElementA' />"
+                                           "      </Source>"
+                                           "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned SubElement'>"
+                                           "          <Class class ='SubElementB' />"
+                                           "      </Target>"
+                                           "   </ECRelationshipClass>"
+                                           "</ECSchema>"));
+        ASSERT_TRUE(ecdb.IsDbOpen());        
+        ECSqlStatementCache cache(20); 
+        CachedECSqlStatementPtr stmt;
+        ECClassId elementOwnsSubElementB_ECClassId = ecdb.Schemas().GetECClass("TestSchema", "ElementOwnsSubElementB")->GetId();
+        ECClassId subElementAOwnsSubElementB_ECClassId = ecdb.Schemas().GetECClass("TestSchema", "SubElementAOwnsSubElementB")->GetId();
+        ECClassId modelHasElement_ECClassId = ecdb.Schemas().GetECClass("TestSchema", "ModelHasElement")->GetId();
+
+        //Add model
+        ECInstanceKey modelKey1, modelKey2;
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.Model(Name) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindText(1, "MODEL-1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step(modelKey1));
+
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.Model(Name) VALUES (?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "MODEL-2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(modelKey2));
+
+        ECInstanceKey subElementAKey1, subElementAKey2;
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementA(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-A1-M1", IECSqlBinder::MakeCopy::No));   
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey1.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNull(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementAKey1));
+
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementA(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-A2-M2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey2.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNull(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementAKey2));
+
+        ECInstanceKey subElementBKey1, subElementBKey2, subElementBKey3, subElementBKey4;
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementB(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-B1-A1-M1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey1.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(3, subElementAKey1.GetECInstanceId(), elementOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementBKey1));
+
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementB(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-B2-A2-M2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey2.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(3, subElementAKey2.GetECInstanceId(), subElementAOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementBKey2));
+
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementB(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-B3-A1-M1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey1.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(3, subElementAKey1.GetECInstanceId(), elementOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementBKey3));
+
+        stmt = cache.GetPreparedStatement(ecdb, "INSERT INTO ts.SubElementB(Code,Model,Parent) VALUES (?,?,?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindText(1, "CODE-B4-A2-M2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(2, modelKey2.GetECInstanceId(), modelHasElement_ECClassId));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindNavigationValue(3, subElementAKey2.GetECInstanceId(), subElementAOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(subElementBKey4));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.Model");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.Element");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(6, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.Element WHERE Parent.RelECClassId = ?");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(1, elementOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.Element WHERE Parent.RelECClassId = ?");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(1, subElementAOwnsSubElementB_ECClassId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.ElementOwnsChildElement");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(4, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ONLY ts.ElementOwnsChildElement");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(0, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.ElementOwnsSubElementB");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ONLY ts.ElementOwnsSubElementB");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ts.SubElementAOwnsSubElementB");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        stmt = cache.GetPreparedStatement(ecdb, "SELECT COUNT(*) FROM ONLY ts.SubElementAOwnsSubElementB");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(2, stmt->GetValueInt(0));
+
+        const_cast<ECDbR>(ecdb).SaveChanges();
+        }
 END_ECDBUNITTESTS_NAMESPACE
 
