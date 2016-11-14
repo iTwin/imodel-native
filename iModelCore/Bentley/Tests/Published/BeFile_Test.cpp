@@ -10,6 +10,9 @@
 #include <Bentley/BeFile.h>
 #include <Bentley/Bentley.h>
 #include  <Bentley/BeTest.h>
+
+PUSH_MSVC_IGNORE(6053 6054) // don't care about NULL termination warnings in tests...
+
 USING_NAMESPACE_BENTLEY
 
 struct BeFileTests : public testing::Test
@@ -646,5 +649,7 @@ TEST_F(BeFileTests, Flush)
         status = m_file.Flush();
         EXPECT_TRUE(BeFileStatus::Success != status);
         }
+
+POP_MSVC_IGNORE
 
 #endif // defined (BENTLEY_WIN32)
