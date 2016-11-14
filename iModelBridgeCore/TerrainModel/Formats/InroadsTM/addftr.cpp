@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* addftr.c                                     twl    16-Nov-1998            */
@@ -45,13 +45,13 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
   long numPnts,                         /* => # of points being added         */
   CIVdtmpnt *ftrPntsP,                  /* => list of feature points          */
   DPoint3d *pntsP,                      /* => list of point coordinates       */
-  byte *pntFlgsP,                    /* => list of point properties        */
+  unsigned char *pntFlgsP,                    /* => list of point properties        */
   double pntDensity,                    /* => pointDensity                    */
   CIVdtmstynam *stylesP,                /* => feature's styles (or NULL)      */
   long numStyles,                       /* => # of styles                     */
   CIVdtmpaynam *payItemsP,              /* => pay items (or NULL)             */
   long numPayItems,                     /* => # of pay items                  */
-  byte flag,                          /* => feature's flags                 */
+  unsigned char flag,                          /* => feature's flags                 */
   BOOL bRemoveDuplicates, // = TRUE     /* => should almost always be TRUE    */
   BOOL bCloseString // = TRUE           /* => should almost always be TRUE    */
 )
@@ -83,7 +83,7 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
       for ( i = 0; i < numPnts; i++ )
       {
         memcpy ( &ftrPntsP[i].cor, &pntsP[i], sizeof ( DPoint3d ) );
-       
+
         if ( pntFlgsP )
             ftrPntsP[i].flg = pntFlgsP[i];
         else if ( i > 0  && ( pntType == DTM_C_DTMBRK || pntType == DTM_C_DTMCTR || pntType == DTM_C_DTMINF || pntType == DTM_C_DTMINT || pntType == DTM_C_DTMEXT ) )
@@ -102,7 +102,7 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
     long extTyp;
     long nExtPnts;
 
-    if ( ( sts = aecDTM_getFeatureInfo ( extFtrP, srfP, 
+    if ( ( sts = aecDTM_getFeatureInfo ( extFtrP, srfP,
                                   NULL, &extTyp, NULL, NULL, NULL, &extPnts, &nExtPnts, NULL,
                                   NULL, NULL, NULL, NULL, NULL ) ) == SUCCESS )
     {
@@ -120,8 +120,8 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
           memcpy ( &extPnts[nExtPnts], &ftrPntsP[i], sizeof ( struct CIVdtmpnt ) );
           nExtPnts++;
         }
-        
-        sts = aecDTM_setFeatureInfo (  extFtrP, srfP, DTM_C_ADDONLY, NULL, NULL, NULL, 
+
+        sts = aecDTM_setFeatureInfo (  extFtrP, srfP, DTM_C_ADDONLY, NULL, NULL, NULL,
                                        NULL, NULL, extPnts, nExtPnts, NULL, NULL, 0, NULL, 0, NULL, TRUE );
 
         newFtrP = extFtrP;
@@ -135,7 +135,7 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
   }
   else
   {
-    if ( sts == SUCCESS && 
+    if ( sts == SUCCESS &&
          ( sts = aecDTM_addFeatureCheck ( srfP, ftrType, &numPnts, ftrPntsP, &closeString, TRUE, bRemoveDuplicates ) ) == SUCCESS )
     {
       if ( bCloseString == FALSE )
@@ -318,7 +318,7 @@ int aecDTM_addFeatureCheck  /*  <= TRUE if error                   */
 
   if ( sts == SUCCESS )
   {
-    
+
     pntType = aecDTM_pointFileFromFeatureFile ( ftrTyp );
 
     if ( *numPntsP > 1L && bRemoveDuplicates) aecDTM_removeDuplicateDTMPoints ( numPntsP, pntsP, AEC_C_TOL );
@@ -369,7 +369,7 @@ int aecDTM_addFeatureCheck  /*  <= TRUE if error                   */
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_addFeaturePointsToFile
- DESC: Add points directly to a specific point file.  Allows the size of the 
+ DESC: Add points directly to a specific point file.  Allows the size of the
        block allocated to be specified.
  HIST: Original - tmi 24-Oct-1990
  MISC:

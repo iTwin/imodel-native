@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ int CFeature::AddPoints     // <=  Non-zero status code if error occurred.
 int CFeature::AddPoints     // <=  Non-zero status code if error occurred.
 (
     DPoint3d *pntsP,        //  => 3D points to add to feature.
-    byte *flgsP,         //  => Point properties.
+    unsigned char *flgsP,         //  => Point properties.
     long numPnts            //  => Number of points to add.
 )
 {
@@ -129,7 +129,7 @@ long *numPntsP           // <=  Number of points returned.
                 memcpy ( *ftrPntsPP, m_pntsP, sizeof ( CFeaturePnt ) * m_nNumPnts );
         }
     }
-        
+
     return ( sts );
 }
 
@@ -143,7 +143,7 @@ long *numPntsP           // <=  Number of points returned.
 int CFeature::GetPoints // <=  Non-zero status code if error occurred.
 (
 DPoint3d **pntsPP,       // <=  Feature's 3D coordinates. CALLER MUST FREE.
-byte **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
+unsigned char **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
 long *numPntsP           // <=  Number of points returned.
 )
 {
@@ -159,12 +159,12 @@ long *numPntsP           // <=  Number of points returned.
 
     if ( ( sts = GetPoints ( &ftrPntsP, numPntsP ) ) == SUCCESS )
     {
-        sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, ftrPntsP, *numPntsP );                
+        sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, ftrPntsP, *numPntsP );
     }
 
     if ( ftrPntsP )
         free ( ftrPntsP );
-        
+
     return ( sts );
 }
 
@@ -177,7 +177,7 @@ long *numPntsP           // <=  Number of points returned.
 //---------------------------------------------------------------------------
 
 long CFeature::GetPointCount ( )    // <=  Number of points.
-{    
+{
     if ( !PointsAreLoaded ( ) )
         LoadPoints ( );
 
@@ -186,7 +186,7 @@ long CFeature::GetPointCount ( )    // <=  Number of points.
 
 
 //---------------------------------------------------------------------------
-// DESC: Compares amount of free space in the feature object's point list 
+// DESC: Compares amount of free space in the feature object's point list
 //       with the number of new points to be added.  Allocates new space
 //       if required.
 // HIST: Original - twlangha - 01/13/99
@@ -231,8 +231,8 @@ int CFeature::CheckPointsAllocation // <=  Non-zero status code if
 
     if ( !m_pntsP )
         sts = AEC_E_MEMALF;
-    
-    return ( sts );    
+
+    return ( sts );
 }
 
 
@@ -267,7 +267,7 @@ int CFeature::LoadPoints ( )    // <=  Non-zero status code if error occurred.
 
     if ( !PointsAreLoaded ( ) && m_ftrP )
     {
-        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP, 
+        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP,
                                       NULL, &nType, NULL, NULL, NULL, &m_pntsP, &m_nNumPnts, NULL,
                                       NULL, NULL, NULL, NULL, NULL );
 
@@ -331,12 +331,12 @@ void CFeature::ValidatePoints ( )
         {
             for ( int i = GetPointCount() - 1; i >= 0; i-- )
             {
-                if ( 
-                     ( ( i == GetPointCount() - 1 || ( m_pntsP[i].flg & FTR_C_DISCNT ) ) && 
-                       (m_pntsP[i-1].flg & FTR_C_DISCNT ) )                                       
+                if (
+                     ( ( i == GetPointCount() - 1 || ( m_pntsP[i].flg & FTR_C_DISCNT ) ) &&
+                       (m_pntsP[i-1].flg & FTR_C_DISCNT ) )
                                                                                             ||
                      ( i == 0 && ( m_pntsP[i].flg & FTR_C_DISCNT ) )
-                   )            
+                   )
                 {
                     RemovePoints ( i, 1 );
                 }
@@ -367,7 +367,7 @@ void CFeature::ReversePointDisconFlags ( BOOL bFeatureToDTM )
         {
             ValidatePoints();
 
-            // Starting with next to last point, search backwards. 
+            // Starting with next to last point, search backwards.
             // Find each discontinuity and set the subsequent PUD
             // flag to x8.
             for ( int i = m_nNumPnts - 2; i >= 0; i-- )
@@ -390,7 +390,7 @@ void CFeature::ReversePointDisconFlags ( BOOL bFeatureToDTM )
         }
         else
         {
-            // Starting with the second point, find each PUD flag set to 
+            // Starting with the second point, find each PUD flag set to
             // 0 and set the previous points flag to be a discontinuity.
             for ( int i = 1; i < m_nNumPnts; i++ )
             {
@@ -406,7 +406,7 @@ void CFeature::ReversePointDisconFlags ( BOOL bFeatureToDTM )
 
             ValidatePoints();
         }
-    }     
+    }
 }
 
 

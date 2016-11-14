@@ -50,7 +50,7 @@ struct CIVdtmtin *tinP               /*  => triangle to add to stack        */
             return (DTM_M_MEMALF);
         }
 
-    (*tinstkPP)[(*ntinstkP)++] = (ULONG_PTR) tinP;
+    (*tinstkPP)[(*ntinstkP)++] = (long) (uintptr_t)tinP;
 
     return (sts);
     }

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* mrkuti.c                                            tmi    22-Oct-1990     */
@@ -30,10 +30,10 @@ struct CIVmrkbnd
     long nvrt;
     DPoint3d *vrtP;
     DPoint3d box[5];
-    byte vld;
-    byte del;
-    byte inside;
-    byte dntExtFtr;
+    unsigned char vld;
+    unsigned char del;
+    unsigned char inside;
+    unsigned char dntExtFtr;
 };
 
 
@@ -187,7 +187,7 @@ static int aecDTM_markBoundaryTrianglesProcess
     mrkP->nvrt = npnt;
     mrkP->vrtP = pntsP;
 
-    if ( mrkP->inside == (byte)TRUE )
+    if ( mrkP->inside == (unsigned char)TRUE )
     {
       aecPolygon_computeRange ( &mrkP->box[0], &mrkP->box[2], npnt, pntsP );
       mrkP->box[1].x = mrkP->box[2].x;  mrkP->box[1].y = mrkP->box[0].y;
@@ -234,19 +234,19 @@ static int aecDTM_markBoundaryTrianglesProcessMore
 
   VCENTROIDXY ( tP[0], tP[1], tP[2], pnt );
 
-  if ( mrkP->inside == (byte)TRUE )
+  if ( mrkP->inside == (unsigned char)TRUE )
     insideBox = aecPolygon_isPointInside ( 5L, mrkP->box, &pnt );
   else
     insideBox = TRUE;
 
   if ( insideBox )
   {
-    mrkP->vld = (byte)aecPolygon_isPointInside ( mrkP->nvrt, mrkP->vrtP, &pnt );
+    mrkP->vld = (unsigned char)aecPolygon_isPointInside ( mrkP->nvrt, mrkP->vrtP, &pnt );
     if ( mrkP->inside == FALSE ) mrkP->vld ^= TRUE;
 
-    if ( mrkP->vld == (byte)TRUE )
+    if ( mrkP->vld == (unsigned char)TRUE )
     {
-      if ( mrkP->del == (byte)TRUE )
+      if ( mrkP->del == (unsigned char)TRUE )
       {
         aecDTM_deleteTriangle ( mrkP->srf, tinP, 2 );
 

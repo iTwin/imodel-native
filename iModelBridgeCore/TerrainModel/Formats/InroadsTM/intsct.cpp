@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* intsct.c                                            dgc    01-Feb-1994     */
@@ -26,8 +26,8 @@
 typedef struct
 {
   double y;
-  ULong  end:   1;
-  ULong  iSeg: 31;
+  unsigned long  end:   1;
+  unsigned long  iSeg: 31;
 } YStrip;
 
 typedef struct
@@ -351,7 +351,7 @@ static int intersectCheck
 
 /*%-----------------------------------------------------------------------------
  FUNC: eleNodeInsert
- DESC: 
+ DESC:
  HIST: original						dgc	10/1994
  MISC: static
  KEYW: INTERSECTION ELEMENT NODE INSERT
@@ -391,7 +391,7 @@ static int eleNodeInsert
 
 /*%-----------------------------------------------------------------------------
  FUNC: eleNodeDelete
- DESC: 
+ DESC:
  HIST: original						dgc	10/1994
  MISC: static
  KEYW: INTERSECTION ELEMENT NODE DELETE
