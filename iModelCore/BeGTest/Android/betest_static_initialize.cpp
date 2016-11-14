@@ -113,9 +113,9 @@ void* BeTestHost::_InvokeP (char const* function, void* args)
         return m_env;
         }
     else if (0 == strncmp (function, "getObj", 6))
-	    {
+        {
         return m_obj;
-	    }
+        }
     else if (0 == strncmp (function, "getClass", 8))
         {
         return m_env->GetObjectClass (m_obj);
@@ -170,7 +170,7 @@ jstring         localStateDir
     BeJStringUtilities::InitWStringFromJString (env, s_localStateDir, localStateDir);
 
     s_testOutputRoot = s_localStateDir;
-    s_testOutputRoot.AppendToPath(L"Output");
+    s_testOutputRoot.AppendToPath(L"Output").AppendSeparator();
 
     static bool s_cleaned;
     if (!s_cleaned)
