@@ -343,7 +343,7 @@ struct SingleSelectStatementExp : QueryExp
 
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
-
+        
         bool IsCoreSelect() const { return GetLimitOffset() == nullptr && GetOrderBy() == nullptr; }
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
     };

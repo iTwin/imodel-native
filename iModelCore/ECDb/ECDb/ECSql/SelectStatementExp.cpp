@@ -237,14 +237,33 @@ RangeClasssInfo::List FromExp::FindRangeClassRefExpressions() const
     {
     RangeClasssInfo::List rangeClassRefs;
     FindRangeClassRefs(rangeClassRefs, RangeClasssInfo::Scope::Local);
-  
-    //rangeClassRefs->push_back(nullptr); //Dilimiter for local vs inherited properties
+    auto  isSubQuery = [] (Exp const& start, SingleSelectStatementExp const* end)
+        {
+        if (end == nullptr)
+            return true;
+
+        Exp const* c = &start;
+        do
+            {
+            c = c->GetParent();
+            if (c == nullptr || c == end)
+                return false;
+
+            if (c->GetType() == Exp::Type::FromClause)
+                return true;
+
+            } while (true);
+        };
+
+
     SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
-    bool isTableSubQuery = FindParent(Exp::Type::FromClause) != nullptr;
+    Exp const* old = this;
+    bool isTableSubQuery = isSubQuery(*old, cur);
     while (cur != nullptr && !isTableSubQuery)
         {        
-        isTableSubQuery = cur->FindParent(Exp::Type::FromClause) != nullptr;
-        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));   
+        old = cur;
+        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
+        isTableSubQuery = isSubQuery(*old, cur);
         if (cur != nullptr && !isTableSubQuery)
             {
             if (cur->GetFrom() != this)

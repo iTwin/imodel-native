@@ -73,6 +73,7 @@ void Exp::FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Exp::Type o
         if (child->GetType() == ofType)
             expList.push_back(this);
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
