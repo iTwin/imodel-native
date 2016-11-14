@@ -633,10 +633,9 @@ struct  ScalableMeshTileNode : ModelTileNode
     {
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
-    DgnModelId              m_modelId;
 
-    ScalableMeshTileNode(DgnModelId modelId, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
-        m_modelId(modelId), m_node(node), m_transform(transform), ModelTileNode(transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
+    ScalableMeshTileNode(DgnModelCR model, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
+        m_node(node), m_transform(transform), ModelTileNode(model, transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
         {}
 
 
@@ -678,7 +677,7 @@ struct  ScalableMeshTileNode : ModelTileNode
                 }
             builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
-                builder->AddTriangle(*visitor, m_modelId, false, twoSidedTriangles);
+                builder->AddTriangle(*visitor, GetModel().GetModelId(), false, twoSidedTriangles);
 
             tileMeshes.push_back(builder->GetMesh());
             }
@@ -693,7 +692,7 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
     DRange3d transformedRange = node->GetContentExtent();
     if (transformedRange.IsNull() || transformedRange.IsEmpty()) transformedRange = node->GetNodeExtent();
     transformDbToTile.Multiply(transformedRange, transformedRange);
-    rootTile = new ScalableMeshTileNode(GetModelId(), node, transformedRange, transformDbToTile, childIndex, parent);
+    rootTile = new ScalableMeshTileNode(*this, node, transformedRange, transformDbToTile, childIndex, parent);
 
     for (auto& child : node->GetChildrenNodes())
         {
@@ -968,6 +967,28 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
     return tmFileName;
     }
 
+void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->ClearOverviews(targetSM.get());
+    if (targetSM.get() == m_smPtr.get())
+        {
+        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+        }
+    if (targetSM.get() == m_smPtr->GetTerrainSM().get())
+        {
+        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
+        if (m_currentDrawingInfoPtr.IsValid())
+            {
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
+            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
+            }
+        }
+    }
+
+void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->InitScalableMesh(targetSM);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     3/2016

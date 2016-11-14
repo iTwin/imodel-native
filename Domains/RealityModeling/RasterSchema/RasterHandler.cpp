@@ -52,7 +52,7 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const override { descr = m_infoString; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DgnDbStatus::Success; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override { return DgnDbStatus::Success; }
     virtual void _SetHilited(DgnElement::Hilited newState) const override { m_hilited = newState; }
@@ -77,7 +77,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     m_infoString(model.GetName())
     {
     if (m_infoString.empty())
-        m_infoString = model.GetCode().GetValueCP();
+        m_infoString = model.GetName();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     Render::GeometryParams geomParams;
@@ -494,38 +494,20 @@ Utf8String RasterModel::GetDescription() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+void RasterModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& stmt, ForInsert forInsert)
     {
-    // Shoud have been added by RasterModelHandler::_GetClassParams() if not make sure the handler is registred.
-    BeAssert(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip) != -1); 
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    // Shoud have been added by RasterModelHandler::_GetClassParams() if not make sure the handler is registered.
+    BeAssert(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip) != -1); 
 
     bvector<uint8_t> clipData;
     m_clips.ToBlob(clipData, GetDgnDb());
     
     if(clipData.empty())
-        statement.BindNull(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip));
+        stmt.BindNull(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip));
     else
-        statement.BindBinary(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-
-    return DgnDbStatus::Success;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  7/2016
-//----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  7/2016
-//----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
+        stmt.BindBinary(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     }
 
 //----------------------------------------------------------------------------------------

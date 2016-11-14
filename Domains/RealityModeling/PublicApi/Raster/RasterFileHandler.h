@@ -44,10 +44,9 @@ public:
             //! Parameters to create a new instance of a RasterFileModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] link The file link.
-            //! @param[in] code The Code for the DgnModellink
             //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::RepositoryLinkCR link, Dgn::DgnCode code, DMatrix4dCP sourceToWorld) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), link.GetElementId(), code), m_sourceToWorldP(sourceToWorld),
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::RepositoryLinkCR link, DMatrix4dCP sourceToWorld) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), link.GetElementId()), m_sourceToWorldP(sourceToWorld),
                 m_link(&link)
                 {
                 BeAssert(link.GetElementId().IsValid());

@@ -317,6 +317,10 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
 //----------------------------------------------------------------------------------------
 BentleyStatus SceneInfo::Read(StreamBuffer& buffer) 
     {
+    // If we weren't able to read the file...
+    if (0 == buffer.GetSize())
+        return ERROR;
+
     Json::Value val;
     Json::Reader reader;
     Utf8CP buffStr = (Utf8CP) buffer.GetData();

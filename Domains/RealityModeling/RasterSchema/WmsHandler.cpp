@@ -173,11 +173,10 @@ void WmsMap::FromJson(Json::Value const& v)
     m_axisOrder = (AxisOrder)wmsValue.get("axisOrder", Json::Value((uint32_t)AxisOrder::Default)).asUInt();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, Utf8CP modelName, WmsMap const& mapInfo)
+WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, WmsMap const& mapInfo)
     {
     if (!link.GetElementId().IsValid())        // link must be persisted.
         return nullptr;
@@ -188,8 +187,7 @@ WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR lin
     if(!mapInfo.HasValidParameters())
         return nullptr;  // Can't create model.
 
-
-    return new WmsModel(DgnModel::CreateParams(db, classId, link.GetElementId(), DgnModel::CreateModelCode(modelName)), mapInfo);
+    return new WmsModel(DgnModel::CreateParams(db, classId, link.GetElementId()), mapInfo);
     }
 
 //----------------------------------------------------------------------------------------

@@ -119,7 +119,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTER_EXPORT)
 
 public:
-    RASTER_EXPORT static WmsModelPtr CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, Utf8CP modelName, WmsMap const& prop);
+    RASTER_EXPORT static WmsModelPtr CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, WmsMap const& prop);
 };
 
 END_BENTLEY_RASTER_NAMESPACE

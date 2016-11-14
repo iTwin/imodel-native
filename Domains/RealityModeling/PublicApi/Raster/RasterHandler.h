@@ -98,8 +98,7 @@ protected:
 //    virtual void _DrawModel(Dgn::ViewContextR) override;
     
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParamsCR params) override;
-    Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-    Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _InitFrom(Dgn::DgnModelCR other) override;
 
     void _WriteJsonProperties(Json::Value& v) const override;

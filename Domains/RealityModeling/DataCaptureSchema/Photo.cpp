@@ -26,6 +26,7 @@ HANDLER_DEFINE_MEMBERS(PhotoHandler)
 #define Photo_PROPNAME_Pose_Rotation_M_22       "M_22"
 
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -185,14 +186,21 @@ void PhotoHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhotoPtr Photo::Create(Dgn::SpatialModelR model)
+PhotoPtr Photo::Create(Dgn::SpatialModelR model, CameraElementId camera)
     {
+    if (!camera.IsValid())
+        {
+        BeAssert(false && "Cannot create a photo with an invalid camera");
+        return nullptr;
+        }
+
     DgnClassId classId = QueryClassId(model.GetDgnDb());
     DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Photo, model.GetDgnDb());
 
-    PhotoPtr cp = new Photo(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    PhotoPtr cp = new Photo(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),camera);
     return cp;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -202,6 +210,44 @@ int             Photo::GetPhotoId() const { return m_photoId; }
 PoseType        Photo::GetPose() const { return m_pose; }
 void            Photo::SetPhotoId(int val) { m_photoId = val; }
 void            Photo::SetPose(PoseTypeCR val) { m_pose = val; }
+void            Photo::SetCameraId(CameraElementId val) { m_camera = val; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CameraElementId  Photo::QueryPhotoIsTakenByCameraRelationship(DgnDbR dgndb, PhotoElementId photoElmId)
+    {
+    Utf8CP ecSql = "SELECT [TargetECInstanceId]  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCamera) " WHERE SourceECInstanceId=?";
+
+    CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (!statement.IsValid())
+        {
+        BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
+        return CameraElementId();
+        }
+
+    statement->BindId(1, photoElmId);
+
+    DbResult stepStatus = statement->Step();
+    if (stepStatus != BE_SQLITE_ROW)
+        return CameraElementId();
+
+    return statement->GetValueId<CameraElementId>(0);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CameraElementId  Photo::GetCameraId() const
+    {
+    //Query and cache the result
+    if (!m_camera.IsValid())
+        m_camera = QueryPhotoIsTakenByCameraRelationship(GetDgnDb(),GetId());
+    return m_camera;
+    }
+
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,14 +310,120 @@ DgnDbStatus Photo::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Photo::_OnInsert()
     {
-//     PlanningModelP planningModel = dynamic_cast<PlanningModelP> (GetModel().get());
-//     if (nullptr == planningModel)
-//         {
-//         BeAssert(false && "Can insert Photo only in a PlanningModel");
-//         return DgnDbStatus::WrongModel;
-//         }
+    if (!m_camera.IsValid())
+        {
+        BeAssert(false && "Cannot insert a photo with an invalid camera");
+        return DgnDbStatus::ValidationFailed;
+        }
 
     return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const
+    {
+    InsertPhotoIsTakenByCameraRelationship(dgndb,GetId(),GetCameraId());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Photo::InsertPhotoIsTakenByCameraRelationship(DgnDbR dgndb, PhotoElementId photoElmId, CameraElementId cameraElmId)
+    {
+    if (!photoElmId.IsValid() || !cameraElmId.IsValid())
+        {
+        BeAssert(false && "Attempt to add invalid photo is taken by relationship");
+        return ERROR;
+        }
+
+    Utf8CP ecSql = "INSERT INTO " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCamera) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
+    CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    BeAssert(statement.IsValid());
+
+    statement->BindId(1, photoElmId);
+    statement->BindId(2, cameraElmId);
+
+    DbResult stepStatus = statement->Step();
+    if (BE_SQLITE_DONE != stepStatus)
+        {
+        BeAssert(false && "Error creating PhotoIsTakenByCamera Relationship");
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::_OnInserted(DgnElementP copiedFrom) const
+    {
+    T_Super::_OnInserted(copiedFrom);
+
+    //Update relationship
+    InsertPhotoIsTakenByCameraRelationship(GetDgnDb());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::DeletePhotoIsTakenByCameraRelationship(DgnDbR dgndb) const
+    {
+    if (!GetId().IsValid())
+        {
+        BeAssert(false && "Attempt to delete an invalid PhotoIsTakenByCamera relationship");
+        return;
+        }
+
+    //Delete old one 
+    Utf8CP ecSql = "DELETE FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCamera) " WHERE SourceECInstanceId=?";
+    CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    BeAssert(statement.IsValid());
+    statement->BindId(1, GetId());        //Source
+    DbResult stepStatus = statement->Step();
+    if (BE_SQLITE_DONE != stepStatus)
+        {
+        BeAssert(false && "Error deleting PhotoIsTakenByCamera Relationship");
+        }
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::UpdatePhotoIsTakenByCameraRelationship(DgnDbR dgndb) const
+    {
+    //Delete old one 
+    DeletePhotoIsTakenByCameraRelationship(dgndb);
+    //and then insert new one
+    InsertPhotoIsTakenByCameraRelationship(dgndb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::_OnUpdated(DgnElementCR original) const
+    {
+    T_Super::_OnUpdated(original);
+
+    auto other = dynamic_cast<PhotoCP>(&original);
+    BeAssert(nullptr != other);
+    if (nullptr == other)
+        return;
+    
+    //Update relationship
+    if (GetCameraId() != other->GetCameraId())
+        UpdatePhotoIsTakenByCameraRelationship(GetDgnDb());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::_OnDeleted() const
+    {
+    T_Super::_OnDeleted();
+    DeletePhotoIsTakenByCameraRelationship(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,6 +439,7 @@ void Photo::_CopyFrom(DgnElementCR el)
 
     SetPhotoId(other->GetPhotoId());
     SetPose(other->GetPose());
+    SetCameraId(other->GetCameraId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,7 +465,6 @@ PhotoElementId Photo::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
 
     return statement->GetValueId<PhotoElementId>(0);
     }
-
 
 
 END_BENTLEY_DATACAPTURE_NAMESPACE
