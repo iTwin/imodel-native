@@ -477,9 +477,9 @@ public:
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
     DrawingViewControllerP GetDrawingViewControllerP() {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
     //! If this view is a sheet view, get the sheet view controller.
-    SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
+    Sheet::ViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
-    SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    Sheet::ViewControllerP GetSheetViewControllerP() {return (Sheet::ViewControllerP) GetSheetViewControllerCP();}
     /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! If this view is a query view, get the query view controller.
     DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
