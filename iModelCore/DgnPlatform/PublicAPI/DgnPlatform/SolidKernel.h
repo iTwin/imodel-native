@@ -10,10 +10,6 @@
 
 #include "Render.h"
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-class TopoDS_Shape;
-#endif
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!< Reference counted type to manage the life-cycle of the IFaceMaterialAttachments.
@@ -41,15 +37,20 @@ public:
 DGNPLATFORM_EXPORT FaceAttachment();
 DGNPLATFORM_EXPORT FaceAttachment(Render::GeometryParamsCR sourceParams);
 
-//! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
-DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
-//! Cook and resolve FaceAttachment color and material. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
-DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsCR baseParams) const;
+DGNPLATFORM_EXPORT bool operator == (struct FaceAttachment const&) const;
+DGNPLATFORM_EXPORT bool operator < (struct FaceAttachment const&) const;
+
 //! Return GraphicParams from prior call to CookFaceAttachment. Will return nullptr if CookFaceAttachment has not been called.
 Render::GraphicParamsCP GetGraphicParams() const {return (m_haveGraphicParams ? &m_graphicParams : nullptr);}
 
-DGNPLATFORM_EXPORT bool operator == (struct FaceAttachment const&) const;
-DGNPLATFORM_EXPORT bool operator < (struct FaceAttachment const&) const;
+//! Cook and resolve FaceAttachment color and material. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsCR baseParams) const;
+
+//! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
+
+//! Returns face identifier for T_FaceToSubElemIdMap pair from face, edge, or vertex sub-entity.
+DGNPLATFORM_EXPORT static uint32_t GetFaceIdentifierFromSubEntity(ISubEntityCR);
 
 }; // FaceAttachment
 
@@ -217,19 +218,6 @@ GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
 }; // ISubEntity
-
-#if defined (BENTLEYCONFIG_OPENCASCADE)    
-//=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
-//! that the entire set of solid kernel includes isn't required for the published api.
-//=======================================================================================
-struct SolidKernelUtil
-{
-DGNPLATFORM_EXPORT static IBRepEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
-DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(IBRepEntityCR);
-DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
-}; // SolidKernelUtil
-#endif
 
 //=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.

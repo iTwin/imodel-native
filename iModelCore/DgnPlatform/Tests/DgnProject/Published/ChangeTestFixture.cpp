@@ -196,8 +196,8 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        categories->AddCategory(catId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(*m_testDb))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");
     auto flags = style->GetViewFlags();

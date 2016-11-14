@@ -366,6 +366,60 @@ void PSolidUtil::SetFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachment
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_EDGE_ask_faces(edgeTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    int     symbIndex = 0;
+    FaceId  entityId;
+
+    // Prefer a face with the same nodeId as the edge...
+    if (SUCCESS == PSolidTopoId::IdFromEntity(entityId, edgeTag, true))
+        {
+        for (int iFace=0; iFace < nFaces; iFace++)
+            {
+            FaceId  faceId;
+
+            if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, faceTags[iFace], true) || entityId.nodeId != faceId.nodeId)
+                continue;
+
+            symbIndex = iFace;
+            break;
+            }
+        }
+
+    PK_FACE_t faceTag = faceTags[symbIndex];
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_VERTEX_ask_faces(vertexTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    PK_FACE_t faceTag = faceTags[0]; // Might need to change to use face with highest node id...
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt pki_combine_memory_blocks (PK_MEMORY_block_t* pBuffer)

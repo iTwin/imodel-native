@@ -22,11 +22,6 @@
 %endif
 %endif
 
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-dirToSearch = $(BuildContext)VendorAPI/opencascade/
-%include cincapnd.mki
-%endif
-
 #-----------------------------------------------------------
 # Root DgnPlatform directory
 #-----------------------------------------------------------
@@ -437,20 +432,6 @@ $(CoreObjs)PSolidUtil$(oext) :                      $(DgnBRepSrc)PSolidUtil.cpp 
 
 %endif
 
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-
-$(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-%endif
-
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------
@@ -685,31 +666,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-# FoundationClasses
-LINKER_LIBRARIES_DELAYLOADED = \
-    $(ContextSubPartsLibs)TKernel.lib \
-    $(ContextSubPartsLibs)TKMath.lib
-
-# ModelingData
-LINKER_LIBRARIES_DELAYLOADED + \
-    $(ContextSubPartsLibs)TKG2d.lib \
-    $(ContextSubPartsLibs)TKG3d.lib \
-    $(ContextSubPartsLibs)TKBrep.lib \
-    $(ContextSubPartsLibs)TKGeomBase.lib
-
-# ModelingAlgorithms (also TKHLR TKFillet TKFeat TKXMesh TKShHealing)
-LINKER_LIBRARIES_DELAYLOADED + \
-    $(ContextSubPartsLibs)TKBool.lib \
-    $(ContextSubPartsLibs)TKBO.lib \
-    $(ContextSubPartsLibs)TKOffset.lib \
-    $(ContextSubPartsLibs)TKPrim.lib \
-    $(ContextSubPartsLibs)TKMesh.lib \
-    $(ContextSubPartsLibs)TKGeomAlgo.lib \
-    $(ContextSubPartsLibs)TKShHealing.lib \
-    $(ContextSubPartsLibs)TKTopAlgo.lib
-%endif
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES_DELAYLOADED = \
