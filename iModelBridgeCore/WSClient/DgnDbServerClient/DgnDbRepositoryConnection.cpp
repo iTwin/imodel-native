@@ -230,7 +230,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
         if (result.IsSuccess())
             {
             JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            finalResult->SetSuccess(FileInfo::FromJson(instance, fileInfo));
+            finalResult->SetSuccess(FileInfo::Parse(instance, fileInfo));
             return;
             }
 
@@ -264,14 +264,15 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
-            JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
-            if (repositoryInstances.isArray())
-                finalResult->SetSuccess(FileInfo::FromJson(repositoryInstances[0], fileInfo));
-            else
+            
+            if (queryResult.GetValue().GetRapidJsonDocument().IsNull())
                 {
                 finalResult->SetError(error);
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+                return;
                 }
+
+            finalResult->SetSuccess(FileInfo::Parse(*queryResult.GetValue().GetInstances().begin(), fileInfo));
             });
 
         })->Then<DgnDbServerFileResult>([=] ()
@@ -533,15 +534,15 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICa
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return;
             }
-        
-        auto instances = result.GetValue().GetJsonValue()[ServerSchema::Instances];
-        if (!instances.isArray())
+        auto instances = result.GetValue().GetInstances();
+        if (instances.IsEmpty())
             {
             finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
             return;
             }
-        auto fileInfo = FileInfo::FromJson(instances[0], FileInfo());
+
+        auto fileInfo = FileInfo::Parse(*instances.begin(), FileInfo());
         m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
             {
             if (!deleteResult.IsSuccess())
@@ -574,7 +575,7 @@ DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::MasterFilesQuery(WSQuery quer
                 return DgnDbServerFilesResult::Error(result.GetError());
             bvector<FileInfoPtr> files;
             for (auto const& instance : result.GetValue().GetJsonValue()[ServerSchema::Instances])
-                files.push_back(FileInfo::FromJson(instance));
+                files.push_back(FileInfo::Parse(instance));
             return DgnDbServerFilesResult::Success(files);
             });
         });
@@ -1471,7 +1472,7 @@ DgnDbServerBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoIn
             bvector<std::shared_ptr<DgnDbServerBriefcaseInfo>> briefcases;
             for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
                 {
-                briefcases.push_back(DgnDbServerBriefcaseInfo::FromJson(value));
+                briefcases.push_back(DgnDbServerBriefcaseInfo::Parse(value));
                 }
 
             return DgnDbServerBriefcasesInfoResult::Success(briefcases);
@@ -1642,31 +1643,32 @@ ICancellationTokenPtr cancellationToken
     return ExecutionManager::ExecuteWithRetry<DgnDbCodeLockSetResultInfo>([=]()
         {
         //Execute query
-        return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerCodeLockSetResult>
+        auto smth = "0";
+        
+        return m_wsRepositoryClient->SendQueryRequest(query, "", smth, cancellationToken)->Then<DgnDbServerCodeLockSetResult>
             ([=] (const WSObjectsResult& result)
             {
             if (result.IsSuccess())
                 {
                 DgnDbCodeLockSetResultInfo codesLocks;
-                for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                for (auto const& value : result.GetValue().GetInstances())
                     {
                     DgnCode        code;
                     DgnCodeState   codeState;
                     DgnLock        lock;
                     BeBriefcaseId  briefcaseId;
                     Utf8String     repositoryId;
-                    if (GetLockFromServerJson(value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
+                    if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, repositoryId))
                         {
                         if (lock.GetLevel() != LockLevel::None)
                             codesLocks.AddLock(lock, briefcaseId, repositoryId);
                         }
-                    else if (GetCodeFromServerJson(value[ServerSchema::Properties], code, codeState, briefcaseId, repositoryId))
+                    else if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId, repositoryId))
                         {
                         codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
                         }
                     //NEEDSWORK: log an error
                     }
-
                 return DgnDbServerCodeLockSetResult::Success(codesLocks);
                 }
             else
@@ -1714,18 +1716,18 @@ WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint6
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             06/2016
 //---------------------------------------------------------------------------------------
-void AddCodeLock(DgnDbCodeLockSetResultInfo& codesLocksSet, JsonValueCR codeLockJson)
+void AddCodeLock(DgnDbCodeLockSetResultInfo& codesLocksSet, WebServices::WSObjectsReader::Instance codeLockJson)
     {
     DgnCode        code;
     DgnCodeState   codeState;
     DgnLock        lock;
     BeBriefcaseId  briefcase;
     Utf8String     repository;
-    if (GetLockFromServerJson(codeLockJson[ServerSchema::Properties], lock, briefcase, repository))
+    if (GetLockFromServerJson(codeLockJson.GetProperties(), lock, briefcase, repository))
         {
         codesLocksSet.AddLock(lock, briefcase, repository);
         }
-    else if (GetCodeFromServerJson(codeLockJson[ServerSchema::Properties], code, codeState, briefcase, repository))
+    else if (GetCodeFromServerJson(codeLockJson.GetProperties(), code, codeState, briefcase, repository))
         {
         codesLocksSet.AddCode(code, codeState, briefcase, repository);
         }
@@ -1777,7 +1779,7 @@ ICancellationTokenPtr cancellationToken
                     return;
                     }
                 DgnDbCodeLockSetResultInfo codesLocks;
-                for (auto const& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                for (auto const& value : result.GetValue().GetInstances())
                     {
                     AddCodeLock(codesLocks, value);
                     }
@@ -1844,8 +1846,9 @@ ICancellationTokenPtr cancellationToken
             
                 for (auto& value : ptr)
                     {
+                    auto json = ToRapidJson(value);
                     DgnDbCodeTemplate        codeTemplate;
-                    if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    if (GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                         {
                         templates.AddCodeTemplate(codeTemplate);
                         }
@@ -1889,8 +1892,9 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvaila
 
                 for (auto& value : ptr)
                     {
+                    auto json = ToRapidJson(value);
                     DgnDbCodeTemplate        codeTemplate;
-                    if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    if (GetCodeTemplateFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
                         {
                         templates.AddCodeTemplate(codeTemplate);
                         }
@@ -1941,9 +1945,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::GetBriefcaseFileInfo(BeBriefca
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerFileResult::Error(result.GetError());
             }
-
-        JsonValueCR instance = result.GetValue().GetJsonValue()[ServerSchema::Instances][0];
-        auto fileInfo = FileInfo::FromJson(instance);
+        auto fileInfo = FileInfo::Parse(*result.GetValue().GetInstances().begin());
         return DgnDbServerFileResult::Success(fileInfo);
         });
     }
@@ -1963,7 +1965,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
                 }
 
             JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::FromJson(instance));
+            return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::Parse(instance));
             });
         });
     }
@@ -1971,23 +1973,26 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
+DgnDbServerRevisionPtr ParseRevision (WSObjectsReader::Instance instance)
     {
+    RapidJsonValueCR properties = instance.GetProperties();
+
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     DgnDbServerHost::Adopt(host);
     RevisionStatus status;
-    DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(),
-    jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
+    DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, properties[ServerSchema::Property::Id].GetString(),
+    properties[ServerSchema::Property::ParentId].GetString(), properties[ServerSchema::Property::MasterFileId].GetString()));
     DgnDbServerHost::Forget(host);
     if (RevisionStatus::Success == status)
         {
-        indexedRevision->GetRevision()->SetSummary(jsonValue[ServerSchema::Property::Description].asCString());
+        indexedRevision->GetRevision()->SetSummary(properties[ServerSchema::Property::Description].GetString());
         DateTime pushDate = DateTime();
-        DateTime::FromString(pushDate, jsonValue[ServerSchema::Property::PushDate].asCString());
+        DateTime::FromString(pushDate, properties[ServerSchema::Property::PushDate].GetString());
         indexedRevision->GetRevision()->SetDateTime(pushDate);
-        indexedRevision->GetRevision()->SetUserName(jsonValue[ServerSchema::Property::UserCreated].asCString());
-        indexedRevision->SetIndex(jsonValue[ServerSchema::Property::Index].asUInt64());
-        indexedRevision->SetURL(jsonValue["URL"].asString());
+        indexedRevision->GetRevision()->SetUserName(properties[ServerSchema::Property::UserCreated].GetString());
+        indexedRevision->SetIndex(properties[ServerSchema::Property::Index].GetUint64());
+        Utf8String url = properties[ServerSchema::Property::URL].IsString() ? properties[ServerSchema::Property::URL].GetString() : "";
+        indexedRevision->SetURL(url);
         }
     return indexedRevision;
     }
@@ -2028,7 +2033,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (revisionResult.IsSuccess())
             {
-            auto revision = ParseRevision(revisionResult.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties]);
+            auto revision = ParseRevision(*revisionResult.GetValue().GetInstances().begin());
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return DgnDbServerRevisionResult::Success(revision);
@@ -2532,8 +2537,8 @@ ICancellationTokenPtr       cancellationToken
         if (revisionsInfoResult.IsSuccess())
             {
             bvector<DgnDbServerRevisionPtr> indexedRevisions;
-            for (auto& value : revisionsInfoResult.GetValue().GetJsonValue()[ServerSchema::Instances])
-                indexedRevisions.push_back(ParseRevision(value[ServerSchema::Properties]));
+            for (auto const& value : revisionsInfoResult.GetValue().GetInstances())
+                indexedRevisions.push_back(ParseRevision(value));
             std::sort(indexedRevisions.begin(), indexedRevisions.end(), [](DgnDbServerRevisionPtr a, DgnDbServerRevisionPtr b)
                 {
                 return a->GetIndex() < b->GetIndex();
