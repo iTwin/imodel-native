@@ -82,6 +82,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
             return CompatibilityStatus::ERROR_ElementInsertFailed;
         }
 
+    m_db->SaveChanges();
     return CompatibilityStatus::Success;
     }
 
@@ -91,7 +92,13 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
 CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
     {
     CompatibilityStatus status = CompatibilityStatus::Success;
-    insertTestElement();
+    if (!m_db->IsReadonly())
+        {
+        status = insertTestElement();
+        if (status != CompatibilityStatus::Success)
+            return status;
+        }
+
     DgnModels::Iterator modelsIterator = m_db->Models().MakeIterator();
     for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
         {
@@ -220,7 +227,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
             if (BeFileNameStatus::Success == copyFileStatus)
                 {
                 DbResult status;
-                m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+                m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
                 if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
                     {
                     stat = VerifyElementsAndModels();

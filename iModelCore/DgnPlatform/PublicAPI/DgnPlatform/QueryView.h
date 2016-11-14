@@ -161,8 +161,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
+        DgnElementId m_abortedElement;
         NonSceneQuery m_rangeQuery;
         DgnQueryViewR m_view;
+        DgnElementId GetNextId();
         explicit ProgressiveTask(DgnQueryViewR view, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
