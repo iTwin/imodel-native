@@ -1369,7 +1369,7 @@ TEST(BeStringUtilitiesTests, CharToPointer)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                  11/16
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, ParseArgumentsUtf8)
+TEST(BeStringUtilitiesTests, ParseArgumentsUtf8)
     {
     //with aux delimiter
     Utf8CP input_str = "One Two 3G4,\"Fourty Two\"";
@@ -1405,7 +1405,7 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
     //for local code page
 #if defined(_WIN32)
     UINT current_code_page = ::GetACP(); //::GetACP() gives code page of local machine
-    LangCodePage codePage_retrieved ;
+    LangCodePage codePage_retrieved;
     ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetCurrentCodePage(codePage_retrieved));
     ASSERT_EQ(current_code_page, (UINT)codePage_retrieved);
     EXPECT_EQ(true, BeStringUtilities::IsValidCodePage((LangCodePage)current_code_page));
@@ -1418,8 +1418,8 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
 TEST(BeStringUtilitiesTests, GetDecimalSeparator)
     {
     WString refrenced_str;
-    WStringR decimal_separator=refrenced_str;
-    ASSERT_EQ(BentleyStatus::SUCCESS,BeStringUtilities::GetDecimalSeparator(decimal_separator));
+    WStringR decimal_separator = refrenced_str;
+    ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetDecimalSeparator(decimal_separator));
     WString expected_decimal_str = L".";
     EXPECT_STREQ(expected_decimal_str.c_str(), decimal_separator.c_str());
     }
