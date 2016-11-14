@@ -159,7 +159,7 @@ struct RasterProgressive : Dgn::ProgressiveTask
     Dgn::TileTree::DrawArgs::MissingNodes m_missing;
     Dgn::TileTree::TimePoint m_nextShow;
     Dgn::TileTree::TileLoadsPtr m_loads;
-    TransformCR m_depthTrans;
+    Transform m_depthTrans;
 
     Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
     RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes, Dgn::TileTree::TileLoadsPtr loads, TransformCR depthTrans) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_depthTrans(depthTrans) {}
