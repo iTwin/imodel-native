@@ -96,7 +96,7 @@ HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(context
 
 RealityDataHandlerDepends       = $(DgnPlatformAPISrc)DgnViewport.h $(DgnPlatformAPISrc)RealityDataCache.h
 
-WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h
+WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)TileTree.h
 
 toolsHeaders                    = $(DgnPlatformToolsPublicAPISrc)KeyTree.h
 
