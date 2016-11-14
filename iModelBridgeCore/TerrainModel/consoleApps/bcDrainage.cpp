@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcDrainage.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "stdafx.h"
@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 class DTMDrainageTables ;
 
-int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr ibcDtm) ;
+int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm) ;
 int bcdtmDrainage_callBackFunction(DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP) ;
 
 static int numDtmFeatures = 0 ;
@@ -72,7 +72,7 @@ int wmain(int argc, wchar_t *argv[])
 
     // Create IBcDTM
 
-    ibcDtm = BcDTM::CreateFromDtmHandle(dtmP);
+    ibcDtm = BcDTM::CreateFromDtmHandle(*dtmP);
     if(ibcDtm.IsNull())
         {
         bcdtmWrite_message(1,0,0,"Error Creating IbcDTM") ;
@@ -207,14 +207,14 @@ errexit :
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr ibcDtm)
+int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
     {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(1) ;
     long startTime=bcdtmClock() ;
     BC_DTM_OBJ *dtmP=NULL,*depressionDtmP=NULL ;
     BC_DTM_OBJ *traceDtmP=NULL ;
     void  *userP=NULL ;
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams  fence ;
+    Bentley::TerrainModel::DTMFenceParams  fence ;
     DPoint3d  fencePts[10] ;
     DPoint3d  traceStartPoint,sumpPoint ;
     double    maxPondDepth ;
@@ -225,7 +225,8 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
 
     // Variables To Test Maximum Descent And Ascent Tracing
  
-    int pnt1,pnt2,pnt3,clPtr,voidTriangle,numTrianglesTraced=0 ;
+    int pnt1,pnt2,pnt3,clPtr,numTrianglesTraced=0 ;
+    bool voidTriangle;
     double x,y,falseLowDepth=0.0 ;
    
     //  Drainage Tests
@@ -308,7 +309,7 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                                  //  Get Point For Pond Determination
 
                                  int ap,np,sp = tempDtmP->hullPoint ;
-                                 double x,y,z ;
+                                 double x_local,y_local,z ;
                                  bool pointFound=false ; 
                                  do
                                      {
@@ -317,8 +318,8 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                                      if( nodeAddrP(tempDtmP,ap)->hPtr != sp )
                                          {
                                           pointFound = true ;
-                                          x = ( pointAddrP(tempDtmP,sp)->x + pointAddrP(tempDtmP,ap)->x ) / 2.0 ;
-                                          y = ( pointAddrP(tempDtmP,sp)->y + pointAddrP(tempDtmP,ap)->y ) / 2.0 ;
+                                          x_local = ( pointAddrP(tempDtmP,sp)->x + pointAddrP(tempDtmP,ap)->x ) / 2.0 ;
+                                          y_local = ( pointAddrP(tempDtmP,sp)->y + pointAddrP(tempDtmP,ap)->y ) / 2.0 ;
                                           z = ( pointAddrP(tempDtmP,sp)->z + pointAddrP(tempDtmP,ap)->z ) / 2.0 ;
                                          } 
                                      sp = np ; 
@@ -327,8 +328,8 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                                  if( ! pointFound && tempDtmP->numPoints == 3 )
                                      {
                                      pointFound = true ;
-                                     x = ( pointAddrP(tempDtmP,0)->x + pointAddrP(tempDtmP,1)->x + pointAddrP(tempDtmP,2)->x ) / 3.0 ;
-                                     y = ( pointAddrP(tempDtmP,0)->y + pointAddrP(tempDtmP,1)->y + pointAddrP(tempDtmP,2)->y ) / 3.0 ;
+                                     x_local = ( pointAddrP(tempDtmP,0)->x + pointAddrP(tempDtmP,1)->x + pointAddrP(tempDtmP,2)->x ) / 3.0 ;
+                                     y_local = ( pointAddrP(tempDtmP,0)->y + pointAddrP(tempDtmP,1)->y + pointAddrP(tempDtmP,2)->y ) / 3.0 ;
                                      z = ( pointAddrP(tempDtmP,0)->z + pointAddrP(tempDtmP,1)->z + pointAddrP(tempDtmP,2)->z ) / 3.0 ;
                                     } 
 
@@ -338,8 +339,8 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                                      {
                                       bool pondDetermined=false ; 
                                       double pondElevation,pondDepth,pondVolume,pondArea ;
-                                      BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDynamicFeatureArray pondFeatures ;
-                                      if( BcDTMDrainage::CalculatePondForPoint(ibcDtm.get(),x,y,0.0,pondDetermined,pondElevation,pondDepth,pondArea,pondVolume,pondFeatures) == DTM_SUCCESS)
+                                      Bentley::TerrainModel::DTMDynamicFeatureArray pondFeatures ;
+                                      if( BcDTMDrainage::CalculatePondForPoint(ibcDtm.get(), x_local, y_local,0.0,pondDetermined,pondElevation,pondDepth,pondArea,pondVolume,pondFeatures) == DTM_SUCCESS)
                                       if( dbg && pondDetermined )
                                          {
                                          bcdtmWrite_message(0,0,0,"Pond Determined ** elevation = %8.3lf depth = %8.3lf volume = %12.3lf area = %15.8lf",pondElevation,pondDepth,pondVolume,pondArea) ;  
@@ -399,7 +400,7 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                               { 
                               if( nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )    // Pnt1 On Tin Hull
                                   {
-                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,(long *)&voidTriangle)) goto errexit ;
+                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidTriangle)) goto errexit ;
                                   if( ! voidTriangle )
                                       {
                                       if( numTrianglesTraced % 1000 == 0 ) bcdtmWrite_message(0,0,0,"Triangles Traced = %8ld of %8ld",numTrianglesTraced,dtmP->numTriangles) ;
@@ -446,7 +447,7 @@ int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDT
                               { 
                               if( nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )    // Pnt1 On Tin Hull
                                   {
-                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,(long *)&voidTriangle)) goto errexit ;
+                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidTriangle)) goto errexit ;
                                   if( ! voidTriangle )
                                       {
                                       if( numTrianglesTraced % 1000 == 0 ) bcdtmWrite_message(0,0,0,"Triangles Traced = %8ld of %8ld",numTrianglesTraced,dtmP->numTriangles) ;

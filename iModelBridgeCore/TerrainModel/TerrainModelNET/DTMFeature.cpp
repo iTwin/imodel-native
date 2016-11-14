@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeature.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -15,6 +15,8 @@
 using namespace System;
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
+
+#pragma warning (disable:4458)
 
 //=======================================================================================
 // @bsimethod                                               Daryl.Holmwood     3/2010

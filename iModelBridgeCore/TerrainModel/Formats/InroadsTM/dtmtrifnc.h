@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmtrifnc.h                                           aec    08-Feb-1994   */
@@ -105,7 +105,6 @@ int aecDTM_triangleStackPut /* <= TRIE if error                    */
   struct CIVdtmtin *tinP,              /* => triangle to put on stack         */
   int dis                              /* => TRUE: display input triangle     */
 );
-
 int aecDTM_triangleStackGet /* <= TRUE if error                    */
 (
   struct CIVdtmtin **tinPP,            /* <= retrieved triangle               */
@@ -135,11 +134,9 @@ int aecDTM_triangulateLinearFree /* <= TRUE if error               */
 (
   struct CIVtinLineData *dat           /* => internal data structure          */
 );
-
 void aecDTM_triangulateClearErrorPoint
 (
 );
-
 void aecDTM_triangulateSetErrorPoint
 (
     struct CIVdtmpnt *dtmPntP

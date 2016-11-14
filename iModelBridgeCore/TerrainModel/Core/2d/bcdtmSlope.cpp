@@ -82,8 +82,9 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
 */
 {
  int       ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long      p1,p2,p3,clc,voidFlag,numTempSlopePts,numHullPts,intersectFlag ;
+ long      p1,p2,p3,clc,numTempSlopePts,numHullPts,intersectFlag ;
  DTMDirection direction;
+ bool voidFlag;
  long      numSlopeArray=0,memSlopeArray=0,memSlopeArrayInc=0 ;
  double    x1,y1,z1,x2,y2,z2,x3,y3,z3,tx,ty,tz ;
  double    x11,y11,z11,x21,y21,z21,x31,y31,z31 ;
@@ -270,7 +271,7 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
              clc = clistAddrP(dtm2P,clc)->nextPtr ;
              if( p2 > p1 && p3 > p1 && nodeAddrP(dtm2P,p1)->hPtr != p2 )
                {
-                bcdtmList_testForVoidTriangleDtmObject(dtm2P,p1,p2,p3,&voidFlag) ;
+                bcdtmList_testForVoidTriangleDtmObject(dtm2P,p1,p2,p3,voidFlag) ;
                 if( ! voidFlag )          
                   {
                    x1 = pointAddrP(dtm2P,p1)->x ; y1 = pointAddrP(dtm2P,p1)->y ; z1 = pointAddrP(dtm2P,p1)->z ;

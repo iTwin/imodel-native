@@ -463,7 +463,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getStatisticsDtmObject
  clistSize       = dtmP->cListPtr ;
  numDtmFeatures  = dtmP->numFeatures ;
  flistSize       = dtmP->numFlist ;
- dtmMemorySize   = sizeof(BC_DTM_OBJ) + numPoints * sizeof(DTM_TIN_POINT) + clistSize * sizeof(DTM_CIR_LIST) + numDtmFeatures * sizeof(DTM_FEATURE_TABLE) + flistSize * sizeof(DTM_FEATURE_LIST) ;
+ dtmMemorySize   = sizeof(BC_DTM_OBJ) + numPoints * sizeof(DPoint3d) + clistSize * sizeof(DTM_CIR_LIST) + numDtmFeatures * sizeof(DTM_FEATURE_TABLE) + flistSize * sizeof(DTM_FEATURE_LIST) ;
  numBreaks       = numContourLines = numVoids = numIslands = numHoles = numGroupSpots = 0 ;
  hasHull = false;
 /*
@@ -758,7 +758,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_boreHoleApp00DtmObject
  int           ret=DTM_SUCCESS ;
  long          point,drapeFlag ;
  double        mz ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Check For Valid DTM Objects
 */

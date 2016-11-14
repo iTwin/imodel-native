@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMXAttributeHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
     BC_DTM_OBJ m_originalHeader;
 
 #ifdef COMPLETE_TEMPORARY_CHECK
-        typedef bmap<uint32_t, uint32_t> checkSumT;
+        typedef bmap<UInt32, UInt32> checkSumT;
         checkSumT m_checkSums[NUMPARTITIONTYPES];
 #endif
 
@@ -51,13 +51,13 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
         void StoreSnapShot ();
 
     public:
-        uint32_t m_nextIndex;
+        UInt32 m_nextIndex;
         EditElementHandle m_handle;
 
-        typedef bmap<uint32_t, memStateT> memoryMapT;
+        typedef bmap<UInt32, memStateT> memoryMapT;
         memoryMapT m_memory [NUMPARTITIONTYPES];
 
-        bvector<uint32_t> m_extendedMemoryDeleted;
+        bvector<UInt32> m_extendedMemoryDeleted;
 
         bool m_hasScanned [NUMPARTITIONTYPES];
 
@@ -65,6 +65,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
         int m_writeCount;
         bool m_noSchedule;
         bool m_inCreate;
+        bool m_inScheduleReplace = false;
 
         bool IsOpenedForWrite()
             {
@@ -171,7 +172,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
             if (!m_hasScanned[(int)type])
                 ScanXAttributes (type);
             }
-        memStateT* GetMemoryMapT (DTMPartition type, uint32_t id)
+        memStateT* GetMemoryMapT (DTMPartition type, UInt32 id)
             {
             memoryMapT::iterator iter = m_memory[(int)type].find (id);
 

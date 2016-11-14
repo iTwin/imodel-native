@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMPropertyEnabler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -75,6 +75,8 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             RefCountedPtr<DTMElementSubHandler::SymbologyParams> param;
             int textStyleId;
             int oldTextStyleId;
+            LevelId additionalLevelId;
+            int oldAdditionalLevelId;
             bool dirty;
             DTMSubElementId subElementId;
             DisplayParamTypes paramType;
@@ -87,19 +89,20 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                 dirty = false;
                 materialNameChanged = false;
                 }
-            ParamData (RefCountedPtr<DTMElementSubHandler::SymbologyParams> param, DTMSubElementId subElementId, DisplayParamTypes paramType, int textStyleId)
+            ParamData (RefCountedPtr<DTMElementSubHandler::SymbologyParams> param, DTMSubElementId subElementId, DisplayParamTypes paramType, int textStyleId, LevelId additionalLevelId)
                 {
                 gotMaterial = false;
                 materialNameChanged = false;
                 dirty = false;
-                this->textStyleId = textStyleId;
-                this->oldTextStyleId = textStyleId;
+                this->textStyleId = this->oldTextStyleId = textStyleId;
+                this->additionalLevelId = this->oldAdditionalLevelId = additionalLevelId;
+
                 this->paramType = paramType;
                 this->param = param;
                 this->subElementId = subElementId;
                 }
             };
-        typedef bmap <uint32_t, ParamData> ParamsMap;
+        typedef bmap <UInt32, ParamData> ParamsMap;
 
         struct MrDTMSpecificData
             {
@@ -113,7 +116,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         ElementRefP m_elemRef;
         MSElementDescrCP m_descr;
     private:
-        uint32_t m_paramId [DPID_END+1];
+        UInt32 m_paramId [DPID_END+1];
         ParamsMap m_params;
         bool m_isSTM;
         bool m_originalCanHaveOverrideSymbology;
@@ -125,6 +128,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
 
         long m_edgeMethod;
         double m_edgeLength;
+        WString m_originalName;
         WString m_name;
         bool m_canHaveOverrideSymbology;
         bool m_hasOverrideSymbology;
@@ -132,7 +136,6 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         bool m_originalHasOverrideSymbology;
         ElementId m_originalTemplateElementId;
         int m_originalDisplayStyleId;
-        WString m_originalName;
         long m_originalEdgeMethod;
         double m_originalEdgeLength;
         bool m_isActiveModelReadOnly;
@@ -140,6 +143,18 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         DgnModelRefP m_symbologyModelRef;
         DgnFileP m_symbologyDgnFile;
         MrDTMSpecificData m_mrDTMSpecificData;
+
+        // GrapHeaderValues
+        LevelId m_headerLevel;
+        UInt32 m_headerColor;
+        Int32 m_headerLsId;
+        UInt32 m_headerWeight;
+        LevelId m_originalHeaderLevel;
+        UInt32 m_originalHeaderColor;
+        Int32 m_originalHeaderLsId;
+        UInt32 m_originalHeaderWeight;
+        //LineStyleParams m_headerLsParams;
+        
     public:
         DgnModelRefP m_activeModel;
         bool m_symbologyReadOnly;
@@ -149,7 +164,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         // IQueryProperties
         virtual ElementProperties   _GetQueryPropertiesMask() override
             {
-            return (ElementProperties)(ELEMENT_PROPERTY_ElementTemplate);
+            return (ElementProperties)(ELEMENT_PROPERTY_ElementTemplate | ELEMENT_PROPERTY_Level | ELEMENT_PROPERTY_Color | ELEMENT_PROPERTY_Linestyle | ELEMENT_PROPERTY_Weight);
             }
 
     virtual void _EachElementTemplateCallback (EachElementTemplateArg& arg) override
@@ -160,6 +175,28 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             if (0 == m_templateElementId)
                 m_templateElementId = INVALID_ELEMENTID;
             }
+        }
+
+    virtual void _EachLevelCallback (EachLevelArg& arg) override
+        {
+        if (m_headerLevel == INVALID_LEVEL)
+            m_originalHeaderLevel = m_headerLevel = arg.GetStoredValue ();
+        }
+    virtual void                _EachWeightCallback (EachWeightArg& arg) override
+        {
+        if (m_headerWeight == INVALID_WEIGHT)
+            m_originalHeaderWeight = m_headerWeight = arg.GetStoredValue ();
+        }
+    virtual void                _EachLineStyleCallback (EachLineStyleArg& arg) override
+        {
+        if (m_headerLsId == INVALID_STYLE)
+            m_originalHeaderLsId = m_headerLsId = arg.GetStoredValue ();
+        //m_headerLsParams = *arg.GetParams ();
+        }
+    virtual void                _EachColorCallback (EachColorArg& arg) override
+        {
+        if (m_headerColor == INVALID_COLOR)
+            m_originalHeaderColor = m_headerColor = arg.GetStoredValue ();
         }
 
         //---------------------------------------------------------------------------------------
@@ -183,7 +220,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             while (m_activeModel && T_HOST.GetDgnECAdmin ()._IsModelRefReadOnly (*m_activeModel))
                 m_activeModel = m_activeModel->GetParentModelRefP ();
 
-            m_canHaveOverrideSymbology = DTMSymbologyOverrideManager::CanHaveSymbologyOverride (element);
+            m_canHaveOverrideSymbology = TMSymbologyOverrideManager::CanHaveSymbologyOverride (element);
 
             if (m_activeModel)
                 m_isActiveModelReadOnly = T_HOST.GetDgnECAdmin ()._IsModelRefReadOnly (*m_activeModel);
@@ -192,7 +229,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
 
             if (m_canHaveOverrideSymbology)
                 {
-                if (DTMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElement, element.GetModelRef ()->GetRoot ()))
+                if (TMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElement, element.GetModelRef ()->GetRoot ()))
                     {
                     m_hasOverrideSymbology = element.GetElementRef () != symbologyElement.GetElementRef ();
                     }
@@ -205,6 +242,9 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             m_symbologyReadOnly = !(m_activeModel && m_activeModel->IsSameOrParentOf (*symbologyElement.GetModelRef ()));
             m_symbologyInActiveModel = m_activeModel && symbologyElement.GetModelRef () == m_activeModel;
             m_inActiveModel = m_activeModel && element.GetModelRef () == m_activeModel;
+
+            if (DTMElementHandlerManager::IsFriendModel (symbologyElement, m_activeModel))
+                m_symbologyInActiveModel = true;
 
             DTMElementHandlerManager::GetName (element, m_name);
             DTMDataRefPtr dtmDataRef;
@@ -274,7 +314,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                     DTMElementSubHandler::SymbologyParams* param = DTMElementSubHandler::GetParams (iter);
                     DisplayParamTypes paramType = DPID_END;
                     UInt16 subHandlerId = iter.GetCurrentId ().GetHandlerId ();
-                    uint32_t id = iter.GetCurrentId ().GetId ();
+                    UInt32 id = iter.GetCurrentId ().GetId ();
                     switch (subHandlerId)
                         {
                         case DTMElementTrianglesHandler::SubHandlerId:
@@ -297,6 +337,9 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                             break;
                         case DTMElementSpotsHandler::SubHandlerId:
                             paramType = DPID_SPOTS;
+                            break;
+                        case DTMElementRegionsHandler::SubHandlerId:
+                            paramType = DPID_REGIONS;
                             break;
                         case DTMElementFeaturesHandler::SubHandlerId:
                             switch (((DTMElementFeaturesHandler::DisplayParams*)param)->GetTag ())
@@ -337,9 +380,18 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                         if (dynamic_cast<DTMElementSubHandler::SymbologyParamsAndTextStyle*>(param))
                             textStyleId = GetDTMTextParamId (symbologyElement, id);
 
-                        m_params[iter.GetCurrentId ().GetId ()] = ParamData (param, iter.GetCurrentId (), paramType, textStyleId);
+                        LevelIdXAttributeParams levelIdParam;
+
+                        levelIdParam.Get (symbologyElement, id);
+                        m_params[iter.GetCurrentId ().GetId ()] = ParamData (param, iter.GetCurrentId (), paramType, textStyleId, levelIdParam.GetLevelId());
                         }
                     }
+
+
+                m_headerLevel = INVALID_LEVEL;
+                m_headerColor = INVALID_COLOR;
+                m_headerLsId = INVALID_STYLE;
+                m_headerWeight = INVALID_WEIGHT;
 
                 PropertyContext context (this);
                 symbologyElement.GetHandler ().QueryProperties (symbologyElement, context);
@@ -374,6 +426,25 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             {
             bool needsWrite = false;
             ElementRefP elementRef = element.GetElementRef ();
+
+
+            if (m_headerLevel != m_originalHeaderLevel || m_headerColor != m_originalHeaderColor || m_headerLsId != m_originalHeaderLsId || m_headerWeight != m_originalHeaderWeight)
+                {
+                ElementPropertiesSetterPtr remapper = ElementPropertiesSetter::Create ();
+                if (m_headerLevel != m_originalHeaderLevel)
+                    remapper->SetLevel (m_headerLevel);
+
+                if (m_headerColor != m_originalHeaderColor)
+                    remapper->SetColor (m_headerColor);
+                if (m_headerLsId != m_originalHeaderLsId)
+                    remapper->SetLinestyle (m_headerLsId, nullptr);
+                if (m_headerWeight != m_originalHeaderWeight)
+                    remapper->SetWeight (m_headerWeight);
+
+                remapper->Apply (element);
+                needsWrite = true;
+                }
+
             if (!m_isSTM)
                 {
                 if (m_originalEdgeMethod != m_edgeMethod || m_originalEdgeLength != m_edgeLength)
@@ -412,18 +483,18 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                 {
                 bool hasOverrideSymbology = false;
                 ElementHandle elementHandle2;
-                if (DTMSymbologyOverrideManager::GetElementForSymbology (element, elementHandle2, activeModel))
+                if (TMSymbologyOverrideManager::GetElementForSymbology (element, elementHandle2, activeModel))
                     hasOverrideSymbology = element.GetElementRef () != elementHandle2.GetElementRef ();
                 else
                     hasOverrideSymbology = false;
                 if (!hasOverrideSymbology && m_hasOverrideSymbology)
-                    DTMSymbologyOverrideManager::CreateSymbologyOverride (element, activeModel);
+                    TMSymbologyOverrideManager::CreateSymbologyOverride (element, activeModel);
                 else if (hasOverrideSymbology && !m_hasOverrideSymbology)
-                    DTMSymbologyOverrideManager::DeleteSymbologyOverride (element, activeModel);
+                    TMSymbologyOverrideManager::DeleteSymbologyOverride (element, activeModel);
                 }
 
             EditElementHandle overideSymbologyElement;
-            bool hasSymbology = DTMSymbologyOverrideManager::GetElementForSymbology (element, overideSymbologyElement, activeModel);
+            bool hasSymbology = TMSymbologyOverrideManager::GetElementForSymbology (element, overideSymbologyElement, activeModel);
             EditElementHandle& symbologyElement = hasSymbology ? overideSymbologyElement : element;
             ElementRefP symbologyElementRef = hasSymbology ? overideSymbologyElement.GetElementRef() : elementRef;
 
@@ -501,6 +572,14 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                         AddDTMTextStyle (symbologyElement, it->second.textStyleId, it->second.subElementId.GetId());
                         it->second.oldTextStyleId = it->second.textStyleId;
                         }
+
+                    if (it->second.oldAdditionalLevelId != it->second.additionalLevelId)
+                        {
+                        LevelIdXAttributeParams levelIdParam;
+                        levelIdParam.SetLevelId (it->second.additionalLevelId);
+                        levelIdParam.Set (symbologyElement, it->second.subElementId.GetId());
+                        it->second.oldAdditionalLevelId = it->second.additionalLevelId;
+                        }
                     }
                 }
 
@@ -533,7 +612,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                         DgnECExternalPropertyHandler const* handler = T_HOST.GetDgnECAdmin()._GetExternalPropertyHandler();
                         if (nullptr != handler)
                             {
-                            if (ECOBJECTS_STATUS_Success != handler->SetValue (ECValue ((int64_t)m_templateElementId), L"MstnGraphHeader", L"Template", -1, &symbologyElement))
+                            if (ECOBJECTS_STATUS_Success != handler->SetValue (ECValue ((Int64)m_templateElementId), L"MstnGraphHeader", L"Template", -1, &symbologyElement))
                                 {
                                 //return ECOBJECTS_STATUS_Error;
                                 }
@@ -648,19 +727,23 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         DgnModelRefP SymbologyDgnModelRef() { return m_symbologyModelRef; }
         DgnFileP SymbologyDgnFile() { return m_symbologyDgnFile; }
 
-        uint32_t GetIDForType (DisplayParamTypes id)
+        UInt32 GetIDForType (DisplayParamTypes id)
             {
             return m_paramId [id];
             }
-        WCharCP GetParamTypeString (uint32_t id)
+        WCharCP GetParamTypeString (UInt32 id)
             {
             return DisplayParamTypesString [m_params[id].paramType];
             }
-        int GetParamTextStyleId (uint32_t id)
+        int GetParamTextStyleId (UInt32 id)
             {
             return m_params[id].textStyleId;
             }
-        WCharCP GetParamMaterial (uint32_t id)
+        LevelId GetParamTextLevelId (UInt32 id)
+            {
+            return m_params[id].additionalLevelId;
+            }
+        WCharCP GetParamMaterial (UInt32 id)
             {
             if (!m_params[id].gotMaterial)
                 {
@@ -676,32 +759,37 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                 }
             return m_params[id].materialName.GetWCharCP();
             }
-        void SetParamMaterial (uint32_t id, WCharCP value)
+        void SetParamMaterial (UInt32 id, WCharCP value)
             {
             m_params[id].dirty = true;
             m_params[id].materialNameChanged = true;
             m_params[id].materialName = value;
             }
-        void SetParamTextStyleId (uint32_t id, int value)
+        void SetParamTextStyleId (UInt32 id, int value)
             {
             m_params[id].dirty = true;
             m_params[id].textStyleId = value;
             }
+        void SetParamTextLevelId (UInt32 id, LevelId value)
+            {
+            m_params[id].dirty = true;
+            m_params[id].additionalLevelId = value;
+            }
         const DTMElementSubHandler::SymbologyParams* GetParamForType (DisplayParamTypes id) const
             {
-            uint32_t paramType = m_paramId [id];
+            UInt32 paramType = m_paramId [id];
             if (paramType != 0xffffffff)
                 return GetParam (paramType);
             return nullptr;
             }
         DTMElementSubHandler::SymbologyParams* GetParamForTypeForWrite (DisplayParamTypes id)
             {
-            uint32_t paramType = m_paramId [id];
+            UInt32 paramType = m_paramId [id];
             if (paramType != 0xffffffff)
                 return GetParamForWrite (paramType);
             return nullptr;
             }
-        const DTMElementSubHandler::SymbologyParams* GetParam (uint32_t id) const
+        const DTMElementSubHandler::SymbologyParams* GetParam (UInt32 id) const
             {
             ParamsMap::const_iterator it = m_params.find (id);
 
@@ -710,7 +798,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             return nullptr;
             }
 
-        DTMElementSubHandler::SymbologyParams* GetParamForWrite (uint32_t id)
+        DTMElementSubHandler::SymbologyParams* GetParamForWrite (UInt32 id)
             {
             m_params[id].dirty = true;
             return m_params[id].param.get();
@@ -721,7 +809,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             return m_isActiveModelReadOnly;
             }
 
-        Int16 GetSubHandlerId(uint32_t id)
+        Int16 GetSubHandlerId(UInt32 id)
             {
             return m_params[id].subElementId.GetHandlerId();
             }
@@ -804,7 +892,45 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             m_mrDTMSpecificData.unshadedViewPointDensity = unshadedViewPointDensity;
             }
 
+
+        LevelId GetHeaderLevel ()
+            {
+            return m_headerLevel;
+            }
+        void SetHeaderLevel (LevelId value)
+            {
+            m_headerLevel = value;
+            }
+        UInt32 GetHeaderColor ()
+            {
+            return m_headerColor;
+            }
+        void SetHeaderColor (UInt32 value)
+            {
+            m_headerColor = value;
+            }
+        Int32 GetHeaderLsId ()
+            {
+            return m_headerLsId;
+            }
+        void SetHeaderLsId (Int32 value)
+            {
+            m_headerLsId = value;
+            }
+        UInt32 GetHeaderWeight ()
+            {
+            return m_headerWeight;
+            }
+        void SetHeaderWeight (UInt32 value)
+            {
+            m_headerWeight = value;
+            }
+
+
     };
+
+static const WCharCP s_relationshipNames[] = { L"TerrainModelChildrenRelationship" };
+static const uint8_t REL_TerrainModelChildren = 0;
 
 //=======================================================================================
 //* @bsiclass
@@ -814,7 +940,7 @@ struct DTMELEMENTECExtension : DelegatedElementECExtension, DgnECIntrinsicRelati
     DEFINE_T_SUPER (DelegatedElementECExtension);
     mutable ECSchemaCP m_schema;
 
-    DTMELEMENTECExtension () :  DgnECIntrinsicRelationshipProvider (ElementECExtension::LookupECSchema (L"TerrainModel"))
+    DTMELEMENTECExtension () :  DgnECIntrinsicRelationshipProvider (ElementECExtension::LookupECSchema (L"TerrainModel"), RelationshipNameList (s_relationshipNames, 1))
         {
         m_schema = &GetRelationshipSchema();
         }
@@ -840,8 +966,8 @@ public:
 
     void SetPerDelegateData (DelegatedElementECInstancePtr instance, ECClassCR ecClass, DTMElementDataCache* dataCache) const;
 public:
-    DgnElementECInstancePtr GetInstanceWithDataCache (ElementHandleCR eh, DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, uint32_t localId, DgnECInstanceCreateContextCR context) const;
-    void AddInstanceWithDataCache (DgnElementECInstanceVector& instances, ElementHandleCR eh, DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, uint32_t localId, DgnECInstanceCreateContextCR context) const;
+    DgnElementECInstancePtr GetInstanceWithDataCache (ElementHandleCR eh, DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, UInt32 localId, DgnECInstanceCreateContextCR context) const;
+    void AddInstanceWithDataCache (DgnElementECInstanceVector& instances, ElementHandleCR eh, DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, UInt32 localId, DgnECInstanceCreateContextCR context) const;
 
 protected:
     virtual void                    _GetECClasses (T_ECClassCPVector& classes) const override;
@@ -871,7 +997,7 @@ protected:
         return m_schema; //.get();
         }
 
-    static bool         IsPropertyReadOnly_AlwaysInRef (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR, IElementECDelegateCR primary, uint32_t propertyIndex)
+    static bool         IsPropertyReadOnly_AlwaysInRef (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR, IElementECDelegateCR primary, UInt32 propertyIndex)
         {
         ElementHandleCR eh = instance.GetElementHandle ();
         //DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData ((ElementECDelegateCR)primary));
@@ -879,7 +1005,7 @@ protected:
             return true;
         return primary.IsPropertyReadOnly (instance, propertyIndex);
         }
-    static bool         IsPropertyReadOnly_EdgeMethod (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR del, IElementECDelegateCR primary, uint32_t propertyIndex)
+    static bool         IsPropertyReadOnly_EdgeMethod (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR del, IElementECDelegateCR primary, UInt32 propertyIndex)
         {
         bool ret = IsPropertyReadOnly_AlwaysInRef (instance, del, primary, propertyIndex);
         if (!ret)
@@ -890,7 +1016,7 @@ protected:
             }
         return ret;
         }
-    static bool         IsPropertyReadOnly_Never (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR, IElementECDelegateCR primary, uint32_t propertyIndex)
+    static bool         IsPropertyReadOnly_Never (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR, IElementECDelegateCR primary, UInt32 propertyIndex)
         {
         DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData ((ElementECDelegateCR)primary));
         if (!data->m_inActiveModel && !data->m_symbologyReadOnly)
@@ -898,15 +1024,15 @@ protected:
         return true; // base.IsPropertyReadOnly (instance, propIdx);
         }
 
-    static bool         IsPropertyReadOnly_Default (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR compound, IElementECDelegateCR primary, uint32_t propertyIndex)
+    static bool         IsPropertyReadOnly_Default (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR compound, IElementECDelegateCR primary, UInt32 propertyIndex)
         {
         DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData ((ElementECDelegateCR)primary));
-        if (data->m_inActiveModel)
+        if (nullptr == data || data->m_inActiveModel)
             return primary.IsPropertyReadOnly (instance, propertyIndex);
         return data->m_symbologyReadOnly || !data->m_symbologyInActiveModel;
         }
-    DgnECInstancePtr GetInstance (ElementHandleCR eh, uint32_t localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const;
-    inline void AddInstance (bvector<DgnECInstancePtr>& instances, ElementHandleCR eh, uint32_t localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const
+    DgnECInstancePtr GetInstance (ElementHandleCR eh, UInt32 localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const;
+    inline void AddInstance (bvector<DgnECInstancePtr>& instances, ElementHandleCR eh, UInt32 localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const
         {
         DgnECInstancePtr instance = GetInstance (eh, localId, context, dataCache);
         if (instance.IsValid ())
@@ -921,11 +1047,25 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DTMELEMENTECExtension::_InitializeCompoundDelegate (ICompoundECDelegateR del, ECN::ECClassCR ecClass) const
     {
-    if (ecClass.GetName().Equals (L"DTMElement"))
+    bool isDTMElementClass = ecClass.GetName().Equals(L"DTMElement");
+    
+    if (!isDTMElementClass)
+        {
+        for (auto baseClass : ecClass.GetBaseClasses())
+            {
+            if (baseClass->GetName().Equals(L"DTMElement"))
+                {
+                isDTMElementClass = true;
+                break;
+                }
+            }
+        }
+    if (isDTMElementClass)
         {
         // Following are read-only if in a reference attachment and OverrideSymbology=Yes OR No
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"BaseElementSchema", L"MstnGraphHeader"), &DTMELEMENTECExtension::IsPropertyReadOnly_AlwaysInRef);
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"BaseElementSchema", L"MstnLockedElement"), &DTMELEMENTECExtension::IsPropertyReadOnly_AlwaysInRef);
+        del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"TerrainModel", L"DTMInformation"), &DTMELEMENTECExtension::IsPropertyReadOnly_AlwaysInRef);
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"TerrainModel", L"DTMEdgeMethod"), &DTMELEMENTECExtension::IsPropertyReadOnly_EdgeMethod);
 
         // All others are read-only if in a reference attachment and OverrideSymbology=No
@@ -935,6 +1075,8 @@ void DTMELEMENTECExtension::_InitializeCompoundDelegate (ICompoundECDelegateR de
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"TerrainModel", L"DTMOverrideSymbology"), &DTMELEMENTECExtension::IsPropertyReadOnly_Never);
         }
     }
+
+#pragma region ElementECDelegates
 
 struct BaseElementECDelegate : ElementECDelegate
     {
@@ -978,7 +1120,7 @@ struct BaseOSElementECDelegate : BaseElementECDelegate
 
     public:
 
-    virtual bool _IsPropertyReadOnlyInLockedElement (DelegatedElementECInstanceCR instance, uint32_t propertyIndex) const override
+    virtual bool _IsPropertyReadOnlyInLockedElement (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
         {
         DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
         if (!EXPECTED_CONDITION (nullptr != data))
@@ -987,7 +1129,7 @@ struct BaseOSElementECDelegate : BaseElementECDelegate
             return false;
         return ElementECDelegate::_IsPropertyReadOnlyInLockedElement (instance, propertyIndex);
         }
-    virtual bool _IsPropertyReadOnly (DelegatedElementECInstanceCR instance, uint32_t propertyIndex) const override
+    virtual bool _IsPropertyReadOnly (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
         {
         DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
         if (!EXPECTED_CONDITION (nullptr != data))
@@ -1078,7 +1220,7 @@ struct DTMElementInfoECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1128,7 +1270,7 @@ struct DTMElementInfoECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1147,7 +1289,7 @@ struct DTMElementInfoECDelegate : BaseElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     public:
 
@@ -1211,7 +1353,7 @@ struct DTMElementEdgeMethodECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1244,7 +1386,7 @@ struct DTMElementEdgeMethodECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1265,7 +1407,7 @@ struct DTMElementEdgeMethodECDelegate : BaseElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, uint32_t propertyIndex) const override
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
             {
             DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
             if (data == nullptr)
@@ -1319,7 +1461,7 @@ struct DTMElementContourPropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1354,7 +1496,7 @@ struct DTMElementContourPropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue (ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue (ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1382,7 +1524,7 @@ struct DTMElementContourPropertiesECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     public:
 
@@ -1433,7 +1575,7 @@ struct DTMElementFeaturePropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1482,7 +1624,7 @@ struct DTMElementFeaturePropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1526,7 +1668,7 @@ struct DTMElementFeaturePropertiesECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     public:
 
@@ -1577,7 +1719,7 @@ struct DTMElementSourcePropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1627,7 +1769,7 @@ struct DTMElementSourcePropertiesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1671,7 +1813,7 @@ struct DTMElementSourcePropertiesECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     public:
 
@@ -1695,8 +1837,6 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
             DTMELEMENT_PROPERTYID_LineStyle,
             DTMELEMENT_PROPERTYID_Transparency,
             DTMELEMENT_PROPERTYID_Display,
-            DTMELEMENT_PROPERTYID_IsDynamic,
-            DTMELEMENT_PROPERTYID_Type
             };
 
     private:
@@ -1720,8 +1860,6 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
                 DTMELEMENT_PROPERTYID_LineStyle, L"LineStyle", NULL_MAP,
                 DTMELEMENT_PROPERTYID_Transparency, L"Transparency", NULL_MAP,
                 DTMELEMENT_PROPERTYID_Display, L"Display", NULL_MAP,
-                DTMELEMENT_PROPERTYID_IsDynamic, L"IsDynamic", NULL_MAP,
-                DTMELEMENT_PROPERTYID_Type, L"Type", NULL_MAP,
                 ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
                 };
             return s_BESMAP;
@@ -1730,7 +1868,7 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1750,20 +1888,6 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
                 case DTMELEMENT_PROPERTYID_LineStyle: { ecValue.SetInteger (params->GetSymbology().style); break; }
                 case DTMELEMENT_PROPERTYID_Transparency: { ecValue.SetDouble (params->GetTransparency() * 100.0); break; }
                 case DTMELEMENT_PROPERTYID_Display: { ecValue.SetBoolean (params->GetVisible()); break; }
-                case DTMELEMENT_PROPERTYID_IsDynamic:
-                    {
-                    UInt16 subHandlerId = data->GetSubHandlerId (instance.GetLocalId());
-                    if (subHandlerId == DTMElementFeaturesHandler::SubHandlerId || subHandlerId == DTMElementFeatureSpotsHandler::SubHandlerId)
-                        ecValue.SetBoolean (false);
-                    else if (subHandlerId == DTMElementContoursHandler::SubHandlerId)
-                        ecValue.SetBoolean (false);
-                    else
-                        ecValue.SetBoolean (true);
-                    break;
-                    }
-                case DTMELEMENT_PROPERTYID_Type:
-                    ecValue.SetString (data->GetParamTypeString (instance.GetLocalId()));
-                    break;
 
                 default: {status = ECOBJECTS_STATUS_Error; break; }
                 }
@@ -1773,7 +1897,7 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1799,7 +1923,7 @@ struct DTMElementSubElementDisplayECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     };
 
@@ -1851,7 +1975,7 @@ struct DTMElementGeneralContoursECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1882,7 +2006,7 @@ struct DTMElementGeneralContoursECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1911,7 +2035,7 @@ struct DTMElementGeneralContoursECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -1953,7 +2077,7 @@ struct DTMElementDepressionSymbologyECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -1980,7 +2104,7 @@ struct DTMElementDepressionSymbologyECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2003,7 +2127,7 @@ struct DTMElementDepressionSymbologyECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2016,6 +2140,7 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
             {
             DTMELEMENT_PROPERTYID_ContourDrawText = 1,
             DTMELEMENT_PROPERTYID_ContourTextInterval,
+            DTMELEMENT_PROPERTYID_ContourTextLevel
             };
 
     private:
@@ -2035,6 +2160,7 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
                 {
                 DTMELEMENT_PROPERTYID_ContourDrawText, L"ContourDrawText", NULL_MAP,
                 DTMELEMENT_PROPERTYID_ContourTextInterval, L"ContourTextInterval", NULL_MAP,
+                DTMELEMENT_PROPERTYID_ContourTextLevel, L"ContourTextLevel", NULL_MAP,
                 ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
                 };
             return s_BESMAP;
@@ -2043,7 +2169,7 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2059,6 +2185,7 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
                 {
                 case DTMELEMENT_PROPERTYID_ContourDrawText: { ecValue.SetBoolean (param->GetDrawTextOption() != 0); break; }
                 case DTMELEMENT_PROPERTYID_ContourTextInterval: { ecValue.SetDouble (param->GetTextInterval ()); break; }
+                case DTMELEMENT_PROPERTYID_ContourTextLevel: { ecValue.SetInteger (data->GetParamTextLevelId(instance.GetLocalId())); break; }
 
                 default: {status = ECOBJECTS_STATUS_Error; break; }
                 }
@@ -2069,7 +2196,7 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2085,13 +2212,14 @@ struct DTMElementContourECDelegate : BaseOSElementECDelegate
                 {
                 case DTMELEMENT_PROPERTYID_ContourDrawText: { param->SetDrawTextOption ((DTMElementContoursHandler::DrawTextOption)ecValue.GetBoolean ()); break; }
                 case DTMELEMENT_PROPERTYID_ContourTextInterval: { param->SetTextInterval (ecValue.GetDouble ()); break; }
+                case DTMELEMENT_PROPERTYID_ContourTextLevel: {  data->SetParamTextLevelId (instance.GetLocalId (), ecValue.GetInteger ()); break; }
 
                 default: { status = ECOBJECTS_STATUS_Error; break; }
                 }
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2129,7 +2257,7 @@ struct DTMElementTextStyleECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2153,7 +2281,7 @@ struct DTMElementTextStyleECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2173,7 +2301,7 @@ struct DTMElementTextStyleECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2237,7 +2365,7 @@ struct DTMElementPointSymbologyECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2279,7 +2407,7 @@ struct DTMElementPointSymbologyECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2306,7 +2434,7 @@ struct DTMElementPointSymbologyECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2344,7 +2472,7 @@ struct DTMElementLowPointsECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2369,7 +2497,7 @@ struct DTMElementLowPointsECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2390,7 +2518,7 @@ struct DTMElementLowPointsECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2428,7 +2556,7 @@ struct DTMElementTrianglesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2452,7 +2580,7 @@ struct DTMElementTrianglesECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2472,7 +2600,7 @@ struct DTMElementTrianglesECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2512,7 +2640,7 @@ struct DTMElementRegionsECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2538,11 +2666,11 @@ struct DTMElementRegionsECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             return ECOBJECTS_STATUS_Error;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2580,7 +2708,7 @@ struct DTMElementAttachedMaterialECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2604,7 +2732,7 @@ struct DTMElementAttachedMaterialECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2624,7 +2752,7 @@ struct DTMElementAttachedMaterialECDelegate : BaseOSElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
     };
 
 //*======================================================================================
@@ -2662,7 +2790,7 @@ struct DTMElementOSTemplateECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2679,7 +2807,7 @@ struct DTMElementOSTemplateECDelegate : BaseOSElementECDelegate
                 case DTMELEMENT_PROPERTYID_Template:
                     {
                     if (data->HasOverrideSymbology ())
-                        ecValue.SetLong ((int64_t)data->TemplateElementId());
+                        ecValue.SetLong ((Int64)data->TemplateElementId());
                     else
                         ecValue.SetIsNull (true);
                     break;
@@ -2694,7 +2822,7 @@ struct DTMElementOSTemplateECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2718,7 +2846,7 @@ struct DTMElementOSTemplateECDelegate : BaseOSElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, uint32_t localId) const override
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, UInt32 localId) const override
             {
             DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
             if (data == nullptr)
@@ -2736,30 +2864,57 @@ struct DTMElementOSTemplateECDelegate : BaseOSElementECDelegate
 //*======================================================================================
 //* @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
+struct DTMElementGraphHeaderECDelegate : BaseElementECDelegate
     {
     public:
         enum PropertyId
             {
-            DTMELEMENT_PROPERTYID_OverrideSymbology = 1,
+            DTMELEMENT_PROPERTYID_Level = 1,
+            DTMELEMENT_PROPERTYID_Color,
+            DTMELEMENT_PROPERTYID_Weight,
+            DTMELEMENT_PROPERTYID_Style,
+            DTMELEMENT_PROPERTYID_LineStyleParams
             };
 
     private:
-        DTMElementOverrideSymbologyECDelegate (DTMELEMENTECExtension const& ext) : BaseElementECDelegate (ext) {}
-        virtual ~DTMElementOverrideSymbologyECDelegate() { }
+        DTMElementGraphHeaderECDelegate (DTMELEMENTECExtension const& ext) : BaseElementECDelegate (ext)
+            {
+            }
+        virtual ~DTMElementGraphHeaderECDelegate ()
+            {
+            }
 
     public:
         static ElementECDelegateP  Create (DTMELEMENTECExtension const& extension)
             {
-            return new DTMElementOverrideSymbologyECDelegate (extension);
+            return new DTMElementGraphHeaderECDelegate (extension);
             }
 
     protected:
-        virtual const MapEntry* _GetMap() const override
+        virtual const MapEntry* _GetMap () const override
             {
+            //static const ElementECDelegate::MapEntry s_BESMAP_LineStyleParametersStruct[] =
+            //    {
+            //    BESINDEX_LineStyleParametersStruct_LSScale, L"LSScale", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSWidthMode, L"LSWidthMode", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSStartWidth, L"LSStartWidth", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSEndWidth, L"LSEndWidth", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSGlobalWidth, L"LSGlobalWidth", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSTrueWidth, L"LSTrueWidth", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSShiftMode, L"LSShiftMode", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSDistancePhase, L"LSDistancePhase", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSFractionPhase, L"LSFractionPhase", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSCornerMode, L"LSCornerMode", NULL_MAP,
+            //    BESINDEX_LineStyleParametersStruct_LSThroughCorner, L"LSThroughCorner", NULL_MAP,
+            //    ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
+            //    };
             static const ElementECDelegate::MapEntry s_BESMAP[] =
                 {
-                DTMELEMENT_PROPERTYID_OverrideSymbology, L"OverrideSymbology", NULL_MAP,
+                DTMELEMENT_PROPERTYID_Level, L"Level", NULL_MAP,
+                DTMELEMENT_PROPERTYID_Color, L"Color", NULL_MAP,
+                DTMELEMENT_PROPERTYID_Weight, L"Weight", NULL_MAP,
+                DTMELEMENT_PROPERTYID_Style, L"Style", NULL_MAP,
+                //DTMELEMENT_PROPERTYID_LineStyleParams, L"LineStyleParams", s_BESMAP_LineStyleParametersStruct,
                 ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
                 };
             return s_BESMAP;
@@ -2768,19 +2923,15 @@ struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual bool _IsPropertyReadOnlyInLockedElement (DelegatedElementECInstanceCR instance, uint32_t propertyIndex) const override
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override
             {
-            DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
-            if (!EXPECTED_CONDITION (nullptr != data))
-                return ElementECDelegate::_IsPropertyReadOnlyInLockedElement (instance, propertyIndex);
-            return data->IsActiveModelReadOnly();
+            return false;
             }
-
 
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2793,14 +2944,18 @@ struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
 
             switch (propertyIndex)
                 {
-                case DTMELEMENT_PROPERTYID_OverrideSymbology:
-                    {
-                    if (data->CanHaveOverrideSymbology ())
-                        ecValue.SetBoolean (data->HasOverrideSymbology());
-                    else
-                        ecValue.SetIsNull (true);
+                case DTMELEMENT_PROPERTYID_Level:
+                    ecValue.SetInteger (data->GetHeaderLevel ());
                     break;
-                    }
+                case DTMELEMENT_PROPERTYID_Color:
+                    ecValue.SetInteger (data->GetHeaderColor());
+                    break;
+                case DTMELEMENT_PROPERTYID_Weight:
+                    ecValue.SetInteger (data->GetHeaderWeight());
+                    break;
+                case DTMELEMENT_PROPERTYID_Style:
+                    ecValue.SetInteger (data->GetHeaderLsId());
+                    break;
 
                 default: {status = ECOBJECTS_STATUS_Error; break; }
                 }
@@ -2811,7 +2966,7 @@ struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             if (useArrayIndex)
                 return ECOBJECTS_STATUS_OperationNotSupported;
@@ -2824,7 +2979,27 @@ struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
 
             switch (propertyIndex)
                 {
-                case DTMELEMENT_PROPERTYID_OverrideSymbology: { data->HasOverrideSymbology (ecValue.GetBoolean()); break; }
+                case DTMELEMENT_PROPERTYID_Level:
+                    data->SetHeaderLevel (ecValue.GetInteger());
+                    break;
+                case DTMELEMENT_PROPERTYID_Color:
+                    data->SetHeaderColor (ecValue.GetInteger ());
+                    break;
+                case DTMELEMENT_PROPERTYID_Weight:
+                    data->SetHeaderWeight (ecValue.GetInteger ());
+                    break;
+                case DTMELEMENT_PROPERTYID_Style:
+                    {
+                    int lsId = ecValue.GetInteger ();
+                    data->SetHeaderLsId(lsId);
+                    //if ((0 >= lsId && 7 <= lsId) && IsModified (DTMELEMENT_PROPERTYID_LineStyleParams))
+                    //    {
+                    //    // You can only modify LSParams if not a standard line style ID
+                    //    MarkUnmodified (DTMELEMENT_PROPERTYID_LineStyleParams);
+                    //    data->ClearHeaderLsParams();
+                    //    }
+                    }
+                    break;
 
                 default: { status = ECOBJECTS_STATUS_Error; break; }
                 }
@@ -2832,28 +3007,139 @@ struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
             return status;
             }
 
-        //*--------------------------------------------------------------------------------------
-        //* @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, uint32_t localId) const override
+        virtual bool _IsPropertyReadOnly (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
             {
-            DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
-            if (data == nullptr)
-                {
-                _AttachToInstance (instance);
-                data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
-                }
-            if (!EXPECTED_CONDITION (nullptr != data))
-                return true;
-            return data->m_activeModel || !data->CanHaveOverrideSymbology ();
-            }
-        virtual bool _IsPropertyReadOnly (DelegatedElementECInstanceCR instance, uint32_t propertyIndex) const override
-            {
+            //if (isHeaderPropertyDisabled (instance, propIdx, true))
+            //    return true;
             return false;
             }
 
     };
 
+    //*======================================================================================
+    //* @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct DTMElementOverrideSymbologyECDelegate : BaseElementECDelegate
+        {
+        public:
+            enum PropertyId
+                {
+                DTMELEMENT_PROPERTYID_OverrideSymbology = 1,
+                };
+
+        private:
+            DTMElementOverrideSymbologyECDelegate (DTMELEMENTECExtension const& ext) : BaseElementECDelegate (ext)
+                {
+                }
+            virtual ~DTMElementOverrideSymbologyECDelegate ()
+                {
+                }
+
+        public:
+            static ElementECDelegateP  Create (DTMELEMENTECExtension const& extension)
+                {
+                return new DTMElementOverrideSymbologyECDelegate (extension);
+                }
+
+        protected:
+            virtual const MapEntry* _GetMap () const override
+                {
+                static const ElementECDelegate::MapEntry s_BESMAP[] =
+                    {
+                    DTMELEMENT_PROPERTYID_OverrideSymbology, L"OverrideSymbology", NULL_MAP,
+                    ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
+                    };
+                return s_BESMAP;
+                }
+
+            //*--------------------------------------------------------------------------------------
+            //* @bsimethod
+            //+---------------+---------------+---------------+---------------+---------------+------
+            virtual bool _IsPropertyReadOnlyInLockedElement (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
+                {
+                DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
+                if (!EXPECTED_CONDITION (nullptr != data))
+                    return ElementECDelegate::_IsPropertyReadOnlyInLockedElement (instance, propertyIndex);
+                return data->IsActiveModelReadOnly ();
+                }
+
+
+            //*--------------------------------------------------------------------------------------
+            //* @bsimethod
+            //+---------------+---------------+---------------+---------------+---------------+------
+            virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
+                {
+                if (useArrayIndex)
+                    return ECOBJECTS_STATUS_OperationNotSupported;
+
+                DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
+                if (!EXPECTED_CONDITION (nullptr != data))
+                    return ECOBJECTS_STATUS_Error;
+
+                ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+
+                switch (propertyIndex)
+                    {
+                    case DTMELEMENT_PROPERTYID_OverrideSymbology:
+                        {
+                        if (data->CanHaveOverrideSymbology ())
+                            ecValue.SetBoolean (data->HasOverrideSymbology ());
+                        else
+                            ecValue.SetIsNull (true);
+                        break;
+                        }
+
+                    default: {status = ECOBJECTS_STATUS_Error; break; }
+                    }
+
+                return status;
+                }
+
+            //*--------------------------------------------------------------------------------------
+            //* @bsimethod
+            //+---------------+---------------+---------------+---------------+---------------+------
+            virtual ECObjectsStatus _SetValue (ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
+                {
+                if (useArrayIndex)
+                    return ECOBJECTS_STATUS_OperationNotSupported;
+
+                DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
+                if (!EXPECTED_CONDITION (nullptr != data))
+                    return ECOBJECTS_STATUS_Error;
+
+                ECObjectsStatus   status = ECOBJECTS_STATUS_Success;
+
+                switch (propertyIndex)
+                    {
+                    case DTMELEMENT_PROPERTYID_OverrideSymbology: { data->HasOverrideSymbology (ecValue.GetBoolean ()); break; }
+
+                    default: { status = ECOBJECTS_STATUS_Error; break; }
+                    }
+
+                return status;
+                }
+
+            //*--------------------------------------------------------------------------------------
+            //* @bsimethod
+            //+---------------+---------------+---------------+---------------+---------------+------
+            virtual bool _IsNullValue (DelegatedElementECInstanceCR instance, UInt32 localId) const override
+                {
+                DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
+                if (data == nullptr)
+                    {
+                    _AttachToInstance (instance);
+                    data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
+                    }
+                if (!EXPECTED_CONDITION (nullptr != data))
+                    return true;
+                return data->m_activeModel || !data->CanHaveOverrideSymbology ();
+                }
+            virtual bool _IsPropertyReadOnly (DelegatedElementECInstanceCR instance, UInt32 propertyIndex) const override
+                {
+                return false;
+                }
+
+        };
 
 //*======================================================================================
 //* @bsiclass
@@ -2914,7 +3200,7 @@ struct DTMElementScalableTerrainModelECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _GetValue (ECValueR ecValue, DelegatedElementECInstanceCR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
             if (!EXPECTED_CONDITION (nullptr != data))
@@ -2974,7 +3260,7 @@ struct DTMElementScalableTerrainModelECDelegate : BaseElementECDelegate
         //*--------------------------------------------------------------------------------------
         //* @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        virtual ECObjectsStatus _SetValue(ECN::ECValueCR ecValue, DelegatedElementECInstanceR instance, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override
             {
             DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData (*this));
             if (!EXPECTED_CONDITION (nullptr != data))
@@ -3014,7 +3300,7 @@ struct DTMElementScalableTerrainModelECDelegate : BaseElementECDelegate
 
             return status;
             }
-        virtual bool _IsNullValue (DelegatedElementECInstanceCR, uint32_t) const override { return false; }
+        virtual bool _IsNullValue (DelegatedElementECInstanceCR, UInt32) const override { return false; }
 
     public:
 
@@ -3023,6 +3309,8 @@ struct DTMElementScalableTerrainModelECDelegate : BaseElementECDelegate
             return new DTMElementScalableTerrainModelECDelegate (extension);
             }
     };
+
+#pragma endregion
 
 //*--------------------------------------------------------------------------------------
 //* @bsimethod
@@ -3045,44 +3333,53 @@ DTMELEMENTECExtension::ECTable& DTMELEMENTECExtension::GetMapTable () const
     {
     if (m_ecTable.size())
         return m_ecTable;
-    ECClassEntry DTMClasses[] =
+    static ECClassEntry DTMClasses[] =
         {
-            {L"DTMElement", nullptr}, //&DTMElementECDelegate::Create},
-            {L"DTMInformation", &DTMElementInfoECDelegate::Create},
-            {L"DTMEdgeMethod", &DTMElementEdgeMethodECDelegate::Create},
-            {L"DTMContourProperties", &DTMElementContourPropertiesECDelegate::Create},
-            {L"DTMFeatureProperties", &DTMElementFeaturePropertiesECDelegate::Create},
-            {L"DTMSourceProperties", &DTMElementSourcePropertiesECDelegate::Create},
-            {L"DTMCalculatedProperties", nullptr},
-            {L"DTMSubElementDisplay", &DTMElementSubElementDisplayECDelegate::Create},
-            {L"DTMGeneralContours", &DTMElementGeneralContoursECDelegate::Create},
-            {L"DTMDepressionSymbology", &DTMElementDepressionSymbologyECDelegate::Create},
-            {L"DTMTextStyle", &DTMElementTextStyleECDelegate::Create},
-            {L"DTMPointSymbology", &DTMElementPointSymbologyECDelegate::Create},
-            {L"DTMAttachedMaterial", &DTMElementAttachedMaterialECDelegate::Create},
+                { L"DTMElement", nullptr }, //&DTMElementECDelegate::Create},
+                { L"DTMInformation", &DTMElementInfoECDelegate::Create },
+                { L"DTMEdgeMethod", &DTMElementEdgeMethodECDelegate::Create },
+                { L"DTMContourProperties", &DTMElementContourPropertiesECDelegate::Create },
+                { L"DTMFeatureProperties", &DTMElementFeaturePropertiesECDelegate::Create },
+                { L"DTMSourceProperties", &DTMElementSourcePropertiesECDelegate::Create },
+                { L"DTMCalculatedProperties", nullptr },
+                { L"DTMSubElementDisplay", &DTMElementSubElementDisplayECDelegate::Create },
+                { L"DTMGeneralContours", &DTMElementGeneralContoursECDelegate::Create },
+                { L"DTMDepressionSymbology", &DTMElementDepressionSymbologyECDelegate::Create },
+                { L"DTMTextStyle", &DTMElementTextStyleECDelegate::Create },
+                { L"DTMPointSymbology", &DTMElementPointSymbologyECDelegate::Create },
+                { L"DTMAttachedMaterial", &DTMElementAttachedMaterialECDelegate::Create },
 
-            {L"DTMFeature", nullptr},
-            {L"DTMFeatureSpots", nullptr},
+                { L"DTMFeature", nullptr },
+                { L"DTMFeatureSpots", nullptr },
 
-            {L"DTMFlowArrows", nullptr},
-            {L"DTMHighPoints", nullptr},
-            {L"DTMLowPointsBase", &DTMElementLowPointsECDelegate::Create},
-            {L"DTMLowPoints", nullptr},
-            {L"DTMSpots", nullptr},
+                { L"DTMFlowArrows", nullptr },
+                { L"DTMHighPoints", nullptr },
+                { L"DTMLowPointsBase", &DTMElementLowPointsECDelegate::Create },
+                { L"DTMLowPoints", nullptr },
+                { L"DTMSpots", nullptr },
 
-            {L"DTMTrianglesBase", &DTMElementTrianglesECDelegate::Create},
-            {L"DTMTriangles", nullptr},
-            {L"DTMRegionsBase", &DTMElementRegionsECDelegate::Create},
-            {L"DTMRegions", nullptr},
-            {L"DTMContoursBase", &DTMElementContourECDelegate::Create},
-            {L"DTMContours", nullptr},
-            ////{L"DTMRasterDraping", nullptr},
-            {L"DTMOverrideSymbology", &DTMElementOverrideSymbologyECDelegate::Create},
-            {L"DTMOSTemplate", &DTMElementOSTemplateECDelegate::Create},
+                { L"DTMTrianglesBase", &DTMElementTrianglesECDelegate::Create },
+                { L"DTMTriangles", nullptr },
+                { L"DTMRegionsBase", &DTMElementRegionsECDelegate::Create },
+                { L"DTMRegions", nullptr },
+                { L"DTMContoursBase", &DTMElementContourECDelegate::Create },
+                { L"DTMContours", nullptr },
+                { L"DTMRasterDraping", nullptr},
+                { L"DTMOverrideSymbology", &DTMElementOverrideSymbologyECDelegate::Create },
+                { L"DTMGraphHeader", &DTMElementGraphHeaderECDelegate::Create },
+                { L"DTMOSTemplate", &DTMElementOSTemplateECDelegate::Create },
 
-            {L"STM", &DTMElementScalableTerrainModelECDelegate::Create},
+                { L"STM", &DTMElementScalableTerrainModelECDelegate::Create },
 
-            {nullptr, nullptr}
+                { L"DTMFeatureImportedContours", nullptr },
+                { L"DTMFeatureBoundary", nullptr },
+                { L"DTMFeatureBreaklines", nullptr },
+                { L"DTMFeatureHoles", nullptr },
+                { L"DTMFeatureIslands", nullptr },
+                { L"DTMFeatureVoids", nullptr },
+                { L"DTMFeatureMinorContours", nullptr },
+                { L"DTMFeatureMajorContours", nullptr },
+                { nullptr, nullptr }
         };
 
     for (ECClassEntry* entryP = DTMClasses; entryP->className; entryP++)
@@ -3107,16 +3404,16 @@ void DTMELEMENTECExtension::SetPerDelegateData (DelegatedElementECInstancePtr in
         }
     }
 
-enum DTMElementLocalId : uint32_t
+enum DTMElementLocalId : UInt32
     {
-    LocalID_DTMElement = 0xffffffff,
+    LocalID_DTMElement = 0,
     LocalID_DTMCalculatedFeatures = 0xfffffffe,
     LocalID_DTMSourceFeatures = 0xfffffffd,
     LocalID_DTMGeneralContours = 0xfffffffc
     };
 
 DgnElementECInstancePtr DTMELEMENTECExtension::GetInstanceWithDataCache (ElementHandleCR eh,
-                                                      DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, uint32_t localId, DgnECInstanceCreateContextCR context) const
+                                                      DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, UInt32 localId, DgnECInstanceCreateContextCR context) const
     {
     if (delEnabler)
         {
@@ -3130,7 +3427,7 @@ DgnElementECInstancePtr DTMELEMENTECExtension::GetInstanceWithDataCache (Element
     }
 
 void DTMELEMENTECExtension::AddInstanceWithDataCache (DgnElementECInstanceVector& instances, ElementHandleCR eh,
-                                                      DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, uint32_t localId, DgnECInstanceCreateContextCR context) const
+                                                      DTMElementDataCache* dataCache, DelegatedElementECEnablerCP delEnabler, UInt32 localId, DgnECInstanceCreateContextCR context) const
     {
     DgnElementECInstancePtr instance = GetInstanceWithDataCache (eh, dataCache, delEnabler, localId, context);
     if (instance.IsValid())
@@ -3140,7 +3437,7 @@ void DTMELEMENTECExtension::AddInstanceWithDataCache (DgnElementECInstanceVector
 DgnECInstancePtr DTMELEMENTECExtension::_LocateInstance (ElementHandleCR eh, WStringCR instanceId, DgnECInstanceCreateContextCR context)
     {
     DgnECManagerR   manager = DgnECManager::GetManager ();
-    uint32_t          localId;
+    UInt32          localId;
     PersistentElementPathP pep = nullptr;
 
     if (!manager.ParseECInstanceId (*pep, nullptr, &localId, instanceId.c_str ()))
@@ -3149,7 +3446,7 @@ DgnECInstancePtr DTMELEMENTECExtension::_LocateInstance (ElementHandleCR eh, WSt
     return GetInstance (eh, localId, context, dataCache.get());
     }
 
-DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, uint32_t localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const
+DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, UInt32 localId, DgnECInstanceCreateContextCR context, DTMElementDataCache* dataCache) const
     {
     DgnElementECInstancePtr instance;
 
@@ -3190,31 +3487,45 @@ DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, uint32_
                         {
                         case DTMElementTrianglesHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMTriangles"], it->second.subElementId.GetId(), context);
-                            break;
                         case DTMElementContoursHandler::SubHandlerId:
-                            return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMContours"], it->second.subElementId.GetId (), context);
-                            break;
+                            if (it->second.paramType == DPID_MAJORCONTOUR)
+                                return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureMajorContours"], it->second.subElementId.GetId (), context);
+                            return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureMinorContours"], it->second.subElementId.GetId (), context);
                         case DTMElementFlowArrowsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFlowArrows"], it->second.subElementId.GetId (), context);
-                            break;
                         case DTMElementHighPointsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMHighPoints"], it->second.subElementId.GetId(), context);
-                            break;
                         case DTMElementLowPointsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMLowPoints"], it->second.subElementId.GetId (), context);
-                           break;
                         case DTMElementSpotsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMSpots"], it->second.subElementId.GetId(), context);
-                            break;
                         case DTMElementFeaturesHandler::SubHandlerId:
-                            return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMFeature"], it->second.subElementId.GetId(), context);
-                            break;
+                            switch (it->second.paramType)
+                                {
+                                case DPID_CONTOURS:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureImportedContours"], it->second.subElementId.GetId (), context);
+                                case DPID_BOUNDARIES:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureBoundary"], it->second.subElementId.GetId (), context);
+                                case DPID_BREAKLINES:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureBreaklines"], it->second.subElementId.GetId (), context);
+                                case DPID_HOLES:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureHoles"], it->second.subElementId.GetId (), context);
+                                case DPID_ISLANDS:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureIslands"], it->second.subElementId.GetId (), context);
+                                case DPID_VOIDS:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeatureVoids"], it->second.subElementId.GetId (), context);
+                                default:
+                                    return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMFeature"], it->second.subElementId.GetId (), context);
+                                }
+
                         case DTMElementFeatureSpotsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMFeatureSpots"], it->second.subElementId.GetId(), context);
-                            break;
                         case DTMElementRegionsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMRegions"], it->second.subElementId.GetId(), context);
-                            break;
+
+                        case DTMElementRasterDrapingHandler::SubHandlerId:
+                            return GetInstanceWithDataCache(eh, dataCache, enablerMap[L"DTMRasterDraping"], it->second.subElementId.GetId(), context);
+
                         default:
             //                return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMSubElementDisplay"], it->second.subElementId.GetId(), context);
                             break;
@@ -3228,6 +3539,8 @@ DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, uint32_
 
 void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRecordsR changes, DgnECTxnInfoCR txnInfo, DgnECInstanceCreateContextCR context) const
     {
+    __super::_GetPotentialInstanceChanges(changes, txnInfo, context);
+
     bvector<DgnECInstancePtr> modified;
     RefCountedPtr<DTMElementDataCache> dataCache;
     ElementHandle eh (txnInfo.GetChangedElement ());
@@ -3236,7 +3549,14 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
         {
         ElementHandle dtmEh (txnInfo.GetChangedElement ());
 
-        DTMSymbologyOverrideManager::GetReferencedElement (eh, dtmEh);
+        TMSymbologyOverrideManager::GetReferencedElement (eh, dtmEh);
+
+        if (eh.GetElementType() == 107)
+            {
+            if (ElementHandlerManager::GetHandlerId(eh) == ElementHandlerId(TMElementMajorId, ELEMENTHANDLER_DTMOVERRIDESYMBOLOGY))
+                if (eh.GetElementRef() == dtmEh.GetElementRef())
+                    return;
+            }
 
         bool hasXAttributeChanged = false;
         for (auto const& txn : txnInfo.GetXAttrTxns ())
@@ -3246,7 +3566,7 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
             if (dataCache.IsNull ())
                 dataCache = DTMElementDataCache::Create (dtmEh);
             hasXAttributeChanged = true;
-            AddInstance (modified, dtmEh, (uint32_t)txn.GetId (), context, dataCache.get ());
+            AddInstance (modified, dtmEh, (UInt32)txn.GetId (), context, dataCache.get ());
             }
         if (hasXAttributeChanged)
             {
@@ -3258,7 +3578,6 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
 
         changes.AppendModifiedInstances (DgnECInstanceIterable::CreateFromVector (modified));
         }
-    __super::_GetPotentialInstanceChanges (changes, txnInfo, context);
     }
 
 void DTMELEMENTECExtension::_GenerateInstances (DgnElementECInstanceVector& instances, ElementHandleCR eh, ElementECEnablerListCR enablers, DgnECInstanceCreateContextCR context) const
@@ -3294,7 +3613,7 @@ private:
 
     void    GetAgenda(ElementAgendaR agenda, ElementHandleCR element) const;
 
-    virtual DgnECHostType           _GetHostType () const override {return DgnECHostType_Element;}
+    virtual DgnECHostType           _GetHostType () const override {return DgnECHostType::Element;}
     virtual DgnECInstanceIterable   _GetRelatedInstances (DgnECInstanceCR instance, QueryRelatedClassSpecifierCR relationshipClassSpecifier) const override;
 
 public:
@@ -3348,7 +3667,7 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
             enablerMap [delEnabler->GetClass().GetName()] = delEnabler;
         }
 
-    uint32_t localId = instance->GetLocalId ();
+    UInt32 localId = instance->GetLocalId ();
     if (!m_backwards)
         {
         if (!(dataCache->IsSTM() && (DTMElementHandlerManager::GetMrDTMActivationRefCount() == 0)) && localId == LocalID_DTMElement)
@@ -3374,7 +3693,12 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
                         break;
                     case DTMElementContoursHandler::SubHandlerId:
                         if (localId == LocalID_DTMGeneralContours)
-                            m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMContours"], it->second.subElementId.GetId (), m_createContext);
+                            {
+                            if (it->second.paramType == DPID_MAJORCONTOUR)
+                                m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureMajorContours"], it->second.subElementId.GetId (), m_createContext);
+                            else
+                                m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureMinorContours"], it->second.subElementId.GetId (), m_createContext);
+                            }
                         break;
                     case DTMElementFlowArrowsHandler::SubHandlerId:
                         if (localId == LocalID_DTMCalculatedFeatures)
@@ -3394,7 +3718,32 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
                         break;
                     case DTMElementFeaturesHandler::SubHandlerId:
                         if (localId == LocalID_DTMSourceFeatures)
-                            m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeature"], it->second.subElementId.GetId (), m_createContext);
+                            {
+                            switch (it->second.paramType)
+                                {
+                                case DPID_CONTOURS:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureImportedContours"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                case DPID_BOUNDARIES:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureBoundary"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                case DPID_BREAKLINES:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureBreaklines"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                case DPID_HOLES:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureHoles"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                case DPID_ISLANDS:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureIslands"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                case DPID_VOIDS:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeatureVoids"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                default:
+                                    m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMFeature"], it->second.subElementId.GetId (), m_createContext);
+                                    break;
+                                }
+                            }
                         break;
                     case DTMElementFeatureSpotsHandler::SubHandlerId:
                         if (localId == LocalID_DTMSourceFeatures)
@@ -3404,6 +3753,11 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
                         if (localId == LocalID_DTMCalculatedFeatures)
                             m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMRegions"], it->second.subElementId.GetId (), m_createContext);
                         break;
+                    case DTMElementRasterDrapingHandler::SubHandlerId:
+                        if (localId == LocalID_DTMCalculatedFeatures)
+                            m_extension->AddInstanceWithDataCache(instances, eh, dataCache, enablerMap[L"DTMRasterDraping"], it->second.subElementId.GetId(), m_createContext);
+                        break;
+
                     default:
                         //                m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMSubElementDisplay"], it->second.subElementId.GetId(), m_createContext);
                         break;
@@ -3454,7 +3808,7 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DTMELEMENTECExtension::_GetSupportedRelationshipInfos (DgnECInstanceCR instance, DgnECRelationshipInfoVector& infos) const
     {
-    DeduceSupportedRelationship (infos, L"TerrainModelChildrenRelationship", instance);
+    DeduceSupportedRelationship (infos, REL_TerrainModelChildren, instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3462,7 +3816,7 @@ void DTMELEMENTECExtension::_GetSupportedRelationshipInfos (DgnECInstanceCR inst
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDgnECInstanceFinderPtr DTMELEMENTECExtension::_CreateRelatedFinder (DgnECInstanceCR source, QueryRelatedClassSpecifierCR classSpec, DgnECInstanceCreateContextCR createContext) const
     {
-    if (classSpec.Accept (*GetRelationshipClass (L"TerrainModelChildrenRelationship")))
+    if (classSpec.Accept (*GetRelationshipClass (REL_TerrainModelChildren)))
         {
         if (STRENGTHDIRECTION_Forward == classSpec.GetDirection())
             return TerrainModelChildrenFinder::CreateFinder (this, createContext, false);
@@ -3472,6 +3826,8 @@ IDgnECInstanceFinderPtr DTMELEMENTECExtension::_CreateRelatedFinder (DgnECInstan
 
     return nullptr;
     }
+
+#pragma region TypeAdapters
 
 /*---------------------------------------------------------------------------------**
  * @bsistruct                                                    Paul.Connelly   05/13
@@ -3611,12 +3967,12 @@ bool getLevelDefFromContext (LevelHandle& level, IDgnECTypeAdapterContextCR cont
         if (nullptr == dgnInst)
             return false;
 
-        uint32_t id = dgnInst->GetLocalId ();
+        UInt32 id = dgnInst->GetLocalId ();
 
 
         ElementHandle element (dgnInst->GetElementRef (), &dgnInst->GetModelRef ());
         ElementHandle symbologyElement = element;
-        DTMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElement, element.GetModelRef ()->GetRoot ());
+        TMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElement, element.GetModelRef ()->GetRoot ());
 
         ElementHandle::XAttributeIter xattr (symbologyElement, DTMElementSubHandler::GetDisplayInfoXAttributeHandlerId (), id);
 
@@ -3663,7 +4019,7 @@ struct TMColorTypeAdapter : ColorTypeAdapter, HasTMByCellString
             if (!v.IsInteger ())
                 return false;
 
-            uint32_t color = (uint32_t)v.GetInteger ();
+            UInt32 color = (UInt32)v.GetInteger ();
             if (!ColorToString (strVal, color, context.GetDgnFile (), context))
                 return false;
             else if (color == COLOR_BYLEVEL)
@@ -3672,7 +4028,7 @@ struct TMColorTypeAdapter : ColorTypeAdapter, HasTMByCellString
                 LevelHandle level;
                 if (getLevelDefFromContext (level, context))
                     {
-                    uint32_t levelColor = level.GetByLevelColor ().GetColor ();
+                    UInt32 levelColor = level.GetByLevelColor ().GetColor ();
                     WString levelColorStr;
                     if (ColorToString (levelColorStr, levelColor, level.GetByLevelColorDefinitionFile (), context))
                         {
@@ -3744,7 +4100,7 @@ struct TMWeightTypeAdapter : WeightTypeAdapter, HasTMByCellString
                 return false;
 
             Int32 weight = v.GetInteger ();
-            switch ((uint32_t)weight)
+            switch ((UInt32)weight)
                 {
                 case INVALID_WEIGHT:
                     valueAsString = GetNoneString (context);
@@ -3772,7 +4128,7 @@ struct TMWeightTypeAdapter : WeightTypeAdapter, HasTMByCellString
                 LevelHandle level;
                 if (getLevelDefFromContext (level, context))
                     {
-                    uint32_t byLevelWeight = level.GetByLevelWeight ();
+                    UInt32 byLevelWeight = level.GetByLevelWeight ();
                     // Avoid Snwprintf() if possible, it is quite slow
                     if (byLevelWeight < s_maxWeight)
                         {
@@ -3867,7 +4223,7 @@ struct TMLineStyleTypeAdapter : LineStyleTypeAdapter, HasTMByCellString
                     LevelHandle level;
                     if (getLevelDefFromContext (level, context))
                         {
-                        uint32_t levelStyle = level.GetByLevelLineStyle ().GetStyle ();
+                        UInt32 levelStyle = level.GetByLevelLineStyle ().GetStyle ();
                         WString stringFromCode = LineStyleManager::GetStringFromNumber (levelStyle, dgnFile);
                         valueAsString.reserve (3 + stringFromCode.length ());
                         valueAsString.append (L" (");
@@ -3927,7 +4283,7 @@ struct TMElementTemplateTypeAdapter : TemplateTypeAdapterBase
             ElementHandle el (context.GetElementRef (), context.GetModelRef ());
             DgnPlatform::DgnModelRef* rootModel = el.GetModelRef ()->GetRoot ();
             DgnPlatform::ElementHandle symbologyElement;
-            if (DTMSymbologyOverrideManager::GetElementForSymbology (el, symbologyElement, rootModel))
+            if (TMSymbologyOverrideManager::GetElementForSymbology (el, symbologyElement, rootModel))
                 {
                 if (el.GetElementRef () != symbologyElement.GetElementRef () && rootModel == symbologyElement.GetModelRef ())
                     {
@@ -3978,7 +4334,7 @@ struct TMElementEdgeOptionTypeAdapter : IDgnECTypeAdapter
         {
         if (!v.IsNull ())
             {
-            uint32_t option = v.GetInteger ();
+            UInt32 option = v.GetInteger ();
 
             if (option >= 0 && option < (int)m_values.size ())
                 valueAsString = m_values[option];
@@ -4010,6 +4366,7 @@ struct TMElementEdgeOptionTypeAdapter : IDgnECTypeAdapter
         {
         return false;
         }
+    virtual bool            _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR) const override { return false; }
     virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override
         {
         if (!v.IsNull ())
@@ -4041,6 +4398,7 @@ struct MrDTMViewFlagsTypeAdapter : IDgnECTypeAdapter
 
         virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
         virtual bool            _ConvertToString (WStringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+        virtual bool            _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR) const override { return false; }
         virtual bool            _ConvertFromString (ECN::ECValueR v, WCharCP stringValue, IDgnECTypeAdapterContextCR context) const override;
         virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR) const override
             {
@@ -4088,9 +4446,9 @@ bool MrDTMViewFlagsTypeAdapter::_ConvertToString (WStringR valueAsString, ECN::E
     if (!inputVal.IsNull () && inputVal.IsArray ())
         {
         ECN::IECInstanceInterfaceCR intfc = context.GetInstanceInterface ();
-        uint32_t count = inputVal.GetArrayInfo ().GetCount ();
+        UInt32 count = inputVal.GetArrayInfo ().GetCount ();
         WString accessor;
-        for (uint32_t view = 0; view < count; view++)
+        for (UInt32 view = 0; view < count; view++)
             {
             ECValue v;
             accessor.Sprintf (L"Views[%d]", view);
@@ -4124,7 +4482,7 @@ bool MrDTMViewFlagsTypeAdapter::_ConvertFromString (ECN::ECValueR outVal, WCharC
     return false;
     }
 
-
+#pragma endregion
 
 DTMELEMENTECExtension* extension = nullptr;
 //*--------------------------------------------------------------------------------------
@@ -4133,7 +4491,10 @@ DTMELEMENTECExtension* extension = nullptr;
 void    registerECExtension ()
     {
     extension = DTMELEMENTECExtension::Create();
-    ElementECExtension::RegisterExtension (DTMElementHandler::GetInstance(), *extension);
+    ElementECExtension::RegisterExtension (DTMElementHandler::GetInstance (), *extension);
+    extension = DTMELEMENTECExtension::Create ();
+    ElementECExtension::RegisterExtension (TMSymbologyOverrideHandler::GetInstance (), *extension);
+
 
     DgnECExtendedType::GetByName (L"TMElementTemplate").SetTypeAdapter (*TMElementTemplateTypeAdapter::Create ());
     DgnECExtendedType::GetByName (L"TMColor").SetTypeAdapter (*TMColorTypeAdapter::Create ());

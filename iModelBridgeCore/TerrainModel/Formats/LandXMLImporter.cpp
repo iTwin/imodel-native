@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -46,8 +46,9 @@ Utf8CP cDefinition ( "Definition");
 Utf8CP cP ("P");
 Utf8CP cPnts ("Pnts");
 Utf8CP cFaces ("Faces");
-Utf8CP cF ("F");
-Utf8CP cUnits ("Units");
+Utf8CP cF("F");
+Utf8CP cI("i");
+Utf8CP cUnits("Units");
 Utf8CP cCoordinateSystem ("CoordinateSystem");
 Utf8CP cImperial ("Imperial");
 Utf8CP cMetric ("Metric");
@@ -60,10 +61,11 @@ WCharCP wVoid (L"void");
 WCharCP wIsland (L"island");
 WCharCP wStyle (L"style");
 WCharCP wId (L"id");
-WCharCP wUsrID (L"usrID");
+WCharCP wUsrID (L"UsrID");
 WCharCP wTriangluate (L"triangulate");
-WCharCP wRandomPoints (L"randomPoints");
-WCharCP wTIN (L"TIN");
+WCharCP wRandomPoints(L"randomPoints");
+WCharCP wGroupPoints(L"groupPoints");
+WCharCP wTIN(L"TIN");
 
 WCharCP wMillimeter (L"millimeter");
 WCharCP wCentimeter (L"centimeter");
@@ -109,6 +111,7 @@ LandXMLImporter::LandXMLImporter (WCharCP filename)
         m_pntRefs = NULL;
         m_callback = nullptr;
         m_isMXProject = false;
+        m_isGeopakProject = false;
 
         m_currentPointList = 0;
         }
@@ -210,18 +213,18 @@ void LandXMLImporter::AddFeatureToDTM (WStringCR name, WStringCR description, DT
         else
             {
             // Add to DTM.
-            DTMFeatureId id;
+            DTMFeatureId id = DTM_NULL_FEATURE_ID;
             if (type == DTMFeatureType::RandomSpots)
                 m_dtm->AddPoints (&points[0], (int)points.size ());
             else
                 {
                 if (type == DTMFeatureType::GroupSpots)
-                    m_dtm->AddPointFeature (&points[0], (int)points.size (), dtmUserTag, &id);
+                    m_dtm->AddPointFeature(&points[0], (int)points.size(), dtmUserTag, &id);
                 else
-                    m_dtm->AddLinearFeature (type, &points[0], (int)points.size (), dtmUserTag, &id);
-                if (m_callback)
-                    m_callback->AddFeature (id, DTMAttribute.GetWCharCP (), featureAttribute.featureDefinition.GetWCharCP (), name.GetWCharCP (), description.GetWCharCP (), type, &points[0], points.size ());
+                    m_dtm->AddLinearFeature(type, &points[0], (int)points.size(), dtmUserTag, &id);
                 }
+            if (m_callback)
+                m_callback->AddFeature (id, DTMAttribute.GetWCharCP (), featureAttribute.featureDefinition.GetWCharCP (), name.GetWCharCP (), description.GetWCharCP (), type, &points[0], points.size ());
             }
         }
         }
@@ -507,10 +510,10 @@ void LandXMLImporter::ReadFeatureAttributes (FeatureAttributes& featureAttribute
                         featureAttribute.featureDefinition = attrs.GetAttribute (cValue);
                     else if (propertyName == wId)
                         featureAttribute.featureId = attrs.GetAttribute (cValue);
-                    else if (propertyName == wUsrID)
+                    else if (propertyName.EqualsI(wUsrID))
                         featureAttribute.userTag = attrs.GetAttribute (cValue);
                     else if (propertyName == wTriangluate)
-                        featureAttribute.triangulate = attrs.GetAttribute (cValue) == L"true";
+                        featureAttribute.triangulate = attrs.GetAttribute (cValue).EqualsI(L"true");
                     }
                 }
                 break;
@@ -730,7 +733,7 @@ void LandXMLImporter::ReadContour ()
         WString DTMAttribute = attrs.GetAttribute (cDTMAttribute);
         FeatureAttributes featureAttributes;
 
-        bool randomPoints = false;
+        bool randomPoints = name.empty();
         ClearPoints ();
         while (m_reader->Read () == BeXmlReader::READ_RESULT_Success)
             {
@@ -756,9 +759,29 @@ void LandXMLImporter::ReadContour ()
                     else if (nodeName == cFeature)
                         {
                         XmlAttributes attrs (m_reader);
-                        if (attrs.GetAttribute (cCode) == wRandomPoints)
-                            randomPoints = true;
-                        ReadFeatureAttributes (featureAttributes);
+                        if (attrs.GetAttribute(cCode).EqualsI(wGroupPoints) || attrs.GetAttribute(cCode).EqualsI(wRandomPoints))
+                            {
+                            if (m_isGeopakProject && m_segments.size() >= 1)
+                                {
+                                PointArrayList tmpSegments;
+                                tmpSegments.push_back(m_segments.back());
+                                AddFeatureToDTM(name, name, randomPoints ? DTMFeatureType::RandomSpots : DTMFeatureType::GroupSpots, featureAttributes, DTMAttribute);
+
+                                tmpSegments.swap(m_segments);
+                                }
+                            
+                            randomPoints = attrs.GetAttribute(cCode).EqualsI(wRandomPoints);
+                            ReadFeatureAttributes(featureAttributes);
+
+                            // If this is a Geopak Project the feature segment only applies to the last PntList3d so add this only.
+                            if (m_isGeopakProject)
+                                {
+                                AddFeatureToDTM(name, name, randomPoints ? DTMFeatureType::RandomSpots : DTMFeatureType::GroupSpots, featureAttributes, DTMAttribute);
+                                ClearPoints();
+                                randomPoints = name.empty();
+                                featureAttributes = FeatureAttributes();
+                                }
+                            }
                         }
                     }
                     break;
@@ -878,14 +901,25 @@ void LandXMLImporter::ReadContour ()
                         {
                         if (m_pntRefs == NULL || m_secondPass)
                             {
-                            m_reader->Read ();  // ToDo needs work. Are these always 3?
+                            bool ignoreFace = false;
+                            Utf8String name;
                             WString value;
+                            while (m_reader->ReadToNextAttribute(&name, &value) == BEXML_Success)
+                                {
+                                if (name == cI)
+                                    ignoreFace = ConvertToInt(value) != 0;
+                                }
+
+                            m_reader->Read ();  // ToDo needs work. Are these always 3?
                             m_reader->GetCurrentNodeValue (value);
 
-                            int ptNums[3];
-                            ReadFaceIndexs (value, ptNums[0], ptNums[1], ptNums[2]);
+                            if (!ignoreFace)
+                                {
+                                int ptNums[3];
+                                ReadFaceIndexs(value, ptNums[0], ptNums[1], ptNums[2]);
 
-                            adjust.AddTriangle (ptNums, 3);
+                                adjust.AddTriangle(ptNums, 3);
+                                }
                             }
                         }
                     }
@@ -953,7 +987,10 @@ void LandXMLImporter::ReadContour ()
                             hasDefinition = true;
 
                         if (m_dtm.IsValid())
-                            ReadDefinition ();
+                            {
+                            ReadDefinition();
+                            m_namedDtms[currentName] = m_dtm;
+                            }
                         else
                             m_reader->ReadToEndOfElement  ();
                         }
@@ -1068,6 +1105,8 @@ void LandXMLImporter::ReadContour ()
         applicationName = attrs.GetAttribute (cName);
         if (applicationName == L"MX")
             m_isMXProject = true;
+        else if (applicationName == L"Geopak")
+            m_isGeopakProject = true;
         }
 
     ImportedTerrain LandXMLImporter::_ImportTerrain (WCharCP name) const
@@ -1125,7 +1164,9 @@ void LandXMLImporter::ReadContour ()
                         {
                         Utf8String nodeName;
                         m_reader->GetCurrentNodeName (nodeName);
-                        if (nodeName == cUnits)
+                        if (nodeName == cApplication)
+                            ReadApplication();
+                        else if (nodeName == cUnits)
                             ReadUnits ();
                         else if (nodeName == cCoordinateSystem)
                             ReadCoordinateSystem ();

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadRegions.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -445,8 +445,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
   long p1, p2, p3, clPtr;
   DTM_CIR_LIST    *clistP ;
   DTM_TIN_NODE    *node1P,*node2P,*node3P ;
-  DTM_TIN_POINT   *p1P,*p2P,*p3P;
-  long voidTriangle,voidsInDtm=FALSE;
+  DPoint3d   *p1P,*p2P,*p3P;
+  bool voidTriangle,voidsInDtm=false;
 /*
 ** Write Entry Message
 */
@@ -473,7 +473,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
 /*
 **  Test For Voids In DTM
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
 /*
 **  Scan Dtm Features And Return All Triangles For DTMFeatureType::Polygon With The FeatureID
 */
@@ -536,7 +536,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
                       if( ( p2 > p1 && p3 > p1 && (node2P->tPtr == mark || node2P->tPtr != dtmP->nullPnt) && (node3P->tPtr == mark || node3P->tPtr != dtmP->nullPnt) ) )
                         {
                          voidTriangle = FALSE ;
-                         if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ; }
+                         if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ; }
                          if( voidTriangle == FALSE ) 
                            {
 /*
@@ -616,7 +616,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
   long p1, p2, p3, clPtr;
   DTM_CIR_LIST    *clistP ;
   DTM_TIN_NODE    *node1P,*node2P,*node3P ;
-  long   voidTriangle,voidsInDtm=FALSE;
+  bool   voidTriangle,voidsInDtm=false;
   long  *faceP,*meshFacesP=NULL,numMeshPts=0 ;
   DPoint3d   *meshPtsP=NULL,*meshVectorsP=NULL ; 
   long  meshVectorsSize=0,meshPtsSize=0;
@@ -678,7 +678,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 /*
 **  Test For Voids In DTM
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
 /*
 ** Allocate Memory For Mesh Faces
 */
@@ -758,7 +758,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
                       if( node2P->tPtr != dtmP->nullPnt && node3P->tPtr != dtmP->nullPnt) 
                         {
                          voidTriangle = FALSE ;
-                         if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ; }
+                         if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ; }
                          if( voidTriangle == FALSE ) 
                            {
                             *faceP = p3  ; ++faceP ;
@@ -866,7 +866,7 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long node,minMeshPnt,maxMeshPnt,*faceP ;
  DPoint3d      *p3dP,*vectP,normalVector ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
  double dz ;
 /*

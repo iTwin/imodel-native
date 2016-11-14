@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -914,12 +914,12 @@ struct CIVdtmsrf *srf,
                         sts = DTM_M_RDFILF;
                     else
                         {
-                        t[blk->use].p1 = (CIVdtmpnt*)t[blk->use].op1;
-                        t[blk->use].p2 = (CIVdtmpnt*)t[blk->use].op2;
-                        t[blk->use].p3 = (CIVdtmpnt*)t[blk->use].op3;
-                        t[blk->use].n12 = (CIVdtmtin*)t[blk->use].on12;
-                        t[blk->use].n23 = (CIVdtmtin*)t[blk->use].on23;
-                        t[blk->use].n31 = (CIVdtmtin*)t[blk->use].on31;
+                        t[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op1;
+                        t[blk->use].p2 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op2;
+                        t[blk->use].p3 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op3;
+                        t[blk->use].n12 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on12;
+                        t[blk->use].n23 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on23;
+                        t[blk->use].n31 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on31;
                         numRead++;
                         }
                     }
@@ -1002,9 +1002,9 @@ struct CIVdtmsrf *srf,
                                     }
                                 else
                                     {
-                                    f[blk->use].p1 = (CIVdtmpnt*)f[blk->use].p[0];
-                                    f[blk->use].s1 = (CIVdtmsty*)f[blk->use].p[1];
-                                    f[blk->use].pay = (CIVdtmpay*)f[blk->use].p[2];
+                                    f[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) f[blk->use].p[0];
+                                    f[blk->use].s1 = (CIVdtmsty*) (unsigned __int64) f[blk->use].p[1];
+                                    f[blk->use].pay = (CIVdtmpay*) (unsigned __int64) f[blk->use].p[2];
                                     }
                                 }
                             else if ( srf->version > 7 )
@@ -1012,8 +1012,12 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV8 ftrV8;
                                 memset ( &ftrV8, 0, sizeof ( ftrV8 ) );
 
-                                if ( fread ( &ftrV8, sizeof ( struct CIVdtmftrV8 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV8, CIVdtmftrV8Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
+
+                                ftrV8.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV8.p[0];
+                                ftrV8.s1 = (CIVdtmsty*) (unsigned __int64) ftrV8.p[1];
+                                ftrV8.pay = (CIVdtmpay*) (unsigned __int64) ftrV8.p[2];
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV8.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV8.nam, CIV_C_NAMSIZ );
@@ -1033,8 +1037,11 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV7 ftrV7;
                                 memset ( &ftrV7, 0, sizeof ( ftrV7 ) );
 
-                                if ( fread ( &ftrV7, sizeof ( struct CIVdtmftrV7 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV7, CIVdtmftrV7Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
+
+                                ftrV7.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV7.p[0];
+                                ftrV7.s1 = (CIVdtmsty*) (unsigned __int64) ftrV7.p[1];
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV7.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV7.nam, CIV_C_NAMSIZ );

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* trisrf.c                                            tmi        10-Apr-1990 */
@@ -68,7 +68,7 @@ static int  aecDTM_triangulateLinearLists(struct CIVdtmpnt *,struct CIVdtmpnt *,
 static int  aecDTM_triangulateCheckAreaTolerance(struct CIVtinLineData *);
 static int  aecDTM_triangulateLinearPatch(struct CIVtinLineData *);
 static int  aecDTM_triangulateLinearFindNeighbor(long,long *,struct CIVdtmtin **,int *);
-static int  aecDTM_triangulateLinearAllocateMore(long,long *,long **,long **);
+static int  aecDTM_triangulateLinearAllocateMore(long, long *, CIVdtmtin **, CIVdtmtin **);
 static int  aecDTM_triangulateLinearAllocate(struct CIVtinLineData *);
 static int  aecDTM_alignTriangleDiagonals(struct CIVdtmsrf *);
 static int  aecDTM_alignTriangleDiagonalsProcess(void *,long,DPoint3d *,struct CIVdtmtin*,unsigned long);
@@ -122,8 +122,8 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
   if( sts == SUCCESS )
     sts = aecDTM_crossingCheckExterior( srfP );
 
-  if( sts == SUCCESS && ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
-    sts = aecDTM_crossingCheck ( srfP, DTM_C_NOTINS, NULL, NULL, NULL );
+  //if( sts == SUCCESS && ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
+  //  sts = aecDTM_crossingCheck ( srfP, DTM_C_NOTINS, NULL, NULL, NULL );
 
   if( sts == SUCCESS )
   {
@@ -203,7 +203,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
 static int aecDTM_triangulateStart
 (
   struct CIVdtmsrf *srf,
-  long npnt,
+  long npnt_,
   int useBlockSize
 )
 {
@@ -212,7 +212,7 @@ static int aecDTM_triangulateStart
   struct CIVdtmpnt *p;
   DPoint3d cor[4];
   int sts;
-  long nrec = useBlockSize ? DTM_C_BLKSIZ : 2 * ( npnt + 100 );
+  long nrec = useBlockSize ? DTM_C_BLKSIZ : 2 * ( npnt_ + 100 );
 
   if (nrec > DTM_C_BLKSIZTIN)
       nrec = DTM_C_BLKSIZTIN;
@@ -741,9 +741,9 @@ static int aecDTM_triangulateLinearAffectedTrianglesProcess
   struct CIVtinLineData *dat = (struct CIVtinLineData *)tmp;
   int sts;
 
-  if ( ( sts = aecDTM_triangulateLinearAllocateMore ( dat->tinNum, &dat->tinAlc, &dat->tin, (long **)0 ) ) == SUCCESS )
+  if ( ( sts = aecDTM_triangulateLinearAllocateMore ( dat->tinNum, &dat->tinAlc, dat->tin, nullptr ) ) == SUCCESS )
   {
-    dat->tin[dat->tinNum++] = (long)tin;
+    dat->tin[dat->tinNum++] = tin;
 
     if ( pntIndex != 3 )
     {
@@ -830,13 +830,13 @@ static int aecDTM_triangulateLinearLists
   {
     if ( ( sts = aecDTM_triangulateLinearAllocate ( dat ) ) == SUCCESS )
     {
-        dat->leftPnt[dat->leftNum++] = dat->rightPnt[dat->rightNum++] = (long)p0;
+        dat->leftPnt[dat->leftNum++] = dat->rightPnt[dat->rightNum++] = p0;
         if ( ( sts = aecDTM_triangulateLinearAllocate ( dat ) ) == SUCCESS )
         {
-        dat->leftNei[dat->leftNum-1]   = (long)*(&t->n12+pntIndex);
-        dat->rightNei[dat->rightNum-1] = (pntIndex == 0) ? (long)t->n31 : (long)*(&t->n12+pntIndex-1);
-        dat->leftPnt[dat->leftNum++]   = (pntIndex == 2) ? (long)t->p1  : (long)*(&t->p1+pntIndex+1);
-        dat->rightPnt[dat->rightNum++] = (pntIndex == 0) ? (long)t->p3  : (long)*(&t->p1+pntIndex-1);
+        dat->leftNei[dat->leftNum-1]   = *(&t->n12+pntIndex);
+        dat->rightNei[dat->rightNum-1] = (pntIndex == 0) ? t->n31 : *(&t->n12+pntIndex-1);
+        dat->leftPnt[dat->leftNum++]   = (pntIndex == 2) ? t->p1  : *(&t->p1+pntIndex+1);
+        dat->rightPnt[dat->rightNum++] = (pntIndex == 0) ? t->p3  : *(&t->p1+pntIndex-1);
         }
     }
 
@@ -844,17 +844,17 @@ static int aecDTM_triangulateLinearLists
     {
         t = (struct CIVdtmtin *)dat->tin[i];
 
-        if (      (long)t->n12 == dat->tin[i-1]  &&  (long)t->n23 == dat->tin[i+1] )
+        if (      t->n12 == dat->tin[i-1]  &&  t->n23 == dat->tin[i+1] )
         pntIndex = 2, side = 1;
-        else if ( (long)t->n23 == dat->tin[i-1]  &&  (long)t->n31 == dat->tin[i+1] )
+        else if ( t->n23 == dat->tin[i-1]  &&  t->n31 == dat->tin[i+1] )
         pntIndex = 0, side = 1;
-        else if ( (long)t->n31 == dat->tin[i-1]  &&  (long)t->n12 == dat->tin[i+1] )
+        else if ( t->n31 == dat->tin[i-1]  &&  t->n12 == dat->tin[i+1] )
         pntIndex = 1, side = 1;
-        else if ( (long)t->n12 == dat->tin[i+1]  &&  (long)t->n23 == dat->tin[i-1] )
+        else if ( t->n12 == dat->tin[i+1]  &&  t->n23 == dat->tin[i-1] )
         pntIndex = 0, side = 0;
-        else if ( (long)t->n23 == dat->tin[i+1]  &&  (long)t->n31 == dat->tin[i-1] )
+        else if ( t->n23 == dat->tin[i+1]  &&  t->n31 == dat->tin[i-1] )
         pntIndex = 1, side = 0;
-        else if ( (long)t->n31 == dat->tin[i+1]  &&  (long)t->n12 == dat->tin[i-1] )
+        else if ( t->n31 == dat->tin[i+1]  &&  t->n12 == dat->tin[i-1] )
         pntIndex = 2, side = 0;
         else
         sts = DTM_M_NOSIDE;
@@ -863,13 +863,13 @@ static int aecDTM_triangulateLinearLists
         if ( ( sts = aecDTM_triangulateLinearAllocate ( dat ) ) == SUCCESS )
             if ( side )
             {
-            dat->rightNei[dat->rightNum-1] = (long)*(&t->n12+pntIndex);
-            dat->rightPnt[dat->rightNum++] = (long)*(&t->p1+pntIndex);
+            dat->rightNei[dat->rightNum-1] = *(&t->n12+pntIndex);
+            dat->rightPnt[dat->rightNum++] = *(&t->p1+pntIndex);
             }
             else
             {
-            dat->leftNei[dat->leftNum-1] = (pntIndex == 0) ? (long)t->n31 : (long)*(&t->n12+pntIndex-1);
-            dat->leftPnt[dat->leftNum++] = (long)*(&t->p1+pntIndex);
+            dat->leftNei[dat->leftNum-1] = (pntIndex == 0) ? t->n31 : *(&t->n12+pntIndex-1);
+            dat->leftPnt[dat->leftNum++] = *(&t->p1+pntIndex);
             }
     }
 
@@ -880,14 +880,14 @@ static int aecDTM_triangulateLinearLists
 
         if ( ( sts = aecDTM_triangulateLinearAllocate ( dat ) ) == SUCCESS )
         {
-        dat->leftNei[dat->leftNum-1]   = (pntIndex == 0) ? (long)t->n31 : (long)*(&t->n12+pntIndex-1);
-        dat->rightNei[dat->rightNum-1] = (long)*(&t->n12+pntIndex);
-        dat->leftPnt[dat->leftNum++]   = dat->rightPnt[dat->rightNum++] = (long)p1;
+        dat->leftNei[dat->leftNum-1]   = (pntIndex == 0) ? t->n31 : *(&t->n12+pntIndex-1);
+        dat->rightNei[dat->rightNum-1] = *(&t->n12+pntIndex);
+        dat->leftPnt[dat->leftNum++]   = dat->rightPnt[dat->rightNum++] = p1;
 
         if ( ( sts = aecDTM_triangulateLinearAllocate ( dat ) ) == SUCCESS )
         {
-            dat->leftNei[dat->leftNum-1] = dat->rightNei[dat->rightNum-1] = -1;
-            dat->leftPnt[dat->leftNum++] = dat->rightPnt[dat->rightNum++] = (long)p0;
+        dat->leftNei[dat->leftNum - 1] = dat->rightNei[dat->rightNum - 1] = (CIVdtmtin *)-1;
+            dat->leftPnt[dat->leftNum++] = dat->rightPnt[dat->rightNum++] = p0;
 
             if ( dat->robust )
             if ( ( sts = aecDTM_triangulateCheckAreaTolerance ( dat ) ) == DTM_M_STPPRC )
@@ -985,21 +985,21 @@ static int aecDTM_triangulateLinearPatch
     for ( i = 0; i < dat->tinNum  &&  sts == SUCCESS; i++ )
       sts = aecDTM_triangleStackPut ( dat->srf, (struct CIVdtmtin *)dat->tin[i], 0 );
 
-    aecPolygon_reverseLongArray ( dat->rightNum, dat->rightPnt );
-    aecPolygon_reverseLongArray ( dat->rightNum-1, dat->rightNei );
+    aecPolygon_reverseLongArray ( dat->rightNum, (long *)dat->rightPnt );
+    aecPolygon_reverseLongArray ( dat->rightNum-1, (long *)dat->rightNei );
 
-    aecDTM_patchCheck ( &dat->leftNum, dat->leftPnt, dat->leftNei );
-    if ( ( sts = aecDTM_patchHole ( dat->srf, dat->leftNum, dat->leftPnt, dat->leftNei, &dat->leftTinNum, &dat->leftTin ) ) == SUCCESS )
+    aecDTM_patchCheck ( &dat->leftNum, (long *)dat->leftPnt, (long *)dat->leftNei );
+    if ( ( sts = aecDTM_patchHole ( dat->srf, dat->leftNum, (long *)dat->leftPnt, (long *)dat->leftNei, &dat->leftTinNum, (long **)&dat->leftTin ) ) == SUCCESS )
     {
-      aecDTM_patchCheck ( &dat->rightNum, dat->rightPnt, dat->rightNei );
-      if ( ( sts = aecDTM_patchHole ( dat->srf, dat->rightNum, dat->rightPnt, dat->rightNei, &dat->rightTinNum, &dat->rightTin ) ) == SUCCESS )
-        if ( ( sts = aecDTM_triangulateLinearFindNeighbor ( dat->leftTinNum, dat->leftTin, &leftTin, &leftSide ) ) == SUCCESS )
-          if ( ( sts = aecDTM_triangulateLinearFindNeighbor ( dat->rightTinNum, dat->rightTin, &rightTin, &rightSide ) ) == SUCCESS )
+      aecDTM_patchCheck ( &dat->rightNum, (long *)dat->rightPnt, (long *)dat->rightNei );
+      if ( ( sts = aecDTM_patchHole ( dat->srf, dat->rightNum, (long *)dat->rightPnt, (long *)dat->rightNei, &dat->rightTinNum, (long **)&dat->rightTin ) ) == SUCCESS )
+        if ( ( sts = aecDTM_triangulateLinearFindNeighbor ( dat->leftTinNum, (long *)dat->leftTin, &leftTin, &leftSide ) ) == SUCCESS )
+          if ( ( sts = aecDTM_triangulateLinearFindNeighbor ( dat->rightTinNum, (long *)dat->rightTin, &rightTin, &rightSide ) ) == SUCCESS )
           {
             *(&leftTin->n12+leftSide)   = rightTin;
             *(&rightTin->n12+rightSide) = leftTin;
-            if ( ( sts = aecDTM_patchDelaunay ( dat->srf, dat->leftNum, dat->leftPnt, dat->leftTinNum, dat->leftTin ) ) == SUCCESS )
-              if ( ( sts = aecDTM_patchDelaunay ( dat->srf, dat->rightNum, dat->rightPnt, dat->rightTinNum, dat->rightTin ) ) == SUCCESS )
+            if ( ( sts = aecDTM_patchDelaunay ( dat->srf, dat->leftNum, (long *)*(dat->leftPnt), dat->leftTinNum, (long *)*(dat->leftTin) ) ) == SUCCESS )
+              if ( ( sts = aecDTM_patchDelaunay ( dat->srf, dat->rightNum, (long *)*(dat->rightPnt), dat->rightTinNum, (long *)*(dat->rightTin) ) ) == SUCCESS )
               {
                 dat->tmp = (struct CIVdtmtin *)0;
                 for ( i = dat->leftNum; i < leftNum  &&  sts == SUCCESS; i += 2 )
@@ -1037,13 +1037,13 @@ static int aecDTM_triangulateLinearFindNeighbor
 
   for ( *side = -1, i = 0; i < tinNum  &&  *side == -1; i++ )
   {
-    *tin = (struct CIVdtmtin *)tins[i];
+    *tin = (struct CIVdtmtin *)(size_t)tins[i];
 
-    if ( (long)(*tin)->n12 == -1 )
+    if ( (long)(size_t)(*tin)->n12 == -1 )
       *side = 0, (*tin)->flg |= DTM_C_TINB12;
-    else if ( (long)(*tin)->n23 == -1 )
+    else if ( (long)(size_t)(*tin)->n23 == -1 )
       *side = 1, (*tin)->flg |= DTM_C_TINB23;
-    else if ( (long)(*tin)->n31 == -1 )
+    else if ( (long)(size_t)(*tin)->n31 == -1 )
       *side = 2, (*tin)->flg |= DTM_C_TINB31;
   }
 
@@ -1069,8 +1069,8 @@ static int aecDTM_triangulateLinearAllocateMore
 (
   long num,
   long *nalc,
-  long **ptr1,
-  long **ptr2
+  CIVdtmtin **ptr1,
+  CIVdtmtin **ptr2
 )
 {
   int sts = SUCCESS;
@@ -1082,14 +1082,14 @@ static int aecDTM_triangulateLinearAllocateMore
     *nalc += 1;
     siz = (unsigned int) (*nalc * ALCSIZ);
 
-    *ptr1 = (num == 0L) ? (long *) calloc ( siz, sizeof(long) ) : (long *) realloc ( *ptr1, siz * sizeof(long) );
-    if ( *ptr1 == (long *)0 )
+    *ptr1 = (num == 0L) ? (CIVdtmtin *) calloc(siz, sizeof(CIVdtmtin)) : (CIVdtmtin *) realloc(*ptr1, siz * sizeof(CIVdtmtin));
+    if ( *ptr1 == 0 )
       sts = DTM_M_MEMALF;
 
-    if ( ptr2 != (long **)0 )
+    if ( ptr2 != 0 )
     {
-      *ptr2 = (num == 0L) ? (long *) calloc ( siz, sizeof(long) ) : (long *) realloc ( *ptr2, siz * sizeof(long) );
-      if ( *ptr2 == (long *)0 )
+    *ptr2 = (num == 0L) ? (CIVdtmtin *) calloc(siz, sizeof(CIVdtmtin)) : (CIVdtmtin *) realloc(*ptr2, siz * sizeof(CIVdtmtin));
+      if ( *ptr2 == 0 )
         sts = DTM_M_MEMALF;
     }
   }
@@ -1114,8 +1114,8 @@ static int aecDTM_triangulateLinearAllocate
 {
   int sts;
 
-  if ( ( sts = aecDTM_triangulateLinearAllocateMore ( dat->leftNum, &dat->leftAlc, &dat->leftPnt, &dat->leftNei ) ) == SUCCESS )
-    sts = aecDTM_triangulateLinearAllocateMore ( dat->rightNum, &dat->rightAlc, &dat->rightPnt, &dat->rightNei );
+  if ( ( sts = aecDTM_triangulateLinearAllocateMore ( dat->leftNum, &dat->leftAlc, NULL, dat->leftNei ) ) == SUCCESS )
+    sts = aecDTM_triangulateLinearAllocateMore ( dat->rightNum, &dat->rightAlc, NULL, dat->rightNei );
 
   return ( sts );
 }
@@ -1137,22 +1137,23 @@ int aecDTM_triangulateLinearFree /* <= TRUE if error               */
 {
   int sts = SUCCESS;
 
-  if ( dat->tin      != (long *)0)
+  if ( dat->tin      != 0)
       free ( dat->tin );
-  if ( dat->leftPnt  != (long *)0 )
+  if ( dat->leftPnt  != 0 )
       free ( dat->leftPnt );
-  if ( dat->leftNei  != (long *)0)
+  if ( dat->leftNei  != 0)
       free ( dat->leftNei );
-  if ( dat->leftTin  != (long *)0 )
+  if ( dat->leftTin  != 0 )
       free ( dat->leftTin );
-  if ( dat->rightPnt != (long *)0 )
+  if ( dat->rightPnt != 0 )
       free ( dat->rightPnt );
-  if ( dat->rightNei != (long *)0 )
+  if ( dat->rightNei != 0 )
       free ( dat->rightNei );
-  if ( dat->rightTin != (long *)0 )
+  if ( dat->rightTin != 0 )
       free ( dat->rightTin );
 
-  dat->tin = dat->leftPnt = dat->leftNei = dat->leftTin = dat->rightPnt = dat->rightNei = dat->rightTin = (long *)0;
+  dat->tin = dat->leftNei = dat->leftTin = dat->rightNei = dat->rightTin= 0;
+  dat->leftPnt = dat->rightPnt = 0;
   dat->tinNum = dat->tinAlc = dat->leftNum = dat->leftAlc = dat->leftTinNum = dat->rightNum = dat->rightAlc = dat->rightTinNum = 0L;
 
   return ( sts );
@@ -1558,17 +1559,6 @@ void aecDTM_triangulateSetErrorPoint
 {
     memcpy ( &tinErrPnt, dtmPntP, sizeof ( struct CIVdtmpnt ) );
     tinErrPntSet = TRUE;
-}
-
-static BOOL aecDTM_triangulateGetErrorPoint
-(
-    struct CIVdtmpnt *dtmPntP
-)
-{
-    if ( tinErrPntSet )
-        memcpy ( dtmPntP, &tinErrPnt, sizeof ( struct CIVdtmpnt ) );
-
-    return ( tinErrPntSet );    
 }
 
 int aecDTM_validateTinPtr   /* <= TRUE if error                    */

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayUtils.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ void LogDebugV(const wchar_t* message ...);
 class LogTimeInfoHelper
     {
     WString m_message;
-    uint32_t m_took;
+    UInt32 m_took;
     public:
     LogTimeInfoHelper(wchar_t* message)
         {
@@ -70,9 +70,9 @@ class LogTimeInfoHelper
 
 #define LogTimeInfo(message) LogTimeInfoHelper helper(message)
 
-void DumpPointsInXYZfile(const DPoint3d* pointsP, int nbPoints, string& fileName, const int64_t* indP);
+void DumpPointsInXYZfile(const DPoint3d* pointsP, int nbPoints, string& fileName, const Int64* indP);
 
-void DumpDTMInTinFile(BcDTMP dtmP, wstring& fileName, const int64_t* indP);
+void DumpDTMInTinFile(BcDTMP dtmP, wstring& fileName, const Int64* indP);
 
 #else
 #define LogInfo(...)
@@ -86,103 +86,4 @@ void DumpDTMInTinFile(BcDTMP dtmP, wstring& fileName, const int64_t* indP);
 #endif
 
 END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint2dR operator /= ( DPoint2dR pt, double d )
-    {
-    pt.x /= d;
-    pt.y /= d;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3dR operator /= ( DPoint3dR pt, double d )
-    {
-    pt.x /= d;
-    pt.y /= d;
-    pt.z /= d;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint2dR operator *= ( DPoint2dR pt, double m )
-    {
-    pt.x *= m;
-    pt.y *= m;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3dR operator *= ( DPoint3dR pt, double m )
-    {
-    pt.x *= m;
-    pt.y *= m;
-    pt.z *= m;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint2dR operator *= ( DPoint2dR pt, DPoint2dCR m )
-    {
-    pt.x *= m.x;
-    pt.y *= m.y;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3dR operator += ( DPoint3dR pt, DPoint3dCR offset )
-    {
-    pt.x += offset.x;
-    pt.y += offset.y;
-    pt.z += offset.z;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3dR operator -= (DPoint3dR pt, DPoint3dCR offset)
-    {
-    pt.x -= offset.x;
-    pt.y -= offset.y;
-    pt.z -= offset.z;
-    return pt;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3d operator + ( DPoint3dCR p1, DPoint3dCR p2 )
-    {
-    DPoint3d p = p1;
-    p += p2;
-    return p;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3d operator * ( DPoint3dCR p1, double m )
-    {
-    DPoint3d p = p1;
-    p *= m;
-    return p;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint2d operator / ( DPoint2dCR p1, double d )
-    {
-    DPoint2d p = p1;
-    p /= d;
-    return p;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3d operator / ( DPoint3dCR p1, double d )
-    {
-    DPoint3d p = p1;
-    p /= d;
-    return p;
-    }
-
-///// <author>Piotr.Slowinski</author>                            <date>5/2011</date>
-inline DPoint3d operator / ( DPoint3dCR p1, DPoint3dCR p2 )
-    {
-    DPoint3d p = { p1.x / p2.x, p1.y / p2.y, p1.z / p2.z };
-    return p;
-    }
 

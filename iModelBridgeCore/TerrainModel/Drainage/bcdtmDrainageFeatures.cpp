@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageFeatures.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -703,7 +703,8 @@ int bcdtmDrainage_returnSumpLinesDtmObject
 {
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  int               cacheSize=10000 ;
- long              pnt,startPnt,lastPnt,smpPnt,clkPnt,antPnt,clPtr,voidLine ;
+ long              pnt, startPnt, lastPnt, smpPnt, clkPnt, antPnt, clPtr;
+ bool voidLine;
  DTMFeatureType lineType;
  DTMFenceOption  sumpExtent;
  long               sumpLineFound;
@@ -807,10 +808,10 @@ int bcdtmDrainage_returnSumpLinesDtmObject
 
 //           Check For Void Line
 
-             voidLine = FALSE ; 
+             voidLine = false ; 
              if( voidsInDtm )
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,&voidLine)) goto errexit ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,voidLine)) goto errexit ;
                }
 
 //           Only Process For None Void Lines
@@ -937,7 +938,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
  int               cacheSize=10000 ;
  long              pnt, startPnt, lastPnt, smpPnt, clkPnt, antPnt, clPtr;
  DTMFenceOption  sumpExtent;
- long              sumpLineFound,voidLine ;
+ bool              sumpLineFound,voidLine ;
  DTMFeatureType dtmFeatureType = DTMFeatureType::SumpLine, lineType;
  bool              voidsInDtm=false ;
  double            xSumpMin,xSumpMax,ySumpMin,ySumpMax,pntZ ;
@@ -1047,7 +1048,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
                 voidLine = FALSE ; 
                 if( voidsInDtm )
                   {
-                   if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,&voidLine)) goto errexit ;
+                   if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,voidLine)) goto errexit ;
                   }
 
 //              Only Process For None Void Lines
@@ -1173,7 +1174,8 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
 {
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  int               cacheSize=10000 ;
- long              pnt,startPnt,lastPnt,rdgPnt,clkPnt,antPnt,clPtr,voidLine ;
+ long              pnt, startPnt, lastPnt, rdgPnt, clkPnt, antPnt, clPtr;
+ bool voidLine;
  DTMFenceOption    ridgeExtent;
  long              ridgeLineFound;
  DTMFeatureType  dtmFeatureType = DTMFeatureType::RidgeLine, lineType;
@@ -1277,10 +1279,10 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
 
 //           Check For Void Line
 
-             voidLine = FALSE ; 
+             voidLine = false ; 
              if( voidsInDtm )
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,rdgPnt,&voidLine)) goto errexit ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,rdgPnt,voidLine)) goto errexit ;
                }
 
 //           Only Process For None Void Lines

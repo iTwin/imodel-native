@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* patch.c                                            tmi    29-Oct-1990      */
@@ -15,7 +15,7 @@
 /*----------------------------------------------------------------------------*/
 /* Include files                                                              */
 /*----------------------------------------------------------------------------*/
-#include "stdafx.h"
+#include    "stdafx.h"
 
 extern boolean tinAltMoveMethod;
 
@@ -112,9 +112,9 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
   {
     for ( i = j = k = 0; j < (npnt-k-1)/2  &&  sts == SUCCESS; j++, i = j*2 )
     {
-      p1P = (struct CIVdtmpnt *) pntstkP[i+k];
-      p2P = (struct CIVdtmpnt *) pntstkP[i+k+1];
-      p3P = (struct CIVdtmpnt *) pntstkP[i+k+2];
+      p1P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i+k];
+      p2P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i + k + 1];
+      p3P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i + k + 2];
       if ( p1P == p2P || p1P == p3P || p2P == p3P )
       {
         bExitWhile = TRUE;
@@ -128,16 +128,16 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
             break;
 
         neistkP[j+k] = neistkP[i+k];
-        pntstkP[j+k] = (long) p1P;
+        pntstkP[j + k] = (long) (ULONG_PTR) p1P;
         k++;
-        p1P = (struct CIVdtmpnt *) pntstkP[i+k];
-        p2P = (struct CIVdtmpnt *) pntstkP[i+k+1];
-        p3P = (struct CIVdtmpnt *) pntstkP[i+k+2];
+        p1P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i + k];
+        p2P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i + k + 1];
+        p3P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[i + k + 2];
       }
       if ( j >= (npnt-k-1)/2 ) break;
 
-      n1P = (struct CIVdtmtin *) neistkP[i+k];
-      n2P = (struct CIVdtmtin *) neistkP[i+k+1];
+      n1P = (struct CIVdtmtin *) (ULONG_PTR) neistkP[i + k];
+      n2P = (struct CIVdtmtin *) (ULONG_PTR) neistkP[i + k + 1];
 
       if ( j < (npnt-1)/2 )
         if ( ( sts = aecDTM_addTriangle ( &tinP, srfP, p1P, p2P, p3P, n1P, n2P, n3P ) ) == SUCCESS )
@@ -145,8 +145,8 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
           aecDTM_patchUpdateNeighbor ( n1P, p1P, tinP );
           aecDTM_patchUpdateNeighbor ( n2P, p2P, tinP );
 
-          pntstkP[j+k] = (long) p1P;
-          neistkP[j+k] = (long) tinP;
+          pntstkP[j + k] = (long) (ULONG_PTR) p1P;
+          neistkP[j + k] = (long) (ULONG_PTR) tinP;
           sts = aecDTM_triangleStack ( nnewlstP, newlstPP, tinP );
           if ( srfP->dis.tinfnc ) (*srfP->dis.tinfnc) ( srfP, tinP, 1, srfP->dis.tinsym );
           if ( srfP->dis.confnc ) (*srfP->dis.confnc) ( srfP, tinP, 1, srfP->dis.consym );
@@ -173,17 +173,17 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
 
   if ( sts == SUCCESS )
   {
-    p1P = (struct CIVdtmpnt *) pntstkP[0];
-    p2P = (struct CIVdtmpnt *) pntstkP[1];
-    n1P = (struct CIVdtmtin *) neistkP[0];
-    n2P = (struct CIVdtmtin *) neistkP[1];
+  p1P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[0];
+  p2P = (struct CIVdtmpnt *) (ULONG_PTR) pntstkP[1];
+  n1P = (struct CIVdtmtin *) (ULONG_PTR) neistkP[0];
+  n2P = (struct CIVdtmtin *) (ULONG_PTR) neistkP[1];
 
     aecDTM_patchUpdateNeighbor ( n1P, p1P, n2P );
     aecDTM_patchUpdateNeighbor ( n2P, p2P, n1P );
   }
 
-  free ( pntstkP );
-  free ( neistkP );
+  free(pntstkP); 
+  free(neistkP);
 
   return ( sts );
 }
@@ -276,9 +276,9 @@ int aecDTM_patchDelaunay    /* <= TRUE if error                    */
   long i, j;
 
   for ( i = 0; i < npntlst  &&  sts == SUCCESS; i++ )
-    for ( pntP = (struct CIVdtmpnt *)pntlstP[i], j = 0; j < nnewlst  &&  sts == SUCCESS; j++ )
+      for (pntP = (struct CIVdtmpnt *) (ULONG_PTR) pntlstP[i], j = 0; j < nnewlst && sts == SUCCESS; j++)
     {
-      tinP = (struct CIVdtmtin *) newlstP[j];
+    tinP = (struct CIVdtmtin *) (ULONG_PTR) newlstP[j];
       if ( pntP == tinP->p1  ||  pntP == tinP->p2  ||  pntP == tinP->p3 )
         sts = aecDTM_delaunayTriangle ( srfP, pntP, tinP, (long *)0, (long **)0 );
     }
@@ -348,7 +348,7 @@ static int aecDTM_patchVerify
     {
       for ( i = 0; i < npntstk  &&  dat.tru == 0; i++ )
       {
-        pnt = (struct CIVdtmpnt *) pntstk[i];
+      pnt = (struct CIVdtmpnt *) (ULONG_PTR) pntstk[i];
         if ( pnt != p1  &&  pnt != p2  &&  pnt != p3 )
         {
           DTMPOINTTODPOINT ( srf, pnt, p[0] );

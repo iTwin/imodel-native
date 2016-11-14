@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MX.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -50,15 +50,15 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
 
         if (modelFile.Open (m_filename.GetWCharCP()) == eOk)
             {
-            ModelTable* modelTable;
-            ErrorStatus es = modelFile.getModelTable(modelTable, ModelObject::Read);
+            MXModelObjectPtr<ModelTable> modelTable;
+            ErrorStatus es = modelFile.getModelTable(modelTable.GetR(), ModelObject::Read);
             if (es == eOk)
                 {
-                std::auto_ptr<ModelTableIterator> iter(modelTable->newIterator());
+                std::unique_ptr<ModelTableIterator> iter(modelTable->newIterator());
                 while(!iter->done())
                     {
-                    ModelTableRecord* modelTableRecord;
-                    if (iter->getRecord(modelTableRecord, ModelObject::Read) == eOk)
+                    MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+                    if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                         {
                         WString modelName;
                         modelName.AssignA (modelTableRecord->modelName ());
@@ -70,15 +70,15 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                         if (asLong(modelTableRecord->modelType()) == asLong ("TRIA"))
                             {
                             // triangulation model search for the strings.
-                            StringTable* stringTable;
-                            ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+                            MXModelObjectPtr<StringTable> stringTable;
+                            ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
                             if (es == eOk)
                                 {
-                                std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+                                std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
                                 while(!iter->done())
                                     {
-                                    StringTableRecord* stringTableRecord;
-                                    if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+                                    MXModelObjectPtr<StringTableRecord> stringTableRecord;
+                                    if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                         {
                                         // triangulation string
                                         WString stringName;
@@ -93,9 +93,7 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                         }
                     iter->next();
                     }
-                modelTable->close();
                 }
-            modelFile.Close();
             }
         }
     return m_surfaces;
@@ -108,15 +106,15 @@ void MXFilImporter::DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainMode
 
     if (modelFile.Open (m_filename.GetWCharCP()) == eOk)
         {
-        ModelTable* modelTable;
-        ErrorStatus es = modelFile.getModelTable(modelTable, ModelObject::Read);
+        MXModelObjectPtr<ModelTable> modelTable;
+        ErrorStatus es = modelFile.getModelTable(modelTable.GetR(), ModelObject::Read);
         if (es == eOk)
             {
-            std::auto_ptr<ModelTableIterator> iter(modelTable->newIterator());
+            std::unique_ptr<ModelTableIterator> iter(modelTable->newIterator());
             while(!iter->done())
                 {
-                ModelTableRecord* modelTableRecord;
-                if (iter->getRecord(modelTableRecord, ModelObject::Read) == eOk)
+                MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+                if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                     {
                     WString modelName;
                     modelName.AssignA (modelTableRecord->modelName ());
@@ -124,27 +122,27 @@ void MXFilImporter::DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainMode
                         {
                         // normal string model add this name.
                         if (importAll || nameDtms.find (modelName) != nameDtms.end())
-                            nameDtms[modelName] = ImportStringModel (modelTableRecord);
+                            nameDtms[modelName] = ImportStringModel (modelTableRecord.get());
                         }
                     if (asLong(modelTableRecord->modelType()) == asLong ("TRIA"))
                         {
                         // triangulation model search for the strings.
-                        StringTable* stringTable;
-                        ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+                        MXModelObjectPtr<StringTable> stringTable;
+                        ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
                         if (es == eOk)
                             {
-                            std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+                            std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
                             while(!iter->done())
                                 {
-                                StringTableRecord* stringTableRecord;
-                                if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+                                MXModelObjectPtr<StringTableRecord> stringTableRecord;
+                                if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                     {
                                     // triangulation string
                                     WString stringName;
                                     stringName.AssignA (stringTableRecord->stringName ());
                                     WString name = stringName + modelName;
                                     if (importAll || nameDtms.find (name) != nameDtms.end())
-                                        nameDtms[name] = ImportTriangulation (stringTableRecord, name.GetWCharCP());
+                                        nameDtms[name] = ImportTriangulation (stringTableRecord.get(), name.GetWCharCP());
                                     }
                                 iter->next();
                                 }
@@ -153,9 +151,7 @@ void MXFilImporter::DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainMode
                     }
                 iter->next();
                 }
-            modelTable->close();
             }
-        modelFile.Close();
         }
     }
 
@@ -208,205 +204,167 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
     if (dtm.IsNull())
         dtm = BcDTM::Create ();
     DTMFeatureId featureId;
+    bvector<DPoint3d> pointList;
+
     MXModelFile* modelFile = modelTableRecord->getModelFile();
     // triangulation model search for the strings.
-    StringTable* stringTable;
-    ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+    MXModelObjectPtr<StringTable> stringTable;
+    ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
     if (es == eOk)
         {
-        std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+        std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
         while(!iter->done())
             {
-            StringTableRecord* stringTableRecord;
-            if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+            MXModelObjectPtr<StringTableRecord> stringTableRecord;
+            if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                 {
                 WString stringName;
                 stringName.AssignA (stringTableRecord->stringName ());
                 int numDims = stringTableRecord->type() % 100;
                 bool isPointString = (((numDims == 3) || (numDims == 4)) && (stringTableRecord->stringName()[0] == 'P'));
-                // Add String Masking here! and/or callback!
-                DTMFeatureType featureType = isPointString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
-                // Need to interpret the string type and do we want to import it?
-                unsigned char* data = (unsigned char*)stringTableRecord->stringData();
-                bool isContour = false;
-                double z = 0;
-                if(stringTableRecord->isA() == MXContourString::desc())
+                if (stringTableRecord->stringName()[0] != '*') // If we aren't a text straing
                     {
-                    MXContourString* contourString = MXContourString::cast(stringTableRecord);
-                    isContour = true;
-                    z = contourString->getContourHeight();
-                    }
-
-                std::auto_ptr<DPoint3d> pointsP (new DPoint3d [stringTableRecord->numPoints()]);
-                std::auto_ptr<int> discosP (new int[stringTableRecord->numPoints()]);
-                DPoint3d* points = pointsP.get();
-                int* discos = discosP.get();
-                int j = 0;
-                if (((stringTableRecord->type() / 100) % 10) == 0)
-                    {
-                    long d[2];
-                    DPoint3d pt;
-                    for(int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                    // Add String Masking here! and/or callback!
+                    DTMFeatureType featureType = isPointString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                    // Need to interpret the string type and do we want to import it?
+                    unsigned char* data = (unsigned char*)stringTableRecord->stringData();
+                    bool isContour = false;
+                    double z = 0;
+                    if (stringTableRecord->isA() == MXContourString::desc())
                         {
-                        int offset = ((i - 1) * stringTableRecord->dataRecordSize());
+                        MXContourString* contourString = MXContourString::cast(stringTableRecord.get());
+                        isContour = true;
+                        z = contourString->getContourHeight();
+                        }
 
-                        memcpy (&d[0], data + offset, sizeof(long) * 2);
-                        pt.x = ((double)d[0]) / 1000;
-                        pt.y = ((double)d[1]) / 1000;
-
-                        if(isContour)
-                            {
-                            pt.z = z;
-                            }
-                        else
-                            {
-                            memcpy (&d[0], data + offset + sizeof(long) * 2, sizeof(long));
-                            pt.z = ((double)d[0]) / 1000;
-                            }
-                        discos[j] = modelFile->ConvertXYZToWorld (pt.x, pt.y, pt.z);
-                        points[j] = pt;
-                    }
-                }
-                else
-                    {
-                    for(int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                    std::unique_ptr<DPoint3d[]> pointsP(new DPoint3d[stringTableRecord->numPoints()]);
+                    std::unique_ptr<int[]> discosP(new int[stringTableRecord->numPoints()]);
+                    DPoint3d* points = pointsP.get();
+                    int* discos = discosP.get();
+                    int j = 0;
+                    if (((stringTableRecord->type() / 100) % 10) == 0)
                         {
+                        long d[2];
                         DPoint3d pt;
-                        int offset = ((i - 1) * stringTableRecord->dataRecordSize());
-
-                        memcpy (&pt, data + offset, sizeof(double) * 2);
-
-                        if(isContour)
+                        for (int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
                             {
-                            pt.z = z;
-                            }
-                        else
-                            memcpy (&pt.z, data + offset + sizeof(double) * 2, sizeof(double));
-                        discos[j] = modelFile->ConvertXYZToWorld (pt.x, pt.y, pt.z);
-                        points[j] = pt;
-                        }
-                    }
+                            int offset = ((i - 1) * stringTableRecord->dataRecordSize());
 
-                // Add the points.
+                            memcpy(&d[0], data + offset, sizeof(long) * 2);
+                            pt.x = ((double)d[0]) / 1000;
+                            pt.y = ((double)d[1]) / 1000;
 
-                int numPoints = stringTableRecord->numPoints();
-                int pointNum = 0;
-                int startPt = -1;
-                bool inNullSegment = false;
-                bool inDisco = discos[0] == eStart;
-                bool includeNULLSegments = false;
-                //bool nullInValidLevels = false;
-
-                while (pointNum < numPoints)
-                    {
-                    // If start disco detected, read forward until end disco detected
-                    while ((pointNum < numPoints)
-                        && (inDisco))
-                        {            
-
-                        // Report a disco at the start of string as a point
-                        if (pointNum == 0)
-                            {
-                            if (startPt == -1)
-                                startPt = pointNum;
-
-                            // Add callback...
-                            dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt + 1, asLong (stringTableRecord->stringName()), &featureId);
-                            if (m_callback)
-                                m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt + 1);
-                            startPt = -1;
-                            }
-
-                        if (discos[pointNum] == eEnd)
-                            {
-                            inDisco = false;
-                            break;
-                            }
-
-                        pointNum++;
-                        }             
-
-                    // If null detected and no disco, read forward till valid level or disco detected
-                    while ((pointNum < numPoints) 
-                        && (points[pointNum].z < -998) 
-                        && (discos[pointNum] != eStart)
-                        && (discos[pointNum] != eBearing))
-                        {
-                        inNullSegment = true;
-                        if (startPt == -1)
-                            startPt = pointNum;
-                        pointNum++;
-                        }
-
-                    // End of null segment - include the point the finishes the null segement (valid level, start disco or bearing disco
-                    if (inNullSegment)
-                        {
-                        if (includeNULLSegments)
-                            {
-
-                            if (pointNum < numPoints)
+                            if (isContour)
                                 {
-                                if (startPt == -1)
-                                    startPt = pointNum;
-                                if (discos[pointNum] == eStart)
-                                    inDisco = true;
+                                pt.z = z;
                                 }
-
-                            //if (nullInValidLevels)
-                            //    {
-                            //    pointList[0].Z = -999;
-                            //    pointList[pointList->Count - 1].Z = -999;
-                            //    }
-
-                            if (startPt == -1)
-                                startPt = pointNum;
-                            // Add callback...
-                            dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt + 1, asLong (stringTableRecord->stringName()), &featureId);
-                            if (m_callback)
-                                m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt + 1);
+                            else
+                                {
+                                memcpy(&d[0], data + offset + sizeof(long) * 2, sizeof(long));
+                                pt.z = ((double)d[0]) / 1000;
+                                }
+                            discos[j] = modelFile->ConvertXYZToWorld(pt.x, pt.y, pt.z);
+                            points[j] = pt;
                             }
-                        startPt = -1;
+                        }
+                    else
+                        {
+                        for (int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                            {
+                            DPoint3d pt;
+                            int offset = ((i - 1) * stringTableRecord->dataRecordSize());
 
-                        inNullSegment = false;
+                            memcpy(&pt, data + offset, sizeof(double) * 2);
+
+                            if (isContour)
+                                {
+                                pt.z = z;
+                                }
+                            else
+                                memcpy(&pt.z, data + offset + sizeof(double) * 2, sizeof(double));
+                            discos[j] = modelFile->ConvertXYZToWorld(pt.x, pt.y, pt.z);
+                            points[j] = pt;
+                            }
                         }
 
-                    // Start of disco detected - back top main loop
-                    if (inDisco)
-                        {
-                        pointNum++;
-                        continue;              
-                        }
+                    // Add the points.
+                    bool includeNULLSegments = false;
+                    //bool nullInValidLevels = false;
 
-                    // Normal level must be detected - read forward till null level, bearing or start disco
-                    while (pointNum < numPoints)
-                        {
-                        // Null level detected - break back to start of loop
-                        if (points[pointNum].z < -998)
-                            break;
+                    int numPoints = stringTableRecord->numPoints();
+                    int pointNum = 0;
+                    bool inNullSegment = points[0].z < -998;
+                    bool inDisco = discos[0] == eStart;
+                    pointList.clear();
 
-                        // Point is ok to add - might be bearing disco or start disco
-                        if (startPt == -1)
-                            startPt = pointNum;
+                    for (pointNum = 0; pointNum < numPoints; pointNum++)
+                        {
+                        if (inDisco)
+                            {
+                            if (discos[pointNum] != eEnd)
+                                continue;
+
+                            inDisco = false;
+                            pointList.push_back(points[pointNum]);
+                            inNullSegment = points[pointNum].z < -998;
+                            continue;
+                            }
+
+                        // Skip over discos.
+                        bool isPointNull = points[pointNum].z < -998;
+
+                        if (isPointNull == inNullSegment)
+                            pointList.push_back(points[pointNum]);
+                        else
+                            {
+                            if (inNullSegment)
+                                pointList.push_back(points[pointNum]);
+
+                            if (includeNULLSegments || !inNullSegment)
+                                {
+                                if (inNullSegment)
+                                    pointList.push_back(points[pointNum]);
+                                if (DTMFeatureType::FeatureSpot == featureType)
+                                    dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                else
+                                    dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                if (m_callback)
+                                    m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                                }
+                            pointList.clear();
+                            if (inNullSegment)
+                                pointList.push_back(points[pointNum]);
+                            inNullSegment = isPointNull;
+                            }
 
                         if (discos[pointNum] == eStart)
                             {
+                            if (!pointList.empty())
+                                {
+                                if (includeNULLSegments || !inNullSegment)
+                                    {
+                                    if (DTMFeatureType::FeatureSpot == featureType)
+                                        dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                    else
+                                        dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                    if (m_callback)
+                                        m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                                    }
+                                pointList.clear();
+                                }
                             inDisco = true;
-                            break;
                             }
-
-                        pointNum++;
-
                         }
-        
-                    // Add the level points to results
-                    if (startPt != -1)
+                    if (includeNULLSegments || !inNullSegment)
                         {
-                        // Add callback...
-                        dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt, asLong (stringTableRecord->stringName()), &featureId);
+                        if (DTMFeatureType::FeatureSpot == featureType)
+                            dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                        else
+                            dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
                         if (m_callback)
-                            m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt);
-                        startPt = -1;
+                            m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                         }
+                    pointList.clear();
                     }
                 }
             iter->next();
@@ -441,6 +399,163 @@ BcDTMPtr MXFilImporter::ImportTriangulation (StringTableRecord* stringTableRecor
             m_callback->EndTerrain (name, dtm.get ());
         }
     return dtm;
+    }
+
+
+MXFilExporterPtr MXFilExporter::Create()
+    {
+    return new MXFilExporter();
+    }
+
+bool IsValidModelName(WCharCP name)
+    {
+    int i = 0;
+    if (!name)
+        return false;
+    while (*name)
+        {
+        i++;
+        if (*name == L' ' || *name == L'_' || (*name >= L'0' && *name <= L'9') || (*name >= L'A' && *name <= L'Z'))
+            name++;
+        else
+            return false;
+        }
+    return i <= 28;
+    }
+
+bool IsValidStringName(WCharCP name)
+    {
+    int i = 0;
+    if (!name)
+        return false;
+    while (*name)
+        {
+        i++;
+        if ((*name >= L'0' && *name <= L'9') || (*name >= L'A' && *name <= L'Z'))
+            name++;
+        else
+            return false;
+        }
+    return i == 4;
+    }
+
+MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, NamedDTM const& namedDtm, bool allowOverwrite) //AddToCurrentModelFile?
+    {
+    BcDTMPtr transformedDTM;
+    BcDTMP dtm = namedDtm.GetBcDTMP();
+    if (WString::IsNullOrEmpty(filename) || WString::IsNullOrEmpty(inModelName) || WString::IsNullOrEmpty(inStringName) || nullptr == dtm)
+        return MXExportError::Error;
+
+    Transform transform;
+    bool hasTransform = !dtm->GetTransformation(transform);
+    if (hasTransform)
+        {
+        DPoint3d fixedPoint;
+        DVec3d directionVector;
+        double scale;
+        double aspectFix;
+
+        if (!transform.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, aspectFix, scale))
+            {
+            return MXExportError::Error;
+            }
+        else if (0 != aspectFix)
+            {
+            return MXExportError::Error;
+            }
+
+        BC_DTM_OBJ *dtmHandleP = nullptr;
+
+        bcdtmObject_cloneDtmObject(dtm->GetTinHandle(), (BC_DTM_OBJ **)&dtmHandleP);
+
+        // Create a new Digital TM instance
+        transformedDTM = BcDTM::CreateFromDtmHandle(*dtmHandleP);
+
+        transformedDTM->Transform(transform);
+        dtm = transformedDTM.get();
+        }
+
+    WString wModelName(inModelName);
+    
+    wModelName.ToUpper();
+    if (!IsValidModelName(wModelName.c_str()))
+        return MXExportError::Error;
+
+    WString wStringName(inStringName);
+    wStringName.ToUpper();
+    if (!IsValidStringName(wStringName.c_str()))
+        return MXExportError::Error;
+
+    AString modelName(wModelName.c_str());
+    AString stringName(wStringName.c_str());
+    // Create modelFile.
+    MXModelFile modelFile;
+
+    if (modelFile.Open(filename, false, true) != eOk)
+        return MXExportError::CantOpenFile;
+
+    MXModelObjectPtr<ModelTable> modelTable;
+    if (eOk != modelFile.getModelTable(modelTable.GetR(), ModelObject::Read))
+        return MXExportError::Error;
+
+    // Create Model
+    MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+    if (eOk != modelTable->getModel(modelName.c_str(), modelTableRecord.GetR(), ModelObject::Write, false))
+        {
+        std::unique_ptr<ModelTableRecord> newModelTableRecord = std::make_unique<ModelTableRecord>();
+
+        if (eOk != modelTable->addModel(modelName.c_str(), newModelTableRecord.get(), "TRIA"))
+            return MXExportError::Error;
+
+        modelTableRecord = newModelTableRecord.release();
+        }
+    
+    if (asLong(modelTableRecord->modelType()) != asLong("TRIA"))
+        return MXExportError::Error;
+
+    MXModelObjectPtr<StringTable> stringTable;
+    if (eOk != modelTableRecord->getStringTable(stringTable.GetR(), ModelObject::Write))
+        return MXExportError::Error;
+
+    MXModelObjectPtr<StringTableRecord> stringTableRecord;
+    if (eOk != stringTable->getString(stringName.c_str(), stringTableRecord.GetR(), ModelObject::Write, false))
+        {
+        std::unique_ptr<MXTriangleString> triangleStringTableRecord = std::make_unique<MXTriangleString>();
+        if (eOk != stringTable->addString(stringName.c_str(), triangleStringTableRecord.get()))
+            return MXExportError::Error;
+
+        stringTableRecord = triangleStringTableRecord.release();
+        }
+    else if (!allowOverwrite)
+        return MXExportError::StringExists;
+
+    MXTriangleString* triangleStringTableRecord = MXTriangleString::cast(stringTableRecord.get());
+
+    if (nullptr == triangleStringTableRecord)
+        return MXExportError::Error;
+
+    MXTriangle mxTriangulation;
+    MXTriangle::TriangleArray* triPtrP;
+    MXTriangle::PointArray* pointsPtrP;
+    mxTriangulation.getPtrs(triPtrP, pointsPtrP);
+
+    if (hasTransform) // Here we need to sort out unit conversions.
+        {
+        for (int i = 0; i < pointsPtrP->size(); i++)
+            {
+            auto& point = (*pointsPtrP)[i];
+            transform.Multiply(point);
+            //point.x *= 3.28084;
+            //point.y *= 3.28084;
+            //point.z *= 3.28084;
+            }
+        }
+    bcdtmExport_MXTriangulationFromDtmObject(dtm->GetTinHandle(), triPtrP, pointsPtrP);
+
+    if (eOk != triangleStringTableRecord->saveData(&mxTriangulation))
+        return MXExportError::Error;
+
+    return MXExportError::Success;
     }
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE

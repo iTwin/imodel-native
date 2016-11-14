@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -135,7 +135,7 @@ bool DTMElement::CanHaveSymbologyOverride::get()
     {
     PIN_ELEMENTHANDLE
 
-    return DTMSymbologyOverrideManager::CanHaveSymbologyOverride (*thisEeh);
+    return TMSymbologyOverrideManager::CanHaveSymbologyOverride (*thisEeh);
     }
 
 //=======================================================================================
@@ -146,7 +146,7 @@ bool DTMElement::HasSymbologyOverride::get()
     PIN_ELEMENTHANDLE
     DgnPlatform::DgnModelRef* rootModel = thisEeh->GetModelRef()->GetRoot();
     DgnPlatform::ElementHandle symbologyElement;
-    if (DTMSymbologyOverrideManager::GetElementForSymbology (*thisEeh, symbologyElement, rootModel))
+    if (TMSymbologyOverrideManager::GetElementForSymbology (*thisEeh, symbologyElement, rootModel))
         return thisEeh->GetElementRef () != symbologyElement.GetElementRef () && rootModel == symbologyElement.GetModelRef();
     return false;
     }
@@ -156,7 +156,24 @@ bool DTMElement::HasSymbologyOverride::get()
 //=======================================================================================
 void DTMElement::HasSymbologyOverride::set (bool value)
     {
-//    PIN_ELEMENTHANDLE
+    PIN_ELEMENTHANDLE_ADJUSTFINALIZE
+
+    bool hadOverrideSymbology = HasSymbologyOverride;
+    DgnPlatform::DgnModelRef* activeModel = thisEeh->GetModelRef()->GetRoot();
+    if (value != hadOverrideSymbology)
+        {
+        bool hasOverrideSymbology = false;
+        DgnPlatform::ElementHandle elementHandle2;
+        if (TMSymbologyOverrideManager::GetElementForSymbology(*thisEeh, elementHandle2, activeModel))
+            hasOverrideSymbology = thisEeh->GetElementRef() != elementHandle2.GetElementRef();
+        else
+            hasOverrideSymbology = false;
+        if (!hasOverrideSymbology && value)
+            TMSymbologyOverrideManager::CreateSymbologyOverride(*thisEeh, activeModel);
+        else if (hasOverrideSymbology && !value)
+            TMSymbologyOverrideManager::DeleteSymbologyOverride(*thisEeh, activeModel);
+        }
+
     }
 
 //=======================================================================================
@@ -167,7 +184,7 @@ DTMElement^ DTMElement::GetSymbologyOverrideElement ()
     PIN_ELEMENTHANDLE
     DgnPlatform::DgnModelRef* rootModel = thisEeh->GetModelRef()->GetRoot();
     DgnPlatform::ElementHandle symbologyElement;
-    if (DTMSymbologyOverrideManager::GetElementForSymbology (*thisEeh, symbologyElement, rootModel))
+    if (TMSymbologyOverrideManager::GetElementForSymbology (*thisEeh, symbologyElement, rootModel))
         {
         if (thisEeh->GetElementRef () != symbologyElement.GetElementRef () && rootModel == symbologyElement.GetModelRef())
             {
@@ -230,11 +247,10 @@ void DTMElement::ThematicDisplayStyle::set (System::String^ value)
     int dsIndex = -1;
     if (value)
         {
-        DisplayStyleCP ds = DisplayStyleManager::FindDisplayStyleByName (p, thisEeh->GetDgnFileP ());
+        DisplayStyleCP ds = DisplayStyleList::CreateForFile(*thisEeh->GetDgnFileP(), DISPLAY_STYLE_LIST_OPTIONS_IncludeAll).FindDisplayStyleByName(p);
 
         if (ds)
             {
-            ds = DisplayStyleManager::EnsureDisplayStyleIsInFile(*ds, *thisEeh->GetDgnFileP());
             dsIndex = ds->GetIndex();
             }
         }
@@ -639,9 +655,9 @@ cli::array<DTMSubElement^>^ DTMElement::GetSubElements()
     return list->ToArray();
     }
 
-DTMSubElement::DTMSubElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement)
+DTMSubElement::DTMSubElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement)
     {
-    m_id = new BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId (xAttrId);
+    m_id = new Bentley::TerrainModel::Element::DTMSubElementId (xAttrId);
     m_dtmElement = dtmElement;
 
     PIN_ELEMENTHANDLE_OF (dtmElement);
@@ -687,6 +703,15 @@ DTMElementFeaturesHandler::FeatureTypes DTMFeatureElement::GetFeatureType::get()
     {
     GETDISPLAYPARAM(DTMElementFeaturesHandler::DisplayParams)
     return params.GetTag ();
+    }
+
+DTMContourElement::DTMContourElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElementTextStyle (xAttrId, dtmElement)
+    {
+    PIN_ELEMENTHANDLE_OF (dtmElement);
+    LevelIdXAttributeParams levelIdParam;
+
+    levelIdParam.Get (*dtmElementEeh, m_id->GetId());
+    m_additionalLevelId = levelIdParam.GetLevelId ();
     }
 
 //=======================================================================================
@@ -801,6 +826,22 @@ void DTMContourElement::DrawTextOption::set (DTMContourElement::ContourDrawTextO
     {
     GETDISPLAYPARAM(DTMElementContoursHandler::DisplayParams);
     params.SetDrawTextOption ((DTMElementContoursHandler::DrawTextOption)value);
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 07/08
+//=======================================================================================
+DGNET::LevelId DTMContourElement::TextLevelId::get ()
+    {
+    return m_additionalLevelId;
+    }
+
+//=======================================================================================
+// @bsimethod                                                    Daryl.Holmwood  04/10
+//=======================================================================================
+void DTMContourElement::TextLevelId::set (DGNET::LevelId value)
+    {
+    m_additionalLevelId = value;
     }
 
 //=======================================================================================
@@ -930,6 +971,22 @@ void DTMContourElement::SmallContourLength::set (double value)
     }
 
 //=======================================================================================
+// @bsimethod                                                    Daryl.Holmwood  05/15
+//=======================================================================================
+void DTMContourElement::Commit (DTMElement^ element)
+    {
+    PIN_ELEMENTHANDLE_OF (element);
+    LevelIdXAttributeParams levelIdParam;
+    levelIdParam.Get (*elementEeh, m_id->GetId ());
+    if (levelIdParam.GetLevelId () != (DgnPlatform::LevelId)m_additionalLevelId)
+        {
+        levelIdParam.SetLevelId ((DgnPlatform::LevelId)m_additionalLevelId);
+        levelIdParam.Set (*elementEeh, m_id->GetId ());
+        }
+    __super::Commit (element);
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 07/08
 //=======================================================================================
 DGNET::DgnTextStyle^ DTMSubElementTextStyle::TextStyle::get()
@@ -945,7 +1002,7 @@ void DTMSubElementTextStyle::TextStyle::set (DGNET::DgnTextStyle^ value)
     {
     GETDISPLAYPARAM(DTMElementSubHandler::SymbologyParamsAndTextStyle);
     if (value)
-        params.SetTextStyleID ((int)(int64_t)value->Id);
+        params.SetTextStyleID ((int)(Int64)value->Id);
     else
         params.SetTextStyleID (0);
     }
@@ -1302,12 +1359,12 @@ void DTMMaterialElement::SetMaterialInfo (System::String^ palette, System::Strin
         pin_ptr<const wchar_t> wPalette = PtrToStringChars (palette);
         pin_ptr<const wchar_t> wMaterial = PtrToStringChars (material);
         ElementId materialElementId = 0;
-        MaterialCP material;
+        MaterialCP material_local;
 
-        material = MaterialManager::GetManagerR().FindMaterial (nullptr, Bentley::DgnPlatform::MaterialId (wMaterial), *SymbologyDgnFile, *SymbologyDgnModelRef, true);
+        material_local = MaterialManager::GetManagerR().FindMaterial (nullptr, Bentley::DgnPlatform::MaterialId (wMaterial), *SymbologyDgnFile, *SymbologyDgnModelRef, true);
 
-        if (material)
-            materialElementId = material->GetElementId();
+        if (material_local)
+            materialElementId = material_local->GetElementId();
         else
             {
             MaterialList materials;
@@ -1453,7 +1510,7 @@ DTMElement::DTMElement (Bentley::DgnPlatformNET::DgnModel^ model, Element^ templ
     PIN_ELEMENTHANDLE_OF (templateElement)
 
     DgnPlatform::EditElementHandle peer;
-    Bentley::BentleyStatus status = BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementDisplayHandler::CreateDTMElement (peer, templateElementEeh, *iBcDTM, *modelNative, false);
+    Bentley::BentleyStatus status = Bentley::TerrainModel::Element::DTMElementDisplayHandler::CreateDTMElement (peer, templateElementEeh, *iBcDTM, *modelNative, false);
 
     Bentley::DgnPlatformNET::StatusHandler::HandleStatus (status);   //  throws an exception if not SUCCESS
 
@@ -1467,15 +1524,15 @@ DTMElement::DTMElement (Bentley::DgnPlatformNET::DgnModel^ model, Element^ templ
 TerrainModelNET::DTM^ DTMElement::GetDTM ()
     {
     PIN_ELEMENTHANDLE
-    RefCountedPtr<BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMDataRef> dataRef;
-    if (SUCCESS == BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::GetDTMDataRef (dataRef, *thisEeh))
+    RefCountedPtr<Bentley::TerrainModel::Element::DTMDataRef> dataRef;
+    if (SUCCESS == Bentley::TerrainModel::Element::DTMElementHandlerManager::GetDTMDataRef (dataRef, *thisEeh))
         {
-        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtm;
+        Bentley::TerrainModel::DTMPtr dtm;
 
         dataRef->GetDTMReferenceDirect (dtm);
         BcDTMP bcDTM = dynamic_cast<BcDTMP>(dtm.get());
         if (bcDTM)
-            return BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle (System::IntPtr (bcDTM));
+            return Bentley::TerrainModelNET::DTM::FromHandle (System::IntPtr (bcDTM));
        }
     return nullptr;
     }
@@ -1509,11 +1566,16 @@ public ref class Helper
            dtmElement->ReleaseElementHandler ();
         }
     };
+
+void DTMElement::RegisterManagedElementHandler()
+    {
+    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(TMSymbologyOverrideHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    }
 END_BENTLEY_TERRAINMODELNET_ELEMENT_NAMESPACE
 
 EXPORT_ATTRIBUTE void registerManagedElementHandler()
     {
-    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&BENTLEY_NAMESPACE_NAME::TerrainModelNET::Element::DTMElement::GetDTMElement)));
-    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (DTMOverrideSymbologyManager::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&BENTLEY_NAMESPACE_NAME::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    Bentley::TerrainModelNET::Element::DTMElement::RegisterManagedElementHandler();
     }
 

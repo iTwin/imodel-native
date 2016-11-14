@@ -2,36 +2,35 @@
 #
 #     $Source: ElementHandler/app/app.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-%include mdl.mki
-
 baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
 
-%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
-%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
+appendMacroSeparator=;
+PolicyPaths+$(BuildContext)SubParts/Assemblies/
+%undef appendMacroSeparator
 
-always:
-    ~@mkdir $(DLM_CONTEXT_LOCATION)
-    ~@mkdir $(terrainModelBuildDir_)
+%include  mdl.mki
 
-# This sets the path for rsign.
-mstnToolsPath = $(BuildContext)SubParts/Assemblies/
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts +  -wd4458
 
-#----------------------------------------------------------
-#       Override location for "prg.h"
-#----------------------------------------------------------
-%if defined (BSI_PRG_H_DIR)
-    dirToSearch     = $(BSI_PRG_H_DIR)
-    %include cincapnd.mki
-%endif
+## Could be in solution policy file..
 
-terrainModelHandlerAppObj   = $(terrainModelBuildDir_)TerrainModelHandlerApp/
-appName                     = TerrainModelHandlerApp
+terrainModelHandlerAppObj = $(terrainModelBuildDir_)TerrainModelHandlerApp/
+
+OPTIMIZE_FOR_SPEED=1
+
+appName             = TerrainModelHandlerApp
+sAppName            = terrainmodelhandler
 
 MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#ProductIncludes + -I${publishInc}
 
 dirToSearch     = $(BuildContext)VendorAPI
 %include cincapnd.mki
@@ -47,6 +46,8 @@ always:
 
 dirToSearch     = $(terrainModelHandlerAppObj)
 %include cincapnd.mki
+
+## End of Solution Policy..
 
 o = $(terrainModelHandlerAppObj)
 
@@ -152,8 +153,8 @@ LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)TerrainModelCor
                       
 ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
-ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 
 ASSEMBLY_NAME               = $(DLM_NAME)
 ASSEMBLY_STRONGNAME         = 1
