@@ -362,6 +362,22 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24ProjectWisePluginRepository_Suc
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG25ProjectWisePluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath = GetTestCachePath();
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
