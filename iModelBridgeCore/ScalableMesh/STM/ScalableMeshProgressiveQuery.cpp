@@ -1458,10 +1458,13 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
             bmap<IScalableMeshCachedDisplayNode*, size_t>& m_map;
             bool operator()(IScalableMeshCachedDisplayNodePtr& nodeA, IScalableMeshCachedDisplayNodePtr& nodeB)
                 {
-                double maxLengthA = max(max(nodeA->GetContentExtent().XLength(), nodeA->GetContentExtent().YLength()), nodeA->GetContentExtent().ZLength());
-                double maxLengthB = max(max(nodeB->GetContentExtent().XLength(), nodeB->GetContentExtent().YLength()), nodeB->GetContentExtent().ZLength());
+                volatile double maxLengthA = max(max(nodeA->GetContentExtent().XLength(), nodeA->GetContentExtent().YLength()), nodeA->GetContentExtent().ZLength());
+                volatile double maxLengthB = max(max(nodeB->GetContentExtent().XLength(), nodeB->GetContentExtent().YLength()), nodeB->GetContentExtent().ZLength());
 
-                return (maxLengthA - maxLengthB) + (m_scores[m_map[nodeA.get()]] - m_scores[m_map[nodeB.get()]])*(maxLengthA - maxLengthB) / 6 < 0;
+				volatile size_t scoreA = m_scores[m_map[nodeA.get()]];
+				volatile size_t scoreB = m_scores[m_map[nodeB.get()]];
+
+                return (maxLengthA - maxLengthB) + ((int)scoreA -(int)scoreB)*(maxLengthA - maxLengthB) / 6 < 0;
                 }
 
             OverviewScoringMethod(vector<size_t>& scores, bmap<IScalableMeshCachedDisplayNode*, size_t>& map) : m_scores(scores), m_map(map)
