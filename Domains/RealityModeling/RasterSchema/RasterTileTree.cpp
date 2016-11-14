@@ -21,8 +21,8 @@ static const uint32_t DRAW_COARSER_DELTA = 6;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-RasterRoot::RasterRoot(RasterModel& model, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system)
-    :TileTree::Root(model.GetDgnDb(), Transform::FromIdentity(), realityCacheName, rootUrl, system),
+RasterRoot::RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system)
+    :TileTree::Root(model.GetDgnDb(), Transform::FromIdentity(), rootUrl, system),
      m_model(model)
     {
     }
@@ -55,7 +55,7 @@ void RasterRoot::GenerateResolution(bvector<Resolution>& resolution, uint32_t wi
 * @bsimethod                                    Mathieu.Marchand                9/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RasterTile::RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent)
-    : Tile(parent), m_root(root), m_id(id)
+    : Tile(root, parent), m_id(id)
     {
     }
 

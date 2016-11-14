@@ -22,8 +22,6 @@ protected:
     Transform           m_physicalToSource;  //! Transformation from raster file true origin to a lower-left origin. In pixel unit.    
     DMap4d              m_physicalToWorld;   //! Including units change and reprojection approximation if any.
 
-    folly::Future<BentleyStatus> _RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads) override;
-
     RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system);
     ~RasterFileSource();
 
@@ -42,6 +40,24 @@ public:
 //=======================================================================================
 struct RasterFileTile : RasterTile
 {
+public:
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  9/2016
+    //=======================================================================================
+    struct RasterTileLoad : TileTree::TileLoad
+        {
+        Render::Image m_image;  // filled by _ReadFromSource
+
+        RasterTileLoad(TileTree::TileR tile, TileTree::TileLoadsPtr loads, Utf8StringCR cacheKey)
+            :TileTree::TileLoad("", tile, loads, cacheKey) {};
+            
+        virtual ~RasterTileLoad(){}
+        
+        RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRootR()); }
+
+        BentleyStatus _ReadFromSource() override;        
+        BentleyStatus _LoadTile() override;
+        };
 protected:
     
 public:
@@ -49,9 +65,9 @@ public:
 
     RasterFileTile(RasterFileSourceR root, TileId id, RasterFileTileCP parent);
 
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override { BeAssert(!"not expected we load from _RequestTile"); return ERROR; }
-
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
+
+    TileTree::TileLoadPtr _CreateTileLoad(TileTree::TileLoadsPtr loads) override { return new RasterTileLoad(*this, loads, ""); }
 };
 
 

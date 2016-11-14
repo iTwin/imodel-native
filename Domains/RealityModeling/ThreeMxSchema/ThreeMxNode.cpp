@@ -49,6 +49,15 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
         }
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+Dgn::TileTree::TileLoadPtr Node::_CreateTileLoad(Dgn::TileTree::TileLoadsPtr loads)
+    {
+    return new NodeLoad(GetRoot()._ConstructTileName(*this), *this, loads);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Create a PolyfaceHeader from a Geometry
 * @bsimethod                                    Keith.Bentley                   05/16

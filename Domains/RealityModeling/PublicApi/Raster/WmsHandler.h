@@ -76,6 +76,9 @@ DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_WmsModel, RasterModel)
 private:
     WmsMap m_map;
 
+    Http::Credentials m_credentials;
+    Http::Credentials m_proxyCredentials;
+
 protected:
     friend struct WmsModelHandler;
     
@@ -97,6 +100,13 @@ protected:
 
 public:
     RASTER_EXPORT WmsMap const& GetMap() const;    
+
+    //! Return the last http error. If HttpStatus::Unauthorized or HttpStatus::ProxyAuthenticationRequired then 
+    //! the connection must be authenticate before we try to contact the server again.
+    RASTER_EXPORT Http::HttpStatus GetLastHttpError() const;
+
+    //! Authenticate the connection. If successful, the credentials are saved for the session.
+    RASTER_EXPORT Http::HttpStatus Authenticate(Http::Credentials const& credentials, Http::Credentials const& proxyCredentials);
 };
 
 //=======================================================================================

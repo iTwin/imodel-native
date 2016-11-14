@@ -31,10 +31,19 @@ USING_NAMESPACE_TILETREE
 BentleyStatus Scene::ReadSceneFile()
     {
     StreamBuffer rootStream;
-    auto result = _RequestFile(m_rootUrl, rootStream);
 
-    result.wait(); 
-    return result.isReady() ? m_sceneInfo.Read(rootStream) : ERROR;
+    if (IsHttp())
+        {
+        TileTree::HttpDataQuery query(m_rootUrl, nullptr);
+        query.Perform(rootStream);
+        }
+    else
+        {
+        TileTree::FileDataQuery query(m_rootUrl, nullptr);
+        query.Perform(rootStream);
+        }
+
+    return rootStream.HasData() ? m_sceneInfo.Read(rootStream) : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,12 +51,12 @@ BentleyStatus Scene::ReadSceneFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadScene()
     {
-    CreateCache(1024*1024*1024); // 1 GB
-
     if (SUCCESS != ReadSceneFile())
         return ERROR;
+    
+    CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024*1024*1024); // 1 GB
 
-    Node* root = new Node(nullptr);
+    Node* root = new Node(*this, nullptr);
     root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
@@ -194,7 +203,7 @@ void ThreeMxModel::Load(SystemP renderSys) const
         return;
 
     // if we ask for the model with a different Render::System, we just throw the old one away.
-    m_scene = new Scene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), renderSys);
+    m_scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), renderSys);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
     }
@@ -632,7 +641,7 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
     {
-    ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
+    ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, m_sceneFile.c_str(), nullptr);
     
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;

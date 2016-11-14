@@ -30,89 +30,61 @@ static HFCPtr<HRPPixelType> getTileQueryPixelType(HRARaster const& raster, Rende
     return new HRPPixelTypeV24R8G8B8();
     }
 
-//=======================================================================================
-// @bsiclass                                                    Mathieu.Marchand  9/2016
-//=======================================================================================
-struct TileQuery
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterFileTile::RasterTileLoad::_ReadFromSource()
     {
-    TileQuery(RasterFileTileR tile, TileLoadsPtr loads) : m_tile(&tile), m_loads(loads) {}
+    RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
-    RefCountedPtr<RasterFileTile> m_tile;
-    mutable TileLoadsPtr m_loads;
-
-    RasterFileSourceR GetFileSource() const { return static_cast<RasterFileSourceR>(m_tile->GetRoot()); }
-
-    struct TileLoader
-        {
-        Root& m_root;
-        TileLoader(Root& root) : m_root(root) { root.StartTileLoad(); }
-        ~TileLoader() { m_root.DoneTileLoad(); }
-        };
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  9/2016
-    //----------------------------------------------------------------------------------------
-    BentleyStatus DoRead() const
-        {
-        if (m_loads != nullptr && m_loads->IsCanceled())
-            {
-            if (m_tile.IsValid())
-                m_tile->SetNotLoaded();
-
-            return ERROR;
-            }
-
-        if (m_tile.IsValid() && !m_tile->IsQueued())
-            return SUCCESS; // this node was abandoned.
-
-        TileLoader loadFlag(m_tile->GetRoot());
-        bool enableAlphaBlend = false;
-        Render::Image image = GetFileSource().QueryTile(m_tile->GetTileId(), enableAlphaBlend);
-
+    bool enableAlphaBlend = false;
+    m_image = GetFileSource().QueryTile(rasterTile.GetTileId(), enableAlphaBlend); //&&MM validate that we are not copying bytes for nothing.
+    
 #ifndef NDEBUG  // debug build only.
-        static bool s_missingTilesInRed = false;
-        if (s_missingTilesInRed && !image.IsValid())
-            {
-            ByteStream data(256 * 256 * 3);
-            Byte red[3] = {255,0,0};
-            for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
-                memcpy(data.GetDataP() + pixel * 3, red, 3);
+    static bool s_missingTilesInRed = false;
+    if (s_missingTilesInRed && !m_image.IsValid())
+        {
+        ByteStream data(256 * 256 * 3);
+        Byte red[3] = {255,0,0};
+        for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
+            memcpy(data.GetDataP() + pixel * 3, red, 3);
 
-            image = Render::Image(256, 256, std::move(data), Render::Image::Format::Rgb);
-            enableAlphaBlend = false;
-            }
+        m_image = Render::Image(256, 256, std::move(data), Render::Image::Format::Rgb);
+        enableAlphaBlend = false;
+        }
 #endif  
 
-        if (!image.IsValid())
-            {
-            m_tile->SetNotFound();
-            return ERROR;
-            }
+    return m_image.IsValid() ? SUCCESS : ERROR;
+    }
 
-        if (m_tile->IsAbandoned())
-            return ERROR;
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterFileTile::RasterTileLoad::_LoadTile()
+    {
+    if (!m_image.IsValid())
+        return ERROR;
 
-        auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
-        Render::Texture::CreateParams params;
-        params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
-        auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, params);
+    auto graphic = rasterTile.GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
 
-        graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-        graphic->AddTile(*texture, m_tile->GetCorners());
+    Render::Texture::CreateParams params;
+    params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
+    auto texture = rasterTile.GetRoot().GetRenderSystem()->_CreateTexture(m_image, params);
 
-        auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-        BeAssert(SUCCESS == stat);
-        UNUSED_VARIABLE(stat);
+    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
+    graphic->AddTile(*texture, rasterTile.GetCorners());
 
-        m_tile->m_graphic = graphic;
-        m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
+    BeAssert(SUCCESS == stat);
+    UNUSED_VARIABLE(stat);
 
-        if (m_loads != nullptr)
-            m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
+    rasterTile.m_graphic = graphic;
+    m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-        return SUCCESS;
-        }
+    return SUCCESS;
     };
 
 //----------------------------------------------------------------------------------------
@@ -144,7 +116,7 @@ RasterFileSource::~RasterFileSource()
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 RasterFileSource::RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system)
-    :RasterRoot(model, model.GetName().c_str(), ""/*rootUrl*/, system),
+    :RasterRoot(model, ""/*rootUrl*/, system),
      m_rasterFile(&rasterFile),
      m_model(model)
     {  
@@ -232,29 +204,6 @@ Render::Image RasterFileSource::QueryTile(TileId const& id, bool& alphaBlend)
     return Render::Image(effectiveTileSizeX, effectiveTileSizeY, std::move(dataStream), imageFormat);
     }
 
-      
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> RasterFileSource::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads)
-    {
-    DgnDb::VerifyClientThread();
-
-    if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (loads)
-        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
-    tile.SetIsQueued(); // mark as queued so we don't request it again.
-
-    TileQuery query(const_cast<RasterFileTileR>(static_cast<RasterFileTileCR>(tile)), loads);
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return query.DoRead(); });
-    }
-
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterFileTile  ---------------------------------------
 //----------------------------------------------------------------------------------------
@@ -311,7 +260,7 @@ TileTree::Tile::ChildTiles const* RasterFileTile::_GetChildren(bool load) const
     if (load && m_children.empty())
         {
         // this Tile has children, but we haven't created them yet. Do so now
-        RasterRoot::Resolution const& childrenResolution = m_root.GetResolution(m_id.resolution - 1);
+        RasterRoot::Resolution const& childrenResolution = ((root_type&)m_root).GetResolution(m_id.resolution - 1);
 
         // Upper-Left child, we always have one 
         TileId childUpperLeft(m_id.resolution - 1, m_id.x << 1, m_id.y << 1);
