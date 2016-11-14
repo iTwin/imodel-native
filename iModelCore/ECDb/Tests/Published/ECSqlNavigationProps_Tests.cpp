@@ -1455,9 +1455,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
 
 
     //---------------------------------------------------------------------------------------
-    // @bsiclass                                     Krischan.Eberle                 07/16
+    // @bsiclass                                     Affan.Khan                 07/16
     //+---------------+---------------+---------------+---------------+---------------+------
-    TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdCheck)
+    TEST_F(ECSqlNavigationPropertyTestFixture, EndTablePolymorphicRelationshipTest)
         {
         ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
                                 SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
