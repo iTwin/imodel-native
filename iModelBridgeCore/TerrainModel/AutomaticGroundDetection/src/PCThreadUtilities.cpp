@@ -884,4 +884,91 @@ bool PointCloudWorkerThread::TerminateRequested() const
     BeMutexHolder lock(m_cv.GetMutex());
     return m_terminate;
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+GroundDetectionThreadPool::GroundDetectionThreadPool(int numWorkingThreads)
+: m_numWorkingThreads(numWorkingThreads)//, m_isTerminating(false)
+    {
+    m_workingThreads = new std::thread[m_numWorkingThreads];
+        /*
+        m_areWorkingThreadRunning = new std::atomic<bool>[m_maxThreads];
+
+        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
+            m_areWorkingThreadRunning[ind] = false;
+            */
+                
+    m_run = false;    
+    }
+
+GroundDetectionThreadPool::~GroundDetectionThreadPool()
+    {
+    for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
+        {
+        if (m_workingThreads[threadInd].joinable())
+            m_workingThreads[threadInd].join();
+        }
+
+    delete[] m_workingThreads;    
+    }
+
+void GroundDetectionThreadPool::ClearQueueWork()
+    {
+    m_workQueue.clear();
+    }
+
+void GroundDetectionThreadPool::QueueWork(GroundDetectionWorkPtr& work)
+    {    
+    assert(m_run == false);
+    m_workQueue.push_back(work);
+    }
+
+void GroundDetectionThreadPool::Start()
+    { 
+    if (m_run == false)
+        {        
+        m_run = true;
+
+        //Launch a group of threads
+        for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+            {                                                                    
+            m_workingThreads[threadId] = std::thread(&GroundDetectionThreadPool::WorkThread, this, /*DgnPlatformLib::QueryHost(), */threadId);            
+            }
+        }
+    }
+
+void GroundDetectionThreadPool::WaitAndStop()
+    {         
+    for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+        {
+        if (m_workingThreads[threadId].joinable())
+            m_workingThreads[threadId].join();                                
+        }
+
+    m_run = false;
+    }    
+    
+void GroundDetectionThreadPool::WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId)
+    {
+        //DgnPlatformLib::AdoptHost(*hostToAdopt);
+
+    GroundDetectionWorkPtr currentWork;
+
+    do
+        {  
+        currentWork = nullptr;
+        
+        uint32_t currentInd = std::atomic_exchange<uint32_t> (&m_currentWorkInd, m_currentWorkInd + 1);
+               
+        if (currentInd < m_workQueue.size())
+            {
+            currentWork = m_workQueue[currentInd];
+            currentWork->_DoWork();
+            }                
+
+        } while (m_run && (currentWork.IsValid()));
+    }
+    
 END_GROUND_DETECTION_NAMESPACE

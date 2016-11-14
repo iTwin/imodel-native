@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -953,7 +953,10 @@ void LandXMLImporter::ReadContour ()
                             hasDefinition = true;
 
                         if (m_dtm.IsValid())
-                            ReadDefinition ();
+                            {
+                            ReadDefinition();
+                            m_namedDtms[currentName] = m_dtm;
+                            }
                         else
                             m_reader->ReadToEndOfElement  ();
                         }
