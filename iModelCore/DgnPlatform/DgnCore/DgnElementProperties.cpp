@@ -1045,7 +1045,11 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
         return DgnDbStatus::NotFound;
         }
 
-    auto status = ecdbuffer.SetValueToMemory(m_propIdx, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    PropertyLayoutCP propertyLayout = NULL;
+    ECObjectsStatus status = m_layout->GetPropertyLayoutByIndex(propertyLayout, m_propIdx);
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return toDgnDbWriteStatus(status);
+    status = ecdbuffer.SetInternalValueToMemory(*propertyLayout, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
         
     if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
         return DgnDbStatus::Success;
