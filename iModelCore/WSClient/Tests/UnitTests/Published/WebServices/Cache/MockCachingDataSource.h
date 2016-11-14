@@ -62,8 +62,8 @@ struct MockCachingDataSource : public ICachingDataSource
             IWSRepositoryClientPtr ());
         MOCK_METHOD1 (SetClient,
             void (IWSRepositoryClientPtr client));
-        MOCK_METHOD0 (CancelAllTasksAndWait,
-            void ());
+        MOCK_METHOD0 (CancelAllTasks,
+            AsyncTaskPtr<void>());
         MOCK_METHOD1 (UpdateSchemas,
             AsyncTaskPtr<Result> (ICancellationTokenPtr ct));
 
