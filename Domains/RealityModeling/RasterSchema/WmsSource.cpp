@@ -174,7 +174,8 @@ WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo, WmsModel& model, Dgn::Rend
 WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system)
  :RasterRoot(model, mapInfo.m_url.c_str(), system),
   m_mapInfo(mapInfo),
-  m_reverseAxis(false)
+  m_reverseAxis(false),
+  m_lastHttpError(Http::HttpStatus::None)
     {
     // for WMS we define a 256x256 multi-resolution image.
     GenerateResolution(m_resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
