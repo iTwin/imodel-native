@@ -202,11 +202,12 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
         static bool IsInitialized();
     };
 
-bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
+bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
-bool GetCodeFromServerJson (JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
+bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
-bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
+bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
+rapidjson::Document ToRapidJson(JsonValueCR source);
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             10/2016

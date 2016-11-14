@@ -8,9 +8,11 @@
 #include <DgnDbServer/Client/DgnDbRepositoryManager.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/Logging.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
@@ -24,7 +26,8 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
             DgnLock                  lock;
             BeSQLite::BeBriefcaseId  briefcaseId;
             Utf8String               repositoryId;
-            if (!GetLockFromServerJson (lockJson, lock, briefcaseId, repositoryId))
+            auto rapidJson = ToRapidJson(lockJson);
+            if (!GetLockFromServerJson (rapidJson, lock, briefcaseId, repositoryId))
                 continue;//NEEDSWORK: log an error
 
             AddLockInfoToList (response.LockStates (), lock, briefcaseId, repositoryId);
@@ -38,7 +41,8 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
             DgnCodeState             codeState;
             BeSQLite::BeBriefcaseId  briefcaseId;
             Utf8String               revisionId;
-            if (!GetCodeFromServerJson(codeJson, code, codeState, briefcaseId, revisionId))
+            auto rapidJson = ToRapidJson(codeJson);
+            if (!GetCodeFromServerJson(rapidJson, code, codeState, briefcaseId, revisionId))
                 continue;//NEEDSWORK: log an error
 
             AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId, revisionId);
