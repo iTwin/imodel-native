@@ -47,33 +47,6 @@ public:
 
 
 //=======================================================================================
-//! A temporary stand-in for true change sets while developing incremental publishing.
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-typedef RefCountedPtr<struct ModelChanges> ModelChangesPtr;
-
-struct ModelElementState  
-    {
-    bmap    <BeInt64Id, int64_t>    m_elementTimes;
-
-    ModelElementState(DgnModelCR model);              // Constructor for current model state.
-    ModelElementState(BeFileNameCR dataDirectory);    // Constructor from previusly published, saved model state.
-    void Save (BeFileNameCR dataDirectory);           // Save to file.
-    bool IsEmpty() const { return m_elementTimes.empty(); }
-    };
-
-struct ModelChanges : RefCountedBase
-    {
-    bset<BeInt64Id>     m_deleted;          // A change will be handled as a delete/add.
-    bset<BeInt64Id>     m_added;
-
-    bool            IsEmpty() const { return m_deleted.empty() && m_added.empty(); }
-    static ModelChangesPtr Create (ModelElementState const& before, ModelElementState const& after) { return new ModelChanges (before, after); }
-protected:    
-    ModelChanges (ModelElementState const& before, ModelElementState const& after);
-    };
-
-//=======================================================================================
 //! Context in which tile publishing occurs.
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -91,24 +64,19 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantOpenOutputFile,
         };
 
-
-
-    
-
 protected:
-    ViewControllerR                     m_viewController;
-    BeFileName                          m_outputDir;
-    BeFileName                          m_dataDir;
-    WString                             m_rootName;
-    Transform                           m_dbToTile;
-    Transform                           m_tileToEcef;
-    size_t                              m_maxTilesetDepth;
-    bvector<TileNodePtr>                m_modelRoots;
-    BeMutex                             m_mutex;
-    bool                                m_publishPolylines;
-    bool                                m_processModelsInParallel = true;
-    bool                                m_publishIncremental;
-    bmap<DgnModelId, ModelChangesPtr>   m_modelChanges;
+    ViewControllerR                         m_viewController;
+    BeFileName                              m_outputDir;
+    BeFileName                              m_dataDir;
+    WString                                 m_rootName;
+    Transform                               m_dbToTile;
+    Transform                               m_tileToEcef;
+    size_t                                  m_maxTilesetDepth;
+    bvector<TileNodePtr>                    m_modelRoots;
+    BeMutex                                 m_mutex;
+    bool                                    m_publishPolylines;
+    bool                                    m_processModelsInParallel = true;
+    bool                                    m_publishIncremental;
 
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
@@ -130,6 +98,9 @@ protected:
 
     TILEPUBLISHER_EXPORT virtual TileGenerator::Status _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status) override;
+    TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
+
+
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
@@ -141,7 +112,6 @@ public:
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
-    ModelChangesPtr GetModelChanges(DgnModelId modelId) { auto const& found = m_modelChanges.find(modelId); return found == m_modelChanges.end() ? nullptr : found->second; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
@@ -203,7 +173,6 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
-    BentleyStatus  GenerateMeshesIncrementally();
 
     BeFileName  GetBinaryDataFileName() const;
 
@@ -216,6 +185,9 @@ private:
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
+
+    enum IncrementalStatus { UsePrevious, Regenerate, Success };
+    IncrementalStatus IncrementalGenerate(TileModelDeltaCR modelDelta);
 
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);

@@ -109,35 +109,47 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
-        
-    if (!context.GetPublishIncremental() ||
-        SUCCESS != GenerateMeshesIncrementally())
-        m_meshes = m_tile.GenerateMeshes(context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   TilePublisher::GenerateMeshesIncrementally ()
+TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModelDeltaCR modelDelta)
     {
     TileReader          tileReader;
     TileMeshList        oldMeshes, newMeshes;
-    ModelChangesPtr     modelChanges = m_context.GetModelChanges(m_tile.GetModel().GetModelId());
                                                         
-    if (!modelChanges.IsValid() ||
-        TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
-        return ERROR;
+    if (TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
+        return IncrementalStatus::Regenerate;
+
+    bool        geometryRemoved = false;
+    DRange3d    publishedRange = DRange3d::NullRange();
 
     for (auto& mesh : oldMeshes)
-        mesh->RemoveEntityGeometry(modelChanges->m_deleted);
+        geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
 
-    newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines());
+    if (modelDelta.GetAdded().empty())
+        {
+        if (!geometryRemoved)
+            {
+            for (auto& oldMesh : oldMeshes)
+                publishedRange.Extend (oldMesh->GetRange());
+
+            m_tile.SetPublishedRange (publishedRange);
+            return IncrementalStatus::UsePrevious;
+            }
+        }
+    else
+        {
+        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), &modelDelta);
+        }
 
     // Merge old meshes with new ones.
     bmap<TileMeshMergeKey, TileMeshPtr>  meshMap;
     
     for (auto& oldMesh : oldMeshes)
-        meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
+        if (!oldMesh->IsEmpty())
+            meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
 
     for (auto& newMesh : newMeshes)
         {
@@ -149,8 +161,14 @@ BentleyStatus   TilePublisher::GenerateMeshesIncrementally ()
         else
             found->second->AddMesh (*newMesh);
         }
-    
-    return SUCCESS;
+    for (auto& curr : meshMap)
+        {
+        publishedRange.Extend (curr.second->GetRange());
+        m_meshes.push_back (curr.second);
+        }
+
+    m_tile.SetPublishedRange (publishedRange);
+    return IncrementalStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,6 +275,28 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
+    TileModelDeltaCP     modelDelta;
+
+    if (nullptr != (modelDelta = m_tile.GetModelDelta()))
+        {
+        switch (IncrementalGenerate(*modelDelta))
+            {
+            case IncrementalStatus::UsePrevious:        // There are no changes within this tile - use previously generated tile.
+                return PublisherContext::Status::Success;
+
+            case IncrementalStatus::Regenerate:
+                m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+                break;
+
+             case IncrementalStatus::Success:
+                break;
+            }
+        }
+    else
+        {
+        m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+        }
+
     if (m_meshes.empty())
         return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
@@ -313,6 +353,7 @@ PublisherContext::Status TilePublisher::Publish()
 
     return PublisherContext::Status::Success;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -705,6 +746,8 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
 
             if (material.IsValid())
                 materialValue["name"] = material->GetMaterialName().c_str();
+
+            materialValue["materialId"] = displayParams->GetMaterialId().ToString();
             }
         }
 
@@ -1240,130 +1283,26 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ModelElementState::ModelElementState(DgnModelCR model)
-    {
-#ifdef WIP
-    for (auto& it : const_cast<DgnModelR> (model).MakeIterator())
-        {
-        int64_t         milliseconds;
-        DgnElementCPtr  el = model.GetDgnDb().Elements().GetElement(it.GetId());
 
-        if (el.IsValid() &&
-            SUCCESS == el->QueryTimeStamp().ToUnixMilliseconds (milliseconds)) 
-            m_elementTimes.Insert (it.GetId(), milliseconds);
-        }
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelElementState::Save(BeFileNameCR dataDirectory)
+bool PublisherContext::_DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model)
     {
-    BeFileName      modelStateFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
-    Json::Value     value (Json::objectValue);
+    if (!m_publishIncremental)
+        return false;
 
-    for (auto& curr : m_elementTimes)
-        value[curr.first.ToString().c_str()] = curr.second;
-
-    TilePublisher::WriteJsonToFile (modelStateFileName.c_str(), value);
+    dataDirectory = GetDataDirForModel(model);
+    return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ModelElementState::ModelElementState (BeFileNameCR dataDirectory)
-    {
-    BeFileName      modelStateFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
-    auto            inputFile = _wfopen (modelStateFileName.c_str(), L"rb");
-
-    if (nullptr == inputFile)
-        return;
-
-    fseek (inputFile, 0, SEEK_END);
-    size_t     endPos = ftell (inputFile);
-    fseek (inputFile, 0, SEEK_SET);
-
-    bvector<char>   input(endPos);
-    Json::Value     value;
-    Json::Reader    reader;
-
-    if (1 == fread (input.data(), endPos, 1, inputFile) &&
-        reader.parse (input.data(), input.data() + endPos, value))
-        {
-        auto    members = value.getMemberNames();
-
-        for (auto& member : members)
-            {
-            DgnElementId    id;
-
-            if (SUCCESS == BeInt64Id::FromString (id, member.c_str()))
-                m_elementTimes.Insert (id, value[member].asInt64());
-            }
-        }
-    fclose (inputFile);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ModelChanges::ModelChanges (ModelElementState const& before, ModelElementState const& after)
-    {
-    for (auto const& beforePair : before.m_elementTimes)
-        {
-        auto const&   foundAfter = after.m_elementTimes.find (beforePair.first);
-
-        if (foundAfter == after.m_elementTimes.end())
-            {
-            m_deleted.insert (beforePair.first);
-            }
-        else
-            {
-            if (beforePair.second != foundAfter->second)
-                {
-                m_deleted.insert (beforePair.first);
-                m_added.insert (beforePair.first);
-                }
-            }
-        }
-    for (auto const& afterPair : after.m_elementTimes)
-        {
-        auto const&   foundBefore = before.m_elementTimes.find (afterPair.first);
-
-        if (foundBefore == before.m_elementTimes.end())
-            m_added.insert (afterPair.first);
-        }
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    BeFileName          dataDir = GetDataDirForModel(model);
-
-    if (m_publishIncremental)
-        {
-        ModelElementState   currentState(model), priorPublishState (dataDir);
-
-        if (!priorPublishState.IsEmpty())                                                                            
-            {
-            ModelChangesPtr modelChanges = ModelChanges::Create (priorPublishState, currentState);
-        
-            if (modelChanges->IsEmpty())
-                return  TileGenerator::Status::NoChanges;
-
-            m_modelChanges.Insert(model.GetModelId(), modelChanges);
-            }
-
-        currentState.Save(dataDir);
-        }
-
-    return Status::Success == InitializeDirectories(dataDir) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
+    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1376,11 +1315,7 @@ TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileN
         BeAssert(nullptr != rootTile);
         BeMutexHolder lock(m_mutex);
         m_modelRoots.push_back(rootTile);
-
-        auto const& foundModelChanges = m_modelChanges.find(model.GetModelId());
-        if (foundModelChanges != m_modelChanges.end())
-            m_modelChanges.erase (foundModelChanges);
-        }
+         }
     else if (!m_publishIncremental || TileGenerator::Status::NoChanges != status)
         {
         CleanDirectories(GetDataDirForModel(model));

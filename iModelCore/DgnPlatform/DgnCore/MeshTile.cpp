@@ -311,6 +311,96 @@ END_UNNAMED_NAMESPACE
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileModelDelta::Save()
+    {
+#ifdef WIP
+    BeFileName      modelStateFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
+    Json::Value     value (Json::objectValue);
+
+    for (auto& curr : m_elementStates)
+        {
+        Json::Value     elementState(Json::objectValue);
+
+        value["time"]  = curr.second.m_lastModifiedTime;
+        value["count"] = curr.second.m_facetCount;
+        value[curr.first.ToString().c_str()] = value;
+        }
+
+    TilePublisher::WriteJsonToFile (modelStateFileName.c_str(), value);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
+    {
+    for (auto& it : model.MakeIterator())
+        {
+        int64_t         milliseconds;
+
+        if (SUCCESS == it.GetLastModifyTime().ToUnixMilliseconds (milliseconds)) 
+            m_elementStates.Insert (it.GetElementId(), ElementState(milliseconds, 0));
+        }
+
+    m_fileName = BeFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
+
+#ifdef WIP
+    auto            inputFile = _wfopen (m_fileName.c_str(), L"rb");
+
+    if (nullptr == inputFile)
+        {
+        for (auto& element : m_elementStates)
+            m_added.insert (element.first);
+
+        return;
+        }
+
+    fseek (inputFile, 0, SEEK_END);
+    size_t     endPos = ftell (inputFile);
+    fseek (inputFile, 0, SEEK_SET);
+
+    bvector<char>       input(endPos);
+    Json::Value         value;
+    Json::Reader        reader;
+
+    if (1 == fread (input.data(), endPos, 1, inputFile) &&
+        reader.parse (input.data(), input.data() + endPos, value))
+        {
+        auto    members = value.getMemberNames();
+
+        for (auto& member : members)
+            {
+            DgnElementId    id;
+
+            if (SUCCESS == BeInt64Id::FromString (id, member.c_str()))
+                {
+                auto const&     found = m_elementStates.find(id);
+                Json::Value&    previousElementState = value[member.c_str()];
+                int64_t         previousTime = previousElementState["time"].asInt64();
+                int32_t         previousFacetCount = previousElementState["count"].asInt();
+
+                if (found == m_elementStates.end() || previousTime == found->second.m_lastModifiedTime)
+                    found->second.m_facetCount = previousFacetCount;
+                else
+                    m_deleted.insert(id);
+
+                }
+            }
+        }
+    for (auto& elementState : m_elementStates)
+        if (0 == elementState.second.m_facetCount)
+            m_added.insert (elementState.first);
+
+
+    fclose (inputFile);
+#endif
+     }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::TileGenerationCache(Options options) : m_tree(XYZRangeTreeRoot::Allocate()), m_options(options),
@@ -408,7 +498,7 @@ DRange3d TileGenerationCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::Populate(DgnDbR db, DgnModelId modelId, ITileGenerationFilterP filter)
+void TileGenerationCache::Populate(DgnDbR db, DgnModelId modelId)       
     {
     Statement stmt(db,  "SELECT ElementId,MinX,MinY,MinZ,MaxX,MaxY,MaxZ FROM " DGN_VTABLE_SpatialIndex " r, " BIS_TABLE(BIS_CLASS_Element) " e WHERE r.ElementId=e.Id AND e.ModelId=?");
     stmt.BindId(1, modelId);
@@ -416,9 +506,6 @@ void TileGenerationCache::Populate(DgnDbR db, DgnModelId modelId, ITileGeneratio
     while (BE_SQLITE_ROW == stmt.Step())
         {
         auto elemId = stmt.GetValueId<DgnElementId>(0);
-        if (nullptr != filter && !filter->AcceptElement(elemId))
-            continue;
-
         DRange3d elRange = DRange3d::From(stmt.GetValueDouble(1), stmt.GetValueDouble(2), stmt.GetValueDouble(3),
                                           stmt.GetValueDouble(4), stmt.GetValueDouble(5), stmt.GetValueDouble(6));
 
@@ -464,8 +551,11 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_categoryId.GetValueUnchecked(), rhs.m_categoryId.GetValueUnchecked());
-    COMPARE_VALUES (m_subCategoryId.GetValueUnchecked(), rhs.m_subCategoryId.GetValueUnchecked());
+
+    // Note - do not compare category and subcategory - These are used only for 
+    // extracting BRep face attachments.  Comparing them would create seperate
+    // meshes for geometry with same symbology but different category.
+    // This was determined (empirically) to degrade performance. 
 
     // No need to compare textures -- if materials match then textures must too.
     return false;
@@ -564,21 +654,79 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    TileMesh::RemoveEntityGeometry (bset<BeInt64Id> const& ids)
+bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
     {
+    bool                        deleteGeometryFound = false;
+    bmap<uint32_t, uint32_t>    indexRemap;
+    bvector<DPoint3d>           savePoints = m_points;
+    bvector<DVec3d>             saveNormals = m_normals;
+    bvector<DPoint2d>           saveParams = m_uvParams;
+    bvector<DgnElementId>       saveEntityIds = m_entityIds;
+
+    m_points.clear();
+    m_normals.clear();
+    m_uvParams.clear();
+    m_entityIds.clear();
+
+    for (size_t index = 0; index<saveEntityIds.size(); index++)
+        {
+        auto&   entityId = saveEntityIds[index];
+
+        if (deleteIds.find(entityId) == deleteIds.end() &&
+            indexRemap.find(index) == indexRemap.end())
+            {
+            indexRemap.Insert(index, (uint32_t) m_points.size());
+            m_points.push_back(savePoints[index]);
+            m_entityIds.push_back(entityId);
+            if (!saveNormals.empty())
+                m_normals.push_back(saveNormals[index]);
+            if (!saveParams.empty())
+                m_uvParams.push_back(saveParams[index]);
+            }
+        else
+            {
+            deleteGeometryFound = true;
+            }
+        }
+    if (!deleteGeometryFound)
+        return false;
+        
+
     for (bvector<TileTriangle>::iterator  triangle = m_triangles.begin(); triangle != m_triangles.end(); )
         {
-        if (ids.find(GetTriangleEntityId(*triangle)) != ids.end())
+        if (indexRemap.find(triangle->m_indices[0]) == indexRemap.end())
+            {
             m_triangles.erase (triangle);
+            }
         else
+            {
+            for (size_t i=0; i<3; i++)
+                triangle->m_indices[i] = indexRemap[triangle->m_indices[i]];
+
             triangle++;
+            }
         }
+    for (bvector<TilePolyline>::iterator  polyline = m_polylines.begin(); polyline != m_polylines.end(); )
+        {
+        if (indexRemap.find(polyline->m_indices[0]) == indexRemap.end())
+            {
+            m_polylines.erase (polyline);
+            }
+        else
+            {
+            for (size_t i=0; i<polyline->m_indices.size(); i++)
+                polyline->m_indices[i] = indexRemap[polyline->m_indices[i]];
+
+            polyline++;
+            }                                                                                                         
+        }
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -717,7 +865,7 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool includeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -785,7 +933,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id entityId, bool doDecimate)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doDecimate)
     {
     TilePolyline    newPolyline;
 
@@ -801,7 +949,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool twoSidedTriangles, bool includeParams)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams);
@@ -952,23 +1100,22 @@ TileNodePList TileNode::GetTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
-    : m_params(params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
+TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+    : m_params(params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
     {
     //
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-double TileGeometry::GetFacetCountDensity(IFacetOptionsR options) const
+size_t TileGeometry::GetFacetCount(IFacetOptionsR options) const
     {
-    double rangeVolume = m_tileRange.DiagonalDistance();
-    if (0.0 == rangeVolume)
-        return 0.0;
+    if (0 != m_facetCount)
+        return m_facetCount;
     
     FacetCounter counter(options);
-    return static_cast<double>(_GetFacetCount(counter)) / rangeVolume;
+    return (m_facetCount = _GetFacetCount(counter));
     }
 
 //=======================================================================================
@@ -979,7 +1126,7 @@ struct PrimitiveTileGeometry : TileGeometry
 private:
     IGeometryPtr        m_geometry;
 
-    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
@@ -988,7 +1135,7 @@ private:
 
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
 public:
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
         {
         return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, isCurved, db);
         }
@@ -1000,10 +1147,10 @@ public:
 struct SolidKernelTileGeometry : TileGeometry
 {
 private:
-    IBRepEntityPtr   m_entity;
-    BeMutex                 m_mutex;
+    IBRepEntityPtr      m_entity;
+    BeMutex             m_mutex;
 
-    SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, DgnDbR db)
+    SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
@@ -1011,7 +1158,7 @@ private:
     virtual bool _IsPolyface() const override { return false; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
-    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, DgnDbR db)
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
         {
         return new SolidKernelTileGeometry(solid, tf, range, elemId, params, db);
         }
@@ -1020,7 +1167,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
     {
     return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, isCurved, db);
     }
@@ -1028,7 +1175,7 @@ TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db)
     {
     return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, db);
     }
@@ -1232,9 +1379,15 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
             {
             m_progressMeter._IndicateProgress(nCompletedModels++, nModels);
 
-            DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+            DgnModelPtr         model = GetDgnDb().Models().GetModel(modelId);
+            TileModelDeltaPtr   modelDelta;
+            BeFileName          modelDeltaDirectory;
+            
             if (model.IsNull())
                 continue;
+
+            if (collector._DoIncrementalModelPublish (modelDeltaDirectory, *model))
+                modelDelta = TileModelDelta::Create (*model, modelDeltaDirectory);
 
             auto beginStatus = collector._BeginProcessModel(*model);
             switch (beginStatus)
@@ -1251,12 +1404,15 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
             if (nullptr != generateMeshTiles)
                 modelStatus = generateMeshTiles->_GenerateMeshTiles(root, m_transformFromDgn, collector, GetProgressMeter());
             else
-                modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model);
+                modelStatus = GenerateElementTiles(root, collector, leafTolerance, maxPointsPerTile, *model, modelDelta.get());
 
             if (Status::Aborted == collector._EndProcessModel(*model, root.get(), modelStatus))
                 return Status::Aborted;
             else if (root.IsValid())
                 m_totalTiles += root->GetNodeCount();
+
+            if (modelDelta.IsValid())
+                modelDelta->Save ();
             }
         }
     else
@@ -1308,17 +1464,17 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
     {
-    DgnModelPtr modelPtr(&model);
-    auto pCollector = &collector;
+    DgnModelPtr     modelPtr(&model);
+    auto            pCollector = &collector;
+    auto            host = &T_HOST;
+    auto            generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
 
-    auto host = &T_HOST;
-
-    auto generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
     if (nullptr != generateMeshTiles)
         {
         return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
             {
-            ScopedHostAdopter hostScope(*host);
+            ScopedHostAdopter   hostScope(*host);
+
             auto status = pCollector->_BeginProcessModel(*modelPtr);
             TileNodePtr root;
             if (Status::Success == status)
@@ -1335,6 +1491,12 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     else
         {
+        BeFileName          dataDirectory;
+        TileModelDeltaPtr   modelDelta;
+
+        if (pCollector->_DoIncrementalModelPublish (dataDirectory, *modelPtr))
+            modelDelta = TileModelDelta::Create (model, dataDirectory);
+
         return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
             {
             ScopedHostAdopter hostScope(*host);
@@ -1344,7 +1506,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             {
             ScopedHostAdopter hostScope(*host);
             if (Status::Success == status)
-                return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr);
+                return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr, modelDelta.get());
             else
                 return folly::makeFuture(ElementTileResult(status, nullptr));
             })
@@ -1356,6 +1518,13 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
             return pCollector->_EndProcessModel(*modelPtr, result.m_tile.get(), result.m_status);
+            })
+        .then([=](TileGenerator::Status status)
+            {
+            if (modelDelta.IsValid())
+                modelDelta->Save ();
+
+            return status;
             });
         }
     }
@@ -1363,10 +1532,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext  context(*cache, model, collector, leafTolerance, maxPointsPerTile);
+    ElementTileContext  context(*cache, model, modelDelta, collector, leafTolerance, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGenerator::Status status)
         {
@@ -1387,7 +1556,7 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
     #endif
 
-        context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId(), context.m_collector->_GetElementFilter(context.m_model->GetModelId()));
+        context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId());
         bool emptyRange = context.m_cache->GetRange().IsNull();
         return emptyRange ? Status::NoGeometry : Status::Success;
         });
@@ -1403,11 +1572,11 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(Status sta
     auto& cache = *context.m_cache;
     if (Status::Success != status)
         {
-        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
+        ElementTileResult result(status, ElementTileNode::Create(*context.m_model, context.m_modelDelta, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr).get());
         return folly::makeFuture(result);
         }
 
-    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
+    ElementTileNodePtr parent = ElementTileNode::Create(*context.m_model, context.m_modelDelta, cache.GetRange(), GetTransformFromDgn(), 0, 0, nullptr);
     return ProcessParentTile(parent, context).then([=](ElementTileResult result) { return ProcessChildTiles(result.m_status, parent, context); });
     }
 
@@ -1439,7 +1608,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
         // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
         // elements too small to be included in this tile)
-        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
+        tile.CollectGeometry(generationCache, m_dgndb, context.m_modelDelta, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile);
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
@@ -1466,7 +1635,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         tile.ComputeChildTileRanges(subRanges, tile.GetDgnRange(), s_splitCount);
         for (auto& subRange : subRanges)
             {
-            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+            ElementTileNodePtr child = ElementTileNode::Create(tile.GetModel(), tile.GetModelDelta(), subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
 
             tile.GetChildren().push_back(child);
             }
@@ -1535,9 +1704,9 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta)
     {
-    auto future = GenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model);
+    auto future = GenerateElementTiles(collector, leafTolerance, maxPointsPerTile, model, modelDelta);
     auto result = future.get();
 
     root = result.m_tile.get();
@@ -1770,20 +1939,21 @@ Render::GraphicPtr TileGeometryProcessorContext::_StrokeGeometry(GeometrySourceC
 struct TileGeometryProcessor : IGeometryProcessor
 {
 private:
-    IFacetOptionsR          m_facetOptions;
-    IFacetOptionsPtr        m_targetFacetOptions;
-    DgnElementId            m_curElemId;
-    TileGenerationCacheCR   m_cache;
-    DgnDbR                  m_dgndb;
-    TileGeometryList&       m_geometries;
-    DRange3d                m_range;
-    DRange3d                m_tileRange;
-    Transform               m_transformFromDgn;
-    TileGeometryList        m_curElemGeometries;
-    double                  m_minRangeDiagonal;
-    bool*                   m_leafThresholdExceeded;
-    size_t                  m_leafCountThreshold;
-    size_t                  m_leafCount;
+    IFacetOptionsR              m_facetOptions;
+    IFacetOptionsPtr            m_targetFacetOptions;
+    DgnElementId                m_curElemId;
+    TileGenerationCacheCR       m_cache;
+    DgnDbR                      m_dgndb;
+    TileGeometryList&           m_geometries;
+    DRange3d                    m_range;
+    DRange3d                    m_tileRange;
+    Transform                   m_transformFromDgn;
+    TileGeometryList            m_curElemGeometries;
+    TileModelDeltaP             m_modelDelta;
+    double                      m_minRangeDiagonal;
+    bool*                       m_leafThresholdExceeded;
+    size_t                      m_leafCountThreshold;
+    size_t                      m_leafCount;
 
 
     void PushGeometry(TileGeometryR geom);
@@ -1802,8 +1972,8 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
-        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
+        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_modelDelta(modelDelta),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0)
         {
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
@@ -1845,7 +2015,7 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
         if (intersection.IsNull())
             return;
 
-        m_leafCount += intersection.DiagonalDistance() * geom.GetFacetCountDensity(*m_targetFacetOptions);
+        m_leafCount += (size_t) ((double) geom.GetFacetCount(*m_targetFacetOptions) * intersection.DiagonalDistance() / geom.GetTileRange().DiagonalDistance());
         *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
         }
         
@@ -1859,6 +2029,25 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     try
         {
+        TileModelDelta::ElementState*    elementState = nullptr;
+        if (nullptr != m_modelDelta)
+            {
+            if (nullptr == (elementState = m_modelDelta->GetElementState(elemId)))
+                {
+                BeAssert (false && "Unexpected Element");
+                return;
+                }
+            if (!m_modelDelta->DoPublish(elemId))
+                {
+                DRange3d intersection = DRange3d::FromIntersection (dgnRange, m_range, true);
+
+                if (intersection.IsNull())
+                    return;
+
+                m_leafCount += (size_t) ((double) elementState->GetFacetCount() * intersection.DiagonalDistance() / dgnRange.DiagonalDistance());
+                *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
+                }
+            }
         m_curElemGeometries.clear();
         bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
         if (!haveCached)
@@ -1870,7 +2059,13 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             PushGeometry(*geom);
 
         if (!haveCached)
+            {
+            if (nullptr != elementState && 0 == elementState->GetFacetCount())    
+                for (auto& geom : m_curElemGeometries)
+                    elementState->SetFacetCount(elementState->GetFacetCount() + geom->GetFacetCount(*m_targetFacetOptions));
+
             m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
+            }
         }
     catch (...)
         {
@@ -1996,10 +2191,7 @@ struct GatherGeometryHandler : XYZRangeTreeHandler
     virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
         {
         if (pLeaf->Range().IntersectsWith(m_range) && !m_processor.BelowMinRange(pLeaf->Range()))
-            {
-            DgnElementId elemId = RangeTreeNode::GetElementId(*pLeaf);
-            m_processor.ProcessElement(m_context, elemId, pLeaf->Range());
-            }
+            m_processor.ProcessElement(m_context, RangeTreeNode::GetElementId(*pLeaf), pLeaf->Range());
 
         return true;
         }
@@ -2030,11 +2222,11 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
+void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, leafCountThreshold);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold);
     TileGeometryProcessorContext    context(processor, db, cache);
 
     processor._OutputGraphics(context);
@@ -2043,7 +2235,7 @@ void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
+TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter) const
     {
     static const double s_vertexToleranceRatio    = .1;
     static const double s_vertexClusterThresholdPixels = 5.0;
@@ -2061,6 +2253,10 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
 
     for (auto& geom : m_geometries)
         {
+        if (nullptr != filter && 
+            !filter->AcceptElement(DgnElementId(geom->GetEntityId().GetValue())))
+            continue;
+
         DRange3dCR  geomRange = geom->GetTileRange();
         double      rangePixels = geomRange.DiagonalDistance() / tolerance;
 
@@ -2103,7 +2299,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        BeInt64Id elemId;
+                        DgnElementId elemId;
                         if (!maxGeometryCountExceeded)
                             elemId = geom->GetEntityId();
 
@@ -2139,7 +2335,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                     continue;
                     }
 
-                BeInt64Id elemId;
+                DgnElementId elemId;
                 if (geometryCount < s_maxGeometryIdCount)
                     elemId = geom->GetEntityId();
 
@@ -2171,7 +2367,7 @@ TileModelCategoryFilter::TileModelCategoryFilter(DgnDbR db, DgnModelIdSet const*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId)
+bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId) const
     {
     m_stmt->BindVirtualSet(1, m_set);
     bool accepted = BE_SQLITE_ROW == m_stmt->Step();
