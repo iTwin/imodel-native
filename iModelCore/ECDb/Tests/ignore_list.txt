@@ -6,10 +6,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#TFS 516115 will address this (Affan)
-ECDbMappingTestFixture.MismatchDataTypesInExistingTable
-ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
-
 #TFS 518176 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
