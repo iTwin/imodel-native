@@ -157,8 +157,8 @@ BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElem
     if (!elementId.IsValid() || !geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
-    CachedECSqlStatementPtr statementPtr = db.GetPreparedECSqlStatement(
-        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    CachedECSqlStatementPtr statementPtr = db.GetNonSelectPreparedECSqlStatement(
+        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", db.GetECSqlWriteToken());
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;

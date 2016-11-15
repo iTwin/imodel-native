@@ -39,7 +39,7 @@ DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
             return DgnDbStatus::WriteError;
         }
 
-    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " SET TextAnnotation=? WHERE ElementId=?");
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " SET TextAnnotation=? WHERE ElementId=?", el.GetDgnDb().GetECSqlWriteToken());
     if (!update.IsValid())
         return DgnDbStatus::WriteError;
 

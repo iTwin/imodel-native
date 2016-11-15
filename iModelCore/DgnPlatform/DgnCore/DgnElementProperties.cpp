@@ -703,7 +703,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
     if (autoHandledProperties.empty())
         return updaterCache[eclassid] = nullptr;
 
-    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, autoHandledProperties);
+    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, m_element.GetDgnDb().GetECSqlWriteToken(), autoHandledProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**

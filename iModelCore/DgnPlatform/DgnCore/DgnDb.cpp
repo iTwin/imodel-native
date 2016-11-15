@@ -1,3 +1,4 @@
+#region
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnDb.cpp $
@@ -44,7 +45,14 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_queryQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
+    m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
     }
+
+//--------------------------------------------------------------------------------------
+//not inlined as it must not be called externally
+// @bsimethod                                Krischan.Eberle                11/2016
+//---------------+---------------+---------------+---------------+---------------+------
+ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteToken; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12
@@ -183,6 +191,74 @@ CachedECSqlStatementPtr DgnDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
     {
     return m_ecsqlCache.GetPreparedStatement(*this, ecsql);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, ECSqlWriteToken const* writeToken) const
+    {
+    return m_ecsqlCache.GetPreparedStatement(*this, ecsql, writeToken);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DgnDb::InsertECRelationship(ECInstanceKey& relKey, ECN::IECRelationshipInstanceCR rel)
+    {
+    //WIP this might need a cache of inserters if called often
+    ECInstanceInserter inserter(*this, rel.GetClass(), GetECSqlWriteToken());
+    if (!inserter.IsValid())
+        return ERROR;
+
+    return inserter.Insert(relKey, rel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId const& sourceId, ECInstanceId const& targetId)
+    {
+    if (!sourceId.IsValid() && !targetId.IsValid())
+        {
+        BeAssert(false && "SourceId and TargetId cannot both be invalid");
+        return BE_SQLITE_ERROR;
+        }
+
+    Utf8String ecsql("DELETE FROM ");
+    ecsql.append(relClassECSqlName).append(" WHERE ");
+
+    if (sourceId.IsValid())
+        {
+        ecsql.append("SourceECInstanceId=?");
+        if (targetId.IsValid())
+            ecsql.append(" AND ");
+        }
+
+    if (targetId.IsValid())
+        ecsql.append("TargetECInstanceId=?");
+
+    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECSqlWriteToken());
+    if (stmt == nullptr)
+        return BE_SQLITE_ERROR;
+
+    int parameterIndex = 1;
+    if (sourceId.IsValid())
+        {
+        if (ECSqlStatus::Success != stmt->BindId(parameterIndex, sourceId))
+            return BE_SQLITE_ERROR;
+
+        ++parameterIndex;
+        }
+
+    if (targetId.IsValid())
+        {
+        if (ECSqlStatus::Success != stmt->BindId(parameterIndex, targetId))
+            return BE_SQLITE_ERROR;
+        }
+
+    return stmt->Step();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
