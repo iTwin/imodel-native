@@ -64,10 +64,11 @@ class RealityDataDownloadTestFixture : public testing::Test
 TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     {
     AString urlUSGSLink = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip";
-    WString filename(GetDirectory());
-    filename.append(L"SimpleDownload");
-    InitTestDirectory(filename.c_str());
+    WString directory(GetDirectory());
+    directory.append(L"SimpleDownload");
+    InitTestDirectory(directory.c_str());
 
+    WString filename(directory);
     RealityDataDownload::ExtractFileName(filename, urlUSGSLink);
 
     bvector<std::pair<AString, WString>> simpleDlList = bvector<std::pair<AString, WString>>();
@@ -80,7 +81,7 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     pDownload->Perform();
     
     ASSERT_TRUE(BeFileName::DoesPathExist(filename.c_str()));
-    BeFileName::EmptyAndRemoveDirectory(filename.c_str());
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
 //-------------------------------------------------------------------------------------

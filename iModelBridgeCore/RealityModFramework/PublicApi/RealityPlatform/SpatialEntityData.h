@@ -22,7 +22,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct CurlHolder
-{
+    {
 public:
     CurlHolder() : m_curl(curl_easy_init()) {}
     ~CurlHolder() { if (NULL != m_curl) curl_easy_cleanup(m_curl); }
@@ -30,7 +30,7 @@ public:
 
 private:
     CURL* m_curl;
-};
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
@@ -54,7 +54,7 @@ enum class SpatialEntityStatus
 // a behavior for the OnFileListed, OnFileDownloaded and OnDataExtracted method.
 //=====================================================================================
 struct ISpatialEntityTraversalObserver
-{
+    {
 public:
     //! OnFileListed is called whenever a file was listed for download. It is up to
     //! the effective traversal observer to do whatever process is required on the data.
@@ -68,13 +68,13 @@ public:
     //! data handler. The data object given defines the data discovered. It is up to
     //! the effective traversal observer to do whatever process is required on the data.
     virtual void OnDataExtracted(SpatialEntityDataCR data) = 0;
-};
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityThumbnail : public RefCountedBase
-{
+    {
 public:
     //! Create invalid thumbnail.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityThumbnailPtr Create();
@@ -121,14 +121,14 @@ protected:
     bvector<Byte> m_data;
     Utf8String m_generationDetails;
     Utf8String m_thumbnailUrl;
-};
+    };
 
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityMetadata : public RefCountedBase
-{
+    {
 public:
     //! Create empty metadata.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Create();
@@ -174,14 +174,14 @@ protected:
     Utf8String m_format;
     Utf8String m_data;
     Utf8String m_metadataUrl;
-};
+    };
 
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityServer : public RefCountedBase
-{
+    {
 public:
     //! Create invalid server.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Create();
@@ -248,14 +248,14 @@ protected:
     double m_latency;
     Utf8String m_state;
     Utf8String m_type;
-};
+    };
 
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct SpatialEntityData : public RefCountedBase
-{
+    {
 public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr Create();
@@ -393,7 +393,7 @@ protected:
     float m_panchromaticSize;
 
     mutable SQLINTEGER m_serverId = -1;
-}; 
+    }; 
    
 
 //=====================================================================================
@@ -402,7 +402,7 @@ protected:
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct SpatialEntityDataHandler
-{
+    {
 public:
     //! Unzip files.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityStatus UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath);
@@ -413,6 +413,6 @@ protected:
 
     //! Geocoding lookup.
     REALITYDATAPLATFORM_EXPORT static Utf8String RetrieveGeocodingFromMetadata(BeFileNameCR filename);
-};
+    };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

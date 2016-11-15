@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <RealityAdmin/ContextServicesWorkbench.h>
+#include <RealityPlatform/RealityConversionTools.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -38,25 +39,17 @@ ContextServicesWorkbench* ContextServicesWorkbench::Create(Utf8StringCR authoriz
 
 void ContextServicesWorkbench::SetGeoParam(GeoCoordinationParamsCR params)
     {
-    m_uiParams = params;
+    m_params = params;
     }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   10/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
 ContextServicesWorkbench::ContextServicesWorkbench(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params)
-    : m_authorizationToken(authorizationToken), m_uiParams(params)
+    : m_authorizationToken(authorizationToken), m_params(params)
     {
     m_errorObj = Json::objectValue;
-    //Getting the cacert.pem file from the current working directory
-    WChar exePath[MAX_PATH];
-    GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-    WString exeDir = exePath;
-    size_t pos = exeDir.find_last_of(L"/\\");
-    exeDir = exeDir.substr(0, pos + 1);
-
-    BeFileName caBundlePath(exeDir);
+    BeFileName caBundlePath = getBaseFolder();
     
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
     }
@@ -142,46 +135,228 @@ BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails()
     }
 
 ///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Francis Boily                    09/2015
+//* @bsimethod                                    Spencer.Mason                    11/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl()
     {
+    Utf8String tempRealityServerUrl = getBaseUrl();
+    
+    Utf8String listUrl = tempRealityServerUrl.append("/RealityModeling/SpatialEntityWithDetailsView?polygon={points:[");
+    listUrl.append(m_params.GetPolygonAsString(false));
+    listUrl.append("],coordinate_system:'4326'}");
+    listUrl.append(m_params.GetFilterString());
+
+    return listUrl;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Spencer.Mason                    11/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContextServicesWorkbench::getBaseUrl()
+{
     Utf8String tempRealityServerUrl;
-    switch(m_uiParams.GetServerType())
-        {
+    switch (m_params.GetServerType())
+    {
     case ServerType::DEV:
         tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
     case ServerType::PROD:
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.3";
     default:
         tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
-        }
-    
-    Utf8String listUrl = tempRealityServerUrl.append("/Repositories/IndexECPlugin--Server/RealityModeling/SpatialEntityWithDetailsView?polygon={points:[");
-    listUrl.append(m_uiParams.GetPolygonAsString(false));
-    listUrl.append("],coordinate_system:'4326'}");
-    listUrl.append(m_uiParams.GetFilterString());
+    }
+
+    Utf8String listUrl = tempRealityServerUrl.append("/Repositories/IndexECPlugin--Server");
 
     return listUrl;
+}
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+void ContextServicesWorkbench::FilterSpatialEntity()
+    {
+    BeAssert(m_downloadedSEWD);
+
+    bmap<Utf8String, RealityPlatform::SpatialEntityDataPtr>* SEDp = new bmap<Utf8String, RealityPlatform::SpatialEntityDataPtr>();
+
+    RealityConversionTools::JsonToSpatialEntityData(m_spatialEntityWithDetailsJson.c_str(), SEDp);
+    
+    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(m_spatialEntityWithDetailsJson.c_str());
+    if (dataset.IsNull())
+        return;
+
+    //bool removeLandsat = ->ContainsUsgsImagery();
+    RealityPlatform::SpatialEntityDataPtr entity;
+
+    auto imageryIt(dataset->GetImageryGroupR().begin());
+    while (imageryIt != dataset->GetImageryGroupR().end())
+        {
+        auto iter = SEDp->find(imageryIt->get()->GetIdentifier().c_str());
+        if(iter == SEDp->end())
+            {
+            imageryIt++;
+            continue;
+            }
+
+        entity = iter->second;
+        if (entity.IsNull())
+            {
+            imageryIt++;
+            continue;
+            }
+
+        if (entity->GetCloudCover() > 50.0)// || (removeLandsat && entity->GetDataProvider().EqualsI(LANDSAT_PROVIDER)))
+            {
+            imageryIt = dataset->GetImageryGroupR().erase(imageryIt);
+            }
+        else
+            {
+            imageryIt++;
+            }
+        }
+
+    m_selectedIds = SpatioTemporalSelector::GetIDsByRes(*dataset, m_params.GetPolygonVector());
     }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   10/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ContextServicesWorkbench::DownloadPackage()
+    {
+    Utf8String instanceId;
+    if (BentleyStatus::SUCCESS != downloadPackageId())
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != downloadPackageFile())
+        return BentleyStatus::ERROR;
+    
+    return BentleyStatus::SUCCESS;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   01/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> selectedIds) const
+    {
+    // Create the package url.
+    Utf8String listAsPostFields = "{'instance':{'instanceId':null,'className':'PackageRequest','schemaName':'RealityModeling','properties':{'RequestedEntities':[";
+
+    // Append all IDs previously selected.
+    for (uint16_t i = 0; i < selectedIds.size(); ++i)
+        {
+        listAsPostFields.append("{ 'Id':'");
+        listAsPostFields.append(selectedIds[i]);
+        listAsPostFields.append("','SelectedFormat':'image/png','SelectedStyle':'default'},");
+        }
+
+    //if (containOsmClass())
+        listAsPostFields.append("],'CoordinateSystem':null,'OSM': true,'Polygon':'[");
+    /*else
+        listAsPostFields.append("],'CoordinateSystem':null,'OSM': false,'Polygon':'[");*/
+
+    listAsPostFields.append(m_params.GetPolygonAsString(false));
+    listAsPostFields.append("]'}}, 'requestOptions':{'CustomOptions':{'Version':'2', 'Requestor':'ContextServicesWorkbench', 'RequestorVersion':'1.0' }}}");
+
+    return listAsPostFields;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   01/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ContextServicesWorkbench::downloadPackageId()
+    {
+    //Second query to do the package request, WSG is creating the file on his side and returning us a filename
+    Utf8String readBufferPackage;
+    Utf8String postFields = GetPackageParameters(m_selectedIds[m_selectedResolution]);
+    Utf8String tempRealityServerUrl = getBaseUrl();
+    Utf8String packageUrl = tempRealityServerUrl.append("/RealityModeling/PackageRequest");
+
+    CURLcode result = performCurl(packageUrl, &readBufferPackage, nullptr, postFields);
+
+    if (CURLE_OK != result)
+        return BentleyStatus::ERROR;
+
+    Json::Value packageInfos(Json::objectValue);
+    Json::Reader::Parse(readBufferPackage, packageInfos);
+
+    if (!packageInfos.isMember("changedInstance"))
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    m_instanceId = packageInfos["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+    return  BentleyStatus::SUCCESS;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   01/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ContextServicesWorkbench::downloadPackageFile()
+    {
+    //Third query to download the file from the server eg: GUID.xrdp
+    BeFileName realityDataTempPath = getBaseFolder();
+    if (realityDataTempPath.empty())
+        return BentleyStatus::ERROR;
+
+    m_packageFileName = BeFileName(realityDataTempPath);
+    m_packageFileName.AppendToPath(BeFileName(m_instanceId));
+
+    char outfile[1024] = "";
+    strcpy(outfile, m_packageFileName.GetNameUtf8().c_str());
+    FILE *fp;
+    fp = fopen(outfile, "wb");
+    if (!fp)
+        return BentleyStatus::ERROR;
+
+    //Do another query to the server to get the file this will be a download
+    char fileUrl[1024] = "";
+    Utf8String tempRealityServerUrl = getBaseUrl();
+    tempRealityServerUrl.append("/RealityModeling/PreparedPackage/");
+
+    strcpy(fileUrl, tempRealityServerUrl.c_str());
+    strcat(fileUrl, m_instanceId.c_str());
+    strcat(fileUrl, "/$file");
+
+    CURLcode result = performCurl(fileUrl, nullptr, fp);
+    fclose(fp);
+    if (CURLE_OK != result)
+        return BentleyStatus::ERROR;
+
+    m_downloadedPackage = true;
+    return BentleyStatus::SUCCESS;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   10/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName ContextServicesWorkbench::getBaseFolder()
+{
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+
+    return BeFileName(exeDir);
+}
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Spencer.Mason                   11/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordinationParams::GeoCoordinationParams(bvector<GeoPoint2d> params, ServerType serverType, Utf8String filterString)
     :m_filterPolygon(params), m_serverType(serverType), m_filterString()
-{}
-
+    {}
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GeoCoordinationParams::GetPolygonAsString(bool urlEncode) const
-{
+    {
     Utf8String polygon;
     bool first = true;
     for (auto& point : GetPolygonVector())
-    {
+        {
         if (first)
             first = false;
         else
@@ -189,8 +364,8 @@ Utf8String GeoCoordinationParams::GetPolygonAsString(bool urlEncode) const
         polygon.append(urlEncode ? "%5B" : "[");
         polygon.append(Utf8PrintfString("%f%s%f", point.longitude, (urlEncode ? "%2C" : ","), point.latitude));
         polygon.append(urlEncode ? "%5D" : "]");
-    }
+        }
     return polygon;
-}
+    }
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

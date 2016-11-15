@@ -13,6 +13,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 #include <RealityAdmin/ContextServicesWorkbench.h>
+#include <RealityPlatform/RealityConversionTools.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -108,5 +109,13 @@ TEST_F(ContextServicesTestFixture, SimpleTest)
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());*/
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
+
+    bvector<RealityPlatform::SpatialEntityDataPtr>* SEDp = new bvector<RealityPlatform::SpatialEntityDataPtr>();
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == RealityConversionTools::JsonToSpatialEntityData(cswBench->GetSpatialEntityWithDetailsJson().c_str(), SEDp));
+
+    cswBench->FilterSpatialEntity();
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());*/
     }
