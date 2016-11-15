@@ -232,7 +232,8 @@ static bool s_dontShowMesh = false;
 void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                               ViewContextR                                context, 
-                              const DMatrix4d&                            storageToUors)
+                              const DMatrix4d&                            storageToUors,
+                              ScalableMeshDisplayCacheManager*            mgr)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -427,6 +428,13 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
                     if (cachedMesh != 0)
                         {
                         qvElem = cachedMesh->m_qvElem;
+                        char elemId[500];
+                        std::sprintf(elemId, "%p", qvElem);
+                        if (!mgr->IsValid(qvElem) || !mgr->IsValidForId(qvElem, meshNodes[nodeInd]->GetNodeId()))
+                        {
+                            volatile int a = 1;
+                            a = a;
+                        }
                         //assert(qvElem != 0);
                         }
                     else
@@ -544,11 +552,13 @@ protected:
     const DMatrix4d&                        m_storageToUorsTransfo;
     bool                                    m_hasFetchedFinalNode;
     bool                                    m_hasFetchedFinalTerrainNode;
+    IScalableMeshDisplayCacheManager*       m_displayNodesCache;
 
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                     ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                    DMatrix4d&                              storageToUorsTransfo) 
+                                    DMatrix4d&                              storageToUorsTransfo,
+                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
     : m_storageToUorsTransfo(storageToUorsTransfo)
         { 
         DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
@@ -556,7 +566,8 @@ protected:
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_hasFetchedFinalNode = false;
-        m_hasFetchedFinalTerrainNode = m_currentDrawingInfoPtr->m_coverageClips.empty();        
+        m_hasFetchedFinalTerrainNode = m_currentDrawingInfoPtr->m_coverageClips.empty();      
+        m_displayNodesCache = cacheManager.get();
         }
 
 public:
@@ -568,7 +579,8 @@ public:
 //----------------------------------------------------------------------------------------
 virtual Completion _Process(ViewContextR viewContext) override
     {
-    if (m_hasFetchedFinalTerrainNode && m_hasFetchedFinalNode)
+
+    if (m_hasFetchedFinalTerrainNode && m_hasFetchedFinalNode && !((ScalableMeshDisplayCacheManager*)m_displayNodesCache)->IsDirty())
         return Completion::Finished;
 
     Completion completionStatus = Completion::Aborted; 
@@ -649,13 +661,13 @@ virtual Completion _Process(ViewContextR viewContext) override
     else    
     if (s_drawInProcess)
         {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
         if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
             {
             for (auto& clip : m_currentDrawingInfoPtr->m_coverageClips)
                 {
                 viewContext.PushClip(*clip);
-                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo);
+                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
                 viewContext.PopTransformClip();
                 }
             }
@@ -670,11 +682,13 @@ virtual Completion _Process(ViewContextR viewContext) override
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                       DMatrix4d&                              storageToUorsTransfo, 
-                      ViewContextR                            context) 
+                      ViewContextR                            context,
+                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
     {
     RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
                                                                                                         currentDrawingInfoPtr,
-                                                                                                        storageToUorsTransfo));
+                                                                                                        storageToUorsTransfo,
+                                                                                                        cacheManager));
     
     context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
     }
@@ -782,13 +796,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);  
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
             if (!clipFromCoverageSet.empty())
                 {
                 for (auto& clip : clipFromCoverageSet)
                     {
                     context.PushClip(*clip);
-                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
+                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
                     context.PopTransformClip();
                     }
                 }
@@ -993,22 +1007,22 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
     else isTerrainComplete = true;
 
-    if (isTerrainComplete && !needProgressive) m_forceRedraw = false;
+    if (isTerrainComplete && !needProgressive && !!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->IsDirty()) m_forceRedraw = false;
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
         {
         for (auto&clip : clipFromCoverageSet)
             {            
             context.PushClip(*clip);
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
             context.PopTransformClip();
             }
         }
 
     if (needProgressive)
         {
-        ScalableMeshProgressiveDisplay::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
+        ScalableMeshProgressiveDisplay::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
         }
 
     }                 
