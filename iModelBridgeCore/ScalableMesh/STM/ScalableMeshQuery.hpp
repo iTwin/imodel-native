@@ -1786,6 +1786,9 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
     {
     if (!m_cachedDisplayMeshData.IsValid())
         return false;
+    if (m_cachedDisplayMeshData->size() == 0)
+        return false;
+    if ((*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() == 0) return false;
 
     for (auto& textureData : m_cachedDisplayTextureData)
         {
@@ -2271,28 +2274,30 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 if (s_deactivateTexture || !meshNode->IsTextured())
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
-                                                                                     finalPointNb,
-                                                                                     &centroid,
-                                                                                     finalPointPtr,
-                                                                                     0,
-                                                                                     (int)finalIndexNb / 3,
-                                                                                     finalIndexPtr,
-                                                                                     0,
-                                                                                     0);
+                                                                    finalPointNb,
+                                                                    &centroid,
+                                                                    finalPointPtr,
+                                                                    0,
+                                                                    (int)finalIndexNb / 3,
+                                                                    finalIndexPtr,
+                                                                    0,
+                                                                    0);
+                       // meshNode->GetBlockID().m_integerID);
 
                     assert(status == SUCCESS);
                     }
                 else
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
-                                                                                         finalPointNb,
-                                                                                         &centroid,
-                                                                                         finalPointPtr,
-                                                                                         0,
-                                                                                         (int)finalIndexNb / 3,
-                                                                                         finalIndexPtr,
-                                                                                         finalUVPtr,
-                                                                                         GetCachedDisplayTextureForID(textureID));
+                                                                                        finalPointNb,
+                                                                                        &centroid,
+                                                                                        finalPointPtr,
+                                                                                        0,
+                                                                                        (int)finalIndexNb / 3,
+                                                                                        finalIndexPtr,
+                                                                                        finalUVPtr,
+                                                                                        GetCachedDisplayTextureForID(textureID));
+                        //meshNode->GetBlockID().m_integerID);
 
                     assert(status == SUCCESS);
                     }
