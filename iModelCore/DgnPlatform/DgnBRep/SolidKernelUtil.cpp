@@ -68,6 +68,8 @@ FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
         m_material = sourceParams.GetMaterialId();
         // NEEDSWORK_WIP_MATERIAL...m_uv???
         }
+
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**

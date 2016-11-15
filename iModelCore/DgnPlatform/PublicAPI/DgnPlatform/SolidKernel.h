@@ -374,12 +374,14 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
 //! @param[in] maxVertexDistance A vertex will be picked if it is within this distance from the ray.
 //! @note The returned entities are ordered by increasing distance from ray origin to hit point on entity.
 //! @return true if ray intersected a requested entity type.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance);
 
 //! Find the closest sub-entity on body to a given point.
 //! @param[in] entity The entity to find the closest sub-entity for.
 //! @param[in] testPt The space point.
 //! @return the face, edge, or vertex sub-entity that contains the closest point.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
 
 //! Test if a point is inside or on the boundary of the given body.
