@@ -139,7 +139,6 @@ static void clearRollbackMarks ()
         } 
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -150,8 +149,6 @@ static void clearExclusions()
 
     PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2015
@@ -364,11 +361,9 @@ TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
     Json::Value     value;
     Json::Reader    reader;
 
-
     if (BeFileStatus::Success != inputFile.Open (m_fileName.c_str(), BeFileAccess::Read) ||
         BeFileStatus::Success != inputFile.ReadEntireFile (inputData) ||
         !reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value))
-
         {
         for (auto& element : m_elementStates)
             m_added.insert (element.first);
@@ -399,6 +394,10 @@ TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
     for (auto& elementState : m_elementStates)
         if (0 == elementState.second.GetFacetCount())
             m_added.insert (elementState.first);
+
+#ifdef WIP
+    
+#endif    
     }
 
 

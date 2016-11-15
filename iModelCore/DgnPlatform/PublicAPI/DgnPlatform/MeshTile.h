@@ -460,6 +460,7 @@ private:
     bmap<DgnElementId, ElementState>    m_elementStates;
     bset<DgnElementId>                  m_deleted;                  // A change will be handled as a delete/add.
     bset<DgnElementId>                  m_added;
+    Json::Value                         m_previousTileSet;
 
 protected:    
     TileModelDelta(DgnModelCR model, BeFileNameCR dataDirectory);       // Constructor for current model state.
