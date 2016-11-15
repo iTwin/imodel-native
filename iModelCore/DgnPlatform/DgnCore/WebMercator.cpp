@@ -222,28 +222,29 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
 * @note this method can be called on many threads, simultaneously.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
+BentleyStatus MapTile::MapTileload::_LoadTile()
     {
-    MapRootR mapRoot = (MapRootR) root;
+    MapRootR mapRoot = static_cast<MapRootR>(m_tile->GetRootR());
+    MapTileR tile = static_cast<MapTileR>(*m_tile);
 
-    auto graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
-    ImageSource source(mapRoot.m_format, std::move(data));
+    ImageSource source(mapRoot.m_format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = root.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
-    data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
+    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
+    m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
-    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+    graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
 
-    m_graphic = graphic;
+    tile.m_graphic = graphic;
 
-    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
     }
 
@@ -279,7 +280,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
 * frustum testing).
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_mapRoot(root), m_id(id)
+MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(root, parent), m_mapRoot(root), m_id(id)
     {
     // First, convert from tile coordinates to LatLong.
     double nTiles = (1 << id.m_zoomLevel);
@@ -325,7 +326,7 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
 * Combine the three parts of the full tile URL: rootUrl + tileName + urlSuffix.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapRoot::_ConstructTileName(TileCR tile)
+Utf8String MapRoot::_ConstructTileName(TileCR tile) const
     {
     return m_rootUrl + tile._GetTileName() + m_urlSuffix;
     }
@@ -334,7 +335,7 @@ Utf8String MapRoot::_ConstructTileName(TileCR tile)
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, realityCacheName, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+        uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)
@@ -366,8 +367,16 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
         return;
         }
 
-    CreateCache(MAX_DB_CACHE_SIZE);
+    CreateCache(realityCacheName, MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, TileId(0,0,0), nullptr);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+TileLoadPtr MapTile::_CreateTileLoad(TileLoadsPtr loads)
+    {
+    return new MapTileload(GetRoot()._ConstructTileName(*this), *this, loads);
     }
 
 /*---------------------------------------------------------------------------------**//**

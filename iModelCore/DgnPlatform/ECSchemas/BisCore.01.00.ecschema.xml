@@ -1301,7 +1301,8 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECProperty propertyName="Details" typeName="string" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">

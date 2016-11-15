@@ -193,6 +193,12 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const = 0;
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
 //! @private
 virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
+//! @private
+virtual bool _GetFaceLocation(DPoint3dR, DPoint2dR) const = 0;
+//! @private
+virtual bool _GetEdgeLocation(DPoint3dR, double&) const = 0;
+//! @private
+virtual bool _GetVertexLocation(DPoint3dR) const = 0;
 
 public:
 
@@ -216,6 +222,18 @@ GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 
 //! @return A Render::Graphic representing this sub-entity.
 Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
+
+//! Get pick location and uv parameter from a sub-entity representing a face. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetFaceLocation(DPoint3dR point, DPoint2dR uvParam) const {return _GetFaceLocation(point, uvParam);}
+
+//! Get pick location and u parameter from a sub-entity representing a edge. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetEdgeLocation(DPoint3dR point, double& uParam) const {return _GetEdgeLocation(point, uParam);}
+
+//! Get vertex location from a sub-entity representing a vertex. 
+//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
+bool GetVertexLocation(DPoint3dR point) const {return _GetVertexLocation(point);}
 
 }; // ISubEntity
 
@@ -356,12 +374,14 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
 //! @param[in] maxVertexDistance A vertex will be picked if it is within this distance from the ray.
 //! @note The returned entities are ordered by increasing distance from ray origin to hit point on entity.
 //! @return true if ray intersected a requested entity type.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance);
 
 //! Find the closest sub-entity on body to a given point.
 //! @param[in] entity The entity to find the closest sub-entity for.
 //! @param[in] testPt The space point.
 //! @return the face, edge, or vertex sub-entity that contains the closest point.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
 
 //! Test if a point is inside or on the boundary of the given body.
@@ -393,19 +413,6 @@ DGNPLATFORM_EXPORT static bool ClosestPointToFace(ISubEntityCR subEntity, DPoint
 //! @param[out] param The u parameter at the closest point.
 //! @return true if closest point was found.
 DGNPLATFORM_EXPORT static bool ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, double& param);
-
-//! Get pick location and uv parameter from a sub-entity representing a face. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param);
-
-//! Get pick location and u parameter from a sub-entity representing a edge. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam);
-
-//! Get vertex location from a sub-entity representing a vertex. 
-//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
-//! @note Convenience method for use along with GetFaceLocation and GetEdgeLocation; could use EvaluateVertex instead.
-DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
 
 //! Return a PolyfaceHeader created by facetting the supplied sheet or solid body using the specified facet options.
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
@@ -455,6 +462,36 @@ struct Create
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L);
+
+    //! @param[out] out The new body.
+    //! @param[in] profiles The cross sections profiles.
+    //! @param[in] nProfiles The profile count.
+    //! @param[in] guides An optional set of guide curves for constrolling the loft.
+    //! @param[in] nGuides The guide curve count.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L);
+
+    //! Create a new sheet or solid body by sweeping a cross section profile along a path.
+    //! @param[out] out The new body.
+    //! @param[in] profile The cross section profile. (open, closed, or region with holes)
+    //! @param[in] path The path to sweep along.
+    //! @param[in] alignParallel true to keep profile at a fixed angle to global axis instead of path tangent (and lock direction).
+    //! @param[in] selfRepair true to attempt repair of self-intersections.
+    //! @param[in] createSheet true to force a sheet body to be created from a closed profile which would normally produce a solid body. (Similiar behavior to ISolidPrimitive::GetCapped)
+    //! @param[in] lockDirection Optionally keep profile at a fixed angle relative to the path tangent projected into a plane perpendicular to the lock direction. Only valid when alignParallel is false.
+    //! @param[in] twistAngle Optionally spin profile as it moves along the path.
+    //! @param[in] scale Optionally scale profile as it moves along the path.
+    //! @param[in] scalePoint The profile point to scale about, required when applying scale.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, BentleyApi::DVec3dCP lockDirection = NULL, double const* twistAngle = NULL, double const* scale = NULL, BentleyApi::DPoint3dCP scalePoint = NULL, uint32_t nodeId = 0L);
+
+    //! Create a new body by extruding a planar sheet body up to another body.
+    //! @param[out] out The new body.
+    //! @param[in] extrudeTo The body to trim the extruded body to.
+    //! @param[in] profile The planar sheet body to extrude.
+    //! @param[in] reverseDirection To specify if extrusion is in the same direction or opposite direction to the surface normal of the profile sheet body.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& out, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
     };
 
 //! Support for modification of bodies.
