@@ -2258,3 +2258,95 @@ TEST (BeFileNameTests, PopDir)
 #endif
 #endif
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                          Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(BeFileNameTests, SupplyDefaultNameParts)
+    {
+    //
+    // Replacing file name part
+
+    BeFileName  fileNameA("\\dir1\\dir2\\.txt", true);
+    BeFileName  fileNameW(L"/dir1/dir2/.txt");
+
+#if defined (_WIN32)
+    WCharCP     expected = L"\\dir1\\dir2\\temp.txt";
+#else
+    WCharCP     expected = L"/dir1/dir2/temp.txt";
+#endif
+    WCharCP defaultName = L"\\dir1\\dir2_1\\temp.txt";
+    fileNameA.SupplyDefaultNameParts(defaultName);
+    fileNameW.SupplyDefaultNameParts(defaultName);
+    EXPECT_STREQ(expected, fileNameA.GetName());
+    EXPECT_TRUE(0 == wcscmp(fileNameA.GetName(), expected)) << " expected " << expected << " got  " << fileNameA.GetName();
+    EXPECT_TRUE(0 == wcscmp(fileNameW.GetName(), expected)) << " expected " << expected << " got  " << fileNameW.GetName();
+
+    //
+    // Replacing file extension part
+
+    BeFileName  fileNameA_2("\\dir1\\dir2\\temp", true);
+    BeFileName  fileNameW_2(L"/dir1/dir2/temp");
+
+#if defined (_WIN32)
+    expected = L"\\dir1\\dir2\\temp.txt";
+#else
+    expected = L"/dir1/dir2/temp.txt";
+#endif
+    defaultName = L"\\dir1\\dir2_1\\temp.txt";
+    fileNameA_2.SupplyDefaultNameParts(defaultName);
+    fileNameW_2.SupplyDefaultNameParts(defaultName);
+    EXPECT_TRUE(0 == wcscmp(fileNameA_2.GetName(), expected)) << " expected " << expected << " got  " << fileNameA_2.GetName();
+    EXPECT_TRUE(0 == wcscmp(fileNameW_2.GetName(), expected)) << " expected " << expected << " got  " << fileNameW_2.GetName();
+
+    //
+    // Replacing Directory path part
+
+    BeFileName  fileNameA_3("temp.txt", true);
+    BeFileName  fileNameW_3(L"temp.txt");
+
+#if defined (_WIN32)
+    expected = L"\\dir1\\dir2_1\\temp.txt";
+#else
+    expected = L"/dir1/dir2_1/temp.txt";
+#endif
+    defaultName = L"\\dir1\\dir2_1\\temp.txt";
+    fileNameA_3.SupplyDefaultNameParts(defaultName);
+    fileNameW_3.SupplyDefaultNameParts(defaultName);
+    EXPECT_TRUE(0 == wcscmp(fileNameA_3.GetName(), expected)) << " expected " << expected << " got  " << fileNameA_3.GetName();
+    EXPECT_TRUE(0 == wcscmp(fileNameW_3.GetName(), expected)) << " expected " << expected << " got  " << fileNameW_3.GetName();
+
+    //
+    // Replacing Drive part
+
+    BeFileName  fileNameA_4("\\dir1\\dir2\\temp.txt", true);
+    BeFileName  fileNameW_4(L"/dir1/dir2/temp.txt");
+
+#if defined (_WIN32)
+    expected = L"D:\\dir1\\dir2\\temp.txt";
+#else
+    expected = L"D:/dir1/dir2/temp.txt";
+#endif
+    defaultName = L"D:\\dir1\\dir2_1\\temp.txt";
+    fileNameA_4.SupplyDefaultNameParts(defaultName);
+    fileNameW_4.SupplyDefaultNameParts(defaultName);
+    EXPECT_TRUE(0 == wcscmp(fileNameA_4.GetName(), expected)) << " expected " << expected << " got  " << fileNameA_4.GetName();
+    EXPECT_TRUE(0 == wcscmp(fileNameW_4.GetName(), expected)) << " expected " << expected << " got  " << fileNameW_4.GetName();
+
+    //
+    // Replacing Drive and file name parts
+
+    BeFileName  fileNameA_5("\\dir1\\dir2\\.txt", true);
+    BeFileName  fileNameW_5(L"/dir1/dir2/.txt");
+
+#if defined (_WIN32)
+    expected = L"D:\\dir1\\dir2\\temp.txt";
+#else
+    expected = L"D:/dir1/dir2/temp.txt";
+#endif
+    defaultName = L"D:\\dir1\\dir2_1\\temp.txt";
+    fileNameA_5.SupplyDefaultNameParts(defaultName);
+    fileNameW_5.SupplyDefaultNameParts(defaultName);
+    EXPECT_TRUE(0 == wcscmp(fileNameA_5.GetName(), expected)) << " expected " << expected << " got  " << fileNameA_5.GetName();
+    EXPECT_TRUE(0 == wcscmp(fileNameW_5.GetName(), expected)) << " expected " << expected << " got  " << fileNameW_5.GetName();
+    }

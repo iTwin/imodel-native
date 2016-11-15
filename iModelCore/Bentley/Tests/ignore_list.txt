@@ -34,3 +34,4 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
     # To be equal to: ++i
     #       Which is: 2
     # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)
+

@@ -107,3 +107,55 @@ TEST (BeTimeUtilitiesTests, StopWatch)
 #endif
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Farhad.Kabir                       10/16
+//---------------------------------------------------------------------------------------
+//     This method calculates time difference between local time zone of machine and
+//     GMT/UTC time in milli seconds.
+uint64_t adjustingTimeZone()
+    {
+    double seconds;
+    time_t t1 = time(NULL);
+    struct tm buf1;
+    localtime_s(&buf1, &t1);
+    time_t t = time(NULL);
+    struct tm buf;
+    gmtime_s(&buf, &t);
+    seconds = difftime(mktime(&buf1), mktime(&buf));
+    uint64_t localmillis = (uint64_t)seconds * 1000;
+    return localmillis; // return time difference in milli seconds
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Farhad.Kabir                       10/16
+//---------------------------------------------------------------------------------------
+TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
+    {
+    bmap<uint64_t, uint64_t> testData;
+    testData.Insert(1095379199000, 1095379199000 + adjustingTimeZone());
+    testData.Insert(1379469420000, 1379469420000 + adjustingTimeZone());
+    testData.begin();
+    bmap<uint64_t, uint64_t>::iterator data = testData.begin();
+    while (data != testData.end())
+        {
+        uint64_t actualMillis = data->first;
+        BentleyStatus stat = BeTimeUtilities::AdjustUnixMillisForLocalTime(actualMillis);
+        EXPECT_TRUE(stat == BentleyStatus::SUCCESS);
+        uint64_t expectedMillis = data->second;
+
+        EXPECT_EQ(expectedMillis, actualMillis);
+        ++data;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Farhad.Kabir                       10/16
+//---------------------------------------------------------------------------------------
+TEST(BeTimeUtilitiesTests, GetCurrentTimeAsUnixMillisDoubleWithDelay) 
+    {
+    double ts0 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDoubleWithDelay();
+    double ts1 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDoubleWithDelay();
+
+    EXPECT_NE(ts0,ts1)<< "ts0 is "<< ts0 << "ts1 is " << ts1;
+
+    }
