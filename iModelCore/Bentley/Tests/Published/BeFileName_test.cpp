@@ -2267,7 +2267,7 @@ TEST(BeFileNameTests, SupplyDefaultNameParts)
     //
     // Replacing file name part
 
-    BeFileName  fileNameA("\\dir1\\dr2\\.txt", true);
+    BeFileName  fileNameA("\\dir1\\dir2\\.txt", true);
     BeFileName  fileNameW(L"/dir1/dir2/.txt");
 
 #if defined (_WIN32)

@@ -160,20 +160,3 @@ TEST(BeTimeUtilitiesTests, GetCurrentTimeAsUnixMillisDoubleWithDelay)
     EXPECT_NE(ts0,ts1)<< "ts0 is "<< ts0 << "ts1 is " << ts1;
 
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Farhad.Kabir                       10/16
-//---------------------------------------------------------------------------------------
-TEST(StopWatchTests, Now)
-    {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
-    uint64_t t1 = StopWatch::Now();
-    uint64_t t2;
-    QueryPerformanceCounter((LARGE_INTEGER*)&t2);
-    EXPECT_EQ(t2,t1);
-#elif defined (__unix__)
-    uint64_t t1 = StopWatch::Now();
-    uint64_t t2 = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    EXPECT_EQ(t2, t1);
-#endif
-    }
