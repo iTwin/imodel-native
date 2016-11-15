@@ -12,6 +12,10 @@
 #include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/ViewController.h>
 
+BEGIN_BENTLEY_DGN_NAMESPACE
+struct SheetViewDefinition;
+END_BENTLEY_DGN_NAMESPACE
+
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 
 BEGIN_SHEET_NAMESPACE
@@ -156,7 +160,7 @@ public:
 struct ViewController : Dgn::ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
-    friend struct SheetViewDefinition;
+    friend SheetViewDefinition;
 
 protected:
     ViewControllerCP _ToSheetView() const override {return this;}
