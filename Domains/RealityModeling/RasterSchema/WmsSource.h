@@ -34,7 +34,7 @@ private:
 
     bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 
-    std::atomic<Http::HttpStatus> m_lastHttpError = Http::HttpStatus::None;
+    std::atomic<Http::HttpStatus> m_lastHttpError;
 
     GeoCoordinates::BaseGCSPtr m_gcs;   //! WMS Gcs. Might be NULL if we cannot create one.
 
