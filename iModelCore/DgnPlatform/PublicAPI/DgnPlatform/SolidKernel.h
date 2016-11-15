@@ -468,6 +468,7 @@ struct Create
     //! @param[in] nProfiles The profile count.
     //! @param[in] guides An optional set of guide curves for constrolling the loft.
     //! @param[in] nGuides The guide curve count.
+    //! @param[in] nodeId   -- *** TBD ***
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L);
 
@@ -482,6 +483,7 @@ struct Create
     //! @param[in] twistAngle Optionally spin profile as it moves along the path.
     //! @param[in] scale Optionally scale profile as it moves along the path.
     //! @param[in] scalePoint The profile point to scale about, required when applying scale.
+    //! @param[in] nodeId   -- *** TBD ***
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, BentleyApi::DVec3dCP lockDirection = NULL, double const* twistAngle = NULL, double const* scale = NULL, BentleyApi::DPoint3dCP scalePoint = NULL, uint32_t nodeId = 0L);
 
@@ -490,6 +492,7 @@ struct Create
     //! @param[in] extrudeTo The body to trim the extruded body to.
     //! @param[in] profile The planar sheet body to extrude.
     //! @param[in] reverseDirection To specify if extrusion is in the same direction or opposite direction to the surface normal of the profile sheet body.
+    //! @param[in] nodeId   -- *** TBD ***
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& out, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
     };
