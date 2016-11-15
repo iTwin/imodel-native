@@ -30,7 +30,6 @@ TEST(BeFileName_Tests, GetCurrentWorkingDirectory)
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                    11/16
 //-------------------------------------------------------------------------------------------
-
 TEST(BeFileName_Tests, BeGetTempPath)
     {
     BeFileName bf1(L"");

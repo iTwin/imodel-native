@@ -115,15 +115,14 @@ TEST (BeTimeUtilitiesTests, StopWatch)
 //     GMT/UTC time in milli seconds.
 uint64_t adjustingTimeZone()
     {
-    time_t localtime;
     double seconds;
-
-    time(&localtime);  /* get current time; same as: now = time(NULL)  */
+    time_t t1 = time(NULL);
+    struct tm buf1;
+    localtime_s(&buf1, &t1);
     time_t t = time(NULL);
     struct tm buf;
     gmtime_s(&buf, &t);
-
-    seconds = difftime(localtime, mktime(&buf));
+    seconds = difftime(mktime(&buf1), mktime(&buf));
     uint64_t localmillis = (uint64_t)seconds * 1000;
     return localmillis; // return time difference in milli seconds
     }
@@ -144,7 +143,7 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
         EXPECT_TRUE(stat == BentleyStatus::SUCCESS);
         uint64_t expectedMillis = data->second;
 
-        EXPECT_TRUE(expectedMillis == actualMillis);
+        EXPECT_EQ(expectedMillis, actualMillis);
         ++data;
         }
     }

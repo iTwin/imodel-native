@@ -1118,9 +1118,9 @@ TEST(DateTimeTests, CommonEraTicksToJulianDay)
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, CompareDates)
     {
-    ///Date Only
-    DateTime date1 (2014, 02, 13);
-    DateTime date2 (2014, 04, 13);
+    //Date Only
+    DateTime date1(2014, 02, 13);
+    DateTime date2(2014, 04, 13);
 
     ASSERT_TRUE(date1.IsValid());
     ASSERT_TRUE(date2.IsValid());
@@ -1128,9 +1128,8 @@ TEST(DateTimeTests, CompareDates)
     EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date2, date1));
     date1 = date2;
     EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date2, date1));
-    //EXPECT_EQ((int)DateTime::CompareResult::Error, (int)DateTime::Compare(date1, DateTime(DateTime::Kind::Utc, 2014, 13, 5, 13, 11, 22, 4400000)));
 
-    ///Date and Date Time Objects
+    //Date and Date Time Objects
     DateTime date3(DateTime::Kind::Utc, 2014, 13, 13, 22, 3, 12, 8888000);
     DateTime date4(2014, 04, 13);
 
@@ -1141,7 +1140,7 @@ TEST(DateTimeTests, CompareDates)
     date3 = date4;
     EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date4, date3));
 
-    ///DateTime Utc Objects
+    //DateTime Utc Objects
     DateTime date5(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 8888000);
     DateTime date6(DateTime::Kind::Utc, 2015, 10, 13, 22, 3, 12, 8888001);
 
@@ -1152,7 +1151,7 @@ TEST(DateTimeTests, CompareDates)
     date5 = date6;
     EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date6, date5));
 
-    ///DateTime Local Objects
+    //DateTime Local Objects
     DateTime date7(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888000);
     DateTime date8(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888012);
 
@@ -1163,14 +1162,19 @@ TEST(DateTimeTests, CompareDates)
     date7 = date8;
     EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date8, date7));
 
-    ///DateTime Unspecified Objects
+    //DateTime Unspecified Objects
     DateTime date9(DateTime::Kind::Unspecified, 2014, 01, 13, 22, 3, 12, 888000);
     DateTime date10(DateTime::Kind::Unspecified, 2014, 02, 13, 22, 3, 12, 888000);
-
-    ASSERT_TRUE(date5.IsValid());
-    ASSERT_TRUE(date6.IsValid());
+    ASSERT_TRUE(date9.IsValid());
+    ASSERT_TRUE(date10.IsValid());
     EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date9, date10));
     EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date10, date9));
     date9 = date10;
     EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date10, date9));
+
+    //Invalid DateTime Objects
+    DateTime date11;
+    DateTime date12;
+    ASSERT_TRUE(!date11.IsValid());
+    ASSERT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date11, date12));
     }
