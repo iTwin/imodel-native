@@ -194,8 +194,7 @@ namespace IndexECPlugin.Tests
                 Expect.Call(delegate
                 {
                     m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
-                //}).Repeat.Times(3);
-                }).Repeat.Never();
+                }).Repeat.Times(3);
 
                 }
             using ( m_mock.Playback() )

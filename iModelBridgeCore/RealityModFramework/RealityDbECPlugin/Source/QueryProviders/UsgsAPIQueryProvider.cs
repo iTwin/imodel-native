@@ -81,9 +81,9 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        /// <param name="dbConnection">The dbConnection that will be used to access the cache in the database</param>
+        /// <param name="connectionString">The connection string that will be used to access the cache in the database</param>
         /// <param name="schemaModule">The schema of the ECPlugin</param>
-        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbConnection dbConnection, IECSchema schemaModule)
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, string connectionString, IECSchema schemaModule)
             {
             m_query = query;
             m_querySettings = querySettings;
@@ -97,7 +97,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 daysCacheIsValid = 10;
                 }
-            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, dbConnection, querySettings, new DbQuerier());
+            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, connectionString, querySettings, new DbQuerier());
 
             }
 
@@ -265,15 +265,17 @@ namespace IndexECPlugin.Source.QueryProviders
         //We should replace isComplete by an extended data parameter in each of the instances.
         private void LaunchCaching ()
             {
-            foreach(KeyValuePair<IECClass, List<IECInstance>> instancesGroup in m_storageForCaching)
+            //Parallel.ForEach(m_storageForCaching, (instancesGroup) =>
+            foreach ( var instancesGroup in m_storageForCaching )
                 {
                 List<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null;
-                if(instancesGroup.Key.Name == "SpatialEntityBase")
+                if ( instancesGroup.Key.Name == "SpatialEntityBase" )
                     {
                     additionalColumns = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
-                    additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("ParentDatasetIdStr", Bentley.ECObjects.ECObjects.StringType, inst => ((string)inst.ExtendedData["ParentDatasetIdStr"])));
+                    additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("ParentDatasetIdStr", Bentley.ECObjects.ECObjects.StringType, inst => ((string) inst.ExtendedData["ParentDatasetIdStr"])));
                     }
                 m_instanceCacheManager.InsertInstancesInCache(instancesGroup.Value, instancesGroup.Key, additionalColumns);
+                //});
                 }
             }
 
@@ -1359,7 +1361,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             continue;
                             }
 
-                        //CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
+                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
 
                         instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
