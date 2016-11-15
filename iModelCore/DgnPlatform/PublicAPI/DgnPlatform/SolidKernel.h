@@ -193,6 +193,12 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const = 0;
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
 //! @private
 virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
+//! @private
+virtual bool _GetFaceLocation(DPoint3dR, DPoint2dR) const = 0;
+//! @private
+virtual bool _GetEdgeLocation(DPoint3dR, double&) const = 0;
+//! @private
+virtual bool _GetVertexLocation(DPoint3dR) const = 0;
 
 public:
 
@@ -216,6 +222,18 @@ GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 
 //! @return A Render::Graphic representing this sub-entity.
 Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
+
+//! Get pick location and uv parameter from a sub-entity representing a face. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetFaceLocation(DPoint3dR point, DPoint2dR uvParam) const {return _GetFaceLocation(point, uvParam);}
+
+//! Get pick location and u parameter from a sub-entity representing a edge. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetEdgeLocation(DPoint3dR point, double& uParam) const {return _GetEdgeLocation(point, uParam);}
+
+//! Get vertex location from a sub-entity representing a vertex. 
+//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
+bool GetVertexLocation(DPoint3dR point) const {return _GetVertexLocation(point);}
 
 }; // ISubEntity
 
@@ -393,19 +411,6 @@ DGNPLATFORM_EXPORT static bool ClosestPointToFace(ISubEntityCR subEntity, DPoint
 //! @param[out] param The u parameter at the closest point.
 //! @return true if closest point was found.
 DGNPLATFORM_EXPORT static bool ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, double& param);
-
-//! Get pick location and uv parameter from a sub-entity representing a face. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param);
-
-//! Get pick location and u parameter from a sub-entity representing a edge. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam);
-
-//! Get vertex location from a sub-entity representing a vertex. 
-//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
-//! @note Convenience method for use along with GetFaceLocation and GetEdgeLocation; could use EvaluateVertex instead.
-DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
 
 //! Return a PolyfaceHeader created by facetting the supplied sheet or solid body using the specified facet options.
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);

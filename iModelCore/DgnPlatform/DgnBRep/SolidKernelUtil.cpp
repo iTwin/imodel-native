@@ -738,44 +738,7 @@ bool BRepUtil::ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPo
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
-    {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetFaceLocation(subEntity, point, param);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetEdgeLocation(subEntity, point, uParam);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetVertexLocation(subEntity, point);
-#else
-    return false;
-#endif
-    }
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -800,7 +763,6 @@ static void transformInertiaTensor(double inertia[3][3], RotMatrixCR rMatrix, do
     inertia[0][2] *= pow(scale, power);
     inertia[1][2] *= pow(scale, power);
     }
-
 #endif
     
 /*---------------------------------------------------------------------------------**//**
