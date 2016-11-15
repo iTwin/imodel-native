@@ -211,7 +211,7 @@ public:
 
     //! Add a new geometric element into the range index.
     //! @param[in] geom the element to add to the range index.
-    DGNPLATFORM_EXPORT void AddElement(GeometrySourceCR geom){if (geom.HasGeometry()) AddEntry(Entry(geom.CalculateRange3d(), geom.ToElement()->GetElementId(), geom.GetCategoryId()));}
+    DGNPLATFORM_EXPORT void AddElement(GeometrySourceCR geom) {if (geom.HasGeometry()) AddEntry(Entry(geom.CalculateRange3d(), geom.ToElement()->GetElementId(), geom.GetCategoryId()));}
 
     //! Remove an element from the range index.
     //! @param[in] id The id of the element to remove

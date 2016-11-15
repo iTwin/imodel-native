@@ -47,7 +47,6 @@ Frustum::Frustum(DRange3dCR range)
     m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -183,22 +182,6 @@ void SpatialViewController::QueueQuery(DgnViewportR viewport, UpdatePlan::Query 
     GetDgnDb().GetQueryQueue().Add(*query);
     if (plan.WantWait())
         GetDgnDb().GetQueryQueue().WaitFor(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::AssignActiveVolume(ClipPrimitiveR volume)
-    {
-    m_activeVolume = &volume;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::ClearActiveVolume()
-    {
-    m_activeVolume = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,7 +914,6 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
         {
         if (!m_view.m_scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
-            ++m_view.m_scene->m_progressiveTotal;
             if (SUCCESS != context.VisitElement(thisId, true)) // no, draw it now
                 {
                 m_abortedElement = thisId;
@@ -943,6 +925,8 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
                 context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }
+
+            ++m_view.m_scene->m_progressiveTotal;
             }
 
         if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch

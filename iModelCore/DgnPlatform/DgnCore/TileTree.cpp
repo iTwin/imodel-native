@@ -68,7 +68,7 @@ BentleyStatus TileLoad::DoRead()
             return SUCCESS;
             }
             
-        // If for some reasons, we failed to load from the db, try from the source.
+        // If for some reason we failed to load from the db, try from the source.
         }
         
     if (SUCCESS != _ReadFromSource())
@@ -119,7 +119,6 @@ BentleyStatus TileLoad::_ReadFromSource()
 
     return SUCCESS;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * Attempt to load a node from the local cache.
@@ -211,10 +210,7 @@ BentleyStatus TileLoad::SaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadsPtr loads)
-    :m_request(url),
-     m_loads(loads),
-     m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadsPtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)

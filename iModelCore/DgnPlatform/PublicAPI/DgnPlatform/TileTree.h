@@ -31,7 +31,7 @@ It manages:
  - incremental asynchronous refinement
 
 The tree is represented in memory by two classes: TileTree::Root and TileTree::Tile. The tree is in a local
-coordinate system, and is positioned in BIM world space by a linear transform.
+coordinate system, and is positioned in world space by a linear transform.
 
 The HLOD tree can subdivide space using any approach, but must obey the following rules:
  a) there is one TileTree::Root, and it points to the root TileTree::Tile
@@ -140,8 +140,8 @@ public:
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
-    RootR GetRootR() { return m_root; }
-    DGNPLATFORM_EXPORT int CountTiles() const;
+    RootR GetRootR() {return m_root;}
+    DGNPLATFORM_EXPORT int CountTiles() const; //! for debugging
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
     
 
@@ -171,8 +171,8 @@ public:
 };
 
 /*=================================================================================**//**
-//! The root of a tree of tiles. This object stores the location of the tree relative to the BIM. It also facilitates
-//! local caching of HTTP-based tiles.
+//! The root of a tree of tiles. This object stores the location of the tree relative to world coordinates. 
+//! It also facilitates local caching of HTTP-based tiles.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
@@ -193,7 +193,7 @@ protected:
     BeConditionVariable m_cv;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
-    //! All subclasses of Root must call this method in their destructor. This is necessary ,since it must be called while the subclass vtable is 
+    //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
@@ -289,10 +289,9 @@ protected:
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
     TileLoad(Utf8StringCR fileName, TileR tile, TileLoadsPtr& loads, Utf8StringCR cacheKey)
-        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+        : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
-
     BentleyStatus SaveToDb();
     BentleyStatus ReadFromDb();
 
@@ -306,8 +305,8 @@ public:
     struct TileLoader
         {
         Root& m_root;
-        TileLoader(Root& root) : m_root(root) { root.StartTileLoad(); }
-        ~TileLoader() { m_root.DoneTileLoad(); }
+        TileLoader(Root& root) : m_root(root) {root.StartTileLoad();}
+        ~TileLoader() {m_root.DoneTileLoad();}
         };
 
     //! Called from worker threads to read the data. Could be from cache or from source.
@@ -326,7 +325,7 @@ struct HttpDataQuery
 
     DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadsPtr loads);
 
-    bool WasCanceled() const { return m_response.GetConnectionStatus() == Http::ConnectionStatus::Canceled; }
+    bool WasCanceled() const {return m_response.GetConnectionStatus() == Http::ConnectionStatus::Canceled;}
 
     Http::Request& GetRequest() {return m_request;}
 
