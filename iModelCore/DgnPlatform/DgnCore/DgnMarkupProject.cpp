@@ -770,8 +770,8 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     view->GetDisplayStyle().SetViewFlags(flags);
 
     auto& catsel = view->GetCategorySelector();
-    for (auto const& catId : DgnCategory::QueryCategories(db))
-        catsel.AddCategory(catId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+        catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
         
     return view;
     }

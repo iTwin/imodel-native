@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/VecMath.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-#include <DgnPlatform/DgnBRep/OCBRep.h>
-#elif defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
@@ -880,6 +878,8 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
     if (PK_ENTITY_null == entityTag)
         return;
 
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
+
     if (includeEdges)
         {
         int         nEdges = 0;
@@ -889,17 +889,43 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
 
         for (int iEdge = 0; iEdge < nEdges; ++iEdge)
             {
+            if (stopTester && stopTester->_CheckStop())
+                return;
+
+            bool isHiddenEntity = false;
+
+            if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTags[iEdge]) && isHiddenEntity)
+                continue;
+
             ICurvePrimitivePtr curve;
 
             if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTags[iEdge]))
                 break;
 
-            // NEEDSWORK: Get correct symbology from face attachments...
+            PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTags[iEdge]) : PK_ENTITY_null);
+
+            if (PK_ENTITY_null != faceTag)
+                {
+                T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+                T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+                T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
+
+                if (found == faceToSubElemIdMap.end())
+                    {
+                    BeAssert(false); // ERROR - Face not represented in map...
+                    }
+                else
+                    {
+                    FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
+                    Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+
+                    if (nullptr != graphicParams)
+                        graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
+                    }
+                }
+
             curve->TransformInPlace(entity.GetEntityTransform());
             graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-
-            if (stopTester && stopTester->_CheckStop())
-                return;
             }
 
         PK_MEMORY_free(edgeTags);
@@ -907,50 +933,10 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
 
     if (includeFaceIso)
         {
+        if (stopTester && stopTester->_CheckStop())
+            return;
+
         // NEEDSWORK...Do something with face hatch lines???
-        }
-
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-
-    if (nullptr == shape)
-        return;    
-    
-    if (includeEdges)
-        {
-        TopTools_IndexedMapOfShape edgeMap;
-
-        TopExp::MapShapes(*shape, TopAbs_EDGE, edgeMap);
-
-        for (int iEdge=1; iEdge <= edgeMap.Extent(); iEdge++)
-            {
-            TopoDS_Edge const& edge = TopoDS::Edge(edgeMap(iEdge));
-            ICurvePrimitivePtr curve = OCBRep::ToCurvePrimitive(edge);
-
-            if (!curve.IsValid())
-                continue;
-
-            graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-
-            if (stopTester && stopTester->_CheckStop())
-                return;
-            }
-        }
-
-    if (includeFaceIso)
-        {
-        Geom2dHatch_Hatcher hatcher = Geom2dHatch_Hatcher(Geom2dHatch_Intersector(1.e-10, 1.e-10), 1.e-8, 1.e-8);
-        bool isSheet = (IBRepEntity::EntityType::Sheet == entity.GetEntityType());
-
-        for (TopExp_Explorer ex(*shape, TopAbs_FACE); ex.More(); ex.Next())
-            {
-            TopoDS_Face const& face = TopoDS::Face(ex.Current());
-
-            OCBRepUtil::HatchFace(graphic, hatcher, face, !isSheet);
-
-            if (stopTester && stopTester->_CheckStop())
-                return;
-            }
         }
 #endif
     }

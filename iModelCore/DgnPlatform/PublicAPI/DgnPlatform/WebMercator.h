@@ -56,7 +56,7 @@ struct MapRoot : TileTree::Root
     Transform m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
 
     DPoint3d ToWorldPoint(GeoPoint);
-    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
+    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) const override;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
@@ -69,6 +69,16 @@ struct MapRoot : TileTree::Root
 //=======================================================================================
 struct MapTile : TileTree::Tile
 {
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    //=======================================================================================
+    struct MapTileload : TileTree::TileLoad
+        {
+        MapTileload(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
+
+        BentleyStatus _LoadTile() override;
+        };
+
     TileId m_id;                                        //! tile id 
     Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
     MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
@@ -79,7 +89,6 @@ struct MapTile : TileTree::Tile
     TileId GetTileId() const {return m_id;}
     MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
 
-    BentleyStatus _LoadTile(TileTree::StreamBuffer&, TileTree::RootR) override;
     bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
     void TryHigherRes(TileTree::DrawArgsR args) const;
     bool _HasChildren() const override;
@@ -88,6 +97,8 @@ struct MapTile : TileTree::Tile
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override;
     double _GetMaximumSize() const override {return m_mapRoot.GetMaxPixelSize();}
+
+    TileTree::TileLoadPtr _CreateTileLoad(TileTree::TileLoadsPtr) override;
 };
 
 //=======================================================================================

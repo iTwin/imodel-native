@@ -366,6 +366,60 @@ void PSolidUtil::SetFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachment
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_EDGE_ask_faces(edgeTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    int     symbIndex = 0;
+    FaceId  entityId;
+
+    // Prefer a face with the same nodeId as the edge...
+    if (SUCCESS == PSolidTopoId::IdFromEntity(entityId, edgeTag, true))
+        {
+        for (int iFace=0; iFace < nFaces; iFace++)
+            {
+            FaceId  faceId;
+
+            if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, faceTags[iFace], true) || entityId.nodeId != faceId.nodeId)
+                continue;
+
+            symbIndex = iFace;
+            break;
+            }
+        }
+
+    PK_FACE_t faceTag = faceTags[symbIndex];
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_FACE_t PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    if (SUCCESS != PK_VERTEX_ask_faces(vertexTag, &nFaces, &faceTags) || 0 == nFaces)
+        return PK_ENTITY_null;
+
+    PK_FACE_t faceTag = faceTags[0]; // Might need to change to use face with highest node id...
+
+    PK_MEMORY_free(faceTags);
+
+    return faceTag;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt pki_combine_memory_blocks (PK_MEMORY_block_t* pBuffer)
@@ -550,6 +604,7 @@ mutable Render::GraphicBuilderPtr   m_graphic; // Create on demand...
 DPoint2d                            m_param = DPoint2d::FromZero(); // Locate param(s) for face/edge...convenient for tools...
 DPoint3d                            m_point = DPoint3d::FromZero(); // Locate point for face/edge/vertex...convenient for tools...
 bool                                m_haveLocation = false; // Whether this sub-entity was created from a locate and point/param are valid...
+bool                                m_displayTangentEdges = false; // Whether to add tangent blend edges to graphic...
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
@@ -597,7 +652,18 @@ virtual bool _IsEqual(ISubEntityCR subEntity) const override
     if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
         return false;
 
-    if (m_entityTag != topoSubEntity->m_entityTag)
+    if (m_entityTag == topoSubEntity->m_entityTag)
+        return true;
+
+    if (!m_displayTangentEdges || !topoSubEntity->m_displayTangentEdges)
+        return false;
+
+    bvector<PK_EDGE_t> smoothEdges;
+
+    if (SUCCESS != PSolidTopo::GetTangentBlendEdges(smoothEdges, m_entityTag))
+        return false;
+
+    if (smoothEdges.end() == std::find(smoothEdges.begin(), smoothEdges.end(), topoSubEntity->m_entityTag))
         return false;
 
     return true;
@@ -679,7 +745,31 @@ virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const overri
         GeometricPrimitiveCPtr geom = _GetGeometry();
 
         if (geom.IsValid())
+            {
+            if (m_displayTangentEdges)
+                {
+                bvector<PK_EDGE_t> smoothEdges;
+
+                if (SUCCESS == PSolidTopo::GetTangentBlendEdges(smoothEdges, m_entityTag))
+                    {
+                    for (PK_EDGE_t thisEdgeTag : smoothEdges)
+                        {
+                        if (thisEdgeTag == m_entityTag)
+                            continue;
+
+                        ICurvePrimitivePtr curve;
+
+                        if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, thisEdgeTag))
+                            continue;
+
+                        curve->TransformInPlace(m_parentGeom->GetAsIBRepEntity()->GetEntityTransform());
+                        m_graphic->AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, curve), false);
+                        }
+                    }
+                }
+
             geom->AddToGraphic(*m_graphic);
+            }
         }
 
     return m_graphic;
@@ -807,6 +897,27 @@ static void SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR para
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetDisplayTangentEdges(ISubEntityR subEntity, bool display)
+    {
+    PSolidTopoSubEntity* topoSubEntity;
+
+    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity*> (&subEntity)))
+        return;
+
+    PK_CLASS_t entityClass;
+
+    PK_ENTITY_ask_class(topoSubEntity->m_entityTag, &entityClass);
+
+    if (PK_CLASS_edge != entityClass)
+        return;
+
+    topoSubEntity->m_displayTangentEdges = display;
+    topoSubEntity->m_graphic = nullptr; // Invalidate graphic...
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdateCache(ISubEntityCR donorEntity)
@@ -876,6 +987,14 @@ Transform PSolidSubEntity::GetSubEntityTransform(ISubEntityCR subEntity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidSubEntity::SetDisplayTangentEdges(ISubEntityR subEntity, bool display)
+    {
+    PSolidTopoSubEntity::SetDisplayTangentEdges(subEntity, display);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void PSolidSubEntity::UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntity)
     {
     PSolidTopoSubEntity* topoSubEntity;
@@ -885,6 +1004,7 @@ void PSolidSubEntity::UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntit
 
     topoSubEntity->UpdateCache(donorEntity);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -10,9 +10,7 @@
 #include <folly/BeFolly.h>
 #endif
 #include <Geom/XYZRangeTree.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-#include <DgnPlatform/DgnBRep/OCBRep.h>
-#elif defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 

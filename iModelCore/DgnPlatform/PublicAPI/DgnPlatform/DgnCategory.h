@@ -221,12 +221,6 @@ public:
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, DgnCategoryId categoryId, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
-    //! Returns a set of sub-category IDs.
-    //! @param[in]      db         The DgnDb in which to query.
-    //! @param[in]      categoryId If valid, include only sub-categories of the specified category; otherwise, include all sub-categories within the DgnDb.
-    //! @return A set of sub-category IDs, optionally limited to those belonging to a specific category.
-    DGNPLATFORM_EXPORT static DgnSubCategoryIdSet QuerySubCategories(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
-
     //! Returns the number of sub-categories of a specific category, or the total number of sub-categories of all categories in the DgnDb.
     //! @param[in]      db         The DgnDb in which to query
     //! @param[in]      categoryId If valid, the count includes only sub-categories of the specified category.
@@ -389,14 +383,10 @@ public:
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
-    //! Returns the IDs of all categories in the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnCategoryIdSet QueryCategories(DgnDbR db);
-
-    //! Returns the IDs of all categories in the specified DgnDb, in ascending order by name
-    DGNPLATFORM_EXPORT static DgnCategoryIdList QueryOrderedCategories(DgnDbR db);
-
-    //! Returns the IDs of all sub-categories of this category
-    DgnSubCategoryIdSet QuerySubCategories() const {return DgnSubCategory::QuerySubCategories(GetDgnDb(), GetCategoryId());}
+    //! Returns an iterator over all sub-categories of this category
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    ElementIterator MakeSubCategoryIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const {return DgnSubCategory::MakeIterator(GetDgnDb(), GetCategoryId(), whereClause, orderByClause);}
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db); //! Returns the number of categories in the DgnDb
     size_t QuerySubCategoryCount() const {return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId());} //! Returns the number of sub-categories belonging to this category
