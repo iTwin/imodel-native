@@ -542,6 +542,13 @@ static void testRangeIndex()
 TEST_F(TransactionManagerTests, UndoRedo)
     {
     SetupSeedProject();
+
+    CloseDb();
+    BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
+    DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.dgndb");
+    OpenDb(m_db, outFileName, mode);
+    
     auto& txns = m_db->Txns();
     m_db->SaveChanges();
 

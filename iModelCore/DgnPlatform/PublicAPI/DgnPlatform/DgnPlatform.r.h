@@ -21,6 +21,10 @@
 
   #define BEGIN_BENTLEY_DISPLAY_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Display {
   #define END_BENTLEY_DISPLAY_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+
+  #define BEGIN_SHEET_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Sheet {
+  #define END_SHEET_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+
 #else
   #include <Geom/GeomApi.r.h>
   #define BEGIN_BENTLEY_DGN_NAMESPACE
@@ -31,6 +35,9 @@
 
   #define BEGIN_BENTLEY_DISPLAY_NAMESPACE
   #define END_BENTLEY_DISPLAY_NAMESPACE
+
+  #define BEGIN_SHEET_NAMESPACE 
+  #define END_SHEET_NAMESPACE 
 #endif
 
 // for backwards compatibility, do not use

@@ -70,8 +70,6 @@ ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 CategoryTests.SubCategoryInvariants
-TransactionManagerTests.UndoRedo
-ImportTest.ImportElementsWithAuthorities
 ImportTest.ImportElementsWithDependencies
 ChangeSummaryTestFixture.QueryMultipleSessions
 DgnChangeSummaryTestFixture.ValidateChangeSummaries
@@ -132,3 +130,49 @@ CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 TextAnnotationTest.BasicCrud2d # WIP_VIEW_DEFINITION
 TextAnnotationTest.BasicCrud3d # After merge
 
+ImportTest.ImportElementsWithAuthorities
+    # bim0200dev, x64 & x86, DEBUG, after merge
+    # [ RUN      ] ImportTest.ImportElementsWithAuthorities
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestElementProperty - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,628 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,629 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,629 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,629 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,629 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:35,629 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestElementProperty - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestIntegerProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestDoubleProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty1 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty2 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty3 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,155 ERROR [0x00001370] DgnCore - [DgnPlatformTest].[TestElement].TestPointProperty4 - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,171 ERROR [0x00001370] DgnCore - [BisCore].[SubCategory].Descr - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,171 ERROR [0x00001370] DgnCore - [BisCore].[SubCategory].Properties - missing accessors for custom-handled property
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'UPDATE [bis_GeometricElement3d] SET [sc01]=?,[sc02]=?,[sc03]=?,[sc04]=?,[sc05]=?,[sc06]=?,[sc07]=?,[sc08]=?,[sc09]=?,[sc0a]=?,[sc0b]=?,[sc0c]=?,[sc0d]=?,[sc0e]=?,[sc0f]=?,[sc10]=?,[sc11]=?,[sc12]=?,[sc13]=?,[sc14]=?,[sc15]=?,[sc16]=?,[sc17]=?,[sc18]=?,[sc19]=?,[sc1a]=?,[sc1b]=?,[sc1c]=?,[sc1d]=?,[sc1e]=?,[sc1f]=?,[sc20]=?,[sc21]=?,[sc22]=?,[sc23]=?,[sc24]=?,[sc25]=?,[sc26]=?,[sc27]=?,[sc28]=?,[sc29]=?,[sc2a]=?,[sc2b]=?,[sc2c]=?,[sc2d]=?,[sc2e]=?,[sc2f]=?,[sc30]=?,[sc31]=?,[sc32]=?,[sc33]=?,[sc34]=?,[sc35]=?,[sc36]=?,[sc37]=?,[sc38]=?,[sc39]=?,[sc3a]=?,[sc3b]=?,[sc3c]=?,[sc3d]=? WHERE [ElementId] = ? AND (ECClassId=1099511627784)'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'DELETE FROM 'main'.'dgn_SpatialIndex_parent' WHERE nodeno = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'INSERT OR REPLACE INTO 'main'.'dgn_SpatialIndex_parent' VALUES(:1, :2)'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'SELECT parentnode FROM 'main'.'dgn_SpatialIndex_parent' WHERE nodeno = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'DELETE FROM 'main'.'dgn_SpatialIndex_rowid' WHERE rowid = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'INSERT OR REPLACE INTO 'main'.'dgn_SpatialIndex_rowid' VALUES(:1, :2)'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'SELECT nodeno FROM 'main'.'dgn_SpatialIndex_rowid' WHERE rowid = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'DELETE FROM 'main'.'dgn_SpatialIndex_node' WHERE nodeno = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'INSERT OR REPLACE INTO 'main'.'dgn_SpatialIndex_node' VALUES(:1, :2)'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Statement not closed: 'SELECT data FROM 'main'.'dgn_SpatialIndex_node' WHERE nodeno = :1'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeSQLite - Cannot close database 'F:\Bim0200Dev\out-staging\Winx64\Product\DgnPlatform-Gtest\run\Output\ImportTest\3dMetricGeneralcc-2.bim'
+    # 2016-11-15 07:43:37,280 ERROR [0x00001370] BeAssert - F:\Bim0200Dev\src-staging\BeSQLite\BeSQLite.cpp(2055): ASSERTION FAILURE (0): false
+    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
+    # F:\Bim0200Dev\src-staging\BeSQLite\BeSQLite.cpp(2055): ASSERTION FAILURE (0): false
+    # [  FAILED  ] ImportTest.ImportElementsWithAuthorities (1822 ms)

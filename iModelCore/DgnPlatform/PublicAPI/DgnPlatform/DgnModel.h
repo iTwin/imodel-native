@@ -21,9 +21,7 @@ DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
-DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
@@ -339,7 +337,7 @@ protected:
     virtual SpatialLocationModelCP _ToSpatialLocationModel() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
-    virtual SheetModelCP _ToSheetModel() const {return nullptr;}
+    virtual Sheet::ModelCP _ToSheetModel() const {return nullptr;}
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
@@ -444,7 +442,7 @@ public:
     SpatialLocationModelCP ToSpatialLocationModel() const {return _ToSpatialLocationModel();} //!< more efficient substitute for dynamic_cast<SpatialLocationModelCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
-    SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    Sheet::ModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     RoleModelP ToRoleModelP() {return const_cast<RoleModelP>(_ToRoleModel());} //!< more efficient substitute for dynamic_cast<RoleModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
@@ -455,7 +453,7 @@ public:
     SpatialLocationModelP ToSpatialLocationModelP() {return const_cast<SpatialLocationModelP>(_ToSpatialLocationModel());} //!< more efficient substitute for dynamic_cast<SpatialLocationModelP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
-    SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    Sheet::ModelP ToSheetModelP() {return const_cast<Sheet::ModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
     bool IsGeometricModel() const {return nullptr != ToGeometricModel();}
     bool IsSpatialModel() const {return nullptr != ToSpatialModel();}
@@ -1084,33 +1082,6 @@ public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
 };
 
-//=======================================================================================
-//! A sheet model is a GraphicalModel2d that has the following characteristics:
-//!     - Has fixed extents (is not infinite), specified in meters.
-//!     - Can contain @b views of other models, like pictures pasted on a photo album.
-//! @ingroup GROUP_DgnModel
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicalModel2d
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SheetModel, GraphicalModel2d);
-
-protected:
-    SheetModelCP _ToSheetModel() const override final {return this;}
-
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-
-public:
-    //! construct a new SheetModel
-    explicit SheetModel(CreateParams const& params) : T_Super(params) {}
-
-    //! Construct a SheetModel
-    //! @param[in] params The CreateParams for the new SheetModel
-    static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
-
-    //! Create a SheetModel that breaks down the specified Sheet element
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet);
-};
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
         private: virtual Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
@@ -1184,12 +1155,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
     {
         MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for SheetModel
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RoleModel
