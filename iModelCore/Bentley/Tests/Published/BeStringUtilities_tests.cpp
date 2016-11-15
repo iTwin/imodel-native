@@ -12,7 +12,9 @@
 #include <Bentley/ScopedArray.h>
 #include <Bentley/CodePages.h>
 #include <map>
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 #include <Windows.h>
+#endif
 
 #define VERIFY(X) ASSERT_TRUE(X)
 #define TESTDATA_String                     "ThisIsATest!@#$%^&*()-="
@@ -1403,7 +1405,7 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
     EXPECT_EQ(false, BeStringUtilities::IsValidCodePage(LangCodePage::Unknown));
 
     //for local code page
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
     UINT current_code_page = ::GetACP(); //::GetACP() gives code page of local machine
     LangCodePage codePage_retrieved;
     ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetCurrentCodePage(codePage_retrieved));

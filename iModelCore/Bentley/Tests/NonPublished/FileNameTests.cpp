@@ -7,11 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 #include <Windows.h>
+#endif
 #include <stdio.h>
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 #include <Shlwapi.h>
+#endif
 #define BUFFER_SIZE 200
 #define BUFSIZE 65536
+
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                    11/16
@@ -55,3 +61,5 @@ TEST(BeFileName_Tests, BeGetTempFileName)
     WCharCP expectedFileName = fileName.GetName();
     EXPECT_TRUE(PathFileExistsW(expectedFileName));
     }
+
+#endif

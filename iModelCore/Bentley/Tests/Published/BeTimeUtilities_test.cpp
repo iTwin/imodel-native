@@ -108,6 +108,8 @@ TEST (BeTimeUtilitiesTests, StopWatch)
     }
 #endif
 
+#ifdef WIP_MERGE_Farhad
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       10/16
 //---------------------------------------------------------------------------------------
@@ -147,6 +149,8 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
         ++data;
         }
     }
+
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       10/16
