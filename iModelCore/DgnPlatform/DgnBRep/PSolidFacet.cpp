@@ -1396,9 +1396,10 @@ static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPt
     T_FaceAttachmentsVec const& faceAttachmentsVec = entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
     bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
     bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-
+    
     for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
         {
+        BeAssert (curr->second.second < faceAttachmentsVec.size());
         FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second.second);
         bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
 

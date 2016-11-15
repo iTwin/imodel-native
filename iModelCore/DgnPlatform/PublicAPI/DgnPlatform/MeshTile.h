@@ -438,13 +438,15 @@ struct TileModelDelta : RefCountedBase, ITileGenerationFilter
         ElementState() { }
         ElementState(int64_t lastModified,  uint32_t facetCount) : m_lastModifiedTime(lastModified), m_facetCount(facetCount) { }
         uint32_t GetFacetCount() const { return m_facetCount; }
+        int64_t GetLastModifiedTime() const { return m_lastModifiedTime; }
+        Json::Value GetJsonValue () const;
         void SetFacetCount(uint32_t facetCount) { m_facetCount = facetCount; }
         };
 
 
     void Save ();                         // Save to file.
     bool ChangesPresent() const { return m_deleted.empty() && m_added.empty(); }
-    bool DoPublish(DgnElementId id) { return m_added.find(id) == m_added.end(); }
+    bool DoPublish(DgnElementId id) { return m_added.find(id) != m_added.end(); }
     ElementState* GetElementState(DgnElementId id) { auto const& found = m_elementStates.find(id); return found == m_elementStates.end() ? nullptr : &found->second; }
     static TileModelDeltaPtr Create(DgnModelCR model, BeFileNameCR dataDirectory) { return new TileModelDelta(model, dataDirectory); }
     bset<DgnElementId> const& GetAdded() const { return m_added; }

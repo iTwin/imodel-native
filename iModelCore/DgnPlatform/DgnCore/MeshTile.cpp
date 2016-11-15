@@ -311,23 +311,37 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     TileModelDelta::ElementState::GetJsonValue () const
+    {
+    Json::Value value(Json::objectValue);
+
+    value["time"] = m_lastModifiedTime;
+    value["count"] = m_facetCount;
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void TileModelDelta::Save()
     {
-#ifdef WIP
-    BeFileName      modelStateFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
     Json::Value     value (Json::objectValue);
+    BeFile      outputFile;
 
     for (auto& curr : m_elementStates)
+        value[curr.first.ToString().c_str()] = curr.second.GetJsonValue();
+
+    if (BeFileStatus::Success != outputFile.Create (m_fileName.c_str()))
         {
-        Json::Value     elementState(Json::objectValue);
-
-        value["time"]  = curr.second.m_lastModifiedTime;
-        value["count"] = curr.second.m_facetCount;
-        value[curr.first.ToString().c_str()] = value;
+        BeAssert (false && "Unable to open output file");
+        return;
         }
+   
+    Utf8String  metadataStr = Json::FastWriter().write(value);
 
-    TilePublisher::WriteJsonToFile (modelStateFileName.c_str(), value);
-#endif
+    if (BeFileStatus::Success != outputFile.Write (nullptr, metadataStr.data(), metadataStr.size()))
+        BeAssert (false && "Unable to open write file");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,13 +356,19 @@ TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
         if (SUCCESS == it.GetLastModifyTime().ToUnixMilliseconds (milliseconds)) 
             m_elementStates.Insert (it.GetElementId(), ElementState(milliseconds, 0));
         }
-
+    
     m_fileName = BeFileName (nullptr, dataDirectory.c_str(), L"ModelState", L"json");
 
-#ifdef WIP
-    auto            inputFile = _wfopen (m_fileName.c_str(), L"rb");
+    BeFile          inputFile;
+    ByteStream      inputData;
+    Json::Value     value;
+    Json::Reader    reader;
 
-    if (nullptr == inputFile)
+
+    if (BeFileStatus::Success != inputFile.Open (m_fileName.c_str(), BeFileAccess::Read) ||
+        BeFileStatus::Success != inputFile.ReadEntireFile (inputData) ||
+        !reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value))
+
         {
         for (auto& element : m_elementStates)
             m_added.insert (element.first);
@@ -356,46 +376,30 @@ TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
         return;
         }
 
-    fseek (inputFile, 0, SEEK_END);
-    size_t     endPos = ftell (inputFile);
-    fseek (inputFile, 0, SEEK_SET);
 
-    bvector<char>       input(endPos);
-    Json::Value         value;
-    Json::Reader        reader;
+    auto    members = value.getMemberNames();
 
-    if (1 == fread (input.data(), endPos, 1, inputFile) &&
-        reader.parse (input.data(), input.data() + endPos, value))
+    for (auto& member : members)
         {
-        auto    members = value.getMemberNames();
+        DgnElementId    id;
 
-        for (auto& member : members)
+        if (SUCCESS == BeInt64Id::FromString (id, member.c_str()))
             {
-            DgnElementId    id;
+            auto const&     found = m_elementStates.find(id);
+            Json::Value&    previousElementState = value[member.c_str()];
+            int64_t         previousTime = previousElementState["time"].asInt64();
+            int32_t         previousFacetCount = previousElementState["count"].asInt();
 
-            if (SUCCESS == BeInt64Id::FromString (id, member.c_str()))
-                {
-                auto const&     found = m_elementStates.find(id);
-                Json::Value&    previousElementState = value[member.c_str()];
-                int64_t         previousTime = previousElementState["time"].asInt64();
-                int32_t         previousFacetCount = previousElementState["count"].asInt();
-
-                if (found == m_elementStates.end() || previousTime == found->second.m_lastModifiedTime)
-                    found->second.m_facetCount = previousFacetCount;
-                else
-                    m_deleted.insert(id);
-
-                }
+            if (found != m_elementStates.end() && previousTime == found->second.GetLastModifiedTime())
+                found->second.SetFacetCount (previousFacetCount);
+            else
+                m_deleted.insert(id);
             }
         }
     for (auto& elementState : m_elementStates)
-        if (0 == elementState.second.m_facetCount)
+        if (0 == elementState.second.GetFacetCount())
             m_added.insert (elementState.first);
-
-
-    fclose (inputFile);
-#endif
-     }
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1612,7 +1616,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
             isLeaf = true;
 
         ElementTileResult result(m_progressMeter._WasAborted() ? Status::Aborted : Status::Success, static_cast<ElementTileNodeP>(tile.GetRoot()));
-        if (tile.GetGeometries().empty())
+        if (tile.GetGeometries().empty() && nullptr == tile.GetModelDelta())
             return result;
 
         tile.SetIsEmpty(false);
@@ -2044,6 +2048,8 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 
                 m_leafCount += (size_t) ((double) elementState->GetFacetCount() * intersection.DiagonalDistance() / dgnRange.DiagonalDistance());
                 *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
+
+                return;
                 }
             }
         m_curElemGeometries.clear();

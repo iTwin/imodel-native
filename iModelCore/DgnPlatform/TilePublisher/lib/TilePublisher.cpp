@@ -125,10 +125,14 @@ TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModel
     bool        geometryRemoved = false;
     DRange3d    publishedRange = DRange3d::NullRange();
 
-    for (auto& mesh : oldMeshes)
-        geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
+    if (!modelDelta.GetDeleted().empty())
+        for (auto& mesh : oldMeshes)
+            geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
 
-    if (modelDelta.GetAdded().empty())
+    if (!modelDelta.GetAdded().empty())
+        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), &modelDelta);
+
+    if (newMeshes.empty())
         {
         if (!geometryRemoved)
             {
@@ -138,34 +142,34 @@ TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModel
             m_tile.SetPublishedRange (publishedRange);
             return IncrementalStatus::UsePrevious;
             }
+        m_meshes = oldMeshes;
         }
     else
         {
-        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), &modelDelta);
-        }
-
-    // Merge old meshes with new ones.
-    bmap<TileMeshMergeKey, TileMeshPtr>  meshMap;
+        // Merge old meshes with new ones.
+        bmap<TileMeshMergeKey, TileMeshPtr>  meshMap;
     
-    for (auto& oldMesh : oldMeshes)
-        if (!oldMesh->IsEmpty())
-            meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
+        for (auto& oldMesh : oldMeshes)
+            if (!oldMesh->IsEmpty())
+                meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
 
-    for (auto& newMesh : newMeshes)
-        {
-        TileMeshMergeKey    key(*newMesh);
-        auto const&         found = meshMap.find(key);
+        for (auto& newMesh : newMeshes)
+            {
+            TileMeshMergeKey    key(*newMesh);
+            auto const&         found = meshMap.find(key);
 
-        if (meshMap.find(key) == meshMap.end())
-            meshMap.Insert (key, newMesh);
-        else
-            found->second->AddMesh (*newMesh);
+            if (meshMap.find(key) == meshMap.end())
+                meshMap.Insert (key, newMesh);
+            else
+                found->second->AddMesh (*newMesh);
+            }
+        for (auto& curr : meshMap)
+            {
+            m_meshes.push_back (curr.second);
+            }
         }
-    for (auto& curr : meshMap)
-        {
-        publishedRange.Extend (curr.second->GetRange());
-        m_meshes.push_back (curr.second);
-        }
+    for (auto& mesh : m_meshes)
+        publishedRange.Extend (mesh->GetRange());
 
     m_tile.SetPublishedRange (publishedRange);
     return IncrementalStatus::Success;
