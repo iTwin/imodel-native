@@ -462,6 +462,36 @@ struct Create
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L);
+
+    //! @param[out] out The new body.
+    //! @param[in] profiles The cross sections profiles.
+    //! @param[in] nProfiles The profile count.
+    //! @param[in] guides An optional set of guide curves for constrolling the loft.
+    //! @param[in] nGuides The guide curve count.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L);
+
+    //! Create a new sheet or solid body by sweeping a cross section profile along a path.
+    //! @param[out] out The new body.
+    //! @param[in] profile The cross section profile. (open, closed, or region with holes)
+    //! @param[in] path The path to sweep along.
+    //! @param[in] alignParallel true to keep profile at a fixed angle to global axis instead of path tangent (and lock direction).
+    //! @param[in] selfRepair true to attempt repair of self-intersections.
+    //! @param[in] createSheet true to force a sheet body to be created from a closed profile which would normally produce a solid body. (Similiar behavior to ISolidPrimitive::GetCapped)
+    //! @param[in] lockDirection Optionally keep profile at a fixed angle relative to the path tangent projected into a plane perpendicular to the lock direction. Only valid when alignParallel is false.
+    //! @param[in] twistAngle Optionally spin profile as it moves along the path.
+    //! @param[in] scale Optionally scale profile as it moves along the path.
+    //! @param[in] scalePoint The profile point to scale about, required when applying scale.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, BentleyApi::DVec3dCP lockDirection = NULL, double const* twistAngle = NULL, double const* scale = NULL, BentleyApi::DPoint3dCP scalePoint = NULL, uint32_t nodeId = 0L);
+
+    //! Create a new body by extruding a planar sheet body up to another body.
+    //! @param[out] out The new body.
+    //! @param[in] extrudeTo The body to trim the extruded body to.
+    //! @param[in] profile The planar sheet body to extrude.
+    //! @param[in] reverseDirection To specify if extrusion is in the same direction or opposite direction to the surface normal of the profile sheet body.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& out, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
     };
 
 //! Support for modification of bodies.
