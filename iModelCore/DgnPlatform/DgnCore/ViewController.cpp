@@ -1808,9 +1808,13 @@ void SheetViewController::_DrawView(ViewContextR context)
             Texture::CreateParams textureParams;
             auto texture = rsys._CreateTexture(image, textureParams);
 
-            // auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
-            //graphic->SetSymbology(bgcolor, bgcolor, 4); *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
-            graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
+            auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
+            if (bgcolor.GetRed() == 0xff) // *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black??
+                bgcolor.SetRed(0xfe);
+            else if (bgcolor.GetRed() == 0)
+                bgcolor.SetRed(1);
+
+            graphic->SetSymbology(bgcolor, bgcolor, 0);
 
             graphic->AddTile(*texture, corners);
             }
