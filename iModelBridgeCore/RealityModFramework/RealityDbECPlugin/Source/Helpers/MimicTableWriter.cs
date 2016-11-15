@@ -46,34 +46,34 @@ namespace IndexECPlugin.Source.Helpers
             }
 
         /// <summary>
-        /// This method builds the sql query to insert data in the mimic table. This could be rewritten as a SQL insert query builder class method.
+        /// This method builds the sql query to upsert data in the mimic table. This could be rewritten as a SQL query builder class method.
         /// All instances must be of the same ECClass.
         /// </summary>
-        /// <param name="instanceList">The instances to insert.</param>
+        /// <param name="instanceList">The instances to upsert.</param>
         /// <param name="ecClass">The ECClass of the instances</param>
-        /// <param name="sqlInsertQueryBuilder">The appropriate ISQLInsertQueryBuilder object to create the query</param>
+        /// <param name="sqlMergeUpsertStatementBuilder">The appropriate ISQLMergeUpsertStatementBuilder object to create the query</param>
         /// <param name="paramNameValueMap">The map containing each parameter's name and its corresponding value and DbType</param>
+        /// <param name="onStatement">The on statement of the MERGE</param>
+        /// <param name="whenMatchedString">The When matched conditional statement</param>
         /// <param name="additionalColumns">Represent additional columns to add in the insert and that are not part of the class. 
         /// Each tuple contains the name of the column, the type and the delegate function to obtain the value</param>
-        /// <param name="deleteStatementConstructor">The delegate used to create a delete statement before the insert. 
-        /// Used to clear old data before inserting the new data</param>>
         /// <returns>The query string</returns>
         public string CreateMimicSQLInsert (IEnumerable<IECInstance> instanceList, 
-                                               IECClass ecClass, 
-                                               ISQLInsertStatementBuilder sqlInsertQueryBuilder,
-                                               out IParamNameValueMap paramNameValueMap, 
-                                               IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null,
-                                               Func<IECInstance, WhereStatementManager> deleteStatementConstructor = null)
+                                            IECClass ecClass,
+                                            ISQLMergeUpsertStatementBuilder sqlMergeUpsertStatementBuilder,
+                                            out IParamNameValueMap paramNameValueMap, 
+                                            string onStatement,
+                                            string whenMatchedString,
+                                            IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
             {
             m_setStream = false;
 
             IECInstance sqlEntity = ecClass.GetCustomAttributes("SQLEntity");
-            sqlInsertQueryBuilder.SetInsertIntoTableName(sqlEntity.GetPropertyValue(MimicTableNameProp).StringValue);
+            sqlMergeUpsertStatementBuilder.SetMergeTableName(sqlEntity.GetPropertyValue(MimicTableNameProp).StringValue);
 
-            if(deleteStatementConstructor != null)
-                {
-                sqlInsertQueryBuilder.ActivateDeleteBeforeInsert();
-                }
+            sqlMergeUpsertStatementBuilder.SetMatchedStatement(whenMatchedString);
+
+            sqlMergeUpsertStatementBuilder.SetOnStatement(onStatement);
 
             IEnumerable<IECProperty> propList = ecClass.Properties(true);
 
@@ -97,28 +97,28 @@ namespace IndexECPlugin.Source.Helpers
 
                 if ( prop.IsSpatial() )
                     {
-                    sqlInsertQueryBuilder.AddSpatialColumnName(columnName);
+                    sqlMergeUpsertStatementBuilder.AddSpatialColumnName(columnName);
                     
 #if (BBOXQUERY)
                     if(prop.GetCustomAttributes("SpatialBBox") != null)
                         {
-                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].Type);
-                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].Type);
-                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].Type);
-                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].Type);
+                        sqlMergeUpsertStatementBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].Type);
+                        sqlMergeUpsertStatementBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].Type);
+                        sqlMergeUpsertStatementBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].Type);
+                        sqlMergeUpsertStatementBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].Type);
                         }
 #endif
                     }
                 else
                     {
-                    sqlInsertQueryBuilder.AddColumnName(columnName, prop.Type);
+                    sqlMergeUpsertStatementBuilder.AddColumnName(columnName, prop.Type);
                     }
                 }
             if ( additionalColumns != null )
                 {
                 foreach ( var additionalColumn in additionalColumns )
                     {
-                    sqlInsertQueryBuilder.AddColumnName(additionalColumn.Item1, additionalColumn.Item2);
+                    sqlMergeUpsertStatementBuilder.AddColumnName(additionalColumn.Item1, additionalColumn.Item2);
                     }
                 }
             if ( CanMimicStreamData )
@@ -127,10 +127,10 @@ namespace IndexECPlugin.Source.Helpers
                 if ( (fileHolderAttribute != null) )
                     {
                     m_setStream = true;
-                    sqlInsertQueryBuilder.AddBinaryColumnName(fileHolderAttribute["LocationHoldingColumn"].StringValue );
+                    sqlMergeUpsertStatementBuilder.AddBinaryColumnName(fileHolderAttribute["LocationHoldingColumn"].StringValue );
                     }
                 }
-            sqlInsertQueryBuilder.EndSettingColumnNames();
+            sqlMergeUpsertStatementBuilder.EndSettingColumnNames();
             foreach ( IECInstance instance in instanceList )
                 {
                 if ( instance.ClassDefinition.Name != ecClass.Name && !instance.ClassDefinition.BaseClasses.Any(c => c.Name == ecClass.Name) )
@@ -139,12 +139,6 @@ namespace IndexECPlugin.Source.Helpers
                     }
 
                 Dictionary<string, object> row = new Dictionary<string, object>();
-
-                WhereStatementManager deleteStatementManager = null;
-                if ( deleteStatementConstructor != null)
-                    {
-                    deleteStatementManager = deleteStatementConstructor(instance);
-                    }
 
                 foreach ( IECProperty prop in propList )
                     {
@@ -226,9 +220,9 @@ namespace IndexECPlugin.Source.Helpers
                         row.Add(streamColumnName, null);
                         }
                     }
-                sqlInsertQueryBuilder.AddRow(row, deleteStatementManager);
+                sqlMergeUpsertStatementBuilder.AddRow(row);
                 }
-            return sqlInsertQueryBuilder.CreateSqlStatement(out paramNameValueMap);
+            return sqlMergeUpsertStatementBuilder.CreateSqlStatement(out paramNameValueMap);
             }
         }
     }

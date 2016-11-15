@@ -238,19 +238,19 @@ namespace IndexECPlugin.Source
                             {
                             case "index":
                                     {
-                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                    helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection);
-                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection);
+                                    instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
+                                    instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
                                     return instances;
                                     }
 
                             case "usgsapi":
                                     {
-                                    helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
+                                    helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
-                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                                    instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
+                                    instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
                                     return instances;
                                     }
                             case "all":
@@ -258,15 +258,15 @@ namespace IndexECPlugin.Source
 
                                     List<IECInstance> instanceList = new List<IECInstance>();
                                         {
-                                        helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                        helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
                                         instanceList = helper.CreateInstanceList().ToList();
-                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection);
-                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection);
+                                        instanceOverrider.Modify(instanceList, DataSource.Index, ConnectionString);
+                                        instanceComplement.Modify(instanceList, DataSource.Index, ConnectionString);
 
-                                        helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
+                                        helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
                                         IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
-                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                                        instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
+                                        instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
                                         instanceList.AddRange(instances);
                                         return instanceList;
                                         }

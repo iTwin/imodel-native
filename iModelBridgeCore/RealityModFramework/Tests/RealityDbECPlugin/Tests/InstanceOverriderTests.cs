@@ -41,7 +41,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSEB(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateSEB(true, m_schema);
@@ -97,7 +97,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -105,7 +105,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
@@ -129,7 +129,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateMetadata(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateMetadata(true, m_schema);
@@ -179,7 +179,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -187,7 +187,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenRawMetadata, modifiedInstance["RawMetadata"].StringValue);
                 Assert.AreEqual(overridenRawMetadataFormat, modifiedInstance["RawMetadataFormat"].StringValue);
@@ -208,7 +208,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -254,7 +254,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -262,7 +262,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenMainURL, modifiedInstance["MainURL"].StringValue);
                 Assert.AreEqual(overridenCompoundType, modifiedInstance["CompoundType"].StringValue);
@@ -284,7 +284,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -360,7 +360,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -368,7 +368,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenMainURL, modifiedInstance["MainURL"].StringValue);
                 Assert.AreEqual(overridenCompoundType, modifiedInstance["CompoundType"].StringValue);
@@ -401,7 +401,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -460,7 +460,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -469,7 +469,7 @@ namespace IndexECPlugin.Tests
 
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenCommunicationProtocol, modifiedInstance["CommunicationProtocol"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
@@ -493,7 +493,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -534,7 +534,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -543,7 +543,7 @@ namespace IndexECPlugin.Tests
 
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenMainURL, modifiedInstance["MainURL"].StringValue);
                 Assert.AreEqual(overridenCompoundType, modifiedInstance["CompoundType"].StringValue);
@@ -561,7 +561,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             IECInstance sebInstance = SetupHelpers.CreateSEB(true, m_schema);
             IECInstance metadataInstance = SetupHelpers.CreateMetadata(true, m_schema);
@@ -590,7 +590,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Equal(sebInstance.ClassDefinition),
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(sebOverrideInstances);
 
@@ -599,7 +599,7 @@ namespace IndexECPlugin.Tests
                                               Arg<IParamNameValueMap>.Is.Anything,
                                               Arg<IECClass>.Is.Equal(metadataInstance.ClassDefinition),
                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                              Arg<IDbConnection>.Is.Anything,
+                                              Arg<string>.Is.Anything,
                                               Arg<IEnumerable<string>>.Is.Anything,
                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(metadataOverrideInstances);
                 }
@@ -608,7 +608,7 @@ namespace IndexECPlugin.Tests
                 IECInstance modifiedInstance = instances.First();
                 IECInstance modifiedRelInstance = modifiedInstance.GetRelationshipInstances().First().Target;
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(sebOverridenName, modifiedInstance["Name"].StringValue);
                 Assert.AreEqual(metadataOverridenLegal, modifiedRelInstance["Legal"].StringValue);
@@ -621,7 +621,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSpatialEntity(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateSpatialEntity(true, m_schema);
@@ -680,7 +680,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -688,7 +688,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
@@ -713,7 +713,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateParentSED(m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateParentSED(m_schema);
@@ -771,7 +771,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -779,7 +779,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue, "Footprints are not equal");
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue, "Names are not equal");
@@ -803,7 +803,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateThumbnail(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateThumbnail(true, m_schema);
@@ -850,7 +850,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -858,7 +858,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenProvenance, modifiedInstance["ThumbnailProvenance"].StringValue, "ThumbnailProvenances are not equal");
                 Assert.AreEqual(overridenFormat, modifiedInstance["ThumbnailFormat"].StringValue, "ThumbnailFormats are not equal");
@@ -880,7 +880,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateWMSLayer(m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateWMSLayer(m_schema);
@@ -911,7 +911,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -919,7 +919,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue, "Names are not equal");
                 Assert.AreEqual(overridenTitle, modifiedInstance["Title"].StringValue, "Titles are not equal");
@@ -935,7 +935,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -1018,7 +1018,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -1027,7 +1027,7 @@ namespace IndexECPlugin.Tests
 
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenCommunicationProtocol, modifiedInstance["CommunicationProtocol"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);
@@ -1060,7 +1060,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
 
 
@@ -1110,7 +1110,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -1119,7 +1119,7 @@ namespace IndexECPlugin.Tests
 
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenMainURL, modifiedInstance["MainURL"].StringValue);
                 Assert.AreEqual(overridenCompoundType, modifiedInstance["CompoundType"].StringValue);
@@ -1141,7 +1141,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateSEWDV(true, m_schema) };
             IECInstance overrideInstance = SetupHelpers.CreateSEWDV(true, m_schema);
@@ -1210,7 +1210,7 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
                 }
@@ -1218,7 +1218,7 @@ namespace IndexECPlugin.Tests
                 {
                 IECInstance modifiedInstance = instances.First();
 
-                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceOverrider.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(overridenFootprint, modifiedInstance["Footprint"].StringValue);
                 Assert.AreEqual(overridenName, modifiedInstance["Name"].StringValue);

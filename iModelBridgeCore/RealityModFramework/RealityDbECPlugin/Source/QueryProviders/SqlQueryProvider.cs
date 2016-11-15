@@ -43,22 +43,22 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private bool m_instanceCount = false;
 
-        private IDbConnection m_dbConnection;
+        private string m_connectionString;
 
         private PolygonDescriptor m_polygonDescriptor;
 
         private IECSchema m_schema;
 
-        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbConnection dbConnection, IECSchema schema)
+        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, String connectionString, IECSchema schema)
             {
             if ( query == null )
                 {
                 throw new ArgumentNullException("query");
                 }
 
-            if ( dbConnection == null )
+            if ( connectionString == null )
                 {
-                throw new ArgumentNullException("dbConnection");
+                throw new ArgumentNullException("connectionString");
                 }
 
             if ( schema == null )
@@ -68,7 +68,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             m_query = query;
             m_querySettings = querySettings;
-            m_dbConnection = dbConnection;
+            m_connectionString = connectionString;
             m_schema = schema;
             m_polygonDescriptor = null;
 
@@ -163,7 +163,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 #endif
 
-            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_dbConnection);
+            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_connectionString);
 
 #if BBOXQUERY
             if ( m_polygonDescriptor != null )
@@ -228,7 +228,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
 
-                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
+                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_connectionString, m_schema);
 
                     var relInstList = queryHelper.CreateInstanceList();
                     foreach ( var relInst in relInstList )
@@ -254,10 +254,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //}
 
-            if ( m_instanceCount && sqlCountString != null )
-                {
-                instanceList.Add(CreateInstanceCountInstance(sqlCountString));
-                }
+            //if ( m_instanceCount && sqlCountString != null )
+            //    {
+            //    instanceList.Add(CreateInstanceCountInstance(sqlCountString));
+            //    }
 
             return instanceList;
             }
@@ -292,7 +292,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
 
-                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
+                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_connectionString, m_schema);
 
 
 
@@ -316,28 +316,29 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             }
 
-        //This is not to be used before having called createSqlCommandStringFromQuery
-        private IECInstance CreateInstanceCountInstance (string sqlCountString)
-            {
-            IECInstance instanceCountInstance = StandardClassesHelper.InstanceCountClass.CreateInstance();
-            instanceCountInstance.InstanceId = "InstanceCount";
+        //WE HAVE DEACTIVATED INSTANCE COUNTING
+        ////This is not to be used before having called createSqlCommandStringFromQuery
+        //private IECInstance CreateInstanceCountInstance (string sqlCountString)
+        //    {
+        //    IECInstance instanceCountInstance = StandardClassesHelper.InstanceCountClass.CreateInstance();
+        //    instanceCountInstance.InstanceId = "InstanceCount";
 
-            using ( IDbCommand dbCommand = m_dbConnection.CreateCommand() )
-                {
-                dbCommand.CommandText = sqlCountString;
-                dbCommand.CommandType = CommandType.Text;
-                dbCommand.Connection = m_dbConnection;
+        //    using ( IDbCommand dbCommand = m_connectionString.CreateCommand() )
+        //        {
+        //        dbCommand.CommandText = sqlCountString;
+        //        dbCommand.CommandType = CommandType.Text;
+        //        dbCommand.Connection = m_connectionString;
 
-                using ( IDataReader reader = dbCommand.ExecuteReader() )
-                    {
-                    reader.Read();
-                    instanceCountInstance["Count"].IntValue = reader.GetInt32(0);
-                    }
-                }
+        //        using ( IDataReader reader = dbCommand.ExecuteReader() )
+        //            {
+        //            reader.Read();
+        //            instanceCountInstance["Count"].IntValue = reader.GetInt32(0);
+        //            }
+        //        }
 
-            m_query.SearchClasses.Add(new SearchClass(StandardClassesHelper.InstanceCountClass));
+        //    m_query.SearchClasses.Add(new SearchClass(StandardClassesHelper.InstanceCountClass));
 
-            return instanceCountInstance;
-            }
+        //    return instanceCountInstance;
+        //    }
         }
     }

@@ -151,9 +151,11 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/QueryProviders/UsgsAPIQueryProvider.cs \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
             $(baseDir)Source/IECPropertyExtension.cs \
             $(baseDir)Source/IndexConstants.cs \
