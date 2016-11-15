@@ -4700,7 +4700,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "                       <Name>IDX_Partial_Index</Name>"
         "                       <IsUnique>False</IsUnique>"
         "                       <Properties>"
-        "                           <string>AId</string>"
+        "                           <string>AId.Id</string>"
         "                       </Properties>"
         "                   </DbIndex>"
         "               </Indexes>"
@@ -4725,7 +4725,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
 
     ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
     ASSERT_NE(b, nullptr);
-    IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
+    IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
     ASSERT_FALSE(ca.IsNull());
 
     ECValue indexes, indexName;
@@ -4756,7 +4756,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "                       <Name>IDX_Partial</Name>"
         "                       <IsUnique>False</IsUnique>"
         "                       <Properties>"
-        "                           <string>AId</string>"
+        "                           <string>AId.Id</string>"
         "                       </Properties>"
         "                   </DbIndex>"
         "               </Indexes>"
@@ -4794,7 +4794,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
 
         ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
         ASSERT_NE(b, nullptr);
-        IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
+        IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
         ASSERT_FALSE(ca.IsNull());
 
         ECValue indexes, indexName;

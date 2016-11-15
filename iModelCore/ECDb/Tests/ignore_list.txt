@@ -23,9 +23,6 @@ ECSchemaUpdateTests.UpdateECDbMapCA_AddSharedColumnCount
 #TFS 521152
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 
-#TFS 521213
-ECSchemaUpdateTests.Add_Delete_ECProperty_ShareColumns
-
 #TFS 521141
 ECRelationshipInheritanceTestFixture.BasicCRUD
 ECSchemaUpdateTests.AddNewDerivedEndTableRelationship
