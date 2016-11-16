@@ -95,7 +95,7 @@ enum class DiffNodeId
     Name = 3,
     DisplayLabel = 4,
     Description = 5,
-    VersionMajor = 6,
+    VersionRead = 6,
     VersionWrite = 7,
     VersionMinor = 8,
     ECVersionMajor = 9, 
