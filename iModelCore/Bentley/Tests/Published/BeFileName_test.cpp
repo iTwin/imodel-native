@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <vector>
 
 #if defined (BENTLEY_WIN32)
     #include "Shlwapi.h"
@@ -2260,7 +2261,7 @@ TEST (BeFileNameTests, PopDir)
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                          Farhad.Kabir                    11/16
+// @bsimethod                                          Farhad.Kabir                    11/16
 //---------------------------------------------------------------------------------------
 TEST(BeFileNameTests, SupplyDefaultNameParts)
     {
@@ -2349,4 +2350,17 @@ TEST(BeFileNameTests, SupplyDefaultNameParts)
     fileNameW_5.SupplyDefaultNameParts(defaultName);
     EXPECT_TRUE(0 == wcscmp(fileNameA_5.GetName(), expected)) << " expected " << expected << " got  " << fileNameA_5.GetName();
     EXPECT_TRUE(0 == wcscmp(fileNameW_5.GetName(), expected)) << " expected " << expected << " got  " << fileNameW_5.GetName();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                          Farhad.Kabir                  11/16
+//-----------------------------------------------------------------------------------------
+TEST(BeFileNameTests, CombineFileNames) 
+    {
+    BeFileName  fileNameW(L"/dir1/dir2/file.txt");
+    BeFileName bf = fileNameW.BeFileName::Combine({ L"D:\\dir1\\dir2_1\\temp.txt",
+                                                  L"D:\\dir1\\dir21\\temp.dat",
+                                                  L"E:\\dir1\\dir2_1\\knight.bat" });
+    BeFileName  expectedPath(L"/dir1/dir2/file.txt/D:/dir1/dir2_1/temp.txt/D:/dir1/dir21/temp.dat/E:/dir1/dir2_1/knight.bat");
+    EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), bf.GetNameUtf8().c_str()) << expectedPath.GetNameUtf8().c_str();
     }
