@@ -10,7 +10,11 @@
 #include <Bentley/WString.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/ScopedArray.h>
+#include <Bentley/CodePages.h>
 #include <map>
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
+#include <Windows.h>
+#endif
 
 #define VERIFY(X) ASSERT_TRUE(X)
 #define TESTDATA_String                     "ThisIsATest!@#$%^&*()-="
@@ -1362,4 +1366,62 @@ TEST(BeStringUtilitiesTests, CharToPointer)
         {
         FAIL() << "Unknown pointer size";
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  11/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, ParseArgumentsUtf8)
+    {
+    //with aux delimiter
+    Utf8CP input_str = "One Two 3G4,\"Fourty Two\"";
+    bvector<Utf8String> tokens;
+
+    BeStringUtilities::ParseArguments(tokens, input_str, ",");
+    ASSERT_EQ(4, tokens.size());
+    EXPECT_STREQ("One", tokens[0].c_str());
+    EXPECT_STREQ("Two", tokens[1].c_str());
+    EXPECT_STREQ("3G4", tokens[2].c_str());
+    EXPECT_STREQ("Fourty Two", tokens[3].c_str());
+    tokens.clear();
+    input_str = "Coding is%followed by,good programming-practices";
+
+    // without aux delimiter
+    BeStringUtilities::ParseArguments(tokens, input_str);
+    ASSERT_EQ(4, tokens.size());
+    EXPECT_STREQ("Coding", tokens[0].c_str());
+    EXPECT_STREQ("is%followed", tokens[1].c_str());
+    EXPECT_STREQ("by,good", tokens[2].c_str());
+    EXPECT_STREQ("programming-practices", tokens[3].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  11/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, IsValidCodePage)
+    {
+    EXPECT_EQ(true, BeStringUtilities::IsValidCodePage(LangCodePage::Arabic));
+    EXPECT_EQ(true, BeStringUtilities::IsValidCodePage(LangCodePage::Greek));
+    EXPECT_EQ(false, BeStringUtilities::IsValidCodePage(LangCodePage::Unknown));
+
+    //for local code page
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
+    UINT current_code_page = ::GetACP(); //::GetACP() gives code page of local machine
+    LangCodePage codePage_retrieved;
+    ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetCurrentCodePage(codePage_retrieved));
+    ASSERT_EQ(current_code_page, (UINT)codePage_retrieved);
+    EXPECT_EQ(true, BeStringUtilities::IsValidCodePage((LangCodePage)current_code_page));
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  11/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, GetDecimalSeparator)
+    {
+    WString refrenced_str;
+    WStringR decimal_separator = refrenced_str;
+    ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetDecimalSeparator(decimal_separator));
+    WString expected_decimal_str = L".";
+    EXPECT_STREQ(expected_decimal_str.c_str(), decimal_separator.c_str());
     }
