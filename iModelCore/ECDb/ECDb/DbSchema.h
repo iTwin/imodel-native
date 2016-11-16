@@ -174,7 +174,7 @@ public:
     bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
-
+    bool IsOverflow() const { return GetMasterOverflowColumn() != nullptr; }
     static Utf8CP TypeToSql(DbColumn::Type);
     static Type PrimitiveTypeToColumnType(ECN::PrimitiveType);
     static bool IsCompatible(Type lhs, Type rhs);
