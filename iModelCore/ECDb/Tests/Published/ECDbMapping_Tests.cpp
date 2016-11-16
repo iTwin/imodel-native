@@ -9284,7 +9284,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     auto readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     auto ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
-    auto ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestCompatible);
+    auto ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(ecdbmapSchema.IsValid());
 
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0);

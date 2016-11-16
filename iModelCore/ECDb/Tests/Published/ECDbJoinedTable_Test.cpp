@@ -2324,7 +2324,7 @@ void JoinedTableECSqlStatementsTests::ImportSchemaWithCA(ECSchemaPtr& ecSchema, 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
     SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(ecdbmapSchema.IsValid());
     readContext->AddSchema(*ecSchema);
     ecSchema->AddReferencedSchema(*ecdbmapSchema);

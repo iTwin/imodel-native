@@ -240,8 +240,8 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
     if (a.GetAlias() != b.GetAlias())
         change.GetAlias().SetValue(a.GetAlias(), b.GetAlias());
 
-    if (a.GetVersionMajor() != b.GetVersionMajor())
-        change.GetVersionMajor().SetValue(a.GetVersionMajor(), b.GetVersionMajor());
+    if (a.GetVersionRead() != b.GetVersionRead())
+        change.GetVersionRead().SetValue(a.GetVersionRead(), b.GetVersionRead());
 
     if (a.GetVersionMinor() != b.GetVersionMinor())
         change.GetVersionMinor().SetValue(a.GetVersionMinor(), b.GetVersionMinor());
@@ -1159,7 +1159,7 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
     change.GetDescription().SetValue(appendType, v.GetInvariantDescription());
 
     change.GetAlias().SetValue(appendType, v.GetAlias());
-    change.GetVersionMajor().SetValue(appendType, v.GetVersionMajor());
+    change.GetVersionRead().SetValue(appendType, v.GetVersionRead());
     change.GetVersionMinor().SetValue(appendType, v.GetVersionMinor());
     change.GetVersionWrite().SetValue(appendType, v.GetVersionWrite());
 
@@ -1635,7 +1635,7 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
     if (strcmp(idString, "String") == 0) return SystemId::String;
     if (strcmp(idString, "Target") == 0) return SystemId::Target;
     if (strcmp(idString, "TypeName") == 0) return SystemId::TypeName;
-    if (strcmp(idString, "VersionMajor") == 0) return SystemId::VersionMajor;
+    if (strcmp(idString, "VersionRead") == 0) return SystemId::VersionRead;
     if (strcmp(idString, "VersionMinor") == 0) return SystemId::VersionMinor;
     if (strcmp(idString, "VersionWrite") == 0) return SystemId::VersionWrite;
 
@@ -1718,7 +1718,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::String: return "String";
             case SystemId::Target: return "Target";
             case SystemId::TypeName: return "TypeName";
-            case SystemId::VersionMajor: return "VersionMajor";
+            case SystemId::VersionRead: return "VersionRead";
             case SystemId::VersionMinor: return "VersionMinor";
             case SystemId::VersionWrite: return "VersionWrite";
 
