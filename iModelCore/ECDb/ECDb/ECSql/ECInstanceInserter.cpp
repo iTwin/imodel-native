@@ -27,13 +27,16 @@ private:
 
     void Initialize(ECSqlWriteToken const*);
 
+    DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECN::IECRelationshipInstanceCR, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const;
+
     static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("insert", instance, errorMessage); }
 
 public:
     Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken);
 
-    DbResult Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
+    DbResult Insert(ECInstanceKey& newInstanceKey, IECInstanceCR, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
     DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
+    DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
     bool IsValid() const { return m_isValid; }
     };
 
@@ -72,6 +75,14 @@ bool ECInstanceInserter::IsValid() const { return m_impl->IsValid(); }
 DbResult ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userprovidedECInstanceId) const
     {
     return m_impl->Insert(newInstanceKey, instance, autogenerateECInstanceId, userprovidedECInstanceId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECInstanceInserter::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+    {
+    return m_impl->InsertRelationship(newInstanceKey, sourceKey, targetKey, relationshipProperties, autogenerateECInstanceId, userProvidedECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -171,12 +182,16 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
 
     if (!ECInstanceAdapterHelper::Equals(instance.GetClass(), m_ecClass))
         {
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceInserter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
+        LOG.errorv("Failed to insert RelationshipECInstance: Invalid ECInstance passed to ECInstanceInserter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
                              m_ecClass.GetFullName(), instance.GetClass().GetFullName());
-
-        LogFailure(instance, Utf8String(errorMessage).c_str());
         return BE_SQLITE_ERROR;
+        }
+
+    if (m_ecClass.IsRelationshipClass())
+        {
+        IECRelationshipInstanceCP relInstance = dynamic_cast<IECRelationshipInstanceCP> (&instance);
+        BeAssert(relInstance != nullptr && "Was checked before");
+        return InsertRelationship(newInstanceKey, *relInstance, autogenerateECInstanceId, userProvidedECInstanceId);
         }
 
     if (autogenerateECInstanceId && userProvidedECInstanceId != nullptr)
@@ -253,6 +268,115 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
             errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
                                  m_statement.GetECSql());
             LogFailure(instance, errorMessage.c_str());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    //now execute statement
+    const DbResult stepStatus = m_statement.Step(newInstanceKey);
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
+    return stepStatus;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstanceKey, IECRelationshipInstanceCR relInstance, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+    {
+    IECInstancePtr sourceInstance = relInstance.GetSource();
+    IECInstancePtr targetInstance = relInstance.GetTarget();
+    if (sourceInstance == nullptr || targetInstance == nullptr)
+        {
+        LOG.error("Failed to insert RelationshipECInstance: Source and Target must be set in the RelationshipECInstance.");
+        return BE_SQLITE_ERROR;
+        }
+
+    ECInstanceId sourceId, targetId;
+    if (SUCCESS != ECInstanceId::FromString(sourceId, sourceInstance->GetInstanceId().c_str()))
+        {
+        LOG.error("Failed to insert RelationshipECInstance: Source instance of the RelationshipECInstance must have a valid InstanceId.");
+        return BE_SQLITE_ERROR;
+        }
+
+    if (SUCCESS != ECInstanceId::FromString(targetId, targetInstance->GetInstanceId().c_str()))
+        {
+        LOG.error("Failed to insert RelationshipECInstance: Target instance of the RelationshipECInstance must have a valid InstanceId.");
+        return BE_SQLITE_ERROR;
+        }
+
+    return InsertRelationship(newInstanceKey, ECInstanceKey(sourceInstance->GetClass().GetId(), sourceId), ECInstanceKey(targetInstance->GetClass().GetId(), targetId),
+                  &relInstance, autogenerateECInstanceId, userProvidedECInstanceId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+    {
+    if (!IsValid())
+        {
+        LOG.errorv("ECInstanceInserter for ECClass '%s' is invalid as the ECClass is not mapped or not instantiable.", m_ecClass.GetFullName());
+        return BE_SQLITE_ERROR;
+        }
+
+    if (relationshipProperties != nullptr && !ECInstanceAdapterHelper::Equals(relationshipProperties->GetClass(), m_ecClass))
+        {
+        LOG.errorv("Failed to insert RelationshipECInstance: Invalid RelationshipECInstance passed to ECInstanceInserter. "
+                   "ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.", m_ecClass.GetFullName(), relationshipProperties->GetClass().GetFullName());
+        return BE_SQLITE_ERROR;
+        }
+
+    if (autogenerateECInstanceId && userProvidedECInstanceId != nullptr)
+        {
+        LOG.error("Failed to insert RelationshipECInstance: Wrong usage of ECInstanceInserter::Insert.When passing true for autogenerateECInstanceId, userprovidedECInstanceId must be nullptr.");
+        return BE_SQLITE_ERROR;
+        }
+
+    ECInstanceId actualUserProvidedInstanceId;
+    //try to retrieve a user provided ECInstanceId as auto-generation is not wanted
+    if (!autogenerateECInstanceId)
+        {
+        if (userProvidedECInstanceId != nullptr)
+            {
+            if (!userProvidedECInstanceId->IsValid())
+                {
+                LOG.error("Failed to insert RelationshipECInstance: Parameter 'userprovidedECInstanceId' is not a valid ECInstanceId.");
+                return BE_SQLITE_ERROR;
+                }
+
+            actualUserProvidedInstanceId = *userProvidedECInstanceId;
+            }
+        else
+            {
+            LOG.error("Failed to insert RelationshipECInstance: Parameter 'userprovidedECInstanceId' must be set if parameter 'autogenerateECInstanceId' is false.");
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    //"Pins" the internal memory buffer used by the ECDBuffer such that :
+    //a) all calculated property values will be evaluated exactly once, when scope is constructed; and
+    //b) addresses of all property values will not change for lifetime of scope.
+    //To be used in conjunction with ECValue::SetAllowsPointersIntoInstanceMemory () to ensure
+    //pointers remain valid for lifetime of scope.
+    ECDBufferScope scope;
+    if (m_needsCalculatedPropertyEvaluation && relationshipProperties != nullptr)
+        scope.Init(relationshipProperties->GetECDBuffer());
+
+    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(actualUserProvidedInstanceId, sourceKey, targetKey, relationshipProperties);
+
+    //now add parameter values
+    for (auto const& bindingInfo : m_ecValueBindingInfos)
+        {
+        BeAssert(bindingInfo->HasECSqlParameterIndex());
+        auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo);
+        if (stat != SUCCESS)
+            {
+            LOG.errorv("Failed to insert RelationshipECInstance: Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
+                                 m_statement.GetECSql());
             return BE_SQLITE_ERROR;
             }
         }

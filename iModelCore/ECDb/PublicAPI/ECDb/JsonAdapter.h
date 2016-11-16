@@ -602,7 +602,7 @@ struct JsonUpdater : NonCopyableClass
 
         //! Updates an instance from the specified jsonValue
         //! @deprecated In favour of other overloads that take an instance id
-        ECDB_EXPORT DbResult Update(JsonValueCR jsonValue) const;
+        //ECDB_EXPORT DbResult Update(JsonValueCR jsonValue) const;
 
         //! Updates an instance from the specified jsonValue
         //! @param[in] instanceId the ECInstanceId of the instance to update

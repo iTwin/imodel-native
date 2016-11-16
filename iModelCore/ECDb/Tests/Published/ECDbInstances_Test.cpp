@@ -658,19 +658,18 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
     ASSERT_TRUE(project != nullptr);
-    IECInstancePtr instance;
-    instance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+    IECInstancePtr projectInstance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
     //ECInstance Adapters
     ECInstanceInserter inserter(db, *employee, nullptr);
     ECInstanceKey instanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *instance));
+    ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(instanceKey, *projectInstance));
 
     ECInstanceUpdater updater(db, *employee, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(*instance));
+    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(*projectInstance));
 
     ECInstanceDeleter deleter(db, *employee, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(*instance));
+    ASSERT_EQ(BE_SQLITE_ERROR, deleter.Delete(*projectInstance));
 
     //Json Adapters
     // Read JSON input from file
@@ -685,16 +684,16 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile));
 
     JsonInserter jsonInserter(db, *employee, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, jsonInserter.Insert(instanceKey, jsonInput));
+    ASSERT_EQ(BE_SQLITE_ERROR, jsonInserter.Insert(instanceKey, jsonInput));
 
     JsonUpdater jsonUpdater(db, *employee, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput));
+    ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput));
 
     JsonDeleter jsonDeleter(db, *employee, nullptr);
     ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
-    ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, jsonDeleter.Delete(instanceId));
+    ECInstanceId::FromString(instanceId, projectInstance->GetInstanceId().c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, jsonDeleter.Delete(instanceId)) << "InstanceId is not validated so Delete is expected to succeed even if the id doesn't match the ECClass";
 
     BeTest::SetFailOnAssert(true);
     }

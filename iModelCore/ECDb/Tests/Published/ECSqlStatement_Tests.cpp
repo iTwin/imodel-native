@@ -1151,7 +1151,7 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     int deleteCount = 0;
     for (auto& inst : in)
         {
-        ASSERT_TRUE(deleter.Delete(*inst) == BentleyStatus::SUCCESS);
+        ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(*inst));
         deleteCount++;
         }
 

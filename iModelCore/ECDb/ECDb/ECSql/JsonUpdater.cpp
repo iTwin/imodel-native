@@ -13,41 +13,9 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyInstance(ECInstanceKeyCR instanceKey) const
-    {
-    ECClassCP ecClass = m_ecdb.Schemas().GetECClass(instanceKey.GetECClassId());
-    if (!ecClass)
-        return nullptr;
-
-    IECInstancePtr instance = CreateEmptyInstance(*ecClass);
-    ECInstanceAdapterHelper::SetECInstanceId(*instance, instanceKey.GetECInstanceId());
-    return instance;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    IECInstancePtr sourceInst = CreateEmptyInstance(sourceKey);
-    IECInstancePtr targetInst = CreateEmptyInstance(targetKey);
-    if (sourceInst == nullptr || targetInst == nullptr)
-        return nullptr;
-
-    StandaloneECRelationshipInstancePtr relInst = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(ecRelClass)->CreateRelationshipInstance();
-    relInst->SetSource(sourceInst.get());
-    relInst->SetTarget(targetInst.get());
-
-    return relInst.get();
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonUpdater::Update(JsonValueCR jsonValue) const
+/*DbResult JsonUpdater::Update(JsonValueCR jsonValue) const
     {
     ECInstanceId instanceId = ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
     if (!instanceId.IsValid())
@@ -55,7 +23,7 @@ DbResult JsonUpdater::Update(JsonValueCR jsonValue) const
 
     return Update(instanceId, jsonValue);
     }
-
+    */
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -141,5 +109,37 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 
     return m_ecinstanceUpdater.Update(*ecInstance);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr JsonUpdater::CreateEmptyInstance(ECInstanceKeyCR instanceKey) const
+    {
+    ECClassCP ecClass = m_ecdb.Schemas().GetECClass(instanceKey.GetECClassId());
+    if (!ecClass)
+        return nullptr;
+
+    IECInstancePtr instance = CreateEmptyInstance(*ecClass);
+    ECInstanceAdapterHelper::SetECInstanceId(*instance, instanceKey.GetECInstanceId());
+    return instance;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
+    {
+    IECInstancePtr sourceInst = CreateEmptyInstance(sourceKey);
+    IECInstancePtr targetInst = CreateEmptyInstance(targetKey);
+    if (sourceInst == nullptr || targetInst == nullptr)
+        return nullptr;
+
+    StandaloneECRelationshipInstancePtr relInst = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(ecRelClass)->CreateRelationshipInstance();
+    relInst->SetSource(sourceInst.get());
+    relInst->SetTarget(targetInst.get());
+
+    return relInst.get();
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

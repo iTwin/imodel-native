@@ -90,16 +90,10 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     ASSERT_TRUE(updater.IsValid());
 
     Json::Value val;
-    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(val)) << "Empty JSON value";
+    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(ECInstanceId(), val)) << "Empty JSON value";
 
     val["Name"] = "test2.txt";
-    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(val)) << "JSON value without $ECInstanceId member";
-
-    val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue() + 1);
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(val)) << "JSON value with not-existing $ECInstanceId member";
-
-    val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), val)) << "JSON value without $ECInstanceId member";
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,7 +173,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     Utf8CP expectedVal = "good afternoon";
     relationshipJson["Name"] = expectedVal;
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
-    ASSERT_EQ(SUCCESS, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(db, "SELECT NULL FROM ts.AHasA WHERE ECInstanceId=? AND Name=?"));
@@ -198,7 +192,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     relationshipRapidJson.SetObject();
     relationshipRapidJson.AddMember("Name", rapidjson::StringRef(expectedVal), relationshipRapidJson.GetAllocator());
 
-    ASSERT_EQ(SUCCESS, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, relInstanceId));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(2, expectedVal, IECSqlBinder::MakeCopy::No));
@@ -256,7 +250,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassJson["P2"] = expectedVal;
     ecClassJson["P3"] = 2000.20;
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
-    ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), ecClassJson));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), ecClassJson));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
@@ -280,7 +274,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassRapidJson.AddMember("P2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
     ecClassRapidJson.AddMember("P3", 3000.30, ecClassRapidJson.GetAllocator());
 
-    ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 300));
@@ -391,7 +385,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     Savepoint sp(ecdb, "default updater");
     JsonUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), properties));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
@@ -408,7 +402,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     {
     JsonUpdater updater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), properties));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());

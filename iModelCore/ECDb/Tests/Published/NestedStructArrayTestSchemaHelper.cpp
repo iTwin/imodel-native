@@ -7,6 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "NestedStructArrayTestSchemaHelper.h"
 
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_EC
+
+BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -738,3 +742,5 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
 
     ecdb.SaveChanges();
     }
+
+END_ECDBUNITTESTS_NAMESPACE

@@ -382,8 +382,7 @@ TEST(FieldEngineer, Workflow)
     JsonUpdater updater(ecDb, *employeeClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     currentObject["FirstName"] = "Silver";
-    StatusInt updateStatus = updater.Update(currentObject); // Uses ECInstanceId in the currentObject to find the entry to update
-    ASSERT_TRUE(updateStatus == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(ecInstanceId, currentObject)); // Uses ECInstanceId in the currentObject to find the entry to update
     int afterUpdateCount = CountRows(ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Gold'");
     ASSERT_EQ(0, afterUpdateCount);
     afterUpdateCount = CountRows(ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Silver'");
@@ -416,8 +415,7 @@ TEST(FieldEngineer, Workflow)
      */
     JsonDeleter deleter(ecDb, *employeeClass, nullptr);
     ASSERT_TRUE(deleter.IsValid());
-    StatusInt deleteStatus = deleter.Delete(bronzeFishId);
-    ASSERT_TRUE(deleteStatus == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(bronzeFishId));
     int afterDeleteCount = CountRows(ecDb, ecSqlWithoutSelect);
     ASSERT_EQ(0, afterDeleteCount);
     statement.Finalize();
@@ -462,8 +460,7 @@ TEST(FieldEngineer, Workflow)
     */
     JsonDeleter deleter2(ecDb, *managerRelClass, nullptr);
     ASSERT_TRUE(deleter.IsValid());
-    deleteStatus = deleter2.Delete(managerRelId);
-    ASSERT_TRUE(deleteStatus == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, deleter2.Delete(managerRelId));
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step()); // Validate that there aren't any rows for relationship!!

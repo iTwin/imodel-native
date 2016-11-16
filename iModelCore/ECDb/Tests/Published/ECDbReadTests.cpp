@@ -13,11 +13,11 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ReadTests : ECDbTestFixture {};
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
+int CountInstancesOfClass(ECDbR db, ECClassCR ecClass, bool isPolymorphic)
     {
     Utf8String ecsql("SELECT count(*) FROM ");
 
@@ -27,7 +27,7 @@ int CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
     ecsql.append(ecClass.GetECSqlName());
 
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (db, ecsql.c_str ());
+    ECSqlStatus stat = statement.Prepare(db, ecsql.c_str());
     if (stat != ECSqlStatus::Success)
         return -1;
 
@@ -48,73 +48,73 @@ TEST_F(ReadTests, ReadPolymorphic)
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
      */
     ECClassCP furniture = db.Schemas().GetECClass("StartupCompany", "Furniture");
-    ASSERT_TRUE (furniture != nullptr);
-    int count = CountInstancesOfClass (db, *furniture, false);
-    ASSERT_EQ (3, count);
-    count = CountInstancesOfClass (db, *furniture, true);
-    ASSERT_EQ (9, count);
+    ASSERT_TRUE(furniture != nullptr);
+    int count = CountInstancesOfClass(db, *furniture, false);
+    ASSERT_EQ(3, count);
+    count = CountInstancesOfClass(db, *furniture, true);
+    ASSERT_EQ(9, count);
 
     /*
      * Test retrieval when parent and children are all in different tables (TablePerClass)
      */
     ECClassCP hardware = db.Schemas().GetECClass("StartupCompany", "Hardware");
-    ASSERT_TRUE (hardware != nullptr);
-    count = CountInstancesOfClass (db, *hardware, false);
-    ASSERT_EQ (3, count);
-    count = CountInstancesOfClass (db, *hardware, true);
-    ASSERT_EQ (9, count);
+    ASSERT_TRUE(hardware != nullptr);
+    count = CountInstancesOfClass(db, *hardware, false);
+    ASSERT_EQ(3, count);
+    count = CountInstancesOfClass(db, *hardware, true);
+    ASSERT_EQ(9, count);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SetStringValue (IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stringValue)
+bool SetStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stringValue)
     {
     ECValue ecValue;
-    if (SUCCESS != ecValue.SetUtf8CP (stringValue, true))
+    if (SUCCESS != ecValue.SetUtf8CP(stringValue, true))
         return false;
-    if (ECObjectsStatus::Success != instance.SetValue (propertyAccessor, ecValue))
+    if (ECObjectsStatus::Success != instance.SetValue(propertyAccessor, ecValue))
         return false;
     return true;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SetIntValue (IECInstanceR instance, Utf8CP propertyAccessor, int intValue)
+bool SetIntValue(IECInstanceR instance, Utf8CP propertyAccessor, int intValue)
     {
     ECValue ecValue;
-    if (SUCCESS != ecValue.SetInteger (intValue))
+    if (SUCCESS != ecValue.SetInteger(intValue))
         return false;
-    if (ECObjectsStatus::Success != instance.SetValue (propertyAccessor, ecValue))
+    if (ECObjectsStatus::Success != instance.SetValue(propertyAccessor, ecValue))
         return false;
     return true;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InsertInstance (ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance)
+bool InsertInstance(ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance)
     {
-    ECInstanceInserter inserter (db, ecClass, nullptr);
-    if (!inserter.IsValid ())
+    ECInstanceInserter inserter(db, ecClass, nullptr);
+    if (!inserter.IsValid())
         return false;
 
-    auto insertStatus = inserter.Insert (ecInstance);
-    return SUCCESS == insertStatus;
+    const DbResult insertStatus = inserter.Insert(ecInstance);
+    return BE_SQLITE_DONE == insertStatus;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreatePerson (ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
+IECInstancePtr CreatePerson(ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
     {
     IECInstancePtr ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     if (ecInstance.IsNull())
         return nullptr;
-    if (!SetStringValue (*ecInstance, "FirstName", firstName))
+    if (!SetStringValue(*ecInstance, "FirstName", firstName))
         return nullptr;
-    if (!SetStringValue (*ecInstance, "LastName", lastName))
+    if (!SetStringValue(*ecInstance, "LastName", lastName))
         return nullptr;
     return ecInstance;
     }
@@ -179,19 +179,19 @@ TEST_F(ReadTests, OrderBy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReadTests, LimitOffset)
     {
-    ECDbR db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ECDbR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     // Populate 100 instances
     ECClassCP ecClass = db.Schemas().GetECClass("StartupCompany", "ClassWithPrimitiveProperties");
     IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    ECInstanceInserter inserter (db, *ecClass, nullptr);
-    ASSERT_TRUE (inserter.IsValid ());
+    ECInstanceInserter inserter(db, *ecClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
     for (int ii = 0; ii < 100; ii++)
         {
-        bool instanceStatus = SetIntValue (*ecInstance, "intProp", ii);
-        ASSERT_TRUE (instanceStatus);
+        bool instanceStatus = SetIntValue(*ecInstance, "intProp", ii);
+        ASSERT_TRUE(instanceStatus);
         ECInstanceKey instanceKey;
-        ASSERT_EQ(SUCCESS, inserter.Insert (instanceKey, *ecInstance));
+        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *ecInstance));
         }
     db.SaveChanges();
 
@@ -199,27 +199,27 @@ TEST_F(ReadTests, LimitOffset)
     Utf8String ecsql("SELECT intProp FROM ");
     ecsql.append(ecClass->GetECSqlName()).append(" LIMIT :pageSize OFFSET :pageSize * (:pageNumber - 1)");
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ())) << ecsql.c_str();
-    int pageSizeIndex = statement.GetParameterIndex ("pageSize");
-    ASSERT_TRUE (pageSizeIndex >= 0);
-    int pageNumberIndex = statement.GetParameterIndex ("pageNumber");
-    ASSERT_TRUE (pageNumberIndex >= 0);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str())) << ecsql.c_str();
+    int pageSizeIndex = statement.GetParameterIndex("pageSize");
+    ASSERT_TRUE(pageSizeIndex >= 0);
+    int pageNumberIndex = statement.GetParameterIndex("pageNumber");
+    ASSERT_TRUE(pageNumberIndex >= 0);
 
     // Start getting the 5th page, where each page is 10 instances
     int pageSize = 10;
     int pageNumber = 5;
-    statement.BindInt (pageSizeIndex, pageSize);
-    statement.BindInt (pageNumberIndex, pageNumber);
+    statement.BindInt(pageSizeIndex, pageSize);
+    statement.BindInt(pageNumberIndex, pageNumber);
 
     // Verify the first result
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    int actualValue = statement.GetValueInt (0);
+    int actualValue = statement.GetValueInt(0);
     int expectedValue = pageSize * (pageNumber - 1);
-    ASSERT_EQ (actualValue, expectedValue);
+    ASSERT_EQ(actualValue, expectedValue);
     }
 
 TEST_F(ReadTests, WriteCalculatedECProperty)
-{
+    {
     ECDbR db = SetupECDb("SimpleCompany.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"));
     Utf8String instanceXml = "<Manager xmlns = \"SimpleCompany.01.00\" >"
         "<FirstName>StRiNg - 10002</FirstName>"
@@ -251,8 +251,8 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     ECSchemaPtr schema;
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, *schema, &schema);
     IECInstancePtr instance;
-    InstanceReadStatus status= IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
-    ASSERT_TRUE(InstanceReadStatus::Success==status);
+    InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
+    ASSERT_TRUE(InstanceReadStatus::Success == status);
 
     Savepoint s(db, "Populate");
     ECClassCR ecClass = instance->GetClass();
@@ -273,27 +273,27 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     bvector<IECInstancePtr> instances;
     ECInstanceECSqlSelectAdapter adapter(ecStatement);
     while (BE_SQLITE_ROW == ecStatement.Step())
-    {
+        {
         IECInstancePtr newInstance = adapter.GetInstance();
         ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance));
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ReadTests, CreateECDbWithArbitraryNumberOfECInstances)
-{
+    {
     ECDbR ecdbr = SetupECDb("ecdbWithArbitratyInstances.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"), 3);
 
-    ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
-    ASSERT_TRUE (ecschemap != nullptr);
+    ECSchemaCP ecschemap = ecdbr.Schemas().GetECSchema("SimpleCompany", true);
+    ASSERT_TRUE(ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP("Employee");
     ASSERT_TRUE(employee != NULL);
     int count = CountInstancesOfClass(ecdbr, *employee, false);
     ASSERT_EQ(3, count);
     count = CountInstancesOfClass(ecdbr, *employee, true);
-    ASSERT_EQ(2*3, count);
-}
+    ASSERT_EQ(2 * 3, count);
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

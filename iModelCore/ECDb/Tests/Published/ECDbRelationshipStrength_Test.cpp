@@ -28,8 +28,7 @@ void DeleteInstance(IECInstanceCR instance, ECDbR ecdb)
 
     ASSERT_TRUE(deleter.IsValid()) << "Invaild Deleter for ecClass : " << ecClass.GetName().c_str();
 
-    auto status = deleter.Delete(instance);
-    ASSERT_TRUE(status == SUCCESS) << "Instance Deletion failed for ecClass : " << ecClass.GetName().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(instance)) << "Instance Deletion failed for ecClass : " << ecClass.GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**

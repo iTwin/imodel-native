@@ -258,7 +258,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         ASSERT_EQ(testClass->GetId(), userProvidedKey.GetECClassId());
         assertInsert(testInstance, userProvidedKey.GetECInstanceId());
 
-        ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, inserter.Insert(userProvidedKey, testInstance, false) << testScenario << ": inserting instance with same instance id twice should result in constraint violation error";
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, inserter.Insert(userProvidedKey, testInstance, false)) << testScenario << ": inserting instance with same instance id twice should result in constraint violation error";
         };
 
     //Test #1: insert empty instance

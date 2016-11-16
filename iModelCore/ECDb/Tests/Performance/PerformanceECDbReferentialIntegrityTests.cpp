@@ -38,7 +38,7 @@ ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
     JsonInserter inserter(ecdb, *ecClass, nullptr);
     Json::Value instance(Json::objectValue);
     ECInstanceKey instanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, instance));
+    EXPECT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());
     return instanceKey;
     }
