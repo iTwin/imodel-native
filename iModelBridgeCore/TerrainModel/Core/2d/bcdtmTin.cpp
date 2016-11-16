@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -18,6 +18,8 @@
 
 
 #include <thread>
+
+const int MINIMUM_POINTS_PER_TIN_THREAD = 2000;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -52,7 +54,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 **
 */
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long colinear=0,startTime,useMultiThread=TRUE ;
+ long colinear = 0, startTime;// , useMultiThread = TRUE;
 /*
 ** Write Entry Message
 */
@@ -114,8 +116,9 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 /*
 ** Single Thread Triangulate DTM Object
 */
- if( useMultiThread == FALSE || DTM_NUM_PROCESSORS == 1 || dtmP->numPoints < 1000 )
-   {
+
+ /*if( useMultiThread == FALSE || DTM_NUM_PROCESSORS == 1 || dtmP->numPoints < 1000 )
+   {*/
     if( dbg ) bcdtmWrite_message(0,0,0,"Single Thread Triangulating") ;
     startTime = bcdtmClock() ;
     if( bcdtmTin_triangulateDtmObject(dtmP,&colinear)) goto errexit ;
@@ -125,11 +128,11 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
        bcdtmWrite_message(1,0,0,"All DTM Points Colinear") ;
        goto errexit ;
       }
-   }
+  // }
 /*
 ** Multi Thread Triangulate DTM Object
 */
- else
+ /*else
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Multi Thread Triangulating") ;
     startTime = bcdtmClock() ;
@@ -140,7 +143,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
        bcdtmWrite_message(1,0,0,"All DTM Points Colinear") ;
        goto errexit ;
       }
-   }
+   }*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulation Completed") ;
 /*
 ** Check For Check Stop Termination
@@ -435,7 +438,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
+int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
 /*
 ** This is the controlling function for sorting dtm points into tiles and then triangulating them
 **
@@ -443,6 +446,12 @@ BENTLEYDTM_Private int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *coli
 **
 */
 {
+
+bool useMultiThread = true;
+
+if (useMultiThread && DTM_NUM_PROCESSORS != 1 && dtmP->numPoints > (MINIMUM_POINTS_PER_TIN_THREAD * 2))
+ return bcdtmTin_multiThreadTriangulateDtmObject(dtmP, colinearPtsP);
+
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long p,node,leftPnt=0,rightPnt=0,topPnt=0,bottomPnt=0 ;
  long startTime,tinTime ;
@@ -614,7 +623,7 @@ void bcdtmTin_multiThreadTriangulationWorkerDtmObject (DTM_MULTI_THREAD *trgPara
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
+int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
 /*
 ** This is the controlling function for To Multi Thread A DTM Triangulation
 **
@@ -2333,7 +2342,7 @@ BENTLEYDTM_Public int bcdtmTin_getSwapTriangleDtmObject(BC_DTM_OBJ *dtmP,long st
 +-----------------------------------------------------------*/
 std::mutex s_safeInsert;
 
-BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType)
+int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType)
 /*
 ** This Function Inserts Dtm Features Into A Dtm Object
 */
