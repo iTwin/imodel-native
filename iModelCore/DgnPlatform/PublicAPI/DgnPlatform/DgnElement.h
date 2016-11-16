@@ -257,7 +257,7 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         return idSet;
         }
 
-    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass DgnElementId
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass of DgnElementId
     template <class T_ElementId> bvector<T_ElementId> BuildIdList()
         {
         bvector<T_ElementId> idList;
@@ -265,6 +265,13 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
             idList.push_back(entry.GetId<T_ElementId>());
 
         return idList;
+        }
+
+    //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId>  void BuildIdList (bvector<T_ElementId>& idList)
+        {
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
         }
 };
 
