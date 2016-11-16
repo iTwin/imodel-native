@@ -415,7 +415,7 @@ bool TileModelDelta::DoIncremental (TileNodeCR tile) const
     BeFileName      tileFileName (nullptr, m_dataDirectory.c_str(), tile.GetFileName (m_rootName.c_str(), L"b3dm").c_str(), nullptr);
     bvector<size_t> tilePath;
 
-    for (TileNodeCP pathTile = tile.GetParent(); nullptr != pathTile; pathTile = pathTile->GetParent())
+    for (TileNodeCP pathTile = &tile; nullptr != pathTile->GetParent(); pathTile = pathTile->GetParent())
         tilePath.push_back (pathTile->GetSiblingIndex());
 
     return SUCCESS == findTileValue (previousTile, m_previousTileSet["root"], tilePath) && 
