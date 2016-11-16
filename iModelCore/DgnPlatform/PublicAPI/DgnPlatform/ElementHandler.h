@@ -180,12 +180,6 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Dgn::SectionDrawing, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for Sheet
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Sheet, Dgn::Sheet, Sheet, Document, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for DefinitionElement
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {

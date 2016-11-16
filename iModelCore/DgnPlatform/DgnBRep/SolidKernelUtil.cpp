@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-#include <DgnPlatform/DgnBRep/OCBRep.h>
-#elif defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
@@ -21,6 +19,37 @@ FaceAttachment::FaceAttachment()
     m_color = ColorDef::Black();
     m_transparency = 0.0;
     m_uv.Init(0.0, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
+    {
+    if (m_useColor      != rhs.m_useColor ||
+        m_useMaterial   != rhs.m_useMaterial ||
+        m_color         != rhs.m_color ||
+        m_transparency  != rhs.m_transparency ||
+        m_material      != rhs.m_material ||
+        m_uv.x          != rhs.m_uv.x || 
+        m_uv.y          != rhs.m_uv.y)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
+    {
+    return (m_useColor         < rhs.m_useColor ||
+            m_useMaterial      < rhs.m_useMaterial ||
+            m_color.GetValue() < rhs.m_color.GetValue() ||
+            m_transparency     < rhs.m_transparency ||
+            m_material         < rhs.m_material ||
+            m_uv.x             < rhs.m_uv.x || 
+            m_uv.y             < rhs.m_uv.y);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,6 +68,8 @@ FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
         m_material = sourceParams.GetMaterialId();
         // NEEDSWORK_WIP_MATERIAL...m_uv???
         }
+
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,337 +106,35 @@ void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR b
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2012
+* @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
+uint32_t FaceAttachment::GetFaceIdentifierFromSubEntity(ISubEntityCR subEntity)
     {
-    if (m_useColor      != rhs.m_useColor ||
-        m_useMaterial   != rhs.m_useMaterial ||
-        m_color         != rhs.m_color ||
-        m_transparency  != rhs.m_transparency ||
-        m_material      != rhs.m_material ||
-        m_uv.x          != rhs.m_uv.x || 
-        m_uv.y          != rhs.m_uv.y)
-        return false;
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    PK_ENTITY_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
 
-    return true;
-    }
+    if (PK_ENTITY_null == entityTag)
+        return 0;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
-    {
-    return (m_useColor         < rhs.m_useColor ||
-            m_useMaterial      < rhs.m_useMaterial ||
-            m_color.GetValue() < rhs.m_color.GetValue() ||
-            m_transparency     < rhs.m_transparency ||
-            m_material         < rhs.m_material ||
-            m_uv.x             < rhs.m_uv.x || 
-            m_uv.y             < rhs.m_uv.y);
-    }
+    PK_CLASS_t  entityClass;
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)    
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  03/16
-+===============+===============+===============+===============+===============+======*/
-struct OpenCascadeEntity : RefCounted<IBRepEntity>
-{
-private:
+    PK_ENTITY_ask_class(entityTag, &entityClass);
 
-TopoDS_Shape m_shape;
-
-protected:
-
-virtual Transform _GetEntityTransform () const override {Transform transform = OCBRep::ToTransform(m_shape.Location()); return transform;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _SetEntityTransform (TransformCR transform) override
-    {
-    DPoint3d    origin;
-    RotMatrix   rMatrix, rotation, skewFactor;
-    Transform   shapeTrans, goopTrans; 
-
-    transform.GetTranslation(origin);
-    transform.GetMatrix(rMatrix);
-
-    // NOTE: Don't allow scaled TopoDS_Shape::Location...too many bugs, also non-uniform scale isn't supported...
-    if (rMatrix.RotateAndSkewFactors(rotation, skewFactor, 0, 1))
+    switch (entityClass)
         {
-        goopTrans.InitFrom(skewFactor);
-        shapeTrans.InitFrom(rotation, origin);
+        case PK_CLASS_face:
+            return entityTag;
+
+        case PK_CLASS_edge:
+            return PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(entityTag);
+
+        case PK_CLASS_vertex:
+            return PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(entityTag);
         }
-    else
-        {
-        goopTrans = transform;
-        shapeTrans.InitIdentity();
-        }
-
-    try
-        {
-        if (!goopTrans.IsIdentity())
-            {
-            double  goopScale;
-
-            goopTrans.GetMatrix(rMatrix);
-
-            if (rMatrix.IsUniformScale(goopScale))
-                {
-                gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
-
-                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-                BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
-    
-                if (!transformer.IsDone())
-                    {
-                    BeAssert(false);
-                    return false;
-                    }
-
-                m_shape = transformer.ModifiedShape(m_shape);
-                }
-            else
-                {
-                gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
-
-                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-                BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
-    
-                if (!transformer.IsDone())
-                    {
-                    BeAssert(false);
-                    return false;
-                    }
-
-                m_shape = transformer.ModifiedShape(m_shape);
-                }
-
-            BeAssert(m_shape.Location().IsIdentity());
-            }
-        }
-    catch (Standard_Failure)
-        {
-        return false;
-        }
-
-    m_shape.Location(OCBRep::ToGpTrsf(shapeTrans));
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-EntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
-    {
-    switch (shapeType)
-        {
-        case TopAbs_COMPOUND:
-            return IBRepEntity::EntityType::Compound;
-
-        case TopAbs_COMPSOLID:
-        case TopAbs_SOLID:
-            return IBRepEntity::EntityType::Solid;
-
-        case TopAbs_SHELL:
-        case TopAbs_FACE:
-            return IBRepEntity::EntityType::Sheet;
-
-        case TopAbs_WIRE:
-        case TopAbs_EDGE:
-            return IBRepEntity::EntityType::Wire;
-
-        case TopAbs_VERTEX:
-        default:
-            return IBRepEntity::EntityType::Minimal;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-EntityType _GetEntityType() const {return ToEntityType(OCBRepUtil::GetShapeType(m_shape));}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d _GetEntityRange() const
-    {
-    Bnd_Box box;
-
-    try
-        {
-        BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
-        }
-    catch (Standard_Failure)
-        {
-        BRepBndLib::Add(m_shape, box); // Sloppy AABB implementation is apparently more robust...we NEED a valid range!
-        }
-
-    return OCBRep::ToDRange3d(box);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsEqual (IBRepEntityCR entity) const override
-    {
-    if (this == &entity)
-        return true;
-
-    OpenCascadeEntity const* ocEntity;
-
-    if (NULL == (ocEntity = dynamic_cast <OpenCascadeEntity const*>(&entity)))
-        return false;
-
-    return TO_BOOL(m_shape == ocEntity->GetShape());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override {return nullptr;}
-virtual bool _InitFaceMaterialAttachments (Render::GeometryParamsCP baseParams) override {return false;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual IBRepEntityPtr _Clone() const override
-    {
-    TopoDS_Shape clone(m_shape);
-
-    return OpenCascadeEntity::CreateNewEntity(clone);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-OpenCascadeEntity(TopoDS_Shape const& shape) : m_shape(shape) {}
-
-public:
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape const& GetShape() const {return m_shape;}
-TopoDS_Shape& GetShapeR() {return m_shape;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape)
-    {
-    if (OCBRepUtil::IsEmptyCompoundShape(shape))
-        return nullptr; // Don't create OpenCascadeEntity from empty compound (ex. useless result from BRepAlgoAPI_Cut if target is completely inside tool)...
-
-    return new OpenCascadeEntity(shape);
-    }
-
-}; // OpenCascadeEntity
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape const* SolidKernelUtil::GetShape(IBRepEntityCR entity)
-    {
-    OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
-
-    if (!ocEntity)
-        return nullptr;
-
-    return &ocEntity->GetShape();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TopoDS_Shape* SolidKernelUtil::GetShapeP(IBRepEntityR entity)
-    {
-    OpenCascadeEntity* ocEntity = dynamic_cast <OpenCascadeEntity*> (&entity);
-
-    if (!ocEntity)
-        return nullptr;
-
-    return &ocEntity->GetShapeR();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBRepEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
-    {
-    return OpenCascadeEntity::CreateNewEntity(shape);
-    }
-
-#if defined (NOT_NOW_FACET) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-
-    if (nullptr == shape)
-        return nullptr;
-
-    if (nullptr != pixelSizeRange)
-        pixelSizeRange->InitNull();
-
-    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
-
-    facetOptions->SetNormalsRequired(true);
-    facetOptions->SetParamsRequired(true);
-
-    if (!OCBRep::HasCurvedFaceOrEdge(*shape))
-        {
-        facetOptions->SetAngleTolerance(Angle::PiOver2()); // Shouldn't matter...use max angle tolerance...
-        facetOptions->SetChordTolerance(1.0); // Shouldn't matter...avoid expense of getting AABB...
-        }
-    else
-        {
-        Bnd_Box box;
-        Standard_Real maxDimension = 0.0;
-
-        BRepBndLib::Add(*shape, box);
-        BRepMesh_ShapeTool::BoxMaxDimension(box, maxDimension);
-
-        if (0.0 >= pixelSize)
-            {
-            facetOptions->SetAngleTolerance(0.2); // ~11 degrees
-            facetOptions->SetChordTolerance(0.1 * maxDimension);
-            }
-        else
-            {
-            static double sizeDependentRatio = 5.0;
-            static double pixelToChordRatio = 0.5;
-            static double minRangeRelTol = 1.0e-4;
-            static double maxRangeRelTol = 1.5e-2;
-            double minChordTol = minRangeRelTol * maxDimension;
-            double maxChordTol = maxRangeRelTol * maxDimension;
-            double chordTol = pixelToChordRatio * pixelSize;
-            bool isMin = false, isMax = false;
-
-            if (isMin = (chordTol < minChordTol))
-                chordTol = minChordTol; // Don't allow chord to get too small relative to shape size...
-            else if (isMax = (chordTol > maxChordTol))
-                chordTol = maxChordTol; // Don't keep creating coarser and coarser graphics as you zoom out, at a certain point it just wastes memory/time...
-
-            facetOptions->SetChordTolerance(chordTol);
-            facetOptions->SetAngleTolerance(Angle::PiOver2()); // Use max angle tolerance...mesh coarseness dictated by pixel size based chord...
-
-            if (nullptr != pixelSizeRange)
-                {
-                if (isMin)
-                    *pixelSizeRange = DRange1d::FromLowHigh(0.0, chordTol * sizeDependentRatio); // Finest tessellation, keep using this as we zoom in...
-                else if (isMax)
-                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, DBL_MAX); // Coarsest tessellation, keep using this as we zoom out...
-                else
-                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, chordTol * sizeDependentRatio);
-                }
-            }
-        }
-
-    return OCBRep::IncrementalMesh(*shape, *facetOptions);
 #endif
 
-#endif
+    return 0;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
@@ -414,10 +143,6 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR fac
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, facetOptions);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-    BeAssert(nullptr != shape);
-    return (nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr);
 #else
     return nullptr;
 #endif
@@ -430,8 +155,6 @@ bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& pol
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    return false;
 #else
     return false;
 #endif
@@ -444,8 +167,6 @@ BentleyStatus BRepUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVe
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::ClipCurveVector(output, input, clipVector, transform);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    return OCBRep::ClipCurveVector(output, input, clipVector, transform);
 #else
     return ERROR;
 #endif
@@ -458,25 +179,6 @@ BentleyStatus BRepUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped,
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::ClipBody(output, clipped, input, clipVector);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-    BeAssert(nullptr != shape);
-    if (nullptr == shape)
-        return ERROR;
-
-    bvector<TopoDS_Shape> clipResults;
-
-    if (SUCCESS != OCBRep::ClipTopoShape(clipResults, clipped, shape, clipVector))
-        return ERROR;
-
-    for (TopoDS_Shape clipShape : clipResults)
-        {
-        IBRepEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
-
-        output.push_back(entityPtr);
-        }
-
-    return SUCCESS;
 #else
     return ERROR;
 #endif
@@ -879,10 +581,6 @@ bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
-    BeAssert(nullptr != shape);
-    return (nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false);
 #else
     return false;
 #endif
@@ -1042,44 +740,7 @@ bool BRepUtil::ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPo
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
-    {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetFaceLocation(subEntity, point, param);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetEdgeLocation(subEntity, point, uParam);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BRepUtil::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidSubEntity::GetVertexLocation(subEntity, point);
-#else
-    return false;
-#endif
-    }
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1104,7 +765,6 @@ static void transformInertiaTensor(double inertia[3][3], RotMatrixCR rMatrix, do
     inertia[0][2] *= pow(scale, power);
     inertia[1][2] *= pow(scale, power);
     }
-
 #endif
     
 /*---------------------------------------------------------------------------------**//**
@@ -1197,19 +857,10 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromCurveVector (entityOut, curveVector, nullptr, nodeId);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape shape;
-
-    if (SUCCESS != OCBRep::Create::TopoShapeFromCurveVector(shape, curveVector))
-        return ERROR;
-
-    entityOut = SolidKernelUtil::CreateNewEntity(shape);
-
-    return SUCCESS;
+    return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
 #else
     return ERROR;
 #endif
@@ -1218,19 +869,10 @@ BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromSolidPrimitive (entityOut, primitive, nodeId);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape shape;
-
-    if (SUCCESS != OCBRep::Create::TopoShapeFromSolidPrimitive(shape, primitive))
-        return ERROR;
-
-    entityOut = SolidKernelUtil::CreateNewEntity(shape);
-
-    return SUCCESS;
+    return PSolidGeom::BodyFromSolidPrimitive(entityOut, primitive, nodeId);
 #else
     return ERROR;
 #endif
@@ -1239,19 +881,10 @@ BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive (IBRepEntityPtr& entityOu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromBSurface (IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromBSurface (entityOut, surface, nodeId);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape shape;
-
-    if (SUCCESS != OCBRep::Create::TopoShapeFromBSurface(shape, surface))
-        return ERROR;
-
-    entityOut = SolidKernelUtil::CreateNewEntity(shape);
-
-    return SUCCESS;
+    return PSolidGeom::BodyFromBSurface(entityOut, surface, nodeId);
 #else
     return ERROR;
 #endif
@@ -1260,19 +893,46 @@ BentleyStatus BRepUtil::Create::BodyFromBSurface (IBRepEntityPtr& entityOut, MSB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromPolyface (IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromPolyface (entityOut, meshData, nodeId);
-#elif defined (BENTLEYCONFIG_OPENCASCADE) 
-    TopoDS_Shape shape;
+    return PSolidGeom::BodyFromPolyface(entityOut, meshData, nodeId);
+#else
+    return ERROR;
+#endif
+    }
 
-    if (SUCCESS != OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
-        return ERROR;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromLoft(entityOut, profiles, nProfiles, guides, nGuides, nodeId);
+#else
+    return ERROR;
+#endif
+    }
 
-    entityOut = SolidKernelUtil::CreateNewEntity(shape);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromSweep(entityOut, profile, path, alignParallel, selfRepair, createSheet, lockDirection, twistAngle, scale, scalePoint, nodeId);
+#else
+    return ERROR;
+#endif
+    }
 
-    return SUCCESS;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOut, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromExtrusionToBody(entityOut, extrudeTo, profile, reverseDirection, nodeId);
 #else
     return ERROR;
 #endif

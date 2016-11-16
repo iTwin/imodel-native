@@ -50,11 +50,11 @@ public:
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+    static Sheet::ElementPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
+    static Sheet::ElementPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
@@ -62,7 +62,7 @@ public:
 
     //! Insert a SheetModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetModelPtr InsertSheetModel(SheetCR);
+    static Sheet::ModelPtr InsertSheetModel(Sheet::ElementCR);
 
     //! Insert a LinkModel
     //! @note Also creates an InformationPartitionElement for the DocumentListModel to model

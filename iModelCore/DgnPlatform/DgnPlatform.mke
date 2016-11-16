@@ -22,11 +22,6 @@
 %endif
 %endif
 
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-dirToSearch = $(BuildContext)VendorAPI/opencascade/
-%include cincapnd.mki
-%endif
-
 #-----------------------------------------------------------
 # Root DgnPlatform directory
 #-----------------------------------------------------------
@@ -101,7 +96,7 @@ HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(context
 
 RealityDataHandlerDepends       = $(DgnPlatformAPISrc)DgnViewport.h $(DgnPlatformAPISrc)RealityDataCache.h
 
-WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h
+WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)TileTree.h
 
 toolsHeaders                    = $(DgnPlatformToolsPublicAPISrc)KeyTree.h
 
@@ -345,7 +340,7 @@ $(CoreObjs)DgnLight$(oext) :                        $(DgnCoreDir)DgnLight.cpp $(
 
 $(CoreObjs)DgnView$(oext) :                         $(DgnCoreDir)DgnView.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)DgnView.h ${MultiCompileDepends}
 
-$(CoreObjs)ViewAttachment$(oext) :                  $(DgnCoreDir)ViewAttachment.cpp $(DgnPlatformAPISrc)ViewAttachment.h ${MultiCompileDepends}
+$(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(DgnPlatformAPISrc)Sheet.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
@@ -434,20 +429,6 @@ $(CoreObjs)PSolidTopo$(oext) :                      $(DgnBRepSrc)PSolidTopo.cpp 
 $(CoreObjs)PSolidTopoId$(oext) :                    $(DgnBRepSrc)PSolidTopoId.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
 $(CoreObjs)PSolidUtil$(oext) :                      $(DgnBRepSrc)PSolidUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-%endif
-
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-
-$(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-$(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 %endif
 
@@ -685,31 +666,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-# FoundationClasses
-LINKER_LIBRARIES_DELAYLOADED = \
-    $(ContextSubPartsLibs)TKernel.lib \
-    $(ContextSubPartsLibs)TKMath.lib
-
-# ModelingData
-LINKER_LIBRARIES_DELAYLOADED + \
-    $(ContextSubPartsLibs)TKG2d.lib \
-    $(ContextSubPartsLibs)TKG3d.lib \
-    $(ContextSubPartsLibs)TKBrep.lib \
-    $(ContextSubPartsLibs)TKGeomBase.lib
-
-# ModelingAlgorithms (also TKHLR TKFillet TKFeat TKXMesh TKShHealing)
-LINKER_LIBRARIES_DELAYLOADED + \
-    $(ContextSubPartsLibs)TKBool.lib \
-    $(ContextSubPartsLibs)TKBO.lib \
-    $(ContextSubPartsLibs)TKOffset.lib \
-    $(ContextSubPartsLibs)TKPrim.lib \
-    $(ContextSubPartsLibs)TKMesh.lib \
-    $(ContextSubPartsLibs)TKGeomAlgo.lib \
-    $(ContextSubPartsLibs)TKShHealing.lib \
-    $(ContextSubPartsLibs)TKTopAlgo.lib
-%endif
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES_DELAYLOADED = \

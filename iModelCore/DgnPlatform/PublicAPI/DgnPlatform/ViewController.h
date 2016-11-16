@@ -265,8 +265,8 @@ public:
 
     //! perform the equivalent of a dynamic_cast to a SheetViewController.
     //! @return a valid SheetViewControllerCP, or nullptr if this is not a sheet view
-    virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
-    SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
+    virtual Sheet::ViewControllerCP _ToSheetView() const {return nullptr;}
+    Sheet::ViewControllerP ToSheetViewP() {return const_cast<Sheet::ViewControllerP>(_ToSheetView());}
 
     //! determine whether this view is a 3d view
     bool Is3d() const {return _Is3d();}
@@ -565,8 +565,10 @@ public:
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
+        DgnElementId m_abortedElement;
         NonSceneQuery m_rangeQuery;
         SpatialViewControllerR m_view;
+        DgnElementId GetNextId();
         explicit ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
@@ -684,8 +686,8 @@ public:
 
     //! @name Active Volume
     //! @{
-    DGNPLATFORM_EXPORT void AssignActiveVolume(ClipPrimitiveR volume);
-    DGNPLATFORM_EXPORT void ClearActiveVolume();
+    void AssignActiveVolume(ClipPrimitiveR volume) {m_activeVolume = &volume;}
+    void ClearActiveVolume() {m_activeVolume = nullptr;}
     ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
     //! @}
 };
@@ -937,7 +939,7 @@ protected:
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
     //! Construct a new DrawingViewController.
-    DGNPLATFORM_EXPORT DrawingViewController(DrawingViewDefinitionCR def);
+    DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
 };
 
 //=======================================================================================
@@ -1038,23 +1040,6 @@ public:
     void SetDrawingSymbology(DrawingSymbology const& s) {m_symbology=s;} //!< Set the symbology for some aspects of the drawings when they are drawn in context.
     Pass GetPassesToDraw() const {return m_passesToDraw;} //!< Get the drawing elements to draw.
     void SetPassesToDraw(Pass p) {m_passesToDraw = p;} //!< Set the drawing elements to draw.
-};
-
-//=======================================================================================
-//! A SheetViewController is used to control views of SheetModels
-// @bsiclass                                                    Keith.Bentley   03/12
-//=======================================================================================
-struct SheetViewController : ViewController2d
-{
-    DEFINE_T_SUPER(ViewController2d);
-    friend struct SheetViewDefinition;
-
-protected:
-    SheetViewControllerCP _ToSheetView() const override {return this;}
-    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-
-    //! Construct a new SheetViewController.
-    DGNPLATFORM_EXPORT SheetViewController(SheetViewDefinitionCR def);
 };
 
 END_BENTLEY_DGN_NAMESPACE
