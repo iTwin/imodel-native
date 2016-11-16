@@ -1521,7 +1521,11 @@ internal:
     DgnCategoryIdSet (DgnDb^ dgnDb)
         {
         BDGN::DgnDbP            dgnDbNative = Convert::DgnDbToNative (dgnDb);
-        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (new BDGN::DgnCategoryIdSet(BDGN::DgnCategory::QueryCategories (*dgnDbNative)));
+        BDGN::ElementIterator   iterator = BDGN::DgnCategory::MakeIterator (*dgnDbNative, nullptr, nullptr);
+        bvector<BDGN::DgnCategoryId>* idList = new bvector <BDGN::DgnCategoryId>();
+        iterator.BuildIdList<BDGN::DgnCategoryId>(*idList);
+        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (idList);
+
         }
     };
 
