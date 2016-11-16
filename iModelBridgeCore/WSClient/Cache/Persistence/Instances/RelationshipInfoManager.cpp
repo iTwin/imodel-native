@@ -190,14 +190,14 @@ BentleyStatus RelationshipInfoManager::SaveInfo(RelationshipInfoR info)
         }
     if (info.IsInCache())
         {
-        if (SUCCESS != m_infoUpdater.Get().Update(info.GetJsonInfo()))
+        if (BE_SQLITE_DONE != m_infoUpdater.Get().Update(info.GetInstanceKey().GetECInstanceId(), info.GetJsonInfo()))
             {
             return ERROR;
             }
         }
     else
         {
-        if (SUCCESS != m_infoInserter.Get().Insert(info.GetJsonInfo()))
+        if (BE_SQLITE_DONE != m_infoInserter.Get().Insert(info.GetJsonInfo()))
             {
             return ERROR;
             }
@@ -280,7 +280,7 @@ Utf8StringCR remoteId
     infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
 
     CacheNodeKey infoKey;
-    if (SUCCESS != m_infoECInstanceInserter.Get().Insert(infoKey, *infoECInstance))
+    if (BE_SQLITE_DONE != m_infoECInstanceInserter.Get().Insert(infoKey, *infoECInstance))
         {
         return CachedInstanceKey();
         }
@@ -441,9 +441,9 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
         return ERROR;
         }
 
-    ECInstanceDeleter deleter(m_dbAdapter.GetECDb(), *relClass);
+    ECInstanceDeleter deleter(m_dbAdapter.GetECDb(), *relClass, nullptr);
 
-    if (!deleter.IsValid() || SUCCESS != deleter.Delete(info.GetInstanceKey().GetECInstanceId()))
+    if (!deleter.IsValid() || BE_SQLITE_DONE != deleter.Delete(info.GetInstanceKey().GetECInstanceId()))
         {
         return ERROR;
         }

@@ -17,7 +17,7 @@ using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
-    ASSERT_EQ(SUCCESS, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
 
 #define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
     ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());
@@ -286,7 +286,7 @@ TEST_F(ECDbAdapterTests, ECDb_UpdateNotExisting_Error)
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
 
-    JsonUpdater updater(*db, *ecClass);
+    JsonUpdater updater(*db, *ecClass, nullptr);
 
     Json::Value instance;
     EXPECT_EQ(ERROR, updater.Update(instance));

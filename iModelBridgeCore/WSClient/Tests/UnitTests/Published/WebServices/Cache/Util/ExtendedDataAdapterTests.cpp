@@ -77,7 +77,7 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_DelegateReturnsNullClasses_Error)
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey owner;
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(owner, Json::Value()));
 
     EXPECT_CALL(del, GetExtendedDataClass(_)).WillRepeatedly(Return(nullptr));
     EXPECT_CALL(del, GetExtendedDataRelationshipClass(_)).WillRepeatedly(Return(nullptr));
@@ -94,7 +94,7 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_InstanceExistsAndFirstTime_DataIsRea
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey instance;
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(instance, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
 
     EXPECT_CALL(del, GetExtendedDataClass(_)).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
     EXPECT_CALL(del, GetExtendedDataRelationshipClass(_)).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
@@ -116,7 +116,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey instance;
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(instance, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
 
     EXPECT_CALL(del, GetExtendedDataClass(_)).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
     EXPECT_CALL(del, GetExtendedDataRelationshipClass(_)).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
@@ -125,7 +125,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(SUCCESS, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Delete(instance.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Delete(instance.GetECInstanceId()));
     data = adapter.GetData(instance);
     EXPECT_TRUE(data.GetData().empty());
     EXPECT_TRUE(data.GetValue("Test").isNull());
@@ -139,8 +139,8 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_OwnerAndDelegatePointsToOtherHolder_
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey owner, holder;
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2")).Insert(holder, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(owner, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Insert(holder, Json::Value()));
 
     EXPECT_CALL(del, GetExtendedDataClass(_)).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
     EXPECT_CALL(del, GetExtendedDataRelationshipClass(_)).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
@@ -163,8 +163,8 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey owner, holder;
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
-    ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2")).Insert(holder, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(owner, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Insert(holder, Json::Value()));
 
     EXPECT_CALL(del, GetExtendedDataClass(_)).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
     EXPECT_CALL(del, GetExtendedDataRelationshipClass(_)).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
@@ -174,7 +174,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(SUCCESS, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2")).Delete(holder.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Delete(holder.GetECInstanceId()));
 
     data = adapter.GetData(owner);
     EXPECT_TRUE(data.GetData().empty());

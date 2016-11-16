@@ -36,7 +36,7 @@ template<typename A> struct ECSqlAdapterCache
             if (it != m_cache.end())
                 return *it->second;
 
-            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass);
+            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, nullptr);
             m_cache.insert({ecClass.GetId(), adapterPtr});
             return *adapterPtr;
             };
@@ -63,7 +63,7 @@ template<typename A> struct ECSqlAdapterCacheWithOptions
             if (it != m_cache.end())
                 return *it->second;
 
-            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, m_ecSqlOptions.c_str());
+            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, nullptr, m_ecSqlOptions.c_str());
             m_cache.insert({ecClass.GetId(), adapterPtr});
             return *adapterPtr;
             };
@@ -87,7 +87,7 @@ template<typename A> struct ECSqlAdapterLoader
         A& Get()
             {
             if (nullptr == m_adapter)
-                m_adapter = std::make_shared<A>(*m_ecdb, *m_ecClass);
+                m_adapter = std::make_shared<A>(*m_ecdb, *m_ecClass, nullptr);
             return *m_adapter;
             };
     };

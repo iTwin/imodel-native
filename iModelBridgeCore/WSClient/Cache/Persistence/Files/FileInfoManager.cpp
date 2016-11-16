@@ -97,15 +97,15 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
 
     if (info.IsInCache())
         {
-        if (SUCCESS != m_cachedFileInfoUpdater.Get().Update(info.GetJsonInfo()) ||
-            SUCCESS != m_externalFileInfoUpdater.Get().Update(info.GetExternalFileInfoJson()))
+        if (BE_SQLITE_DONE != m_cachedFileInfoUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()), info.GetJsonInfo()) ||
+            BE_SQLITE_DONE != m_externalFileInfoUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(info.GetExternalFileInfoJson()), info.GetExternalFileInfoJson()))
             {
             return ERROR;
             }
         }
     else
         {
-        if (SUCCESS != m_cachedFileInfoInserter.Get().Insert(info.GetJsonInfo()))
+        if (BE_SQLITE_DONE != m_cachedFileInfoInserter.Get().Insert(info.GetJsonInfo()))
             {
             return ERROR;
             }
@@ -117,7 +117,7 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
             return ERROR;
             }
 
-        if (SUCCESS != m_externalFileInfoInserter.Get().Insert(info.GetExternalFileInfoJson()))
+        if (BE_SQLITE_DONE != m_externalFileInfoInserter.Get().Insert(info.GetExternalFileInfoJson()))
             {
             return ERROR;
             }
