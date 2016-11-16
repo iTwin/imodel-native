@@ -430,6 +430,9 @@ public:
     //! Test whether this DgnModel is a template used to create instances
     bool IsTemplate() const {return m_isTemplate;}
 
+    //! @private
+    void SetTemplate(bool b) {m_isTemplate = b;}
+
     //! @name Dynamic casting to DgnModel subclasses
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
