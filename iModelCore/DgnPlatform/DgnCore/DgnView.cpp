@@ -1116,6 +1116,8 @@ void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::_CopyFrom(DgnElementCR el)
     {
+    T_Super::_CopyFrom(el);
+
     auto& other = static_cast<DisplayStyleCR>(el);
 
     m_styles = other.m_styles;

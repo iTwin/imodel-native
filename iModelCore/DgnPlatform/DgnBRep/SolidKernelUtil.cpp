@@ -68,6 +68,8 @@ FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
         m_material = sourceParams.GetMaterialId();
         // NEEDSWORK_WIP_MATERIAL...m_uv???
         }
+
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -855,10 +857,10 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromCurveVector (entityOut, curveVector, nullptr, nodeId);
+    return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
 #else
     return ERROR;
 #endif
@@ -867,10 +869,10 @@ BentleyStatus BRepUtil::Create::BodyFromCurveVector (IBRepEntityPtr& entityOut, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromSolidPrimitive (entityOut, primitive, nodeId);
+    return PSolidGeom::BodyFromSolidPrimitive(entityOut, primitive, nodeId);
 #else
     return ERROR;
 #endif
@@ -879,10 +881,10 @@ BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive (IBRepEntityPtr& entityOu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromBSurface (IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromBSurface (entityOut, surface, nodeId);
+    return PSolidGeom::BodyFromBSurface(entityOut, surface, nodeId);
 #else
     return ERROR;
 #endif
@@ -891,10 +893,46 @@ BentleyStatus BRepUtil::Create::BodyFromBSurface (IBRepEntityPtr& entityOut, MSB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromPolyface (IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromPolyface (entityOut, meshData, nodeId);
+    return PSolidGeom::BodyFromPolyface(entityOut, meshData, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromLoft(entityOut, profiles, nProfiles, guides, nGuides, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromSweep(entityOut, profile, path, alignParallel, selfRepair, createSheet, lockDirection, twistAngle, scale, scalePoint, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOut, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromExtrusionToBody(entityOut, extrudeTo, profile, reverseDirection, nodeId);
 #else
     return ERROR;
 #endif
