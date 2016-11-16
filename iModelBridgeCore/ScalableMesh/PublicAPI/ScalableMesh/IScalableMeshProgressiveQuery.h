@@ -33,15 +33,16 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
     {
     public:                                         
         
-        virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh, 
+        virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
                                                 size_t                  nbVertices,
                                                 DPoint3d const*         positionOrigin,
                                                 float*                  positions,
                                                 float*                  normals,
                                                 int                     nbTriangles,
                                                 int*                    indices,
-                                                float*                  params,                                                
-                                                SmCachedDisplayTexture* cachedTexture) = 0; 
+                                                float*                  params,
+                                                SmCachedDisplayTexture* cachedTexture) = 0;
+//            uint64_t nodeId) = 0; 
 
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) = 0; 
 
@@ -52,7 +53,10 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
                                                    int                      format,      // => see QV_*_FORMAT definitions above
                                                    unsigned char const *    texels) = 0; // => texel image)
 
-        virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) = 0;       
+        virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) = 0; 
+
+		//called when a resource was deleted but dependent resources (which may or may not be in use) need to be regenerated
+		//virtual void _SetCacheDirty(bool isDirty) = 0;
     };
 
 
