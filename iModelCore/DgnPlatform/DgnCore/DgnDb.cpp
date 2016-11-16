@@ -1,4 +1,3 @@
-#region
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnDb.cpp $
@@ -203,12 +202,25 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DgnDb::InsertECRelationship(ECInstanceKey& relKey, ECN::IECRelationshipInstanceCR rel)
+DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId const& sourceId, BeSQLite::EC::ECInstanceId const& targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
+    {
+    //WIP this might need a cache of inserters if called often
+    ECInstanceInserter inserter(*this, relClass, GetECSqlWriteToken());
+    if (!inserter.IsValid())
+        return BE_SQLITE_ERROR;
+
+    return inserter.InsertRelationship(relKey, ECInstanceKey(ECClassId(), sourceId), ECInstanceKey(ECClassId(), targetId), relInstanceProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::InsertECRelationship(ECInstanceKey& relKey, ECN::IECRelationshipInstanceCR rel)
     {
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, rel.GetClass(), GetECSqlWriteToken());
     if (!inserter.IsValid())
-        return ERROR;
+        return BE_SQLITE_ERROR;
 
     return inserter.Insert(relKey, rel);
     }

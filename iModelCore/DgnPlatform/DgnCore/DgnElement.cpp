@@ -1369,14 +1369,6 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
     return parms;
     }
 
-//---------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-BeSQLite::EC::ECSqlWriteToken const* DgnElement::GetECSqlWriteToken() const
-    {
-    return GetDgnDb().GetECSqlWriteToken();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

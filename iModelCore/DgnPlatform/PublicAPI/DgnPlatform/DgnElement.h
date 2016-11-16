@@ -1251,7 +1251,6 @@ protected:
     //! @param expected The property to be compared and its expected value
     //! @param other    The other element
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECSqlWriteToken const* GetECSqlWriteToken() const;
 
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
 
