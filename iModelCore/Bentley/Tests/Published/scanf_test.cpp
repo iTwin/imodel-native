@@ -9,6 +9,8 @@
 #include    <Bentley/BeStringUtilities.h>
 #include    <Bentley/WString.h>
 
+PUSH_MSVC_IGNORE(6054) // don't care about NULL termination warnings in tests...
+
 static void ok (bool b, CharCP fmt, ...)
     {
     if (b)
@@ -43,6 +45,7 @@ static void ok (bool b, CharCP fmt, ...)
  */
 
 #include <stdio.h>
+
 
 static void test_sscanf( void )
 {
@@ -346,3 +349,5 @@ TEST(scanf_test,WStringMixes)
     ASSERT_TRUE( 1 == BE_STRING_UTILITIES_SWSCANF (L"SC99", L"SC%d", &v) );
     ASSERT_EQ(v,99);
     }
+
+POP_MSVC_IGNORE
