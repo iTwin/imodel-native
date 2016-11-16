@@ -34,6 +34,7 @@
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="ECObjectsManaged"            PartFile="ecf"                Repository="ecf"/>
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet"/>
+        <SubPart PartName="AtpSupport"                  PartFile="platformtech"       Repository="PlatformTech" /> <!-- Not needed here, but pull along into LKGs for consumers -->
         <Bindings>
             <Libs>Delivery\Bentley.GeoCoord.lib</Libs>
             <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\Bentley.GeoCoord.lib</Libs>
