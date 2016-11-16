@@ -494,7 +494,7 @@ BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR info)
         }
     else
         {
-        return m_responseUpdater.Get().Update(info.GetJsonData());
+        return BE_SQLITE_DONE == m_responseUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonData()), info.GetJsonData()) ? SUCCESS : ERROR;
         }
     }
 
@@ -508,7 +508,7 @@ BentleyStatus CachedResponseManager::InsertInfo(CachedResponseInfoR info)
         return SUCCESS;
         }
 
-    if (SUCCESS != m_responseInserter.Get().Insert(info.GetJsonData()) ||
+    if (BE_SQLITE_DONE != m_responseInserter.Get().Insert(info.GetJsonData()) ||
         !m_hierarchyManager.RelateInstances(info.GetInfoKey(), info.GetKey().GetParent(), m_responseToParentClass).IsValid() ||
         !m_hierarchyManager.RelateInstances(info.GetInfoKey(), info.GetKey().GetHolder(), m_responseToHolderClass).IsValid())
         {

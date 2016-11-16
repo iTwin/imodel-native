@@ -333,7 +333,7 @@ BentleyStatus InstanceCacheHelper::CacheInstance(ObjectInfoR infoInOut, RapidJso
 BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClassCR ecClass, RapidJsonValueCR properties)
     {
     ECInstanceKey ecInstanceKey;
-    if (SUCCESS != m_inserters.Get(ecClass).Insert(ecInstanceKey, properties))
+    if (BE_SQLITE_DONE != m_inserters.Get(ecClass).Insert(ecInstanceKey, properties))
         {
         return ERROR;
         }
@@ -347,7 +347,7 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties)
     {
-    return m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), properties);
+    return BE_SQLITE_DONE == m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), properties) ? SUCCESS : ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -365,7 +365,7 @@ BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR inf
         }
 
     // Save merged instance
-    if (SUCCESS != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), mergedJson))
+    if (BE_SQLITE_DONE != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), mergedJson))
         {
         return ERROR;
         }
