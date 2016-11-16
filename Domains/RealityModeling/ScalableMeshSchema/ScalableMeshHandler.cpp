@@ -1516,6 +1516,20 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
     m_properties.FromJson(v);
+
+    if (m_smPtr == 0 && !m_tryOpen)
+    {
+        //BeFileName smFileName(((this)->m_properties).m_fileId);
+        BeFileName smFileName;
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+
+        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        {
+            OpenFile(smFileName, GetDgnDb());
+        }
+
+        m_tryOpen = true;
+    }
     }
 
 
