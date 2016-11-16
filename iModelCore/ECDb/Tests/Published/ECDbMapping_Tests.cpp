@@ -3675,6 +3675,51 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     AssertSchemaImport(asserted, GetECDb(), testItem);
     ASSERT_FALSE(asserted);
     }
+
+    //Mapping of a class containing a Key property for a FK Relationship is expected to fail
+    {
+    SetupECDb("existingtablekeyproperty.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, FooId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECProperty propertyName='FooId' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='false'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='false'>"
+        "      <Class class = 'Goo' />"
+        "           <Key>"
+        "              <Property name='FooId'/>"
+        "           </Key>"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", false, "ECCRelationshipClass mapped to an existing table should have a foreign key Column.");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+    }
     }
 
 //---------------------------------------------------------------------------------------
