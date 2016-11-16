@@ -24,13 +24,12 @@
     </Part>
 
     <!-- To Use the GeoCoordManaged part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke" ApiNumber="B02">
+    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="ECObjectsManaged"  PartFile="ecf"                Repository="ecf"/>
+        <SubPart PartName="ECObjectsManaged"            PartFile="ecf"                  Repository="ecf"/>
+        <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <Bindings>
-            <Libs>Delivery/Bentley.GeoCoord.lib</Libs>
-            <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery/Bentley.GeoCoord$(ApiNumber).dll
+            <Assemblies>Delivery/Bentley.GeoCoord.dll
                 <TransKit SourceDirectory="Delivery/GeoCoordManaged/transkit" />
             </Assemblies>
         </Bindings>

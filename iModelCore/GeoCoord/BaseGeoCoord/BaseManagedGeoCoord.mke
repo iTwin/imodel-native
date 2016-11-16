@@ -8,7 +8,6 @@
 %include mdl.mki
 
 appName         = baseManaged
-sAppName        = baseManaged
 baseDir         = $(_MakeFilePath)
 
 publicAPISrc    = $(baseDir)PublicApi/
@@ -26,7 +25,7 @@ nameToDefine=__BASEGEOCOORD_BUILD__
 #----------------------------------------------------------------------
 #  Create output directories
 #----------------------------------------------------------------------
-o               = $(geoCoordManagedObj)
+o               = $(OutBuildDir)geocoordManaged/
 
 always:
     !~mkdir $(o)
@@ -51,7 +50,7 @@ assemblyName        = Bentley.GeoCoord
 nameToDefine=__BASEMANAGEDGCS_BUILD__
 %include cdefapnd.mki
 
-assemDirToSearch    = $(BuildContextSubPartsAssemblies)
+assemDirToSearch    = $(ContextSubpartsAssembliesDir)
 %include cincapnd.mki
 
 assemDirToSearch    = $(o)
@@ -65,7 +64,6 @@ objList = $(o)baseManagedGCS$(oext) \
 #---------------------------------------------
 ASSEMBLY_MODULE                 = 1
 ASSEMBLY_NAME                   = GeoCoordExceptions$(DLM_REVISION)
-RIGHTSCOMPLIANT                 = true
 ASSEMBLY_SOURCE_LIST            = $(baseDir)GeoCoordExceptions.cs
 ASSEMBLY_NO_VERSION_RESOURCE    = 1
 ASSEMBLY_PLATFORM               = anycpu
@@ -126,7 +124,7 @@ DLM_NAME                = $(assemblyName)
 RIGHTSCOMPLIANT         = true
 DLM_DEST                = $(o)
 DLM_OBJECT_FILES        = $(objList)
-LINKER_LIBRARIES        = $(BuildContextSubPartsLib)$(BaseGeocoordLib)
+LINKER_LIBRARIES        = $(ContextSubPartsLibs)$(libprefix)basegeocoord$(libext)
 
 DLM_NO_IMPLIB           = 1
 
