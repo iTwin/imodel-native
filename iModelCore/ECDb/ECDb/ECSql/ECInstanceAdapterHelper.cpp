@@ -338,6 +338,9 @@ BentleyStatus ECInstanceAdapterHelper::BindValue(IECSqlBinder& binder, ECInstanc
 BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, PrimitiveECValueBindingInfo const& valueBindingInfo)
     {
     ECValue value;
+    if (!instanceInfo.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
     value.SetAllowsPointersIntoInstanceMemory(true);
@@ -476,6 +479,9 @@ BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECI
 //static
 BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, ArrayECValueBindingInfo const& valueBindingInfo)
     {
+    if (!instanceInfo.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     IECInstanceCR instance = instanceInfo.GetInstance();
     const uint32_t arrayPropIndex = valueBindingInfo.GetArrayPropertyIndex();
     ECValue arrayValue;
@@ -578,8 +584,8 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue(IECSqlBinder
                     return ECSqlStatus::Success == binder.BindId(sourceInstance->GetClass().GetId()) ? SUCCESS : ERROR;
                 }
 
-            //SourceECClassId is not mandatory. Bind Null of not specified
-            return ECSqlStatus::Success == binder.BindNull() ? SUCCESS : ERROR;
+            //SourceECClassId is not mandatory. Leave unbound
+            return SUCCESS;
             }
 
             case ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId:
@@ -618,8 +624,8 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue(IECSqlBinder
                     return ECSqlStatus::Success == binder.BindId(targetInstance->GetClass().GetId()) ? SUCCESS : ERROR;
                 }
 
-            //TargetECClassId is not mandatory. Bind Null of not specified
-            return ECSqlStatus::Success == binder.BindNull() ? SUCCESS : ERROR;
+            //TargetECClassId is not mandatory. Leave unbound
+            return SUCCESS;
             }
 
             default:

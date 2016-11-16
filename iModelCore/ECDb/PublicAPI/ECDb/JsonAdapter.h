@@ -601,10 +601,6 @@ struct JsonUpdater : NonCopyableClass
         bool IsValid() const { return m_ecinstanceUpdater.IsValid(); }
 
         //! Updates an instance from the specified jsonValue
-        //! @deprecated In favour of other overloads that take an instance id
-        //ECDB_EXPORT DbResult Update(JsonValueCR jsonValue) const;
-
-        //! Updates an instance from the specified jsonValue
         //! @param[in] instanceId the ECInstanceId of the instance to update
         //! @param[in] jsonValue the instance data
         //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,

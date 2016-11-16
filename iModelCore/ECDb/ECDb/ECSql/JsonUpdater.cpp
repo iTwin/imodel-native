@@ -15,18 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-/*DbResult JsonUpdater::Update(JsonValueCR jsonValue) const
-    {
-    ECInstanceId instanceId = ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
-    if (!instanceId.IsValid())
-        return BE_SQLITE_ERROR;
-
-    return Update(instanceId, jsonValue);
-    }
-    */
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) const
     {
     if (m_ecClass.GetRelationshipClassCP() != nullptr)
