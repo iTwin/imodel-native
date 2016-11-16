@@ -117,7 +117,7 @@ int InstanceCRUDTests::insertECInstances (bmap<ECN::ECClassCP, std::vector<ECN::
             if (insert)
                 {
                 Savepoint savepoint (ecdb, "Populate");
-                ECInstanceInserter inserter (ecdb, *ecClass);
+                ECInstanceInserter inserter (ecdb, *ecClass, nullptr);
                 auto insertStatus = inserter.Insert (*instance);
                 if (insertStatus != BentleyStatus::SUCCESS)
                     {
@@ -692,7 +692,7 @@ bool InstanceCRUDTests::deleteECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
             auto const& instanceList = entry.second;
             for (auto &instance : instanceList)
                 {
-                ECInstanceDeleter deleter (m_db, *ecClass);
+                ECInstanceDeleter deleter (m_db, *ecClass, nullptr);
                 if (!instance.IsValid ())
                     continue;
                 Utf8String i = instance->GetInstanceId ();
@@ -827,7 +827,7 @@ bool InstanceCRUDTests::updateECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
                 if (insertedInstance->IsValid () || updateinstance->IsValid ())
                     {
                     updateinstance->get ()->SetInstanceId (insertedInstance->get ()->GetInstanceId ().c_str ());
-                    ECInstanceUpdater updater (m_db, *ecClass);
+                    ECInstanceUpdater updater (m_db, *ecClass, nullptr);
                     auto updateStatus = updater.Update (*(updateinstance->get ()));
                     if (updateStatus != SUCCESS)
                         {

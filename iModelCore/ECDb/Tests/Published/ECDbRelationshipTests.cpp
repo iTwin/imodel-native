@@ -99,11 +99,11 @@ ECN::ECClassId ClassToId(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PersistRelationship(IECRelationshipInstanceR relInstance, ECDbR ecdb)
     {
-    ECInstanceInserter inserter(ecdb, relInstance.GetClass());
+    ECInstanceInserter inserter(ecdb, relInstance.GetClass(), nullptr);
     if (!inserter.IsValid())
         return ERROR;
 
-    return inserter.Insert(relInstance);
+    return inserter.Insert(relInstance) == BE_SQLITE_DONE ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,10 +272,10 @@ TEST(ECDbRelationships, MappingRelationshipsWithAdditionalECProperties)
     ASSERT_TRUE(relationshipInstance != nullptr) << "Creating the relationship instance in memory is not expected to fail.";
     ASSERT_EQ(ECObjectsStatus::Success, relationshipInstance->SetValue("Created", ECValue(created)));
 
-    ECInstanceInserter inserter(ecdb, relationshipInstance->GetClass());
+    ECInstanceInserter inserter(ecdb, relationshipInstance->GetClass(), nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    ASSERT_EQ(SUCCESS, inserter.Insert(instanceKey, *relationshipInstance)) << "Inserting relationship with additional properties is expected to be supported for link table mapping";
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *relationshipInstance)) << "Inserting relationship with additional properties is expected to be supported for link table mapping";
     BeTest::SetFailOnAssert(true);
     }
     }

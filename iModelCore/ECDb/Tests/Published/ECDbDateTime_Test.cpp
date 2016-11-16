@@ -176,12 +176,12 @@ struct ECDbDateTimeTests : ECDbTestFixture
             PopulateTestInstanceWithDateTimeArray(testInstance, expectedDateTimeArrayElements, "utcarray", DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
             PopulateTestInstanceWithStructArray(testInstance, expectedStructArrayElements, testClass);
 
-            ECInstanceInserter inserter(ecdb, *testClass);
+            ECInstanceInserter inserter(ecdb, *testClass, nullptr);
             if (!inserter.IsValid())
                 return ECInstanceKey();
 
             ECInstanceKey instanceKey;
-            EXPECT_EQ(SUCCESS, inserter.Insert(instanceKey, *testInstance)) << "Inserting ECInstance with DateTime values failed.";
+            EXPECT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance)) << "Inserting ECInstance with DateTime values failed.";
             return instanceKey;
             }
     };
@@ -344,7 +344,7 @@ TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
     testDateList.push_back(ECValue(DateTime(DateTime::Kind::Utc, -1000, 2, 28, 4, 4, 13, 5555555)));
 
     bmap<ECInstanceId, ECValue> testDataset;
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     for (ECValueCR testECValue : testDateList)
         {
@@ -352,7 +352,7 @@ TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
 
         testInstance->SetValue(dateTimePropertyName, testECValue);
         ECInstanceKey instanceKey;
-        ASSERT_EQ(SUCCESS, inserter.Insert(instanceKey, *testInstance));
+        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance));
         testDataset[instanceKey.GetECInstanceId()] = testECValue;
         }
 

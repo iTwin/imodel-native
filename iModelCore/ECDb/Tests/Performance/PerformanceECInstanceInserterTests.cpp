@@ -165,7 +165,7 @@ public:
     {
         for (auto testClass : testClasses)
         {
-            auto inserter = std::unique_ptr<ECInstanceInserter>(new ECInstanceInserter(ecdb, *testClass));
+            std::unique_ptr<ECInstanceInserter> inserter(new ECInstanceInserter(ecdb, *testClass, nullptr));
             if (!inserter->IsValid())
                 return false;
 
@@ -184,7 +184,7 @@ public:
         auto const& inserter = *it->second;
 
         ECInstanceKey key;
-        return inserter.Insert(key, testInstance) == SUCCESS;
+        return inserter.Insert(key, testInstance) == BE_SQLITE_DONE;
     };
 
     void DoFinalize()

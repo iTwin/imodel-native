@@ -25,15 +25,15 @@ private:
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
 
-    void Initialize();
+    void Initialize(ECSqlWriteToken const*);
 
     static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("insert", instance, errorMessage); }
 
 public:
-    Impl(ECDbCR ecdb, ECClassCR ecClass);
+    Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken);
 
-    BentleyStatus Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
-    BentleyStatus Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
+    DbResult Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
+    DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
     bool IsValid() const { return m_isValid; }
     };
 
@@ -45,10 +45,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass)
-    {
-    m_impl = new ECInstanceInserter::Impl(ecdb, ecClass);
-    }
+ECInstanceInserter::ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken)
+    : m_impl(new ECInstanceInserter::Impl(ecdb, ecClass, writeToken))
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
@@ -65,15 +64,12 @@ ECInstanceInserter::~ECInstanceInserter()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceInserter::IsValid() const
-    {
-    return m_impl->IsValid();
-    }
+bool ECInstanceInserter::IsValid() const { return m_impl->IsValid(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userprovidedECInstanceId) const
+DbResult ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userprovidedECInstanceId) const
     {
     return m_impl->Insert(newInstanceKey, instance, autogenerateECInstanceId, userprovidedECInstanceId);
     }
@@ -81,7 +77,7 @@ BentleyStatus ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IEC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
+DbResult ECInstanceInserter::Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
     {
     return m_impl->Insert(instance, autogenerateECInstanceId);
     }
@@ -92,16 +88,16 @@ BentleyStatus ECInstanceInserter::Insert(ECN::IECInstanceR instance, bool autoge
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass)
+ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceIdBindingInfo(nullptr), m_needsCalculatedPropertyEvaluation(false), m_isValid(false)
     {
-    Initialize();
+    Initialize(writeToken);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceInserter::Impl::Initialize()
+void ECInstanceInserter::Impl::Initialize(ECSqlWriteToken const* writeToken)
     {
     Utf8String ecsql("INSERT INTO ");
     //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one
@@ -159,19 +155,18 @@ void ECInstanceInserter::Impl::Initialize()
         }
 
     ecsql.append(valuesClause).append(")");
-    const auto stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
-    m_isValid = stat.IsSuccess();
+    m_isValid = ECSqlStatus::Success == m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
     {
     if (!IsValid())
         {
         LOG.errorv("ECInstanceInserter for ECClass '%s' is invalid as the ECClass is not mapped or not instantiable.", m_ecClass.GetFullName());
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     if (!ECInstanceAdapterHelper::Equals(instance.GetClass(), m_ecClass))
@@ -181,13 +176,13 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
                              m_ecClass.GetFullName(), instance.GetClass().GetFullName());
 
         LogFailure(instance, Utf8String(errorMessage).c_str());
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     if (autogenerateECInstanceId && userProvidedECInstanceId != nullptr)
         {
         LogFailure(instance, "Wrong usage of ECInstanceInserter::Insert. When passing true for autogenerateECInstanceId, userprovidedECInstanceId must be nullptr.");
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     ECInstanceId actualUserProvidedInstanceId;
@@ -203,7 +198,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
                                      m_ecClass.GetFullName());
 
                 LogFailure(instance, errorMessage.c_str());
-                return ERROR;
+                return BE_SQLITE_ERROR;
                 }
 
             actualUserProvidedInstanceId = *userProvidedECInstanceId;
@@ -219,7 +214,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
                                      m_ecClass.GetFullName());
 
                 LogFailure(instance, errorMessage.c_str());
-                return ERROR;
+                return BE_SQLITE_ERROR;
 
                 }
 
@@ -230,7 +225,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
                                      m_ecClass.GetFullName(), instanceIdStr.c_str());
 
                 LogFailure(instance, errorMessage.c_str());
-                return ERROR;
+                return BE_SQLITE_ERROR;
                 }
             }
 
@@ -258,7 +253,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
             errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
                                  m_statement.GetECSql());
             LogFailure(instance, errorMessage.c_str());
-            return ERROR;
+            return BE_SQLITE_ERROR;
             }
         }
 
@@ -269,25 +264,25 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IE
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (BE_SQLITE_DONE == stepStatus && newInstanceKey.IsValid()) ? SUCCESS : ERROR;
+    return stepStatus;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Impl::Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
+DbResult ECInstanceInserter::Impl::Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
     {
     ECInstanceKey newInstanceKey;
-    auto stat = Insert(newInstanceKey, instance, autogenerateECInstanceId, nullptr);
-    if (stat != SUCCESS)
-        return ERROR;
+    const DbResult stat = Insert(newInstanceKey, instance, autogenerateECInstanceId, nullptr);
+    if (BE_SQLITE_DONE != stat)
+        return stat;
 
     //only set instance id in ECInstance if it was auto-generated by ECDb. IF not auto-generated it hasn't changed
     //in the input ECInstance, and hence doesn't need to be set
-    if (autogenerateECInstanceId)
-        return ECInstanceAdapterHelper::SetECInstanceId(instance, newInstanceKey.GetECInstanceId());
-    else
-        return SUCCESS;
+    if (!autogenerateECInstanceId)
+        return BE_SQLITE_DONE;
+
+    return SUCCESS == ECInstanceAdapterHelper::SetECInstanceId(instance, newInstanceKey.GetECInstanceId()) ? BE_SQLITE_DONE : BE_SQLITE_ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -24,7 +24,7 @@ extern IECInstancePtr CreatePerson(ECClassCR ecClass, Utf8CP firstName, Utf8CP l
 void DeleteInstance(IECInstanceCR instance, ECDbR ecdb)
     {
     ECClassCR ecClass = instance.GetClass();
-    ECInstanceDeleter deleter(ecdb, ecClass);
+    ECInstanceDeleter deleter(ecdb, ecClass, nullptr);
 
     ASSERT_TRUE(deleter.IsValid()) << "Invaild Deleter for ecClass : " << ecClass.GetName().c_str();
 

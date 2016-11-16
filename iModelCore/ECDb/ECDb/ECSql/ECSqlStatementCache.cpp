@@ -89,7 +89,7 @@ ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql) const
+CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token) const
     {
     CachedECSqlStatement* existingStmt = FindEntry(ecsql);
     if (existingStmt != nullptr)
@@ -98,7 +98,7 @@ CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, U
     CachedECSqlStatementPtr newStmt = nullptr;
     AddStatement(newStmt, ecdb, ecsql);
 
-    if (ECSqlStatus::Success != newStmt->Prepare(ecdb, ecsql))
+    if (ECSqlStatus::Success != newStmt->Prepare(ecdb, ecsql, token))
         return nullptr;
 
     return newStmt;

@@ -15,25 +15,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonInserter::JsonInserter(ECDbCR ecdb, ECClassCR ecClass) : m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool JsonInserter::IsValid() const
-    {
-    return m_ecinstanceInserter.IsValid();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const
+DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
     if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
+        return BE_SQLITE_ERROR;
 
     return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
     }
@@ -41,37 +28,33 @@ BentleyStatus JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert(JsonValueR jsonValue) const
+DbResult JsonInserter::Insert(JsonValueR jsonValue) const
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
     if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
+        return BE_SQLITE_ERROR;
 
     ECInstanceKey newInstanceKey;
-    auto stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
-    if (stat != SUCCESS)
-        return ERROR;
+    DbResult stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
+    if (BE_SQLITE_DONE != stat)
+        return stat;
 
     jsonValue["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
-    return SUCCESS;
+    return BE_SQLITE_DONE;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Shaun.Sewall                    01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const
+DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
     if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
+        return BE_SQLITE_ERROR;
 
-    auto stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
-    if (stat != SUCCESS)
-        return ERROR;
-
-    return SUCCESS;
+    return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

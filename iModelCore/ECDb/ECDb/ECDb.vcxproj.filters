@@ -636,9 +636,6 @@
     <ClCompile Include="ECSql\JsonUpdater.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\JsonDeleter.cpp">
-      <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\JsonReader.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>

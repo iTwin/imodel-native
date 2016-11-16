@@ -27,19 +27,18 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
     relationshipInstance->SetSource(sourceInstance.get());
     relationshipInstance->SetTarget(targetInstance.get());
 
-    ECInstanceInserter inserter(ecdb, *relClass);
+    ECInstanceInserter inserter(ecdb, *relClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey ecInstanceKey;
-    BentleyStatus insertStatus = inserter.Insert(ecInstanceKey, *relationshipInstance.get());
-    ASSERT_EQ(SUCCESS, insertStatus);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(ecInstanceKey, *relationshipInstance.get()));
     }
 
 ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
     {
-    JsonInserter inserter(ecdb, *ecClass);
+    JsonInserter inserter(ecdb, *ecClass, nullptr);
     Json::Value instance(Json::objectValue);
     ECInstanceKey instanceKey;
-    inserter.Insert(instanceKey, instance);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());
     return instanceKey;
     }
@@ -160,7 +159,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
 
     // Delete
     StopWatch timer(true);
-    ECInstanceDeleter deleter(ecdb, *testClass);
+    ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
     auto status = deleter.Delete(testECInstanceKey.GetECInstanceId());
     timer.Stop();
     ASSERT_EQ(SUCCESS, status);

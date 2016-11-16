@@ -34,7 +34,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
     {
     public:
-        struct Impl;
+
+    struct Impl;
 
     private:
         Impl* m_pimpl;
@@ -60,7 +61,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql) { return Prepare(ecdb, ecsql, nullptr); }
+
+        //! Prepares the statement with the specified ECSQL
+        //! @param[in] ecdb ECDb context
+        //! @param[in] ecsql ECSQL
+        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
+        //! the ECDb file was set-up with the option "ECSQL write token validation".
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! @return ECSqlStatus::Success or error codes
+        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECSqlWriteToken const* token);
 
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
@@ -503,9 +513,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
         //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @param [in] ecdb ECDb file
-        //!  @param [in] ecsql ECSQL string for which to return a prepared statement
+        //! @param [in] ecsql ECSQL string for which to return a prepared statement
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql) const;
+        CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql) const { return GetPreparedStatement(ecdb, ecsql, nullptr); }
+
+        //! Gets a cached and prepared statement for the specified ECSQL.
+        //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
+        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+        //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
+        //! @param [in] ecdb ECDb file
+        //! @param [in] ecsql ECSQL string for which to return a prepared statement
+        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
+        //! the ECDb file was set-up with the "require ECSQL write token" option.
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token) const;
 
         //! Returns whether the cache is currently empty or not.
         //! @return true if cache is empty, false otherwise

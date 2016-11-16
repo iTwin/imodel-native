@@ -53,13 +53,13 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 
     ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass);
+    JsonInserter inserter(ecdb, *documentClass, nullptr);
 
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
-    ASSERT_EQ(SUCCESS, inserter.Insert(id, jsonInput));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, jsonInput));
     ecdb.SaveChanges();
 
     ECSqlStatement statement;
@@ -93,7 +93,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
         }
 
     //verify Json Insertion using the other Overload
-    ASSERT_EQ(SUCCESS, inserter.Insert(jsonInput));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(jsonInput));
     ecdb.SaveChanges();
 
     //Verify Inserted Instances.
@@ -127,13 +127,13 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 
     ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass);
+    JsonInserter inserter(ecdb, *documentClass, nullptr);
 
     //-----------------------------------------------------------------------------------
     // Insert using rapidjson
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
-    ASSERT_EQ(SUCCESS, inserter.Insert(id, rapidJsonInput));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, rapidJsonInput));
     ecdb.SaveChanges();
 
     ECSqlStatement statement;
@@ -195,8 +195,8 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     rootInstance["Name"] = rootName;
     rootInstance["Persistance"] = 0;
 
-    JsonInserter inserter(ecdb, *rootClass);
-    ASSERT_EQ(SUCCESS, inserter.Insert(rootInstance));
+    JsonInserter inserter(ecdb, *rootClass, nullptr);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(rootInstance));
 
     // Try again
     statement.Reset();
@@ -245,10 +245,10 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
 
     ECClassCP parentClass = ecdb.Schemas().GetECClass("TestSchema", "Parent");
     ASSERT_TRUE(parentClass != nullptr);
-    JsonInserter inserter(ecdb, *parentClass);
+    JsonInserter inserter(ecdb, *parentClass, nullptr);
 
     ECInstanceKey key;
-    ASSERT_EQ(SUCCESS, inserter.Insert(key, rapidJsonVal));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, rapidJsonVal));
     ecdb.SaveChanges();
 
     ECSqlStatement stmt;

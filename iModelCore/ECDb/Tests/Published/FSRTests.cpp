@@ -98,10 +98,10 @@ struct FSRTests : public ::testing::Test
             {
             Savepoint savepoint(m_db, "Populate");
             auto &ecClass = instance->GetClass();
-            ECInstanceInserter inserter(m_db, ecClass);
+            ECInstanceInserter inserter(m_db, ecClass, nullptr);
             ECInstanceKey id;
-            auto insertStatus = inserter.Insert(id, *(instance.get()));
-            if (insertStatus != BentleyStatus::SUCCESS)
+            DbResult insertStatus = inserter.Insert(id, *(instance.get()));
+            if (BE_SQLITE_DONE != insertStatus)
                 {
                 LOG.infov("Could not insert ECInstance of ECClass %s into ECDb file. Error code: InsertStatus::%d", Utf8String(ecClass.GetFullName()).c_str(), insertStatus);
                 savepoint.Cancel();
@@ -109,7 +109,6 @@ struct FSRTests : public ::testing::Test
             else
                 {
                 savepoint.Commit();
-
                 }
             }
         }

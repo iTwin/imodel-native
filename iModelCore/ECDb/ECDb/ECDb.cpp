@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
+// @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 
@@ -119,6 +119,14 @@ int ECDb::_OnAddFunction(DbFunction& func) const { return m_pimpl->OnAddFunction
 void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction(func); }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2016
+//---------------+---------------+---------------+---------------+---------------+------
+ECSqlWriteToken const& ECDb::EnableECSqlWriteTokenValidation() 
+    {
+    return m_pimpl->EnableECSqlWriteTokenValidation(); 
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 ECDbSchemaManagerCR ECDb::Schemas() const { return m_pimpl->Schemas(); }
@@ -170,5 +178,7 @@ ECDb::Impl& ECDb::GetECDbImplR() const { BeAssert(m_pimpl != nullptr); return *m
 // @bsimethod                                                   Krischan.Eberle   09/2015
 //---------------------------------------------------------------------------------------
 void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const { _OnIssueReported(severity, message); }
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

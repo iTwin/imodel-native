@@ -96,7 +96,7 @@ bool SetIntValue (IECInstanceR instance, Utf8CP propertyAccessor, int intValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InsertInstance (ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance)
     {
-    ECInstanceInserter inserter (db, ecClass);
+    ECInstanceInserter inserter (db, ecClass, nullptr);
     if (!inserter.IsValid ())
         return false;
 
@@ -184,7 +184,7 @@ TEST_F(ReadTests, LimitOffset)
     // Populate 100 instances
     ECClassCP ecClass = db.Schemas().GetECClass("StartupCompany", "ClassWithPrimitiveProperties");
     IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    ECInstanceInserter inserter (db, *ecClass);
+    ECInstanceInserter inserter (db, *ecClass, nullptr);
     ASSERT_TRUE (inserter.IsValid ());
     for (int ii = 0; ii < 100; ii++)
         {
@@ -255,21 +255,18 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     ASSERT_TRUE(InstanceReadStatus::Success==status);
 
     Savepoint s(db, "Populate");
-    auto &ecClass = instance->GetClass();
-    ECInstanceInserter inserter(db, ecClass);
+    ECClassCR ecClass = instance->GetClass();
+    ECInstanceInserter inserter(db, ecClass, nullptr);
     ECInstanceKey id;
-    auto insertStatus = inserter.Insert(id, *(instance.get()));
-    ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    insertStatus = inserter.Insert(id, *(instance.get()));
-    ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    insertStatus = inserter.Insert(id, *(instance.get()));
-    ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
     s.Commit();
     db.SaveChanges();
 
-    SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", Utf8String(ecClass.GetSchema().GetName()).c_str(), Utf8String(ecClass.GetName()).c_str());
+    SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
     ECSqlStatement ecStatement;
     ECSqlStatus prepareStatus = ecStatement.Prepare(db, ecSql.GetUtf8CP());
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);

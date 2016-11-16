@@ -21,7 +21,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
             ECDbR ecdb = SetupECDb("updateInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
             ECClassCP testClass = ecdb.Schemas().GetECClass(schemaName, className);
 
-            ECInstanceInserter inserter(ecdb, *testClass);
+            ECInstanceInserter inserter(ecdb, *testClass, nullptr);
             ECInstanceUpdater* updater = nullptr;
             for (int i = 0; i < numberOfInstances; i++)
                 {
@@ -51,9 +51,9 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                 if (nullptr == updater)
                     {
                     if (populateAllProperties)
-                        updater = new ECInstanceUpdater(ecdb, *testClass);
+                        updater = new ECInstanceUpdater(ecdb, *testClass, nullptr);
                     else
-                        updater = new ECInstanceUpdater(ecdb, *updatedInstance);
+                        updater = new ECInstanceUpdater(ecdb, *updatedInstance, nullptr);
                     }
 
                 if (testClass->GetPropertyCount() == 0)
@@ -132,9 +132,9 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 
     ECInstanceId testId;
     {
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(SUCCESS, inserter.Insert(*testInstance));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*testInstance));
     ASSERT_EQ(SUCCESS, ECInstanceId::FromString(testId, testInstance->GetInstanceId().c_str()));
     }
 
@@ -149,7 +149,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     v.SetInteger(2);
     ASSERT_EQ(ECObjectsStatus::Success, testInstance->SetValue("I", v));
 
-    ECInstanceUpdater updater(ecdb, *testClass);
+    ECInstanceUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(SUCCESS, updater.Update(*testInstance));
 
@@ -237,7 +237,7 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyAndCalculatedProperties)
     //calc prop gets reevaluated automatically, so no need to set it here
 
     //Be default readonly props cannot be updated, so updater skips readonly props
-    ECInstanceUpdater updater(ecdb, *ecClass);
+    ECInstanceUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     ECSqlStatement validateStmt;
@@ -263,7 +263,7 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyAndCalculatedProperties)
 
     {
     //now use updater with option to update readonly props
-    ECInstanceUpdater readonlyUpdater(ecdb, *ecClass, "ReadonlyPropertiesAreUpdatable");
+    ECInstanceUpdater readonlyUpdater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(readonlyUpdater.IsValid());
     ASSERT_EQ(SUCCESS, readonlyUpdater.Update(*updatedInstance));
 
@@ -306,7 +306,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     ASSERT_TRUE(ecClass != nullptr);
 
     bvector<uint32_t> propertiesToBind {1, 2, 3};
-    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_TRUE(instanceUpdater.IsValid());
 
     //new values for properties
@@ -383,7 +383,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     ASSERT_TRUE(p3 != nullptr);
 
     bvector<ECPropertyCP> propertiesToBind {p1, p2, p3};
-    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_TRUE(instanceUpdater.IsValid());
 
     //new values for properties
@@ -443,11 +443,10 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     v.SetInteger(2);
     testInstance->SetValue("SmallIntArray", v, 2);
 
-    ECInstanceInserter inserter(db, *testClass);
+    ECInstanceInserter inserter(db, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert(instanceKey, *testInstance);
-    ASSERT_EQ(SUCCESS, insertStatus);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance));
 
     Utf8CP ecSql = "SELECT ECInstanceId, ECClassId, SmallIntArray FROM KitchenSink.TestClass";
     ECSqlStatement ecStatement;
@@ -471,7 +470,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     v.SetInteger(1);
     selectedInstance->SetValue("SmallIntArray", v, 1);
 
-    ECInstanceUpdater updater(db, *testClass);
+    ECInstanceUpdater updater(db, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     auto updateStatus = updater.Update(*selectedInstance);
     ASSERT_EQ(SUCCESS, updateStatus);
@@ -512,7 +511,7 @@ TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
     ASSERT_TRUE(ecClass != nullptr);
 
     bvector<uint32_t> propertiesToBind {};
-    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_FALSE(instanceUpdater.IsValid());
     }
 
@@ -537,7 +536,7 @@ TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
     ASSERT_TRUE(ecClass != nullptr);
 
     bvector<uint32_t> propertiesToBind {};
-    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_FALSE(instanceUpdater.IsValid());
 
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();

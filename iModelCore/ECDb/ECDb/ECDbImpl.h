@@ -14,6 +14,9 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct ECSqlWriteToken final
+    {};
+
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
@@ -67,10 +70,10 @@ private:
         };
 
     
-
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
+    std::unique_ptr<ECSqlWriteToken> m_expectedECSqlWriteToken;
 
     mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
     BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
@@ -118,6 +121,8 @@ private:
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
 
+    ECSqlWriteToken const& EnableECSqlWriteTokenValidation() { m_expectedECSqlWriteToken = std::unique_ptr<ECSqlWriteToken>(new ECSqlWriteToken()); return *m_expectedECSqlWriteToken; }
+
 public:
     ~Impl() {}
 
@@ -133,6 +138,8 @@ public:
     BeBriefcaseBasedIdSequence& GetPropertyPathIdSequence() { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
+
+    bool RequiresECSqlWriteToken() const { return m_expectedECSqlWriteToken != nullptr; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

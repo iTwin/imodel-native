@@ -705,20 +705,20 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
     ASSERT_TRUE(testClass != nullptr);
 
     {
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
-    ECInstanceUpdater updater(ecdb, *testClass);
+    ECInstanceUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
-    ECInstanceDeleter deleter(ecdb, *testClass);
+    ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
 
     {
-    JsonInserter inserter(ecdb, *testClass);
+    JsonInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
-    JsonUpdater updater(ecdb, *testClass);
+    JsonUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
-    JsonDeleter deleter(ecdb, *testClass);
+    JsonDeleter deleter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
     }
@@ -2476,13 +2476,13 @@ TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "TestClass");
     ASSERT_TRUE(testClass != nullptr);
 
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
 
-    ECInstanceUpdater updater(ecdb, *testClass);
+    ECInstanceUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
 
-    ECInstanceDeleter deleter(ecdb, *testClass);
+    ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
 
@@ -3065,8 +3065,8 @@ TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
 	{
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "    <ECEntityClass typeName='Product' modifier='None'>"
         "        <ECProperty propertyName='Name' typeName='text' />"
         "        <ECProperty propertyName='Price' typeName='double' />"
@@ -3180,8 +3180,8 @@ TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
 
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "<ECEntityClass typeName='Class' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3215,8 +3215,8 @@ TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
 
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "<ECEntityClass typeName='TestClass' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3247,8 +3247,8 @@ TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
 
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "<ECEntityClass typeName='Foo'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3277,8 +3277,8 @@ TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
 TEST_F(ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                         "   <ECEntityClass typeName='ClassA' Modifier='None'>"
                         "       <ECCustomAttributes>"
                         "           <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3959,12 +3959,12 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     ClassB_Instance->SetValue("BB", ECValue("val3"));
 
     //Inserter of ClassA
-    ECInstanceInserter ClassA_Inserter(db, *ClassA);
+    ECInstanceInserter ClassA_Inserter(db, *ClassA, nullptr);
     ASSERT_TRUE(ClassA_Inserter.IsValid());
     ClassA_Inserter.Insert(*ClassA_Instance);
 
     //Inserter of ClassB
-    ECInstanceInserter ClassB_Inserter(db, *ClassB);
+    ECInstanceInserter ClassB_Inserter(db, *ClassB, nullptr);
     ASSERT_TRUE(ClassB_Inserter.IsValid());
     ClassB_Inserter.Insert(*ClassB_Instance);
 
@@ -3976,7 +3976,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     ClassAHasB_relationshipInstance->SetSource(ClassA_Instance.get());
     ClassAHasB_relationshipInstance->SetTarget(ClassB_Instance.get());
 
-    ECInstanceInserter AHasB_relationshipInserter(db, *AHasB);
+    ECInstanceInserter AHasB_relationshipInserter(db, *AHasB, nullptr);
     AHasB_relationshipInserter.Insert(*ClassAHasB_relationshipInstance);
 
 
@@ -3985,7 +3985,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     ClassC_Instance->SetValue("CC", ECValue("val5"));
 
     //Inserter of ClassC
-    ECInstanceInserter ClassC_Inserter(db, *ClassC);
+    ECInstanceInserter ClassC_Inserter(db, *ClassC, nullptr);
     ASSERT_TRUE(ClassC_Inserter.IsValid());
     ClassC_Inserter.Insert(*ClassC_Instance);
 
@@ -3994,7 +3994,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     ClassBHasC_relationshipInstance->SetSource(ClassB_Instance.get());
     ClassBHasC_relationshipInstance->SetTarget(ClassC_Instance.get());
 
-    ECInstanceInserter BHasC_relationshipInserter(db, *BHasC);
+    ECInstanceInserter BHasC_relationshipInserter(db, *BHasC, nullptr);
     BHasC_relationshipInserter.Insert(*ClassBHasC_relationshipInstance);
 
     //Deletes instance of ClassA. Instances of ClassB and ClassC are also deleted.
@@ -5136,8 +5136,8 @@ TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='bsca' />"
         "    <ECEntityClass typeName='ClassWithBusinessKey' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
@@ -5165,6 +5165,18 @@ TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
         "        <ECProperty propertyName='Id' typeName='long' />"
         "        <ECProperty propertyName='Name' typeName='string' />"
         "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassWithGlobalIdAndBusinessKey' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </GlobalIdSpecification>"
+        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </BusinessKeySpecification>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Id' typeName='long' />"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
         "</ECSchema>");
 
     ECDb db;
@@ -5175,6 +5187,7 @@ TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
     AssertIndex(db, "ix_ts_ClassWithBusinessKey_BusinessKeySpecification_Name", false, "ts_ClassWithBusinessKey", {"Name"});
     AssertIndex(db, "ix_ts_ClassWithSyncId_SyncIDSpecification_Name", false, "ts_ClassWithSyncId", {"Name"});
     AssertIndex(db, "ix_ts_ClassWithGlobalId_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalId", {"Name"});
+    AssertIndex(db, "ix_ts_ClassWithGlobalIdAndBusinessKey_BusinessKeySpecification_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalIdAndBusinessKey", {"Name"});
     }
 
 //---------------------------------------------------------------------------------------
@@ -8954,13 +8967,11 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     baseInstance1->SetValue("P0", ECValue("string1"));
     baseInstance2->SetValue("P0", ECValue("string2"));
 
-    ECInstanceInserter inserter(ecdb, *baseClass);
+    ECInstanceInserter inserter(ecdb, *baseClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
-    auto stat = inserter.Insert(*baseInstance1, true);
-    ASSERT_TRUE(stat == SUCCESS);
-    stat = inserter.Insert(*baseInstance2, true);
-    ASSERT_TRUE(stat == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*baseInstance1, true));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*baseInstance2, true));
 
     //Insert Instances for ClassA
     ECN::StandaloneECInstancePtr classAInstance1 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -8969,13 +8980,11 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     classAInstance1->SetValue("P1", ECValue("string1"));
     classAInstance2->SetValue("P1", ECValue("string2"));
 
-    ECInstanceInserter classAinserter(ecdb, *classA);
+    ECInstanceInserter classAinserter(ecdb, *classA, nullptr);
     ASSERT_TRUE(classAinserter.IsValid());
 
-    stat = classAinserter.Insert(*classAInstance1, true);
-    ASSERT_TRUE(stat == SUCCESS);
-    stat = classAinserter.Insert(*classAInstance2, true);
-    ASSERT_TRUE(stat == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, classAinserter.Insert(*classAInstance1, true));
+    ASSERT_EQ(BE_SQLITE_DONE, classAinserter.Insert(*classAInstance2, true));
 
     //Insert Instances for ClassB
     ECN::StandaloneECInstancePtr classBInstance1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -8984,13 +8993,11 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     classBInstance1->SetValue("P2", ECValue("string1"));
     classBInstance2->SetValue("P2", ECValue("string2"));
 
-    ECInstanceInserter classBinserter(ecdb, *classB);
+    ECInstanceInserter classBinserter(ecdb, *classB, nullptr);
     ASSERT_TRUE(classBinserter.IsValid());
 
-    stat = classBinserter.Insert(*classBInstance1, true);
-    ASSERT_TRUE(stat == SUCCESS);
-    stat = classBinserter.Insert(*classBInstance2, true);
-    ASSERT_TRUE(stat == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_DONE, classBinserter.Insert(*classBInstance1, true));
+    ASSERT_EQ(BE_SQLITE_DONE, classBinserter.Insert(*classBInstance2, true));
 
     //Get Relationship Classes
     ECRelationshipClassCP baseHasClassAClass = schema->GetClassCP("BaseHasClassA")->GetRelationshipClassCP();
@@ -9000,39 +9007,39 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
 
     {//Insert Instances for Relationship TPHhasClassA
     ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*baseHasClassAClass)->CreateRelationshipInstance();
-    ECInstanceInserter relationshipinserter(ecdb, *baseHasClassAClass);
+    ECInstanceInserter relationshipinserter(ecdb, *baseHasClassAClass, nullptr);
     ASSERT_TRUE(relationshipinserter.IsValid());
 
     {//Inserting 1st Instance
     relationshipInstance->SetSource(baseInstance1.get());
     relationshipInstance->SetTarget(classAInstance1.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
     }
     {//Inserting 2nd Instance
     relationshipInstance->SetSource(baseInstance2.get());
     relationshipInstance->SetTarget(classAInstance2.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
     }
     }
 
     {//Insert Instances for Relationship TPHhasClassB
     ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*baseHasClassBClass)->CreateRelationshipInstance();
-    ECInstanceInserter relationshipinserter(ecdb, *baseHasClassBClass);
+    ECInstanceInserter relationshipinserter(ecdb, *baseHasClassBClass, nullptr);
     ASSERT_TRUE(relationshipinserter.IsValid());
 
     {//Inserting 1st Instance
     relationshipInstance->SetSource(baseInstance1.get());
     relationshipInstance->SetTarget(classBInstance1.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
     }
     {//Inserting 2nd Instance
     relationshipInstance->SetSource(baseInstance2.get());
     relationshipInstance->SetTarget(classBInstance2.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
     }
     }
     ECSqlStatement stmt;

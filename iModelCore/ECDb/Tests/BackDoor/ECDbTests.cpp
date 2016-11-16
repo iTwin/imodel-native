@@ -767,7 +767,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb,
             continue;
             }
 
-        ECInstanceInserter inserter(ecdb, *ecClass);
+        ECInstanceInserter inserter(ecdb, *ecClass, nullptr);
         if (!inserter.IsValid())
             {
             LOG.infov("    ECClass: %-40s\t\t(Not mapped to any table)", ecClass->GetName().c_str());

@@ -482,7 +482,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     ClassMap const& classMap = exp.GetInfo().GetMap();
     if (ctx.IsPrimaryStatement() && !ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
         {
-        ECDbPolicy policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
+        ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage());

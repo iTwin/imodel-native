@@ -42,43 +42,21 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
     return *this;
     }
 
-//********************* IsValidInECSqlPolicyAssertion ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-//static
-IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::s_noECSqlTypeFilterAssertionFlyweight;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-//static
-ECDbPolicyAssertion const& IsValidInECSqlPolicyAssertion::Get()
-    {
-    return s_noECSqlTypeFilterAssertionFlyweight;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-//static
-IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get(ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
-    {
-    return IsValidInECSqlPolicyAssertion(ecSqlTypeFilter, isPolymorphicClassExpression);
-    }
-
 
 //********************* ECDbPolicyManager ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::GetClassPolicy(ClassMap const& classMap, ECDbPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
     {
     switch (assertion.GetType())
         {
-            case ECDbPolicyAssertion::Type::IsValidInECSql:
-                return DoGetClassPolicy(classMap, static_cast<IsValidInECSqlPolicyAssertion const&> (assertion));
+            case ECDbPolicyAssertion::Type::ClassIsValidInECSql:
+                return DoGetPolicy(static_cast<ClassIsValidInECSqlPolicyAssertion const&> (assertion));
+
+            case ECDbPolicyAssertion::Type::ECSqlPermission:
+                return DoGetPolicy(static_cast<ECSqlPermissionPolicyAssertion const&> (assertion));
 
             default:
                 return ECDbPolicy::CreateNotSupported();
@@ -89,9 +67,9 @@ ECDbPolicy ECDbPolicyManager::GetClassPolicy(ClassMap const& classMap, ECDbPolic
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& assertion)
     {
-    ECClassCR ecClass = classMap.GetClass();
+    ECClassCR ecClass = assertion.GetClassMap().GetClass();
     Utf8StringCR className = ecClass.GetName();
     //generally not supported - regardless of ECSqlType
     if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
@@ -102,7 +80,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
         return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
         }
 
-    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+    if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
@@ -114,7 +92,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
-    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable && !classMap.IsMappedToSingleTable())
+    if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && !assertion.GetClassMap().IsMappedToSingleTable())
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
@@ -128,7 +106,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
         const ECSqlType ecsqlType = assertion.GetECSqlType();
         if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
-            if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+            if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
                 {
                 Utf8String notSupportedMessage;
                 notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
@@ -137,9 +115,10 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
                 return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
                 }
 
-            if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+            if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
                 {
-                if (classMap.GetTables().empty())
+                std::vector<DbTable*> tables = assertion.GetClassMap().GetTables();
+                if (tables.empty())
                     {
                     BeAssert(false && "ClassMap.GetTables is not expected to be empty.");
                     Utf8String notSupportedMessage;
@@ -148,7 +127,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
                     return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
                     }
 
-                if (classMap.GetTables()[0]->GetType() == DbTable::Type::Existing)
+                if (tables[0]->GetType() == DbTable::Type::Existing)
                     {
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
@@ -172,6 +151,25 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
                 }
             }
         }
+
+    return ECDbPolicy::CreateSupported();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    12/2013
+//---------------------------------------------------------------------------------------
+//static
+ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSqlPermissionPolicyAssertion const& assertion)
+    {
+    if (assertion.GetECSqlType() == ECSqlType::Select)
+        return ECDbPolicy::CreateSupported(); //reading is always allowed
+
+    ECDbCR ecdb = assertion.GetECDb();
+    if (ecdb.IsReadonly())
+        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE on a file opened in read-only mode");
+
+    if (ecdb.GetECDbImplR().RequiresECSqlWriteToken() && assertion.GetToken() == nullptr)
+        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlStatement::WriteToken.");
 
     return ECDbPolicy::CreateSupported();
     }

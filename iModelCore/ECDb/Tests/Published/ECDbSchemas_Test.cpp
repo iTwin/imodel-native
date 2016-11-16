@@ -715,18 +715,18 @@ TEST_F(ECDbSchemaTests, DiegoRelationshipTest)
     rel1->SetSource(civilModel2.get());
     rel1->SetTarget(geometricModel.get());
 
-    ECInstanceInserter civilModelInserter(ecdb, *civilModelClass);
+    ECInstanceInserter civilModelInserter(ecdb, *civilModelClass, nullptr);
     ASSERT_TRUE(civilModelInserter.IsValid());
-    ASSERT_EQ(SUCCESS, civilModelInserter.Insert(*civilModel1));
-    ASSERT_EQ(SUCCESS, civilModelInserter.Insert(*civilModel2));
+    ASSERT_EQ(BE_SQLITE_DONE, civilModelInserter.Insert(*civilModel1));
+    ASSERT_EQ(BE_SQLITE_DONE, civilModelInserter.Insert(*civilModel2));
 
-    ECInstanceInserter geometricModelInserter(ecdb, *geometricModelClass);
+    ECInstanceInserter geometricModelInserter(ecdb, *geometricModelClass, nullptr);
     ASSERT_TRUE(geometricModelInserter.IsValid());
-    ASSERT_EQ(SUCCESS, geometricModelInserter.Insert(*geometricModel));
+    ASSERT_EQ(BE_SQLITE_DONE, geometricModelInserter.Insert(*geometricModel));
 
-    ECInstanceInserter relInserter(ecdb, *relClass);
+    ECInstanceInserter relInserter(ecdb, *relClass, nullptr);
     ASSERT_TRUE(relInserter.IsValid());
-    ASSERT_EQ(SUCCESS, relInserter.Insert(*rel1));
+    ASSERT_EQ(BE_SQLITE_DONE, relInserter.Insert(*rel1));
     }
 
 //---------------------------------------------------------------------------------------

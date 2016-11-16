@@ -64,43 +64,45 @@ struct ECDbPolicyAssertion
         //+===============+===============+===============+===============+===============+======
         enum class Type
             {
-            IsValidInECSql //!< @see IsValidInECSqlPolicyAssertion
+            ClassIsValidInECSql, //!< @see ClassIsValidInECSqlPolicyAssertion
+            ECSqlPermission
             };
 
     private:
-        virtual Type _GetType() const = 0;
+        Type m_type;
+
+    protected:
+        explicit ECDbPolicyAssertion(Type type) : m_type(type) {}
 
     public:
         virtual ~ECDbPolicyAssertion() {}
 
-        Type GetType() const { return _GetType(); }
+        Type GetType() const { return m_type; }
     };
 
 //=======================================================================================
 //! Policy whether a given ECClass can be used in ECSQL or not.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct IsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
+struct ClassIsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
     {
     private:
+        ClassMap const& m_classMap;
         bool m_useECSqlTypeFilter;
         ECSqlType m_ecSqlTypeFilter;
         bool m_isPolymorphicClassExpression;
 
-        static IsValidInECSqlPolicyAssertion s_noECSqlTypeFilterAssertionFlyweight;
-
-        IsValidInECSqlPolicyAssertion()
-            : m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
-            {}
-
-        IsValidInECSqlPolicyAssertion(ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
-            : m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
-            {}
-
-        virtual ECDbPolicyAssertion::Type _GetType() const override { return Type::IsValidInECSql; }
-
-
     public:
+        ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
+            : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
+            {}
+
+        explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) 
+                : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
+            {}
+
+        ClassMap const& GetClassMap() const { return m_classMap; }
+
         //! Gets a value indicating whether the requested policy should consider the ECSQL type filter or not.
         //! @remarks IsValidInECSqlPolicyAssertion::IsPolymorphicClassExpression is to be ignored, too, if the type filter is not considered.
         //! @return true if the policy is requested for the ECSQL type only specified by IsValidInECSqlPolicyAssertion::GetECSqlType.
@@ -113,15 +115,31 @@ struct IsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
         ECSqlType GetECSqlType() const { return m_ecSqlTypeFilter; }
 
         //! Gets a value indicating whether the policy is requested for a polymorphic class expression or
-        //! nott
+        //! not
         //! @remarks Don't call this if IsValidInECSqlPolicyAssertion::UseECSqlTypeFilter is false.
         //! @return true if the policy for a polymorphic class expression is requested. false otherwise
         bool IsPolymorphicClassExpression() const { return m_isPolymorphicClassExpression; }
-
-        static ECDbPolicyAssertion const& Get();
-        static IsValidInECSqlPolicyAssertion Get(ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression);
     };
 
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      11/2016
+//+===============+===============+===============+===============+===============+======
+struct ECSqlPermissionPolicyAssertion : ECDbPolicyAssertion
+    {
+    private:
+        ECDbCR m_ecdb;
+        ECSqlType m_ecsqlType;
+        ECSqlWriteToken const* m_token;
+
+    public:
+        ECSqlPermissionPolicyAssertion(ECDbCR ecdb, ECSqlType ecsqlType, ECSqlWriteToken const* token)
+            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECSqlPermission), m_ecdb(ecdb), m_ecsqlType(ecsqlType), m_token(token)
+            {}
+
+        ECDbCR GetECDb() const { return m_ecdb; }
+        ECSqlType GetECSqlType() const { return m_ecsqlType; }
+        ECSqlWriteToken const* GetToken() const { return m_token; }
+    };
 
 //=======================================================================================
 //! Determines whether a given ECDb feature is supported in a given context.
@@ -133,10 +151,11 @@ struct ECDbPolicyManager
         ECDbPolicyManager();
         ~ECDbPolicyManager();
 
-        static ECDbPolicy DoGetClassPolicy(ClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion);
+        static ECDbPolicy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
+        static ECDbPolicy DoGetPolicy(ECSqlPermissionPolicyAssertion const&);
 
     public:
-        static ECDbPolicy GetClassPolicy(ClassMap const& classMap, ECDbPolicyAssertion const& assertion);
+        static ECDbPolicy GetPolicy(ECDbPolicyAssertion const&);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

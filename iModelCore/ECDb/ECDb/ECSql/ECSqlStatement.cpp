@@ -63,7 +63,7 @@ void ECSqlStatement::Finalize() { m_pimpl->Finalize(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql) { return m_pimpl->Prepare(ecdb, ecsql); }
+ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token) { return m_pimpl->Prepare(ecdb, ecsql, token); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013

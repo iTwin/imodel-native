@@ -77,29 +77,29 @@ TEST_F(JsonUpdaterTests, InvalidInput)
 
     ECInstanceKey key;
     {
-    JsonInserter inserter(ecdb, *testClass);
+    JsonInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
     Json::Value val;
     val["Name"] = "test.txt";
 
-    ASSERT_EQ(SUCCESS, inserter.Insert(key, val));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, val));
     }
 
-    JsonUpdater updater(ecdb, *testClass);
+    JsonUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     Json::Value val;
-    ASSERT_EQ(ERROR, updater.Update(val)) << "Empty JSON value";
+    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(val)) << "Empty JSON value";
 
     val["Name"] = "test2.txt";
-    ASSERT_EQ(ERROR, updater.Update(val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(val)) << "JSON value without $ECInstanceId member";
 
     val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue() + 1);
-    ASSERT_EQ(SUCCESS, updater.Update(val)) << "JSON value with not-existing $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(val)) << "JSON value with not-existing $ECInstanceId member";
 
     val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue());
-    ASSERT_EQ(SUCCESS, updater.Update(val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(val)) << "JSON value without $ECInstanceId member";
     }
 
 //---------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
 
     // Update relationship properties
-    JsonUpdater updater(db, *relClass);
+    JsonUpdater updater(db, *relClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     /*
@@ -245,7 +245,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
 
     // Update ecClass properties
-    JsonUpdater updater(ecdb, *ecClass);
+    JsonUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     /*
@@ -324,13 +324,13 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ASSERT_TRUE(parseSuccessful);
 
     // Insert using RapidJson API
-    JsonInserter inserter(ecdb, *spatialClass);
+    JsonInserter inserter(ecdb, *spatialClass, nullptr);
     ECInstanceKey rapidJsonInstanceKey;
-    ASSERT_EQ(SUCCESS, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
     // Insert using JsonCpp API
     ECInstanceKey jsonCppInstanceKey;
-    ASSERT_EQ(SUCCESS, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
 
     ecdb.SaveChanges();
 
@@ -377,8 +377,8 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     Json::Value properties;
     properties["Num"] = oldNum;
     properties["Square"] = oldSquare;
-    JsonInserter inserter(ecdb, *ecClass);
-    ASSERT_EQ(SUCCESS, inserter.Insert(key, properties));
+    JsonInserter inserter(ecdb, *ecClass, nullptr);
+    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, properties));
 
     //Update test instance
     properties["Num"] = newNum;
@@ -389,7 +389,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     //default updater
     {
     Savepoint sp(ecdb, "default updater");
-    JsonUpdater updater(ecdb, *ecClass);
+    JsonUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), properties));
 
@@ -406,7 +406,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
 
     //updater with readonly prop options
     {
-    JsonUpdater updater(ecdb, *ecClass, "ReadonlyPropertiesAreUpdatable");
+    JsonUpdater updater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), properties));
 

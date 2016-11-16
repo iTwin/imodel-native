@@ -12,15 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        01/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql)
-    {
-    return _Prepare(ecdb, ecsql);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token)
     {
     if (IsPrepared())
         {
@@ -34,11 +26,18 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
         return ECSqlStatus::InvalidECSql;
         }
 
-    ECSqlPrepareContext prepareContext = _InitializePrepare(ecdb, ecsql);
+    ECSqlPrepareContext prepareContext = _InitializePrepare(ecdb, token);
+    return _Prepare(prepareContext, ecsql);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        10/13
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
+    {
     //Step 1: parse the ECSQL
     ECSqlParser parser;
-    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql);
+    std::unique_ptr<Exp> exp = parser.Parse(ctx.GetECDb(), ecsql);
     if (exp == nullptr)
         {
         Finalize();
@@ -46,7 +45,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
         }
 
     //establish joinTable context if any
-    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinedTableInfo(*exp, ecsql);
+    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = ctx.TrySetupJoinedTableInfo(*exp, ecsql);
     if (joinedTableInfo != nullptr)
         {
         if (joinedTableInfo->HasJoinedTableECSql()) //in case joinTable update it is possible that current could be null
@@ -55,7 +54,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
             ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();
 
         //reparse
-        exp = parser.Parse(ecdb, ecsql); 
+        exp = parser.Parse(ctx.GetECDb(), ecsql);
         if (exp == nullptr)
             {
             Finalize();
@@ -63,9 +62,19 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
             }
         }
 
+
     //Step 2: translate into SQLite SQL and prepare SQLite statement
-    ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ecdb, *exp);
-    ECSqlStatus stat = preparedStatement.Prepare(prepareContext, *exp, ecsql);
+    ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ctx.GetECDb(), *exp);
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECSqlPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType(), ctx.GetWriteToken()));
+    if (!policy.IsSupported())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage());
+        Finalize();
+        return ECSqlStatus::Error;
+        }
+
+    ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();
 
@@ -122,8 +131,8 @@ DbResult ECSqlStatementBase::Step()
     //for performance reasons ECSqlPreparedStatement::Step is not polymorphic (anymore). Cost
     //of virtual dispatch was eliminated by taking cost of caller having to downcast to each subclass type
     //and call non-virtual Step.
-    const auto columnType = GetPreparedStatementP()->GetType();
-    switch (columnType)
+    const ECSqlType ecsqlType = GetPreparedStatementP()->GetType();
+    switch (ecsqlType)
         {
             case ECSqlType::Select:
                 return GetPreparedStatementP<ECSqlSelectPreparedStatement>()->Step();

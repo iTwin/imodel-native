@@ -342,6 +342,7 @@ struct ECSqlPrepareContext
             };
     private:
         ECDbCR m_ecdb;
+        ECSqlWriteToken const* m_writeToken;
 
         ECSqlStatementBase& m_ecsqlStatement;
         ECSqlPrepareContext const* m_parentCtx;
@@ -355,13 +356,13 @@ struct ECSqlPrepareContext
         ECN::ECClassId m_joinedTableClassId;
 
     public:
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ECN::ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlWriteToken const*);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId, ECSqlWriteToken const*);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
 
         ECDbCR GetECDb() const { return m_ecdb; }
+        ECSqlWriteToken const* GetWriteToken() const { return m_writeToken; }
+
         ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx; }
         ECN::ArrayECPropertyCP GetParentArrayProperty() const { return m_parentArrayProperty; }
         ECSqlColumnInfo const* GetParentColumnInfo() const { return m_parentColumnInfo; }

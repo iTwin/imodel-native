@@ -83,7 +83,6 @@
     <ClCompile Include="ECSql\IECSqlBinder.cpp" />
     <ClCompile Include="ECSql\InsertStatementExp.cpp" />
     <ClCompile Include="ECSql\JoinExp.cpp" />
-    <ClCompile Include="ECSql\JsonDeleter.cpp" />
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp" />
     <ClCompile Include="ECSql\JsonInserter.cpp" />
     <ClCompile Include="ECSql\JsonReader.cpp" />
@@ -289,7 +288,7 @@
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir)PublicAPI\;$(ProjectDir)ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)..\PublicAPI\;$(ProjectDir)ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\Build\ECDb\BeSQLiteECG.dll</NMakeOutput>

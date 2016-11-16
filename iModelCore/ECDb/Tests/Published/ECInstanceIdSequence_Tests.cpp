@@ -112,14 +112,13 @@ ECDbR ecdb,
 ECClassCR ecClass
 )
     {
-    ECInstanceInserter inserter(ecdb, ecClass);
+    ECInstanceInserter inserter(ecdb, ecClass, nullptr);
     if (!inserter.IsValid())
         return nullptr;
 
     IECInstancePtr testInstance = ECDbTestUtility::CreateArbitraryECInstance(ecClass);
 
-    auto insertStatus = inserter.Insert(instanceKey, *testInstance);
-    if (insertStatus != SUCCESS)
+    if (BE_SQLITE_DONE != inserter.Insert(instanceKey, *testInstance))
         return nullptr;
 
     if (SUCCESS != ECDbTestUtility::SetECInstanceId(*testInstance, instanceKey.GetECInstanceId()))
@@ -144,12 +143,12 @@ IECInstancePtr target
     relation->SetSource(source.get());
     relation->SetTarget(target.get());
 
-    ECInstanceInserter inserter(ecdb, relationClass);
+    ECInstanceInserter inserter(ecdb, relationClass, nullptr);
     if (!inserter.IsValid())
         return ECInstanceKey();
 
     ECInstanceKey instanceKey;
-    if (SUCCESS != inserter.Insert(instanceKey, *relation))
+    if (BE_SQLITE_DONE != inserter.Insert(instanceKey, *relation))
         return ECInstanceKey();
 
     return instanceKey;

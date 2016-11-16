@@ -40,15 +40,3 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
-
-ECDbMappingTestFixture.ECClassIdAsVirtualColumn
-    # bim0200dev, x64, DEBUG, after merge
-    # [ RUN      ] ECDbMappingTestFixture.ECClassIdAsVirtualColumn
-    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\SchemaImportTestFixture.cpp(75): error:       Expected: testItem.m_expectedToSucceed
-    #       Which is: true
-    # To be equal to: SUCCESS == schemaImportStatus
-    #       Which is: false
-    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\ECDbMapping_Tests.cpp(3079): error: Value of: asserted
-    #   Actual: true
-    # Expected: false
-    # [  FAILED  ] ECDbMappingTestFixture.ECClassIdAsVirtualColumn (145 ms)

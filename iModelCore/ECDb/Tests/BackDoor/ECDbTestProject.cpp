@@ -16,23 +16,23 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 * @bsimethod                                 Krischan.Eberle                12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-bool ECDbTestProject::s_isInitialized = false; 
+bool ECDbTestProject::s_isInitialized = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbTestProject::ECDbTestProject () : m_ecdb (new ECDb) { Initialize (); }
+ECDbTestProject::ECDbTestProject() : m_ecdb(new ECDb) { Initialize(); }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+-
-ECDbTestProject::~ECDbTestProject () 
+ECDbTestProject::~ECDbTestProject()
     {
-    m_inserterCache.clear ();
+    m_inserterCache.clear();
 
-    if (m_ecdb->IsDbOpen ())
+    if (m_ecdb->IsDbOpen())
         {
-        m_ecdb->CloseDb ();
+        m_ecdb->CloseDb();
         }
     delete m_ecdb;
     m_ecdb = nullptr;
@@ -42,33 +42,33 @@ ECDbTestProject::~ECDbTestProject ()
 * @bsimethod                                 Krischan.Eberle                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-void ECDbTestProject::Initialize ()
+void ECDbTestProject::Initialize()
     {
     if (!s_isInitialized)
         {
         //establish standard schema search paths (they are in the application dir)
         BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationSchemaDir);
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
 
         BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot (temporaryDir);
+        BeTest::GetHost().GetOutputRoot(temporaryDir);
 
-        ECDb::Initialize (temporaryDir, &applicationSchemaDir);
-        srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
+        ECDb::Initialize(temporaryDir, &applicationSchemaDir);
+        srand((uint32_t) BeTimeUtilities::QueryMillisecondsCounter());
         s_isInitialized = true;
         }
-    }   
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbTestProject::IsInitialized () {return s_isInitialized; }   
+bool ECDbTestProject::IsInitialized() { return s_isInitialized; }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+-
-Utf8CP ECDbTestProject::GetECDbPath () const { return GetECDbCR ().GetDbFileName (); }
+Utf8CP ECDbTestProject::GetECDbPath() const { return GetECDbCR().GetDbFileName(); }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                11/2012
@@ -94,81 +94,81 @@ DbResult ECDbTestProject::ReOpen(BeSQLite::EC::ECDb::OpenParams openParams)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbR ECDbTestProject::Create (Utf8CP ecdbFileName)
+ECDbR ECDbTestProject::Create(Utf8CP ecdbFileName)
     {
-    CreateEmpty (ecdbFileName);
-    return GetECDb ();
+    CreateEmpty(ecdbFileName);
+    return GetECDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbR ECDbTestProject::Create (Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, bool importArbitraryECInstances)
+ECDbR ECDbTestProject::Create(Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, bool importArbitraryECInstances)
     {
     //default number of ECInstances (if import flag is true) is 3
     const int numberOfECInstancesToImport = importArbitraryECInstances ? 3 : 0;
 
-    return Create (ecdbFileName, testSchemaXmlFileName, numberOfECInstancesToImport);
+    return Create(ecdbFileName, testSchemaXmlFileName, numberOfECInstancesToImport);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbR ECDbTestProject::Create (Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, int numberOfArbitraryECInstancesToImport)
+ECDbR ECDbTestProject::Create(Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, int numberOfArbitraryECInstancesToImport)
     {
-    CreateEmpty (ecdbFileName);
+    CreateEmpty(ecdbFileName);
     ECSchemaPtr schema = nullptr;
-    if (ImportECSchema (schema, testSchemaXmlFileName) != SUCCESS)
-        return GetECDb ();
-         
-    if (numberOfArbitraryECInstancesToImport > 0)
-        ImportArbitraryECInstances (*schema, numberOfArbitraryECInstancesToImport);
+    if (ImportECSchema(schema, testSchemaXmlFileName) != SUCCESS)
+        return GetECDb();
 
-    return GetECDb ();
+    if (numberOfArbitraryECInstancesToImport > 0)
+        ImportArbitraryECInstances(*schema, numberOfArbitraryECInstancesToImport);
+
+    return GetECDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
+void ECDbTestProject::CreateEmpty(Utf8CP ecdbFileName)
     {
     BeFileName ecdbFilePath = ECDbTestUtility::BuildECDbPath(ecdbFileName);
     if (ecdbFilePath.DoesPathExist())
         {
         // Delete any previously created file
-        ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeDeleteFile (ecdbFilePath.GetName ()));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(ecdbFilePath.GetName()));
         }
-    
-    Utf8String ecdbFilePathUtf8 = ecdbFilePath.GetNameUtf8 ();
-    DbResult stat = m_ecdb->CreateNewDb (ecdbFilePathUtf8.c_str ());
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
 
-    LOG.debugv("Created test ECDb file '%s'", ecdbFilePathUtf8.c_str ());
+    Utf8String ecdbFilePathUtf8 = ecdbFilePath.GetNameUtf8();
+    DbResult stat = m_ecdb->CreateNewDb(ecdbFilePathUtf8.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
+
+    LOG.debugv("Created test ECDb file '%s'", ecdbFilePathUtf8.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDbTestProject::Open (Utf8CP ecdbFilePath, ECDb::OpenParams openParams)
+DbResult ECDbTestProject::Open(Utf8CP ecdbFilePath, ECDb::OpenParams openParams)
     {
     m_ecdb->RemoveIssueListener();
-    return m_ecdb->OpenBeSQLiteDb (ecdbFilePath, openParams);
+    return m_ecdb->OpenBeSQLiteDb(ecdbFilePath, openParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbR ECDbTestProject::GetECDb () { return *m_ecdb; }
+ECDbR ECDbTestProject::GetECDb() { return *m_ecdb; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbCR ECDbTestProject::GetECDbCR () const { return *m_ecdb; }
+ECDbCR ECDbTestProject::GetECDbCR() const { return *m_ecdb; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbTestProject::ImportECSchema (ECN::ECSchemaPtr& schema, WCharCP testSchemaXmlFileName)
+BentleyStatus ECDbTestProject::ImportECSchema(ECN::ECSchemaPtr& schema, WCharCP testSchemaXmlFileName)
     {
     if (WString::IsNullOrEmpty(testSchemaXmlFileName))
         return ERROR;
@@ -194,97 +194,96 @@ BentleyStatus ECDbTestProject::ImportECSchema (ECN::ECSchemaPtr& schema, WCharCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestProject::ImportArbitraryECInstances(ECSchemaCR schema, int numberOfECInstances)
     {
-    StopWatch stopwatch ("", true);
+    StopWatch stopwatch("", true);
     int classCount = 0;
     for (ECClassCP ecClass : schema.GetClasses())
         {
         if (!ecClass->IsEntityClass() || ecClass->GetClassModifier() == ECClassModifier::Abstract)
             continue;
-        
+
         classCount++;
         for (int i = 0; i < numberOfECInstances; i++)
             {
-            IECInstancePtr ecInstance = ECDbTestUtility::CreateArbitraryECInstance (*ecClass);
-            ImportECInstance (ecInstance);
+            IECInstancePtr ecInstance = ECDbTestUtility::CreateArbitraryECInstance(*ecClass);
+            ImportECInstance(ecInstance);
             }
 
         //no need to longer hold inserter for a class as each class is only touched once in this method.
-        m_inserterCache.clear ();
+        m_inserterCache.clear();
         }
 
-    GetECDb ().SaveChanges();
-    stopwatch.Stop ();
-    LOG.infov (L"Inserting %d test instances per class for %d classes took %lf milliseconds.", numberOfECInstances, classCount, stopwatch.GetElapsedSeconds () * 1000);
+    GetECDb().SaveChanges();
+    stopwatch.Stop();
+    LOG.infov(L"Inserting %d test instances per class for %d classes took %lf milliseconds.", numberOfECInstances, classCount, stopwatch.GetElapsedSeconds() * 1000);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbTestProject::InsertECInstance (ECInstanceKey& ecInstanceKey, IECInstancePtr ecInstance)
+BentleyStatus ECDbTestProject::InsertECInstance(ECInstanceKey& ecInstanceKey, IECInstancePtr ecInstance)
     {
-    EXPECT_TRUE (ecInstance.IsValid ());
+    EXPECT_TRUE(ecInstance.IsValid());
 
     ECClassCR ecClass = ecInstance->GetClass();
     ECInstanceInserter const* inserter = nullptr;
-    auto it = m_inserterCache.find (&ecClass);
-    if (it == m_inserterCache.end ())
+    auto it = m_inserterCache.find(&ecClass);
+    if (it == m_inserterCache.end())
         {
-        auto newInserter = std::unique_ptr<ECInstanceInserter> (new ECInstanceInserter (GetECDb (), ecClass));
-        if (!newInserter->IsValid ())
+        std::unique_ptr<ECInstanceInserter> newInserter(new ECInstanceInserter(GetECDb(), ecClass, nullptr));
+        if (!newInserter->IsValid())
             //ECClass is not mapped or not instantiable -> ignore it
             return ERROR;
 
-        inserter = newInserter.get ();
-        m_inserterCache[&ecClass] = std::move (newInserter);
+        inserter = newInserter.get();
+        m_inserterCache[&ecClass] = std::move(newInserter);
         }
     else
-        inserter = it->second.get ();
+        inserter = it->second.get();
 
-    auto stat = inserter->Insert (ecInstanceKey, *ecInstance);
-    if (stat == SUCCESS)
+    if (BE_SQLITE_DONE == inserter->Insert(ecInstanceKey, *ecInstance))
         {
-        if (SUCCESS != ECDbTestUtility::SetECInstanceId (*ecInstance, ecInstanceKey.GetECInstanceId ()))
+        if (SUCCESS != ECDbTestUtility::SetECInstanceId(*ecInstance, ecInstanceKey.GetECInstanceId()))
             return ERROR;
         }
 
-    return stat;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbTestProject::ImportECInstance (IECInstancePtr ecInstance)
+void ECDbTestProject::ImportECInstance(IECInstancePtr ecInstance)
     {
     ECInstanceKey ecInstanceKey;
-    InsertECInstance (ecInstanceKey, ecInstance);
+    InsertECInstance(ecInstanceKey, ecInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   05/12
 ---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className)
+BentleyStatus ECDbTestProject::GetInstances(bvector<IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className)
     {
     instances.clear();
 
-    ECClassCP ecClass = GetECDb().Schemas().GetECClass (schemaName, className);
-    EXPECT_TRUE (ecClass != nullptr) << "ECDbTestProject::GetInstances> ECClass '" << className << "' not found.";
+    ECClassCP ecClass = GetECDb().Schemas().GetECClass(schemaName, className);
+    EXPECT_TRUE(ecClass != nullptr) << "ECDbTestProject::GetInstances> ECClass '" << className << "' not found.";
     if (ecClass == nullptr)
         return ERROR;
 
-    SqlPrintfString ecSql ("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
+    SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
     ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare (GetECDb(), ecSql.GetUtf8CP());
-    EXPECT_EQ(ECSqlStatus::Success, status) << "ECDbTestProject::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP () << "' failed.";
+    ECSqlStatus status = ecStatement.Prepare(GetECDb(), ecSql.GetUtf8CP());
+    EXPECT_EQ(ECSqlStatus::Success, status) << "ECDbTestProject::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP() << "' failed.";
     if (status != ECSqlStatus::Success)
         return ERROR;
 
-    ECInstanceECSqlSelectAdapter adapter (ecStatement);
+    ECInstanceECSqlSelectAdapter adapter(ecStatement);
     while (BE_SQLITE_ROW == ecStatement.Step())
         {
         IECInstancePtr instance = adapter.GetInstance();
-        BeAssert (instance.IsValid());
+        BeAssert(instance.IsValid());
         if (instance != nullptr)
-            instances.push_back (instance);
+            instances.push_back(instance);
         }
 
     return SUCCESS;
