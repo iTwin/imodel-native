@@ -130,7 +130,7 @@ ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& contex
         {
         LOG.errorv(L"Could not load schema: %ls.%ls. Check assets or dependencies",
                    key.m_schemaName.c_str(),
-                   ECSchema::FormatSchemaVersion(key.m_versionMajor, key.m_versionMinor).c_str());
+                   ECSchema::FormatSchemaVersion(key.m_versionRead, key.m_versionMinor).c_str());
         BeAssert(false);
         }
     return schema;
@@ -190,7 +190,7 @@ std::vector<ECSchemaPtr>& schemasOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context)
     {
-    Utf8String versionStr = SchemaKey::FormatLegacySchemaVersion(schema.GetVersionMajor(), schema.GetVersionMinor());
+    Utf8String versionStr = SchemaKey::FormatLegacySchemaVersion(schema.GetVersionRead(), schema.GetVersionMinor());
     Utf8String supplName = schema.GetName() + "_Supplemental_ECDbMapping." + versionStr + ".ecschema.xml";
 
     BeFileName supplPath = SchemaContext::GetSupportMappingDir();

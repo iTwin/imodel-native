@@ -46,7 +46,7 @@ Utf8StringCR ecExpression
 
     SchemaKey beStandardsSchemaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr beStandardsSchema = context->LocateSchema(beStandardsSchemaKey, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr beStandardsSchema = context->LocateSchema(beStandardsSchemaKey, SchemaMatchType::LatestWriteCompatible);
 
     ECClassCP caClass = beStandardsSchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
