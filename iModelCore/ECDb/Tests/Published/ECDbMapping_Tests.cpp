@@ -2015,6 +2015,60 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OverflowProperties)
+    {
+    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "        <ECProperty propertyName='L' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='double'/>"
+        "        <ECProperty propertyName='DT' typeName='dateTime'/>"
+        "        <ECProperty propertyName='B' typeName='boolean'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECStructProperty propertyName='ST1P' typeName='ST1'/>"
+        "        <!-- Following are not supported at the moment"
+        "            <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "            <ECStructArrayProperty propertyName='arrayOfSP1' typeName='ST1P' minOccurs='0' maxOccurs='unbounded'/>"
+        "            <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        -->"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ecdb.SaveChanges();
+
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)

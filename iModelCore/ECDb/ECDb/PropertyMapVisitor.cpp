@@ -241,8 +241,26 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenLeft();
 
-    result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-
+    DbColumn const* overFlowColumn = propertyMap.GetColumn().GetMasterOverflowColumn();
+    if (overFlowColumn != nullptr)
+        {
+        //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
+        if (m_target == SqlTarget::Table)
+            {
+            result.GetSqlBuilderR().Append("json_extract(")
+                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                .AppendComma().Append("'$.")
+                .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+            }
+        else
+            {
+            result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+            }
+        }
+    else
+        {
+        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        }
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenRight();
 
