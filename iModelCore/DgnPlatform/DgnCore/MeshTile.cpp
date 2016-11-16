@@ -43,7 +43,7 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 class   ParasolidException {};
 
 /*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2015
+* @bsiclass                                                     Ray.Bentley      10/2015
 *  Called from the main thread to register Thread Local Storage used by
 *  all threads for Parasolid error handling.
 +===============+===============+===============+===============+===============+======*/
@@ -57,7 +57,7 @@ struct  ThreadedLocalParasolidHandlerStorageMark
 
 
 /*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2015
+* @bsiclass                                                     Ray.Bentley      10/2015
 *  Inner mark.   Included around code sections that should be rolled back in case
 *                Of serious error.
 +===============+===============+===============+===============+===============+======*/
@@ -93,7 +93,7 @@ protected:
 static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015                                                                   
+* @bsimethod                                                    Ray.Bentley      10/2015                                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMark ()
     {
@@ -102,7 +102,7 @@ ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMa
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
     { 
@@ -115,7 +115,7 @@ typedef bvector<PK_MARK_t>  T_RollbackMarks;
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static T_RollbackMarks*  getRollbackMarks () 
     { 
@@ -125,7 +125,7 @@ static T_RollbackMarks*  getRollbackMarks ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void clearRollbackMarks () 
     {    
@@ -140,7 +140,7 @@ static void clearRollbackMarks ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void clearExclusions()
     {
@@ -151,7 +151,7 @@ static void clearExclusions()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
     {
@@ -181,7 +181,7 @@ static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark ()
     {
@@ -199,7 +199,7 @@ ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark (
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark ()
     {
@@ -208,7 +208,7 @@ ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark 
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark ()
     {
@@ -219,7 +219,7 @@ ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark (
     }
       
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      02/2012
+* @bsimethod                                                    Ray.Bentley      02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark ()
     {
@@ -324,27 +324,18 @@ Json::Value     TileModelDelta::ElementState::GetJsonValue () const
 void TileModelDelta::Save()
     {
     Json::Value     value (Json::objectValue);
-    BeFile      outputFile;
 
     for (auto& curr : m_elementStates)
         value[curr.first.ToString().c_str()] = curr.second.GetJsonValue();
 
-    if (BeFileStatus::Success != outputFile.Create (m_fileName.c_str()))
-        {
-        BeAssert (false && "Unable to open output file");
-        return;
-        }
-   
-    Utf8String  metadataStr = Json::FastWriter().write(value);
-
-    if (BeFileStatus::Success != outputFile.Write (nullptr, metadataStr.data(), metadataStr.size()))
-        BeAssert (false && "Unable to open write file");
+    if (SUCCESS != TileUtil::WriteJsonToFile (m_fileName.c_str(), value))
+        BeAssert (false && "Unable to open model state file");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
+TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory) : m_dataDirectory (dataDirectory), m_rootName(TileUtil::GetRootNameForModel(model))
     {
     for (auto& it : model.MakeIterator())
         {
@@ -395,9 +386,47 @@ TileModelDelta::TileModelDelta (DgnModelCR model, BeFileNameCR dataDirectory)
         if (0 == elementState.second.GetFacetCount())
             m_added.insert (elementState.first);
 
-#ifdef WIP
+    TileUtil::ReadJsonFromFile (m_previousTileSet, BeFileName (nullptr, dataDirectory.c_str(), m_rootName.c_str(), L"json").c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus findTileValue (Json::Value& tile, Json::Value const& tileSet, bvector<size_t>& tilePath)
+    {
+    if (tilePath.empty())
+        {
+        tile = tileSet;
+        return SUCCESS;
+        }
     
-#endif    
+    Json::Value     children = tileSet["children"];
+    uint32_t        index = tilePath.back();
+
+    if (children.isNull() || index >= children.size() )
+        return ERROR;
+
+
+    tilePath.pop_back();
+    return findTileValue (tile, children[index], tilePath);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileModelDelta::DoIncremental (TileNodeCR tile) const
+    {
+    Json::Value     previousTile;
+    BeFile          testFile;
+    BeFileName      tileFileName (nullptr, m_dataDirectory.c_str(), tile.GetFileName (m_rootName.c_str(), L"b3dm").c_str(), nullptr);
+    bvector<size_t> tilePath;
+
+    for (TileNodeCP pathTile = tile.GetParent(); nullptr != pathTile; pathTile = pathTile->GetParent())
+        tilePath.push_back (pathTile->GetSiblingIndex());
+
+    return SUCCESS == findTileValue (previousTile, m_previousTileSet["root"], tilePath) && 
+           fabs(previousTile["geometricError"].asDouble() - tile.GetTolerance()) < 1.0E-8 &&
+           BeFileStatus::Success == testFile.Open (tileFileName.c_str(), BeFileAccess::Read);
     }
 
 
@@ -1552,6 +1581,7 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]                                                         
         {
         ScopedHostAdopter hostScope(context.m_host);
+
     #if defined (BENTLEYCONFIG_PARASOLID) 
         ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
@@ -2378,3 +2408,41 @@ bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId) const
     return accepted;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileUtil::WriteJsonToFile (WCharCP fileName, Json::Value const& value)
+    {
+    BeFile          outputFile;
+
+    if (BeFileStatus::Success != outputFile.Create (fileName))
+        return ERROR;
+   
+    Utf8String  string = Json::FastWriter().write(value);
+
+    return BeFileStatus::Success == outputFile.Write (nullptr, string.data(), string.size()) ? SUCCESS : ERROR;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
+    {
+    Json::Reader    reader;
+    ByteStream      inputData;
+    BeFile          inputFile;
+
+    return BeFileStatus::Success == inputFile.Open (fileName, BeFileAccess::Read) &&
+           BeFileStatus::Success == inputFile.ReadEntireFile (inputData) &&
+           reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TileUtil::GetRootNameForModel(DgnModelCR model)
+    {
+    static const WString s_prefix(L"Model_");
+    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    }

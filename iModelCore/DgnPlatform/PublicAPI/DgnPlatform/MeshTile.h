@@ -451,12 +451,15 @@ struct TileModelDelta : RefCountedBase, ITileGenerationFilter
     static TileModelDeltaPtr Create(DgnModelCR model, BeFileNameCR dataDirectory) { return new TileModelDelta(model, dataDirectory); }
     bset<DgnElementId> const& GetAdded() const { return m_added; }
     bset<DgnElementId> const& GetDeleted() const { return m_deleted; }
+    DGNPLATFORM_EXPORT bool DoIncremental (TileNodeCR tile) const;     // Return true if this previously generated tile is available and compatible with the current tile.
 
 
     virtual bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
 
 private:
+    BeFileName                          m_dataDirectory;
     BeFileName                          m_fileName;
+    WString                             m_rootName;
     bmap<DgnElementId, ElementState>    m_elementStates;
     bset<DgnElementId>                  m_deleted;                  // A change will be handled as a delete/add.
     bset<DgnElementId>                  m_added;
@@ -800,6 +803,19 @@ struct IGenerateMeshTiles
     virtual TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) = 0;
 
 };  // IPublishModelMeshTiles
+
+
+//=======================================================================================
+// static utility methods
+// @bsistruct                                                   Ray.Bentley     08/2016
+//=======================================================================================
+struct TileUtil
+{
+    DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
+    DGNPLATFORM_EXPORT static BentleyStatusReadJsonFromFile (Json::Value& value, WCharCP fileName);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
+
+};  // TileUtil
 
 END_BENTLEY_RENDER_NAMESPACE
 

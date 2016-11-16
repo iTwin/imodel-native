@@ -412,7 +412,7 @@ private:
     BeMutex                     m_mutex;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);

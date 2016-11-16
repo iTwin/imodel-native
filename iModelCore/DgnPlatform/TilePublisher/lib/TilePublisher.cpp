@@ -119,7 +119,8 @@ TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModel
     TileReader          tileReader;
     TileMeshList        oldMeshes, newMeshes;
                                                         
-    if (TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
+    if (modelDelta.DoIncremental(m_tile) &&
+        TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
         return IncrementalStatus::Regenerate;
 
     bool        geometryRemoved = false;
@@ -195,24 +196,6 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x), 0.0, 0.0));
     AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y), 0.0));
     AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
-    {
-    Utf8String  metadataStr = Json::FastWriter().write(value);
-    auto        outputFile = _wfopen(fileName, L"w");
-   
-    if (nullptr == outputFile)
-        {
-        BeAssert (false && "Unable to open output file");
-        return;
-        }
-
-    std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
-    std::fclose(outputFile);
     }
 
 
@@ -1209,6 +1192,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
+#ifdef LIMIT_TILESET_DEPTH                     // I believe this should not be necessary now that we are not combining models into a single tileset. 
         if (0 == --depth)
             {
             // Write children as seperate tilesets.
@@ -1226,7 +1210,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
                     {
-                    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), childTileset);
+                    TileUtil::WriteJsonToFile (metadataFileName.c_str(), childTileset);
 
                     Json::Value         child;
 
@@ -1241,6 +1225,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         else
+#endif
             {
             // Append children to this tileset.
             for (auto& childTile : tile.GetChildren())
@@ -1284,7 +1269,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     DRange3d    rootRange;
 
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
-    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
+    TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
     }
 
 
@@ -1335,7 +1320,7 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     {
     WString tmpTilesetName;
     WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
-    tilesetName = GetRootNameForModel(model);
+    tilesetName = TileUtil::GetRootNameForModel(model);
 
     BeFileName dataDir = m_dataDir;
     dataDir.AppendToPath(tilesetName.c_str());
@@ -1343,14 +1328,6 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     return dataDir;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString PublisherContext::GetRootNameForModel(DgnModelCR model) const
-    {
-    static const WString s_prefix(L"Model_");
-    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -1407,7 +1384,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
         childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
 
-        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
+        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
 
         root[JSON_Children].append(childRoot);
         }
@@ -1418,7 +1395,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
 
-    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), value);
+    TileUtil::WriteJsonToFile (metadataFileName.c_str(), value);
 
     return Status::Success;
     }
@@ -1642,4 +1619,5 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
 
     return json;
     }
+
 

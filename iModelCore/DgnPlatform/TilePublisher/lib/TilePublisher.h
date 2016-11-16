@@ -118,8 +118,6 @@ public:
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT WString GetRootNameForModel(DgnModelCR model) const;
-
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
@@ -197,7 +195,6 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
-    TILEPUBLISHER_EXPORT static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 
 //=======================================================================================
