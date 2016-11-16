@@ -44,7 +44,9 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_queryQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
-    m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
+    m_ecsqlWriteToken = nullptr;
+    //uncomment this (and remove line above) once API for modifying Aspects has been implemented
+    //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
     }
 
 //--------------------------------------------------------------------------------------
