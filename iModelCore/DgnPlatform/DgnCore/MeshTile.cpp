@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#if !defined(MESHTILE_NO_FOLLY)
 #include <folly/BeFolly.h>
-#endif
 #include <Geom/XYZRangeTree.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
@@ -280,14 +278,10 @@ struct RangeTreeNode
 #endif
 };
 
-#if !defined(MESHTILE_NO_FOLLY)
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
-#endif
 static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
-#if !defined(MESHTILE_NO_FOLLY)
 static const double s_minToleranceRatio = 100.0;
-#endif
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -1384,7 +1378,6 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel)
     {
-#if !defined(MESHTILE_NO_FOLLY)
     auto nModels = static_cast<uint32_t>(modelIds.size());
     if (0 == nModels)
         return Status::NoGeometry;
@@ -1464,12 +1457,8 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     m_progressMeter._IndicateProgress(nModels, nModels);
 
     return Status::Success;
-#else
-    return Status::NoGeometry;
-#endif
     }
 
-#if !defined(MESHTILE_NO_FOLLY)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1680,7 +1669,6 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         return result;
         });
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
@@ -1700,7 +1688,6 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
         m_geometries.erase(eraseAt, m_geometries.end());
     }
 
-#if !defined(MESHTILE_NO_FOLLY)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1743,7 +1730,6 @@ TileGenerator::Status TileGenerator::GenerateElementTiles(TileNodePtr& root, ITi
     root = result.m_tile.get();
     return result.m_status;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
