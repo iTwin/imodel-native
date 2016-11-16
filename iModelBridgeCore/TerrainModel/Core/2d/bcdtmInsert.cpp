@@ -862,6 +862,7 @@ errexit :
     goto cleanup ;
     }
 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1136,7 +1137,7 @@ errexit:
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
     (
     BC_DTM_OBJ *dtmP,
     long       firstPnt,
