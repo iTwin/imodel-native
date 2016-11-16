@@ -22,7 +22,7 @@
 #include <Bentley/bset.h>
 #include <Bentley/BeFileName.h>
 
-#define DEFAULT_VERSION_MAJOR       1
+#define DEFAULT_VERSION_READ       1
 #define DEFAULT_VERSION_WRITE      0
 #define DEFAULT_VERSION_MINOR       0
 
@@ -2384,20 +2384,20 @@ typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 //! Defines what sort of match should be used when locating a schema
 enum class SchemaMatchType
     {
-    //! Find exact VersionMajor, VersionWrite, VersionMinor match as well as Data
+    //! Find exact VersionRead, VersionWrite, VersionMinor match as well as Data
     Identical,
-    //! Find exact VersionMajor, VersionWrite, VersionMinor match.
+    //! Find exact VersionRead, VersionWrite, VersionMinor match.
     Exact,
-    //! Find latest version with matching VersionMajor and VersionWrite
-    LatestCompatible,
+    //! Find latest version with matching VersionRead and VersionWrite
+    LatestWriteCompatible,
     //! Find latest version.
     Latest,
-    //! Find latest version with matching VersionMajor
-    LatestMajorCompatible,
+    //! Find latest version with matching VersionRead
+    LatestReadCompatible,
     };
 
 //=======================================================================================
-//! Fully defines a schema with its name, major and minor versions, and a checksum
+//! Fully defines a schema with its name, read, write and minor versions, and a checksum
 //! 
 //! The following table shows how schema version changes over time
 //! 
@@ -2439,35 +2439,34 @@ enum class SchemaMatchType
 struct SchemaKey
     {
     Utf8String    m_schemaName;
-    uint32_t      m_versionMajor;
+    uint32_t      m_versionRead;
     uint32_t      m_versionWrite;
     uint32_t      m_versionMinor;
     uint32_t      m_checkSum;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
-    //! @param[in]  major   The major portion of the version
+    //! @param[in]  read    The read portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (Utf8CP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(0){}
+    SchemaKey (Utf8CP name, uint32_t read, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(0){}
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
-    //! @param[in]  major   The major portion of the version
-    //! @param[in]  write   The  write compatibility version
+    //! @param[in]  read    The read portion of the version
+    //! @param[in]  write   The write portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey(Utf8CP name, uint32_t major, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionWrite(write), m_versionMinor(minor), m_checkSum(0) {}
+    SchemaKey(Utf8CP name, uint32_t read, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(write), m_versionMinor(minor), m_checkSum(0) {}
 
     //! Default constructor
-    SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
+    SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
 
     Utf8StringCR GetName() const { return m_schemaName; }
 
-    //! Gets the major schema version. Identifies the generation of the schema that guarantees that newer schemas can be
+    //! Gets the read schema version. Identifies the generation of the schema that guarantees that newer schemas can be
     //! read by older software.
-    //! Example: 
-    uint32_t GetVersionMajor() const { return m_versionMajor; };
+    uint32_t GetVersionRead() const { return m_versionRead; };
 
-    //! Gets the major for write version. This is less significant than the major version. It identifies the generation of the schema
+    //! Gets the major for write version. This is less significant than the read version. It identifies the generation of the schema
     //! that guarantees that newer schemas can be written by older software.
     uint32_t GetVersionWrite() const { return m_versionWrite; };
 
@@ -2477,69 +2476,70 @@ struct SchemaKey
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
     //! @param[in]  schemaFullName  The full name of the schema.
-    static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, Utf8CP schemaFullName) { return ParseSchemaFullName(key.m_schemaName, key.m_versionMajor, key.m_versionWrite, key.m_versionMinor, schemaFullName); }
+    static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, Utf8CP schemaFullName) { return ParseSchemaFullName(key.m_schemaName, key.m_versionRead, key.m_versionWrite, key.m_versionMinor, schemaFullName); }
 
-    //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionWrite   Write compatibility version. Will default to zero if the string only contains two numbers.
-    //! @param[out] versionMinor    The minor version number
-    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
+    //! Given a version string RR.WW.MM, this will parse into read, write and minor versions
+    //! @param[out] versionRead    The read version number
+    //! @param[out] versionWrite   The write version number. Will default to zero if the string only contains two numbers.
+    //! @param[out] versionMinor   The minor version number
+    //! @param[in]  versionString   A string containing the read, write and minor versions (RR.WW.MM)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString);
 
-    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! Given a version string RR.WW.MM, this will parse read, write and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionWrite The write compatibility version number
+    //! @param[out] versionRead     The read version number
+    //! @param[out] versionWrite    The write  version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and read, write and minor versions (GetName().RR.WW.MM)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName(Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName(Utf8StringR schemaName, uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName);
 
-    //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
-    Utf8String GetFullSchemaName() const { return FormatFullSchemaName(m_schemaName.c_str(), m_versionMajor, m_versionWrite, m_versionMinor); }
+    //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write version and mm is minor version.
+    Utf8String GetFullSchemaName() const { return FormatFullSchemaName(m_schemaName.c_str(), m_versionRead, m_versionWrite, m_versionMinor); }
 
-    //! Generate a schema full name string given the major,  write compatibility and minor version values.
+    //! Generate a schema full name string given the read, write and minor version values.
     //! @param[in] schemaName      Name of the schema
-    //! @param[in] versionMajor    The major version number
-    //! @param[out] versionWrite  The  write compatibility version number
+    //! @param[in] versionRead     The read version number
+    //! @param[in] versionWrite    The write version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String FormatFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+    ECOBJECTS_EXPORT static Utf8String FormatFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor);
 
-    //! Generate a legacy schema full name, which does not contain the  write compatibility version.
+    //! Generate a legacy schema full name, which does not contain the write version.
     //! @param[in] schemaName      Name of the schema
-    //! @param[in] versionMajor    The major version number
+    //! @param[in] versionRead     The read version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
+    ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor);
 
-    //! Generate a schema version string given the major write and minor version values.
-    //! @param[in] versionMajor    The major version number
-    //! @param[out] versionWrite The  write compatibility version number
+    //! Generate a schema version string given the read, write and minor version values.
+    //! @param[in] versionRead     The read version number
+    //! @param[in] versionWrite    The write version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+    ECOBJECTS_EXPORT static Utf8String FormatSchemaVersion(uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor);
 
-    //! Generate a legacy schema version string given the major and minor version values.
-    //! @param[in] versionMajor    The major version number
+    //! Generate a legacy schema version string given the read and minor version values.
+    //! @param[in] versionRead     The read version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String FormatLegacySchemaVersion(uint32_t versionMajor, uint32_t versionMinor);
+    ECOBJECTS_EXPORT static Utf8String FormatLegacySchemaVersion(uint32_t versionRead, uint32_t versionMinor);
 
-    //! Generate a legacy schema version string given the major write and minor version values.
-    Utf8String GetVersionString() const { return FormatSchemaVersion(m_versionMajor, m_versionWrite, m_versionMinor); }
+    //! Generate a schema version string given the read, write and minor version values.
+    Utf8String GetVersionString() const { return FormatSchemaVersion(m_versionRead, m_versionWrite, m_versionMinor); }
 
-    //! Generate a legacy schema version string given the major and minor version values.
-    Utf8String GetLegacyVersionString() const { return FormatLegacySchemaVersion(m_versionMajor, m_versionMinor); }
+    //! Generate a legacy schema version string given the read and minor version values.
+    Utf8String GetLegacyVersionString() const { return FormatLegacySchemaVersion(m_versionRead, m_versionMinor); }
 
     //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
     //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SchemaMatchType::Exact - This will first test the names, then the major version, and lastly the minor version
-    //! @li SchemaMatchType::LatestCompatible - This will first test the names and then the major versions.
+    //! @li SchemaMatchType::Exact - This will first test the names, then the read version, and lastly the minor version
+    //! @li SchemaMatchType::LatestReadCompatible - This will first test the names and then the read versions.
+    //! @li SchemaMatchType::LatestWriteCompatible - This will first test the names and then the read and write versions.
     //! @li SchemaMatchType::Latest - Returns whether the current schema's name is less than the target's.
     ECOBJECTS_EXPORT bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const;
     
@@ -2548,8 +2548,9 @@ struct SchemaKey
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
     //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SchemaMatchType::Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
-    //! @li SchemaMatchType::LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
+    //! @li SchemaMatchType::Exact - Returns whether this schema's name, read version, and minor version are all equal to the target's.
+    //! @li SchemaMatchType::LatestWriteCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
+    //! @li SchemaMatchType::LatestReadCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
     //! @li SchemaMatchType::Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
@@ -3239,10 +3240,10 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
-    //! Sets the major version of this schema, check SchemaKey doc for detailed description.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
-    //! Gets the major version of this schema, check SchemaKey doc for detailed description.
-    ECOBJECTS_EXPORT uint32_t           GetVersionMajor() const;
+    //! Sets the read version of this schema, check SchemaKey doc for detailed description.
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionRead(uint32_t value);
+    //! Gets the read version of this schema, check SchemaKey doc for detailed description.
+    ECOBJECTS_EXPORT uint32_t           GetVersionRead() const;
     //! Sets the write compatibility version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionWrite(uint32_t value);
     //! Gets the write compatibility version of this schema, check SchemaKey doc for detailed description.
@@ -3476,13 +3477,13 @@ public:
     //! will contain the serialized schema.
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false);
     
-    //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
+    //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write compatibility version and mm is minor version.
     Utf8String             GetFullSchemaName() const { return m_key.GetFullSchemaName(); }
 
-    //! Return a legacy full schema name in format GetName().MM.mm where Name is the schema name MM is major version and mm is minor version.
+    //! Return a legacy full schema name in format GetName().RR.mm where Name is the schema name RR is read version and mm is minor version.
     //! This overload is missing the  write compatibility version
     Utf8String             GetLegacyFullSchemaName() const { return SchemaKey::FormatLegacyFullSchemaName(
-        m_key.GetName().c_str(), m_key.GetVersionMajor(), m_key.GetVersionMinor()); }
+        m_key.GetName().c_str(), m_key.GetVersionRead(), m_key.GetVersionMinor()); }
 
     //! Given a source class, will copy that class into this schema if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
@@ -3509,82 +3510,82 @@ public:
     //! Given a str containing SchemaXml, will compute the CheckSum
     ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
 
-    //! Generate a schema version string given the major and minor version values.
-    //! @param[in] versionMajor    The major version number
-    //! @param[in] versionWrite    The write compatibility version number
+    //! Generate a schema version string given the read, write and minor version values.
+    //! @param[in] versionRead     The read version number
+    //! @param[in] versionWrite    The write version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor); }
+    static Utf8String FormatSchemaVersion(uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionRead, versionWrite, versionMinor); }
 
     //! If the given schemaName and alias is valid, this will create a new schema object
     //! @param[out] schemaOut       if successful, will contain a new schema object
     //! @param[in]  schemaName      Name of the schema to be created.
     //! @param[in]  alias           Alias of the schema to be created
-    //! @param[in]  versionMajor    The major version number.
-    //! @param[in]  versionWrite    The write compatibility version number
+    //! @param[in]  versionRead     The read version number.
+    //! @param[in]  versionWrite    The write version number
     //! @param[in]  versionMinor    The minor version number.
     //! @param[in]  ecVersion       The EC version of the schema to be created.
     //! @return A status code indicating whether the call was succesful or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, 
+                                                         Utf8StringCR alias, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor, 
                                                          ECVersion ecVersion = ECVersion::Latest);
 
-    //! Generate a schema version string given the major and minor version values.
-    //! @param[in] versionMajor    The major version number
-    //! @param[in] versionMinor    The minor version number
+    //! Generate a schema version string given the read and minor version values.
+    //! @param[in] versionRead    The read version number
+    //! @param[in] versionMinor   The minor version number
     //! @return The version string
-    static Utf8String      FormatSchemaVersion(uint32_t versionMajor, uint32_t versionMinor)
+    static Utf8String      FormatSchemaVersion(uint32_t versionRead, uint32_t versionMinor)
         {
-        return FormatSchemaVersion(versionMajor, DEFAULT_VERSION_WRITE, versionMinor);
+        return FormatSchemaVersion(versionRead, DEFAULT_VERSION_WRITE, versionMinor);
         }
 
-    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! Given a schema full name, SchemaName.RR.WW.MM, this will parse into schema name and read, write and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[out] versionRead     The read version number
+    //! @param[out] versionWrite    The write version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and read, write and minor versions (GetName().RR.WW.MM)
     //! @return A status code indicating whether the string was successfully parsed
-    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName) { return SchemaKey::ParseSchemaFullName(schemaName, versionMajor, versionWrite, versionMinor, fullName); }
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName) { return SchemaKey::ParseSchemaFullName(schemaName, versionRead, versionWrite, versionMinor, fullName); }
 
-    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! Given a schema full name, SchemaName.RR.MM, this will parse into schema name and read and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
-    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionRead     The read version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and read and minor versions (GetName().RR.MM)
     //! @return A status code indicating whether the string was successfully parsed
-    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName)
-        {
-        uint32_t unwanted = DEFAULT_VERSION_WRITE;
-        return ParseSchemaFullName(schemaName, versionMajor, unwanted, versionMinor, fullName);
-        }
-
-    //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out] schemaName      The schema name without version number qualifiers
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
-    //! @return A status code indicating whether the string was successfully parsed
-    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR fullName) { return ParseSchemaFullName(schemaName, versionMajor, versionMinor, fullName.c_str()); }
-
-    //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionMinor    The minor version number
-    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
-    //! @return A status code indicating whether the string was successfully parsed
-    static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP versionString)
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionRead, uint32_t& versionMinor, Utf8CP fullName)
         {
         uint32_t unwanted = DEFAULT_VERSION_WRITE;
-        return ParseVersionString(versionMajor, unwanted, versionMinor, versionString);
+        return ParseSchemaFullName(schemaName, versionRead, unwanted, versionMinor, fullName);
         }
 
-    //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out] versionMajor    The major version number
-    //! @param[out] versionWrite    write compatibility version number, will default to zero if versionString only has two numbers.
+    //! Given a schema full name, SchemaName.RR.MM, this will parse into schema name and read and minor versions
+    //! @param[out] schemaName      The schema name without version number qualifiers
+    //! @param[out] versionRead     The read version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and read and minor versions (GetName().RR.MM)
     //! @return A status code indicating whether the string was successfully parsed
-    static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString) { return SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, versionString); }
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionRead, uint32_t& versionMinor, Utf8StringCR fullName) { return ParseSchemaFullName(schemaName, versionRead, versionMinor, fullName.c_str()); }
+
+    //! Given a version string RR.MM, this will parse into read and minor versions
+    //! @param[out] versionRead     The read version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  versionString   A string containing the read and minor versions (RR.MM)
+    //! @return A status code indicating whether the string was successfully parsed
+    static ECObjectsStatus ParseVersionString(uint32_t& versionRead, uint32_t& versionMinor, Utf8CP versionString)
+        {
+        uint32_t unwanted = DEFAULT_VERSION_WRITE;
+        return ParseVersionString(versionRead, unwanted, versionMinor, versionString);
+        }
+
+    //! Given a version string RR.WW.MM, this will parse into read, write and minor versions
+    //! @param[out] versionRead     The read version number
+    //! @param[out] versionWrite    The write version number, will default to zero if versionString only has two numbers.
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  versionString   A string containing the read, write (optional) and minor versions (RR.WW.MM)
+    //! @return A status code indicating whether the string was successfully parsed
+    static ECObjectsStatus ParseVersionString(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString) { return SchemaKey::ParseVersionString(versionRead, versionWrite, versionMinor, versionString); }
 
     //! Given two schemas, will check to see if the second schema is referenced by the first schema
     //! @param[in]    thisSchema            The base schema to check the references of

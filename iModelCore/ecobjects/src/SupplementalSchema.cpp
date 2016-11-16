@@ -470,7 +470,7 @@ bvector<ECSchemaP>& localizationSchemas
             return SupplementedSchemaStatus::Metadata_Missing;
         if (!metaData.IsValid())
             return SupplementedSchemaStatus::Metadata_Missing;
-        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionMajor(), primarySchema.GetVersionMinor(), SchemaMatchType::Latest))
+        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionRead(), primarySchema.GetVersionMinor(), SchemaMatchType::Latest))
             continue;
 
         if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))
@@ -491,7 +491,7 @@ bvector<ECSchemaP>& localizationSchemas
             status = CreateMergedSchemaFromSchemasWithEqualPrecedence(schema1, supplemental);
             if (SupplementedSchemaStatus::Success != status)
                 return status;
-            SchemaKey key(schema1->GetName().c_str(), schema1->GetVersionMajor(), schema1->GetVersionMinor());
+            SchemaKey key(schema1->GetName().c_str(), schema1->GetVersionRead(), schema1->GetVersionMinor());
             schemasByPrecedence[precedence] = m_schemaCache->GetSchema(key);
             }
         else

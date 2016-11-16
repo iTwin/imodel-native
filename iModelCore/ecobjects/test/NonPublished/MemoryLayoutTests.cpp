@@ -230,7 +230,7 @@ struct NonPublishedMemoryLayoutTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    12/09
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Utf8String    GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor, Utf8CP className)
+    Utf8String    GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor, Utf8CP className)
         {
         Utf8Char fmt[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             "<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -381,7 +381,7 @@ struct NonPublishedMemoryLayoutTests : ECTestFixture
             "</ECSchema>";
 
         Utf8String buff;
-        buff.Sprintf(fmt, schemaName, versionMajor, versionMinor, className);
+        buff.Sprintf(fmt, schemaName, versionRead, versionMinor, className);
 
         return buff;
         }

@@ -819,7 +819,7 @@ ECSchemaCP schema
 )
     {
     Utf8Char buf[1024];
-    BeStringUtilities::Snprintf(buf, "%s.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
+    BeStringUtilities::Snprintf(buf, "%s.%02d", schema->GetName().c_str(), schema->GetVersionRead());
     for (size_t i = 0; i < s_numSchemasThatAllowOverridingArrays; i++)
         if (0 == strcmp(s_schemasThatAllowOverridingArrays[i], buf))
             return true;
@@ -1294,7 +1294,7 @@ bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
     return ((thisClass == thatClass) ||
             ( (0 == thisClass->GetName().compare(thatClass->GetName())) &&
               (0 == thisClass->GetSchema().GetName().compare(thatClass->GetSchema().GetName())) &&
-              (thisClass->GetSchema().GetVersionMajor() == thatClass->GetSchema().GetVersionMajor()) &&
+              (thisClass->GetSchema().GetVersionRead() == thatClass->GetSchema().GetVersionRead()) &&
               (thisClass->GetSchema().GetVersionMinor() == thatClass->GetSchema().GetVersionMinor())));
     }
 

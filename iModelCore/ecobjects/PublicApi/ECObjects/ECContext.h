@@ -58,13 +58,13 @@ private:
 protected:
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
-    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
     ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
-    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
 
@@ -112,12 +112,12 @@ public:
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
-    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     //! Creates a context for deserializing ECSchemas
-    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     //! Adds a schema locater to the current context
@@ -160,9 +160,9 @@ public:
 
     //! Look for a _V8Conversion schema for the given schema
     //! @param[in] schemaName   The name of the schema to look for
-    //! @param[in] versionMajor The major version of the schema to look for
+    //! @param[in] versionRead  The read version of the schema to look for
     //! @param[in] versionMinor The minor version of the schema to look for
-    ECOBJECTS_EXPORT ECSchemaPtr        LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
+    ECOBJECTS_EXPORT ECSchemaPtr        LocateConversionSchemaFor(Utf8CP schemaName, int versionRead, int versionMinor);
 
 };
 

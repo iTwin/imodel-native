@@ -140,9 +140,9 @@ TEST_F (SchemaTest, TestsLatestCompatible)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("Widgets", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestCompatible);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestWriteCompatible);
     EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionMajor () == 9);
+    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
     EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
     }
 
@@ -162,7 +162,7 @@ TEST_F (SchemaTest, TestsLatest)
     SchemaKey key ("Widgets", 9, 7);
     testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionMajor () == 9);
+    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
     EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
     }
 
