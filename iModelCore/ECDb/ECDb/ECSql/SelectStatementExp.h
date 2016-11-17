@@ -71,7 +71,7 @@ struct FromExp : Exp
     {
     DEFINE_EXPR_TYPE(FromClause)
     private:
-        void FindRangeClassRefs(RangeClassRefList&, ClassRefExp const&) const;
+        void FindRangeClassRefs(RangeClasssInfo::List&, ClassRefExp const&,RangeClasssInfo::Scope) const;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -83,13 +83,13 @@ struct FromExp : Exp
 
         BentleyStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
 
-        std::unique_ptr<RangeClassRefList> FindRangeClassRefExpressions() const;
+        RangeClasssInfo::List FindRangeClassRefExpressions() const;
 
         //-----------------------------------------------------------------------------------------
         // @bsimethod                                    Affan.Khan                       05/2013
         //For subquery it return "" if subquery has no alias
         //+---------------+---------------+---------------+---------------+---------------+------
-        void FindRangeClassRefs(RangeClassRefList&) const;
+        void FindRangeClassRefs(RangeClasssInfo::List&, RangeClasssInfo::Scope scope = RangeClasssInfo::Scope::Local) const;
     };
 
 struct ValueExpListExp;
@@ -227,8 +227,8 @@ struct SelectClauseExp : Exp
     {
     DEFINE_EXPR_TYPE(Selection)
     private:
-        BentleyStatus ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassRefList const&);
-        BentleyStatus ReplaceAsteriskExpressions(RangeClassRefList const&);
+        BentleyStatus ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClasssInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpressions(RangeClasssInfo::List const&);
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -279,7 +279,7 @@ struct SingleSelectStatementExp : QueryExp
         int m_limitOffsetClauseIndex;
         int m_optionsClauseIndex;
 
-        std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
+        RangeClasssInfo::List m_finalizeParsingArgCache;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -343,7 +343,7 @@ struct SingleSelectStatementExp : QueryExp
 
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
-
+        
         bool IsCoreSelect() const { return GetLimitOffset() == nullptr && GetOrderBy() == nullptr; }
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
     };

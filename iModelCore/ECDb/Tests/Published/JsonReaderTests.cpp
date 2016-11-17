@@ -161,7 +161,7 @@ TEST_F(JsonReaderTests, JsonValueStruct)
         status = foo->SetValue("arrayOfAnglesStructsFoo", anglesStructValue, ii);
         }
 
-    ECInstanceInserter fooInserter(GetECDb(), *fooClass);
+    ECInstanceInserter fooInserter(GetECDb(), *fooClass, nullptr);
     fooInserter.Insert(*foo);
     ecdb.SaveChanges();
 

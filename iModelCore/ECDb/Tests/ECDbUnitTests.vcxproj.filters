@@ -220,6 +220,9 @@
     <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlWriteTokenTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

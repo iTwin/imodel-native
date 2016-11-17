@@ -23,19 +23,11 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatement::Impl::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
     {
-    BeMutexHolder lock(ecdb.GetECDbImplR().GetMutex());
+    BeMutexHolder lock(ctx.GetECDb().GetECDbImplR().GetMutex());
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
-    return ECSqlStatementBase::_Prepare(ecdb, ecsql);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare(ECDbCR ecdb, Utf8CP ecsql)
-    {
-    return ECSqlPrepareContext(ecdb, *this);
+    return ECSqlStatementBase::_Prepare(ctx, ecsql);
     }
 
 //---------------------------------------------------------------------------------------

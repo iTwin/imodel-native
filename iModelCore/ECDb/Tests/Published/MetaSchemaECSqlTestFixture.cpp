@@ -106,7 +106,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
         else if (colName.EqualsI("Alias"))
             ASSERT_STREQ(expectedSchema.GetAlias().c_str(), val.GetText()) << "ECSchemaDef.Alias";
         else if (colName.EqualsI("VersionMajor"))
-            ASSERT_EQ(expectedSchema.GetVersionMajor(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionMajor";
+            ASSERT_EQ(expectedSchema.GetVersionRead(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionRead";
         else if (colName.EqualsI("VersionMinor"))
             ASSERT_EQ(expectedSchema.GetVersionMinor(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionMinor";
         else if (colName.EqualsI("VersionWrite"))

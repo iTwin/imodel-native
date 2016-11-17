@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "DeleteStatementExp.h"
-
+#include "Exp.h"
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -33,20 +33,21 @@ DeleteStatementExp::DeleteStatementExp(unique_ptr<ClassRefExp> classNameExp, uni
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
+    
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         auto classNameExp = GetClassNameExp ();
-        auto classList = unique_ptr<RangeClassRefList> (new RangeClassRefList ());
-        classList->push_back (classNameExp);
+        RangeClasssInfo::List classList;
+        classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
         m_finalizeParsingArgCache = move (classList);
-        ctx.PushFinalizeParseArg (m_finalizeParsingArgCache.get ());
+        ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
 
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
         ctx.PopFinalizeParseArg ();
-        m_finalizeParsingArgCache = nullptr;
+        m_finalizeParsingArgCache.clear();
         return FinalizeParseStatus::Completed;
         }
     }

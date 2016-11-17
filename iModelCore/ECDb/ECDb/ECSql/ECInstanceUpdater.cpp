@@ -25,20 +25,20 @@ private:
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
 
-    void Initialize(bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(properties, nullptr, ecsqlOptions); }
-    void Initialize(bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
-    void Initialize(bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
+    void Initialize(ECSqlWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(writeToken, properties, nullptr, ecsqlOptions); }
+    void Initialize(ECSqlWriteToken const*, bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
+    void Initialize(ECSqlWriteToken const*, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
 
     static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage); }
 
 public:
-    Impl(ECDbCR, ECClassCR, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, IECInstanceCR, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, ECClassCR, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, ECClassCR, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, IECInstanceCR, ECSqlWriteToken const*, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions);
     ~Impl() {}
 
-    BentleyStatus Update(IECInstanceCR instance) const;
+    DbResult Update(IECInstanceCR instance) const;
     bool IsValid() const { return m_isValid; }
     };
 
@@ -49,34 +49,30 @@ public:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions)
-    {
-    m_impl = new Impl(ecdb, ecClass, ecsqlOptions);
-    }
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+    : m_impl(new Impl(ecdb, ecClass, writeToken, ecsqlOptions))
+    {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, Utf8CP ecsqlOptions)
-    {
-    m_impl = new Impl(ecdb, instance, ecsqlOptions);
-    }
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+    : m_impl(new Impl(ecdb, instance, writeToken, ecsqlOptions))
+    {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
-    {
-    m_impl = new Impl(ecdb, ecClass, propertyIndexesToBind, ecsqlOptions);
-    }
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+    : m_impl(new Impl(ecdb, ecClass, writeToken, propertyIndexesToBind, ecsqlOptions))
+    {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP> const& properties, Utf8CP ecsqlOptions)
-    {
-    m_impl = new Impl(ecdb, ecClass, properties, ecsqlOptions);
-    }
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& properties, Utf8CP ecsqlOptions)
+    : m_impl(new Impl(ecdb, ecClass, writeToken, properties, ecsqlOptions))
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
@@ -93,19 +89,13 @@ ECInstanceUpdater::~ECInstanceUpdater()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceUpdater::IsValid() const
-    {
-    return m_impl->IsValid();
-    }
+bool ECInstanceUpdater::IsValid() const { return m_impl->IsValid(); }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const
-    {
-    return m_impl->Update(instance);
-    }
+DbResult ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const { return m_impl->Update(instance); }
 
 
 //*************************************************************************************
@@ -114,7 +104,7 @@ BentleyStatus ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
@@ -123,13 +113,13 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOption
         properties.push_back(prop);
         }
 
-    Initialize(properties, ecsqlOptions);
+    Initialize(writeToken, properties, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(instance.GetClass()), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
@@ -141,31 +131,31 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, Utf8CP ecsqlO
             properties.push_back(propertyValue.GetValueAccessor().GetECProperty());
         }
 
-    Initialize(properties, ecsqlOptions);
+    Initialize(writeToken, properties, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
-    Initialize(propertyIndexesToBind, ecsqlOptions);
+    Initialize(writeToken, propertyIndexesToBind, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
-    Initialize(propertiesToBind, ecsqlOptions);
+    Initialize(writeToken, propertiesToBind, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceUpdater::Impl::Initialize(bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+void ECInstanceUpdater::Impl::Initialize(ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     {
     bvector<ECPropertyCP> properties;
     bvector<Utf8CP> propertyAccessStrings;
@@ -195,13 +185,13 @@ void ECInstanceUpdater::Impl::Initialize(bvector<uint32_t> const& propertyIndexe
         propertyAccessStrings.push_back(accessString);
         }
 
-    return Initialize(properties, &propertyAccessStrings, ecsqlOptions);
+    return Initialize(writeToken, properties, &propertyAccessStrings, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceUpdater::Impl::Initialize(bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions)
+void ECInstanceUpdater::Impl::Initialize(ECSqlWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions)
     {
     const bool hasAccessStrings = propertyAccessStrings != nullptr && !propertyAccessStrings->empty();
     if (hasAccessStrings && properties.size() != propertyAccessStrings->size())
@@ -291,14 +281,14 @@ void ECInstanceUpdater::Impl::Initialize(bvector<ECPropertyCP> const& properties
     if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
         ecsql.append(" ECSQLOPTIONS ").append(ecsqlOptions);
 
-    const ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
+    const ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken);
     m_isValid = stat.IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
+DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     {
     if (!ECInstanceAdapterHelper::Equals(instance.GetClass(), m_ecClass))
         {
@@ -307,13 +297,13 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
                              m_ecClass.GetFullName(), instance.GetClass().GetFullName());
 
         LogFailure(instance, Utf8String(errorMessage).c_str());
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     if (!IsValid())
         {
         LOG.errorv("ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName());
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     // ECSql does not support modifying the endpoints of a relationship instance.  First need to verify that.
@@ -322,11 +312,11 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         {
         ECInstanceId newSourceInstanceId;
         if (SUCCESS != ECInstanceId::FromString(newSourceInstanceId, relationshipInstance->GetSource()->GetInstanceId().c_str()))
-            return ERROR;
+            return BE_SQLITE_ERROR;
 
         ECInstanceId newTargetInstanceId;
         if (SUCCESS != ECInstanceId::FromString(newTargetInstanceId, relationshipInstance->GetTarget()->GetInstanceId().c_str()))
-            return ERROR;
+            return BE_SQLITE_ERROR;
 
         ECClassId newSourceClassId = relationshipInstance->GetSource()->GetClass().GetId();
         ECClassId newTargetClassId = relationshipInstance->GetTarget()->GetClass().GetId();
@@ -336,11 +326,11 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         ECSqlStatement statement;
         ECSqlStatus status = statement.Prepare(m_ecdb, ecSql.c_str());
         if (!status.IsSuccess())
-            return ERROR;
+            return BE_SQLITE_ERROR;
 
         ECInstanceId instanceId;
         if (SUCCESS != ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str()))
-            return ERROR;
+            return BE_SQLITE_ERROR;
 
         statement.BindId(1, instanceId);
         while (BE_SQLITE_ROW == statement.Step())
@@ -352,7 +342,7 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
 
             if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() && oldSourceClassId != newSourceClassId &&
                 oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() && oldTargetClassId != newTargetClassId)
-                return ERROR;
+                return BE_SQLITE_ERROR;
             }
 
         }
@@ -365,19 +355,19 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     ECDBufferScope scope;
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init(instance.GetECDBuffer());
+
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance);
     //now add parameter values for regular properties
     for (auto const& bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
-        auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo);
-        if (stat != SUCCESS)
+        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
             {
             Utf8String errorMessage;
             errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
                                  m_statement.GetECSql());
             LogFailure(instance, errorMessage.c_str());
-            return ERROR;
+            return BE_SQLITE_ERROR;
             }
         }
 
@@ -388,12 +378,12 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         Utf8String errorMessage;
         errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", instance.GetInstanceId().c_str());
         LogFailure(instance, errorMessage.c_str());
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     BeAssert(ecinstanceId.IsValid());
     if (!m_statement.BindId(m_ecinstanceIdParameterIndex, ecinstanceId).IsSuccess())
-        return ERROR;
+        return BE_SQLITE_ERROR;
 
     //now execute statement
     const DbResult stepStatus = m_statement.Step();
@@ -402,7 +392,7 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

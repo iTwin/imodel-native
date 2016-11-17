@@ -26,6 +26,8 @@ enum class ECDbIssueSeverity
     Error //!< Error
     };
 
+struct ECSqlWriteToken;
+
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
 //! 
@@ -87,13 +89,19 @@ private:
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
     ECDB_EXPORT virtual DbResult _OnDbOpening() override;
-    ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const& params) override;
+    ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT virtual void _OnDbClose() override;
     ECDB_EXPORT virtual void _OnDbChangedByOtherConnection() override;
-    ECDB_EXPORT virtual DbResult _VerifySchemaVersion(Db::OpenParams const& params) override;
-    ECDB_EXPORT virtual int _OnAddFunction(DbFunction& func) const override;
-    ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction& func) const override;
+    ECDB_EXPORT virtual DbResult _VerifySchemaVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT virtual int _OnAddFunction(DbFunction&) const override;
+    ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction&) const override;
+
+    //! If called, consumers can only execute ECSQL INSERT, UPDATE, DELETE statements
+    //! with the write token returned from this method. 
+    //! Subclasses can call this if they don't want consumers to modify data via ECSQL directly,
+    //! and provide their own data modifying APIs.
+    ECDB_EXPORT ECSqlWriteToken const& EnableECSqlWriteTokenValidation();
 #endif
 
     virtual void _OnAfterECSchemaImport() const {}

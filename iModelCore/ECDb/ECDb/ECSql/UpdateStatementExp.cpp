@@ -39,17 +39,17 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         auto classNameExp = GetClassNameExp ();
-        auto classList = unique_ptr<RangeClassRefList> (new RangeClassRefList ());
-        classList->push_back (classNameExp);
-        m_finalizeParsingArgCache = move (classList);
-        ctx.PushFinalizeParseArg (m_finalizeParsingArgCache.get ());
+        RangeClasssInfo::List classList;
+        classList.push_back(RangeClasssInfo(*classNameExp, RangeClasssInfo::Scope::Local));
+        m_finalizeParsingArgCache = classList;
+        ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
 
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
         ctx.PopFinalizeParseArg ();
-        m_finalizeParsingArgCache = nullptr;
+        m_finalizeParsingArgCache.clear();
 
         return FinalizeParseStatus::Completed;
         }

@@ -42,7 +42,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
             {
             ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
-            ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
+            ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql(), ctx.GetWriteToken());
             if (status != ECSqlStatus::Success)
                 {
                 ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to prepare ECSQL '%s'. Could not prepare the subset of the ECSQL that targets the primary table: %s.", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());

@@ -188,7 +188,7 @@ void ECDbTestUtility::WriteECSchemaToDisk(ECSchemaCR ecSchema, WCharCP filenameN
     WCharCP tmpFilename = (filenameNoVerExt != nullptr) ? filenameNoVerExt : WString(ecSchema.GetName().c_str(), BentleyCharEncoding::Utf8).c_str();
     size_t size = wcslen(tmpFilename) + wcslen(L".VV.vv.ecschema.xml") + 1;
     WCharP schemaFilename = (wchar_t*) malloc(size * sizeof(wchar_t));
-    BeStringUtilities::Snwprintf(schemaFilename, size, L"%ls.%02d.%02d.ecschema.xml", tmpFilename, ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
+    BeStringUtilities::Snwprintf(schemaFilename, size, L"%ls.%02d.%02d.ecschema.xml", tmpFilename, ecSchema.GetVersionRead(), ecSchema.GetVersionMinor());
     BeFileName schemaFile;
     BeTest::GetHost().GetOutputRoot(schemaFile);
     schemaFile.AppendToPath(schemaFilename);
@@ -749,7 +749,7 @@ void ECDbTestUtility::GetClassUsageStatistics
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb, bool dumpEmptyClasses)
     {
-    LOG.infov("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
+    LOG.infov("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionRead(), schema.GetVersionMinor());
     size_t totalClassCount = 0;
     size_t totalUsedClassCount = 0;
     size_t totalCustomAttributeClassCount = 0;
@@ -767,7 +767,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb,
             continue;
             }
 
-        ECInstanceInserter inserter(ecdb, *ecClass);
+        ECInstanceInserter inserter(ecdb, *ecClass, nullptr);
         if (!inserter.IsValid())
             {
             LOG.infov("    ECClass: %-40s\t\t(Not mapped to any table)", ecClass->GetName().c_str());

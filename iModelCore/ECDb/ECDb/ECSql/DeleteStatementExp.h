@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ private:
     int m_whereClauseIndex;
     int m_optionsClauseIndex;
 
-    std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
+    RangeClasssInfo::List m_finalizeParsingArgCache;
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8String _ToECSql() const override;

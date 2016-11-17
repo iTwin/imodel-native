@@ -1102,9 +1102,9 @@ TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     Utf8String inXml, outXml;
     for (IECInstancePtr inst : instanceList)
         {
-        ECInstanceInserter inserter(ecdb, inst->GetClass());
+        ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BentleyStatus::SUCCESS, inserter.Insert(*inst, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst, true));
         inst->WriteToXmlString(inXml, true, true);
         inXml += "\r\n";
         }
@@ -1138,21 +1138,20 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     int insertCount = 0;
     for (auto inst : in)
         {
-        ECInstanceInserter inserter(ecdb, inst->GetClass());
-        auto st = inserter.Insert(*inst);
-        ASSERT_TRUE(st == BentleyStatus::SUCCESS);
+        ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst));
         insertCount++;
         }
 
     ECClassCP classP = ecdb.Schemas().GetECClass("NestedStructArrayTest", "ClassP");
     ASSERT_TRUE(classP != nullptr);
 
-    ECInstanceDeleter deleter(ecdb, *classP);
+    ECInstanceDeleter deleter(ecdb, *classP, nullptr);
 
     int deleteCount = 0;
     for (auto& inst : in)
         {
-        ASSERT_TRUE(deleter.Delete(*inst) == BentleyStatus::SUCCESS);
+        ASSERT_EQ(BE_SQLITE_OK, deleter.Delete(*inst));
         deleteCount++;
         }
 
@@ -3636,14 +3635,11 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     Instance2->SetValue("TestClass.P2", ECValue(345));
 
     //Inserting values of TestClass
-    ECInstanceInserter inserter(GetECDb(), *TestClass);
+    ECInstanceInserter inserter(GetECDb(), *TestClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
-    auto stat = inserter.Insert(*Instance1, true);
-    ASSERT_TRUE(stat == SUCCESS);
-
-    stat = inserter.Insert(*Instance2, true);
-    ASSERT_TRUE(stat == SUCCESS);
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*Instance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*Instance2, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass"));
@@ -3880,5 +3876,6 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -38,9 +38,9 @@ private:
 
     static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
 
-    virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
-    virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
-
+    virtual ECSqlStatus _Prepare (ECSqlPrepareContext&, Utf8CP ecsql) override;
+    virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, ECSqlWriteToken const* writeToken) override { return ECSqlPrepareContext(ecdb, *this, writeToken); }
+        
     static NativeLogging::ILogger& GetPrepareDiagnosticsLogger ();
 
 public:

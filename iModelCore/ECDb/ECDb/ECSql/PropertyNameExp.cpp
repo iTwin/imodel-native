@@ -107,7 +107,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
     BeAssert(finalizeParseArgs != nullptr && "PropertyNameExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-    RangeClassRefList const& rangeClassRefList = *static_cast<RangeClassRefList const*> (finalizeParseArgs);
+    RangeClasssInfo::List const& rangeClassRefList = *static_cast<RangeClasssInfo::List const*> (finalizeParseArgs);
 
     BeAssert(!m_propertyPath.IsEmpty());
 
@@ -118,21 +118,27 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     bvector<RangeClassRefExp const*> aliasClassRefExpMatches;
     bvector<RangeClassRefExp const*> propNameClassRefExpMatches;
     int classAliasMatches = 0;
-    for (RangeClassRefExp const* rangeClassRef : rangeClassRefList)
+    for (RangeClasssInfo const& rangeClassRef : rangeClassRefList)
         {
+        if (rangeClassRef.IsInherited())
+            {
+            if (!aliasClassRefExpMatches.empty() || !propNameClassRefExpMatches.empty())
+                break;
+            }
+        
         //assume first entry is prop name
-        if (rangeClassRef->ContainProperty(firstPropPathEntry))
-            propNameClassRefExpMatches.push_back(rangeClassRef);
+        if (rangeClassRef.GetExp().ContainProperty(firstPropPathEntry))
+            propNameClassRefExpMatches.push_back(&rangeClassRef.GetExp());
 
         //assume first entry is class alias
         if (secondPropPathEntry != nullptr)
             {
             //alias can be duplicate. Its fine as long as property can be detected uniquely
-            if (rangeClassRef->GetId().Equals(firstPropPathEntry))
+            if (rangeClassRef.GetExp().GetId().Equals(firstPropPathEntry))
                 {
                 classAliasMatches++;
-                if (rangeClassRef->ContainProperty(secondPropPathEntry))
-                    aliasClassRefExpMatches.push_back(rangeClassRef);
+                if (rangeClassRef.GetExp().ContainProperty(secondPropPathEntry))
+                    aliasClassRefExpMatches.push_back(&rangeClassRef.GetExp());
 
                 }
             }

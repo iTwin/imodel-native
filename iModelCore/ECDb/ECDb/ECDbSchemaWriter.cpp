@@ -739,7 +739,7 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionMajor()))
+    if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionRead()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionWrite()))
@@ -1527,7 +1527,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
                 }
 
             //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
+            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
@@ -1575,7 +1575,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
                 }
 
             //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
+            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
@@ -2047,17 +2047,17 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
         }
 
-    if (schemaChange.GetVersionMajor().IsValid())
+    if (schemaChange.GetVersionRead().IsValid())
         {
-        if (schemaChange.GetVersionMajor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMajor().GetValue(ValueId::New).Value())
+        if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
             {
-            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Decreasing 'VersionMajor' of an ECSchema is not supported.",
+            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Decreasing 'VersionRead' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
         m_majorChangesAllowedForSchemas.insert(oldSchema.GetId());
-        updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionMajor().GetNew().Value());
+        updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionRead().GetNew().Value());
         }
 
     if (schemaChange.GetVersionWrite().IsValid())

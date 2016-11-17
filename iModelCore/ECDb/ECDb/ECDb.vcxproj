@@ -84,7 +84,6 @@
     <ClCompile Include="ECSql\IECSqlBinder.cpp" />
     <ClCompile Include="ECSql\InsertStatementExp.cpp" />
     <ClCompile Include="ECSql\JoinExp.cpp" />
-    <ClCompile Include="ECSql\JsonDeleter.cpp" />
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp" />
     <ClCompile Include="ECSql\JsonInserter.cpp" />
     <ClCompile Include="ECSql\JsonReader.cpp" />

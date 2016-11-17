@@ -101,7 +101,7 @@ BentleyStatus ECDb_ECInstanceInserter()
     bvector<ECN::IECInstanceCP> instanceList;
     GetPageOfECInstancesFromSomeOtherWorkflow(ecClass, instanceList);
 
-    ECInstanceInserter inserter(ecdb, *ecClass);
+    ECInstanceInserter inserter(ecdb, *ecClass, nullptr);
     if (!inserter.IsValid())
         //the inserter is not valid, if for example the ECClass passed is not instantiable (abstract class) or
         //if it is generally not usable in ECDb because it not mapped to a table (e.g. custom attributes)
@@ -111,8 +111,8 @@ BentleyStatus ECDb_ECInstanceInserter()
     for (IECInstanceCP instance : instanceList)
         {
         ECInstanceKey generatedKey;
-        BentleyStatus stat = inserter.Insert(generatedKey, *instance);
-        if (stat != SUCCESS)
+        const DbResult stat = inserter.Insert(generatedKey, *instance);
+        if (BE_SQLITE_OK != stat)
             return ERROR;
         }
 
@@ -133,7 +133,7 @@ BentleyStatus ECDb_JsonInserter()
     bvector<Json::Value const*> jsonInstanceList;
     GetPageOfJsonInstancesFromSomeOtherWorkflow(ecClass, jsonInstanceList);
 
-    JsonInserter inserter(ecdb, *ecClass);
+    JsonInserter inserter(ecdb, *ecClass, nullptr);
     if (!inserter.IsValid())
         //the inserter is not valid, if for example the ECClass passed is not instantiable (abstract class) or
         //if it is generally not usable in ECDb because it not mapped to a table (e.g. custom attributes)
@@ -143,8 +143,8 @@ BentleyStatus ECDb_JsonInserter()
     for (Json::Value const* jsonInstance : jsonInstanceList)
         {
         ECInstanceKey generatedKey;
-        BentleyStatus stat = inserter.Insert(generatedKey, *jsonInstance);
-        if (stat != SUCCESS)
+        const DbResult stat = inserter.Insert(generatedKey, *jsonInstance);
+        if (BE_SQLITE_OK != stat)
             return ERROR;
         }
 

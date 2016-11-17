@@ -67,7 +67,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
 
     auto readContext = ECSchemaReadContext::CreateContext();
     auto bscaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 11);
-    auto bscaSchema = readContext->LocateSchema(bscaKey, SchemaMatchType::LatestCompatible);
+    auto bscaSchema = readContext->LocateSchema(bscaKey, SchemaMatchType::LatestWriteCompatible);
     EXPECT_TRUE(bscaSchema.IsValid());
     EXPECT_EQ(testSchema->AddReferencedSchema(*bscaSchema), ECObjectsStatus::Success);
 

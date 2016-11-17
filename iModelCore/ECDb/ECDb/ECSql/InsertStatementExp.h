@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/InsertStatementExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ private:
     size_t m_valuesExpIndex;
     bool m_isOriginalPropertyNameListUnset;
 
-    std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
+    RangeClasssInfo::List m_finalizeParsingArgCache;
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
