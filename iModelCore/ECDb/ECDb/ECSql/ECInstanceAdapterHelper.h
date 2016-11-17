@@ -33,9 +33,7 @@ struct ECValueBindingInfo : NonCopyableClass
             {
             ECInstanceId,
             SourceECInstanceId,
-            SourceECClassId,
-            TargetECInstanceId,
-            TargetECClassId
+            TargetECInstanceId
             };
 
     protected:
@@ -260,6 +258,7 @@ struct ECInstanceAdapterHelper
                 ECInstanceId m_instanceId;
                 ECInstanceId m_sourceId;
                 ECInstanceId m_targetId;
+
             public:
                 explicit ECInstanceInfo(ECN::IECInstanceCR instance)
                     : m_instance(&instance)
@@ -269,8 +268,8 @@ struct ECInstanceAdapterHelper
                     : m_instance(&instance), m_instanceId(instanceId)
                     {}
 
-                ECInstanceInfo(ECInstanceId instanceId, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey)
-                    : ECInstanceInfo(instanceId, sourceKey, targetKey, nullptr)
+                ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId)
+                    : ECInstanceInfo(instanceId, sourceId, targetId, nullptr)
                     {}
 
                 ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties)
@@ -281,8 +280,8 @@ struct ECInstanceAdapterHelper
                 ECN::IECInstanceCR GetInstance() const { BeAssert(HasInstance()); return *m_instance; }
                 bool HasInstanceId() const { return m_instanceId.IsValid(); }
                 ECInstanceId GetInstanceId() const { return m_instanceId; }
-                ECInstanceId GetSourceKey() const { return m_sourceId; }
-                ECInstanceId GetTargetKey() const { return m_targetId; }
+                ECInstanceId GetSourceId() const { return m_sourceId; }
+                ECInstanceId GetTargetId() const { return m_targetId; }
             };
     private:
         ECInstanceAdapterHelper();

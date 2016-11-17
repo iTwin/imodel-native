@@ -19,7 +19,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceId : BeInt64Id
     {
+public:
     BEINT64_ID_DECLARE_MEMBERS(ECInstanceId, BeInt64Id)
+
+public:
+    explicit ECInstanceId(BeInt64Id id) : ECInstanceId(id.GetValueUnchecked()) {}
     };
 
 //=======================================================================================
