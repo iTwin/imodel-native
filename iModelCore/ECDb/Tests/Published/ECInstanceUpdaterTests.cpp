@@ -27,7 +27,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                 {
                 IECInstancePtr instance = ECDbTestUtility::CreateArbitraryECInstance(*testClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
-                ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance));
+                ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
                 IECInstancePtr updatedInstance;
 
                 if (populateAllProperties)
@@ -63,7 +63,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                 else
                     ASSERT_TRUE(updater->IsValid());
 
-                ASSERT_EQ(BE_SQLITE_DONE, updater->Update(*updatedInstance));
+                ASSERT_EQ(BE_SQLITE_OK, updater->Update(*updatedInstance));
 
                 SqlPrintfString ecSql("SELECT c0.[ECInstanceId], c0.ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
                 ECSqlStatement statement;
@@ -132,7 +132,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
     ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*testInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*testInstance));
     ASSERT_EQ(SUCCESS, ECInstanceId::FromString(testId, testInstance->GetInstanceId().c_str()));
     }
 
@@ -149,7 +149,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 
     ECInstanceUpdater updater(ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(*testInstance));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*testInstance));
 
     DateTime newLastMod;
     tryGetLastMod(newLastMod, ecdb, testId);
@@ -244,7 +244,7 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyAndCalculatedProperties)
     {
     Savepoint sp(ecdb, "default updater");
 
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(*updatedInstance));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*updatedInstance));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
@@ -263,7 +263,7 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyAndCalculatedProperties)
     //now use updater with option to update readonly props
     ECInstanceUpdater readonlyUpdater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(readonlyUpdater.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, readonlyUpdater.Update(*updatedInstance));
+    ASSERT_EQ(BE_SQLITE_OK, readonlyUpdater.Update(*updatedInstance));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
@@ -331,7 +331,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
 
     //update inserted instance
-    ASSERT_EQ(BE_SQLITE_DONE, instanceUpdater.Update(*updatedInstance));
+    ASSERT_EQ(BE_SQLITE_OK, instanceUpdater.Update(*updatedInstance));
 
     //validate updated Instance
     Utf8String validateECSql;
@@ -408,7 +408,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
 
     //update inserted instance
-    ASSERT_EQ(BE_SQLITE_DONE, instanceUpdater.Update(*updatedInstance));
+    ASSERT_EQ(BE_SQLITE_OK, instanceUpdater.Update(*updatedInstance));
 
     //validate updated Instance
     Utf8String validateECSql;
@@ -444,7 +444,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     ECInstanceInserter inserter(db, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testInstance));
 
     Utf8CP ecSql = "SELECT ECInstanceId, ECClassId, SmallIntArray FROM KitchenSink.TestClass";
     ECSqlStatement ecStatement;
@@ -470,7 +470,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
 
     ECInstanceUpdater updater(db, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(*selectedInstance));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*selectedInstance));
 
     ECSqlStatement ecStatement2;
     ECSqlStatus status2 = ecStatement2.Prepare(db, ecSql);

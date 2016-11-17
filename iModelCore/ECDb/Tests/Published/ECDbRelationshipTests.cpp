@@ -103,7 +103,7 @@ BentleyStatus PersistRelationship(IECRelationshipInstanceR relInstance, ECDbR ec
     if (!inserter.IsValid())
         return ERROR;
 
-    return inserter.Insert(relInstance) == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    return inserter.Insert(relInstance) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -275,7 +275,7 @@ TEST(ECDbRelationships, MappingRelationshipsWithAdditionalECProperties)
     ECInstanceInserter inserter(ecdb, relationshipInstance->GetClass(), nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *relationshipInstance)) << "Inserting relationship with additional properties is expected to be supported for link table mapping";
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *relationshipInstance)) << "Inserting relationship with additional properties is expected to be supported for link table mapping";
     BeTest::SetFailOnAssert(true);
     }
     }

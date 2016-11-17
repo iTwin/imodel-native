@@ -101,7 +101,7 @@ bool InsertInstance(ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance)
         return false;
 
     const DbResult insertStatus = inserter.Insert(ecInstance);
-    return BE_SQLITE_DONE == insertStatus;
+    return BE_SQLITE_OK == insertStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,7 +191,7 @@ TEST_F(ReadTests, LimitOffset)
         bool instanceStatus = SetIntValue(*ecInstance, "intProp", ii);
         ASSERT_TRUE(instanceStatus);
         ECInstanceKey instanceKey;
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *ecInstance));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *ecInstance));
         }
     db.SaveChanges();
 
@@ -258,11 +258,11 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     ECClassCR ecClass = instance->GetClass();
     ECInstanceInserter inserter(db, ecClass, nullptr);
     ECInstanceKey id;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
+    ASSERT_EQ(BE_SQLITE_DBE_SQLITE_OKONE, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(id, *(instance.get())));
+    ASSERT_EQ(BE_SQLITEBE_SQLITE_OK_DONE, inserter.Insert(id, *(instance.get())));
     s.Commit();
     db.SaveChanges();
 

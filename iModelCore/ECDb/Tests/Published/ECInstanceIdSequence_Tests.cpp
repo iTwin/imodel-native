@@ -118,7 +118,7 @@ ECClassCR ecClass
 
     IECInstancePtr testInstance = ECDbTestUtility::CreateArbitraryECInstance(ecClass);
 
-    if (BE_SQLITE_DONE != inserter.Insert(instanceKey, *testInstance))
+    if (BE_SQLITE_OK != inserter.Insert(instanceKey, *testInstance))
         return nullptr;
 
     if (SUCCESS != ECDbTestUtility::SetECInstanceId(*testInstance, instanceKey.GetECInstanceId()))
@@ -148,7 +148,7 @@ IECInstancePtr target
         return ECInstanceKey();
 
     ECInstanceKey instanceKey;
-    if (BE_SQLITE_DONE != inserter.Insert(instanceKey, *relation))
+    if (BE_SQLITE_OK != inserter.Insert(instanceKey, *relation))
         return ECInstanceKey();
 
     return instanceKey;

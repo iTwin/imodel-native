@@ -355,13 +355,13 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     ECDBufferScope scope;
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init(instance.GetECDBuffer());
+
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(instance);
     //now add parameter values for regular properties
     for (auto const& bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
-        auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo);
-        if (stat != SUCCESS)
+        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
             {
             Utf8String errorMessage;
             errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
@@ -392,7 +392,7 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return stepStatus;
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

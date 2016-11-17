@@ -338,7 +338,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     v.SetLong(modelKey.GetECInstanceId().GetValue());
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("ModelId", v));
 
-    ASSERT_EQ(BE_SQLITE_DONE, elementInserter.Insert(elementKey, *elementInst));
+    ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
     }
 
@@ -448,7 +448,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
 
-    ASSERT_EQ(BE_SQLITE_DONE, elementInserter.Insert(elementKey, newElementJson));
+    ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, newElementJson));
     ecdb.SaveChanges();
     }
     //verify relationship was inserted

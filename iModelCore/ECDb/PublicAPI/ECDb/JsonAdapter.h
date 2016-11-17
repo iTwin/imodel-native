@@ -552,18 +552,18 @@ struct JsonInserter : NonCopyableClass
         //! Inserts the instance
         //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
         //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+        //! @return BE_SQLITE_OK in case of success, error codes otherwise
         ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const;
 
         //! Inserts the instance and updates the $ECInstanceId field with the generated ECInstanceId
         //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+        //! @return BE_SQLITE_OK in case of success, error codes otherwise
         ECDB_EXPORT DbResult Insert(JsonValueR jsonValue) const;
 
         //! Insert an instance created from the specified jsonValue
         //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
         //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+        //! @return BE_SQLITE_OK in case of success, error codes otherwise
         ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const;
     };
 
@@ -603,8 +603,8 @@ struct JsonUpdater : NonCopyableClass
         //! Updates an instance from the specified jsonValue
         //! @param[in] instanceId the ECInstanceId of the instance to update
         //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR jsonValue) const;
 
         //! Update  a relationship instance from the specified jsonValue and source/target keys
@@ -612,15 +612,15 @@ struct JsonUpdater : NonCopyableClass
         //! @param[in] jsonValue the instance data
         //! @param[in] sourceKey ECInstanceKey for the source of the relationship
         //! @param[in] targetKey ECInstanceKey for the target of the relationship
-        //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 
         //! Update an instance from the specified jsonValue
         //! @param[in] instanceId the ECInstanceId of the instance to update
         //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const;
 
         //! Update  a relationship instance from the specified jsonValue and source/target keys
@@ -628,8 +628,8 @@ struct JsonUpdater : NonCopyableClass
         //! @param[in] jsonValue the instance data
         //! @param[in] sourceKey ECInstanceKey for the source of the relationship
         //! @param[in] targetKey ECInstanceKey for the target of the relationship
-        //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
     };
 
@@ -660,8 +660,8 @@ struct JsonDeleter : NonCopyableClass
 
         //! Deletes the instance identified by the supplied ECInstanceId
         //! @param[in] instanceId the ECInstanceId of the instance to delete
-        //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL. This means,
-        //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL. This means,
+        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         DbResult Delete(ECInstanceId instanceId) const { return m_ecinstanceDeleter.Delete(instanceId); }
     };
 

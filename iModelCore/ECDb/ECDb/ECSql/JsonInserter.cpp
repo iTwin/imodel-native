@@ -37,11 +37,11 @@ DbResult JsonInserter::Insert(JsonValueR jsonValue) const
 
     ECInstanceKey newInstanceKey;
     DbResult stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
-    if (BE_SQLITE_DONE != stat)
+    if (BE_SQLITE_OK != stat)
         return stat;
 
     jsonValue["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------

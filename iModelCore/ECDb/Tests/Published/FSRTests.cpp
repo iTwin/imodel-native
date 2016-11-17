@@ -101,7 +101,7 @@ struct FSRTests : public ::testing::Test
             ECInstanceInserter inserter(m_db, ecClass, nullptr);
             ECInstanceKey id;
             DbResult insertStatus = inserter.Insert(id, *(instance.get()));
-            if (BE_SQLITE_DONE != insertStatus)
+            if (BE_SQLITE_OK != insertStatus)
                 {
                 LOG.infov("Could not insert ECInstance of ECClass %s into ECDb file. Error code: InsertStatus::%d", Utf8String(ecClass.GetFullName()).c_str(), insertStatus);
                 savepoint.Cancel();

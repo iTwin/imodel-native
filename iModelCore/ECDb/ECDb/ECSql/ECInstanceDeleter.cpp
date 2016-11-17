@@ -54,7 +54,7 @@ DbResult ECInstanceDeleter::Delete(ECInstanceId ecInstanceId) const
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return stepStatus;
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**

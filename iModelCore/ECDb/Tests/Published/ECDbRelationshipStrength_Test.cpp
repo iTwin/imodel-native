@@ -28,7 +28,7 @@ void DeleteInstance(IECInstanceCR instance, ECDbR ecdb)
 
     ASSERT_TRUE(deleter.IsValid()) << "Invaild Deleter for ecClass : " << ecClass.GetName().c_str();
 
-    ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(instance)) << "Instance Deletion failed for ecClass : " << ecClass.GetName().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, deleter.Delete(instance)) << "Instance Deletion failed for ecClass : " << ecClass.GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,7 +488,7 @@ void ECDbRelationshipsIntegrityTests::InsertEntityClassInstances(Utf8CP classNam
         ASSERT_EQ(stmt.Reset(), ECSqlStatus::Success);
         ASSERT_EQ(stmt.ClearBindings(), ECSqlStatus::Success);
         ASSERT_EQ(stmt.BindText(1, textVal.GetUtf8CP(), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(key), BE_SQLITE_DONE);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
         classKeys.push_back(key);
         }
     }

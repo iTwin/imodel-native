@@ -240,7 +240,7 @@ BentleyStatus ECDbTestProject::InsertECInstance(ECInstanceKey& ecInstanceKey, IE
     else
         inserter = it->second.get();
 
-    if (BE_SQLITE_DONE == inserter->Insert(ecInstanceKey, *ecInstance))
+    if (BE_SQLITE_OK == inserter->Insert(ecInstanceKey, *ecInstance))
         {
         if (SUCCESS != ECDbTestUtility::SetECInstanceId(*ecInstance, ecInstanceKey.GetECInstanceId()))
             return ERROR;

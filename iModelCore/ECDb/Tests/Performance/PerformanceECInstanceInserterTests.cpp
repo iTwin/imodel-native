@@ -184,7 +184,7 @@ public:
         auto const& inserter = *it->second;
 
         ECInstanceKey key;
-        return inserter.Insert(key, testInstance) == BE_SQLITE_DONE;
+        return inserter.Insert(key, testInstance) == BE_SQLITE_OK;
     };
 
     void DoFinalize()

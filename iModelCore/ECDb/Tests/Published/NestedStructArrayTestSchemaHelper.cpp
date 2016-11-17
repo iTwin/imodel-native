@@ -164,9 +164,9 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
 
     BeSQLite::EC::ECInstanceInserter employeeInserter(ecdb, *employeeClass, nullptr);
     ASSERT_TRUE(employeeInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeInserter.Insert(*employeeInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, employeeInserter.Insert(*employeeInstance2, true));
-    ASSERT_EQ(BE_SQLITE_DONE, employeeInserter.Insert(*employeeInstance3, true));
+    ASSERT_EQ(BE_SQLITE_OK, employeeInserter.Insert(*employeeInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, employeeInserter.Insert(*employeeInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, employeeInserter.Insert(*employeeInstance3, true));
 
     //Create instances of Customer and insert into Db
     ECClassCP customerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
@@ -203,10 +203,10 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
 
     BeSQLite::EC::ECInstanceInserter customerInserter(ecdb, *customerClass, nullptr);
     ASSERT_TRUE(customerInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, customerInserter.Insert(*customerInstance1));
-    ASSERT_EQ(BE_SQLITE_DONE, customerInserter.Insert(*customerInstance2));
-    ASSERT_EQ(BE_SQLITE_DONE, customerInserter.Insert(*customerInstance3));
-    ASSERT_EQ(BE_SQLITE_DONE, customerInserter.Insert(*customerInstance4));
+    ASSERT_EQ(BE_SQLITE_OK, customerInserter.Insert(*customerInstance1));
+    ASSERT_EQ(BE_SQLITE_OK, customerInserter.Insert(*customerInstance2));
+    ASSERT_EQ(BE_SQLITE_OK, customerInserter.Insert(*customerInstance3));
+    ASSERT_EQ(BE_SQLITE_OK, customerInserter.Insert(*customerInstance4));
 
     //Create and Insert instance of Class Order
     ECClassCP orderClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Order");
@@ -234,15 +234,15 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
 
     BeSQLite::EC::ECInstanceInserter orderInserter(ecdb, *orderClass, nullptr);
     ASSERT_TRUE(orderInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance1));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance2));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance3));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance4));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance5));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance6));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance7));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance8));
-    ASSERT_EQ(BE_SQLITE_DONE, orderInserter.Insert(*orderInstance9));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance1));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance2));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance3));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance4));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance5));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance6));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance7));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance8));
+    ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance9));
 
     //Insert Relationship Instance CustomerHasOrder
     ECRelationshipClassCP customerHasOrder = ecdb.Schemas().GetECClass("ECSqlStatementTests", "CustomerHasOrder")->GetRelationshipClassCP();
@@ -255,39 +255,39 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     customerHasOrderInstance->SetSource(customerInstance1.get());
     customerHasOrderInstance->SetTarget(orderInstance1.get());
     customerHasOrderInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance1.get());
     customerHasOrderInstance->SetTarget(orderInstance2.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance1.get());
     customerHasOrderInstance->SetTarget(orderInstance3.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance2.get());
     customerHasOrderInstance->SetTarget(orderInstance4.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance2.get());
     customerHasOrderInstance->SetTarget(orderInstance5.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance2.get());
     customerHasOrderInstance->SetTarget(orderInstance6.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance3.get());
     customerHasOrderInstance->SetTarget(orderInstance7.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance3.get());
     customerHasOrderInstance->SetTarget(orderInstance8.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     customerHasOrderInstance->SetSource(customerInstance3.get());
     customerHasOrderInstance->SetTarget(orderInstance9.get());
-    ASSERT_EQ(BE_SQLITE_DONE, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     //Insert Relationship Instance EmployeeHasOrder
     ECRelationshipClassCP employeeHasOrder = ecdb.Schemas().GetECClass("ECSqlStatementTests", "EmployeeHasOrder")->GetRelationshipClassCP();
@@ -300,39 +300,39 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     employeeHasOrderInstance->SetSource(employeeInstance1.get());
     employeeHasOrderInstance->SetTarget(orderInstance1.get());
     employeeHasOrderInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance1.get());
     employeeHasOrderInstance->SetTarget(orderInstance2.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance1.get());
     employeeHasOrderInstance->SetTarget(orderInstance3.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance2.get());
     employeeHasOrderInstance->SetTarget(orderInstance4.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance2.get());
     employeeHasOrderInstance->SetTarget(orderInstance5.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance2.get());
     employeeHasOrderInstance->SetTarget(orderInstance6.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance3.get());
     employeeHasOrderInstance->SetTarget(orderInstance7.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance3.get());
     employeeHasOrderInstance->SetTarget(orderInstance8.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     employeeHasOrderInstance->SetSource(employeeInstance3.get());
     employeeHasOrderInstance->SetTarget(orderInstance9.get());
-    ASSERT_EQ(BE_SQLITE_DONE, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
+    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     //Create and Insert Instances of Shipper
     ECClassCP shipperClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Shipper");
@@ -345,9 +345,9 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     setShipperValues(shipperInstance3, "Salguero", 39045213);
     BeSQLite::EC::ECInstanceInserter shipperInserter(ecdb, *shipperClass, nullptr);
     ASSERT_TRUE(shipperInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, shipperInserter.Insert(*shipperInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, shipperInserter.Insert(*shipperInstance2, true));
-    ASSERT_EQ(BE_SQLITE_DONE, shipperInserter.Insert(*shipperInstance3, true));
+    ASSERT_EQ(BE_SQLITE_OK, shipperInserter.Insert(*shipperInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, shipperInserter.Insert(*shipperInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, shipperInserter.Insert(*shipperInstance3, true));
 
     //Create and Insert Instances of Supplier
     ECClassCP supplierClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Supplier");
@@ -360,9 +360,9 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     setSupplierValues(supplierInstance3, "GHIJ", "Stannis", "Brathion", "MD", "USA", "1598 PICCARD DRIVE", 1300);
     BeSQLite::EC::ECInstanceInserter supplierInserter(ecdb, *supplierClass, nullptr);
     ASSERT_TRUE(supplierInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, supplierInserter.Insert(*supplierInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, supplierInserter.Insert(*supplierInstance2, true));
-    ASSERT_EQ(BE_SQLITE_DONE, supplierInserter.Insert(*supplierInstance3, true));
+    ASSERT_EQ(BE_SQLITE_OK, supplierInserter.Insert(*supplierInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, supplierInserter.Insert(*supplierInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, supplierInserter.Insert(*supplierInstance3, true));
 
     //Create and Insert Instances of Products
     ECClassCP productClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Product");
@@ -389,15 +389,15 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     BeSQLite::EC::ECInstanceInserter productInserter(ecdb, *productClass, nullptr);
     ASSERT_TRUE(productInserter.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance2, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance3, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance4, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance5, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance6, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance7, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance8, true));
-    ASSERT_EQ(BE_SQLITE_DONE, productInserter.Insert(*productsInstance9, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance3, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance4, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance5, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance6, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance7, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance8, true));
+    ASSERT_EQ(BE_SQLITE_OK, productInserter.Insert(*productsInstance9, true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -641,7 +641,7 @@ void NestedStructArrayTestSchemaHelper::InsertRelationshipInstance(BeSQLite::EC:
     relationshipInstance->SetSource(sourceInstance.get());
     relationshipInstance->SetTarget(targetInstance.get());
     relationshipInstance->SetInstanceId("source->target");
-    EXPECT_EQ(BE_SQLITE_DONE, relationshipInserter.Insert(*relationshipInstance, true));
+    EXPECT_EQ(BE_SQLITE_OK, relationshipInserter.Insert(*relationshipInstance, true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -655,7 +655,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter sourceInserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(sourceInserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, sourceInserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, sourceInserter.Insert(*instance, true));
         }
 
     instances = CreateECInstances(ecdb, 1, "DerivedA");
@@ -663,7 +663,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter inserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance, true));
         }
 
     instances = CreateECInstanceWithOutStructArrayProperty(ecdb, 1, "DerivedB");
@@ -671,7 +671,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter inserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance, true));
         }
 
     instances = CreateECInstanceWithOutStructArrayProperty(ecdb, 1, "DoubleDerivedB");
@@ -679,7 +679,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter inserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance, true));
         }
 
     instances = CreateECInstances(ecdb, 1, "DoubleDerivedA");
@@ -687,7 +687,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter inserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance, true));
         }
 
     instances = CreateECInstances(ecdb, 1, "DoubleDerivedC");
@@ -695,7 +695,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
         {
         BeSQLite::EC::ECInstanceInserter inserter(ecdb, instance->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*instance, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance, true));
         }
 
     //Create and Insert Constraint Classes Instances and then for relationship class BaseHasDerivedA
@@ -708,14 +708,14 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
             {
             BeSQLite::EC::ECInstanceInserter sourceInserter(ecdb, sourceInstance->GetClass(), nullptr);
             ASSERT_TRUE(sourceInserter.IsValid());
-            ASSERT_EQ(BE_SQLITE_DONE, sourceInserter.Insert(*sourceInstance, true));
+            ASSERT_EQ(BE_SQLITE_OK, sourceInserter.Insert(*sourceInstance, true));
 
             bvector<IECInstancePtr> targetInstances = CreateECInstances(ecdb, 2, "DerivedA");
             for (auto targetInstance : targetInstances)
                 {
                 BeSQLite::EC::ECInstanceInserter targetInserter(ecdb, targetInstance->GetClass(), nullptr);
                 ASSERT_TRUE(targetInserter.IsValid());
-                ASSERT_EQ(BE_SQLITE_DONE, targetInserter.Insert(*targetInstance, true));
+                ASSERT_EQ(BE_SQLITE_OK, targetInserter.Insert(*targetInstance, true));
                 InsertRelationshipInstance(ecdb, sourceInstance, targetInstance, baseHasDerivedA);
                 }
             }
@@ -727,14 +727,14 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
             {
             BeSQLite::EC::ECInstanceInserter sourceInserter(ecdb, sourceInstance->GetClass(), nullptr);
             ASSERT_TRUE(sourceInserter.IsValid());
-            ASSERT_EQ(BE_SQLITE_DONE, sourceInserter.Insert(*sourceInstance, true));
+            ASSERT_EQ(BE_SQLITE_OK, sourceInserter.Insert(*sourceInstance, true));
 
             bvector<IECInstancePtr> targetInstances = CreateECInstances(ecdb, 2, "DoubleDerivedA");
             for (IECInstancePtr targetInstance : targetInstances)
                 {
                 BeSQLite::EC::ECInstanceInserter targetInserter(ecdb, targetInstance->GetClass(), nullptr);
                 ASSERT_TRUE(targetInserter.IsValid());
-                ASSERT_EQ(BE_SQLITE_DONE, targetInserter.Insert(*targetInstance, true));
+                ASSERT_EQ(BE_SQLITE_OK, targetInserter.Insert(*targetInstance, true));
                 InsertRelationshipInstance(ecdb, sourceInstance, targetInstance, derivedBHasChildren);
                 }
             }

@@ -30,7 +30,7 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
     ECInstanceInserter inserter(ecdb, *relClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey ecInstanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(ecInstanceKey, *relationshipInstance.get()));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, *relationshipInstance.get()));
     }
 
 ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
@@ -38,7 +38,7 @@ ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
     JsonInserter inserter(ecdb, *ecClass, nullptr);
     Json::Value instance(Json::objectValue);
     ECInstanceKey instanceKey;
-    EXPECT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, instance));
+    EXPECT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());
     return instanceKey;
     }

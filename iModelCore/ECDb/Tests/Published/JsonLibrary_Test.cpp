@@ -294,12 +294,12 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     JsonInserter inserter(ecdb, *documentClass, nullptr);
 
     // insert 1 row using JsonCpp
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(jsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonInput));
     ecdb.SaveChanges();
 
     // insert 1 row using RapidJson
     ECInstanceKey ecInstanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(ecInstanceKey, rapidJsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, rapidJsonInput));
     ASSERT_TRUE(ecInstanceKey.IsValid());
     ecdb.SaveChanges();
 
@@ -310,7 +310,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     rapidJsonInput["Urx"].SetDouble(3.3);
     rapidJsonInput["Ury"].SetDouble(4.4);
 
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(ecInstanceKey.GetECInstanceId(), rapidJsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetECInstanceId(), rapidJsonInput));
     ecdb.SaveChanges();
     }
 

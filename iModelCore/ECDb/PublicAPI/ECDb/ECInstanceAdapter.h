@@ -105,7 +105,6 @@ public:
     //! @param [in] writeToken Token required to execute ECSQL INSERT statements if 
     //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
     //! If the option is not set, nullptr can be passed for @p writeToken.
-    //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken);
     ECDB_EXPORT ~ECInstanceInserter();
 
@@ -127,7 +126,7 @@ public:
     //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
-    //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
     ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
 
     //! Inserts a relationship instance into the @ref ECDbFile "ECDb file".
@@ -146,7 +145,7 @@ public:
     //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
-    //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
     ECDB_EXPORT DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
@@ -157,7 +156,7 @@ public:
     //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
-    //! @return BE_SQLITE_DONE in case of success, error codes otherwise
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
     ECDB_EXPORT DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
     };
 
@@ -239,8 +238,8 @@ public:
     //! Passing the ECSQL option @b ReadonlyPropertiesAreUpdatable to the constructor of the updater, modifies the default
     //! and values of readonly properties are updated.
     //! @param[in] instance ECInstance for which the corresponding row is to be updated.
-    //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL UPDATE. This means,
-    //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
     ECDB_EXPORT DbResult Update(ECN::IECInstanceCR instance) const;
     };
 
@@ -279,14 +278,14 @@ public:
 
     //! Deletes the ECInstance with the specified ECInstanceId.
     //! @param[in] ecInstanceId Id of the ECInstance to delete
-    //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL. This means,
-    //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
     ECDB_EXPORT DbResult Delete(ECInstanceId ecInstanceId) const;
 
     //! Deletes the given ECInstance.
     //! @param[in] ecInstance ECInstance to delete
-    //! @return BE_SQLITE_DONE in case of successful execution of the underlying ECSQL. This means,
-    //! BE_SQLITE_DONE is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
     ECDB_EXPORT DbResult Delete(ECN::IECInstanceCR ecInstance) const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

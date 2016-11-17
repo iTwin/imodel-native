@@ -83,7 +83,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     Json::Value val;
     val["Name"] = "test.txt";
 
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, val));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, val));
     }
 
     JsonUpdater updater(ecdb, *testClass, nullptr);
@@ -93,7 +93,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(ECInstanceId(), val)) << "Empty JSON value";
 
     val["Name"] = "test2.txt";
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), val)) << "JSON value without $ECInstanceId member";
     }
 
 //---------------------------------------------------------------------------------------
@@ -173,7 +173,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     Utf8CP expectedVal = "good afternoon";
     relationshipJson["Name"] = expectedVal;
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(db, "SELECT NULL FROM ts.AHasA WHERE ECInstanceId=? AND Name=?"));
@@ -192,7 +192,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     relationshipRapidJson.SetObject();
     relationshipRapidJson.AddMember("Name", rapidjson::StringRef(expectedVal), relationshipRapidJson.GetAllocator());
 
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, relInstanceId));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(2, expectedVal, IECSqlBinder::MakeCopy::No));
@@ -250,7 +250,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassJson["P2"] = expectedVal;
     ecClassJson["P3"] = 2000.20;
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), ecClassJson));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), ecClassJson));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
@@ -274,7 +274,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassRapidJson.AddMember("P2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
     ecClassRapidJson.AddMember("P3", 3000.30, ecClassRapidJson.GetAllocator());
 
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 300));
@@ -320,11 +320,11 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     // Insert using RapidJson API
     JsonInserter inserter(ecdb, *spatialClass, nullptr);
     ECInstanceKey rapidJsonInstanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
     // Insert using JsonCpp API
     ECInstanceKey jsonCppInstanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
 
     ecdb.SaveChanges();
 
@@ -372,7 +372,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     properties["Num"] = oldNum;
     properties["Square"] = oldSquare;
     JsonInserter inserter(ecdb, *ecClass, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, properties));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, properties));
 
     //Update test instance
     properties["Num"] = newNum;
@@ -385,7 +385,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     Savepoint sp(ecdb, "default updater");
     JsonUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), properties));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
@@ -402,7 +402,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     {
     JsonUpdater updater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), properties));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());

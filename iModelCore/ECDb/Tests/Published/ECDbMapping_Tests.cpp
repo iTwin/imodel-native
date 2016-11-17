@@ -8970,8 +8970,8 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     ECInstanceInserter inserter(ecdb, *baseClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*baseInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*baseInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*baseInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*baseInstance2, true));
 
     //Insert Instances for ClassA
     ECN::StandaloneECInstancePtr classAInstance1 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -8983,8 +8983,8 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     ECInstanceInserter classAinserter(ecdb, *classA, nullptr);
     ASSERT_TRUE(classAinserter.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_DONE, classAinserter.Insert(*classAInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, classAinserter.Insert(*classAInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, classAinserter.Insert(*classAInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, classAinserter.Insert(*classAInstance2, true));
 
     //Insert Instances for ClassB
     ECN::StandaloneECInstancePtr classBInstance1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -8996,8 +8996,8 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     ECInstanceInserter classBinserter(ecdb, *classB, nullptr);
     ASSERT_TRUE(classBinserter.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_DONE, classBinserter.Insert(*classBInstance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, classBinserter.Insert(*classBInstance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, classBinserter.Insert(*classBInstance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, classBinserter.Insert(*classBInstance2, true));
 
     //Get Relationship Classes
     ECRelationshipClassCP baseHasClassAClass = schema->GetClassCP("BaseHasClassA")->GetRelationshipClassCP();
@@ -9014,13 +9014,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     relationshipInstance->SetSource(baseInstance1.get());
     relationshipInstance->SetTarget(classAInstance1.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, relationshipinserter.Insert(*relationshipInstance));
     }
     {//Inserting 2nd Instance
     relationshipInstance->SetSource(baseInstance2.get());
     relationshipInstance->SetTarget(classAInstance2.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, relationshipinserter.Insert(*relationshipInstance));
     }
     }
 
@@ -9033,13 +9033,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     relationshipInstance->SetSource(baseInstance1.get());
     relationshipInstance->SetTarget(classBInstance1.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, relationshipinserter.Insert(*relationshipInstance));
     }
     {//Inserting 2nd Instance
     relationshipInstance->SetSource(baseInstance2.get());
     relationshipInstance->SetTarget(classBInstance2.get());
     relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_DONE, relationshipinserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, relationshipinserter.Insert(*relationshipInstance));
     }
     }
     ECSqlStatement stmt;

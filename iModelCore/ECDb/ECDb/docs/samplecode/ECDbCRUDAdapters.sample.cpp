@@ -112,7 +112,7 @@ BentleyStatus ECDb_ECInstanceInserter()
         {
         ECInstanceKey generatedKey;
         const DbResult stat = inserter.Insert(generatedKey, *instance);
-        if (BE_SQLITE_DONE != stat)
+        if (BE_SQLITE_OK != stat)
             return ERROR;
         }
 
@@ -144,7 +144,7 @@ BentleyStatus ECDb_JsonInserter()
         {
         ECInstanceKey generatedKey;
         const DbResult stat = inserter.Insert(generatedKey, *jsonInstance);
-        if (BE_SQLITE_DONE != stat)
+        if (BE_SQLITE_OK != stat)
             return ERROR;
         }
 

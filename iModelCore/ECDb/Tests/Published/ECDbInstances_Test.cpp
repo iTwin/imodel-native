@@ -179,7 +179,7 @@ BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, EC
     ECDbTestUtility::AssignRandomValueToECInstance(nonNullValue, testInstance, nonNullPropertyName);
 
     DbResult stat = inserter.Insert(instanceKey, *testInstance);
-    BeAssert(stat == BE_SQLITE_DONE);
+    BeAssert(stat == BE_SQLITE_OK);
     return SUCCESS;
     }
 
@@ -397,7 +397,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     ECInstanceInserter inserter(db, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testClassInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testClassInstance));
 
     SqlPrintfString ecSql("SELECT StructArray FROM TestSchema.TestClass");
     ECSqlStatement ecStatement;
@@ -540,7 +540,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 
     ECInstanceInserter inserter(ecdb, *relClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*relationshipInstance));
 
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
@@ -693,7 +693,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
     ECInstanceId::FromString(instanceId, projectInstance->GetInstanceId().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, jsonDeleter.Delete(instanceId)) << "InstanceId is not validated so Delete is expected to succeed even if the id doesn't match the ECClass";
+    ASSERT_EQ(BE_SQLITE_OK, jsonDeleter.Delete(instanceId)) << "InstanceId is not validated so Delete is expected to succeed even if the id doesn't match the ECClass";
 
     BeTest::SetFailOnAssert(true);
     }

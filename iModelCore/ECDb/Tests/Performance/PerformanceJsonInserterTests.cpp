@@ -40,7 +40,7 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     for (int i = 0; i < repetitionCount; i++)
         {
         ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(key, jsonInput));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, jsonInput));
         ASSERT_TRUE(key.IsValid());
         }
     timer.Stop();
@@ -90,7 +90,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     for (int i = 0; i < repetitionCount; i++)
         {
         ECInstanceKey ecInstanceKey;
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(ecInstanceKey, rapidJsonInput));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, rapidJsonInput));
         ASSERT_TRUE(ecInstanceKey.IsValid());
         }
     timer.Stop();

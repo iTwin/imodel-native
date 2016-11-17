@@ -1104,7 +1104,7 @@ TEST_F(ECSqlStatementTestFixture, InsertStructArray)
         {
         ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
         ASSERT_TRUE(inserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*inst, true));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst, true));
         inst->WriteToXmlString(inXml, true, true);
         inXml += "\r\n";
         }
@@ -1139,7 +1139,7 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     for (auto inst : in)
         {
         ECInstanceInserter inserter(ecdb, inst->GetClass(), nullptr);
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*inst));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*inst));
         insertCount++;
         }
 
@@ -1151,7 +1151,7 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     int deleteCount = 0;
     for (auto& inst : in)
         {
-        ASSERT_EQ(BE_SQLITE_DONE, deleter.Delete(*inst));
+        ASSERT_EQ(BE_SQLITE_OK, deleter.Delete(*inst));
         deleteCount++;
         }
 
@@ -3638,8 +3638,8 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     ECInstanceInserter inserter(GetECDb(), *TestClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*Instance1, true));
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(*Instance2, true));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*Instance1, true));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*Instance2, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass"));

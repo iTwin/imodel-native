@@ -181,7 +181,7 @@ struct ECDbDateTimeTests : ECDbTestFixture
                 return ECInstanceKey();
 
             ECInstanceKey instanceKey;
-            EXPECT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance)) << "Inserting ECInstance with DateTime values failed.";
+            EXPECT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testInstance)) << "Inserting ECInstance with DateTime values failed.";
             return instanceKey;
             }
     };
@@ -352,7 +352,7 @@ TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
 
         testInstance->SetValue(dateTimePropertyName, testECValue);
         ECInstanceKey instanceKey;
-        ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(instanceKey, *testInstance));
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testInstance));
         testDataset[instanceKey.GetECInstanceId()] = testECValue;
         }
 
