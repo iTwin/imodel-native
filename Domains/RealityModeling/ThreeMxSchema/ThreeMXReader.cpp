@@ -186,7 +186,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
 
-            NodePtr nodeptr  = new Node(this);
+            NodePtr nodeptr  = new Node(GetRootR(), this);
 
             if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;

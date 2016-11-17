@@ -8,11 +8,10 @@
 #include "RasterInternal.h"
 #include "WmsSource.h"
 #include "GcsUtils.h"
+#include <Bentley/md5.h>
 
 #define  CONTENT_TYPE_PNG       "image/png"
 #define  CONTENT_TYPE_JPEG      "image/jpeg"
-
-USING_NAMESPACE_BENTLEY_SQLITE
 
 
 //----------------------------------------------------------------------------------------
@@ -173,9 +172,10 @@ WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo, WmsModel& model, Dgn::Rend
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system)
- :RasterRoot(model, model.GetName().c_str(), mapInfo.m_url.c_str(), system),
+ :RasterRoot(model, mapInfo.m_url.c_str(), system),
   m_mapInfo(mapInfo),
-  m_reverseAxis(false)
+  m_reverseAxis(false),
+  m_lastHttpError(Http::HttpStatus::None)
     {
     // for WMS we define a 256x256 multi-resolution image.
     GenerateResolution(m_resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
@@ -207,14 +207,21 @@ WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::System
         m_cartesianToWorldApproximation.InitIdentity();
         }
 
-    CreateCache(100 * 1024 * 1024); // 100 Mb
     m_rootTile = new WmsTile(*this, TileId(GetResolutionCount() - 1, 0, 0), nullptr);
+
+    // Cache name is a mix of model name and root tile url hash. If settings(ex: layers) change so is the tile url which will generate a new cache name.
+    Utf8String rootTileUrl = _ConstructTileName(*m_rootTile);
+    MD5 hash;
+    hash.Add(rootTileUrl.c_str(), rootTileUrl.length());
+    Utf8String cacheName(model.GetName() + "_" + hash.GetHashString());
+
+    CreateCache(cacheName.c_str(), 100 * 1024 * 1024); // 100 Mb
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile)
+Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile) const
     {
     WmsTileCR wmsTile = static_cast<WmsTile const&>(tile);
 
@@ -257,16 +264,7 @@ Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile)
         tileUrl.append(m_mapInfo.m_vendorSpecific);
         }
     
-    return tileUrl;   
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> WmsSource::_RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads)
-    {
-    DEBUG_PRINTF("RequestTile r=%d (%d,%d) %d", ((WmsTileR) tile).GetTileId().resolution, ((WmsTileR) tile).GetTileId().x, ((WmsTileR) tile).GetTileId().y, (uintptr_t)&tile);
-    return RasterRoot::_RequestTile(tile, loads);
+    return tileUrl;
     }
 
 //----------------------------------------------------------------------------------------
@@ -375,7 +373,7 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
     if (load && m_children.empty())
         {
         // this Tile has children, but we haven't created them yet. Do so now
-        RasterRoot::Resolution const& childrenResolution = m_root.GetResolution(m_id.resolution - 1);
+        RasterRoot::Resolution const& childrenResolution = ((root_type&)m_root).GetResolution(m_id.resolution - 1);
 
         // Upper-Left child, we always have one 
         TileId childUpperLeft(m_id.resolution - 1, m_id.x << 1, m_id.y << 1);
@@ -407,54 +405,91 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
     return &m_children;
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus WmsTile::WmsTileLoad::_ReadFromSource()
+    {
+    TileTree::HttpDataQuery query(m_fileName, m_loads);
+
+    if (m_credentials.IsValid())
+        query.GetRequest().SetCredentials(m_credentials);
+
+    if (m_proxyCredentials.IsValid())
+        query.GetRequest().SetCredentials(m_proxyCredentials);
+
+    if (SUCCESS != query.Perform(m_tileBytes))
+        {
+        if (!query.WasCanceled() && Http::HttpStatus::OK != query.GetResponse().GetHttpStatus() && Http::HttpStatus::None != query.GetResponse().GetHttpStatus())
+            GetWmsTile().GetSourceR().SetLastHttpError(query.GetResponse().GetHttpStatus());
+        
+        return ERROR;
+        }
+
+    m_contentType = query.GetResponse().GetHeaders().GetContentType();
+    if (m_contentType.EqualsI("application/vnd.ogc.se_xml"))
+        {
+        // Report WMS error in the tile, root or model??
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTile::_LoadTile(Dgn::TileTree::StreamBuffer& data, Dgn::TileTree::RootR root)
+BentleyStatus WmsTile::WmsTileLoad::_LoadTile()
     {
-    Render::ImageSource::Format format;
-    if (GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_PNG))
-        {
-        format = Render::ImageSource::Format::Png;
-        }
-    else if (GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_JPEG))
-        {
-        format = Render::ImageSource::Format::Jpeg;
-        }
-    else
-        {
-        SetNotFound();
-        return ERROR;
-        }
+    WmsTile& rasterTile = static_cast<WmsTile&>(*m_tile);
 
-    Render::ImageSource source(format, std::move(data));
-    Render::Image image(source, Render::Image::Format::Rgb, Render::Image::BottomUp::No);
+    Render::Image image;
+
+    //&&MM would like to use contentType but when coming from the DB we do not have this information. >> todo add it to the db + expiration
+    if (rasterTile.GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_PNG))
+        {
+        image = Render::Image::FromPng(m_tileBytes.GetData(), m_tileBytes.GetSize(), Render::Image::Format::Rgb);
+        }
+    else if (rasterTile.GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_JPEG))
+        {
+        image = Render::Image::FromJpeg(m_tileBytes.GetData(), m_tileBytes.GetSize(), Render::Image::Format::Rgb);
+        }
 
     if (!image.IsValid())
-        {
-        // We might have receive an error message from the server in the form of an XML stream.
-        // the html field "Content-Type" have that info but we do not have access to it. >> Content-Type=application/vnd.ogc.se_xml
-        SetNotFound();
-        ERROR_PRINTF("invalid tile data r=%d (%d,%d)", GetTileId().resolution, GetTileId().x, GetTileId().y);
         return ERROR;
-        }
 
     Render::Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = root.GetRenderSystem()->_CreateTexture(image, textureParams);
+    auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
 
-    data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
-
-    auto graphic = root.GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
-    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+    graphic->AddTile(*texture, rasterTile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS == stat);
     UNUSED_VARIABLE(stat);
 
-    m_graphic = graphic;
+    rasterTile.m_graphic = graphic;
 
-    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    rasterTile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+TileTree::TileLoadPtr WmsTile::_CreateTileLoad(TileTree::LoadStatePtr loads)
+    {
+    auto status = GetSource().GetLastHttpError();
+    if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
+        return nullptr; // Need to authenticate before we try again.
+
+    RefCountedPtr<WmsTileLoad> tileLoad = new WmsTileLoad(GetRoot()._ConstructTileName(*this), *this, loads);
+    tileLoad->m_credentials = GetSource().GetCredentials();
+    tileLoad->m_proxyCredentials = GetSource().GetProxyCredentials();
+
+    return tileLoad;
+    }
+

@@ -100,6 +100,16 @@ struct Node : Dgn::TileTree::Tile
     friend struct Scene;
     typedef std::forward_list<GeometryPtr> GeometryList;
 
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    //=======================================================================================
+    struct NodeLoad : Dgn::TileTree::TileLoad
+        {
+        NodeLoad(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::LoadStatePtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
+
+        BentleyStatus _LoadTile() override { return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR()); };
+        };
+
 private:
     double m_maxDiameter; // maximum diameter
     double m_factor=0.5;  // by default, 1/2 of diameter
@@ -112,12 +122,14 @@ private:
     Utf8String GetChildFile() const;
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
+    //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
+    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::LoadStatePtr) override;
+
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxDiameter(0.0) {}
+    Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
     void ClearGeometry() { m_geometry.clear(); }

@@ -36,7 +36,8 @@ rasterDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(RasterPublicApiSrc)RasterHandler.h                \
                                   $(RasterPublicApiSrc)RasterDomain.h                 \
                                   $(RasterPublicApiSrc)RasterFileHandler.h            \
-                                  $(RasterPublicApiSrc)WmsHandler.h
+                                  $(RasterPublicApiSrc)WmsHandler.h             \
+                                  $(BuildContext)PublicAPI/DgnPlatform/TileTree.h
 
 rasterDisplayDepends =  $(SrcRaster)RasterTileTree.h
 
@@ -132,7 +133,8 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 
 %include $(sharedMki)LinkLibrary.mki
 
