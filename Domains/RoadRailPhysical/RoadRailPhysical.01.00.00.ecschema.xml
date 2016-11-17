@@ -394,12 +394,6 @@
     <!-- END GeometryDefinitionElement Class Hierarchy -->
     
     <!-- BEGIN General Aspects classes -->
-    <ECEntityClass typeName="SwappableUniqueAspect" modifier="Abstract">
-        <BaseClass>bis:ElementUniqueAspect</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="IndexedMultiAspect" modifier="Abstract">
-        <BaseClass>bis:ElementMultiAspect</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="StatusAspect" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
@@ -423,6 +417,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadDesignSpeedStandards">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -435,6 +430,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadDesignSpeedDefinitionTable">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -494,6 +490,7 @@
     <!-- BEGIN RoadClass classes -->
     <ECEntityClass typeName="RoadClassStandards">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -506,6 +503,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadClassDefinitionTable">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -618,6 +616,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="CrossSectionElement" modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
