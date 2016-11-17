@@ -2912,7 +2912,6 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-
     virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual uint64_t _Purge(uint64_t memTarget) override;
 

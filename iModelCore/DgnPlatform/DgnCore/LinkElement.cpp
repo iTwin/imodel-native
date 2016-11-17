@@ -132,7 +132,7 @@ BentleyStatus LinkElement::AddToSource(DgnDbR dgndb, DgnElementId linkId, DgnEle
         }
 
     Utf8CP ecSql = "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementHasLinks) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
-    CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql);
+    CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql, dgndb.GetECSqlWriteToken());
     BeAssert(stmt.IsValid());
 
     stmt->BindId(1, sourceElementId);
