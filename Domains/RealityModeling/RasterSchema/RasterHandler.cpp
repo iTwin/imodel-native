@@ -387,7 +387,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        TileTree::TileLoadsPtr loads = std::make_shared<TileTree::TileLoads>();
+        TileTree::LoadStatePtr loads = std::make_shared<TileTree::LoadState>();
         args.RequestMissingTiles(*m_root, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads, depthTransfo));
         }

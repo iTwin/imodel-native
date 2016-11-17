@@ -48,7 +48,7 @@ public:
         {
         Render::Image m_image;  // filled by _ReadFromSource
 
-        RasterTileLoad(TileTree::TileR tile, TileTree::TileLoadsPtr loads, Utf8StringCR cacheKey)
+        RasterTileLoad(TileTree::TileR tile, TileTree::LoadStatePtr loads, Utf8StringCR cacheKey)
             :TileTree::TileLoad("", tile, loads, cacheKey) {};
             
         virtual ~RasterTileLoad(){}
@@ -67,7 +67,7 @@ public:
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoadPtr _CreateTileLoad(TileTree::TileLoadsPtr loads) override { return new RasterTileLoad(*this, loads, ""); }
+    TileTree::TileLoadPtr _CreateTileLoad(TileTree::LoadStatePtr loads) override { return new RasterTileLoad(*this, loads, ""); }
 };
 
 

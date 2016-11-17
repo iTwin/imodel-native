@@ -92,7 +92,7 @@ protected:
         Http::Credentials m_proxyCredentials;
         Utf8String m_contentType;
 
-        WmsTileLoad(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
+        WmsTileLoad(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
         virtual ~WmsTileLoad() {};
 
         BentleyStatus _ReadFromSource() override;
@@ -101,7 +101,7 @@ protected:
         WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }
         };
 
-    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::TileLoadsPtr) override;
+    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::LoadStatePtr) override;
 
     root_type const& GetSource() const { return static_cast<root_type const&>(m_root); }
     root_type& GetSourceR() { return static_cast<root_type&>(m_root); }

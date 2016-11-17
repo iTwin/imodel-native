@@ -105,7 +105,7 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     struct NodeLoad : Dgn::TileTree::TileLoad
         {
-        NodeLoad(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
+        NodeLoad(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::LoadStatePtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
 
         BentleyStatus _LoadTile() override { return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR()); };
         };
@@ -123,7 +123,7 @@ private:
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::TileLoadsPtr) override;
+    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::LoadStatePtr) override;
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
