@@ -217,8 +217,6 @@ public:
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
 
     //! Inserts a new ECRelationship
-    //! @remarks This is a convenience overload that allows you to avoid having to construct a fully-defined IECRelationshipInstance
-    //! with source and target ECInstances to be set. 
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
     //! @param[in] sourceId SourceECInstanceId.
@@ -226,14 +224,8 @@ public:
     //! @param[in] relInstanceProperties If @p relClass has ECProperties, pass its values via this parameter. Note: In this
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
-    //! @return BE_SQLITE_DONE in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId const& sourceId, BeSQLite::EC::ECInstanceId const& targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
-
-    //! Inserts a new ECRelationship
-    //! @param[out] relKey key of the new ECRelationship
-    //! @param[in] relInstance ECRelationship instance to insert
-    //! @return BE_SQLITE_DONE in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::IECRelationshipInstanceCR relInstance);
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
     
     //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
     //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
@@ -241,8 +233,8 @@ public:
     //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
     //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
     //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
-    //! @return BE_SQLITE_DONE in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId const& sourceId, BeSQLite::EC::ECInstanceId const& targetId);
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

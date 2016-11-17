@@ -204,33 +204,20 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId const& sourceId, BeSQLite::EC::ECInstanceId const& targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
+DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, relClass, GetECSqlWriteToken());
     if (!inserter.IsValid())
         return BE_SQLITE_ERROR;
 
-    return inserter.InsertRelationship(relKey, ECInstanceKey(ECClassId(), sourceId), ECInstanceKey(ECClassId(), targetId), relInstanceProperties);
+    return inserter.InsertRelationship(relKey, sourceId, targetId, relInstanceProperties);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertECRelationship(ECInstanceKey& relKey, ECN::IECRelationshipInstanceCR rel)
-    {
-    //WIP this might need a cache of inserters if called often
-    ECInstanceInserter inserter(*this, rel.GetClass(), GetECSqlWriteToken());
-    if (!inserter.IsValid())
-        return BE_SQLITE_ERROR;
-
-    return inserter.Insert(relKey, rel);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId const& sourceId, ECInstanceId const& targetId)
+DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {
