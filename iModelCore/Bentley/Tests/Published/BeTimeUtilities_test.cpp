@@ -128,6 +128,7 @@ uint64_t adjustingTimeZone()
     uint64_t localmillis = (uint64_t)seconds * 1000;
     return localmillis; // return time difference in milli seconds
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       10/16
 //---------------------------------------------------------------------------------------
