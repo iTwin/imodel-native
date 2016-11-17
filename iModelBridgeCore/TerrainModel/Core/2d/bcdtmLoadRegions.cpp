@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -47,8 +47,8 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
  long mark,
  long *numMarkedP,
  long *minPntP,
- long *maxPntP 
- ) 
+ long *maxPntP
+ )
 /*
 ** This Function Marks All Points Internal To A tPtr Polygon.
 **
@@ -67,9 +67,9 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
 /*
 ** Check Start Point tPtr List Is Not Null
 */
- if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt ) 
+ if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt )
    {
-    bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ; 
+    bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ;
     goto errexit ;
    }
 /*
@@ -77,7 +77,7 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Internal To Tptr Polygon") ;
  priorPnt = startPnt ;
- scanPnt = nodeAddrP(dtmP,startPnt)->tPtr ; 
+ scanPnt = nodeAddrP(dtmP,startPnt)->tPtr ;
  do
    {
     antPnt = nextPnt = nodeAddrP(dtmP,scanPnt)->tPtr ;
@@ -88,14 +88,14 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
 **     Check For Point On Internal Region Hull
 */
        if( nodeAddrP(dtmP,antPnt)->tPtr == dtmP->nullPnt && regionOption == 2 )
-         { 
+         {
           if( bcdtmMark_checkForPointOnRegionHullDtmObject(dtmP,antPnt))
             {
              nodeAddrP(dtmP,antPnt)->tPtr = dtmP->numPoints ;
              if( antPnt < *minPntP ) *minPntP = antPnt ;
              if( antPnt > *maxPntP ) *maxPntP = antPnt ;
             }
-         } 
+         }
        if( nodeAddrP(dtmP,antPnt)->tPtr == dtmP->nullPnt )
          {
           nodeAddrP(dtmP,antPnt)->tPtr = mark ;
@@ -118,7 +118,7 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
                    if( clPnt < *minPntP ) *minPntP = clPnt ;
                    if( clPnt > *maxPntP ) *maxPntP = clPnt ;
                   }
-               } 
+               }
 /*
 **           Mark Point
 */
@@ -129,11 +129,11 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
                 nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
                }
             }
-         } 
+         }
        if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,scanPnt,antPnt)) < 0 ) goto errexit ;
       }
-    priorPnt = scanPnt ;  
-    scanPnt = nextPnt ; 
+    priorPnt = scanPnt ;
+    scanPnt = nextPnt ;
    } while ( priorPnt != startPnt ) ;
 /*
 ** Scan Tptr List And Mark Connected Points
@@ -155,21 +155,21 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
 **     Check For Point On Internal Region Hull
 */
        if( nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt && regionOption == 2 )
-         { 
-          if( bcdtmMark_checkForPointOnRegionHullDtmObject(dtmP,clPnt)) 
+         {
+          if( bcdtmMark_checkForPointOnRegionHullDtmObject(dtmP,clPnt))
             {
              nodeAddrP(dtmP,clPnt)->tPtr = dtmP->numPoints ;
              if( clPnt < *minPntP ) *minPntP = clPnt ;
              if( clPnt > *maxPntP ) *maxPntP = clPnt ;
             }
-         } 
+         }
 /*
 **     Mark Point
 */
-       if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
-         { 
+       if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )
+         {
           nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-          lastPnt = clPnt ; 
+          lastPnt = clPnt ;
           nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
          }
       }
@@ -200,7 +200,7 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -247,7 +247,7 @@ BENTLEYDTM_Private int bcdtmMark_checkAndMarkPolygonsDtmObject(BC_DTM_OBJ* dtmP,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *dtmP,long startPnt,long mark,long *numMarkedP, long *minPntP , long *maxPntP ) 
+BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *dtmP,long startPnt,long mark,long *numMarkedP, long *minPntP , long *maxPntP )
 /*
 ** This Function Marks All Points Internal To A tPtr Polygon.
 **
@@ -266,9 +266,9 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
 /*
 ** Check Start Point tPtr List Is Not Null
 */
- if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt ) 
+ if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt )
    {
-    bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ; 
+    bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ;
     goto errexit ;
    }
 /*
@@ -276,7 +276,7 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Internal To Tptr Polygon") ;
  priorPnt = startPnt ;
- scanPnt = nodeAddrP(dtmP,startPnt)->tPtr ; 
+ scanPnt = nodeAddrP(dtmP,startPnt)->tPtr ;
  do
    {
     antPnt = nextPnt = nodeAddrP(dtmP,scanPnt)->tPtr ;
@@ -305,11 +305,11 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
                 nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
                }
             }
-         } 
+         }
        if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,scanPnt,antPnt)) < 0 ) goto errexit ;
       }
-    priorPnt = scanPnt ;  
-    scanPnt = nextPnt ; 
+    priorPnt = scanPnt ;
+    scanPnt = nextPnt ;
    } while ( priorPnt != startPnt ) ;
 /*
 ** Scan Tptr List And Mark Connected Points
@@ -329,10 +329,10 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
        clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
       if( nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )
           bcdtmMark_checkAndMarkPolygonsDtmObject(dtmP, clPnt);
-       if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
-         { 
+       if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )
+         {
           nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-          lastPnt = clPnt ; 
+          lastPnt = clPnt ;
           nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
          }
       }
@@ -363,7 +363,7 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -385,15 +385,15 @@ BENTLEYDTM_Private int bcdtmFind_startAndEndPointTptrPolygonDtmObject(
     /*
     ** Check Start Point tPtr List Is Not Null
     */
-    if( nodeAddrP(dtmP,pt)->tPtr == dtmP->nullPnt ) 
+    if( nodeAddrP(dtmP,pt)->tPtr == dtmP->nullPnt )
         {
-        bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ; 
+        bcdtmWrite_message(2,0,0,"Tptr List Start Point Is Null") ;
         goto errexit ;
         }
     /*
     ** Scan Around Tptr Polygon And Start and End Points
     */
-    scanPnt = nodeAddrP(dtmP,pt)->tPtr ; 
+    scanPnt = nodeAddrP(dtmP,pt)->tPtr ;
     do
         {
 
@@ -450,8 +450,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
-   { 
+ if( dbg )
+   {
     bcdtmWrite_message(0,0,0,"Loading Triangles for Region") ;
     bcdtmWrite_message(0,0,0,"dtmP          = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureId     = %10I64d",featureId) ;
@@ -500,7 +500,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
        if( dbg ) bcdtmWrite_message(0,0,0,"featureId = %10I64d ** numMarked = %8ld minPnt = %8ld maxPnt = %8ld",featureId,numMarked,minPnt,maxPnt) ;
 /*
 **     Get Start And End Points For Scan
-*/ 
+*/
        if( bcdtmFind_startAndEndPointTptrPolygonDtmObject(dtmP, startPnt, &startPnt, &lastPnt) != DTM_SUCCESS) goto errexit;
        if( startPnt < minPnt ) minPnt = startPnt ;
        if( lastPnt  > maxPnt ) maxPnt = lastPnt ;
@@ -514,7 +514,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
           node1P = nodeAddrP(dtmP,p1) ;
           if(( clPtr = node1P->cPtr) != dtmP->nullPtr)
             {
-             if( node1P->tPtr != dtmP->nullPnt) 
+             if( node1P->tPtr != dtmP->nullPnt)
                {
                 p1P = pointAddrP(dtmP,p1) ;
                 trgPts[0].x = p1P->x ;
@@ -531,13 +531,13 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
                    clPtr  = clistP->nextPtr ;
                    p3     = clistP->pntNum ;
                    node3P = nodeAddrP(dtmP,p3) ;
-                   if( node1P->hPtr != p2 ) 
+                   if( node1P->hPtr != p2 )
                      {
                       if( ( p2 > p1 && p3 > p1 && (node2P->tPtr == mark || node2P->tPtr != dtmP->nullPnt) && (node3P->tPtr == mark || node3P->tPtr != dtmP->nullPnt) ) )
                         {
                          voidTriangle = FALSE ;
                          if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ; }
-                         if( voidTriangle == FALSE ) 
+                         if( voidTriangle == FALSE )
                            {
 /*
 **                          Set Point Addresses
@@ -553,18 +553,18 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
                             trgPts[2].x = p3P->x ;
                             trgPts[2].y = p3P->y ;
                             trgPts[2].z = p3P->z ;
-                            ++numTriangles ; 
+                            ++numTriangles ;
                             if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Triangle,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,trgPts,4,userP)) goto errexit ;
                            }
-                        } 
+                        }
                      }
                    p2     = p3 ;
                    node2P = node3P ;
-                  } 
-               } 
+                  }
+               }
             }
           nodeAddrP(dtmP,p1)->tPtr = dtmP->nullPnt ;
-         } 
+         }
       }
    }
 /*
@@ -596,9 +596,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
 BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 (
  BC_DTM_OBJ *dtmP,                         // ==> Pointer To DTM
- long       maxTriangles,                  // ==> Maximum Triangles To Return Per Callback Call 
- long       vectorOption,                  // ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals> 
- double     zAxisFactor,                   // ==> Factor To Exaggerate The z Axis default value 1.0                            
+ long       maxTriangles,                  // ==> Maximum Triangles To Return Per Callback Call
+ long       vectorOption,                  // ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals>
+ double     zAxisFactor,                   // ==> Factor To Exaggerate The z Axis default value 1.0
  long       regionOption,                  // ==> Region Option < 1 = Include Internal Regions , 2 = Exclude Internal Regions >
  long       indexOption,                   // ==> Index Option  < 1 = Use User Tag , 2 = Use Feature Id >
  int64_t      indexValue,                    // ==> Value For Region Selection
@@ -618,13 +618,13 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
   DTM_TIN_NODE    *node1P,*node2P,*node3P ;
   bool   voidTriangle,voidsInDtm=false;
   long  *faceP,*meshFacesP=NULL,numMeshPts=0 ;
-  DPoint3d   *meshPtsP=NULL,*meshVectorsP=NULL ; 
+  DPoint3d   *meshPtsP=NULL,*meshVectorsP=NULL ;
   long  meshVectorsSize=0,meshPtsSize=0;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
-   { 
+ if( dbg )
+   {
     bcdtmWrite_message(0,0,0,"Loading Triangle Shade Mesh for Region") ;
     bcdtmWrite_message(0,0,0,"dtmP          = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"maxTriangles  = %8ld",maxTriangles) ;
@@ -651,7 +651,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 /*
 ** Validate Mesh Size
 */
- if( maxTriangles <= 0 ) maxTriangles = 50000 ; 
+ if( maxTriangles <= 0 ) maxTriangles = 50000 ;
  if( maxTriangles > dtmP->numTriangles ) maxTriangles = dtmP->numTriangles ;
  if( dbg ) bcdtmWrite_message(0,0,0,"maxTriangles = %8ld",maxTriangles) ;
 /*
@@ -661,7 +661,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 /*
 ** Validate z Axis Factor
 */
- if( zAxisFactor <= 0.0 ) zAxisFactor = 1.0 ; 
+ if( zAxisFactor <= 0.0 ) zAxisFactor = 1.0 ;
 /*
 ** Validate Region Option
 */
@@ -718,8 +718,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
           if( bcdtmObject_storeDtmFeatureInDtmObject(temP,DTMFeatureType::Breakline,temP->nullUserTag,1,&temP->nullFeatureId,meshPtsP,numMeshPts)) goto errexit ;
           if( bcdtmWrite_geopakDatFileFromDtmObject(temP,L"regionBoundary.dat")) goto errexit ;
           if( temP     != NULL ) if( bcdtmObject_destroyDtmObject(&temP)) goto errexit ;
-          if( meshPtsP != NULL ) { free(meshPtsP) ; meshPtsP = NULL ; } 
-         } 
+          if( meshPtsP != NULL ) { free(meshPtsP) ; meshPtsP = NULL ; }
+         }
 /*
 **     Mark Points Internal To Region
 */
@@ -728,7 +728,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
        if( dbg ) bcdtmWrite_message(0,0,0,"indexValue = %10I64d ** numMarked = %8ld minPnt = %8ld maxPnt = %8ld",indexValue,numMarked,minPnt,maxPnt) ;
 /*
 **     Get Start And End Points For Scan
-*/ 
+*/
        if( bcdtmFind_startAndEndPointTptrPolygonDtmObject(dtmP, startPnt, &startPnt, &lastPnt) != DTM_SUCCESS) goto errexit;
        if( startPnt < minPnt ) minPnt = startPnt ;
        if( lastPnt  > maxPnt ) maxPnt = lastPnt ;
@@ -737,13 +737,13 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 **     Scan And Load Triangles
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Triangles") ;
-       numTriangles = 0 ; 
+       numTriangles = 0 ;
        for( p1 = minPnt ; p1 <= maxPnt ; ++p1 )
          {
           node1P = nodeAddrP(dtmP,p1) ;
           if(( clPtr = node1P->cPtr) != dtmP->nullPtr)
             {
-             if( node1P->tPtr != dtmP->nullPnt && node1P->tPtr != dtmP->numPoints ) 
+             if( node1P->tPtr != dtmP->nullPnt && node1P->tPtr != dtmP->numPoints )
                {
                 if( ( p2 = bcdtmList_nextAntDtmObject(dtmP,p1,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
                 node2P = nodeAddrP(dtmP,p2) ;
@@ -753,13 +753,13 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
                    clPtr  = clistP->nextPtr ;
                    p3     = clistP->pntNum ;
                    node3P = nodeAddrP(dtmP,p3) ;
-                   if( node1P->hPtr != p2 ) 
+                   if( node1P->hPtr != p2 )
                      {
-                      if( node2P->tPtr != dtmP->nullPnt && node3P->tPtr != dtmP->nullPnt) 
+                      if( node2P->tPtr != dtmP->nullPnt && node3P->tPtr != dtmP->nullPnt)
                         {
                          voidTriangle = FALSE ;
                          if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ; }
-                         if( voidTriangle == FALSE ) 
+                         if( voidTriangle == FALSE )
                            {
                             *faceP = p3  ; ++faceP ;
                             *faceP = p2  ; ++faceP ;
@@ -783,15 +783,15 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
                                numTriangles = 0 ;
                               }
                            }
-                        } 
+                        }
                      }
                    p2     = p3 ;
                    node2P = node3P ;
-                  } 
-               } 
+                  }
+               }
             }
           nodeAddrP(dtmP,p1)->tPtr = dtmP->nullPnt ;
-         } 
+         }
       }
    }
 /*
@@ -822,8 +822,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
  if( meshPtsP     != NULL ) { free(meshPtsP)     ; meshPtsP       = NULL ; }
  if( meshFacesP   != NULL ) { free(meshFacesP)   ; meshFacesP     = NULL ; }
  if( meshVectorsP != NULL ) { free(meshVectorsP) ; meshVectorsP   = NULL ; }
- if( cdbg ) 
-   { 
+ if( cdbg )
+   {
     bcdtmList_reportAndSetToNullNoneNullTptrValuesDtmObject(dtmP,1) ;
     bcdtmList_reportAndSetToNullNoneNullSptrValuesDtmObject(dtmP,1) ;
    }
@@ -838,7 +838,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- if( dtmP->dtmState == DTMState::Tin ) 
+ if( dtmP->dtmState == DTMState::Tin )
    {
     bcdtmList_nullTptrValuesDtmObject(dtmP) ;
     bcdtmList_nullSptrValuesDtmObject(dtmP) ;
@@ -853,7 +853,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
 BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
 (
  BC_DTM_OBJ  *dtmP,
- long        numTriangles, 
+ long        numTriangles,
  double      zAxisFactor,
  long        *meshFacesP,
  DPoint3d    **meshPtsPP,
@@ -871,11 +871,11 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
  double dz ;
 /*
 ** Write Entry Message
-*/ 
-  if( dbg ) 
+*/
+  if( dbg )
     {
      bcdtmWrite_message(0,0,0,"Creating Triangle Shade Mesh") ;
-    } 
+    }
 /*
 **  Mark Mesh Points
 */
@@ -892,15 +892,15 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
 ** Count Number Of Mesh Points
 */
  *numMeshPtsP = 0 ;
- for( node = minMeshPnt ; node <= maxMeshPnt ; ++node ) 
+ for( node = minMeshPnt ; node <= maxMeshPnt ; ++node )
    {
     nodeP = nodeAddrP(dtmP,node) ;
     if( nodeP->sPtr == 1 )
       {
        ++*numMeshPtsP ;
-       nodeP->sPtr = *numMeshPtsP ; 
+       nodeP->sPtr = *numMeshPtsP ;
       }
-   }  
+   }
 /*
 ** Allocate Memory For Mesh Points
 */
@@ -932,21 +932,21 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
    }
 /*
 **  Exaggerate z Axis
-*/ 
+*/
   if( zAxisFactor != 1.0 )
     {
      if( dbg ) bcdtmWrite_message(0,0,0,"Exaggerating z Axis") ;
-     for( node = minMeshPnt ; node <= maxMeshPnt ; ++node ) 
+     for( node = minMeshPnt ; node <= maxMeshPnt ; ++node )
        {
         nodeP = nodeAddrP(dtmP,node) ;
         if( nodeP->sPtr != dtmP->nullPnt )
           {
-           pntP    = pointAddrP(dtmP,node) ; 
+           pntP    = pointAddrP(dtmP,node) ;
            dz = ( pntP->z - dtmP->zMin ) * zAxisFactor ;
            pntP->z = dtmP->zMin + dz ;
-          } 
+          }
        }
-    } 
+    }
 /*
 ** Populate Mesh Points Array And Mesh Vectors Array
 */
@@ -966,12 +966,12 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
 
 // Scan Points
 
- for( node = minMeshPnt ; node <= maxMeshPnt ; ++node ) 
+ for( node = minMeshPnt ; node <= maxMeshPnt ; ++node )
    {
     nodeP = nodeAddrP(dtmP,node) ;
     if( nodeP->sPtr > 0 && nodeP->sPtr < dtmP->nullPnt  )
       {
-       pntP    = pointAddrP(dtmP,node) ; 
+       pntP    = pointAddrP(dtmP,node) ;
 
 //     Check For Memory Range Error
 
@@ -981,9 +981,9 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
             {
              bcdtmWrite_message(1,0,0,"Mesh Points Memory Range Error ** Mesh Point = %8ld ** Number Of Mesh Points = %8ld",(long)(p3dP-*meshPtsPP),*numMeshPtsP) ;
              goto errexit ;
-            }  
+            }
          }
-       
+
 //     Store Points
 
        p3dP->x = pntP->x ;
@@ -997,21 +997,21 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
    }
 /*
 **  De Exaggerate z Axis
-*/ 
+*/
   if( zAxisFactor != 1.0 )
     {
      if( dbg ) bcdtmWrite_message(0,0,0,"DE-Exaggerating z Axis") ;
-     for( node = minMeshPnt ; node <= maxMeshPnt ; ++node ) 
+     for( node = minMeshPnt ; node <= maxMeshPnt ; ++node )
        {
         nodeP = nodeAddrP(dtmP,node) ;
         if( nodeP->sPtr > 0 && nodeP->sPtr < dtmP->nullPnt  )
           {
-           pntP    = pointAddrP(dtmP,node) ; 
+           pntP    = pointAddrP(dtmP,node) ;
            dz = ( pntP->z - dtmP->zMin ) / zAxisFactor ;
            pntP->z = dtmP->zMin + dz ;
-          } 
+          }
        }
-    } 
+    }
 /*
 ** Reset Point Indexes In Mesh Faces
 */
@@ -1022,7 +1022,7 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
 /*
 ** Null Sptr Values
 */
- for( node = minMeshPnt ; node <= maxMeshPnt ; ++node ) 
+ for( node = minMeshPnt ; node <= maxMeshPnt ; ++node )
    {
     nodeAddrP(dtmP,node)->sPtr = dtmP->nullPnt ;
    }
@@ -1030,7 +1030,7 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
 ** Clean Up
 */
  cleanup :
- if( cdbg ) 
+ if( cdbg )
    {
     bcdtmList_reportAndSetToNullNoneNullSptrValuesDtmObject(dtmP,1) ;
    }

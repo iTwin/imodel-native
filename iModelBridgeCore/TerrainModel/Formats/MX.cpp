@@ -476,7 +476,7 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
         }
 
     WString wModelName(inModelName);
-    
+
     wModelName.ToUpper();
     if (!IsValidModelName(wModelName.c_str()))
         return MXExportError::Error;
@@ -509,7 +509,7 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
 
         modelTableRecord = newModelTableRecord.release();
         }
-    
+
     if (asLong(modelTableRecord->modelType()) != asLong("TRIA"))
         return MXExportError::Error;
 

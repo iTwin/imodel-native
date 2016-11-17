@@ -168,7 +168,7 @@ int tinFeaturePointsCallBackFunction (long pntIndex,double X,double Y,double Z)
     return(SUCCESS) ;
 }
 
-int tinTrianglesCallBackFunction(long trgIndex,long pntIndex1,long pntIndex2,long pntIndex3,long voidTriangle,long side1TrgIndex,long side2TrgIndex,long side3TrgIndex) 
+int tinTrianglesCallBackFunction(long trgIndex,long pntIndex1,long pntIndex2,long pntIndex3,long voidTriangle,long side1TrgIndex,long side2TrgIndex,long side3TrgIndex)
 {
     if ( bTrianglesCallbackOn == FALSE )
         return SUCCESS;
@@ -178,7 +178,7 @@ int tinTrianglesCallBackFunction(long trgIndex,long pntIndex1,long pntIndex2,lon
 **  Notes :-
 **
 **  1. Triangles Are Passed Back In A Clockwise Direction
-**  2. Get Triangle Coordinates From Point Index 
+**  2. Get Triangle Coordinates From Point Index
 **  3. VoidTriangle = < 0 Not Void , 1 Void Triangle >
 **  4. side1TrgIndex = index of triangle adjacent to triangle edge pntIndex1-pntIndex2
 **  5. side2TrgIndex = index of triangle adjacent to triangle edge pntIndex2-pntIndex3
@@ -218,12 +218,12 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
 **  Notes :-
 **
 **  1. Ignore dtmFeatureId . It is a civil platform replacement for Guid and is not used by Athens Geopak
-**  2. dtmUserTag  - Used by Geopak. If possible, should Be retained for round tripping purposes. 
+**  2. dtmUserTag  - Used by Geopak. If possible, should Be retained for round tripping purposes.
 **  3. pointIndicesP - Array Of Feature Point Index's.
 **  4. numPoints - Size Of pointIndicesP array
 **  5. Copy pointIndicesP if you need to. Do not free the memory as it is reused by the DTM to save continual memory allocations.
-**  6. A Null User Tag   is set to -9898989898  
-**  6. A Null Feature Id is set to -9898989898  
+**  6. A Null User Tag   is set to -9898989898
+**  6. A Null Feature Id is set to -9898989898
 **
 */
     const wchar_t* cpFeatureName = NULL;
@@ -308,16 +308,16 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
         aecDTM_addPointsExt ( &dtmPntsP, newSrfP, (int)(DTM_C_DTMRNG | ADDPNT_DTM), 5L, pntsP );
 
         //if( dbg )bcdtmWrite_message(0,0,0,"Inroads Rectangle ** %8I64d %8I64d ** %p %8ld",dtmUserTag,dtmFeatureId,pointIndicesP,numPoints) ;
-       if( dbg == 2 )    
+       if( dbg == 2 )
           {
            for( pntP = pointIndicesP ; pntP < pointIndicesP + numPoints ; ++pntP )
              {
               //bcdtmWrite_message(0,0,0,"Rectangle Indice[%4ld] = %8ld",(long)(pntP-pointIndicesP),*pntP) ;
              }
           }
-      break     ; 
+      break     ;
 
-      case   1 :   // Collection Spots - DTMF_GROUP_SPOT - Eg. Set Of survey control points   
+      case   1 :   // Collection Spots - DTMF_GROUP_SPOT - Eg. Set Of survey control points
         addDtmFeature ( &dtmPntsP, ftrName, NULL, DTM_C_DTMREGFTR, styleNameP, numStyles, pntsP, numPoints );
         //if( dbg )bcdtmWrite_message(0,0,0,"Group Spot   ** %8I64d %8I64d ** %p %8ld",dtmUserTag,dtmFeatureId,pointIndicesP,numPoints) ;
       break    ;
@@ -339,8 +339,8 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
           {
            //bcdtmWrite_message(1,0,0,"ERROR - Tin Hull Does not Close") ;
            goto errexit ;
-          } 
-       if( dbg == 2 )    
+          }
+       if( dbg == 2 )
           {
            for( pntP = pointIndicesP ; pntP < pointIndicesP + numPoints ; ++pntP )
              {
@@ -356,7 +356,7 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
           {
            //bcdtmWrite_message(1,0,0,"ERROR - Void Hull Does not Close") ;
            goto errexit ;
-          } 
+          }
        break     ;
 
       case  21  :  // Interior Boundary - DTMF_ISLAND
@@ -366,7 +366,7 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
           {
            //bcdtmWrite_message(1,0,0,"ERROR - Island Hull Does not Close") ;
            goto errexit ;
-          } 
+          }
      break     ;
 
       case  22  :  // Interior Boundary - DTMF_HOLE - A Void but treated differently when merging Tins.
@@ -376,7 +376,7 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
           {
            //bcdtmWrite_message(1,0,0,"ERROR - Hole Hull Does not Close") ;
            goto errexit ;
-          } 
+          }
       break     ;
 
       case  430 :  // Interior Polygon - DTMF_POLYGON - Used To regionize the Tin - application dependent. Eg Catchment Boundaries
@@ -393,7 +393,7 @@ int tinFeaturesCallBackFunction( long dtmFeatureType,__int64 dtmUserTag,__int64 
         //if( dbg ) bcdtmWrite_message(0,0,0,"Unknown %4ld ** %8I64d %8I64d ** %p %8ld",dtmFeatureType,dtmUserTag,dtmFeatureId,pointIndicesP,numPoints) ;
       break    ;
 
-     } ; 
+     } ;
 
     for (int i = 0; i < numPoints; i++)
     {
@@ -472,7 +472,7 @@ void aecDTM_setConvertTinToDTMFunctionStdcall
 }
 
 int aecDTM_convertTinToDTM
-( 
+(
     CIVdtmsrf **srfPP,
     void *tinP,
     WCharCP name,
@@ -485,7 +485,7 @@ int aecDTM_convertTinToDTM
 
     if ( tinP == NULL )
         return ERROR;
-        
+
     // Attempt to find the surface named and update that if it exists, otherwise create a new surface
     CIVdtmprj *prjP = NULL;
     CIVdtmsrf *dtmSrfP = NULL;
@@ -498,9 +498,9 @@ int aecDTM_convertTinToDTM
         if (prjP)
             {
             aecDTM_findSurfaceByName( &dtmSrfP, prjP,const_cast<WCharP>(name));
-            if (dtmSrfP) 
+            if (dtmSrfP)
                 {
-                aecDTM_deleteAllFeatures(dtmSrfP, 0);			
+                aecDTM_deleteAllFeatures(dtmSrfP, 0);
                 wcscpy(dtmSrfP->des, description);
                 newSrfP = dtmSrfP;
                 }
@@ -686,7 +686,7 @@ void aecDTM_addCPFeature(__int64 featureID, LPWSTR featureName, LPWSTR featureDe
     // Add featurename, etc to list
     featureIds.push_back(featureID);
     featureNames.push_back(std::wstring(featureName));
-    featureDefinitions.push_back(std::wstring(featureDefinition));     
+    featureDefinitions.push_back(std::wstring(featureDefinition));
     }
 
 void aecDTM_getCPFeatureInfoByFeatureId(__int64 featureID, const wchar_t* &featureName, const wchar_t* &featureDefinition)
@@ -695,7 +695,7 @@ void aecDTM_getCPFeatureInfoByFeatureId(__int64 featureID, const wchar_t* &featu
     for (unsigned int index = 0;index<featureIds.size();index++)
         {
         if (featureID==featureIds[index])
-            {            
+            {
             featureName = featureNames[index].c_str();
             featureDefinition = featureDefinitions[index].c_str();
             break;

@@ -22,9 +22,9 @@ static int _sendPointCirularList(struct CIVdtmpnt*, struct CIVdtmsrf*, CIVdtmtin
 static int _sendFeaturesCallback(void*,struct CIVdtmsrf*,int,struct CIVdtmftr*);
 static int _getSurfacePerimeterIndices(struct CIVdtmsrf*,DPoint3d**,long*);
 
-static int _inroadsCallback 
-( 
-void *dtmP, 
+static int _inroadsCallback
+(
+void *dtmP,
 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
 int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t* dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t *dtmFeaturStyle, long dtmFeatureType,DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
@@ -101,7 +101,7 @@ int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  num
     {
         if ( ( sts = aecDTM_triangulate ( NULL, NULL, NULL, srfP, TRISRF_INT, NULL, NULL, NULL, NULL ) ) != SUCCESS )
         {
-            if( sts == DTM_M_TOLPRB )//DO_NOT_TRANSLATE 
+            if( sts == DTM_M_TOLPRB )//DO_NOT_TRANSLATE
             {
                 aecDTM_fixTolerance( srfP );
 
@@ -129,8 +129,8 @@ int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  num
 
         (*(int(*)(double, long,long,char*,
                 int  (*_inroadsCallback)
-                ( 
-                void *dtmP, 
+                (
+                void *dtmP,
                 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
                 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
                 int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t *dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t *dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
@@ -149,9 +149,9 @@ int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  num
     return sts;
 }
 
-static int _inroadsCallback 
-( 
-void *dtmP, 
+static int _inroadsCallback
+(
+void *dtmP,
 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
 int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t *dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t* dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)

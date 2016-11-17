@@ -147,8 +147,10 @@ void test_ ()
 void test()
     {
     BC_DTM_OBJ *dtmP = NULL;
+    const wchar_t* fileName = L"D:\\data\\elenie\\beforeNode.bcdtm";
 
-    if (bcdtmRead_fromFileDtmObject(&dtmP, L"D:\\temp\\tile.dtm"))
+    //fileName = L"D:\\data\\elenie\\clipIssue.bcdtm";
+    if (bcdtmRead_fromFileDtmObject(&dtmP, fileName))
         return;
 
     //FILE* fp = fopen("d:\\temp\\outputTM.dat", "rb");
@@ -159,7 +161,29 @@ void test()
     //    fread(pts, sizeof(pts[0]), 4, fp);
     //    bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::GraphicBreak, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, &pts[0], 4);
     //    }
+    long took = bcdtmClock();
     bcdtmObject_triangulateStmTrianglesDtmObject(dtmP);
+    took = bcdtmClock() - took;
+
+    DTMState dummyState;
+    long dummy = 0;
+    long numPoints;
+    long numTinLines;
+    long numTriangles;
+    long numDtmFeatures;
+    long numBreaks;
+    long numContourLines;
+    long numVoids;
+    long numIslands;
+    long numHoles;
+    long numGroupSpots;
+    bool hasHull;
+
+    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getStatisticsDtmObject(dtmP, dummyState, numPoints, numTinLines, numTriangles, dummy,
+        dummy, numDtmFeatures, numBreaks, numContourLines, numVoids, numIslands, numHoles, numGroupSpots, hasHull, dummy);
+    
+    bcdtmWrite_toFileDtmObject(dtmP, L"d:\\test.bcdtm");
+    printf("Took %ld\n", took);
     }
 // BCivilDTM.2.0.lib odbc32.lib odbccp32.lib
 int wmain(int argc, wchar_t *argv[])
@@ -179,6 +203,7 @@ int wmain(int argc, wchar_t *argv[])
 ** Initialise DTM
 */
  bcdtmInitialise() ;
+ test();
  sOutputToConsole = true;
  //test ();
  if( fpLOG != NULL ) { fclose(fpLOG) ; fpLOG = NULL ; }

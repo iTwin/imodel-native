@@ -21,7 +21,7 @@ int aecFeature_create
     FeatureHandle *ftrHndlP
 );
 
-void aecFeature_destroy 
+void aecFeature_destroy
 (
     FeatureHandle ftrHndl
 );

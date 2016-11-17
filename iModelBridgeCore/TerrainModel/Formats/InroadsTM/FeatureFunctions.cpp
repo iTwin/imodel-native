@@ -112,7 +112,7 @@ int aecFeature_addPoints    // <=  Non-zero status code if error occurred.
 {
     int sts = SUCCESS;
 
-    if ( ftrPntsP )        
+    if ( ftrPntsP )
         sts = ((CFeature *)ftrHndl)->AddPoints ( ftrPntsP, numPnts );
     else if ( pntsP )
         sts = ((CFeature *)ftrHndl)->AddPoints ( pntsP, flgsP, numPnts );
@@ -158,12 +158,12 @@ int aecFeature_getPoints     // <=  Non-zero status code if error occurred.
     if ( ftrPntsPP )
     {
         if ( (sts = ((CFeature *)ftrHndl)->GetPoints ( ftrPntsPP, numPntsP ) ) == SUCCESS )
-            sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, *ftrPntsPP, *numPntsP );                
+            sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, *ftrPntsPP, *numPntsP );
     }
     else
        sts = ((CFeature *)ftrHndl)->GetPoints ( pntsPP, pntFlgsPP, numPntsP );
 
-    return ( sts );        
+    return ( sts );
 }
 
 
@@ -208,14 +208,14 @@ int aecFeature_dpnt3dsToFtrpnts
             memcpy ( &((*ftrPntsPP)[i].cor), &dpnt3dsP[i], sizeof ( DPoint3d ) );
 
             if ( pntflgsP )
-                (*ftrPntsPP)[i].flg = pntflgsP[i];         
+                (*ftrPntsPP)[i].flg = pntflgsP[i];
         }
     }
     else
         sts = AEC_E_MEMALF;
 
-    return ( sts ); 
-}   
+    return ( sts );
+}
 
 
 //---------------------------------------------------------------------------
@@ -255,7 +255,7 @@ int aecFeature_ftrpntsToDpnt3ds
         }
     }
 
-    return ( sts ); 
-} 
-                        
+    return ( sts );
+}
+
 

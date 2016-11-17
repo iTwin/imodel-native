@@ -862,6 +862,7 @@ errexit :
     goto cleanup ;
     }
 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1136,7 +1137,7 @@ errexit:
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
     (
     BC_DTM_OBJ *dtmP,
     long       firstPnt,
@@ -4207,7 +4208,7 @@ errexit :
          bcdtmWrite_message(0, 0, 0, "Removing inserted Points\n");
 
      long point = pointNumP[0];
-     
+
      while (point != dtmP->nullPnt)
          {
          if (DTM_SUCCESS != bcdtmEdit_deletePointDtmObject(dtmP, point, 1))

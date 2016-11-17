@@ -47,11 +47,11 @@
 
 #define BEGIN_BENTLEY_MRDTM_NAMESPACE
 #define END_BENTLEY_MRDTM_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_MRDTM   
+#define USING_NAMESPACE_BENTLEY_MRDTM
 
-#define BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE 
-#define END_BENTLEY_MRDTM_IMPORT_NAMESPACE  
-#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT 
+#define BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
+#define END_BENTLEY_MRDTM_IMPORT_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT
 
 #define TERRAINMODEL_TYPEDEFS(_name_)   typedef struct _name_ * _name_##P; typedef struct _name_ const* _name_##CP; typedef struct _name_ & _name_##R; typedef struct _name_ const& _name_##CR;
 #define TERRAINMODEL_ENUM(t,tEnum)   typedef enum  t tEnum;
@@ -155,7 +155,7 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 #define BENTLEYDTM_Private static
 #if defined (CREATE_STATIC_LIBRARIES) || defined (TERRAINMODEL_STATICLIB)
 #define BENTLEYDTM_Public
-#define BENTLEYDTM_EXPORT 
+#define BENTLEYDTM_EXPORT
 #elif defined (__BENTLEYDTM_BUILD__)
 #define BENTLEYDTM_Public EXPORT_ATTRIBUTE
 #define BENTLEYDTM_EXPORT EXPORT_ATTRIBUTE
@@ -320,7 +320,7 @@ enum class DTMDrapePointCode
 /*
 ** DTM Null Values
 */
-// RobC 17-Dec-1010 Modified DTM_NULL_PNT and DTM_NULL_PTR 
+// RobC 17-Dec-1010 Modified DTM_NULL_PNT and DTM_NULL_PTR
 // For 64 Bit . Both These Constants Have to Be A Minimum Of
 // 6 Times Larger Than the Maximum Number Of Points That Can Be Triangulated
 // The New Values Have Been set To Allow A Maximum Of 350 M Triangulation Points

@@ -16,7 +16,7 @@
 //---------------------------------------------------------------------------
 // DESC: Constructor
 // HIST: Original - twlangha - 01/13/99
-// MISC: 
+// MISC:
 //---------------------------------------------------------------------------
 
 CFeature::CFeature()
@@ -59,7 +59,7 @@ CFeature::~CFeature()
 
 //---------------------------------------------------------------------------
 // DESC: Returns the feature's triangulation setting.  If the feature's
-//       triangulation setting is enabled the feature's points will be 
+//       triangulation setting is enabled the feature's points will be
 //       included in triangulation.  See EnableTriangulation() for more
 //       detail.
 // HIST: Original - twlangha - 01/13/99
@@ -111,7 +111,7 @@ int CFeature::LoadStyles ( )    // <=  Non-zero status code if error occurred.
 
     if ( !StylesAreLoaded ( ) && m_ftrP )
     {
-        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP, 
+        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP,
                                       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                       &m_stylesP, &m_nNumStyles, NULL, NULL, NULL );
 
@@ -176,7 +176,7 @@ int CFeature::LoadPayItems ( )    // <=  Non-zero status code if error occurred.
 
     if ( !PayItemsAreLoaded ( ) && m_ftrP )
     {
-        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP, 
+        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP,
                                       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                       NULL, NULL, &m_payItemsP, &m_nNumPayItems, NULL );
 
@@ -219,7 +219,7 @@ int CFeature::FreeAll ( )   // <=  Non-zero status code if error occurred.
     int sts = SUCCESS;
 
     Clear ( );
-    
+
     return ( sts );
 }
 
@@ -239,7 +239,7 @@ int CFeature::Clear ( )     // <=  Non-zero status code if error occurred.
     FreePoints ( );
     FreeStyles ( );
     FreePayItems ( );
-    
+
     m_ftrP = NULL;
     m_srfP = NULL;
     memset ( &m_guid, 0, sizeof ( BeSQLite::BeGuid ) );

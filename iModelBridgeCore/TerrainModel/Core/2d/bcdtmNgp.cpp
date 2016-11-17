@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 //#pragma optimize( "p", on )
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -64,7 +64,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 **        Ignore Void Points
 */
           lowPnt   = p1 ;
-          lowPoint = TRUE ; 
+          lowPoint = TRUE ;
           while ( clptr != dtmP->nullPtr && lowPoint )
             {
              p2  = clistAddrP(dtmP,clptr)->pntNum ;
@@ -74,7 +74,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 /*
 **        Test For Zero Slope Sumpline
 */
-          if( ! lowPoint  ) 
+          if( ! lowPoint  )
             {
              clptr = nodeP->cPtr ;
              zeroSlopeSumpLine = FALSE ;
@@ -82,39 +82,39 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
                {
                 p2  = clistAddrP(dtmP,clptr)->pntNum ;
                 clptr = clistAddrP(dtmP,clptr)->nextPtr ;
-                if( p2 > p1 ) 
+                if( p2 > p1 )
                   {
 /*
 **                 Ignore Void Lines
 */
                    if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                    if( ! voidLine )
-                     { 
+                     {
                       if( nodeAddrP(dtmP,p1)->hPtr == dtmP->nullPnt )
                         {
                          if( pointAddrP(dtmP,p1)->z == pointAddrP(dtmP,p2)->z )
                            {
-                            if( ( ap = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ; 
-                            if( ( cp = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ; 
+                            if( ( ap = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
+                            if( ( cp = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
 /*
-**                          Check For Zero Slope Sump Line 
+**                          Check For Zero Slope Sump Line
 */
                             if( pointAddrP(dtmP,ap)->z > pointAddrP(dtmP,p1)->z && pointAddrP(dtmP,cp)->z > pointAddrP(dtmP,p1)->z )
                               {
                                zeroSlopeSumpLine = TRUE ;
                                sumpPnt1 = p1 ;
-                               sumpPnt2 = p2 ; 
+                               sumpPnt2 = p2 ;
                               }
-                           } 
+                           }
                         }
                      }
                   }
-               } 
+               }
             }
 /*
 **        Test For Zero Slope Triangle Pond
 */
-          if( ! lowPoint && ! zeroSlopeSumpLine  ) 
+          if( ! lowPoint && ! zeroSlopeSumpLine  )
             {
              clptr = nodeP->cPtr ;
              zeroSlopeTriangle = FALSE ;
@@ -135,11 +135,11 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
                           pointAddrP(dtmP,p1)->z == pointAddrP(dtmP,p3)->z        )
                         {
                          zeroSlopeTriangle = TRUE ;
-                         trgPnt1 = p1 ;  
-                         trgPnt2 = p2 ;  
-                         trgPnt3 = p3 ;  
+                         trgPnt1 = p1 ;
+                         trgPnt2 = p2 ;
+                         trgPnt3 = p3 ;
                         }
-                     } 
+                     }
                   }
                 p2 = p3 ;
                }
@@ -147,7 +147,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
          }
       }
    }
-  
+
 /*
 ** Clean Up
 */
@@ -161,7 +161,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 /*
 ** Error Exit
 */
- errexit : 
+ errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
