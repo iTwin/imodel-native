@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
+#include <Bentley/BeCriticalSection.h>
 #include <Bentley/DateTime.h>
 #include <BeXml/BeXml.h>
 
@@ -21,6 +22,8 @@ struct SamlToken
     {
     private:
         Utf8String m_token;
+
+        mutable BeCriticalSection m_domMutex;
         mutable BeXmlDomPtr m_dom;
 
     private:
@@ -32,6 +35,10 @@ struct SamlToken
         WSCLIENT_EXPORT SamlToken();
         //! Construct token from xml string
         WSCLIENT_EXPORT SamlToken(Utf8String token);
+        //! Copy constructor
+        WSCLIENT_EXPORT SamlToken(const SamlToken& other);
+        //! Assignment operator
+        WSCLIENT_EXPORT SamlToken& operator=(const SamlToken& other);
         //! Check whenver given token is empty
         WSCLIENT_EXPORT bool IsEmpty() const;
         //! Check whenver given token is valid xml and supported

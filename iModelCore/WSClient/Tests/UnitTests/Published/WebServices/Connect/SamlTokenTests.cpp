@@ -13,6 +13,76 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
 
+TEST_F(SamlTokenTests, CopyCtor_OriginalEmpty_Empty)
+    {
+    auto original = std::make_shared<SamlToken>();
+    SamlToken copy(*original);
+    original = nullptr;
+    EXPECT_TRUE(copy.IsEmpty());
+    }
+
+TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndOriginalDestroyed_LifetimeCopied)
+    {
+    auto original = std::make_shared<SamlToken>(StubSamlTokenXML(42));
+    auto copy = std::make_shared<SamlToken>(*original);
+
+    ASSERT_EQ(42, original->GetLifetime());
+    ASSERT_EQ(42, copy->GetLifetime());
+
+    original = nullptr;
+
+    EXPECT_EQ(42, copy->GetLifetime());
+    }
+
+TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndCopyDestroyed_LifetimeSameInOriginal)
+    {
+    auto original = std::make_shared<SamlToken>(StubSamlTokenXML(42));
+    auto copy = std::make_shared<SamlToken>(*original);
+
+    ASSERT_EQ(42, original->GetLifetime());
+    ASSERT_EQ(42, copy->GetLifetime());
+
+    copy = nullptr;
+
+    EXPECT_EQ(42, original->GetLifetime());
+    }
+
+TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndRightDestroyed_LifetimeCopied)
+    {
+    auto token1 = std::make_shared<SamlToken>(StubSamlTokenXML(111));
+    auto token2 = std::make_shared<SamlToken>(StubSamlTokenXML(222));
+
+    ASSERT_EQ(111, token1->GetLifetime());
+    ASSERT_EQ(222, token2->GetLifetime());
+
+    *token1 = *token2;
+
+    ASSERT_EQ(222, token1->GetLifetime());
+    ASSERT_EQ(222, token2->GetLifetime());
+
+    token2 = nullptr;
+
+    EXPECT_EQ(222, token1->GetLifetime());
+    }
+
+TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndLeftDestroyed_LifetimeSameInOriginal)
+    {
+    auto token1 = std::make_shared<SamlToken>(StubSamlTokenXML(111));
+    auto token2 = std::make_shared<SamlToken>(StubSamlTokenXML(222));
+
+    ASSERT_EQ(111, token1->GetLifetime());
+    ASSERT_EQ(222, token2->GetLifetime());
+
+    *token1 = *token2;
+
+    ASSERT_EQ(222, token1->GetLifetime());
+    ASSERT_EQ(222, token2->GetLifetime());
+
+    token1 = nullptr;
+
+    EXPECT_EQ(222, token2->GetLifetime());
+    }
+
 TEST_F(SamlTokenTests, IsEmpty_DefaultCtor_True)
     {
     EXPECT_TRUE(SamlToken().IsEmpty());
