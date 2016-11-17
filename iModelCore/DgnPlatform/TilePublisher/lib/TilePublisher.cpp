@@ -1547,6 +1547,11 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
+    AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
+    transform.Multiply(projectExtents, projectExtents);
+    json["projectExtents"]["low"] = PointToJson(projectExtents.low);
+    json["projectExtents"]["high"] = PointToJson(projectExtents.high);
+
     return Status::Success;
     }
 
