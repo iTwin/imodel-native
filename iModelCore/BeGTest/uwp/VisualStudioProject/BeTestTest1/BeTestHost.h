@@ -15,6 +15,8 @@ void ExecuteOnUiThread (Windows::UI::Core::DispatchedHandler^ action);
 
 struct BeTestHost : RefCounted<BeTest::Host>
     {
+    static Utf8String s_currentTestClassName;
+
     BeFileName m_home;
     BeFileName m_docs;
     BeFileName m_temp;

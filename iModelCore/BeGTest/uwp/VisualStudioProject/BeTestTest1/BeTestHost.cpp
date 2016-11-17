@@ -38,6 +38,8 @@ void ExecuteOnUiThread (DispatchedHandler^ action)
     ::CloseHandle (syncEvent);
     }
 
+Utf8String BeTestHost::s_currentTestClassName;
+
 BeTestHost::BeTestHost (wchar_t const* home)
     {
     m_home.SetName (Windows::ApplicationModel::Package::Current->InstalledLocation->Path->Data ());

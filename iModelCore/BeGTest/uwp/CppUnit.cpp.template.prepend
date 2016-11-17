@@ -10,40 +10,35 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-static void doSetUpL10N ()
-    {
-    BeFileName frameworkSqlang;
-    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
-    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
-    if(frameworkSqlang.DoesPathExist())
-        BeSQLite::L10N::Initialize(frameworkSqlang);
-    }
+BEGIN_UNNAMED_NAMESPACE
 
-//static void doTearDownL10N ()
-//    {
-//    BeSQLite::L10N::Shutdown ();
-//    }
-
-static void doSetUp ()
+static void ensureTestClassSetUp(Utf8CP testClassName)
     {
-    if (BeTest::IsInitialized())
+    if (BeTestHost::s_currentTestClassName.Equals(testClassName))
         return;
+    
+    if (!BeTestHost::s_currentTestClassName.empty())
+        BeTest::TearDownTestCase(BeTestHost::s_currentTestClassName.c_str());
 
-    BeTest::Initialize (*BeTestHost::Create(nullptr));
+    BeTestHost::s_currentTestClassName = testClassName;
 
-    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
-    NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_ERROR);
+    if (!BeTest::IsInitialized())
+        {
+        BeTest::Initialize(*BeTestHost::Create(nullptr));
 
-    doSetUpL10N();
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+        NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_ERROR);
+
+        BeFileName frameworkSqlang;
+        BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
+
+        // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+        if (frameworkSqlang.DoesPathExist())
+            BeSQLite::L10N::Initialize(frameworkSqlang);
+        }
+
+    BeTest::SetUpTestCase(testClassName);
     }
 
-static void doTearDown ()
-    {
-    // BeTest::Uninitialize (); No! CppTest does not call TearDownTestCase as a bookend to each SetUpTestCase method. Instead,
-    //                              it calls SetUpTestCase methods as it goes along and then calls all TearDownTestCase methods
-    //                              at the end, one after another. So, if each TearDownTestCase method were to uninitialize
-    //                              BeTest, then it would be invalid when the next TearDownTestCase method ran. In fact, some
-    //                              TearDownTestCase implementations use the BeTest host.
-    }
-
+END_UNNAMED_NAMESPACE
