@@ -659,7 +659,7 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     rootInstance["Persistence"] = 0;
 
     JsonInserter inserter(db, *rootClass, nullptr);
-    ASSERT_EQ(BE_SQLITE_DONE, inserter.Insert(rootInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rootInstance));
 
     // Try again
     statement.Reset();

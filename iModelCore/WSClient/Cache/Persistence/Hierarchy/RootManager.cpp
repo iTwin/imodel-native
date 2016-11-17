@@ -122,7 +122,7 @@ BentleyStatus RootManager::SetupRoot(Utf8StringCR rootName, CacheRootPersistence
         }
 
     root[CLASS_Root_PROPERTY_Persistence] = static_cast<int> (persistence);
-    if (BE_SQLITE_DONE != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
+    if (BE_SQLITE_OK != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
         {
         return ERROR;
         }
@@ -149,7 +149,7 @@ BentleyStatus RootManager::RenameRoot(Utf8StringCR rootName, Utf8StringCR newRoo
         }
 
     root[CLASS_Root_PROPERTY_Name] = newRootName;
-    if (BE_SQLITE_DONE != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
+    if (BE_SQLITE_OK != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
         {
         return ERROR;
         }
@@ -177,7 +177,7 @@ BentleyStatus RootManager::SetRootSyncDate(Utf8StringCR rootName, DateTimeCR utc
     ReadRootInstance(rootName, root);
 
     root[CLASS_Root_PROPERTY_SyncDate] = utcDateTime.ToUtf8String();
-    if (BE_SQLITE_DONE != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
+    if (BE_SQLITE_OK != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
         {
         return ERROR;
         }
@@ -491,7 +491,7 @@ CacheRootKey RootManager::CreateRoot(Utf8StringCR rootName, CacheRootPersistence
     newRoot[CLASS_Root_PROPERTY_Name] = rootName;
     newRoot[CLASS_Root_PROPERTY_Persistence] = static_cast<int> (persistence);
 
-    if (BE_SQLITE_DONE != m_rootInserter.Get().Insert(newRoot))
+    if (BE_SQLITE_OK != m_rootInserter.Get().Insert(newRoot))
         {
         return CacheRootKey();
         }

@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
     ASSERT_FALSE(ecClassCP == nullptr);\
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(db, *ecClassCP, nullptr).Insert(keyOut, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(db, *ecClassCP, nullptr).Insert(keyOut, Json::Value()));
 
 #define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
     ASSERT_FALSE(ecRelClassCP == nullptr); \
@@ -1066,8 +1066,8 @@ TEST_F(ECDbAdapterTests, RelateInstances_InstancesExist_RelationshipIsCreated)
     auto relClass = adapter.GetECRelationshipClass("TestSchema.AB");
     ECInstanceKey source, target;
 
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(source, Json::Value()));
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(target, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(source, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(target, Json::Value()));
 
     auto relationshipKey = adapter.RelateInstances(relClass, source, target);
     EXPECT_TRUE(relationshipKey.IsValid());
@@ -1092,8 +1092,8 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
     auto relClass = adapter.GetECRelationshipClass("TestSchema.AB");
     ECInstanceKey source, target;
 
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(source, Json::Value()));
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(target, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(source, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(target, Json::Value()));
 
     auto relationshipKey1 = adapter.RelateInstances(relClass, source, target);
     auto relationshipKey2 = adapter.RelateInstances(relClass, source, target);
@@ -1174,7 +1174,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndRemovedListener_List
     ECDbAdapter adapter(*db);
 
     ECInstanceKey instance;
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL(listener, OnBeforeDelete(_, _, _)).Times(0);
@@ -1191,7 +1191,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndListenerReturnsError
     ECDbAdapter adapter(*db);
 
     ECInstanceKey instance;
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(*db, *adapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *adapter.GetECClass("TestSchema.TestClass"), nullptr).Insert(instance, Json::Value()));
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL(listener, OnBeforeDelete(_, _, _)).WillOnce(Return(ERROR));

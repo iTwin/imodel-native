@@ -291,7 +291,7 @@ BentleyStatus UpgraderFromV4ToV5::UpdateInstances(const bvector<UpgradeInstance>
         {
         ECClassCP instanceClass = m_adapter.GetECClass(instance.ecClassId);
         JsonUpdater updater(m_adapter.GetECDb(), *instanceClass, nullptr);
-        if (BE_SQLITE_DONE != updater.Update(ECDbHelper::ECInstanceIdFromJsonInstance(instance.json), instance.json))
+        if (BE_SQLITE_OK != updater.Update(ECDbHelper::ECInstanceIdFromJsonInstance(instance.json), instance.json))
             {
             return ERROR;
             }
