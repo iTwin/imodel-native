@@ -257,7 +257,8 @@ DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId sou
             return BE_SQLITE_ERROR;
         }
 
-    return stmt->Step();
+    const DbResult stat = stmt->Step();
+    return BE_SQLITE_DONE == stat ? BE_SQLITE_OK : stat;
     }
 
 
