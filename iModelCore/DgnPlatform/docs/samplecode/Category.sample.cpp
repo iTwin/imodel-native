@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/Category.sample.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Category_Includes.sampleCode
@@ -22,14 +22,7 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 DgnCategoryId createAndInsertCategory(DgnDbR db)
     {
-    // configure the Category
-    DgnCategory::CreateParams params(db,
-            "MyApp_MyCategory",                         // Set the code for this category.
-            DgnCategory::Scope::Physical,               // Set the scope for this category (which will only be valid for physical models)
-            DgnCategory::Rank::Application,             // Indicate that this category was inserted by an application
-            "MyCategory");                              // Friendly description for this category
-
-    DgnCategory category(params);
+    SpatialCategory category(db, "MyApp_MyCategory", DgnCategory::Rank::Application);
 
     // configure the appearance for the Category's default SubCategory
     DgnSubCategory::Appearance appearance;

@@ -69,6 +69,10 @@ HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Definition)
+HANDLER_DEFINE_MEMBERS(Category);
+HANDLER_DEFINE_MEMBERS(DrawingCategory);
+HANDLER_DEFINE_MEMBERS(SpatialCategory);
+HANDLER_DEFINE_MEMBERS(SubCategory);
 HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(PhysicalTemplate)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
@@ -96,7 +100,9 @@ HANDLER_DEFINE_MEMBERS(Material)
 HANDLER_DEFINE_MEMBERS(Partition)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
-HANDLER_DEFINE_MEMBERS(Category)
+HANDLER_DEFINE_MEMBERS(DrawingCategory)
+HANDLER_DEFINE_MEMBERS(SpatialCategory)
+HANDLER_DEFINE_MEMBERS(SubCategory)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(Link)
@@ -171,6 +177,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
+    RegisterHandler(dgn_ElementHandler::DrawingCategory::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
@@ -216,7 +224,9 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::Partition::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::DrawingCategory::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::SpatialCategory::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Link::GetHandler());

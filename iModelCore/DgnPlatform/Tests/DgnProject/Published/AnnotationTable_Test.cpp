@@ -191,8 +191,8 @@ DgnDbR                  GetDgnDb()
     }
 
 DgnModelId              GetModelId()            { return s_modelId; }
-DgnCategoryId           GetCategoryId()         { return DgnCategory::QueryCategoryId (TEST_CATEGORY_NAME, GetDgnDb()); }
-DgnElementId            GetTextStyleId()        { return AnnotationTextStyle::QueryId (GetDgnDb(), TEST_TEXTSTYLE_NAME); }
+DgnCategoryId           GetCategoryId()         { return DrawingCategory::QueryCategoryId(GetDgnDb(), TEST_CATEGORY_NAME); }
+DgnElementId            GetTextStyleId()        { return AnnotationTextStyle::QueryId(GetDgnDb(), TEST_TEXTSTYLE_NAME); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
@@ -351,10 +351,9 @@ void AnnotationTableTest::SetUpTestCase()
     ASSERT_TRUE(db.IsValid());
 
     // Create a category
-    DgnCategory category(DgnCategory::CreateParams(*db, TEST_CATEGORY_NAME, DgnCategory::Scope::Physical));
+    DrawingCategory category(*db, TEST_CATEGORY_NAME);
     DgnSubCategory::Appearance appearance;
     category.Insert(appearance);
-
     ASSERT_TRUE (category.GetCategoryId().IsValid());
 
     // Create a text style
@@ -363,7 +362,6 @@ void AnnotationTableTest::SetUpTestCase()
     textStyle->SetHeight(0.25);
     textStyle->SetFontId(db->Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     textStyle->Insert();
-
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model

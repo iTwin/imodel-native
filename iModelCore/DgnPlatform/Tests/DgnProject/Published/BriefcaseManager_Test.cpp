@@ -1195,15 +1195,16 @@ struct LocksManagerTest : RepositoryManagerTest
     DgnElementPtr Create3dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), catId);
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
+        return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), categoryId);
         }
 
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
         DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
-        return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
+        return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, categoryId));
         }
 };
 
@@ -1229,7 +1230,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
         {
         m_db = &db;
         m_modelId = DgnModel::DictionaryId();
-        m_elemId = DgnCategory::QueryFirstCategoryId(db);
+        m_elemId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
         }
 
     void SetUp()
@@ -2236,11 +2237,11 @@ TEST_F(ExtractLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
     EXPECT_TRUE(req.IsEmpty());
 
-    // Modify an elem (it's a DgnCategory...)
+    // Modify an elem (it's a SpatialCategory...)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2295,7 +2296,7 @@ struct CodesManagerTest : RepositoryManagerTest
 
     static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
-        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : DgnCategory::CreateCategoryCode(name);
+        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : SpatialCategory::CreateCode(name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }

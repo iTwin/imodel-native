@@ -37,26 +37,25 @@ void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf
     m_db->SaveChanges();
     }
 
-TEST_F(CreateFromInstanceTests, Category)
+TEST_F(CreateFromInstanceTests, SpatialCategory)
     {
     SetupSeedProject();
 
     Utf8CP json =
         "{"
-        "\"CodeAuthorityId\" : \"3\","
+        "\"CodeAuthorityId\" : \"12\","
         "\"CodeNamespace\" : \"\","
         "\"CodeValue\" : \"Hub\","
         "\"Descr\" : \"\","
         "\"ModelId\" : \"16\","
         "\"ParentId\" : null,"
         "\"Rank\" : 1,"
-        "\"Scope\" : 1,"
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null"
         "}";
 
     DgnElementPtr inserted = nullptr;
-    CreateAndInsertElement(inserted, json, "BisCore", "Category");
+    CreateAndInsertElement(inserted, json, BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
     ASSERT_TRUE(inserted.IsValid());
     }
 
@@ -106,7 +105,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "}";
 
 
-    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass("BisCore", "CameraViewDefinition");
+    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);
     ECN::IECInstancePtr ecInstance = viewDefClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(ecInstance.IsValid());
