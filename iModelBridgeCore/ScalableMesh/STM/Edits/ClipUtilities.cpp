@@ -949,7 +949,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
-    en->SetMaxTriangles(2000000);
+    en->SetMaxTriangles((int)m_nIndices*10);
     bmap<int32_t, int32_t> updatedIndices;
     if (m_uvBuffer && m_uvIndices)
         {

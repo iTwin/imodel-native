@@ -943,7 +943,8 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     }
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
-    {       
+    {     
+    if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     Transform reprojectTransform = sMesh->GetReprojectionTransform();
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, reprojectTransform));
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false);
