@@ -1075,6 +1075,12 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
             longitude = geoLocation->longitude;
             latitude  = geoLocation->latitude;
             }
+        else
+            {
+            m_tileToEcef.InitIdentity();
+            return;
+            }
+
         ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
         ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }

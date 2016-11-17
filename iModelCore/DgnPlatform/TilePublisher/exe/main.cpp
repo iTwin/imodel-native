@@ -181,7 +181,7 @@ public:
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
-    GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+    GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     bool GetProcessModelsInParallel() const { return m_parallelModels; }
     bool GetIncremental() const { return m_publish; }
@@ -744,7 +744,7 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, 
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
                                                 createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel(), createParams.GetIncremental());
 
     if (!createParams.GetOverwriteExistingOutputFile())
