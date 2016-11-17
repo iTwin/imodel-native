@@ -753,7 +753,7 @@ DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    if (BE_SQLITE_DONE != updater->Update(*this))
+    if (BE_SQLITE_OK != updater->Update(*this))
         return DgnDbStatus::WriteError;
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
