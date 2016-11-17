@@ -9,8 +9,12 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "RealityPlatformAPI.h"
+#include <ctime>
 #include <Bentley/BeFile.h>
+#include <Bentley/bmap.h>
+#include <BeXml/BeXml.h>
+#include <Bentley/DateTime.h>
+#include "RealityPlatformAPI.h"
 
 //! Callback function to follow the download progression.
 //! @param[out] index       Url index set at the creation, (-1)General error, (-2)Retry the command. 
@@ -28,6 +32,11 @@ typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t B
 //! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
 //! @param[out] pMsg        Curl English message.
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataDownload_StatusCallBack;
+
+//! Callback function to follow the download progression.
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
+typedef std::function<int()> RealityDataDownload_HeartbeatCallBack;
 
 //Special Error codes
 #define REALITYDATADOWNLOAD_RETRY_TENTATIVE     -2
@@ -52,7 +61,7 @@ enum class SetupCurlStatus
 
 
 struct RealityDataDownload : public RefCountedBase
-{
+    {
 public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
@@ -71,6 +80,7 @@ public:
         FileTransfer* nextSister;
         size_t sisterIndex;
         size_t totalSisters;
+        std::time_t DownloadStart;
         };
 
     struct FileTransfer 
@@ -85,6 +95,7 @@ public:
         BeFile                  fileStream;
         size_t                  iAppend;
         RealityDataDownload_ProgressCallBack pProgressFunc;
+        RealityDataDownload_HeartbeatCallBack pHeartbeatFunc;
         size_t                  filesize;
         size_t                  downloadedSizeStep;
         float                   progressStep;
@@ -107,6 +118,76 @@ public:
             fromCache(true), iAppend(ft->iAppend), pProgressFunc(ft->pProgressFunc), filesize(ft->filesize),
             downloadedSizeStep(ft->downloadedSizeStep), progressStep(ft->progressStep), nbRetry(ft->nbRetry)
             {}
+        };
+
+    //where the curl download ended, either in success or failure
+    struct DownloadResult
+        {
+        int                     errorCode; //code returned by curl
+        size_t                  downloadProgress; //a percentage of how much of the file was successfully downloaded
+        };
+
+    //results for a single file
+    struct TransferReport
+        {
+        AString                 url; //url that was contacted
+        size_t                  filesize; //size of the file
+        bvector<DownloadResult> retries; //the results of each retry performed
+        //time between when the download was added to the thread pool and when it either succeeded or failed its final retry
+        //important to note, that if the source limits the number of parallel downloads, this value may be artificially extended
+        std::time_t             timeSpent; 
+        };
+
+    //results of all downloads queued for a package
+    struct DownloadReport
+        {
+        size_t                  packageId;
+        bmap<WString, TransferReport*> results;
+        ~DownloadReport()
+            {
+            for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
+                delete (it->second);
+            }
+
+        REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
+            {
+            BeXmlWriterPtr writer = BeXmlWriter::Create();
+            BeAssert(writer.IsValid());
+            writer->SetIndentation(2);
+
+            //writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
+
+            writer->WriteElementStart("RealityDataDownload_DownloadReport");
+                {
+                writer->WriteAttribute("PackageId", packageId);
+                writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
+
+                for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
+                    {
+                    writer->WriteElementStart("File");
+                        {
+                        writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
+                        TransferReport* tr = it->second;
+                        writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
+                        writer->WriteAttribute("filesize", tr->filesize);
+                        writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                        for(size_t i = 0; i < tr->retries.size(); ++i)
+                            {
+                            writer->WriteElementStart("DownloadAttempt");
+                                {
+                                writer->WriteAttribute("attemptNo", i+1);
+                                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
+                                writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
+                                }
+                            writer->WriteElementEnd();
+                            }
+                        }
+                    writer->WriteElementEnd();
+                    }
+                }
+                writer->WriteElementEnd();
+                writer->ToString(report);
+            }
         };
 
     //{{url, file},{url, file}}
@@ -145,11 +226,15 @@ public:
     //! Set callback to follow progression of the download.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
                                                                    {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
+    //! Set callback to allow the user to mass cancel all downloads
+    REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataDownload_HeartbeatCallBack pi_func)
+                                                                   {m_pHeartbeatFunc = pi_func;};
+
     //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
     //! Start the download progress for all links.
-    REALITYDATAPLATFORM_EXPORT bool Perform();
+    REALITYDATAPLATFORM_EXPORT DownloadReport* Perform();
 
 private:
     RealityDataDownload() { m_pCurlHandle=NULL;};
@@ -158,10 +243,12 @@ private:
     RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
     ~RealityDataDownload();
 
-    SetupCurlStatus SetupCurlandFile(FileTransfer* ft);
+    SetupCurlStatus SetupCurlandFile(FileTransfer* ft, bool isRetry = false);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
     void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index, size_t sisterCount, size_t sisterIndex);
+
+    void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;
@@ -172,9 +259,11 @@ private:
     Utf8String                              m_proxyUrl;
     Utf8String                              m_proxyCreds;
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
-    float                                   m_progressStep;
+    RealityDataDownload_HeartbeatCallBack   m_pHeartbeatFunc;
+    float                                   m_progressStep = 0.01;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
+    DownloadReport                          m_dlReport;
 
-};
-
+    };
+    
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
