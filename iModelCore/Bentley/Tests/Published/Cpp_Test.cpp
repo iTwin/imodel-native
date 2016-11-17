@@ -439,7 +439,7 @@ void test_shared_ptr_in_collections ()
     vector2.push_back (std::make_shared<int> (1));
     vector2.push_back (pair1.first);
     }
-
+    
 //  ---------------------------------------------------------------------
 // enum class
 enum class EnumClassColor;  // forward declare enum class
@@ -864,6 +864,20 @@ void test_unique_ptr_in_collections ()
     //bpair<int, std::unique_ptr<int>> pair2 (1, std::move (std::unique_ptr<int> (new int (1))));
     }
 
+void test_make_unique()
+    {
+        struct Foo
+        {
+            int m_id;
+
+            explicit Foo(int id) : m_id(id) {}            
+        };
+        
+    std::unique_ptr<int> m = std::make_unique<int>(1);
+    ASSERT_EQ(1, *m);
+    std::unique_ptr<Foo> foo = std::make_unique<Foo>(100);
+    ASSERT_EQ(100, foo->m_id);
+    }
 
 //  ---------------------------------------------------------------------
 // Right angle bracket
@@ -975,6 +989,7 @@ TEST(Cpp, LanguageFeatures)
     test_stdfunction ();
     test_unique_ptr ();
     test_unique_ptr_in_collections ();
+    test_make_unique();
     test_rvalueReferences ();
     test_initiailzerLists ();
     test_uniformInitializationSyntax ();
