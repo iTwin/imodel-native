@@ -174,6 +174,7 @@ AttachmentTree::AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::Sys
     m_view = m_db.Elements().Get<ViewDefinition>(DgnElementId(viewId.GetValue()));
 
 //    m_rootTile = new Tile(*this, TileId(0,0,0), nullptr);
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
