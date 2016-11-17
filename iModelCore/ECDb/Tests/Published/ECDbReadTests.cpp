@@ -260,9 +260,9 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     ECInstanceKey id;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITE_DBE_SQLITE_OKONE, inserter.Insert(id, *(instance.get())));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
     instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITEBE_SQLITE_OK_DONE, inserter.Insert(id, *(instance.get())));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
     s.Commit();
     db.SaveChanges();
 
