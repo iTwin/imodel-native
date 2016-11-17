@@ -13,6 +13,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/Sheet.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -87,10 +88,10 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
+Sheet::ElementPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, height, width, name);
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, height, width, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -99,10 +100,10 @@ SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, do
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name)
+Sheet::ElementPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, templateId, name);
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, templateId, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -125,10 +126,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet)
+Sheet::ModelPtr DgnDbTestUtils::InsertSheetModel(Sheet::ElementCR sheet)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet);
+    Sheet::ModelPtr model = Sheet::Model::Create(sheet);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());

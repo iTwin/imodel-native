@@ -136,11 +136,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(IGeometryCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(GeometricPrimitiveCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
-
     DGNPLATFORM_EXPORT size_t GetFacetCount(IBRepEntityCR) const;
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-#endif
 };
 
 //=======================================================================================
@@ -169,7 +165,6 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
-        OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
         ParasolidBRep           = 25,   //!< Parasolid body
         BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
         BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 

@@ -703,7 +703,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
     if (autoHandledProperties.empty())
         return updaterCache[eclassid] = nullptr;
 
-    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, autoHandledProperties);
+    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, m_element.GetDgnDb().GetECSqlWriteToken(), autoHandledProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,7 +753,7 @@ DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    if (BSISUCCESS != updater->Update(*this))
+    if (BE_SQLITE_OK != updater->Update(*this))
         return DgnDbStatus::WriteError;
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
@@ -1045,7 +1045,11 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
         return DgnDbStatus::NotFound;
         }
 
-    auto status = ecdbuffer.SetValueToMemory(m_propIdx, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    PropertyLayoutCP propertyLayout = NULL;
+    ECObjectsStatus status = m_layout->GetPropertyLayoutByIndex(propertyLayout, m_propIdx);
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return toDgnDbWriteStatus(status);
+    status = ecdbuffer.SetInternalValueToMemory(*propertyLayout, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
         
     if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
         return DgnDbStatus::Success;

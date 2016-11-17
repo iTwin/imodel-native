@@ -173,6 +173,7 @@ DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface(IBRepEntityPtr& out, MS
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet,DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& target, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
 
 }; // PSolidGeom
 
@@ -184,15 +185,12 @@ struct PSolidSubEntity
 DGNPLATFORM_EXPORT static ISubEntityPtr CreateSubEntity(PK_ENTITY_t entityTag, TransformCR entityTransform);
 DGNPLATFORM_EXPORT static ISubEntityPtr CreateSubEntity(PK_ENTITY_t entityTag, IBRepEntityCR parent);
 
-DGNPLATFORM_EXPORT static void UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntity); //!< @private LocateSubEntityTool use.
 DGNPLATFORM_EXPORT static void SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param); //!< @private param x/y is face u/v, param x is edge u, na for vertex...
+DGNPLATFORM_EXPORT static void SetDisplayTangentEdges(ISubEntityR subEntity, bool display); //!< @private LocateSubEntityTool use. Include tangent edges in graphic...
+DGNPLATFORM_EXPORT static void UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntity); //!< @private LocateSubEntityTool use. Use existing geometry/graphic...
 
 DGNPLATFORM_EXPORT static PK_ENTITY_t GetSubEntityTag(ISubEntityCR);
 DGNPLATFORM_EXPORT static Transform GetSubEntityTransform(ISubEntityCR);
-
-DGNPLATFORM_EXPORT static bool GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param);
-DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam);
-DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
 
 }; // PSolidSubEntity
 
@@ -230,6 +228,8 @@ DGNPLATFORM_EXPORT static BentleyStatus GetEntityRange(DRange3dR range, PK_TOPOL
 
 DGNPLATFORM_EXPORT static IFaceMaterialAttachmentsPtr CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams);
 DGNPLATFORM_EXPORT static void SetFaceAttachments(IBRepEntityR, IFaceMaterialAttachmentsP);
+DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag);
+DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag);
 
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR entity, IFacetOptionsR);
 DGNPLATFORM_EXPORT static bool FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions);

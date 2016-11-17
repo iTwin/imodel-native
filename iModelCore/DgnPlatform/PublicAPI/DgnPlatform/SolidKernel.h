@@ -10,10 +10,6 @@
 
 #include "Render.h"
 
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-class TopoDS_Shape;
-#endif
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!< Reference counted type to manage the life-cycle of the IFaceMaterialAttachments.
@@ -41,15 +37,20 @@ public:
 DGNPLATFORM_EXPORT FaceAttachment();
 DGNPLATFORM_EXPORT FaceAttachment(Render::GeometryParamsCR sourceParams);
 
-//! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
-DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
-//! Cook and resolve FaceAttachment color and material. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
-DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsCR baseParams) const;
+DGNPLATFORM_EXPORT bool operator == (struct FaceAttachment const&) const;
+DGNPLATFORM_EXPORT bool operator < (struct FaceAttachment const&) const;
+
 //! Return GraphicParams from prior call to CookFaceAttachment. Will return nullptr if CookFaceAttachment has not been called.
 Render::GraphicParamsCP GetGraphicParams() const {return (m_haveGraphicParams ? &m_graphicParams : nullptr);}
 
-DGNPLATFORM_EXPORT bool operator == (struct FaceAttachment const&) const;
-DGNPLATFORM_EXPORT bool operator < (struct FaceAttachment const&) const;
+//! Cook and resolve FaceAttachment color and material. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsCR baseParams) const;
+
+//! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
+DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
+
+//! Returns face identifier for T_FaceToSubElemIdMap pair from face, edge, or vertex sub-entity. The identifier is valid for this IBRepEntity instance in this session only, it is not a persistent identifier.
+DGNPLATFORM_EXPORT static uint32_t GetFaceIdentifierFromSubEntity(ISubEntityCR);
 
 }; // FaceAttachment
 
@@ -192,6 +193,12 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const = 0;
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
 //! @private
 virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
+//! @private
+virtual bool _GetFaceLocation(DPoint3dR, DPoint2dR) const = 0;
+//! @private
+virtual bool _GetEdgeLocation(DPoint3dR, double&) const = 0;
+//! @private
+virtual bool _GetVertexLocation(DPoint3dR) const = 0;
 
 public:
 
@@ -216,20 +223,19 @@ GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 //! @return A Render::Graphic representing this sub-entity.
 Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
-}; // ISubEntity
+//! Get pick location and uv parameter from a sub-entity representing a face. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetFaceLocation(DPoint3dR point, DPoint2dR uvParam) const {return _GetFaceLocation(point, uvParam);}
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)    
-//=======================================================================================
-//! SolidKernelUtil is intended as a bridge between DgnPlatform and the solid kernel so
-//! that the entire set of solid kernel includes isn't required for the published api.
-//=======================================================================================
-struct SolidKernelUtil
-{
-DGNPLATFORM_EXPORT static IBRepEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
-DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(IBRepEntityCR);
-DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(IBRepEntityR);
-}; // SolidKernelUtil
-#endif
+//! Get pick location and u parameter from a sub-entity representing a edge. 
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetEdgeLocation(DPoint3dR point, double& uParam) const {return _GetEdgeLocation(point, uParam);}
+
+//! Get vertex location from a sub-entity representing a vertex. 
+//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
+bool GetVertexLocation(DPoint3dR point) const {return _GetVertexLocation(point);}
+
+}; // ISubEntity
 
 //=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.
@@ -368,12 +374,14 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(IBRepEntityCR);
 //! @param[in] maxVertexDistance A vertex will be picked if it is within this distance from the ray.
 //! @note The returned entities are ordered by increasing distance from ray origin to hit point on entity.
 //! @return true if ray intersected a requested entity type.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance);
 
 //! Find the closest sub-entity on body to a given point.
 //! @param[in] entity The entity to find the closest sub-entity for.
 //! @param[in] testPt The space point.
 //! @return the face, edge, or vertex sub-entity that contains the closest point.
+//! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
 
 //! Test if a point is inside or on the boundary of the given body.
@@ -405,19 +413,6 @@ DGNPLATFORM_EXPORT static bool ClosestPointToFace(ISubEntityCR subEntity, DPoint
 //! @param[out] param The u parameter at the closest point.
 //! @return true if closest point was found.
 DGNPLATFORM_EXPORT static bool ClosestPointToEdge(ISubEntityCR subEntity, DPoint3dCR testPt, DPoint3dR point, double& param);
-
-//! Get pick location and uv parameter from a sub-entity representing a face. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param);
-
-//! Get pick location and u parameter from a sub-entity representing a edge. 
-//! @return false if the sub-entity was not created from a method where locate information was meaningful.
-DGNPLATFORM_EXPORT static bool GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam);
-
-//! Get vertex location from a sub-entity representing a vertex. 
-//! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
-//! @note Convenience method for use along with GetFaceLocation and GetEdgeLocation; could use EvaluateVertex instead.
-DGNPLATFORM_EXPORT static bool GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point);
 
 //! Return a PolyfaceHeader created by facetting the supplied sheet or solid body using the specified facet options.
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(IBRepEntityCR, IFacetOptionsR);
@@ -467,6 +462,39 @@ struct Create
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L);
+
+    //! @param[out] out The new body.
+    //! @param[in] profiles The cross sections profiles.
+    //! @param[in] nProfiles The profile count.
+    //! @param[in] guides An optional set of guide curves for constrolling the loft.
+    //! @param[in] nGuides The guide curve count.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L);
+
+    //! Create a new sheet or solid body by sweeping a cross section profile along a path.
+    //! @param[out] out The new body.
+    //! @param[in] profile The cross section profile. (open, closed, or region with holes)
+    //! @param[in] path The path to sweep along.
+    //! @param[in] alignParallel true to keep profile at a fixed angle to global axis instead of path tangent (and lock direction).
+    //! @param[in] selfRepair true to attempt repair of self-intersections.
+    //! @param[in] createSheet true to force a sheet body to be created from a closed profile which would normally produce a solid body. (Similiar behavior to ISolidPrimitive::GetCapped)
+    //! @param[in] lockDirection Optionally keep profile at a fixed angle relative to the path tangent projected into a plane perpendicular to the lock direction. Only valid when alignParallel is false.
+    //! @param[in] twistAngle Optionally spin profile as it moves along the path.
+    //! @param[in] scale Optionally scale profile as it moves along the path.
+    //! @param[in] scalePoint The profile point to scale about, required when applying scale.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, BentleyApi::DVec3dCP lockDirection = NULL, double const* twistAngle = NULL, double const* scale = NULL, BentleyApi::DPoint3dCP scalePoint = NULL, uint32_t nodeId = 0L);
+
+    //! Create a new body by extruding a planar sheet body up to another body.
+    //! @param[out] out The new body.
+    //! @param[in] extrudeTo The body to trim the extruded body to.
+    //! @param[in] profile The planar sheet body to extrude.
+    //! @param[in] reverseDirection To specify if extrusion is in the same direction or opposite direction to the surface normal of the profile sheet body.
+    //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @return SUCCESS if body was created.
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& out, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
     };
 
 //! Support for modification of bodies.
@@ -503,8 +531,97 @@ struct Modify
     //! @return SUCCESS if some bodies were able to be sewn together.
     DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
 
-    //! 
+    //! Separate a disjoint body into multiple bodies. If the input body does not have disjoint regions, it will be unchanged, however
+    //! the input entity will still be invalidated and returned in the output vector.
     DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity);
+    };
+
+//! Support for persistent topological ids on faces, edges, and vertices.
+//!
+//! A topology id provides a mechanism for identifying a ISubEntity that is independent of any IBRepEntity instance. 
+//! Useful for identifying a ISubEntity across sessions or different instances of a IBRepEntity in the same session. 
+//! In feature-based modeling topology ids allow the corresponding ISubEntity to be found again after re-evaluating the features.
+//!
+//! The foundation for topology identification is the FaceId. A FaceId is a (nodeId-entityId) pair that is assigned to each face 
+//! of a sheet or solid body. The nodeId typically denotes the operation that produced the face and the entityId is used to 
+//! differentiate between all new faces produced.
+//! 
+//! Consider a newly created cube. It has 6 faces which we could assign a nodeId of 1, each face would then be assigned its
+//! own unique entityId from 1 to 6. Now consider cutting a circular slot that splits the top face of our cube (1-1), the single 
+//! circular face of the slot could be assigned (2-1), i.e. operation 2 and face 1. After creating the slot, FaceId (1-1) now 
+//! identifies 2 faces, one on either side of the split; additional ids will be added to resolve the duplicate, (1-7, 1-1) and (1-8, 1-1).
+//! So FaceId (1-1) still exists but we now also have new "highest" FaceIds to uniquely identity the post-split geometry.
+//!
+//! An edge is identified by its face(s), therefore an EdgeId consists of 2 FaceId pairs. For the laminar edge of a sheet body, both FaceIds
+//! will be the same. Similarly a vertex is identified by 3 FaceId pairs.
+struct TopologyID
+    {
+    //! Assign new topology ids to faces of the given body. Resolves duplicate face ids such as from a face being split.
+    //! @param[in,out] entity The body to modify.
+    //! @param[in] nodeId The topology node id to use in the new nodeId-entityId pairs.
+    //! @param[in] overrideExisting false to assign new ids only to currently un-assigned faces and true to replace all existing ids.
+    //! @return SUCCESS if ids could be added.
+    DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting);
+
+    //! Remove the topology ids from all faces of the given body.
+    //! @param[in,out] entity The body to modify.
+    //! @return SUCCESS if ids could be removed.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteNodeIdAttributes(IBRepEntityR entity);
+
+    //! Increment the topology ids for all faces of the given body. Used to avoid nodeId conflicts between target and tool bodies.
+    //! @param[in,out] entity The body to modify.
+    //! @param[in] increment The topology node id in each nodeId-entityId pair will be incremented by this amount.
+    //! @return SUCCESS if ids could be incremented.
+    DGNPLATFORM_EXPORT static BentleyStatus IncrementNodeIdAttributes(IBRepEntityR entity, int32_t increment);
+
+    //! Find the highest and lowest nodeId values from the topology ids currently assigned to the faces of the given body. Used to avoid nodeId conflicts between target and tool bodies.
+    //! @param[in] entity The solid or sheet body to inspect.
+    //! @param[out] highestNodeId The highest nodeId currently assigned.
+    //! @param[out] lowestNodeId The lowest nodeId currently assigned.
+    //! @return SUCCESS if face ids are assigned to the body.
+    DGNPLATFORM_EXPORT static BentleyStatus FindNodeIdRange(IBRepEntityCR entity, uint32_t& highestNodeId, uint32_t& lowestNodeId);
+
+    //! Get the FaceId currently assigned to a given face sub-entity.
+    //! @param[out] faceId The requested nodeId-entityId pair.
+    //! @param[in] subEntity The face sub-entity to query.
+    //! @param[in] useHighestId true to return the highest nodeId-entityId pair for this face, false to return the lowest. Typically true.
+    //! @return SUCCESS if a FaceId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus IdFromFace(FaceId& faceId, ISubEntityCR subEntity, bool useHighestId);
+
+    //! Get the EdgeId currently assigned to a given edge sub-entity.
+    //! @param[out] edgeId The requested nodeId-entityId pairs.
+    //! @param[in] subEntity The edge sub-entity to query.
+    //! @param[in] useHighestId true to return the highest nodeId-entityId pairs for this face, false to return the lowest. Typically true.
+    //! @return SUCCESS if an EdgeId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus IdFromEdge(EdgeId& edgeId, ISubEntityCR subEntity, bool useHighestId);
+
+    //! Get the VertexId currently assigned to a given vertex sub-entity.
+    //! @param[out] vertexId The requested nodeId-entityId triple.
+    //! @param[in] subEntity The vertex sub-entity to query.
+    //! @param[in] useHighestId true to return the highest nodeId-entityId triple for this face, false to return the lowest. Typically true.
+    //! @return SUCCESS if a VertexId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus IdFromVertex(VertexId& vertexId, ISubEntityCR subEntity, bool useHighestId);
+
+    //! Get the set of faces of a body having the given FaceId assignment.
+    //! @param[out] subEntities The sub-entities found.
+    //! @param[in] faceId The FaceId to search for.
+    //! @param[in] entity The body to query.
+    //! @return SUCCESS if FaceId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus FacesFromId(bvector<ISubEntityPtr>& subEntities, FaceId const& faceId, IBRepEntityCR entity);
+
+    //! Get the set of edges of a body having the given EdgeId assignment.
+    //! @param[out] subEntities The sub-entities found.
+    //! @param[in] edgeId The EdgeId to search for.
+    //! @param[in] entity The body to query.
+    //! @return SUCCESS if EdgeId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus EdgesFromId(bvector<ISubEntityPtr>& subEntities, EdgeId const& edgeId, IBRepEntityCR entity);
+
+    //! Get the set of vertices of a body having the given VertexId assignment.
+    //! @param[out] subEntities The sub-entities found.
+    //! @param[in] vertexId The VertexId to search for.
+    //! @param[in] entity The body to query.
+    //! @return SUCCESS if VertexId was assigned.
+    DGNPLATFORM_EXPORT static BentleyStatus VerticesFromId(bvector<ISubEntityPtr>& subEntities, VertexId const& vertexId, IBRepEntityCR entity);
     };
 
 }; // BRepUtil

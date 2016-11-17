@@ -276,6 +276,7 @@ DgnDbStatus DgnElement::_OnInsert()
     return GetModel()->_OnInsertElement(*this);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -723,81 +724,6 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
         }
 
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Sheet::CreateCode(DocumentListModelCR model, Utf8CP name)
-    {
-    return SheetAuthority::CreateSheetCode(name, model.GetModeledElementId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Sheet::CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnCode code = CreateCode(model, baseName);
-    if (!db.Elements().QueryElementIdByCode(code).IsValid())
-        return code;
-
-    int counter=1;
-    do  {
-        Utf8PrintfString name("%s-%d", baseName, counter);
-        code = CreateCode(model, name.c_str());
-        counter++;
-        } while (db.Elements().QueryElementIdByCode(code).IsValid());
-
-    return code;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetPtr Sheet::Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Sheet::GetHandler());
-
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
-    sheet->SetScale(scale);
-    sheet->SetHeight(height);
-    sheet->SetWidth(width);
-    return sheet;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetPtr Sheet::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Sheet::GetHandler());
-
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    auto sheet = new Sheet(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
-    sheet->SetScale(scale);
-    sheet->SetTemplate(sheetTemplate);
-    #ifdef WIP_SHEETS
-    sheet->SetHeight(sheetTemplateElem->GetHeight());
-    sheet->SetWidth(sheetTemplateElem->GetWidth());
-    sheet->SetBorder(sheetTemplateElem->GetBorder());
-    #endif
-    BeAssert(false && "WIP_SHEETS - templates");
-    return sheet;
     }
 
 //=======================================================================================
@@ -1476,7 +1402,7 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     {
     BeAssert(m_userProperties);
 
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
     BeAssert(stmt.IsValid());
 
     Utf8String str;
@@ -1677,7 +1603,7 @@ EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass
         propertiesToBind.push_back(ecProperty);
         }
 
-    auto updater = new EC::ECInstanceUpdater(GetDestinationDb(), ecClass, propertiesToBind);
+    auto updater = new EC::ECInstanceUpdater(GetDestinationDb(), ecClass, GetDestinationDb().GetECSqlWriteToken(), propertiesToBind);
     m_updaterCache[&ecClass] = updater;
 
     return *updater;
@@ -1927,9 +1853,9 @@ DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*thi
 //---------------------------------------------------------------------------------------
 DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member, int priority)
     {
-    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)");
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECSqlWriteToken());
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1947,8 +1873,8 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
 //---------------------------------------------------------------------------------------
 DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member)
     {
-    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "DELETE FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        "DELETE FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", group.GetDgnDb().GetECSqlWriteToken());
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -2230,7 +2156,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
     stmt->BindId(1, m_instanceId);
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -2241,7 +2167,7 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
     stmt->BindId(1, el.GetElementId());
 
     ECInstanceKey key;
@@ -2421,7 +2347,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
     stmt->BindId(1, el.GetElementId());
 
     ECInstanceKey key;
@@ -2438,7 +2364,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE [ElementId]=?", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE [ElementId]=?", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
     stmt->BindId(1, el.GetElementId());
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -2772,7 +2698,7 @@ DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthor
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)", element.GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
@@ -2813,7 +2739,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?", element.GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -3835,7 +3761,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     if (!partsToRemove.empty())
         {
-        CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", db.GetECSqlWriteToken());
         if (!statement.IsValid())
             return DgnDbStatus::BadRequest;
 

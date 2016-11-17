@@ -591,7 +591,7 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
     if (sqlString.empty())
         sqlString = buildECSqlInsertString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
-    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
+    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECSqlWriteToken());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
@@ -617,7 +617,7 @@ BentleyStatus AnnotationTableAspect::UpdateInDb()
     if (sqlString.empty())
         sqlString = buildECSqlUpdateString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
-    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
+    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECSqlWriteToken());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
@@ -646,7 +646,7 @@ BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectTy
     if (sqlString.empty())
         sqlString = buildECSqlDeleteString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
 
-    CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
+    CachedECSqlStatementPtr statement = table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), table.GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return ERROR;
 

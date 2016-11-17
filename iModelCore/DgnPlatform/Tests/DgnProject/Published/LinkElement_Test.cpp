@@ -294,32 +294,71 @@ TEST_F(LinkElementTest, Update)
 TEST_F(LinkElementTest, RepositoryLinkCRUD)
     {
     DgnDbR db = *GetDgnDb(L"RepositoryLinkCRUD");
-    DgnElementId linkElementId;
+    DgnElementId linkElementId1;
+    DgnElementId linkElementId2;
     Utf8CP testUrl = "http://www.outlook.com";
-    Utf8CP testLabel = "TestLabel";
     Utf8CP testDescription = "TestDescription";
-
+    DgnCode testLabel1, testLabel2;
     // Insert test RepositoryLink
-        {
-        LinkModelPtr model = DgnDbTestUtils::InsertLinkModel(db, "TestLinkModel");
-        RepositoryLinkPtr link = RepositoryLink::Create(*model, testUrl, testLabel, testDescription);
-        EXPECT_TRUE(link.IsValid());
-        EXPECT_TRUE(link->Insert().IsValid());
-        linkElementId = link->GetElementId();
+    LinkModelPtr model = DgnDbTestUtils::InsertLinkModel(db, "TestLinkModel");
+    testLabel1 = RepositoryLink::CreateUniqueCode(*model, "TestLabel");
+    RepositoryLinkPtr link = RepositoryLink::Create(*model, testUrl, testLabel1.GetValueCP(), testDescription);
+    EXPECT_TRUE(link.IsValid());
+    EXPECT_TRUE(link->Insert().IsValid());
+    linkElementId1 = link->GetElementId();
 
-        EXPECT_STREQ(link->GetUrl(), testUrl);
-        EXPECT_STREQ(link->GetUserLabel(), testLabel);
-        EXPECT_STREQ(link->GetDescription(), testDescription);
-        }
+    EXPECT_STREQ(link->GetUrl(), testUrl);
+    EXPECT_STREQ(link->GetUserLabel(), testLabel1.GetValueCP());
+    EXPECT_STREQ(link->GetDescription(), testDescription);
 
     // Flush cache and re-check element
-        {
-        db.Memory().PurgeUntil(0);
-        RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId);
-        EXPECT_TRUE(link.IsValid());
+    {
+    db.Memory().PurgeUntil(0);
+    RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId1);
+    EXPECT_TRUE(link.IsValid());
+    EXPECT_STREQ(link->GetUrl(), testUrl);
+    EXPECT_STREQ(link->GetUserLabel(), testLabel1.GetValueCP());
+    EXPECT_STREQ(link->GetDescription(), testDescription);
+    }
+    // Update test Repositrylink
+    {
+    link = db.Elements().GetForEdit<RepositoryLink>(linkElementId1);
+    link->SetUrl("http://www.facebook.com");
+    ASSERT_TRUE(link->Update().IsValid());
+    }
+    // Flush cache and re-check element
+    {
+    db.Memory().PurgeUntil(0);
+    RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId1);
+    EXPECT_TRUE(link.IsValid());
+    EXPECT_STREQ(link->GetUrl(), "http://www.facebook.com");
+    EXPECT_STREQ(link->GetUserLabel(), testLabel1.GetValueCP());
+    EXPECT_STREQ(link->GetDescription(), testDescription);
+    }
+    // Insert another RepositoryLink with Duplicate DgnCode it should return false then insert with unique code
+    {
+    RepositoryLinkPtr link2 = RepositoryLink::Create(*model, testUrl, "TestLabel", testDescription);
+    ASSERT_TRUE(link2.IsValid());
+    BeTest::SetFailOnAssert(false);
+    ASSERT_FALSE(link2->Insert().IsValid());
+    BeTest::SetFailOnAssert(false);
+    testLabel2 = RepositoryLink::CreateUniqueCode(*model, "TestLabel");
+    link2 = RepositoryLink::Create(*model, testUrl, testLabel2.GetValueCP(), testDescription);
+    ASSERT_TRUE(link2.IsValid());
+    ASSERT_TRUE(link2->Insert().IsValid());
+    linkElementId2 = link2->GetElementId();
 
-        EXPECT_STREQ(link->GetUrl(), testUrl);
-        EXPECT_STREQ(link->GetUserLabel(), testLabel);
-        EXPECT_STREQ(link->GetDescription(), testDescription);
-        }
+    EXPECT_STREQ(link2->GetUrl(), testUrl);
+    EXPECT_STREQ(link2->GetUserLabel(), testLabel2.GetValueCP());
+    EXPECT_STREQ(link2->GetDescription(), testDescription);
+    }
+    // Flush cache and re-check element
+    {
+    db.Memory().PurgeUntil(0);
+    RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId2);
+    EXPECT_TRUE(link.IsValid());
+    EXPECT_STREQ(link->GetUrl(), testUrl);
+    EXPECT_STREQ(link->GetUserLabel(), testLabel2.GetValueCP());
+    EXPECT_STREQ(link->GetDescription(), testDescription);
+    }
     }

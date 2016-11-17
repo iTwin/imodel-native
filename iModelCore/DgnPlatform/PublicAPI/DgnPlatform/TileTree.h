@@ -12,10 +12,11 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <folly/futures/Future.h>
 #include <Bentley/Tasks/CancellationToken.h>
+#include <BeHttp/HttpRequest.h>
 
-#define BEGIN_TILETREE_NAMESPACE     BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
-#define END_TILETREE_NAMESPACE       } END_BENTLEY_DGN_NAMESPACE
-#define USING_NAMESPACE_TILETREE     using namespace BentleyApi::Dgn::TileTree;
+#define BEGIN_TILETREE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
+#define END_TILETREE_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
+#define USING_NAMESPACE_TILETREE    using namespace BentleyApi::Dgn::TileTree;
 
 BEGIN_TILETREE_NAMESPACE
 
@@ -30,7 +31,7 @@ It manages:
  - incremental asynchronous refinement
 
 The tree is represented in memory by two classes: TileTree::Root and TileTree::Tile. The tree is in a local
-coordinate system, and is positioned in BIM world space by a linear transform.
+coordinate system, and is positioned in world space by a linear transform.
 
 The HLOD tree can subdivide space using any approach, but must obey the following rules:
  a) there is one TileTree::Root, and it points to the root TileTree::Tile
@@ -66,7 +67,7 @@ HTTP request caching:
  TileTree employs the RealityData::Cache class for saving/loading copies of tile data from HTTP request in a SQLite database in
  the temporary directory. When an HTTP-based tile is needed, the local cache is first checked and used if present. Otherwise
  an HTTP GET request is issued and the result is saved on arrival. The local cached is purged periodically so it doesn't
- grow beyond the "maxSize" argument passed to TileTree::Root::CreateCache. Tiles are always loaded via the Tile::_LoadTile
+ grow beyond the "maxSize" argument passed to TileTree::Root::CreateCache. Tiles are always loaded via the TileLoad::_LoadTile
  method regardless of whether their data comes from a local file, an HTTP request, or from the local cache.
 
 */
@@ -74,12 +75,14 @@ HTTP request caching:
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoad)
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
+DEFINE_REF_COUNTED_PTR(TileLoad)
 
 typedef std::chrono::steady_clock::time_point TimePoint;
-typedef std::shared_ptr<struct TileLoads> TileLoadsPtr;
+typedef std::shared_ptr<struct LoadState> LoadStatePtr;
 
 //=======================================================================================
 //! A ByteStream with a "current position". Used for reading tiles
@@ -96,6 +99,23 @@ struct StreamBuffer : ByteStream
     };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/16
+//=======================================================================================
+struct LoadState : Tasks::ICancellationToken, NonCopyableClass
+{
+    BeAtomic<bool> m_canceled;
+    BeAtomic<int> m_requested;
+    BeAtomic<int> m_fromHttp;
+    BeAtomic<int> m_fromFile;
+    BeAtomic<int> m_fromDb;
+    DGNPLATFORM_EXPORT ~LoadState();
+    bool IsCanceled() override {return m_canceled.load();}
+    void SetCanceled() {m_canceled.store(true);}
+    void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
+    void Reset() {m_fromDb.store(0); m_fromHttp.store(0); m_fromFile.store(0);}
+};
+
+//=======================================================================================
 //! A Tile in a TileTree. Every Tile has 0 or 1 parent Tile and 0 or more child Tiles. 
 //! The range member is an ElementAlignedBox in the local coordinate system of the TileTree.
 //! All child Tiles must be contained within the range of their parent Tile.
@@ -108,6 +128,7 @@ struct Tile : RefCountedBase, NonCopyableClass
     typedef bvector<TilePtr> ChildTiles;
 
 protected:
+    RootR   m_root;
     mutable ElementAlignedBox3d m_range;
     TileCP m_parent;
     mutable BeAtomic<LoadState> m_loadState;
@@ -117,7 +138,7 @@ protected:
     void SetAbandoned() const;
 
 public:
-    Tile(TileCP parent) : m_parent(parent), m_loadState(LoadState::NotLoaded) {}
+    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadState(LoadState::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
@@ -135,14 +156,13 @@ public:
     bool IsNotFound() const {return m_loadState.load() == LoadState::NotFound;}
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
     TileCP GetParent() const {return m_parent;}
-    DGNPLATFORM_EXPORT int CountTiles() const;
+    RootCR GetRoot() const {return m_root;}
+    RootR GetRootR() {return m_root;}
+    DGNPLATFORM_EXPORT int CountTiles() const; //! for debugging
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
 
     virtual void _OnChildrenUnloaded() const {}
     DGNPLATFORM_EXPORT virtual void _UnloadChildren(TimePoint olderThan) const;
-
-    //! Load this tile from data supplied. This method is called when the tile data becomes available, regardless of the source of the data.
-    virtual BentleyStatus _LoadTile(StreamBuffer&, RootR) = 0;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
     virtual bool _HasChildren() const = 0;
@@ -156,6 +176,9 @@ public:
     //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
+    //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
+    virtual TileLoadPtr _CreateTileLoad(LoadStatePtr) = 0;
+
     //! Get the name of this Tile.
     virtual Utf8String _GetTileName() const = 0;
 
@@ -164,8 +187,8 @@ public:
 };
 
 /*=================================================================================**//**
-//! The root of a tree of tiles. This object stores the location of the tree relative to the BIM. It also facilitates
-//! local caching of HTTP-based tiles.
+//! The root of a tree of tiles. This object stores the location of the tree relative to world coordinates. 
+//! It also facilitates local caching of HTTP-based tiles.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
@@ -186,13 +209,12 @@ protected:
     BeConditionVariable m_cv;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
-    //! All subclasses of Root must call this method in their destructor. This is necessary ,since it must be called while the subclass vtable is 
+    //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestFile(Utf8StringCR, StreamBuffer&);
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileCR, TileLoadsPtr);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStatePtr loads);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
@@ -202,6 +224,7 @@ public:
     bool IsPickable() const {return m_pickable;}
     void SetPickable(bool pickable) {m_pickable = pickable;}
     TransformCR GetLocation() const {return m_location;}
+    void SetLocation(TransformCR location) {m_location = location;}
     RealityData::CachePtr GetCache() const {return m_cache;}
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
@@ -209,15 +232,14 @@ public:
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
 
     //! Get the full name of a Tile in this TileTree. By default it concatenates the tile name to the rootDir
-    virtual Utf8String _ConstructTileName(TileCR tile) {return m_rootDir + tile._GetTileName();}
+    virtual Utf8String _ConstructTileName(TileCR tile) const {return m_rootDir + tile._GetTileName();}
 
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()
     //! @param location The transform from tile coordinates to BIM world coordinates.
-    //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param rootUrl The root url for loading tiles. This name will be prepended to tile names.
     //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.
-    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
+    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
     void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;}
@@ -226,8 +248,10 @@ public:
     std::chrono::seconds GetExpirationTime() const {return m_expirationTime;}
 
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
+    //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
+    //! @param maxSize The cache maximum size in bytes.
     //! @note If this is not an HTTP root, this does nothing.
-    DGNPLATFORM_EXPORT void CreateCache(uint64_t maxSize);
+    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize);
 
     //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
     //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.
@@ -240,20 +264,89 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/16
+// This object is created to read and load a single tile asynchronously. 
+// If caching is enable it will first attempt to read the data from the cache. If it's
+// not available it will call _ReadFromSource(). Once the data is available the _LoadTile
+// method is called. 
+// All methods of this class might be called from worker threads except for the constructor 
+// which is guaranteed to run on the client thread. If something you required is not thread 
+// safe you must capture it during construction.
+// @bsiclass                                                    Mathieu.Marchand  11/2016
 //=======================================================================================
-struct TileLoads : Tasks::ICancellationToken, NonCopyableClass
+struct TileLoad : RefCountedBase, NonCopyableClass
 {
-    BeAtomic<bool> m_canceled;
-    BeAtomic<int> m_requested;
-    BeAtomic<int> m_fromHttp;
-    BeAtomic<int> m_fromFile;
-    BeAtomic<int> m_fromDb;
-    DGNPLATFORM_EXPORT ~TileLoads();
-    bool IsCanceled() override {return m_canceled.load();}
-    void SetCanceled() {m_canceled.store(true);}
-    void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
-    void Reset() {m_fromDb.store(0); m_fromHttp.store(0); m_fromFile.store(0);}
+protected:
+    Utf8String m_fileName;      // full file or URL name
+    TilePtr m_tile;             // tile to load, cannot be null.
+    Utf8String m_cacheKey;      // for loading or saving to tile cache
+    StreamBuffer m_tileBytes;   // when available, bytes are saved here
+    LoadStatePtr m_loads;
+
+    //! Constructor for TileLoad.
+    //! @param[in] fileName full file name or URL name.
+    //! @param[in] tile The tile that we are loading.
+    //! @param[in] loads The cancellation token.
+    //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
+    TileLoad(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
+        : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+
+    BentleyStatus LoadTile();
+    BentleyStatus SaveToDb();
+    BentleyStatus ReadFromDb();
+
+    //! Called from worker threads to read the data from the original location disk, web...
+    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromSource();
+
+    //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
+    virtual BentleyStatus _LoadTile() = 0; 
+
+public:
+    struct TileLoader
+        {
+        Root& m_root;
+        TileLoader(Root& root) : m_root(root) {root.StartTileLoad();}
+        ~TileLoader() {m_root.DoneTileLoad();}
+        };
+
+    //! Called from worker threads to read the data. Could be from cache or from source.
+    BentleyStatus DoRead();
+};
+
+//=======================================================================================
+// @bsiclass                                                   Mathieu.Marchand  11/2016
+//=======================================================================================
+struct HttpDataQuery
+{
+    Http::HttpByteStreamBodyPtr m_responseBody;
+    Http::Request m_request;
+    Http::Response m_response;
+    LoadStatePtr m_loads;
+
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, LoadStatePtr loads);
+
+    bool WasCanceled() const {return m_response.GetConnectionStatus() == Http::ConnectionStatus::Canceled;}
+
+    Http::Request& GetRequest() {return m_request;}
+
+    //! Valid only after a call to perform.
+    Http::Response& GetResponse() {return m_response;}
+
+    //! Perform http request and wait for the result.
+    DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);
+};
+
+//=======================================================================================
+// @bsiclass                                                   Mathieu.Marchand  11/2016
+//=======================================================================================
+struct FileDataQuery
+{
+    Utf8String m_fileName;
+    LoadStatePtr m_loads;
+
+    FileDataQuery(Utf8StringCR fileName, LoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
+
+    //! Read the entire file in a single chunk of memory.
+    DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);
 };
 
 //=======================================================================================
@@ -285,8 +378,71 @@ struct DrawArgs
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
     DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadsPtr);
+    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, LoadStatePtr);
 };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/16
+//=======================================================================================
+namespace QuadTree
+{
+//=======================================================================================
+//! Identifies a tile in a multiresolution quad tree
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct TileId
+{
+    uint8_t  m_zoomLevel;
+    uint32_t m_row;
+    uint32_t m_column;
+    TileId() {}
+    TileId(uint8_t zoomLevel, uint32_t col, uint32_t row){m_zoomLevel=zoomLevel; m_column=col; m_row=row;}
+};
+
+//=======================================================================================
+//! The root of a QuadTree
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct Root : TileTree::Root
+{
+    DEFINE_T_SUPER(TileTree::Root)
+
+    ColorDef m_tileColor;                   //! for setting transparency
+    uint8_t m_maxZoom;                      //! the maximum zoom level for this map
+    uint32_t m_maxPixelSize;                //! the maximum size, in pixels, that a tile should stretched to. If the tile's size on screen is larger than this, use its children.
+
+    uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
+    Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
+};
+    
+//=======================================================================================
+//! A QuadTree tile. May or may not have its graphics present.
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct Tile : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile)
+
+    TileId m_id; 
+    Render::IGraphicBuilder::TileCorners m_corners; 
+    Render::GraphicPtr m_graphic;                   
+
+    Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {}
+
+    TileId GetTileId() const {return m_id;}
+    virtual TilePtr _CreateChild(TileId) const = 0;
+    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawArgsR args) const;
+    bool _HasChildren() const override {return m_id.m_zoomLevel < GetQuadRoot().m_maxZoom;}
+    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
+    ChildTiles const* _GetChildren(bool load) const override;
+    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    Utf8String _GetTileName() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_zoomLevel, m_id.m_column, m_id.m_row);}
+    Root& GetQuadRoot() const {return (Root&) m_root;}
+    double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
+};
+
+}
 
 END_TILETREE_NAMESPACE
 

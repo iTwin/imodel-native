@@ -40,7 +40,7 @@ namespace dgn_ElementHandler
     struct Element; 
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
-    struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
+    struct Document; struct Drawing; struct SectionDrawing;  
     struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
@@ -257,7 +257,7 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         return idSet;
         }
 
-    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass DgnElementId
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass of DgnElementId
     template <class T_ElementId> bvector<T_ElementId> BuildIdList()
         {
         bvector<T_ElementId> idList;
@@ -265,6 +265,13 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
             idList.push_back(entry.GetId<T_ElementId>());
 
         return idList;
+        }
+
+    //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId>  void BuildIdList (bvector<T_ElementId>& idList)
+        {
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
         }
 };
 
@@ -1259,7 +1266,7 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    void ClearAllAppData(){m_appData.clear();}//< @private
+    void ClearAllAppData(){m_appData.clear();}//!< @private
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
@@ -2446,79 +2453,6 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup GROUP_DgnElement
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
-    friend struct dgn_ElementHandler::Sheet;
-
-protected:
-    explicit Sheet(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a DgnCode for a Sheet in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
-    //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
-    //! @param[in] model The uniqueness scope for the DgnCode
-    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
-    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
-
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param[in] model The model where the Sheet element will be inserted by the caller.
-    //! @param[in] scale The sheet's drawing scale
-    //! @param[in] height The sheet height (meters)
-    //! @param[in] width The sheet width (meters)
-    //! @param[in] name This name will be used to form the Sheet element's DgnCode
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
-
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param[in] model The model where the Sheet element will be inserted by the caller.
-    //! @param[in] scale The sheet's drawing scale
-    //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
-    //! @param[in] name This name will be used to form the Sheet element's DgnCode
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
-
-    //! Get the drawing scale of the sheet
-    double GetScale() const {return GetPropertyValueDouble("Scale");}
-
-    //! Set the drawing scale of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
-    DgnDbStatus SetScale(double v) {return SetPropertyValue("Scale", v);}
-
-    //! Get the height of the sheet
-    double GetHeight() const {return GetPropertyValueDouble("Height");}
-
-    //! Set the height of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
-    DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);}
-
-    //! Get the width of the sheet
-    double GetWidth() const {return GetPropertyValueDouble("Width");}
-
-    //! Set the width of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
-    DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);}
-
-    //! Get the sheet template, if any.
-    //! @return an invalid ID if the sheet has no template.
-    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>("Template");}
-
-    //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue("Template", v);}
-
-    //! Get the sheet border, if any.
-    //! @return an invalid ID if the sheet has no border.
-    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>("Border");}
-
-    //! Set the sheet border.
-    //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue("Border", v);}
-};
-
-//=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
@@ -2978,7 +2912,6 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-
     virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual uint64_t _Purge(uint64_t memTarget) override;
 
@@ -2993,8 +2926,8 @@ public:
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
-    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     //! Look up an element in the pool of loaded elements for this DgnDb.

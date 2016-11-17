@@ -123,6 +123,8 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     };
 
 private:
+    BeSQLite::EC::ECSqlWriteToken const* m_ecsqlWriteToken; //owned and released by ECDb
+
     void Destroy();
 
 protected:
@@ -214,8 +216,29 @@ public:
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
 
+    //! Inserts a new ECRelationship
+    //! @param[out] relKey key of the new ECRelationship
+    //! @param[in] relClass ECRelationshipClass to create an instance of
+    //! @param[in] sourceId SourceECInstanceId.
+    //! @param[in] targetId TargetECInstanceId.
+    //! @param[in] relInstanceProperties If @p relClass has ECProperties, pass its values via this parameter. Note: In this
+    //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
+    //! don't have to be set in @p relInstanceProperties
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
+    
+    //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
+    //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
+    //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
+    //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
+    //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
+    //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
+
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
+    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, BeSQLite::EC::ECSqlWriteToken const*) const;
 
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
@@ -247,6 +270,13 @@ public:
     static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
     static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
 /** @} */
+
+#if !defined (DOCUMENTATION_GENERATOR)
+    //!Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements.
+    //!Otherwise preparation of the ECSQL will fail.
+    //!@return ECSQL write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    BeSQLite::EC::ECSqlWriteToken const* GetECSqlWriteToken() const; //not inlined as it must not be called externally
+#endif
 };
 
 END_BENTLEY_DGN_NAMESPACE

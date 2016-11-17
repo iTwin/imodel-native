@@ -101,119 +101,22 @@ struct WebMercatorProgressive : ProgressiveTask
     MapRootR m_root;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
-    TileLoadsPtr m_loads;
+    LoadStatePtr m_loads;
 
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes, TileLoadsPtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
+    WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
     ~WebMercatorProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
 
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* WebMercator tile names are of the form: "level/column/row"
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapTile::_GetTileName() const
-    {
-    return Utf8PrintfString("%d/%d/%d", m_id.m_zoomLevel, m_id.m_column, m_id.m_row);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* tile at maximum zoom level do not have children
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MapTile::_HasChildren() const
-    {
-    return m_id.m_zoomLevel < m_mapRoot.m_maxZoom;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* MapTile::_GetChildren(bool create) const
-    {
-    if (!_HasChildren()) // is this is the highest resolution tile?
-        return nullptr;
-
-    if (create && m_children.empty())
-        {
-        // this Tile has children, but we haven't created them yet. Do so now
-        uint8_t level = m_id.m_zoomLevel+1;
-        uint32_t col = m_id.m_column*2;
-        uint32_t row = m_id.m_row*2;
-        for (int i=0; i<2; ++i)
-            {
-            for (int j=0; j<2; ++j)
-                m_children.push_back(new MapTile(m_mapRoot, TileId(level, col+i, row+j), this));
-            }
-        }
-
-    return &m_children;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MapTile::TryLowerRes(DrawArgsR args, int depth) const
-    {
-    MapTile* parent = (MapTile*) m_parent;
-    if (depth <= 0 || nullptr == parent)
-        {
-        // DEBUG_PRINTF("no lower res");
-        return false;
-        }
-
-    if (parent->HasGraphics())
-        {
-        //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_substitutes.Add(*parent->m_graphic);
-        return true;
-        }
-
-    return parent->TryLowerRes(args, depth-1); // recursion
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* We do not have any graphics for this tile, try its immediate children. Not recursive.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::TryHigherRes(DrawArgsR args) const
-    {
-    for (auto const& child : m_children)
-        {
-        MapTile* mapChild = (MapTile*) child.get();
-
-        if (mapChild->HasGraphics())
-            {
-            //DEBUG_PRINTF("using higher res");
-            args.m_substitutes.Add(*mapChild->m_graphic);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
     {
-    if (!m_reprojected)  // if we were unable to re-project this tile, don't draw it.
-        return;
-
-    if (!IsReady())
-        {
-        if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
-
-        if (!TryLowerRes(args, 10))
-            TryHigherRes(args);
-
-        return;
-        }
-
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    if (m_reprojected)  // if we were unable to re-project this tile, don't draw it.
+        T_Super::_DrawGraphics(args, depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,28 +125,29 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
 * @note this method can be called on many threads, simultaneously.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
+BentleyStatus MapTile::Loader::_LoadTile()
     {
-    MapRootR mapRoot = (MapRootR) root;
+    MapRootR mapRoot = static_cast<MapRootR>(m_tile->GetRootR());
+    MapTileR tile = static_cast<MapTileR>(*m_tile);
 
-    auto graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
-    ImageSource source(mapRoot.m_format, std::move(data));
+    ImageSource source(mapRoot.m_format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = root.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
-    data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
+    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
+    m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
-    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+    graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
 
-    m_graphic = graphic;
+    tile.m_graphic = graphic;
 
-    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
     }
 
@@ -260,7 +164,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
         return ERROR;
 
     IGraphicBuilder::TileCorners corners;
-    auto& units= m_mapRoot.GetDgnDb().Units();
+    auto& units= m_root.GetDgnDb().Units();
     for (int i=0; i<4; ++i)
         {
         if (SUCCESS != units.XyzFromLatLong(corners.m_pts[i], llPts[i]))
@@ -279,7 +183,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
 * frustum testing).
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_mapRoot(root), m_id(id)
+MapTile::MapTile(MapRootR root, QuadTree::TileId id, MapTileCP parent) : QuadTree::Tile(root, id, parent)
     {
     // First, convert from tile coordinates to LatLong.
     double nTiles = (1 << id.m_zoomLevel);
@@ -325,7 +229,7 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
 * Combine the three parts of the full tile URL: rootUrl + tileName + urlSuffix.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapRoot::_ConstructTileName(TileCR tile)
+Utf8String MapRoot::_ConstructTileName(TileCR tile) const
     {
     return m_rootUrl + tile._GetTileName() + m_urlSuffix;
     }
@@ -334,12 +238,8 @@ Utf8String MapRoot::_ConstructTileName(TileCR tile)
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, realityCacheName, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+        uint8_t maxZoom, uint32_t maxSize) : QuadTree::Root(db, trans, rootUrl.c_str(), system, maxZoom, maxSize, transparency), m_format(format), m_urlSuffix(urlSuffix)
     {
-    m_tileColor = ColorDef::White();
-    if (0.0 != transparency)
-        m_tileColor.SetAlpha((Byte) (255.* transparency));
-
     AxisAlignedBox3d extents = db.Units().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
@@ -366,8 +266,8 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
         return;
         }
 
-    CreateCache(MAX_DB_CACHE_SIZE);
-    m_rootTile = new MapTile(*this, TileId(0,0,0), nullptr);
+    CreateCache(realityCacheName, MAX_DB_CACHE_SIZE);
+    m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,7 +294,7 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     if (!args.m_missing.empty())
         {
         // yes, request them and schedule a progressive task to draw them as they arrive.
-        TileLoadsPtr loads = std::make_shared<TileLoads>();
+        LoadStatePtr loads = std::make_shared<LoadState>();
         args.RequestMissingTiles(*m_root, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing, loads));
         }
@@ -476,20 +376,6 @@ Utf8CP StreetMapModel::_GetCopyrightMessage() const
     {
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
-
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                                    Sam.Wilson      04/15
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//static Utf8String getStreetMapServerDescription(WebMercatorModel::Properties::MapType mapType)
-//    {
-//    Utf8String descr("Mapbox");   // *** WIP translate
-//    if (WebMercatorModel::Properties::MapType::Map == mapType)
-//        descr.append(" Map");   // *** WIP translate
-//    else
-//        descr.append(" Satellite Images"); // *** WIP translate
-//
-//    return descr;
-//    }
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 

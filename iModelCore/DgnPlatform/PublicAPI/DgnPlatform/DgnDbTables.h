@@ -271,10 +271,10 @@ public:
 };
 
 enum class ModelIterate
-    {
+{
     All = 1<<0,   //!< return all iterable models
     Gui = 1<<1,   //!< return only models marked as visible in Model list GUI
-    };
+};
 
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table
