@@ -15,24 +15,87 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
-    : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, ecsqlOptions)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool JsonUpdater::IsValid() const
+DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) const
     {
-    return m_ecinstanceUpdater.IsValid();
+    if (m_ecClass.GetRelationshipClassCP() != nullptr)
+        {
+        BeAssert(false && "Use the other Update override for relationships");
+        return BE_SQLITE_ERROR;
+        }
+
+    IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
+
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
+        return BE_SQLITE_ERROR;
+
+    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
+
+    return m_ecinstanceUpdater.Update(*ecInstance);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2015
+// @bsimethod                                    Ramanujam.Raman                10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyInstance(ECClassCR ecClass) const
+DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
-    return ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        {
+        BeAssert(false && "Use the other Update override for non-relationship instances");
+        return BE_SQLITE_ERROR;
+        }
+
+    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
+
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
+        return BE_SQLITE_ERROR;
+
+    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
+
+    return m_ecinstanceUpdater.Update(*ecInstance);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Shaun.Sewall                    01 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const
+    {
+    if (m_ecClass.GetRelationshipClassCP() != nullptr)
+        {
+        BeAssert(false && "Use the other Update override for relationships");
+        return BE_SQLITE_ERROR;
+        }
+
+    IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
+
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
+        return BE_SQLITE_ERROR;
+
+    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
+
+    return m_ecinstanceUpdater.Update(*ecInstance);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
+    {
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        {
+        BeAssert(false && "Use the other Update override for non-relationship instances");
+        return BE_SQLITE_ERROR;
+        }
+
+    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
+
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
+        return BE_SQLITE_ERROR;
+
+    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
+
+    return m_ecinstanceUpdater.Update(*ecInstance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -66,103 +129,5 @@ IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelCl
     return relInst.get();
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(JsonValueCR jsonValue) const
-    {
-    ECInstanceId instanceId = ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
-    if (!instanceId.IsValid())
-        return ERROR;
-
-    return Update(instanceId, jsonValue);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) const
-    {
-    if (m_ecClass.GetRelationshipClassCP() != nullptr)
-        {
-        BeAssert(false && "Use the other Update override for relationships");
-        return ERROR;
-        }
-
-    IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
-
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (relClass == nullptr)
-        {
-        BeAssert(false && "Use the other Update override for non-relationship instances");
-        return ERROR;
-        }
-
-    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
-
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Shaun.Sewall                    01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const
-    {
-    if (m_ecClass.GetRelationshipClassCP() != nullptr)
-        {
-        BeAssert(false && "Use the other Update override for relationships");
-        return ERROR;
-        }
-
-    IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
-
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus  JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (relClass == nullptr)
-        {
-        BeAssert(false && "Use the other Update override for non-relationship instances");
-        return ERROR;
-        }
-
-    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
-
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
-        return ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

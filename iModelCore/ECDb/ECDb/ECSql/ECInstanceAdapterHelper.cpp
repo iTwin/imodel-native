@@ -249,6 +249,9 @@ BentleyStatus ECInstanceAdapterHelper::BindValue(IECSqlBinder& binder, ECInstanc
 BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, PrimitiveECValueBindingInfo const& valueBindingInfo)
     {
     ECValue value;
+    if (!instanceInfo.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
     value.SetAllowsPointersIntoInstanceMemory(true);
@@ -381,6 +384,9 @@ BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECI
 //static
 BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, ArrayECValueBindingInfo const& valueBindingInfo)
     {
+    if (!instanceInfo.HasInstance()) // bind null in that case
+        return SUCCESS;
+
     IECInstanceCR instance = instanceInfo.GetInstance();
     const uint32_t arrayPropIndex = valueBindingInfo.GetArrayPropertyIndex();
     ECValue arrayValue;
@@ -450,59 +456,27 @@ BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder,
 //static
 BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, ECSqlSystemPropertyBindingInfo const& valueBindingInfo)
     {
-    ECSqlStatus stat;
-
-    const ECValueBindingInfo::SystemPropertyKind systemPropertyKind = valueBindingInfo.GetKind();
-    if (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::ECInstanceId)
+    switch (valueBindingInfo.GetKind())
         {
-        //bind instance's ecinstanceid
-        if (instanceInfo.HasInstanceId())
-            stat = binder.BindId(instanceInfo.GetInstanceId());
-        else
-            stat = binder.BindNull(); //-> ECDb will auto-generate the id
-
-        return stat.IsSuccess() ? SUCCESS : ERROR;
-        }
-
-    auto relInstance = dynamic_cast<IECRelationshipInstanceCP> (&instanceInfo.GetInstance());
-    if (relInstance == nullptr)
-        {
-        BeAssert(false && "Programmer error. Instance passed to ECInstanceAdapterHelper::BindECSqlSystemPropertyValue is expected to be an IECRelationshipInstance.");
-        return ERROR;
-        }
-
-    auto endInstance = systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId || systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECClassId ?
-        relInstance->GetSource() : relInstance->GetTarget();
-
-    if (endInstance.IsNull())
-        {
-        if (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECClassId)
-            BeAssert(false && "Source Instance of the relationship is null");
-        else
-            BeAssert(false && "Target Instance of the relationship is null ");
-        return ERROR;
-        }
-
-    if (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId || systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId)
-        {
-        //bind constraint ecinstanceid
-        ECInstanceId endInstanceId;
-        if (SUCCESS != ECInstanceId::FromString(endInstanceId, endInstance->GetInstanceId().c_str()))
+            case ECValueBindingInfo::SystemPropertyKind::ECInstanceId:
             {
-            BeAssert(false && "Programmer error. Could not convert IECInstance::GetInstanceId to an ECInstanceId object.");
-            return ERROR;
+            //bind instance's ecinstanceid
+            if (instanceInfo.HasInstanceId())
+                return ECSqlStatus::Success == binder.BindId(instanceInfo.GetInstanceId()) ? SUCCESS : ERROR;
+
+            return ECSqlStatus::Success == binder.BindNull() ? SUCCESS : ERROR; //-> ECDb will auto-generate the id
             }
 
-        stat = binder.BindId(endInstanceId);
-        }
-    else
-        {
-        //Bind constraint class id
-        BeAssert(systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECClassId || systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::TargetECClassId);
-        stat = binder.BindId(endInstance->GetClass().GetId());
-        }
+            case ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId:
+                return ECSqlStatus::Success == binder.BindId(instanceInfo.GetSourceId()) ? SUCCESS : ERROR;
 
-    return stat.IsSuccess() ? SUCCESS : ERROR;
+            case ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId:
+                return ECSqlStatus::Success == binder.BindId(instanceInfo.GetTargetId()) ? SUCCESS : ERROR;
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
     }
 
 //---------------------------------------------------------------------------------------

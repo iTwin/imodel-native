@@ -103,7 +103,10 @@ public:
     //! Instantiates a new ECInstanceInserter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this inserter can insert
-    ECDB_EXPORT ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass);
+    //! @param [in] writeToken Token required to execute ECSQL INSERT statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
+    ECDB_EXPORT ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken);
     ECDB_EXPORT ~ECInstanceInserter();
 
     //! Indicates whether this ECInstanceInserter is valid and can be used to insert ECInstances.
@@ -112,6 +115,8 @@ public:
     ECDB_EXPORT bool IsValid() const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
+    //! @remarks @p instance can either be a regular or a relationship instance. However, ECInstanceInserter::InsertRelationship
+    //! is often more convenient when inserting relationships, especially if the relationship doesn't have any ECProperties.
     //! @param[out] newInstanceKey ECInstanceKey of the inserted instance.
     //! @param[in] instance Instance to insert
     //! @param[in] autogenerateECInstanceId true, if ECDb should auto-generate an ECInstanceId (default),
@@ -122,8 +127,27 @@ public:
     //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
-    //! @return SUCCESS in case of success, ERROR otherwise
-    ECDB_EXPORT BentleyStatus Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
+    ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
+
+    //! Inserts a relationship instance into the @ref ECDbFile "ECDb file".
+    //! @remarks This is a convenience method that allows you to avoid having to construct a fully-defined ECN::IECRelationshipInstance
+    //! with source and target ECInstances to be set. 
+    //! @param[out] newInstanceKey ECInstanceKey of the inserted instance.
+    //! @param[in] sourceId SourceECInstanceId
+    //! @param[in] targetId TargetECInstanceId
+    //! @param[in] relationshipProperties If the ECN::ECRelationshipClass has ECProperties, pass its values via this parameter. Note: In this
+    //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
+    //! don't have to be set in @p relationshipProperties
+    //! @param[in] autogenerateECInstanceId true, if ECDb should auto-generate an ECInstanceId (default),
+    //!            false, if ECDb should not auto-generate the ECInstanceId. In that case @p userProvidedECInstanceId
+    //!            will be used.
+    //! @param[in] userProvidedECInstanceId User provided ECInstanceId. Pass nullptr if @p autogenerateECInstanceId is true
+    //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
+    //! When disabling auto-generation the caller is responsible for handling primary key constraint 
+    //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
+    ECDB_EXPORT DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
     //! @param[in, out] instance Instance to insert. If @p autogenerateECInstanceId is true, 
@@ -133,8 +157,8 @@ public:
     //! @note Disabling auto-generation should be used with care. It is only needed in exceptional cases.
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
-    //! @return SUCCESS in case of success, ERROR otherwise
-    ECDB_EXPORT BentleyStatus Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
+    ECDB_EXPORT DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
     };
 
 //======================================================================================
@@ -159,35 +183,47 @@ public:
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this updater can update
+    //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
     //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the ECInstanceUpdater.
     //!            Pass without ECSQLOPTIONS keyword.
-    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions = nullptr);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] instance The property values that are set on this IECInstance will be used to create column bindings.
+    //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
     //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the ECInstanceUpdater.
     //!            Pass without ECSQLOPTIONS keyword.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, Utf8CP ecsqlOptions = nullptr);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
+    //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
     //! @param[in] propertyIndexesToBind A list of property indices that should be used to create the column bindings.  Properties are assumed to all come from the same class.
     //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the ECInstanceUpdater.
     //!            Pass without ECSQLOPTIONS keyword.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions = nullptr);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions = nullptr);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
+    //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
     //! @param[in] propertiesToBind A list of ECProperties that should be used to create the column bindings.
     //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the ECInstanceUpdater.
     //!            Pass without ECSQLOPTIONS keyword.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions = nullptr);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions = nullptr);
 
     ECDB_EXPORT ~ECInstanceUpdater();
 
@@ -203,9 +239,9 @@ public:
     //! Passing the ECSQL option @b ReadonlyPropertiesAreUpdatable to the constructor of the updater, modifies the default
     //! and values of readonly properties are updated.
     //! @param[in] instance ECInstance for which the corresponding row is to be updated.
-    //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
-    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Update(ECN::IECInstanceCR instance) const;
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    ECDB_EXPORT DbResult Update(ECN::IECInstanceCR instance) const;
     };
 
 //======================================================================================
@@ -224,32 +260,33 @@ private:
     mutable ECSqlStatement m_statement;
     bool m_isValid;
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    void Initialize();
-#endif
+    void Initialize(ECSqlWriteToken const*);
 
 public:
     //! Instantiates a new ECInstanceDeleter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
-    ECDB_EXPORT ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass);
-    ECDB_EXPORT ~ECInstanceDeleter();
+    //! @param [in] writeToken Token required to execute ECSQL DELETE statements if 
+    //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+    //! If the option is not set, nullptr can be passed for @p writeToken.
+    ECDB_EXPORT ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken);
+    ~ECInstanceDeleter() {}
 
     //! Indicates whether this ECInstanceDeleter is valid and can be used to delete ECInstances.
     //! It is not valid, if @p ecClass is not mapped for example.
     //! @return true if the deleter is valid and can be used for deleting. false if it cannot be used for delete.
-    ECDB_EXPORT bool IsValid() const;
+    bool IsValid() const { return m_isValid; }
 
     //! Deletes the ECInstance with the specified ECInstanceId.
     //! @param[in] ecInstanceId Id of the ECInstance to delete
-    //! @return SUCCESS in case of successful execution of the underlying ECSQL. This means,
-    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Delete(ECInstanceId ecInstanceId) const;
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    ECDB_EXPORT DbResult Delete(ECInstanceId ecInstanceId) const;
 
     //! Deletes the given ECInstance.
     //! @param[in] ecInstance ECInstance to delete
-    //! @return SUCCESS in case of successful execution of the underlying ECSQL. This means,
-    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Delete(ECN::IECInstanceCR ecInstance) const;
+    //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL. This means,
+    //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
+    ECDB_EXPORT DbResult Delete(ECN::IECInstanceCR ecInstance) const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

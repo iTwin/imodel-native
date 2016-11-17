@@ -217,7 +217,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsFalseWhenDoes
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
     
     ECDbExpressionSymbolContext ecdbContext(GetECDb());
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
@@ -235,11 +235,11 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -265,13 +265,13 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB1);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB1);
     IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB2);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB2);
     
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -304,12 +304,12 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB->SetValue("label", ECValue("B"));
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -336,11 +336,11 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("A"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -366,15 +366,15 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB1->SetValue("label", ECValue("B1"));
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB1);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB1);
     IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB2->SetValue("label", ECValue("B2"));
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB2);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB2);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -401,14 +401,14 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA1 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA1->SetValue("label", ECValue("A1"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA1);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA1);
     IECInstancePtr instanceA2 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA2->SetValue("label", ECValue("A2"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA2);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA2);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -459,11 +459,11 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("A"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("DifferentSchema", "DifferentClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test2].[DifferentRelationship] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -521,11 +521,11 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenImportingSchemas)
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("ClassA Label"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classC = differentSchema->GetClassCP("ClassC");
     IECInstancePtr instanceC = classC->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classC).Insert(*instanceC);
+    ECInstanceInserter(GetECDb(), *classC, nullptr).Insert(*instanceC);
 
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -579,11 +579,11 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("ClassA Label"));
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classC = GetECDb().Schemas().GetECClass("DifferentSchema", "ClassC");
     IECInstancePtr instanceC = classC->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classC).Insert(*instanceC);
+    ECInstanceInserter(GetECDb(), *classC, nullptr).Insert(*instanceC);
 
     ECSqlStatement insertStmt;
     insertStmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
@@ -621,7 +621,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAre
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
     
     ECDbExpressionSymbolContext ecdbContext(GetECDb());
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
@@ -638,12 +638,12 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB->SetValue("label", ECValue("test label"));
-    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");

@@ -116,7 +116,7 @@ enum class SystemId
     String,
     Target,
     TypeName,
-    VersionMajor,
+    VersionRead,
     VersionMinor,
     VersionWrite
     };
@@ -843,7 +843,7 @@ struct ECSchemaChange : ECObjectChange
         StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        UInt32Change& GetVersionMajor() { return Get<UInt32Change>(SystemId::VersionMajor); }
+        UInt32Change& GetVersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
         UInt32Change& GetVersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
         UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
         StringChange& GetAlias() { return Get<StringChange>(SystemId::Alias); }

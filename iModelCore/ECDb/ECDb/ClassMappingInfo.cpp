@@ -1167,6 +1167,8 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
     idSpecCAs.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
     idSpecCAs.push_back(std::make_pair("SyncIDSpecification", "Property"));
 
+    bmap<Utf8String, bvector<Utf8CP>, CompareIUtf8Ascii> distinctPropNames;
+
     for (std::pair<Utf8CP, Utf8CP> const& idSpecCA : idSpecCAs)
         {
         Utf8CP caName = idSpecCA.first;
@@ -1193,9 +1195,21 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
             return ERROR;
             }
 
-        Utf8String indexName;
-        indexName.Sprintf("ix_%s_%s_%s_%s", ecClass.GetSchema().GetAlias().c_str(), ecClass.GetName().c_str(),
-                          caName, idPropName);
+        distinctPropNames[idPropName].push_back(caName);
+        }
+
+    for (bpair<Utf8String, bvector<Utf8CP>> const& kvPair : distinctPropNames)
+        {
+        Utf8String indexName("ix_");
+        indexName.append(ecClass.GetSchema().GetAlias()).append("_").append(ecClass.GetName()).append("_");
+
+        for (Utf8CP caName : kvPair.second)
+            {
+            indexName.append(caName).append("_");
+            }
+
+        Utf8StringCR idPropName = kvPair.first;
+        indexName.append(idPropName);
 
         std::vector<Utf8String> indexPropNameVector;
         indexPropNameVector.push_back(idPropName);

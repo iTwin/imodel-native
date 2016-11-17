@@ -24,7 +24,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
 
     ECClassCP testClass = ecdb.Schemas().GetECClass(schemaName, className);
 
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     bvector<IECInstancePtr> instances;
     for (int i = 0; i < numberOfInstances; i++)
         {
@@ -34,8 +34,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         else
             instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
 
-        auto status = inserter.Insert(*instance);
-        ASSERT_EQ(SUCCESS, status);
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
         instances.push_back(instance);
         }
 
@@ -78,22 +77,22 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
     ECClassCP tempClass = ecdb.Schemas().GetECClass(schemaName, relationshipClassName);
     ECRelationshipClassCP relationshipClass = tempClass->GetRelationshipClassCP();
 
-    ECInstanceInserter sourceInserter(ecdb, *sourceClass);
-    ECInstanceInserter targetInserter(ecdb, *targetClass);
-    ECInstanceInserter relationshipInserter(ecdb, *relationshipClass);
+    ECInstanceInserter sourceInserter(ecdb, *sourceClass, nullptr);
+    ECInstanceInserter targetInserter(ecdb, *targetClass, nullptr);
+    ECInstanceInserter relationshipInserter(ecdb, *relationshipClass, nullptr);
 
     for (int sourceIndex = 0; sourceIndex < numberOfSourceInstances; sourceIndex++)
         {
         IECInstancePtr sourceInstance = ECDbTestUtility::CreateArbitraryECInstance(*sourceClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-        ASSERT_EQ(SUCCESS, sourceInserter.Insert(*sourceInstance));
+        ASSERT_EQ(BE_SQLITE_OK, sourceInserter.Insert(*sourceInstance));
         for (int targetIndex = 0; targetIndex < numberOfTargetInstancesPerSource; targetIndex++)
             {
             IECInstancePtr targetInstance = ECDbTestUtility::CreateArbitraryECInstance(*targetClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
             ECInstanceKey relationshipId;
-            ASSERT_EQ(SUCCESS, targetInserter.Insert(*targetInstance));
+            ASSERT_EQ(BE_SQLITE_OK, targetInserter.Insert(*targetInstance));
 
             IECRelationshipInstancePtr relationshipInstance = CreateRelationship(*relationshipClass, *sourceInstance, *targetInstance);
-            ASSERT_EQ(SUCCESS, relationshipInserter.Insert(relationshipId, *relationshipInstance));
+            ASSERT_EQ(BE_SQLITE_OK, relationshipInserter.Insert(relationshipId, *relationshipInstance));
             }
         }
 
@@ -125,7 +124,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
 
     ECClassCP structClass = ecdb.Schemas().GetECClass("KitchenSink", "Struct1");
     ASSERT_TRUE(structClass != nullptr);
-    ECInstanceInserter inserter(ecdb, *structClass);
+    ECInstanceInserter inserter(ecdb, *structClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
     }
 
@@ -171,9 +170,8 @@ TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
     ASSERT_EQ(InstanceReadStatus::Success, instanceStatus);
     WString orignalXml, afterXml;
     testInstance->WriteToXmlString(orignalXml, false, false);
-    ECInstanceInserter inserter(ecdb, testInstance->GetClass());
-    auto status = inserter.Insert(*testInstance);
-    ASSERT_EQ(SUCCESS, status);
+    ECInstanceInserter inserter(ecdb, testInstance->GetClass(), nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*testInstance));
 
     Utf8CP ecsql = "SELECT * FROM ECRules.RuleSet";
     ECSqlStatement queryStatement;
@@ -201,7 +199,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
     ASSERT_TRUE(testClass != nullptr);
 
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
 
     auto assertInsert = [&ecdb] (IECInstanceCR testInstance, ECInstanceId expectedId)
         {
@@ -227,30 +225,24 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     auto runInsertTest = [&testClass, &inserter, &assertInsert] (IECInstanceR testInstance, Utf8CP testScenario)
         {
         ECInstanceKey generatedKey;
-        auto status = inserter.Insert(generatedKey, testInstance);
-        ASSERT_EQ(SUCCESS, status) << testScenario << ": Inserting instance without instance id is expected to succeed if auto generation is enabled";
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(generatedKey, testInstance)) << testScenario << ": Inserting instance without instance id is expected to succeed if auto generation is enabled";
         assertInsert(testInstance, generatedKey.GetECInstanceId());
 
         ECInstanceId userProvidedId(generatedKey.GetECInstanceId().GetValue() + 1111LL);
 
-        status = inserter.Insert(generatedKey, testInstance, true, &userProvidedId);
-        ASSERT_EQ(ERROR, status) << testScenario << ": When passing autogenerateECInstanceId=true user provided id must not be passed";
+        ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, true, &userProvidedId)) << testScenario << ": When passing autogenerateECInstanceId=true user provided id must not be passed";
 
-        status = inserter.Insert(generatedKey, testInstance, false);
-        ASSERT_EQ(ERROR, status) << testScenario << ": Inserting instance without instance id is expected to fail if auto generation is disabled";
+        ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, false)) << testScenario << ": Inserting instance without instance id is expected to fail if auto generation is disabled";
 
         testInstance.SetInstanceId("blabla");
-        status = inserter.Insert(generatedKey, testInstance, false);
-        ASSERT_EQ(ERROR, status) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
+        ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, false)) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
 
         testInstance.SetInstanceId("0");
-        status = inserter.Insert(generatedKey, testInstance, false);
-        ASSERT_EQ(ERROR, status) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
+        ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, false)) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
 
         //now pass a valid instance id
         ECInstanceKey userProvidedKey;
-        status = inserter.Insert(userProvidedKey, testInstance, false, &userProvidedId);
-        ASSERT_EQ(SUCCESS, status) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(userProvidedKey, testInstance, false, &userProvidedId)) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
         ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetECInstanceId().GetValue());
         ASSERT_EQ(testClass->GetId(), userProvidedKey.GetECClassId());
         assertInsert(testInstance, userProvidedKey.GetECInstanceId());
@@ -261,14 +253,12 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         userProvidedId.ToString(instanceIdStr);
         testInstance.SetInstanceId(instanceIdStr);
 
-        status = inserter.Insert(userProvidedKey, testInstance, false);
-        ASSERT_EQ(SUCCESS, status) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(userProvidedKey, testInstance, false)) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
         ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetECInstanceId().GetValue());
         ASSERT_EQ(testClass->GetId(), userProvidedKey.GetECClassId());
         assertInsert(testInstance, userProvidedKey.GetECInstanceId());
 
-        status = inserter.Insert(userProvidedKey, testInstance, false);
-        ASSERT_EQ(ERROR, status) << testScenario << ": inserting instance with same instance id twice should result in constraint violation error";
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, inserter.Insert(userProvidedKey, testInstance, false)) << testScenario << ": inserting instance with same instance id twice should result in constraint violation error";
         };
 
     //Test #1: insert empty instance
@@ -318,9 +308,9 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
     v.SetLong(p3Value);
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("P3", v));
 
-    ECInstanceInserter inserter(ecdb, *ecClass);
+    ECInstanceInserter inserter(ecdb, *ecClass, nullptr);
     ECInstanceKey key;
-    ASSERT_EQ(SUCCESS, inserter.Insert(key, *instance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *instance));
 
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%s AND P1=%d AND P2 LIKE '%s' AND P3=%" PRId64,
@@ -413,12 +403,12 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     v.SetUtf8CP("ECInstanceInserter");
     ASSERT_EQ(ECObjectsStatus::Success, testInstance->SetValue("FirstName", v));
 
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
     //scenario 1: Don't set current time prop at all in ECInstance
     ECInstanceKey key;
-    ASSERT_EQ(SUCCESS, inserter.Insert(key, *testInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *testInstance));
 
     AssertCurrentTimeStamp(ecdb, key.GetECInstanceId(), false, "ECInstanceInserter INSERT");
     }
@@ -543,11 +533,10 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 
     {
     //wrap inserter in a nested block to make sure it (and its internal ECSqlStatement) is destroyed before the DB is closed
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert(instanceKey, *testClassInstance);
-    ASSERT_EQ(SUCCESS, insertStatus);
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testClassInstance));
     }
 
     ecdb.CloseDb();

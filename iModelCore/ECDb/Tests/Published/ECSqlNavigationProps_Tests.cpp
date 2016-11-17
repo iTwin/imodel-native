@@ -1092,7 +1092,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
 
     ECInstanceKey elementKey;
     {
-    ECInstanceInserter elementInserter(ecdb, *elementClass);
+    ECInstanceInserter elementInserter(ecdb, *elementClass, nullptr);
     ASSERT_TRUE(elementInserter.IsValid());
 
     IECInstancePtr elementInst = elementClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1103,7 +1103,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
     v.SetLong(modelKey.GetECInstanceId().GetValue());
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", v));
 
-    ASSERT_EQ(SUCCESS, elementInserter.Insert(elementKey, *elementInst));
+    ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
     }
 
@@ -1205,7 +1205,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     ECInstanceKey elementKey;
     {
-    JsonInserter elementInserter(ecdb, *elementClass);
+    JsonInserter elementInserter(ecdb, *elementClass, nullptr);
     ASSERT_TRUE(elementInserter.IsValid());
 
     Utf8String newElementJsonStr;
@@ -1215,7 +1215,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
 
-    ASSERT_EQ(SUCCESS, elementInserter.Insert(elementKey, newElementJson));
+    ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, newElementJson));
     ecdb.SaveChanges();
     }
     //verify relationship was inserted

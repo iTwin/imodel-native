@@ -34,9 +34,7 @@ struct ECValueBindingInfo : NonCopyableClass
             {
             ECInstanceId,
             SourceECInstanceId,
-            SourceECClassId,
-            TargetECInstanceId,
-            TargetECClassId
+            TargetECInstanceId
             };
 
     protected:
@@ -278,21 +276,34 @@ struct ECInstanceAdapterHelper
         struct ECInstanceInfo : NonCopyableClass
             {
             private:
-                ECN::IECInstanceCR m_instance;
+                ECN::IECInstanceCP m_instance;
                 ECInstanceId m_instanceId;
+                ECInstanceId m_sourceId;
+                ECInstanceId m_targetId;
 
             public:
                 explicit ECInstanceInfo(ECN::IECInstanceCR instance)
-                    : m_instance(instance)
+                    : m_instance(&instance)
                     {}
 
                 ECInstanceInfo(ECN::IECInstanceCR instance, ECInstanceId instanceId)
-                    : m_instance(instance), m_instanceId(instanceId)
+                    : m_instance(&instance), m_instanceId(instanceId)
                     {}
 
-                ECN::IECInstanceCR GetInstance() const { return m_instance; }
+                ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId)
+                    : ECInstanceInfo(instanceId, sourceId, targetId, nullptr)
+                    {}
+
+                ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties)
+                    : m_instance(relationshipProperties), m_instanceId(instanceId), m_sourceId(sourceId), m_targetId(targetId)
+                    {}
+
+                bool HasInstance() const { return m_instance != nullptr; }
+                ECN::IECInstanceCR GetInstance() const { BeAssert(HasInstance()); return *m_instance; }
                 bool HasInstanceId() const { return m_instanceId.IsValid(); }
                 ECInstanceId GetInstanceId() const { return m_instanceId; }
+                ECInstanceId GetSourceId() const { return m_sourceId; }
+                ECInstanceId GetTargetId() const { return m_targetId; }
             };
     private:
         ECInstanceAdapterHelper();

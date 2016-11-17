@@ -302,8 +302,6 @@ $(o)JsonInserter$(oext):                                      $(baseDir)ECSql/Js
 
 $(o)JsonUpdater$(oext):                                       $(baseDir)ECSql/JsonUpdater.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonDeleter$(oext):                                       $(baseDir)ECSql/JsonDeleter.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECSqlStatementNoopImpls$(oext):                           $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlBinder$(oext):                                       $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}

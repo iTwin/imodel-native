@@ -138,21 +138,21 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    RangeClassRefList classExpList;
+    RangeClasssInfo::List classExpList;
     FindRangeClassRefs(classExpList);
 
     RangeClassRefExp const* classExpComparand = nullptr;
-    for (RangeClassRefExp const* classExp : classExpList)
+    for (RangeClasssInfo const& classExp : classExpList)
         {
         if (classExpComparand == nullptr)
             {
-            classExpComparand = classExp;
+            classExpComparand = &classExp.GetExp();
             continue;
             }
 
-        if (classExp->GetId().EqualsI(classExpComparand->GetId()))
+        if (classExp.GetExp().GetId().EqualsI(classExpComparand->GetId()))
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -163,32 +163,32 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs) const
+void FromExp::FindRangeClassRefs(RangeClasssInfo::List& classRefs, RangeClasssInfo::Scope scope) const
     {
     for (auto classRef : GetChildren())
-        FindRangeClassRefs(classRefs, *static_cast<ClassRefExp const*> (classRef));
+        FindRangeClassRefs(classRefs, *static_cast<ClassRefExp const*> (classRef), scope);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const& classRef) const
+void FromExp::FindRangeClassRefs(RangeClasssInfo::List& classRefs, ClassRefExp const& classRef, RangeClasssInfo::Scope scope) const
     {
     switch (classRef.GetType())
         {
             case Type::ClassName:
             case Type::SubqueryRef:
-                classRefs.push_back(static_cast<RangeClassRefExp const*>(&classRef)); break;
+                classRefs.push_back(RangeClasssInfo(static_cast<RangeClassRefExp const&>(classRef), scope)); break;
             case Type::QualifiedJoin:
             case Type::NaturalJoin:
             case Type::CrossJoin:
             case Type::ECRelationshipJoin:
             {
             JoinExp const& join = static_cast<JoinExp const&>(classRef);
-            FindRangeClassRefs(classRefs, join.GetFromClassRef());
-            FindRangeClassRefs(classRefs, join.GetToClassRef());
+            FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
+            FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
             if (classRef.GetType() == Type::ECRelationshipJoin)
-                FindRangeClassRefs(classRefs, static_cast<ECRelationshipJoinExp const&>(join).GetRelationshipClass());
+                FindRangeClassRefs(classRefs, static_cast<ECRelationshipJoinExp const&>(join).GetRelationshipClass(), scope);
             break;
             }
             default:
@@ -207,20 +207,20 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
         return ERROR;
         }
 
-    RangeClassRefList existingRangeClassRefs;
+    RangeClasssInfo::List existingRangeClassRefs;
     FindRangeClassRefs(existingRangeClassRefs);
 
-    RangeClassRefList newRangeClassRefs;
+    RangeClasssInfo::List newRangeClassRefs;
 
-    FindRangeClassRefs(newRangeClassRefs, *classRefExp);
-    for (auto newRangeCRef : newRangeClassRefs)
+    FindRangeClassRefs(newRangeClassRefs, *classRefExp, RangeClasssInfo::Scope::Local);
+    for (RangeClasssInfo const& newRangeCRef : newRangeClassRefs)
         {
         for (auto existingRangeCRef : existingRangeClassRefs)
             {
-            if (existingRangeCRef->GetId().Equals(newRangeCRef->GetId()))
+            if (existingRangeCRef.GetExp().GetId().Equals(newRangeCRef.GetExp().GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str());
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
                 return ERROR;
                 }
             }
@@ -233,10 +233,44 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
+RangeClasssInfo::List FromExp::FindRangeClassRefExpressions() const
     {
-    std::unique_ptr<RangeClassRefList> rangeClassRefs(new RangeClassRefList());
-    FindRangeClassRefs(*rangeClassRefs);
+    RangeClasssInfo::List rangeClassRefs;
+    FindRangeClassRefs(rangeClassRefs, RangeClasssInfo::Scope::Local);
+    auto  isSubQuery = [] (Exp const& start, SingleSelectStatementExp const* end)
+        {
+        if (end == nullptr)
+            return true;
+
+        Exp const* c = &start;
+        do
+            {
+            c = c->GetParent();
+            if (c == nullptr || c == end)
+                return false;
+
+            if (c->GetType() == Exp::Type::FromClause)
+                return true;
+
+            } while (true);
+        };
+
+
+    SingleSelectStatementExp const* cur = static_cast<SingleSelectStatementExp const*>(FindParent(Exp::Type::SingleSelect));
+    Exp const* old = this;
+    bool isTableSubQuery = isSubQuery(*old, cur);
+    while (cur != nullptr && !isTableSubQuery)
+        {        
+        old = cur;
+        cur = static_cast<SingleSelectStatementExp const*>(cur->FindParent(Exp::Type::SingleSelect));
+        isTableSubQuery = isSubQuery(*old, cur);
+        if (cur != nullptr && !isTableSubQuery)
+            {
+            if (cur->GetFrom() != this)
+                cur->GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClasssInfo::Scope::Inherited);
+            }
+        }
+
     return rangeClassRefs;
     }
 
@@ -535,7 +569,7 @@ void OrderBySpecExp::AppendSortDirection(Utf8String& str, bool addLeadingBlank) 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClasssInfo::List const& rangeClassRefs)
     {
     std::vector<DerivedPropertyExp const*> propertyNameExpList;
     for (auto childExp : GetChildren())
@@ -564,11 +598,11 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList cons
             {
             Utf8CP alias = propertyPath[0].GetPropertyName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
-            for (RangeClassRefExp const* classRef : rangeClassRefs)
+            for (RangeClasssInfo const& classRef : rangeClassRefs)
                 {
-                if (classRef->GetId().Equals(alias))
+                if (classRef.GetExp().GetId().Equals(alias))
                     {
-                    RangeClassRefList classRefList;
+                    RangeClasssInfo::List classRefList;
                     classRefList.push_back(classRef);
                     auto stat = ReplaceAsteriskExpression(*propertyNameExp, classRefList);
                     if (stat != SUCCESS)
@@ -586,7 +620,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList cons
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClasssInfo::List const& rangeClassRefs)
     {
     std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (std::unique_ptr<PropertyNameExp>& propNameExp)
@@ -594,8 +628,8 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp cons
         derivedPropExpList.push_back(std::unique_ptr<Exp>(new DerivedPropertyExp(std::move(propNameExp), nullptr)));
         };
 
-    for (RangeClassRefExp const* classRef : rangeClassRefs)
-        classRef->CreatePropertyNameExpList(addDelegate);
+    for (RangeClasssInfo const& classRef : rangeClassRefs)
+        classRef.GetExp().CreatePropertyNameExpList(addDelegate);
 
     if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
         {
@@ -615,7 +649,7 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         auto finalizeParseArgs = ctx.GetFinalizeParseArg();
         BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-        RangeClassRefList const* rangeClassRefList = static_cast<RangeClassRefList const*> (finalizeParseArgs);
+        RangeClasssInfo::List const* rangeClassRefList = static_cast<RangeClasssInfo::List const*> (finalizeParseArgs);
         BeAssert(rangeClassRefList != nullptr);
         const auto stat = ReplaceAsteriskExpressions(*rangeClassRefList);
         if (stat != SUCCESS)
@@ -652,7 +686,7 @@ Utf8String SelectClauseExp::_ToECSql() const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
-    : QueryExp(), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX), m_finalizeParsingArgCache(nullptr)
+    : QueryExp(), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
     //WARNING: Do not change the order of following
     m_fromClauseIndex = AddChild(std::move(from));
@@ -712,13 +746,13 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
-        ctx.PushFinalizeParseArg(m_finalizeParsingArgCache.get());
+        ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
         ctx.PopFinalizeParseArg();
-        m_finalizeParsingArgCache = nullptr;
+        m_finalizeParsingArgCache.clear();
         return FinalizeParseStatus::Completed;
         }
     }

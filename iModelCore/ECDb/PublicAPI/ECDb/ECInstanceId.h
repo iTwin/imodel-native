@@ -23,7 +23,7 @@ public:
     BEINT64_ID_DECLARE_MEMBERS(ECInstanceId, BeInt64Id)
 
 public:
-    explicit ECInstanceId(BeBriefcaseBasedId id) : ECInstanceId(id.GetValue()) {}
+    explicit ECInstanceId(BeInt64Id id) : ECInstanceId(id.GetValueUnchecked()) {}
     };
 
 //=======================================================================================

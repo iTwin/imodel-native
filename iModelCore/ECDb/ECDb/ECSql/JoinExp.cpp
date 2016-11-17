@@ -108,7 +108,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     auto fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
 
-    RangeClassRefList fromClassRefs;
+    RangeClasssInfo::List fromClassRefs;
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ERROR);
 
@@ -165,15 +165,15 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInSourceList;
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInTargetList;
 
-    for(auto classRef : fromClassRefs)
+    for(RangeClasssInfo const& classRef : fromClassRefs)
         {
-        if (classRef->GetType() != Exp::Type::ClassName)
+        if (classRef.GetExp().GetType() != Exp::Type::ClassName)
             continue;
             
-        if (classRef == &GetToClassRef() || classRef == &GetRelationshipClass())
+        if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClass())
             continue; 
 
-        auto fromClassNameExpression = static_cast<ClassNameExp const*> (classRef);
+        auto fromClassNameExpression = static_cast<ClassNameExp const*> (&classRef.GetExp());
         auto fromClassId = fromClassNameExpression->GetInfo().GetMap().GetClass ().GetId ();
 
         //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes

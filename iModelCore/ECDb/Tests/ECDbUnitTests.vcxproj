@@ -81,6 +81,7 @@
     <ClCompile Include="Published\ECSqlTestFrameworkHelper.cpp" />
     <ClCompile Include="Published\ECSqlTestFramework_Tests.cpp" />
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlWriteTokenTests.cpp" />
     <ClCompile Include="Published\FieldEngineer_Test.cpp" />
     <ClCompile Include="Published\FSRTests.cpp" />
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />

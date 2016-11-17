@@ -166,7 +166,7 @@ BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, EC
     if (testClass == nullptr)
         return ERROR;
 
-    ECInstanceInserter inserter(ecdb, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     if (!inserter.IsValid())
         return ERROR;
 
@@ -178,8 +178,8 @@ BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, EC
 
     ECDbTestUtility::AssignRandomValueToECInstance(nonNullValue, testInstance, nonNullPropertyName);
 
-    auto stat = inserter.Insert(instanceKey, *testInstance);
-    BeAssert(stat == SUCCESS);
+    DbResult stat = inserter.Insert(instanceKey, *testInstance);
+    BeAssert(stat == BE_SQLITE_OK);
     return SUCCESS;
     }
 
@@ -394,11 +394,10 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     structVal3.SetStruct(struct2Instance3.get());
     testClassInstance->SetValue("StructArray", structVal3, 2);
 
-    ECInstanceInserter inserter(db, *testClass);
+    ECInstanceInserter inserter(db, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert(instanceKey, *testClassInstance);
-    ASSERT_EQ(SUCCESS, insertStatus);
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, *testClassInstance));
 
     SqlPrintfString ecSql("SELECT StructArray FROM TestSchema.TestClass");
     ECSqlStatement ecStatement;
@@ -539,9 +538,9 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     relationshipInstance->SetTarget(targetInstance.get());
     relationshipInstance->SetInstanceId("source->target");
 
-    ECInstanceInserter inserter(ecdb, *relClass);
+    ECInstanceInserter inserter(ecdb, *relClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(SUCCESS, inserter.Insert(*relationshipInstance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*relationshipInstance));
 
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
@@ -659,22 +658,18 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
     ASSERT_TRUE(project != nullptr);
-    IECInstancePtr instance;
-    instance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+    IECInstancePtr projectInstance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
     //ECInstance Adapters
-    ECInstanceInserter inserter(db, *employee);
+    ECInstanceInserter inserter(db, *employee, nullptr);
     ECInstanceKey instanceKey;
-    auto sms = inserter.Insert(instanceKey, *instance);
-    EXPECT_EQ(ERROR, sms);
+    ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(instanceKey, *projectInstance));
 
-    ECInstanceUpdater updater(db, *employee);
-    sms = updater.Update(*instance);
-    EXPECT_EQ(ERROR, sms);
+    ECInstanceUpdater updater(db, *employee, nullptr);
+    ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(*projectInstance));
 
-    ECInstanceDeleter deleter(db, *employee);
-    sms = deleter.Delete(*instance);
-    EXPECT_EQ(ERROR, sms);
+    ECInstanceDeleter deleter(db, *employee, nullptr);
+    ASSERT_EQ(BE_SQLITE_ERROR, deleter.Delete(*projectInstance));
 
     //Json Adapters
     // Read JSON input from file
@@ -688,19 +683,17 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     Json::Value jsonInput;
     ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile));
 
-    JsonInserter jsonInserter(db, *employee);
-    sms = jsonInserter.Insert(instanceKey, jsonInput);
-    EXPECT_EQ(ERROR, sms);
+    JsonInserter jsonInserter(db, *employee, nullptr);
+    ASSERT_EQ(BE_SQLITE_ERROR, jsonInserter.Insert(instanceKey, jsonInput));
 
-    JsonUpdater jsonUpdater(db, *employee);
-    sms = jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput);
-    EXPECT_EQ(ERROR, sms);
+    JsonUpdater jsonUpdater(db, *employee, nullptr);
+    ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput));
 
-    JsonDeleter jsonDeleter(db, *employee);
+    JsonDeleter jsonDeleter(db, *employee, nullptr);
     ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
-    ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
-    sms = jsonDeleter.Delete(instanceId);
+    ECInstanceId::FromString(instanceId, projectInstance->GetInstanceId().c_str());
+    ASSERT_EQ(BE_SQLITE_OK, jsonDeleter.Delete(instanceId)) << "InstanceId is not validated so Delete is expected to succeed even if the id doesn't match the ECClass";
 
     BeTest::SetFailOnAssert(true);
     }
