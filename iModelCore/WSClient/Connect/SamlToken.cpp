@@ -62,6 +62,9 @@ m_token(other.m_token)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlToken& SamlToken::operator=(const SamlToken& other)
     {
+    if (this == &other)
+        return *this;
+
     // Hold onto both mutexes since we are accessing both
     BeCriticalSectionHolder lock(m_domMutex);
     BeCriticalSectionHolder otherLock(other.m_domMutex);
