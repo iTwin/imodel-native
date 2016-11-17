@@ -409,15 +409,15 @@ void                ECSchemaReadContext::RemoveConversionSchema(ECSchemaR schema
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      12/2015
 //--------------------------------------------------------------------------------------
-ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor)
+ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schemaName, int versionRead, int versionMinor)
     {
     ECSchemaPtr conversionSchema;
     if (m_conversionSchemas.IsValid())
         {
         Utf8String conversionSchemaName(schemaName);
         conversionSchemaName += "_V3Conversion";
-        SchemaKey key(conversionSchemaName.c_str(), versionMajor, versionMinor);
-        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::LatestCompatible);
+        SchemaKey key(conversionSchemaName.c_str(), versionRead, versionMinor);
+        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
         }
     
     return conversionSchema;

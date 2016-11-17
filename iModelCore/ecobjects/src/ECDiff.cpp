@@ -10,7 +10,7 @@ using namespace std;
 #define ID_NAME "Name"
 #define ID_DISPLAY_LABEL "DisplayLabel"
 #define ID_DESCRIPTION "Description"
-#define ID_VERSION_MAJOR "VersionMajor"
+#define ID_VERSION_READ "VersionRead"
 #define ID_VERSION_WRITE "VersionWrite"
 #define ID_VERSION_MINOR "VersionMinor"
 #define ID_EC_VERSION_MAJOR "ECVersionMajor"
@@ -792,7 +792,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::Name: return ID_NAME;
         case DiffNodeId::DisplayLabel: return ID_DISPLAY_LABEL;
         case DiffNodeId::Description: return ID_DESCRIPTION;
-        case DiffNodeId::VersionMajor: return ID_VERSION_MAJOR;
+        case DiffNodeId::VersionRead: return ID_VERSION_READ;
         case DiffNodeId::VersionWrite: return ID_VERSION_WRITE;
         case DiffNodeId::VersionMinor:return ID_VERSION_MINOR;
         case DiffNodeId::ECVersionMajor: return ID_EC_VERSION_MAJOR;
@@ -844,8 +844,8 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     if (!left.GetName().Equals(right.GetName()))
         diff->Add (DiffNodeId::Name)->SetValue (left.GetName().c_str(), right.GetName().c_str());
 
-    if (left.GetVersionMajor() != right.GetVersionMajor())
-        diff->Add (DiffNodeId::VersionMajor)->SetValue (left.GetVersionMajor(), right.GetVersionMajor());
+    if (left.GetVersionRead() != right.GetVersionRead())
+        diff->Add (DiffNodeId::VersionRead)->SetValue (left.GetVersionRead(), right.GetVersionRead());
 
     if (left.GetVersionMinor() != right.GetVersionMinor())
         diff->Add (DiffNodeId::VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
@@ -1847,7 +1847,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         }
     Utf8String schemaName;
     Utf8String alias;
-    uint32_t versionMajor;
+    uint32_t versionRead;
     uint32_t versionWrite;
     uint32_t versionMinor;
     ECVersion ecVersion;
@@ -1864,10 +1864,10 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         alias = GetDefault().GetAlias();
 
-    if ((v = GetMergeValue (r, DiffNodeId::VersionMajor)) != NULL)
-        versionMajor = (uint32_t)v->GetValueInt32();
+    if ((v = GetMergeValue (r, DiffNodeId::VersionRead)) != NULL)
+        versionRead = (uint32_t)v->GetValueInt32();
     else
-        versionMajor = GetDefault().GetVersionMajor();
+        versionRead = GetDefault().GetVersionRead();
 
     if ((v = GetMergeValue(r, DiffNodeId::VersionWrite)) != NULL)
         versionWrite = (uint32_t)v->GetValueInt32();
@@ -1890,7 +1890,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         ecVersion = GetDefault().GetECVersion();
 
     //Create Merge schema 
-    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionRead, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
         return MergeStatus::ErrorCreatingMergeSchema;
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)

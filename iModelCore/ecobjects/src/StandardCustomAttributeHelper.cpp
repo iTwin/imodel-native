@@ -151,7 +151,7 @@ StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_
 
 static Utf8CP s_supplementalMetaDataAccessor = "SupplementalSchemaMetaData";
 static Utf8CP s_supplementalProvenanceAccessor = "SupplementalProvenance";
-static const uint32_t s_bscaVersionMajor = 1;
+static const uint32_t s_bscaVersionRead = 1;
 static const uint32_t s_bscaVersionMinor = 8;
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,7 +160,7 @@ static const uint32_t s_bscaVersionMinor = 8;
 StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaKey key(BSCA_SCHEMA_NAME, s_bscaVersionMajor, s_bscaVersionMinor);
+    SchemaKey key(BSCA_SCHEMA_NAME, s_bscaVersionRead, s_bscaVersionMinor);
 
     m_schema = ECSchema::LocateSchema(key, *schemaContext);
 

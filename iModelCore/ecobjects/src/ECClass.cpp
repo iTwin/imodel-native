@@ -819,7 +819,7 @@ ECSchemaCP schema
 )
     {
     Utf8Char buf[1024];
-    BeStringUtilities::Snprintf(buf, "%s.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
+    BeStringUtilities::Snprintf(buf, "%s.%02d", schema->GetName().c_str(), schema->GetVersionRead());
     for (size_t i = 0; i < s_numSchemasThatAllowOverridingArrays; i++)
         if (0 == strcmp(s_schemasThatAllowOverridingArrays[i], buf))
             return true;
@@ -1294,7 +1294,7 @@ bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
     return ((thisClass == thatClass) ||
             ( (0 == thisClass->GetName().compare(thatClass->GetName())) &&
               (0 == thisClass->GetSchema().GetName().compare(thatClass->GetSchema().GetName())) &&
-              (thisClass->GetSchema().GetVersionMajor() == thatClass->GetSchema().GetVersionMajor()) &&
+              (thisClass->GetSchema().GetVersionRead() == thatClass->GetSchema().GetVersionRead()) &&
               (thisClass->GetSchema().GetVersionMinor() == thatClass->GetSchema().GetVersionMinor())));
     }
 
@@ -2399,7 +2399,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
         ECEntityClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
         if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
             {
-            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not nor derived from the abstract constraint class '%s' as specified in Class '%s'",
+            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
                         GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                         baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
             return ECObjectsStatus::BaseClassUnacceptable;
@@ -2409,7 +2409,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
 
         if (!m_constraintClasses[0]->GetClass().Is(&baseConstraintClass))
             {
-            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not nor derived from Class '%s' as specified in Class '%s'",
+            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not derived from Class '%s' as specified in Class '%s'",
                        m_constraintClasses[0]->GetClass().GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                        baseConstraintClass.GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
 

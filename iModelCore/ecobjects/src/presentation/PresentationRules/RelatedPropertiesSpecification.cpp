@@ -39,6 +39,17 @@ Utf8String                 propertyNames
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedPropertiesSpecification const& other)
+    : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
+    m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames)
+    {
+    for (RelatedPropertiesSpecificationP spec : other.m_nestedRelatedPropertiesSpecification)
+        m_nestedRelatedPropertiesSpecification.push_back(new RelatedPropertiesSpecification(*spec));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::~RelatedPropertiesSpecification ()
@@ -102,9 +113,19 @@ Utf8StringCR RelatedPropertiesSpecification::GetRelationshipClassNames (void) co
 Utf8StringCR RelatedPropertiesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedPropertiesSpecification::SetRelatedClassNames(Utf8StringCR value) {m_relatedClassNames = value;}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR RelatedPropertiesSpecification::GetPropertyNames (void) const { return m_propertyNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedPropertiesSpecification::SetPropertyNames(Utf8StringCR value) {m_propertyNames = value;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
