@@ -28,7 +28,6 @@
 #define SQLITE_ENABLE_ZIPVFS 1
 #define SQLITE_USE_URI 1
 
-
 #define SQLITE_ENABLE_FTS5 1    // include support for full text search
 #define SQLITE_ENABLE_JSON1 1   // include support for json
 

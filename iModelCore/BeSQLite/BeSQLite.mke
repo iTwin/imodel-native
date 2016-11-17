@@ -2,7 +2,7 @@
 #
 #     $Source: BeSQLite.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 GCC_DEFAULT_VISIBILITY              = default
@@ -99,7 +99,7 @@ CCompFpOpts=precise
 %endif
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
-            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)closure.c 
+            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)closure.c 
 
 %if $(BUILD_TOOLSET) == "CLANG"
     LLVMCommonCompOpts =% $(OriginalLLVMCommonCompOpts)

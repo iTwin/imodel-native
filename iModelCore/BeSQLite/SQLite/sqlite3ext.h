@@ -15,8 +15,8 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 */
-#ifndef _SQLITE3EXT_H_
-#define _SQLITE3EXT_H_
+#ifndef SQLITE3EXT_H
+#define SQLITE3EXT_H
 #include "sqlite3.h"
 
 typedef struct sqlite3_api_routines sqlite3_api_routines;
