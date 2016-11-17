@@ -1857,7 +1857,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCount)
             ecdb.SaveChanges();
 
             std::vector<std::pair<Utf8String, int>> testItems;
-            testItems.push_back(std::make_pair("ts_Parent", 7));
+            testItems.push_back(std::make_pair("ts_Parent", 8));
             AssertColumnCount(ecdb, testItems, "SharedColumnCount");
             }
 
@@ -1922,7 +1922,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCount)
             ecdb.SaveChanges();
 
             std::vector<std::pair<Utf8String, int>> testItems;
-            testItems.push_back(std::make_pair("ts_Parent", 103));
+            testItems.push_back(std::make_pair("ts_Parent", 104));
             AssertColumnCount(ecdb, testItems, "After first schema import");
 
             SchemaItem secondSchema(
@@ -1988,8 +1988,8 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
 
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 102));
-    testItems.push_back(std::make_pair("ts_Sub2", 102));
+    testItems.push_back(std::make_pair("ts_Sub1", 103));
+    testItems.push_back(std::make_pair("ts_Sub2", 103));
     AssertColumnCount(ecdb, testItems, "After first schema import");
 
     SchemaItem secondSchema(
@@ -2010,7 +2010,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
 
-    testItems.push_back(std::make_pair("ts2_Sub3", 102));
+    testItems.push_back(std::make_pair("ts2_Sub3", 103));
     AssertColumnCount(ecdb, testItems, "After second schema import");
     }
 
@@ -2151,9 +2151,9 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
     ecdb.SaveChanges();
 
     const int elementExpectedColCount = 3;
-    const int definitionElementExpectedColCount = 52;
+    const int definitionElementExpectedColCount = 53;
     int geometricElement2dExpectedColCount = 4;
-    int geometricElement3dExpectedColCount = 8;
+    int geometricElement3dExpectedColCount = 9;
 
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
@@ -2211,8 +2211,8 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, thirdSchema);
     ASSERT_FALSE(asserted);
-
-    geometricElement3dExpectedColCount++;
+    m_ecdb.SaveChanges();
+    //geometricElement3dExpectedColCount++;
 
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
