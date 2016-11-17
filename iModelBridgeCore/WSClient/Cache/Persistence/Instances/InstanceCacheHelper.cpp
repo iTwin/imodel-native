@@ -266,7 +266,7 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(),
+        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(),
             relationshipInstance.GetProperties(), *source, *target))
             {
             return ERROR;
