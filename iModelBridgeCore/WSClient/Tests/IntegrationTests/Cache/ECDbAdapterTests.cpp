@@ -17,7 +17,7 @@ using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
-    ASSERT_EQ(BE_SQLITE_DONE, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
 
 #define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
     ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());

@@ -68,7 +68,7 @@ BentleyStatus ObjectInfoManager::InsertInfo(ObjectInfoR info)
         BeAssert(false && "Cannot insert duplicates");
         return ERROR;
         }
-    if (BE_SQLITE_DONE != m_infoInserter.Get().Insert(info.GetJsonInfo()))
+    if (BE_SQLITE_OK != m_infoInserter.Get().Insert(info.GetJsonInfo()))
         {
         return ERROR;
         }
@@ -85,7 +85,7 @@ BentleyStatus ObjectInfoManager::UpdateInfo(ObjectInfoCR info)
         BeAssert(false && "Cannot update nonexisting info");
         return ERROR;
         }
-    if (BE_SQLITE_DONE != m_infoUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()), info.GetJsonInfo()))
+    if (BE_SQLITE_OK != m_infoUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()), info.GetJsonInfo()))
         {
         return ERROR;
         }
