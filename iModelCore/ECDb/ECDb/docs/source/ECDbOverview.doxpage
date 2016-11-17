@@ -218,7 +218,7 @@
         - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECSchema::GetAlias "Alias"
         - @b Version (@ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor").
-            - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionMajor "VersionMajor" is not allowed though as major version changes cannot be performed through
+            - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead" is not allowed though as read version changes cannot be performed through
             an ECSchema update.
     - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references"
         - @b Add, @b delete, @b modify
