@@ -1110,5 +1110,177 @@ BentleyStatus BRepUtil::Modify::DisjoinBody(bvector<IBRepEntityPtr>& output, IBR
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool        isOwned;
+    PK_BODY_t   bodyTag = PSolidUtil::GetEntityTag(entity, &isOwned);
+
+    if (!isOwned)
+        return ERROR;
+
+    return PSolidTopoId::AddNodeIdAttributes(bodyTag, nodeId, overrideExisting);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttributes(IBRepEntityR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool        isOwned;
+    PK_BODY_t   bodyTag = PSolidUtil::GetEntityTag(entity, &isOwned);
+
+    if (!isOwned)
+        return ERROR;
+
+    return PSolidTopoId::DeleteNodeIdAttributes(bodyTag);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::IncrementNodeIdAttributes(IBRepEntityR entity, int32_t increment)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool        isOwned;
+    PK_BODY_t   bodyTag = PSolidUtil::GetEntityTag(entity, &isOwned);
+
+    if (!isOwned)
+        return ERROR;
+
+    return PSolidTopoId::IncrementNodeIdAttributes(bodyTag, increment);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::FindNodeIdRange(IBRepEntityCR entity, uint32_t& highestNodeId, uint32_t& lowestNodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidTopoId::FindNodeIdRange(PSolidUtil::GetEntityTag(entity), highestNodeId, lowestNodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::IdFromFace(FaceId& faceId, ISubEntityCR subEntity, bool useHighestId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    return PSolidTopoId::IdFromFace(faceId, PSolidSubEntity::GetSubEntityTag(subEntity), useHighestId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::IdFromEdge(EdgeId& edgeId, ISubEntityCR subEntity, bool useHighestId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Edge != subEntity.GetSubEntityType())
+        return ERROR;
+
+    return PSolidTopoId::IdFromEdge(edgeId, PSolidSubEntity::GetSubEntityTag(subEntity), useHighestId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::IdFromVertex(VertexId& vertexId, ISubEntityCR subEntity, bool useHighestId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Vertex != subEntity.GetSubEntityType())
+        return ERROR;
+
+    return PSolidTopoId::IdFromVertex(vertexId, PSolidSubEntity::GetSubEntityTag(subEntity), useHighestId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::FacesFromId(bvector<ISubEntityPtr>& subEntities, FaceId const& faceId, IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_FACE_t> faceVector;
+
+    if (SUCCESS != PSolidTopoId::FacesFromId(faceVector, faceId, PSolidUtil::GetEntityTag(entity)))
+        return ERROR;
+
+    for (PK_FACE_t faceTag: faceVector)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(faceTag, entity));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::EdgesFromId(bvector<ISubEntityPtr>& subEntities, EdgeId const& edgeId, IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_EDGE_t> edgeVector;
+
+    if (SUCCESS != PSolidTopoId::EdgesFromId(edgeVector, edgeId, PSolidUtil::GetEntityTag(entity)))
+        return ERROR;
+
+    for (PK_EDGE_t edgeTag: edgeVector)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(edgeTag, entity));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::VerticesFromId(bvector<ISubEntityPtr>& subEntities, VertexId const& vertexId, IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_VERTEX_t> vertexVector;
+
+    if (SUCCESS != PSolidTopoId::VerticesFromId(vertexVector, vertexId, PSolidUtil::GetEntityTag(entity)))
+        return ERROR;
+
+    for (PK_VERTEX_t vertexTag: vertexVector)
+        subEntities.push_back(PSolidSubEntity::CreateSubEntity(vertexTag, entity));
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+
 
 
