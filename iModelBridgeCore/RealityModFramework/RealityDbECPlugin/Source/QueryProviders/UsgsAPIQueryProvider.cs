@@ -27,6 +27,7 @@ using System.Xml;
 using System.Data;
 using Bentley.ECSystem.Configuration;
 using Bentley.EC.PluginBuilder.Modules;
+using System.Threading;
 
 
 namespace IndexECPlugin.Source.QueryProviders
@@ -165,7 +166,10 @@ namespace IndexECPlugin.Source.QueryProviders
             //    CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
             //    }
 
-            LaunchCaching();
+            PrepareCachingStatements();
+
+            Thread cachingThread = new Thread(() => SendCachingStatements());
+            cachingThread.Start();
 
             return instanceList;
 
@@ -263,7 +267,7 @@ namespace IndexECPlugin.Source.QueryProviders
             }
 
         //We should replace isComplete by an extended data parameter in each of the instances.
-        private void LaunchCaching ()
+        private void PrepareCachingStatements ()
             {
             //Parallel.ForEach(m_storageForCaching, (instancesGroup) =>
             foreach ( var instancesGroup in m_storageForCaching )
@@ -274,10 +278,19 @@ namespace IndexECPlugin.Source.QueryProviders
                     additionalColumns = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
                     additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("ParentDatasetIdStr", Bentley.ECObjects.ECObjects.StringType, inst => ((string) inst.ExtendedData["ParentDatasetIdStr"])));
                     }
-                m_instanceCacheManager.InsertInstancesInCache(instancesGroup.Value, instancesGroup.Key, additionalColumns);
+                m_instanceCacheManager.PrepareCacheInsertStatement(instancesGroup.Value, instancesGroup.Key, additionalColumns);
                 //});
                 }
             }
+
+        //The sending of the Statements has been separated from their creation, since we wanted to send the Db query on a separate thread,
+        //while creating the statements on the main thread. This was done to make sure that the instances the statements are based on 
+        //are not modified on the main thread while they are still used to create the statement.
+        private void SendCachingStatements()
+            {
+            m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+            }
+
 
         private void CreateCacheRelatedInstances (List<IECInstance> cachedInstances, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
             {
