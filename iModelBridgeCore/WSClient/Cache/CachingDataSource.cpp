@@ -63,7 +63,7 @@ m_fileDownloadManager(new FileDownloadManager(*this))
 CachingDataSource::~CachingDataSource()
     {
     // Prevent from hanging when destroyed after failed open/create
-    if (m_open)
+    if (m_isOpen)
         {
         CancelAllTasks()->Wait();
         }
@@ -230,7 +230,6 @@ ICancellationTokenPtr ct
                 }
             txn.Commit();
 
-            ds->m_open = true;
             openResult->SetSuccess(ds);
             });
         })
@@ -239,6 +238,9 @@ ICancellationTokenPtr ct
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
                 openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+
+            if (openResult->IsSuccess())
+                openResult->GetValue()->m_isOpen = true;
 
             return *openResult;
             });
