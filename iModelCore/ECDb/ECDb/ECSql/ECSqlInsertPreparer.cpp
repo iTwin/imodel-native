@@ -373,7 +373,7 @@ InsertStatementExp const& exp
         insertBuilder.Append(insertSqlSnippets.m_pkValuesNativeSqlSnippets);
         }
 
-    //overflow value
+    //overflow value expression
     if (overflowColumn != nullptr)
         {
         if (!valuesNativeSqlSnippets.empty())
@@ -396,6 +396,7 @@ InsertStatementExp const& exp
                 insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
                 }
             }
+
         insertBuilder.Append(")");
         }
     

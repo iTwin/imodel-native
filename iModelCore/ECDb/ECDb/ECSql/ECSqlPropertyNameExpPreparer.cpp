@@ -113,6 +113,14 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
 
             return false;
             }
+        
+        if (currentScopeECSqlType == ECSqlType::Update)
+            {
+            if (propertyMap.IsData())
+                {
+                return static_cast<DataPropertyMap const&>(propertyMap).IsOverflow();
+                }
+            }
 
         switch (currentScope.GetExp().GetType())
             {
@@ -188,7 +196,10 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     ClassMap const& classMap = propMap.GetClassMap();
     ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
                                         ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::SelectView : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
-    bool isWriteData = ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList;
+
+    bool isWriteData = (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList)
+        || (ecsqlType == ECSqlType::Update && exp.GetParent()->GetType() == Exp::Type::Assignment);
+
     if (isWriteData)
         sqlVisitor.EnableSqlForInsertOrUpdate();
 
