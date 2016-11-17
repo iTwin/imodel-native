@@ -44,6 +44,8 @@ public:
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 
+
+
 //=======================================================================================
 //! Context in which tile publishing occurs.
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -62,22 +64,21 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantOpenOutputFile,
         };
 
-
 protected:
-    ViewControllerR         m_viewController;
-    BeFileName              m_outputDir;
-    BeFileName              m_dataDir;
-    WString                 m_rootName;
-    Transform               m_dbToTile;
-    Transform               m_tileToEcef;
-    size_t                  m_maxTilesetDepth;
-    size_t                  m_maxTilesPerDirectory;
-    bvector<TileNodePtr>    m_modelRoots;
-    BeMutex                 m_mutex;
-    bool                    m_publishPolylines;
-    bool                    m_processModelsInParallel = true;
+    ViewControllerR                         m_viewController;
+    BeFileName                              m_outputDir;
+    BeFileName                              m_dataDir;
+    WString                                 m_rootName;
+    Transform                               m_dbToTile;
+    Transform                               m_tileToEcef;
+    size_t                                  m_maxTilesetDepth;
+    bvector<TileNodePtr>                    m_modelRoots;
+    BeMutex                                 m_mutex;
+    bool                                    m_publishPolylines;
+    bool                                    m_processModelsInParallel = true;
+    bool                                    m_publishIncremental;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
@@ -97,6 +98,9 @@ protected:
 
     TILEPUBLISHER_EXPORT virtual TileGenerator::Status _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status) override;
+    TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
+
+
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
@@ -105,17 +109,15 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     ViewControllerCR GetViewController() const { return m_viewController; }
     DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
-    size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
+    bool GetPublishIncremental() const { return m_publishIncremental; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT WString GetRootNameForModel(DgnModelCR model) const;
-
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
@@ -170,6 +172,8 @@ private:
     void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
 
+    BeFileName  GetBinaryDataFileName() const;
+
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
 
@@ -180,6 +184,9 @@ private:
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 
+    enum IncrementalStatus { UsePrevious, Regenerate, Success };
+    IncrementalStatus IncrementalGenerate(TileModelDeltaCR modelDelta);
+
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
 
@@ -188,7 +195,6 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
-    TILEPUBLISHER_EXPORT static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 
 //=======================================================================================

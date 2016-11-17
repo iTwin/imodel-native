@@ -175,40 +175,6 @@ ElementIterator DgnCategory::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryIdSet DgnCategory::QueryCategories(DgnDbR db)
-    {
-    DgnCategoryIdSet ids;
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Category));
-    if (stmt.IsValid())
-        {
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.insert(stmt->GetValueId<DgnCategoryId>(0));
-        }
-
-    return ids;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
-    {
-    DgnCategoryIdList ids;
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,CodeValue FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY CodeValue");
-    if (stmt.IsValid())
-        {
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.push_back(stmt->GetValueId<DgnCategoryId>(0));
-        }
-
-    return ids;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnCategory::QueryCount(DgnDbR db)
     {
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_Category));
@@ -390,30 +356,6 @@ ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId
     ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
     iterator.GetStatement()->BindId(1, categoryId);
     return iterator;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId catId)
-    {
-    DgnSubCategoryIdSet ids;
-
-    Utf8String ecsql("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
-    if (catId.IsValid())
-        ecsql.append(" WHERE ParentId.Id=?");
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-    if (stmt.IsValid())
-        {
-        if (catId.IsValid())
-            stmt->BindId(1, catId);
-
-        while (BE_SQLITE_ROW == stmt->Step())
-            ids.insert(stmt->GetValueId<DgnSubCategoryId>(0));
-        }
-
-    return ids;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -623,8 +565,8 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
         // When we import a Category, we currently import all of its SubCategories too.
         // If we decide to change this policy and wait until the caller asks for a SubCategory, 
         // we must change GeometryStreamIO::Import to call RemapSubCategory, rather than FindSubCategory.
-        for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
-            importer.RemapSubCategory(GetCategoryId(), srcSubCatId);
+        for (ElementIteratorEntry srcSubCategory : DgnSubCategory::MakeIterator(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
+            importer.RemapSubCategory(GetCategoryId(), srcSubCategory.GetId<DgnSubCategoryId>());
         }
     }
 
@@ -666,8 +608,8 @@ DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportConte
         {
         importer.AddCategory(srcCatId, dstCatId);
 
-        for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), srcCatId)) // Make sure the subcats are remapped!
-            importer.RemapSubCategory(dstCatId, srcSubCatId);
+        for (ElementIteratorEntry srcSubCategory : DgnSubCategory::MakeIterator(importer.GetSourceDb(), srcCatId)) // Make sure the subcats are remapped!
+            importer.RemapSubCategory(dstCatId, srcSubCategory.GetId<DgnSubCategoryId>());
 
         return dstCatId;
         }

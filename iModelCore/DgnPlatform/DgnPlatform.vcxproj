@@ -39,6 +39,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\Annotations\TextAnnotationSeed.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\AnnotationTable.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\AreaPattern.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\AutoRestore.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\basefileio.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\CacheDataBlock.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ClipPrimitive.h" />
@@ -66,6 +67,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnAuthority.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnCategory.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnChangeSummary.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnCodesManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnCoreAPI.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnCoreEvent.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnDb.h" />
@@ -73,6 +75,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnDomain.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECPersistence.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECSymbolProvider.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnECTypes.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnElement.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnElementDependency.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnFont.fb.h" />
@@ -92,11 +95,13 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatform.r.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformApi.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformBaseType.r.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformErrors.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformErrors.r.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformLib.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProgressMeter.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProjectUpdater.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnProperties.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnProvenance.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnRangeTree.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnRscFontStructures.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnScript.h" />
@@ -109,6 +114,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DimensionStyle.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DimensionStyleProps.r.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DimStyleResource.r.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ECSqlClassParams.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ECSqlStatementIterator.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ECUtils.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ElementGeometry.h" />
@@ -116,6 +122,8 @@
     <ClInclude Include="PublicAPI\DgnPlatform\ElementHandler.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ExportMacros.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\FenceParams.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\FunctionalDomain.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\GenericDomain.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\GeoCoordErrors.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\GeoCoordinationManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\GeomJsApi.h" />
@@ -155,15 +163,18 @@
     <ClInclude Include="PublicAPI\DgnPlatform\IViewDraw.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\IViewOutput.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\IViewTransients.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\JsonUtils.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LineStyle.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LineStyleApi.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LineStyleResource.r.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\LinkElement.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Locate.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LocksManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LsLocal.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\LxoProcedure.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\MeasureGeom.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\MemoryManager.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\MeshTile.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ModelSolverDef.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\MSSmartPtr.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\NotificationManager.h" />
@@ -174,6 +185,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\QueryView.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\QvElemSet.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\QvViewport.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\RangeIndex.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RealityDataCache.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RegionUtil.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Render.h" />
@@ -182,8 +194,12 @@
     <ClInclude Include="PublicAPI\DgnPlatform\RevisionManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SatelliteChangeSets.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ScanCriteria.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ScriptDomain.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SectionClip.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\SessionManager.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\Sheet.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SheetDef.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\SimplifyGraphic.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SimplifyViewDrawGeom.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SnapContext.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SolarUtility.h" />
@@ -192,6 +208,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\StoredExpression.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\TextString.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\TextStyleInterop.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\TileTree.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\BitMask.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\FlexList.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\KeyTree.h" />
@@ -206,6 +223,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\TransformClipStack.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\TxnManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\UnitDefinition.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\UpdatePlan.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ValueFormat.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ValueParse.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\VecMath.h" />

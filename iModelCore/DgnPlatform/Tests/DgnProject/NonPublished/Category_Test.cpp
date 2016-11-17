@@ -137,7 +137,7 @@ TEST_F (CategoryTests, InsertCategory)
 
     //Iterator for categories.
     EXPECT_EQ(5, DgnCategory::QueryCount(*m_db));
-    DgnCategoryIdSet catIds = DgnCategory::QueryCategories(*m_db);
+    DgnCategoryIdSet catIds = DgnCategory::MakeIterator(*m_db).BuildIdSet<DgnCategoryId>();
     EXPECT_EQ(5, catIds.size());
     int nCompared = 0;
     int nNotCompared = 0;
@@ -169,18 +169,18 @@ TEST_F (CategoryTests, InsertCategory)
     
     // Ordered List verification
     int count = 0;
-    DgnCategoryIdList orderedList = DgnCategory::QueryOrderedCategories(*m_db);
+    DgnCategoryIdList orderedList = DgnCategory::MakeIterator(*m_db, nullptr, "ORDER BY [CodeValue]").BuildIdList<DgnCategoryId>();
     
     DgnCategoryId lastId;
     for (DgnCategoryId id : orderedList)
         {
         if (lastId.IsValid())
-        {
-        DgnCategoryCPtr current = DgnCategory::QueryCategory(id, *m_db);
-        DgnCategoryCPtr lastCategory = DgnCategory::QueryCategory(lastId, *m_db);
-        EXPECT_TRUE(current->GetCode().GetValue().CompareTo( lastCategory->GetCode().GetValue().c_str()) > 0);
-        ++count;
-        }
+            {
+            DgnCategoryCPtr current = DgnCategory::QueryCategory(id, *m_db);
+            DgnCategoryCPtr lastCategory = DgnCategory::QueryCategory(lastId, *m_db);
+            EXPECT_TRUE(current->GetCode().GetValue().CompareTo( lastCategory->GetCode().GetValue().c_str()) > 0);
+            ++count;
+            }
         lastId = id;
         }
     EXPECT_EQ(5, orderedList.size());
@@ -280,12 +280,12 @@ TEST_F (CategoryTests, UpdateCategory)
 TEST_F (CategoryTests, IterateCategories)
     {
     SetupSeedProject();
-    int numCategories = DgnCategory::MakeIterator(*m_db).BuildElementIdSet().size();
+    int numCategories = DgnCategory::MakeIterator(*m_db).BuildIdSet<DgnCategoryId>().size();
     DgnDbTestUtils::InsertCategory(*m_db, "TestCategory1");
     DgnDbTestUtils::InsertCategory(*m_db, "TestCategory2");
     DgnDbTestUtils::InsertCategory(*m_db, "TestCategory3");
     numCategories += 3;
-    ASSERT_EQ(numCategories, DgnCategory::MakeIterator(*m_db).BuildElementIdList().size());
+    ASSERT_EQ(numCategories, DgnCategory::MakeIterator(*m_db).BuildIdList<DgnCategoryId>().size());
 
     bool foundCategory1=false;
     bool foundCategory2=false;
@@ -305,17 +305,17 @@ TEST_F (CategoryTests, IterateCategories)
         if (0 == strcmp(entry.GetCodeValue(), "TestCategory1"))
             {
             foundCategory1 = true;
-            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
             }
         else if (0 == strcmp(entry.GetCodeValue(), "TestCategory2")) 
             {
             foundCategory2 = true;
-            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
             }
         else if (0 == strcmp(entry.GetCodeValue(), "TestCategory3")) 
             {
             foundCategory3 = true;
-            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildElementIdSet().size());
+            ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
             }
         }
 
@@ -337,7 +337,6 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
-
     //Appearence properties.
     uint32_t weight = 10;
     double trans = 0.5;
@@ -357,14 +356,13 @@ TEST_F (CategoryTests, InsertSubCategory)
     
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId(name, *m_db);
-    EXPECT_TRUE (id.IsValid ());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(name, *m_db);
+    EXPECT_TRUE (categoryId.IsValid ());
 
     Utf8CP sub_name = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_name, appearence, sub_desc));
+    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, categoryId, sub_name, appearence, sub_desc));
     
-
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
     DgnCode code = subcategory.GetCode();
@@ -379,7 +377,7 @@ TEST_F (CategoryTests, InsertSubCategory)
     EXPECT_TRUE(app.IsEqual(appearence));
 
     //Verifying subcategory properties
-    DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(id, sub_name, *m_db);
+    DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(categoryId, sub_name, *m_db);
     EXPECT_TRUE (subcat_id.IsValid ());
 
     DgnSubCategoryId subcat_id_byCode = DgnSubCategory::QuerySubCategoryId(code, *m_db);
@@ -389,48 +387,49 @@ TEST_F (CategoryTests, InsertSubCategory)
     DgnSubCategoryCPtr query_sub = DgnSubCategory::QuerySubCategory(subcat_id, *m_db);
     EXPECT_TRUE (query_sub.IsValid ());
 
-    DgnSubCategoryId default_subId = DgnCategory::GetDefaultSubCategoryId(id);
-    EXPECT_EQ(id.GetValue()+1, default_subId.GetValue());
+    DgnSubCategoryId default_subId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+    EXPECT_EQ(categoryId.GetValue()+1, default_subId.GetValue());
 
     //Inserts sub category 2
     Utf8CP sub2_name = "Test SubCategory 2";
     Utf8CP sub2_desc = "This is a test subcategory 2";
 
-    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, id, sub2_name, appearence, sub2_desc));
+    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, categoryId, sub2_name, appearence, sub2_desc));
     EXPECT_TRUE(subcategory2.Insert().IsValid());
 
     //Inserts sub category 3
     Utf8CP sub3_name = "Test SubCategory 3";
     Utf8CP sub3_desc = "This is a test subcategory 3";
 
-    DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, id, sub3_name, appearence, sub3_desc));
+    DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, categoryId, sub3_name, appearence, sub3_desc));
     EXPECT_TRUE(subcategory3.Insert().IsValid());
 
     EXPECT_EQ(4, (int)category.QuerySubCategoryCount());
 
     //Iterator for subcategories.
-    DgnSubCategoryIdSet subcatIds = DgnSubCategory::QuerySubCategories(*m_db, id);
-    EXPECT_EQ(4, subcatIds.size());
-    EXPECT_EQ(subcatIds.size()+1, DgnSubCategory::QueryCount(*m_db)); // + default sub-category of category created by v8 converter
-    EXPECT_EQ(subcatIds.size()+1, DgnSubCategory::QuerySubCategories(*m_db).size()); // + default sub-category of category created by v8 converter
-    EXPECT_EQ(subcatIds.size(), DgnSubCategory::QueryCount(*m_db, id));
+    ElementIterator iterator = category.MakeSubCategoryIterator();
+    EXPECT_EQ(4, iterator.BuildIdSet<DgnElementId>().size());
+    EXPECT_EQ(5, DgnSubCategory::QueryCount(*m_db)); // + default sub-category of category created by v8 converter
+    EXPECT_EQ(4, DgnSubCategory::QueryCount(*m_db, categoryId));
 
     int nCompared = 0;
     int nNotCompared = 0;
-    for (auto const& subcatId : subcatIds)
+    for (ElementIteratorEntry subCategoryEntry : iterator)
         {
+        DgnSubCategoryId subCategoryId = subCategoryEntry.GetId<DgnSubCategoryId>();
         DgnSubCategoryCP pCompareTo = nullptr;
-        if (subcategory.GetSubCategoryId() == subcatId)
+
+        if (subcategory.GetSubCategoryId() == subCategoryId)
             pCompareTo = &subcategory;
-        else if (subcategory2.GetSubCategoryId() == subcatId)
+        else if (subcategory2.GetSubCategoryId() == subCategoryId)
             pCompareTo = &subcategory2;
-        else if (subcategory3.GetSubCategoryId() == subcatId)
+        else if (subcategory3.GetSubCategoryId() == subCategoryId)
             pCompareTo = &subcategory3;
 
         if (nullptr != pCompareTo)
             {
             ++nCompared;
-            CompareSubCategories(subcatId, *pCompareTo);
+            CompareSubCategories(subCategoryId, *pCompareTo);
             }
         else
             {

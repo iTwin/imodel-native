@@ -32,6 +32,7 @@
 #define BIS_CLASS_DocumentPartition         "DocumentPartition"
 #define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
 #define BIS_CLASS_Drawing                   "Drawing"
+#define BIS_CLASS_DrawingAuthority          "DrawingAuthority"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
 #define BIS_CLASS_DrawingModel              "DrawingModel"
 #define BIS_CLASS_Element                   "Element"
@@ -80,6 +81,7 @@
 #define BIS_CLASS_SessionAuthority          "SessionAuthority"
 #define BIS_CLASS_SessionModel              "SessionModel"
 #define BIS_CLASS_Sheet                     "Sheet"
+#define BIS_CLASS_SheetAuthority            "SheetAuthority"
 #define BIS_CLASS_SheetModel                "SheetModel"
 #define BIS_CLASS_SpatialElement            "SpatialElement"
 #define BIS_CLASS_SpatialIndex              "SpatialIndex"
@@ -263,10 +265,10 @@ public:
 };
 
 enum class ModelIterate
-    {
+{
     All = 1<<0,   //!< return all iterable models
     Gui = 1<<1,   //!< return only models marked as visible in Model list GUI
-    };
+};
 
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table

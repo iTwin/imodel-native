@@ -40,7 +40,7 @@ namespace dgn_ElementHandler
     struct Element; 
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
-    struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
+    struct Document; struct Drawing; struct SectionDrawing;  
     struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
@@ -229,10 +229,9 @@ struct ElementIteratorEntry : ECSqlStatementEntry
     friend struct ECSqlStatementIterator<ElementIteratorEntry>;
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
-
 public:
     DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
-    template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
     DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
     DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
@@ -248,11 +247,32 @@ public:
 //=======================================================================================
 struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
 {
-    //! Builds a DgnElementIdSet by iterating all entries
-    DGNPLATFORM_EXPORT DgnElementIdSet BuildElementIdSet();
+    //! Iterates all entries to build an unordered IdSet templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> BeSQLite::IdSet<T_ElementId> BuildIdSet()
+        {
+        BeSQLite::IdSet<T_ElementId> idSet;
+        for (ElementIteratorEntry entry : *this)
+            idSet.insert(entry.GetId<T_ElementId>());
 
-    //! Builds a bvector of DgnElementId by iterating all entries
-    DGNPLATFORM_EXPORT bvector<DgnElementId> BuildElementIdList();
+        return idSet;
+        }
+
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> bvector<T_ElementId> BuildIdList()
+        {
+        bvector<T_ElementId> idList;
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+
+        return idList;
+        }
+
+    //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId>  void BuildIdList (bvector<T_ElementId>& idList)
+        {
+        for (ElementIteratorEntry entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+        }
 };
 
 //=======================================================================================
@@ -577,18 +597,17 @@ public:
     //! Property filter to be use when comparing elements
     struct ComparePropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None      = 0, 
             WriteOnly = 0x02,  //! Ignore properties such as LastMod
             ElementId = 0x10,  //! Ignore ElementIds
-            };
+        };
 
         Ignore m_ignore;
         bset<Utf8String> m_ignoreList;
 
-        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreList(list) {}
-
+        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) : m_ignore(ignore), m_ignoreList(list) {}
         ComparePropertyFilter(bset<Utf8String> const& list) : m_ignore(Ignore::None), m_ignoreList(list) {}
 
         virtual bool _ExcludeElementId() const {return 0 != (Ignore::ElementId & m_ignore);}
@@ -598,25 +617,22 @@ public:
     //! Property filter to be used when setting properties
     struct SetPropertyFilter
     {
-        enum Ignore {
+        enum Ignore 
+        {
             None          = 0, 
             Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
             WriteOnly     = 0x02,  //! Don't set properties such as LastMod
             Null          = 0x08,  //! Don't set the property if the supplied value is null
             ElementId     = 0x10,  //! Don't set ElementId
             WriteOnlyNullBootstrapping = WriteOnly|Null|Bootstrapping|ElementId,
-            };
+        };
 
         Ignore m_ignore;
         bool m_ignoreErrors;
         bset<Utf8String> m_ignoreList;
 
-        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, 
-                       bset<Utf8String> const& ignoreProps = bset<Utf8String>()) 
-            : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
-
-        SetPropertyFilter(bset<Utf8String> const& ignore) 
-            : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
+        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, bset<Utf8String> const& ignoreProps = bset<Utf8String>()) : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
+        SetPropertyFilter(bset<Utf8String> const& ignore)  : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
 
         DGNPLATFORM_EXPORT static bool IsBootStrappingProperty(Utf8StringCR);
 
@@ -1250,7 +1266,7 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    void ClearAllAppData(){m_appData.clear();}//< @private
+    void ClearAllAppData(){m_appData.clear();}//!< @private
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
@@ -2405,8 +2421,17 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for a Drawing in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Drawing within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
+
     //! Creates a new Drawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+    //! @param[in] model Create the Drawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the Drawing element's DgnCode
+    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2422,76 +2447,9 @@ protected:
 
 public:
     //! Creates a new SectionDrawing in the specified DocumentListModel
-    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
-};
-
-//=======================================================================================
-//! @ingroup GROUP_DgnElement
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
-    friend struct dgn_ElementHandler::Sheet;
-
-protected:
-    explicit Sheet(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param height The sheet height (meters)
-    //! @param width The sheet width (meters)
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, double height, double width, 
-                                              DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
-
-    //! Creates a new Sheet in the specified InformationModel
-    //! @param model The model where the Sheet element will be inserted by the caller.
-    //! @param scale The sheet's drawing scale
-    //! @param sheetTemplate The sheet template. Maybe in valid if there is no template.
-    //! @param code Optional. The sheet's code.
-    //! @param userLabel Optional. The sheet's user label.
-    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
-    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
-
-    //! Get the drawing scale of the sheet
-    double GetScale() const {return GetPropertyValueDouble("Scale");}
-
-    //! Set the drawing scale of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
-    DgnDbStatus SetScale(double v) {return SetPropertyValue("Scale", v);}
-
-    //! Get the height of the sheet
-    double GetHeight() const {return GetPropertyValueDouble("Height");}
-
-    //! Set the height of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
-    DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);}
-
-    //! Get the width of the sheet
-    double GetWidth() const {return GetPropertyValueDouble("Width");}
-
-    //! Set the width of the sheet.
-    //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
-    DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);}
-
-    //! Get the sheet template, if any.
-    //! @return an invalid ID if the sheet has no template.
-    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>("Template");}
-
-    //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue("Template", v);}
-
-    //! Get the sheet border, if any.
-    //! @return an invalid ID if the sheet has no border.
-    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>("Border");}
-
-    //! Set the sheet border.
-    //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue("Border", v);}
+    //! @param[in] model Create the SectionDrawing element in this DocumentListModel
+    //! @param[in] name This name will be used to form the SectionDrawing element's DgnCode
+    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8CP name);
 };
 
 //=======================================================================================
@@ -2954,7 +2912,6 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-
     virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual uint64_t _Purge(uint64_t memTarget) override;
 
@@ -2969,8 +2926,8 @@ public:
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
-    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     //! Look up an element in the pool of loaded elements for this DgnDb.

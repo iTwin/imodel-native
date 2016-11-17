@@ -1390,26 +1390,26 @@ PolyfaceHeaderPtr PSolidUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions, IFacetTopologyTable& facetTopo)
+static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions, IFacetTopologyTable& facetTopo)
     {
     T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity.GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
     T_FaceAttachmentsVec const& faceAttachmentsVec = entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
     bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
     bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-
+    
     for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
         {
+        BeAssert (curr->second.second < faceAttachmentsVec.size());
         FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second.second);
         bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
 
         if (found == uniqueFaceAttachments.end())
             {
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
-            Render::GeometryParams faceParams;
 
-            faceAttachment.ToGeometryParams(faceParams);
-            params.push_back(faceParams);
             polyfaces.push_back(polyface);
+            params.push_back(faceAttachment);
+
             faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
             }
         else
@@ -1433,7 +1433,7 @@ static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, double pixelSize, DRange1dP pixelSizeRange)
+bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, double pixelSize, DRange1dP pixelSizeRange)
     {
     if (nullptr == entity.GetFaceMaterialAttachments())
         return false; // No reason to call this method when there aren't attachments...can't return params...
@@ -1443,7 +1443,7 @@ bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& p
     if (!facetTopo->_IsTableValid())
         return false;
 
-    IFacetOptionsPtr  facetOptions = IFacetOptions::Create(); // Doesn't matter...
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create(); // Doesn't matter...
 
     return facetTableToPolyfaces(entity, polyfaces, params, *facetOptions, *facetTopo);
     }
@@ -1451,7 +1451,7 @@ bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR facetOptions)
+bool PSolidUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions)
     {
     if (nullptr == entity.GetFaceMaterialAttachments())
         return false; // No reason to call this method when there aren't attachments...can't return params...

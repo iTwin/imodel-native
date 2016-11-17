@@ -1230,30 +1230,6 @@ Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueT
 DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet ElementIterator::BuildElementIdSet()
-    {
-    DgnElementIdSet elementIdSet;
-    for (ElementIteratorEntry entry : *this)
-        elementIdSet.insert(entry.GetElementId());
-
-    return elementIdSet;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnElementId> ElementIterator::BuildElementIdList()
-    {
-    bvector<DgnElementId> elementIdList;
-    for (ElementIteratorEntry entry : *this)
-        elementIdList.push_back(entry.GetElementId());
-
-    return elementIdList;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::InitNextId()

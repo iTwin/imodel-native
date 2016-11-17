@@ -1711,7 +1711,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         {
         DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(GetDgnDb(), "TestCategory");
         DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), "DrawingListModel");
-        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "Drawing");
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
         DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
 
         TestElement2dPtr element = TestElement2d::Create(GetDgnDb(), drawingModel->GetModelId(), categoryId, DgnCode(), 2.0);
@@ -1791,7 +1791,7 @@ TEST_F(DgnElementTests, EqualsTests)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, DgnElementsIterator)
+TEST_F(DgnElementTests, ElementIterator)
     {
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
@@ -1808,12 +1808,12 @@ TEST_F(DgnElementTests, DgnElementsIterator)
         }
 
     ElementIterator iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject));
-    ASSERT_EQ(numPhysicalObjects, iterator.BuildElementIdSet().size());
-    ASSERT_EQ(numPhysicalObjects, iterator.BuildElementIdList().size());
+    ASSERT_EQ(numPhysicalObjects, iterator.BuildIdSet<DgnElementId>().size());
+    ASSERT_EQ(numPhysicalObjects, iterator.BuildIdList<DgnElementId>().size());
 
     iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), "WHERE [UserLabel]='UserLabel1'");
-    ASSERT_EQ(1, iterator.BuildElementIdSet().size());
-    ASSERT_EQ(1, iterator.BuildElementIdList().size());
+    ASSERT_EQ(1, iterator.BuildIdSet<DgnElementId>().size());
+    ASSERT_EQ(1, iterator.BuildIdList<DgnElementId>().size());
 
     int count=0;
     for (ElementIteratorEntry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))

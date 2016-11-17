@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -108,8 +109,71 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
+    }
 
-    m_meshes = m_tile.GenerateMeshes(context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModelDeltaCR modelDelta)
+    {
+    TileReader          tileReader;
+    TileMeshList        oldMeshes, newMeshes;
+                                                        
+    if (modelDelta.DoIncremental(m_tile) &&
+        TileReader::Status::Success != tileReader.ReadTile (oldMeshes, GetBinaryDataFileName()))
+        return IncrementalStatus::Regenerate;
+
+    bool        geometryRemoved = false;
+    DRange3d    publishedRange = DRange3d::NullRange();
+
+    if (!modelDelta.GetDeleted().empty())
+        for (auto& mesh : oldMeshes)
+            geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
+
+    if (!modelDelta.GetAdded().empty())
+        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), &modelDelta);
+
+    if (newMeshes.empty())
+        {
+        if (!geometryRemoved)
+            {
+            for (auto& oldMesh : oldMeshes)
+                publishedRange.Extend (oldMesh->GetRange());
+
+            m_tile.SetPublishedRange (publishedRange);
+            return IncrementalStatus::UsePrevious;
+            }
+        m_meshes = oldMeshes;
+        }
+    else
+        {
+        // Merge old meshes with new ones.
+        bmap<TileMeshMergeKey, TileMeshPtr>  meshMap;
+    
+        for (auto& oldMesh : oldMeshes)
+            if (!oldMesh->IsEmpty())
+                meshMap.Insert(TileMeshMergeKey(*oldMesh), oldMesh);
+
+        for (auto& newMesh : newMeshes)
+            {
+            TileMeshMergeKey    key(*newMesh);
+            auto const&         found = meshMap.find(key);
+
+            if (meshMap.find(key) == meshMap.end())
+                meshMap.Insert (key, newMesh);
+            else
+                found->second->AddMesh (*newMesh);
+            }
+        for (auto& curr : meshMap)
+            {
+            m_meshes.push_back (curr.second);
+            }
+        }
+    for (auto& mesh : m_meshes)
+        publishedRange.Extend (mesh->GetRange());
+
+    m_tile.SetPublishedRange (publishedRange);
+    return IncrementalStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,24 +196,6 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x), 0.0, 0.0));
     AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y), 0.0));
     AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
-    {
-    Utf8String  metadataStr = Json::FastWriter().write(value);
-    auto        outputFile = _wfopen(fileName, L"w");
-   
-    if (nullptr == outputFile)
-        {
-        BeAssert (false && "Unable to open output file");
-        return;
-        }
-
-    std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
-    std::fclose(outputFile);
     }
 
 
@@ -201,17 +247,46 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName  TilePublisher::GetBinaryDataFileName() const
+    {
+    WString rootName;
+    BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
+
+    return BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), s_binaryDataExtension).c_str(), nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
+    TileModelDeltaCP     modelDelta;
+
+    if (nullptr != (modelDelta = m_tile.GetModelDelta()))
+        {
+        switch (IncrementalGenerate(*modelDelta))
+            {
+            case IncrementalStatus::UsePrevious:        // There are no changes within this tile - use previously generated tile.
+                return PublisherContext::Status::Success;
+
+            case IncrementalStatus::Regenerate:
+                m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+                break;
+
+             case IncrementalStatus::Success:
+                break;
+            }
+        }
+    else
+        {
+        m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+        }
+
     if (m_meshes.empty())
         return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    WString rootName;
-    BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
-
-    BeFileName  binaryDataFileName (nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), s_binaryDataExtension).c_str(), nullptr);
     
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
@@ -225,7 +300,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    std::FILE*  outputFile = _wfopen(binaryDataFileName.c_str(), L"wb");
+    std::FILE*  outputFile = _wfopen(GetBinaryDataFileName().c_str(), L"wb");
 
     if (nullptr == outputFile)
         {
@@ -263,17 +338,9 @@ PublisherContext::Status TilePublisher::Publish()
 
     std::fclose(outputFile);
 
-//#define ROUND_TRIP_DEBUG
-
-#ifdef  ROUND_TRIP_DEBUG
-    TileReader      tileReader;
-    TileMeshList    roundTripMeshes;
-
-    tileReader.ReadTile (roundTripMeshes, binaryDataFileName); 
-#endif
-
     return PublisherContext::Status::Success;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -666,6 +733,8 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
 
             if (material.IsValid())
                 materialValue["name"] = material->GetMaterialName().c_str();
+
+            materialValue["materialId"] = displayParams->GetMaterialId().ToString();
             }
         }
 
@@ -982,8 +1051,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
+    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1047,7 +1116,7 @@ PublisherContext::Status PublisherContext::InitializeDirectories(BeFileNameCR da
         return Status::CantWriteToBaseDirectory;
 
     bool dataDirExists = BeFileName::DoesPathExist(dataDir);
-    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
+    if (dataDirExists && !m_publishIncremental && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
         return Status::CantCreateSubDirectory;
     else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(dataDir))
         return Status::CantCreateSubDirectory;
@@ -1123,6 +1192,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
+#ifdef LIMIT_TILESET_DEPTH                     // I believe this should not be necessary now that we are not combining models into a single tileset. 
         if (0 == --depth)
             {
             // Write children as seperate tilesets.
@@ -1140,7 +1210,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
                     {
-                    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), childTileset);
+                    TileUtil::WriteJsonToFile (metadataFileName.c_str(), childTileset);
 
                     Json::Value         child;
 
@@ -1155,6 +1225,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         else
+#endif
             {
             // Append children to this tileset.
             for (auto& childTile : tile.GetChildren())
@@ -1198,7 +1269,21 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     DRange3d    rootRange;
 
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
-    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
+    TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::_DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model)
+    {
+    if (!m_publishIncremental)
+        return false;
+
+    dataDirectory = GetDataDirForModel(model);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1206,8 +1291,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    BeFileName dataDir = GetDataDirForModel(model);
-    return Status::Success == InitializeDirectories(dataDir) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
+    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,8 +1304,8 @@ TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileN
         BeAssert(nullptr != rootTile);
         BeMutexHolder lock(m_mutex);
         m_modelRoots.push_back(rootTile);
-        }
-    else
+         }
+    else if (!m_publishIncremental || TileGenerator::Status::NoChanges != status)
         {
         CleanDirectories(GetDataDirForModel(model));
         }
@@ -1236,7 +1320,7 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     {
     WString tmpTilesetName;
     WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
-    tilesetName = GetRootNameForModel(model);
+    tilesetName = TileUtil::GetRootNameForModel(model);
 
     BeFileName dataDir = m_dataDir;
     dataDir.AppendToPath(tilesetName.c_str());
@@ -1244,14 +1328,6 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     return dataDir;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString PublisherContext::GetRootNameForModel(DgnModelCR model) const
-    {
-    static const WString s_prefix(L"Model_");
-    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -1308,7 +1384,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
         childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
 
-        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childRootTile->GetFileName (modelRootName.c_str(), s_metadataExtension).c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
+        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
 
         root[JSON_Children].append(childRoot);
         }
@@ -1319,7 +1395,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
 
-    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), value);
+    TileUtil::WriteJsonToFile (metadataFileName.c_str(), value);
 
     return Status::Success;
     }
@@ -1543,4 +1619,5 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
 
     return json;
     }
+
 

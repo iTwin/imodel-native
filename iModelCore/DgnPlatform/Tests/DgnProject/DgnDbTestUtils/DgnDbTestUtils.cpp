@@ -13,6 +13,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/Sheet.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -63,10 +64,10 @@ DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, Utf8CP p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    DrawingPtr drawing = Drawing::Create(model, code, label);
+    DrawingPtr drawing = Drawing::Create(model, name);
     EXPECT_TRUE(drawing.IsValid());
     EXPECT_TRUE(drawing->Insert().IsValid());
     return drawing;
@@ -75,10 +76,10 @@ DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SectionDrawingPtr drawing = SectionDrawing::Create(model, code, label);
+    SectionDrawingPtr drawing = SectionDrawing::Create(model, name);
     EXPECT_TRUE(drawing.IsValid());
     EXPECT_TRUE(drawing->Insert().IsValid());
     return drawing;
@@ -87,10 +88,10 @@ SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, DgnCodeCR code, Utf8CP label)
+Sheet::ElementPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, height, width, code, label);
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, height, width, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -99,10 +100,10 @@ SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, do
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, DgnCodeCR code, Utf8CP label)
+Sheet::ElementPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetPtr sheet = Sheet::Create(model, scale, templateId, code, label);
+    Sheet::ElementPtr sheet = Sheet::Element::Create(model, scale, templateId, name);
     EXPECT_TRUE(sheet.IsValid());
     EXPECT_TRUE(sheet->Insert().IsValid());
     return sheet;
@@ -125,10 +126,10 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet)
+Sheet::ModelPtr DgnDbTestUtils::InsertSheetModel(Sheet::ElementCR sheet)
     {
     MUST_HAVE_HOST(nullptr);
-    SheetModelPtr model = SheetModel::Create(sheet);
+    Sheet::ModelPtr model = Sheet::Model::Create(sheet);
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -274,8 +275,8 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void addAllCategories(DgnDbR db, CategorySelectorR selector)
     {
-    for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        selector.AddCategory(categoryId);
+    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+        selector.AddCategory(categoryEntry.GetId<DgnCategoryId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,7 +314,7 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
     DgnCategoryIdSet _categories;
     if (nullptr == categories)
         {
-        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        for (auto const& categoryId : DgnCategory::MakeIterator(db).BuildIdSet<DgnCategoryId>())
             _categories.insert(categoryId);
         categories = &_categories;
         }

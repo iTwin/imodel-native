@@ -38,7 +38,10 @@ BentleyStatus    TileReader::GetAccessorAndBufferView(Json::Value& accessor, Jso
 TileDisplayParamsPtr TileReader::ReadDisplayParams(Json::Value const& primitiveValue)
     {
     auto&           materialName = primitiveValue["material"];
-    Json::Value     materialValue, values, colorValue, textureValue;
+    Json::Value     materialValue, values, colorValue, materialIdValue;
+    uint32_t        color = 0;
+    BeInt64Id       id;
+    DgnMaterialId   materialId;
 
     if(!materialName.isString() ||
         !(materialValue = m_materialValues[materialName.asCString()]).isObject() ||
@@ -47,12 +50,12 @@ TileDisplayParamsPtr TileReader::ReadDisplayParams(Json::Value const& primitiveV
         BeAssert(false && "material not found");
         return nullptr;
         }
-    if(!(textureValue = values["tex"]).isNull())
-        {
-        BeAssert(false && "needs work - texture extraction");
-        return nullptr;
-        }
-    else if((colorValue = values["color"]).isArray())
+
+    if((materialIdValue = values["materialId"]).isString() &&
+       SUCCESS == BeInt64Id::FromString  (id, materialIdValue.asCString()))
+       materialId = DgnMaterialId(id.GetValue());
+
+    if((colorValue = values["color"]).isArray())
         {
         RgbFactor       rgbFactor;
         double          alpha = colorValue[3].asDouble();
@@ -62,15 +65,11 @@ TileDisplayParamsPtr TileReader::ReadDisplayParams(Json::Value const& primitiveV
         rgbFactor.blue  = colorValue[2].asDouble();
         
         ColorDef    colorDef = ColorUtil::FromRgbFactor(rgbFactor);
-        colorDef.SetAlpha((Byte) std::min(1.0, alpha) * 255.0);
+        colorDef.SetAlpha((Byte) (1.0 - std::min(1.0, alpha)) * 255.0);
 
-        return TileDisplayParams::Create(colorDef.GetValue(), nullptr, false);
+        color = colorDef.GetValue();
         }
-    else
-        {
-        BeAssert(false && "invalid material values type");
-        return nullptr;
-        }
+    return TileDisplayParams::Create(color, materialId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -119,7 +118,7 @@ BentleyStatus TileReader::ReadIndices(TileMeshR mesh, Json::Value const& primiti
 
         case  GLTF_UINT32:
             {
-            if(indicesCount * sizeof(uint16_t) != indicesByteLength)
+            if(indicesCount * sizeof(uint32_t) != indicesByteLength)
                 {
                 BeAssert(false && "index count mismatch");
                 return ERROR;
@@ -166,7 +165,7 @@ BentleyStatus TileReader::ReadIndices(TileMeshR mesh, Json::Value const& primiti
             size_t      triangleVertexCount = 3*(indices.size()/3);
 
             for(size_t i=0; i < triangleVertexCount; i+= 3)
-                mesh.AddTriangle(Triangle(indices[i], indices[i+1], indices[i+2], false));
+                mesh.AddTriangle(TileTriangle(indices[i], indices[i+1], indices[i+2], false));
 
             break;
             }
@@ -315,11 +314,12 @@ TileMeshPtr  TileReader::ReadMeshPrimitive(Json::Value const& primitiveValue)
 
     if (batchIds.size() == mesh->Points().size() && m_batchData["element"].isArray())
         {
+        mesh->SetValidIdsPresent(true);
         for (auto& batchId : batchIds)
             {
-            BeInt64Id       entityId;
+            DgnElementId       entityId;
 
-            if (SUCCESS == BeInt64Id::FromString  (entityId, m_batchData["element"][batchId].asCString()))
+            if (SUCCESS == DgnElementId::FromString  (entityId, m_batchData["element"][batchId].asCString()))
                 mesh->EntityIdsR().push_back(entityId);
             }
         }
@@ -351,7 +351,8 @@ TileReader::Status  TileReader::ReadTile(TileMeshList& meshes, BeFileNameCR file
 
     bvector<char>       batchTableData(batchTableStrLen);
     Json::Value         batchTableValue;
-    Json::Reader        reader;
+    Json::Reader        reader;                                                                                                                        
+
     
     if(1 != fread(batchTableData.data(), batchTableStrLen, 1, m_file))
         return Status::ReadError;

@@ -31,7 +31,6 @@ HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(Physical)
-HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
@@ -67,7 +66,6 @@ HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
-HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(PhysicalTemplate)
@@ -100,6 +98,8 @@ HANDLER_DEFINE_MEMBERS(Category)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(Link)
+HANDLER_DEFINE_MEMBERS(Drawing)
+HANDLER_DEFINE_MEMBERS(Sheet)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -123,7 +123,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
+    RegisterHandler(Sheet::Handlers::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
@@ -144,7 +144,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::Document::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::SectionDrawing::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Sheet::GetHandler());
+    RegisterHandler(Sheet::Handlers::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Definition::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
@@ -205,7 +205,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(ViewElementHandler::CameraView::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
+    RegisterHandler(Sheet::Handlers::Attachment::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
@@ -218,6 +218,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Link::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Drawing::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Sheet::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

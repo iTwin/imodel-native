@@ -117,8 +117,8 @@ private:
 
     DGNPLATFORM_EXPORT static IFacetOptionsPtr CreateDefaultFacetOptions();
 public:
-    explicit FacetCounter(IFacetOptionsR facetOptions) : m_facetOptions(&facetOptions), m_faceMultiplier(ComputeFaceMultiplier(facetOptions.GetMaxPerFace())) { }
-    FacetCounter() : FacetCounter(*CreateDefaultFacetOptions()) { }
+    explicit FacetCounter(IFacetOptionsR facetOptions) : m_facetOptions(&facetOptions), m_faceMultiplier(ComputeFaceMultiplier(facetOptions.GetMaxPerFace())) {}
+    FacetCounter() : FacetCounter(*CreateDefaultFacetOptions()) {}
 
     DGNPLATFORM_EXPORT size_t GetFacetCount(DgnTorusPipeDetailCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(DgnConeDetailCR) const;
@@ -136,11 +136,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(IGeometryCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(GeometricPrimitiveCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
-
     DGNPLATFORM_EXPORT size_t GetFacetCount(IBRepEntityCR) const;
-#if defined (BENTLEYCONFIG_OPENCASCADE) 
-    DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-#endif
 };
 
 //=======================================================================================
@@ -169,7 +165,6 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
-        OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
         ParasolidBRep           = 25,   //!< Parasolid body
         BRepPolyface            = 26,   //!< Polyface from Parasolid solid or sheet body (needed until we have Parasolid support on all platforms) 
         BRepCurveVector         = 27,   //!< CurveVector from Parasolid wire or planar sheet body (needed until we have Parasolid support on all platforms) 
@@ -399,7 +394,7 @@ struct GeometryCollection
 
     public:
 
-        Iterator& operator++() {ToNext (); return *this;}
+        Iterator& operator++() {ToNext(); return *this;}
         bool operator==(Iterator const& rhs) const {return m_dataOffset == rhs.m_dataOffset;}
         bool operator!=(Iterator const& rhs) const {return !(*this == rhs);}
         Iterator const& operator*() const {return *this;}
@@ -445,11 +440,11 @@ public:
     
     //! Iterate a GeometryStream.
     //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeometryPartPtr, etc. until done iterating.
-    DGNPLATFORM_EXPORT GeometryCollection (GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId = DgnCategoryId(), TransformCR sourceToWorld = Transform::FromIdentity());
+    DGNPLATFORM_EXPORT GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId = DgnCategoryId(), TransformCR sourceToWorld = Transform::FromIdentity());
 
     //! Iterate a GeometrySource.
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
-    DGNPLATFORM_EXPORT GeometryCollection (GeometrySourceCR source);
+    DGNPLATFORM_EXPORT GeometryCollection(GeometrySourceCR source);
 
 }; // GeometryCollection
 
@@ -555,14 +550,14 @@ private:
     Render::GeometryParams      m_elParams;
     GeometryStreamIO::Writer    m_writer;
 
-    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
-    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
-    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
+    GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
+    GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
+    GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
 
-    bool ConvertToLocal (GeometricPrimitiveR);
-    bool AppendWorld (GeometricPrimitiveR);
-    bool AppendLocal (GeometricPrimitiveCR);
-    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic);
+    bool ConvertToLocal(GeometricPrimitiveR);
+    bool AppendWorld(GeometricPrimitiveR);
+    bool AppendLocal(GeometricPrimitiveCR);
+    void OnNewGeom(DRange3dCR localRange, bool isSubGraphic);
 
 public:
 
@@ -571,108 +566,108 @@ public:
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private Current Placement2d as of last call to Append when creating a 2d GeometryStream
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
-    DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private GeometryStream being constructed by this builder
-    DGNPLATFORM_EXPORT bool MatchesGeometryPart (DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private Assumes already detected a range match...
+    DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream(GeometryStreamR); //!< @private GeometryStream being constructed by this builder
+    DGNPLATFORM_EXPORT bool MatchesGeometryPart(DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private Assumes already detected a range match...
 
     //! Return the GeometryStreamEntryId for the GeometricPrimitve last added to the builder. Used to identify a specific GeometricPrimitive in the GeometryStream in places like HitDetail.
     DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const;
 
     //! Saves contents of builder to GeometryStream of supplied DgnGeometryPart and updates the part bounding box.
-    DGNPLATFORM_EXPORT BentleyStatus Finish (DgnGeometryPartR);
+    DGNPLATFORM_EXPORT BentleyStatus Finish(DgnGeometryPartR);
 
     //! Saves contents of builder to GeometryStream of supplied GeometrySource and updates the element aligned bounding box.
     //! @note For a builder using CreateWithAutoPlacement this also updates the placement origin/angles(s) using the local coordinate system computed from the first appended GeometricPrimitve.
-    DGNPLATFORM_EXPORT BentleyStatus Finish (GeometrySourceR);
+    DGNPLATFORM_EXPORT BentleyStatus Finish(GeometrySourceR);
 
     //! Enable option so that subsequent calls to Append a GeometricPrimitve produce sub-graphics with local ranges to optimize picking/range testing. Not valid when creating a DgnGeometryPart.
     void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;}
 
     //! Set GeometryParams by DgnSubCategoryId::Appearance. Any subsequent Append of a GeometryPrimitive will display using this symbology.
     //! @note If no symbology is specifically set in a GeometryStream, the GeometricPrimitive display using the default DgnSubCategoryId for the GeometricElement's DgnCategoryId.
-    DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
+    DGNPLATFORM_EXPORT bool Append(DgnSubCategoryId);
 
     //! Set symbology by supplying a fully qualified GeometryParams. Any subsequent Append of a GeometryPrimitive will display using this symbology.
     //! @note If no symbology is specifically set in a GeometryStream, the GeometricPrimitive display using the default DgnSubCategoryId for the GeometricElement's DgnCategoryId.
     //!       World vs. local affects PatternParams and LineStyleInfo that need to store an orientation and other "placement" relative information.
-    DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(Render::GeometryParamsCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a DgnGeometryPartId with relative placement supplied as a Transform.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement);
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement, DRange3dCR range); //!< @private Supply information from DgnGeometryPart::QueryGeometryPartRange directly.
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, TransformCR geomToElement);
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, TransformCR geomToElement, DRange3dCR range); //!< @private Supply information from DgnGeometryPart::QueryGeometryPartRange directly.
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint3d and optional YawPitchRollAngles.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint2d and optional AngleInDegrees rotation.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 
     //! Append a GeometricPrimive to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(GeometricPrimitiveCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a ICurvePrimitive to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(ICurvePrimitiveCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a CurveVector to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (CurveVectorCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(CurveVectorCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a ISolidPrimitive to builder in either local or world coordinates.
     //! @note Only valid with 3d builder.
-    DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(ISolidPrimitiveCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a MSBsplineSurface to builder in either local or world coordinates.
     //! @note Only valid with 3d builder.
-    DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(MSBsplineSurfaceCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a PolyfaceQuery to builder in either local or world coordinates.
     //! @note Only valid with 3d builder.
-    DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(PolyfaceQueryCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a IBRepEntity to builder in either local or world coordinates.
     //! @note Only valid with 3d builder.
-    DGNPLATFORM_EXPORT bool Append (IBRepEntityCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(IBRepEntityCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a IGeometry to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (IGeometryCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(IGeometryCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a TextString to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (TextStringCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(TextStringCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a TextAnnotation to builder in either local or world coordinates.
-    DGNPLATFORM_EXPORT bool Append (TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append(TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
 
     //! @private Create builder for DgnGeometryPart from an existing GeometricElement's GeometryStream (can't contain parts).
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart(GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr);
 
     //! Create a DgnGeometryPart builder for defining a new part that will contain a group of either 2d or 3d GeometricPrimitive.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (DgnDbR db, bool is3d);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart(DgnDbR db, bool is3d);
 
     //! @private Create builder using the DgnModel, DgnCategoryId, and Placement2d or Placement3d of the supplied GeometrySource and an existing GeometricElement's GeometryStream.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR, GeometryStreamCR);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(GeometrySourceCR, GeometryStreamCR);
 
     //! Create builder from DgnModel and DgnCategoryId. A placement will be computed from the first appended GeometricPrimitive.
     //! @note Only CoordSystem::World is supported for append and it's not possible to append a DgnGeometryPartId as it need to be positioned relative to a known coordinate system.
     //!       Generally it's best if the application specifies a more meaningful placement than just using the GeometricPrimitive's local coordinate frame, ex. line mid point vs. start point.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWithAutoPlacement (DgnModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWithAutoPlacement(DgnModelR model, DgnCategoryId categoryId);
 
     //! Create builder from DgnModel, DgnCategoryId, and placement as represented by a transform.
     //! @note Transform must satisfy requirements of YawPitchRollAngles::TryFromTransform, scale is not supported.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, TransformCR transform);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(DgnModelR model, DgnCategoryId categoryId, TransformCR transform);
 
     //! Create 3d builder from DgnModel, DgnCategoryId, origin, and optional YawPitchRollAngles.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 
     //! Create 2d builder from DgnModel, DgnCategoryId, origin, and optional rotation AngleInDegrees.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 
     //! Create builder using the DgnModel, DgnCategoryId, and Placement2d or Placement3d of an existing GeometrySource.
     //! @note It is expected that either the GeometrySource has a valid non-identity placement already set, or that the caller will update the placement after 
     //!       adding GeometricPrimitive in local coordinates. World coordinate geometry should never be added to a builder with an identity placement unless
     //!       the element is really located at the origin.
     //!       The supplied GeometrySource is soley used to query information, it does not need to be the same GeometrySource that is modified by Finish.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(GeometrySourceCR);
 
 }; // GeometryBuilder
 

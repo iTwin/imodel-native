@@ -539,45 +539,6 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_OnInsert()
-    {
-    if (!GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
-        {
-        BeAssert(false && "A SheetModel should be modeling a Sheet element");
-        return DgnDbStatus::BadElement;
-        }
-
-    return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr SheetModel::Create(SheetCR sheet)
-    {
-    DgnDbR db = sheet.GetDgnDb();
-    ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-
-    if (!classId.IsValid() || !sheet.GetElementId().IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, sheet.GetElementId()));
-    if (!model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return dynamic_cast<SheetModelP>(model.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
@@ -956,6 +917,7 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
         case BeSQLite::DbOpcode::Insert:
             req.Locks().Insert(GetDgnDb(), LockLevel::Shared);
             break;
+
         case BeSQLite::DbOpcode::Delete:
             {
             req.Locks().Insert(*this, LockLevel::Exclusive);
@@ -1852,6 +1814,7 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 
     return T_Super::Parse(name);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/

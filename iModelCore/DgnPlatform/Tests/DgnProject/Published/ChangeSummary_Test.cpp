@@ -33,7 +33,6 @@ protected:
     void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
 
     bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
-    BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
 
     int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 
@@ -176,19 +175,6 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ChangeSummary const
 
     DbResult result = statement->Step();
     return (result == BE_SQLITE_ROW);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb)
-    {
-    ECClassCR ecClass = instance.GetClass();
-    ECInstanceInserter inserter(dgndb, ecClass);
-    if (!inserter.IsValid())
-        return ERROR;
-
-    return inserter.Insert(instanceKey, instance);
     }
 
 //---------------------------------------------------------------------------------------

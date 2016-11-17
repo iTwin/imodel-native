@@ -650,7 +650,58 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECPersistence.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="DgnCore\ElementECInstanceAdapter.h">
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformErrors.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnECTypes.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnCodesManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\DgnProvenance.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\ECSqlClassParams.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\FunctionalDomain.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\GenericDomain.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\JsonUtils.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\LinkElement.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\MeshTile.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\RangeIndex.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\ScriptDomain.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\SessionManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\Sheet.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\SimplifyGraphic.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\TileTree.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\UpdatePlan.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\AutoRestore.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
