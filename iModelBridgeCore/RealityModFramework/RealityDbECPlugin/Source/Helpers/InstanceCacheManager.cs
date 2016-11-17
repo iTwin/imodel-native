@@ -30,12 +30,17 @@ namespace IndexECPlugin.Source.Helpers
     public interface IInstanceCacheManager
         {
         /// <summary>
-        /// Inserts instances in cache
+        /// Prepares the statement for inserting instances in the cache tables in the database
         /// </summary>
         /// <param name="instanceList">The list of instances to insert in the cache</param>
         /// <param name="ecClass">The ecClass of the instances to insert.</param>
         /// <param name="additionalColumns">Additional data to add to columns that are not related to any ECProperty</param>
-        void InsertInstancesInCache (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null);
+        void PrepareCacheInsertStatement (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null);
+
+        /// <summary>
+        /// Sends all the statements prepared by PrepareCacheInsertStatement, and then deletes them.
+        /// </summary>
+        void SendAllPreparedCacheInsertStatements();
 
         /// <summary>
         /// Queries instances from the cache, using a list of ids. Only instances of ids that are present in the cache will be returned.
@@ -70,6 +75,7 @@ namespace IndexECPlugin.Source.Helpers
         string m_connectionString;
         ECQuerySettings m_querySettings;
         IDbQuerier m_dbQuerier;
+        List<Tuple<string, IParamNameValueMap>> m_PreparedInsertBundleList;
 
         MimicTableWriter m_mimicTableWriter;
         /// <summary>
@@ -89,6 +95,7 @@ namespace IndexECPlugin.Source.Helpers
             m_connectionString = connectionString;
             m_querySettings = querySettings;
             m_dbQuerier = dbQuerier;
+            m_PreparedInsertBundleList = new List<Tuple<string, IParamNameValueMap>>();
 
             m_mimicTableWriter = new MimicTableWriter(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null);
             }
@@ -331,16 +338,15 @@ namespace IndexECPlugin.Source.Helpers
             }
 
         /// <summary>
-        /// Inserts instances in the cache tables in the database
+        /// Prepares the statement for inserting instances in the cache tables in the database
         /// </summary>
         /// <param name="instanceList">The list of instances to insert. The instances must have the extended data "Complete" set with a boolean</param>
         /// <param name="ecClass">The class of the instances to insert. It is necessary to give an ECClass that is persisted in the database</param>
         /// <param name="additionalColumns">Additional columns to insert and that are not represented by any property in the class</param>
-        public void InsertInstancesInCache (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
+        public void PrepareCacheInsertStatement (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
             {
 
             IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> modifiedAddColumns;
-            List<IParamNameValueMap> paramNameValueMapList = new List<IParamNameValueMap>();
 
             int numberOfParamsPerInstance = PrepareArgs(ecClass, additionalColumns, out modifiedAddColumns);
 
@@ -369,12 +375,26 @@ namespace IndexECPlugin.Source.Helpers
 
                 string sqlInsertQueryString = m_mimicTableWriter.CreateMimicSQLInsert(partialInstanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, onStatement, whenMatchedStatement, modifiedAddColumns);
 
-                paramNameValueMapList.Add(paramNameValueMap);
-
-                m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_connectionString);
+                //m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_connectionString);
+                m_PreparedInsertBundleList.Add(new Tuple<string, IParamNameValueMap>(sqlInsertQueryString, paramNameValueMap));
 
                 addedCount += step;
                 }
+
+            }
+
+        /// <summary>
+        /// Sends all the statements prepared by PrepareCacheInsertStatement, and then deletes them.
+        /// </summary>
+        public void SendAllPreparedCacheInsertStatements()
+            {
+
+            foreach ( Tuple<string, IParamNameValueMap> bundle in m_PreparedInsertBundleList )
+                {
+                m_dbQuerier.ExecuteNonQueryInDb(bundle.Item1, bundle.Item2, m_connectionString);
+                }
+
+            m_PreparedInsertBundleList.Clear();
 
             }
 
