@@ -116,9 +116,9 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         
         if (currentScopeECSqlType == ECSqlType::Update)
             {
-            if (propertyMap.IsData())
+            if (propertyMap.IsData() && static_cast<DataPropertyMap const&>(propertyMap).IsOverflow())
                 {
-                return static_cast<DataPropertyMap const&>(propertyMap).IsOverflow();
+                return true;
                 }
             }
 
