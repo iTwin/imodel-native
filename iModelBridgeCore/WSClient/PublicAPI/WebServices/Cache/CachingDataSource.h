@@ -70,6 +70,7 @@ struct CachingDataSource :
             BeFileNameCR temporaryDir
             );
 
+        BentleyStatus FinalizeOpen(CacheTransactionCR txn);
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
@@ -176,7 +177,10 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT ECSchemaList GetRepositorySchemas(CacheTransactionCR txn) override;
         WSCACHE_EXPORT bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) override;
+
+        //! DEPRECATED, use GetServerInfo()
         WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
+        WSCACHE_EXPORT WSInfo GetServerInfo() override;
 
         WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) override;
 

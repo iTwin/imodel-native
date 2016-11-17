@@ -206,30 +206,33 @@ ICancellationTokenPtr ct
         auto txn = ds->StartCacheTransaction();
         if (ds->m_infoStore->IsCacheInitialized(txn.GetCache()))
             {
+            if (SUCCESS != ds->FinalizeOpen(txn))
+                {
+                openResult->SetError(Status::InternalCacheError);
+                return;
+                }
+            txn.Commit();
             openResult->SetSuccess(ds);
             return;
             }
 
         ds->UpdateSchemas(ct)
-            ->Then(cacheAccessThread, [=] (Result updateResult)
+            ->Then(cacheAccessThread, [=] (Result result)
             {
-            if (!updateResult.IsSuccess())
+            if (!result.IsSuccess())
                 {
-                openResult->SetError(updateResult.GetError());
+                openResult->SetError(result.GetError());
                 return;
                 }
 
             auto txn = ds->StartCacheTransaction();
-            if (!ds->m_infoStore->IsCacheInitialized(txn.GetCache()))
+            if (SUCCESS != ds->m_infoStore->SetCacheInitialized(txn.GetCache()) ||
+                SUCCESS != ds->FinalizeOpen(txn))
                 {
-                if (SUCCESS != ds->m_infoStore->SetCacheInitialized(txn.GetCache()))
-                    {
-                    openResult->SetError(Status::InternalCacheError);
-                    BeAssert(false);
-                    }
+                openResult->SetError(Status::InternalCacheError);
+                return;
                 }
             txn.Commit();
-
             openResult->SetSuccess(ds);
             });
         })
@@ -239,11 +242,19 @@ ICancellationTokenPtr ct
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
                 openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
-            if (openResult->IsSuccess())
-                openResult->GetValue()->m_isOpen = true;
-
             return *openResult;
             });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachingDataSource::FinalizeOpen(CacheTransactionCR txn)
+    {
+    if (SUCCESS != m_infoStore->PrepareServerInfo(txn.GetCache()))
+        return ERROR;
+    m_isOpen = true;
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -486,7 +497,15 @@ bvector<SchemaKey> CachingDataSource::GetRepositorySchemaKeys(CacheTransactionCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSInfo CachingDataSource::GetServerInfo(CacheTransactionCR txn)
     {
-    return m_infoStore->GetServerInfo(txn.GetCache());
+    return GetServerInfo();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSInfo CachingDataSource::GetServerInfo()
+    {
+    return m_infoStore->GetServerInfo();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1031,8 +1050,7 @@ CachedResponseKey CachingDataSource::GetNavigationResponseKey(CacheTransactionCR
 +--------------------------------------------------------------------------------------*/
 WSQueryPtr CachingDataSource::GetNavigationQuery(CacheTransactionCR txn, ObjectIdCR parentId, ISelectProviderPtr selectProvider)
     {
-    WSInfo serverInfo = GetServerInfo(txn);
-
+    WSInfo serverInfo = GetServerInfo();
     if (serverInfo.GetVersion() < BeVersion(2, 0))
         {
         Utf8String schemaName = parentId.schemaName;
@@ -1353,7 +1371,7 @@ ICancellationTokenPtr ct,
 SyncOptions options
 )
     {
-    ct = CreateCancellationToken(ct); 
+    ct = CreateCancellationToken(ct);
 
     auto syncTask = std::make_shared<SyncLocalChangesTask>
         (

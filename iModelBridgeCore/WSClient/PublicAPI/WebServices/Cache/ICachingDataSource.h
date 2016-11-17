@@ -121,14 +121,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Get schema keys for schemas that were synced from remote repository.
         virtual bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) = 0;
 
-        // Get latest cached server info. Info is refreshed on each server session.
+        //! DEPRECATED, use GetServerInfo()
+        //! Get latest cached server info. WSInfo is refreshed for each new session.
         virtual WSInfo GetServerInfo(CacheTransactionCR txn) = 0;
 
-        // Included class instances will always get their children cached when calling CacheNavigation
+        //! Get latest cached server info. WSInfo is refreshed for each new session.
+        virtual WSInfo GetServerInfo() = 0;
+
+        //! Included class instances will always get their children cached when calling CacheNavigation
         virtual void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) = 0;
 
-        // Get key for cached navigation query results.
-        // NOTE: use GetNavigationChildren for getting children and use this only for specific cases
+        //! Get key for cached navigation query results.
+        //! NOTE: use GetNavigationChildren for getting children and use this only for specific cases
         virtual CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ObjectIdCR parentId) = 0;
         virtual CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ECInstanceKeyCR parentKey) = 0;
         //! Get NavigationQuery for any server version.

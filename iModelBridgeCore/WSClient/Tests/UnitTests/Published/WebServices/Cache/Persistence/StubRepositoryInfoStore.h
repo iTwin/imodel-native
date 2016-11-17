@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/StubRepositoryInfoStore.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,7 +32,12 @@ struct StubRepositoryInfoStore : public IRepositoryInfoStore
             return SUCCESS;
             };
 
-        WSInfoCR GetServerInfo(IDataSourceCache& cache) override
+        BentleyStatus PrepareServerInfo(IDataSourceCache& cache) override
+            {
+            return SUCCESS;
+            };
+
+        WSInfo GetServerInfo() override
             {
             return m_info;
             };
