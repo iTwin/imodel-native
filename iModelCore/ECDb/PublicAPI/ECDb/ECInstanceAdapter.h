@@ -134,8 +134,8 @@ public:
     //! @remarks This is a convenience method that allows you to avoid having to construct a fully-defined ECN::IECRelationshipInstance
     //! with source and target ECInstances to be set. 
     //! @param[out] newInstanceKey ECInstanceKey of the inserted instance.
-    //! @param[in] sourceKey Source ECInstanceKey
-    //! @param[in] targetKey Target ECInstanceKey
+    //! @param[in] sourceId SourceECInstanceId
+    //! @param[in] targetId TargetECInstanceId
     //! @param[in] relationshipProperties If the ECN::ECRelationshipClass has ECProperties, pass its values via this parameter. Note: In this
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relationshipProperties
@@ -147,7 +147,7 @@ public:
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
     //! @return BE_SQLITE_DONE in case of success, error codes otherwise
-    ECDB_EXPORT DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
+    ECDB_EXPORT DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
     //! @param[in, out] instance Instance to insert. If @p autogenerateECInstanceId is true, 

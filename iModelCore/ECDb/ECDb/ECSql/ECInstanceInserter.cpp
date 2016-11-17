@@ -36,7 +36,7 @@ public:
 
     DbResult Insert(ECInstanceKey& newInstanceKey, IECInstanceCR, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
     DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
-    DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
+    DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties = nullptr, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
     bool IsValid() const { return m_isValid; }
     };
 
@@ -80,9 +80,9 @@ DbResult ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IECInsta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECInstanceInserter::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+DbResult ECInstanceInserter::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
     {
-    return m_impl->InsertRelationship(newInstanceKey, sourceKey, targetKey, relationshipProperties, autogenerateECInstanceId, userProvidedECInstanceId);
+    return m_impl->InsertRelationship(newInstanceKey, sourceId, targetId, relationshipProperties, autogenerateECInstanceId, userProvidedECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -145,24 +145,15 @@ void ECInstanceInserter::Impl::Initialize(ECSqlWriteToken const* writeToken)
 
     if (m_ecClass.IsRelationshipClass())
         {
+        //SourceECClassId and TargetECClassId are not needed during insert
         ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECInstanceId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECClassId));
-        valuesClause.append(",?");
-        m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECClassId, parameterIndex);
-
-        parameterIndex++;
         ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECInstanceId));
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId, parameterIndex);
-
-        parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECClassId));
-        valuesClause.append(",?");
-        m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECClassId, parameterIndex);
         }
 
     ecsql.append(valuesClause).append(")");
@@ -308,14 +299,13 @@ DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstance
         return BE_SQLITE_ERROR;
         }
 
-    return InsertRelationship(newInstanceKey, ECInstanceKey(sourceInstance->GetClass().GetId(), sourceId), ECInstanceKey(targetInstance->GetClass().GetId(), targetId),
-                  &relInstance, autogenerateECInstanceId, userProvidedECInstanceId);
+    return InsertRelationship(newInstanceKey, sourceId, targetId, &relInstance, autogenerateECInstanceId, userProvidedECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
+DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstanceKey, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const
     {
     if (!IsValid())
         {
@@ -366,7 +356,7 @@ DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstance
     if (m_needsCalculatedPropertyEvaluation && relationshipProperties != nullptr)
         scope.Init(relationshipProperties->GetECDBuffer());
 
-    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(actualUserProvidedInstanceId, sourceKey, targetKey, relationshipProperties);
+    ECInstanceAdapterHelper::ECInstanceInfo instanceInfo(actualUserProvidedInstanceId, sourceId, targetId, relationshipProperties);
 
     //now add parameter values
     for (auto const& bindingInfo : m_ecValueBindingInfos)

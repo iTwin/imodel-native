@@ -258,8 +258,8 @@ struct ECInstanceAdapterHelper
             private:
                 ECN::IECInstanceCP m_instance;
                 ECInstanceId m_instanceId;
-                ECInstanceKey m_sourceKey;
-                ECInstanceKey m_targetKey;
+                ECInstanceId m_sourceId;
+                ECInstanceId m_targetId;
             public:
                 explicit ECInstanceInfo(ECN::IECInstanceCR instance)
                     : m_instance(&instance)
@@ -273,16 +273,16 @@ struct ECInstanceAdapterHelper
                     : ECInstanceInfo(instanceId, sourceKey, targetKey, nullptr)
                     {}
 
-                ECInstanceInfo(ECInstanceId instanceId, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, ECN::IECRelationshipInstanceCP relationshipProperties)
-                    : m_instance(relationshipProperties), m_instanceId(instanceId), m_sourceKey(sourceKey), m_targetKey(targetKey)
+                ECInstanceInfo(ECInstanceId instanceId, ECInstanceId sourceId, ECInstanceId targetId, ECN::IECRelationshipInstanceCP relationshipProperties)
+                    : m_instance(relationshipProperties), m_instanceId(instanceId), m_sourceId(sourceId), m_targetId(targetId)
                     {}
 
                 bool HasInstance() const { return m_instance != nullptr; }
                 ECN::IECInstanceCR GetInstance() const { BeAssert(HasInstance()); return *m_instance; }
                 bool HasInstanceId() const { return m_instanceId.IsValid(); }
                 ECInstanceId GetInstanceId() const { return m_instanceId; }
-                ECInstanceKey const& GetSourceKey() const { return m_sourceKey; }
-                ECInstanceKey const& GetTargetKey() const { return m_targetKey; }
+                ECInstanceId GetSourceKey() const { return m_sourceId; }
+                ECInstanceId GetTargetKey() const { return m_targetId; }
             };
     private:
         ECInstanceAdapterHelper();
