@@ -8,6 +8,7 @@
 #pragma once
 
 #include "WMSParser.h"
+
 #include <Bentley/WString.h>
 #include <BeXml/BeXml.h>
 
@@ -22,8 +23,17 @@ BEGIN_BENTLEY_WMSPARSER_NAMESPACE
 #endif
 
 //=======================================================================================
-//! A WMS_Capabilities document is returned in response to a GetCapabilities request 
-//! made on a WMS.
+//! When invoked on a WMS, the response to a GetCapabilities request shall be an XML 
+//! document containing service metadata formatted according to a XML Schema. The schema 
+//! specifies the mandatory and optional content of the service metadata and how the 
+//! content is formatted. The XML document shall contain a root element named WMS_Capabilities 
+//! in the “http ://www.opengis.net/wms” namespace. This element shall contain an XML Schema 
+//! instance schemaLocation attribute that binds the “http ://www.opengis.net/wms” namespace 
+//! to the schema.
+//!
+//! You can find more information on WMS and the different operations on these sites:
+//! http://www.opengeospatial.org/standards/wms
+//! http://docs.geoserver.org/2.1.0/user/services/wms/reference.html
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
@@ -132,7 +142,8 @@ MPUBLIC struct WMSMultiLevelList : RefCountedBase
     };
 
 //=======================================================================================
-//! General service metadata.
+//! This section contains basic “header” information such as the Name and basic service 
+//! metadata, as well as contact information about the company behind the WMS Server.
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
@@ -392,7 +403,9 @@ MPUBLIC struct WMSCapability : RefCountedBase
     };
 
 //=======================================================================================
-//! Available WMS Operations are listed in a Request element.
+//! This section describes the operations that the WMS server recognizes and the parameters 
+//! and output formats for each operation. A WMS server can be set up not to respond to 
+//! all aforementioned operations.
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
@@ -493,7 +506,9 @@ MPUBLIC struct WMSDCPType : RefCountedBase
     };
 
 //=======================================================================================
-//! Nested list of zero or more map Layers offered by this server.
+//! This section lists the available projections and layers. In GeoServer, they are listed 
+//! in the form “namespace:layer”. Each layer also includes service metadata, like title, 
+//! abstract and keywords.
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
