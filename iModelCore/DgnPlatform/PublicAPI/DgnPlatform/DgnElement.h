@@ -419,7 +419,7 @@ public:
 * There are 3 basic reasons why you would want to make a copy of an element, and there is a function for each one:
 *   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
 *   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It remaps any IDs stored in the element or its aspects.
-*   3. DgnElement::CopyFoerEdit and DgnElement::MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
+*   3. DgnElement::CopyForEdit and DgnElement::MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
 *
 * When making a copy of an element within the same DgnDb but a different model, set up an instance of DgnElement::CreateParams that specifies the target model
 * and pass that when you call Clone.
