@@ -51,7 +51,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_CalledSecondTimeAfterCacheW
     // Create
     auto thread = WorkerThread::Create("DS1");
     auto ds1 = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), thread)->GetResult().GetValue();
-    ASSERT_TRUE(nullptr != ds1); 
+    ASSERT_TRUE(nullptr != ds1);
 
     // Ensure that cache is closed
     ds1 = nullptr;
@@ -138,16 +138,16 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_CancelledAndSameThreadUsedInThenTask
         {
         token->SetCanceled();
         return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
-        })); 
+        }));
 
-    auto thread = WorkerThread::Create("TestCache"); 
+    auto thread = WorkerThread::Create("TestCache");
     auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), thread, token)
         ->Then<CachingDataSource::OpenResult>(thread, [=] (CachingDataSource::OpenResult result)
         {
         return result;
         })->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-    EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
+        EXPECT_FALSE(result.IsSuccess());
+        EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_FileExistsAndCancelled_ReturnsCancellationError)
@@ -560,7 +560,7 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
         }
     }
 
-TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedForListener)
+TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCacheAndCalledWithTransaction_ReturnsInfoReturnedForListener)
     {
     // Arrange
     auto client = MockWSRepositoryClient::Create();
@@ -596,6 +596,40 @@ TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedFor
             })->Wait();
     }
 
+TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedForListener)
+    {
+    // Arrange
+    auto client = MockWSRepositoryClient::Create();
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubInstances().ToWSObjectsResponse()))));
+
+    std::weak_ptr<IWSClient::IServerInfoListener> listenerWeakPtr;
+    EXPECT_CALL(client->GetMockWSClient(), RegisterServerInfoListener(_))
+        .WillOnce(Invoke([&] (std::weak_ptr<IWSClient::IServerInfoListener> providedListener)
+        {
+        listenerWeakPtr = providedListener;
+        }));
+
+    // Act
+    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+
+    listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3)));
+    ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        EXPECT_EQ(BeVersion(1, 3), ds->GetServerInfo().GetWebApiVersion());
+        })->Wait();
+
+        listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3, 1, 0)));
+        ds->GetCacheAccessThread()->ExecuteAsync([=]
+            {
+            EXPECT_EQ(BeVersion(1, 3, 1, 0), ds->GetServerInfo().GetWebApiVersion());
+            })->Wait();
+    }
+
 TEST_F(CachingDataSourceTests, GetFile_InstanceIsNotCached_ErrorStatus)
     {
     auto ds = GetTestDataSourceV1();
@@ -610,7 +644,7 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -646,7 +680,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -672,7 +706,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
         {
         filePath = path;
         onProgress = progress;
-        
+
         check1.Checkin();
         return downloadTask;
         }));
@@ -709,7 +743,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
         });
 
     check1.WaitUntilReached();
-    onProgress(2,42);
+    onProgress(2, 42);
 
     downloadTask->Execute();
 
@@ -727,7 +761,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -765,7 +799,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     bool task1Finished = false;
     auto ct1 = SimpleCancellationToken::Create();
     auto lastTask = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress, ct1)
-    ->Then([&] (CachingDataSource::FileResult result)
+        ->Then([&] (CachingDataSource::FileResult result)
         {
         task1Finished = true;
         EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
@@ -800,7 +834,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
@@ -873,7 +907,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId);
@@ -910,7 +944,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestClass", Utf8String(10000, 'x')};
+    ObjectId fileId{"TestSchema.TestClass", Utf8String(10000, 'x')};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId);
@@ -937,7 +971,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
+    ObjectId fileId{"TestSchema.TestLabeledClass", "TestId"};
 
     StubInstances fileInstances;
     fileInstances.Add(fileId, {{"Name", "TestLabel"}});
@@ -975,8 +1009,8 @@ TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileReq
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
@@ -1000,8 +1034,8 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
@@ -1029,8 +1063,8 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
-    ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
+    ObjectId fileId{"TestSchema.TestFileClass", "TestId"};
+    ObjectId file2Id{"TestSchema.TestFileClass", "TestId2"};
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
@@ -2565,7 +2599,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     auto txn = ds->StartCacheTransaction();
     StubCreatedRelationshipInCache(txn.GetCache(),
-                                   "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert
@@ -3560,11 +3594,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                 {"TestSchema.TestClass", "NewC"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "NewB"}));
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewB"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewB"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewB"}))));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewC"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
 
@@ -3684,14 +3718,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
             {
             EXPECT_EQ(expectedCreationJson2, json);
             return CreateCompletedAsyncTask(StubWSCreateObjectResult
-                                            (
+                (
                 {"TestSchema.TestClass", "B"},
                 {"TestSchema.TestRelationshipClass", "BC"},
                 {"TestSchema.TestClass", "NewC"})
                 );
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId{"TestSchema.TestClass", "NewC"}, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
 
@@ -4439,7 +4473,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePas
 
     auto txn = ds->StartCacheTransaction();
     auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
-                                                       "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert
@@ -5032,7 +5066,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
         };
 
     auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), StubBVector({queryA, queryB}),
-                                     bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
+        bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
@@ -5078,7 +5112,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
         };
 
     auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), bvector<IQueryProvider::Query>(),
-                                     StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+        StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());

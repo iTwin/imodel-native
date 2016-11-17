@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IRepositoryInfoStore.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,14 +20,14 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE IRepositoryInfoStore
     {
     public:
-        virtual ~IRepositoryInfoStore()
-            {};
+        virtual ~IRepositoryInfoStore() {};
 
         virtual BentleyStatus CacheServerInfo(IDataSourceCache& cache, WSInfoCR info) = 0;
-
+        //! Prepare info for GetServerInfo()
+        virtual BentleyStatus PrepareServerInfo(IDataSourceCache& cache) = 0;
         //! Read info from database or return runtime copy without accessing cache
-        virtual WSInfoCR GetServerInfo(IDataSourceCache& cache) = 0;
-
+        virtual WSInfo GetServerInfo() = 0;
+        
         virtual BentleyStatus SetCacheInitialized(IDataSourceCache& cache) = 0;
         virtual bool IsCacheInitialized(IDataSourceCache& cache) = 0;
     };
