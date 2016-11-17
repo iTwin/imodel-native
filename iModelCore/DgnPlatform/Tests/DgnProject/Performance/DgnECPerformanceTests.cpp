@@ -105,7 +105,8 @@ void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf
 
     StopWatch insertingTimer (inserting.c_str (), false);
     StopWatch attachingTimer (attaching.c_str (), false);
-    ECInstanceInserter inserter (project, *testClass);
+    //WIP All data modification must go through API. Must not use ECSQL or ECSQL adapters
+    ECInstanceInserter inserter (project, *testClass, nullptr);
     ASSERT_TRUE (inserter.IsValid ());
 
     totalInsertingStopwatch.Start ();

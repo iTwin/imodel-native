@@ -113,13 +113,12 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
     m_defaultDeviceOrientation.InitIdentity();
-    m_defaultDeviceOrientationValid = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LoadState()
+void ViewController::_LoadState()
     {
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_Load(*m_definition);
@@ -128,7 +127,7 @@ void ViewController::LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::StoreState()
+void ViewController::_StoreState()
     {
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);

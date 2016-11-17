@@ -232,13 +232,13 @@ TEST_F(ViewAttachmentTest, CRUD)
     EXPECT_INVALID(attachment.Insert());
     }
 
-    // Create a valid attachment attachment
+    // Create a valid attachment 
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
     // Confirm data as expected
-    EXPECT_EQ(m_viewId, cpAttach->GetViewId());
+    EXPECT_EQ(m_viewId, cpAttach->GetAttachedViewId());
     EXPECT_TRUE(placement.GetOrigin().IsEqual(cpAttach->GetPlacement().GetOrigin()));
 
     // Modify

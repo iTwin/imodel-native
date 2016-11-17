@@ -68,7 +68,7 @@ BentleyStatus TileLoad::DoRead()
             return SUCCESS;
             }
             
-        // If for some reason we failed to load from the db, try from the source.
+        // If we failed to load from the db, try from the source.
         }
         
     if (SUCCESS != _ReadFromSource())
@@ -210,7 +210,7 @@ BentleyStatus TileLoad::SaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadsPtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)
@@ -312,9 +312,9 @@ BentleyStatus TileCache::_Cleanup() const
         runningSum += selectStatement->GetValueInt64(0);
         }
 
-    BeAssert (runningSum >= garbageSize);
+    BeAssert(runningSum >= garbageSize);
     uint64_t creationDate = selectStatement->GetValueInt64(1);
-    BeAssert (creationDate > 0);
+    BeAssert(creationDate > 0);
 
     CachedStatementPtr deleteStatement;
     m_db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TileTree " WHERE Created <= ?");
@@ -367,7 +367,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadsPtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
     {
     DgnDb::VerifyClientThread();
 
@@ -386,7 +386,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadsPtr loads)
 
     tile.SetIsQueued(); // mark as queued so we don't request it again.
 
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return loader->DoRead(); }); // add to download queue
+    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]() {return loader->DoRead();}); // add to download queue
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,7 +562,7 @@ int Tile::CountTiles() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileLoads::~TileLoads()
+LoadState::~LoadState()
     {
     DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
     }
@@ -611,7 +611,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 * Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root, TileLoadsPtr loads)
+void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
     {
     // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
     for (auto const& tile : m_missing)
@@ -619,4 +619,105 @@ void DrawArgs::RequestMissingTiles(RootR root, TileLoadsPtr loads)
         if (tile.second->IsNotLoaded())
             root._RequestTile(const_cast<TileR>(*tile.second), loads);
         }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
+    {
+    if (!_HasChildren()) // is this is the highest resolution tile?
+        return nullptr;
+
+    if (create && m_children.empty())
+        {
+        // this Tile has children, but we haven't created them yet. Do so now
+        uint8_t level = m_id.m_zoomLevel+1;
+        uint32_t col = m_id.m_column*2;
+        uint32_t row = m_id.m_row*2;
+        for (int i=0; i<2; ++i)
+            {
+            for (int j=0; j<2; ++j)
+                {
+                auto child = _CreateChild(TileId(level, col+i, row+j));
+                if (child.IsValid())
+                    m_children.push_back(child);
+                }
+            }
+        }
+
+    return &m_children;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
+    {
+    Tile* parent = (Tile*) m_parent;
+    if (depth <= 0 || nullptr == parent)
+        {
+        // DEBUG_PRINTF("no lower res");
+        return false;
+        }
+
+    if (parent->HasGraphics())
+        {
+        //DEBUG_PRINTF("using lower res %d", depth);
+        args.m_substitutes.Add(*parent->m_graphic);
+        return true;
+        }
+
+    return parent->TryLowerRes(args, depth-1); // recursion
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* We do not have any graphics for this tile, try its immediate children. Not recursive.
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
+    {
+    for (auto const& child : m_children)
+        {
+        Tile* quadChild = (Tile*) child.get();
+
+        if (quadChild->HasGraphics())
+            {
+            //DEBUG_PRINTF("using higher res");
+            args.m_substitutes.Add(*quadChild->m_graphic);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
+    {
+    if (!IsReady())
+        {
+        if (!IsNotFound())
+            args.m_missing.Insert(depth, this);
+
+        if (!TryLowerRes(args, 10))
+            TryHigherRes(args);
+
+        return;
+        }
+
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+    {
+    m_tileColor = ColorDef::White();
+    if (0.0 != transparency)
+        m_tileColor.SetAlpha((Byte) (255.* transparency));
     }

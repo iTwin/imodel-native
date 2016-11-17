@@ -89,6 +89,8 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(name)));}
 
+    void CopyAllStyles(DisplayStyle const& rhs) {m_styles = rhs.m_styles;}
+
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
     JsonValueCR GetStyle(Utf8CP name) const {return m_styles[name];}

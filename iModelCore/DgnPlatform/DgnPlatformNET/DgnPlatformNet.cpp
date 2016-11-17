@@ -317,12 +317,12 @@ public:
     bool IsValid() { return Validate(); }
 
     //! Get the 64 bit value of this BeInt64Id
-    property uint64_t Value 
-        { 
+    property uint64_t Value
+        {
         uint64_t get ()
             {
-            BeAssert(IsValid()); 
-            return m_id; 
+            BeAssert(IsValid());
+            return m_id;
             }
         }
 
@@ -569,6 +569,9 @@ public:
     !Placement3d ()
         {
         // finalize method
+        if ( (nullptr == m_native) || (nullptr != m_owner) )
+            return;
+
         delete m_native;
         m_native = nullptr;
         }
@@ -713,7 +716,6 @@ public:
         if (ferror(m_fp))
             {
             throw gcnew DgnPlatformNETException ("File not open");
-            return -1;
             }
 
         pin_ptr<wchar_t const> linePinned = PtrToStringChars (line);
@@ -723,7 +725,6 @@ public:
         if (EOF == res)
             {
             throw gcnew DgnPlatformNETException ("Past end of File");
-            return -1;
             }
         return 0;
         }
@@ -989,7 +990,7 @@ struct  PreparedECSqlStatementDeleter : public RefCountedBase
     {
     BeSQLite::EC::CachedECSqlStatement* m_statement;
 
-    PreparedECSqlStatementDeleter (BeSQLite::EC::CachedECSqlStatement* statement) : m_statement (statement) 
+    PreparedECSqlStatementDeleter (BeSQLite::EC::CachedECSqlStatement* statement) : m_statement (statement)
         {
         AddRef();
         }
@@ -1321,7 +1322,7 @@ public:
             throw gcnew DgnPlatformNETException (errorMsg);
             return nullptr;
             }
-        
+
         return gcnew PreparedECSqlStatement (newStatement.get());
         }
 
@@ -1520,7 +1521,11 @@ internal:
     DgnCategoryIdSet (DgnDb^ dgnDb)
         {
         BDGN::DgnDbP            dgnDbNative = Convert::DgnDbToNative (dgnDb);
-        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (new BDGN::DgnCategoryIdSet(BDGN::DgnCategory::QueryCategories (*dgnDbNative)));
+        BDGN::ElementIterator   iterator = BDGN::DgnCategory::MakeIterator (*dgnDbNative, nullptr, nullptr);
+        bvector<BDGN::DgnCategoryId>* idList = new bvector <BDGN::DgnCategoryId>();
+        iterator.BuildIdList<BDGN::DgnCategoryId>(*idList);
+        m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (idList);
+
         }
     };
 
@@ -1762,13 +1767,6 @@ internal:
         }
 
 public:
-    /** Look up a DgnModelId by the model's code. @param name The code to look up. @return The ID of the corresponding model if found */
-    DgnModelId^  QueryModelId (AuthorityIssuedCode^ code)
-        {
-        BDGN::DgnModelId nativeId = m_native->QueryModelId (*code->GetNative());
-        return gcnew DgnModelId (nativeId.GetValue());
-        }
-
     /** Find or load the model identified by the specified ID. @param id The model ID. @return The loaded model or null if not found */
     DgnModel^ GetModel (DgnModelId^ modelId)
         {
@@ -1826,9 +1824,9 @@ public:
      * @return A pointer to the element, or nullptr if the is not in the pool.
      * @note This method will return null if the element is not currently loaded. That does not mean the element doesn't exist in the database.
      */
-    DgnElement^     FindElement (DgnElementId^ elementId)
+    DgnElement^     FindLoadedElement (DgnElementId^ elementId)
         {
-        BDGN::DgnElementCP nativeElement = m_native->FindElement (BDGN::DgnElementId (elementId->Value));
+        BDGN::DgnElementCP nativeElement = m_native->FindLoadedElement (BDGN::DgnElementId (elementId->Value));
         return Convert::DgnElementToManaged (const_cast <BDGN::DgnElementP>(nativeElement));
         }
 
@@ -1954,7 +1952,7 @@ struct  DgnElementDeleter : public RefCountedBase
     {
     BDGN::DgnElementP   m_element;
 
-    DgnElementDeleter (BDGN::DgnElementP element) : m_element (element) 
+    DgnElementDeleter (BDGN::DgnElementP element) : m_element (element)
         {
         AddRef();
         }
@@ -2523,15 +2521,6 @@ public:
             }
         }
 
-    /** The Code of this model */
-    property AuthorityIssuedCode^ Code
-        {
-        AuthorityIssuedCode^ get ()
-            {
-            return gcnew AuthorityIssuedCode (&m_native->GetCode(), this);
-            }
-        }
-
     /** The DgnDb that contains this model */
     property DgnNET::DgnDb^     DgnDb
         {
@@ -2553,26 +2542,16 @@ public:
         }
 
     property bool IsGeometricModel      { bool get () { return m_native->IsGeometricModel();    } }
-    property bool IsSpatialModel        { bool get () { return m_native->IsSpatialModel();      } }      
-    property bool IsPhysicalModel       { bool get () { return m_native->IsPhysicalModel();     } }     
-    property bool Is2dModel             { bool get () { return m_native->Is2dModel();           } }           
-    property bool Is3dModel             { bool get () { return m_native->Is3dModel();           } }           
-    property bool IsRoleModel           { bool get () { return m_native->IsRoleModel();         } }         
-    property bool IsInformationModel    { bool get () { return m_native->IsInformationModel();  } }  
-    property bool IsDefinitionModel     { bool get () { return m_native->IsDefinitionModel();   } }   
-    property bool IsSheetModel          { bool get () { return m_native->IsSheetModel();        } }        
-    property bool IsDictionaryModel     { bool get () { return m_native->IsDictionaryModel();   } }   
+    property bool IsSpatialModel        { bool get () { return m_native->IsSpatialModel();      } }
+    property bool IsPhysicalModel       { bool get () { return m_native->IsPhysicalModel();     } }
+    property bool Is2dModel             { bool get () { return m_native->Is2dModel();           } }
+    property bool Is3dModel             { bool get () { return m_native->Is3dModel();           } }
+    property bool IsRoleModel           { bool get () { return m_native->IsRoleModel();         } }
+    property bool IsInformationModel    { bool get () { return m_native->IsInformationModel();  } }
+    property bool IsDefinitionModel     { bool get () { return m_native->IsDefinitionModel();   } }
+    property bool IsSheetModel          { bool get () { return m_native->IsSheetModel();        } }
+    property bool IsDictionaryModel     { bool get () { return m_native->IsDictionaryModel();   } }
 
-
-    /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
-    static AuthorityIssuedCode^ CreateModelCode (System::String^ modelName)
-        {
-        pin_ptr<wchar_t const> modelNamePinned = PtrToStringChars (modelName);
-        Utf8String  utf8ModelName (modelNamePinned);
-
-        BDGN::DgnCode   nativeCode = BDGN::DgnModel::CreateModelCode (utf8ModelName.c_str());
-        return gcnew AuthorityIssuedCode (nativeCode, nullptr);
-        }
 
     /**
     * Add any required locks and/or codes to the specified request in preparation for the specified operation
@@ -2897,9 +2876,11 @@ public:
     !RenderGeometryParams ()
         {
         // Finalizer
+        if ( (nullptr == m_native) || (nullptr != m_owner) )
+            return;
+
         delete m_native;
         m_native = nullptr;
-        m_owner  = nullptr;
         }
 
 };
@@ -3455,7 +3436,7 @@ public:
             m_native->Append (*nativeCV);
             return;
             }
-        
+
         GeometryNET::SolidPrimitive^ solidPrimitive;
         if (nullptr != (solidPrimitive = dynamic_cast <GeometryNET::SolidPrimitive^>(geometry)))
             {
@@ -3464,7 +3445,7 @@ public:
             m_native->Append (*nativeSP);
             return;
             }
-        
+
         GeometryNET::CurvePrimitive^ curvePrimitive;
         if (nullptr != (curvePrimitive = dynamic_cast <GeometryNET::CurvePrimitive^>(geometry)))
             {
@@ -3473,7 +3454,7 @@ public:
             m_native->Append (*nativeCP);
             return;
             }
-        
+
         GeometryNET::PolyfaceHeader^ polyfaceHeader;
         if (nullptr != (polyfaceHeader = dynamic_cast <GeometryNET::PolyfaceHeader^>(geometry)))
             {
@@ -5433,6 +5414,13 @@ BDGN::DgnModelP         Convert::DgnModelToNative (DgnModel^ model)
 
 DgnElement^             Convert::DgnElementToManaged (BDGN::DgnElementP element)
     {
+    // create the appropriate subclass depending on the characteristics of element.
+    BDGN::GeometricElement3d*    geom3d;
+    BDGN::GeometricElement*      geom;
+    if (nullptr != (geom3d = dynamic_cast <BDGN::GeometricElement3d*>(element)))
+        return gcnew GeometricElement3d (geom3d);
+    else if (nullptr != (geom = dynamic_cast <BDGN::GeometricElement*>(element)))
+        return gcnew GeometricElement (geom);
     return gcnew DgnElement (element);
     }
 

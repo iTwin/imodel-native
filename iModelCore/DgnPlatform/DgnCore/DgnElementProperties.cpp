@@ -703,7 +703,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
     if (autoHandledProperties.empty())
         return updaterCache[eclassid] = nullptr;
 
-    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, autoHandledProperties);
+    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, m_element.GetDgnDb().GetECSqlWriteToken(), autoHandledProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,7 +753,7 @@ DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    if (BSISUCCESS != updater->Update(*this))
+    if (BE_SQLITE_OK != updater->Update(*this))
         return DgnDbStatus::WriteError;
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;

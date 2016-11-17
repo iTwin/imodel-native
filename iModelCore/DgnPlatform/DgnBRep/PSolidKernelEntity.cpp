@@ -798,6 +798,75 @@ virtual DRange3d _GetSubEntityRange() const override
     return m_range;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _GetFaceLocation(DPoint3dR point, DPoint2dR param) const override
+    {
+    if (!m_haveLocation)
+        return false;
+
+    PK_CLASS_t entityClass;
+
+    PK_ENTITY_ask_class(m_entityTag, &entityClass);
+
+    if (PK_CLASS_face != entityClass)
+        return false;
+
+    point = m_point;
+    param = m_param;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _GetEdgeLocation(DPoint3dR point, double& param) const override
+    {
+    if (!m_haveLocation)
+        return false;
+
+    PK_CLASS_t entityClass;
+
+    PK_ENTITY_ask_class(m_entityTag, &entityClass);
+
+    if (PK_CLASS_edge != entityClass)
+        return false;
+
+    point = m_point;
+    param = m_param.x;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _GetVertexLocation(DPoint3dR point) const override
+    {
+    PK_CLASS_t entityClass;
+
+    PK_ENTITY_ask_class(m_entityTag, &entityClass);
+
+    if (PK_CLASS_vertex != entityClass)
+        return false;
+
+    if (!m_haveLocation)
+        {
+        if (SUCCESS != PSolidUtil::GetVertex(point, m_entityTag))
+            return false;
+
+        m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(point);
+
+        return true;
+        }
+
+    point = m_point;
+
+    return true;
+    }
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -850,40 +919,6 @@ static Transform GetEntityTransform(ISubEntityCR subEntity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool GetLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
-    {
-    PSolidTopoSubEntity const* topoSubEntity;
-
-    if (nullptr == (topoSubEntity = dynamic_cast <PSolidTopoSubEntity const*> (&subEntity)))
-        return false;
-
-    if (!topoSubEntity->m_haveLocation)
-        {
-        PK_CLASS_t entityClass;
-
-        PK_ENTITY_ask_class(topoSubEntity->m_entityTag, &entityClass);
-
-        if (PK_CLASS_vertex != entityClass)
-            return false;
-
-        if (SUCCESS != PSolidUtil::GetVertex(point, topoSubEntity->m_entityTag))
-            return false;
-
-        topoSubEntity->m_parentGeom->GetAsIBRepEntity()->GetEntityTransform().Multiply(point);
-        param.Zero();
-
-        return true;
-        }
-
-    point = topoSubEntity->m_point;
-    param = topoSubEntity->m_param;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param)
     {
     PSolidTopoSubEntity* topoSubEntity;
@@ -927,11 +962,16 @@ void UpdateCache(ISubEntityCR donorEntity)
     if (nullptr == (donor = dynamic_cast<PSolidTopoSubEntity const*>(&donorEntity)))
         return;
 
-    if (!m_entityGeom.IsValid())
+    // Use donor geometry/range only when entity tag matches; don't want to update if this is just a tangent edge when m_displayTangentEdges is set...
+    if (!m_entityGeom.IsValid() && m_entityTag == donor->m_entityTag)
+        {
         m_entityGeom = donor->m_entityGeom;
+        m_range = donor->m_range;
+        }
 
-    m_range = donor->m_range;
-    m_graphic = donor->m_graphic;
+    // Use donor graphic only when m_displayTangentEdges matches...
+    if (m_displayTangentEdges == donor->m_displayTangentEdges)
+        m_graphic = donor->m_graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -985,6 +1025,14 @@ Transform PSolidSubEntity::GetSubEntityTransform(ISubEntityCR subEntity)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidSubEntity::SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param)
+    {
+    PSolidTopoSubEntity::SetLocation(subEntity, point, param);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PSolidSubEntity::SetDisplayTangentEdges(ISubEntityR subEntity, bool display)
@@ -1005,55 +1053,6 @@ void PSolidSubEntity::UpdateCache(ISubEntityR subEntity, ISubEntityCR donorEntit
     topoSubEntity->UpdateCache(donorEntity);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidSubEntity::SetLocation(ISubEntityR subEntity, DPoint3dCR point, DPoint2dCR param)
-    {
-    PSolidTopoSubEntity::SetLocation(subEntity, point, param);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidSubEntity::GetFaceLocation(ISubEntityCR subEntity, DPoint3dR point, DPoint2dR param)
-    {
-    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
-        return false;
-
-    return PSolidTopoSubEntity::GetLocation(subEntity, point, param);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidSubEntity::GetEdgeLocation(ISubEntityCR subEntity, DPoint3dR point, double& uParam)
-    {
-    if (ISubEntity::SubEntityType::Edge != subEntity.GetSubEntityType())
-        return false;
-
-    DPoint2d param;
-
-    if (!PSolidTopoSubEntity::GetLocation(subEntity, point, param))
-        return false;
-
-    uParam = param.x;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PSolidSubEntity::GetVertexLocation(ISubEntityCR subEntity, DPoint3dR point)
-    {
-    if (ISubEntity::SubEntityType::Vertex != subEntity.GetSubEntityType())
-        return false;
-
-    DPoint2d param;
-
-    return PSolidTopoSubEntity::GetLocation(subEntity, point, param);
-    }
 
 
 

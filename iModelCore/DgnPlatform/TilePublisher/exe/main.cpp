@@ -49,7 +49,7 @@ enum class ParamId
     DisplayGlobe,
     NoReplace,
     SingleThreaded,
-    IncrementalPublish,
+    Incremental,
     Invalid,
 };
 
@@ -166,7 +166,7 @@ private:
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     bool            m_overwriteExisting = true;
     bool            m_parallelModels = true;
-    bool            m_incrementalPublish = false;
+    bool            m_publish = false;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -184,7 +184,7 @@ public:
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     bool GetProcessModelsInParallel() const { return m_parallelModels; }
-    bool GetIncrementalPublish() const { return m_incrementalPublish; }
+    bool GetIncremental() const { return m_publish; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
@@ -372,8 +372,8 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::SingleThreaded:
                 m_parallelModels = false;
                 break;
-            case ParamId::IncrementalPublish:
-                m_incrementalPublish = true;
+            case ParamId::Incremental:
+                m_publish = true;
                 break;
 
             default:
@@ -412,7 +412,7 @@ private:
     BeMutex                     m_mutex;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
@@ -745,7 +745,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
     TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, 
-                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel(), createParams.GetIncrementalPublish());
+                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel(), createParams.GetIncremental());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

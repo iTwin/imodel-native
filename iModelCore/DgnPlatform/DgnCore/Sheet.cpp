@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/TileTree.h>
 
 BEGIN_SHEET_NAMESPACE
 
@@ -86,11 +87,11 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
     auto sheet = new Element(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
-    #ifdef WIP_SHEETS
+#ifdef WIP_SHEETS
     sheet->SetHeight(sheetTemplateElem->GetHeight());
     sheet->SetWidth(sheetTemplateElem->GetWidth());
     sheet->SetBorder(sheetTemplateElem->GetBorder());
-    #endif
+#endif
     BeAssert(false && "WIP_SHEETS - templates");
     return sheet;
     }
@@ -100,7 +101,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Sheet::ViewAttachment::CheckValid() const
     {
-    if (!GetViewId().IsValid())
+    if (!GetAttachedViewId().IsValid())
         return DgnDbStatus::ViewNotFound;
 
     if (!GetModel()->IsSheetModel())
@@ -154,6 +155,73 @@ ModelPtr Sheet::Model::Create(ElementCR sheet)
 Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     {
     return new Sheet::ViewController(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AttachmentTree::AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP system) : m_attachmentId(attachmentId), TileTree::QuadTree::Root(db, Transform::FromIdentity(), "", system, 10, 256)
+    {
+    auto attach = m_db.Elements().Get<ViewAttachment>(attachmentId);
+    if (!attach.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    SetLocation(attach->GetPlacement().GetTransform());
+
+    auto viewId = attach->GetAttachedViewId();
+    m_view = m_db.Elements().Get<ViewDefinition>(DgnElementId(viewId.GetValue()));
+
+//    m_rootTile = new Tile(*this, TileId(0,0,0), nullptr);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::ViewController::AttachmentTreePtr Sheet::ViewController::FindAttachment(DgnElementId attachId) const
+    {
+    for (auto& attach : m_attachments)
+        {
+        if (attach->GetAttachmentId() == attachId)
+            return attach;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::_LoadState()
+    {
+    auto model = GetViewedModel();
+    if (nullptr == model || nullptr == m_vp)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    bvector<AttachmentTreePtr> attachments;
+
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    stmt->BindId(1, model->GetModelId());
+
+    // If we're already loaded, look in existing AttachementTrees so we don't reload them
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto attachId = stmt->GetValueId<DgnElementId>(0);
+        auto tree = FindAttachment(attachId);
+
+        if (!tree.IsValid())
+            tree = new AttachmentTree(GetDgnDb(), attachId, &m_vp->GetRenderTarget()->GetSystem());
+
+        attachments.push_back(tree);
+        }
+
+    // save new list of attachment trees
+    m_attachments = attachments;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,9 +304,13 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
             Texture::CreateParams textureParams;
             auto texture = rsys._CreateTexture(image, textureParams);
 
-            // auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
-            //graphic->SetSymbology(bgcolor, bgcolor, 4); *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
-            graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
+            auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
+            if (bgcolor.GetRed() == 0xff) // *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black??
+                bgcolor.SetRed(0xfe);
+            else if (bgcolor.GetRed() == 0)
+                bgcolor.SetRed(1);
+
+            graphic->SetSymbology(bgcolor, bgcolor, 0);
 
             graphic->AddTile(*texture, corners);
             }
