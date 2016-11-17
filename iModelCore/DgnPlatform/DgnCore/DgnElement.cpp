@@ -725,7 +725,6 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     }
 
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================

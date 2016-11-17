@@ -57,7 +57,7 @@ void DgnDb::Destroy()
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
     Elements().ClearUpdaterCache();
-    m_revisionManager.release();
+    m_revisionManager.reset(nullptr);
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
         {
