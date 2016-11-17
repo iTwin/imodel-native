@@ -168,7 +168,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
     instance.json->SetObject();
     instance.json->AddMember("Name", rapidjson::StringRef(schemaName.c_str()), instance.json->GetAllocator());
     instance.json->AddMember("NameSpacePrefix", rapidjson::StringRef(schemaAlias.c_str()), instance.json->GetAllocator());
-    instance.json->AddMember("VersionMajor", schemaCopy->GetVersionMajor(), instance.json->GetAllocator());
+    instance.json->AddMember("VersionMajor", schemaCopy->GetVersionRead(), instance.json->GetAllocator());
     instance.json->AddMember("VersionMinor", schemaCopy->GetVersionMinor(), instance.json->GetAllocator());
 
     bvector<RawWSObjectsReader::RawInstance> instances;
