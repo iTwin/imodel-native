@@ -1,0 +1,46 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/ECDbSqlFunctions.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+#include <ECDb/ECDb.h>
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+// TEXT BlobToBase64(BLOB blob)
+// @bsiclass                                                   Krischan.Eberle   11/16
+//=======================================================================================
+struct BlobToBase64 : ScalarFunction
+    {
+    private:
+        static BlobToBase64* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+
+        BlobToBase64() : ScalarFunction("BlobToBase64", 1, DbValueType::TextVal) {}
+        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        static BlobToBase64& GetSingleton();
+    };
+
+
+//=======================================================================================
+// BLOB Base64ToBlob(TEXT base64Str)
+// @bsiclass                                                   Krischan.Eberle   11/16
+//=======================================================================================
+struct Base64ToBlob : ScalarFunction
+    {
+    private:
+        static Base64ToBlob* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+
+        Base64ToBlob() : ScalarFunction("Base64ToBlob", 1, DbValueType::BlobVal) {}
+        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        static Base64ToBlob& GetSingleton();
+    };
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -34,6 +34,10 @@ struct ECSqlWriteToken;
 //! It is used to create, open, close @ref ECDbFile "ECDb files" (see ECDb::CreateNewDb, ECDb::OpenBeSQLiteDb,
 //! ECDb::CloseDb) and gives access to the %EC data.
 //!
+//! The following SQLite functions are built into ECDb (and can be used in SQL and ECSQL):
+//!     * TEXT BlobToBase64(BLOB blob) Encodes a BLOB as its Base64 string representation
+//!     * BLOB Base64ToBlob(TEXT base64Str) Decodes a Base64 string to a BLOB
+//!
 //! An ECDb object is generally thread-safe. However an ECDb connection must be closed in the same thread in which is was opened.
 //! @see @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup

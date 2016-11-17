@@ -72,6 +72,18 @@ DbResult ECDb::Impl::OnDbCreated() const
     return ECDbProfileManager::CreateECProfile(m_ecdb);
     }
 
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2012
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbOpening() const
+    {
+    m_ecdb.AddFunction(Base64ToBlob::GetSingleton());
+    m_ecdb.AddFunction(BlobToBase64::GetSingleton());
+
+    return InitializeSequences();
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2016
 //---------------+---------------+---------------+---------------+---------------+------
@@ -79,6 +91,8 @@ void ECDb::Impl::OnDbClose() const
     {
     ClearECDbCache();
     m_sqlFunctions.clear();
+    m_ecdb.RemoveFunction(Base64ToBlob::GetSingleton());
+    m_ecdb.RemoveFunction(BlobToBase64::GetSingleton());
     }
 
 //--------------------------------------------------------------------------------------

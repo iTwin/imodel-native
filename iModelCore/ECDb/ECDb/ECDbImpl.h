@@ -110,7 +110,7 @@ private:
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
     void ClearECDbCache() const;
-    DbResult OnDbOpening() const { return InitializeSequences(); }
+    DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
     void OnDbClose() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
