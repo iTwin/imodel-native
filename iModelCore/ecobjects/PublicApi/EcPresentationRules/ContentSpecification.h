@@ -17,6 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef bvector<RelatedPropertiesSpecificationP>   RelatedPropertiesSpecificationList;
 typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificationList;
 typedef bvector<HiddenPropertiesSpecificationP>    HiddenPropertiesSpecificationList;
+typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ContentSpecifications.
@@ -29,6 +30,7 @@ private:
     bool                                 m_showImages;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
     HiddenPropertiesSpecificationList    m_hiddenPropertiesSpecification;
+    CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
 
 protected:
@@ -80,6 +82,12 @@ public:
     
     //! Hidden properties that will not be displayed.
     HiddenPropertiesSpecificationList& GetHiddenPropertiesR() {return m_hiddenPropertiesSpecification;}
+
+    //! Additional calculated properties included in the content
+    CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const {return m_calculatedPropertiesSpecification;}
+
+    //! Additional calculated properties included in the content
+    CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR() {return m_calculatedPropertiesSpecification;}
 
     //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
