@@ -72,7 +72,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
 
         m_useSharedColumns = true;
         m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
-        m_excessColumnName.assign(baseMapStrategy->GetTphInfo().GetExcessColumnName());
+        m_overflowColumnName.assign(baseMapStrategy->GetTphInfo().GetOverflowColumnName());
         return SUCCESS;
         }
 
@@ -91,7 +91,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetSharedColumnCount(m_sharedColumnCount))
             return ERROR;
 
-        if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetExcessColumnName(m_excessColumnName))
+        if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetOverflowColumnName(m_overflowColumnName))
             return ERROR;
 
         return SUCCESS;
@@ -112,7 +112,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(m_sharedColumnCount))
                 return ERROR;
 
-            if (ECObjectsStatus::Success != shareColumnsCA.TryGetExcessColumnName(m_excessColumnName))
+            if (ECObjectsStatus::Success != shareColumnsCA.TryGetOverflowColumnName(m_overflowColumnName))
                 return ERROR;
             }
         }

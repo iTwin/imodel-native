@@ -46,7 +46,7 @@ struct TablePerHierarchyInfo
         bool m_isValid;
         bool m_useSharedColumns;
         int m_sharedColumnCount;
-        Utf8String m_excessColumnName;
+        Utf8String m_overflowColumnName;
         JoinedTableInfo m_joinedTableInfo;
 
         BentleyStatus DetermineSharedColumnsInfo(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
@@ -55,8 +55,8 @@ struct TablePerHierarchyInfo
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
         explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid), m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
-        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP excessColName, JoinedTableInfo joinedTableInfo)
-            : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_excessColumnName(excessColName), m_joinedTableInfo(joinedTableInfo)
+        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP overflowColName, JoinedTableInfo joinedTableInfo)
+            : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColName), m_joinedTableInfo(joinedTableInfo)
             {}
 
         BentleyStatus Initialize(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
@@ -65,7 +65,7 @@ struct TablePerHierarchyInfo
         bool IsValid() const { return m_isValid; }
         bool UseSharedColumns() const { return m_useSharedColumns; }
         int GetSharedColumnCount() const { return m_sharedColumnCount; }
-        Utf8StringCR GetExcessColumnName() const { return m_excessColumnName; }
+        Utf8StringCR GetOverflowColumnName() const { return m_overflowColumnName; }
         JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }
     };
 
