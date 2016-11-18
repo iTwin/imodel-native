@@ -14,9 +14,11 @@ using namespace BeFolly;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IOThreadPool::Worker::Work()
+void ThreadPool::Worker::Work()
     {
-    for(;;)
+    SetName();
+
+    for (;;)
         {
         std::function<void()> task;
             {
@@ -37,21 +39,26 @@ void IOThreadPool::Worker::Work()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreadPool::Worker::SetName()
+    {
+    BeThreadUtilities::SetCurrentThreadName(Utf8PrintfString("%s worker %d", m_pool.GetName(), m_id).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-THREAD_MAIN_IMPL IOThreadPool::Worker::Main(void* arg)
+THREAD_MAIN_IMPL ThreadPool::Worker::Main(void* arg)
     {
-    BeThreadUtilities::SetCurrentThreadName("IOPoolWorker");
-
     ((Worker*)arg)->Work();
-
     return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IOThreadPool::Worker::Start()
+void ThreadPool::Worker::Start()
     {
     BeThreadUtilities::StartNewThread(50*1024, Main, this);
     }
@@ -59,19 +66,19 @@ void IOThreadPool::Worker::Start()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IOThreadPool::IOThreadPool(int nThreads)
+ThreadPool::ThreadPool(int nThreads, Utf8CP name) : m_name(name)
     {
     for (int i=0; i<nThreads; ++i)
-        m_workers.emplace_back(new Worker(*this));
+        m_workers.emplace_back(new Worker(*this, i+1));
 
     for (auto& worker : m_workers)
         worker->Start();
-    }                                                 \
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IOThreadPool::add(folly::Func func)
+void ThreadPool::add(folly::Func func)
     {
     if (true)
         {
@@ -90,7 +97,7 @@ void IOThreadPool::add(folly::Func func)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IOThreadPool::WaitForIdle()
+void ThreadPool::WaitForIdle()
     {
     BeMutexHolder holder(m_cv.GetMutex());
     while (!m_tasks.empty())
@@ -100,7 +107,7 @@ void IOThreadPool::WaitForIdle()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IOThreadPool::~IOThreadPool()
+ThreadPool::~ThreadPool()
     {
     if (true)
         {
@@ -116,18 +123,35 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct IOThreadPoolImp : IOThreadPool
+struct IoThreadPoolImp : ThreadPool
 {
-    IOThreadPoolImp() : IOThreadPool(BeThreadUtilities::GetHardwareConcurrency()){}
-    ~IOThreadPoolImp() {}
+    IoThreadPoolImp() : ThreadPool(BeThreadUtilities::GetHardwareConcurrency()*2, "IO"){}
+    ~IoThreadPoolImp() {}
+};
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct CpuThreadPoolImp : ThreadPool
+{
+    CpuThreadPoolImp() : ThreadPool(BeThreadUtilities::GetHardwareConcurrency(), "CPU"){}
+    ~CpuThreadPoolImp() {}
 };
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IOThreadPool& IOThreadPool::GetPool()
+ThreadPool& ThreadPool::GetIoPool()
     {
-    static folly::Singleton<IOThreadPoolImp> s_pool;
+    static folly::Singleton<IoThreadPoolImp> s_pool;
+    return *s_pool.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadPool& ThreadPool::GetCpuPool()
+    {
+    static folly::Singleton<CpuThreadPoolImp> s_pool;
     return *s_pool.get();
     }
