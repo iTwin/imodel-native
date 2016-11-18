@@ -59,7 +59,7 @@ struct ColumnFactory : NonCopyableClass
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
         DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-        DbColumn* ApplySharedColumnStrategy() const;
+        DbColumn* ApplySharedColumnStrategy(DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8CP accessString) const;
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;

@@ -549,108 +549,6 @@ ClassMapPtr ECDbMap::DoGetClassMap(ECClassCR ecClass) const
         return it->second;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Utf8CP tableName, DbTable::Type tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
-    {
-    if (AssertIfIsNotImportingSchema())
-        return nullptr;
-
-    if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
-        primaryKeyColumnName = "ECInstanceId"; //default name for PK column
-
-    DbTable* table = m_dbSchema.FindTableP(tableName);
-    if (table != nullptr)
-        {
-        if (table->GetType() != tableType)
-            {
-            std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
-            LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
-                         "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
-                         tableName,
-                         toStr(tableType == DbTable::Type::Existing), toStr(!table->IsOwnedByECDb()));
-            BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
-            }
-
-        if (table->HasExclusiveRootECClass())
-            {
-            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Table %s is exclusively used by the ECClass with Id %s and therefore "
-                                                               "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
-                                                               tableName, table->GetExclusiveRootECClassId().ToString().c_str());
-            return nullptr;
-            }
-
-        if (exclusiveRootClassId.IsValid())
-            {
-            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECClass with Id %s requests exclusive use of the table %s, "
-                                                               "but it is already used by some other ECClass.",
-                                                               exclusiveRootClassId.ToString().c_str(), tableName);
-            return nullptr;
-            }
-
-        return table;
-        }
-
-    if (tableType != DbTable::Type::Existing)
-        {
-        table = m_dbSchema.CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
-        DbColumn* column = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
-        if (table->GetPersistenceType() == PersistenceType::Persisted)
-            {
-            std::vector<DbColumn*> pkColumns {column};
-            if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
-                return nullptr;
-            }
-        }
-    else
-        {
-        BeAssert(!exclusiveRootClassId.IsValid() && "For MapStrategy Existing we don't persist an exclusive class");
-        table = m_dbSchema.CreateTableAndColumnsForExistingTableMapStrategy(tableName);
-        if (table == nullptr)
-            return nullptr;
-
-        if (!Utf8String::IsNullOrEmpty(primaryKeyColumnName))
-            {
-            const bool canEdit = table->GetEditHandle().CanEdit();
-            if (!canEdit)
-                table->GetEditHandleR().BeginEdit();
-
-            DbColumn* idColumn = table->FindColumnP(primaryKeyColumnName);
-            if (idColumn == nullptr)
-                {
-                LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.", primaryKeyColumnName, tableName);
-                return nullptr;
-                }
-
-            idColumn->SetKind(DbColumn::Kind::ECInstanceId);
-            if (!canEdit)
-                table->GetEditHandleR().EndEdit();
-            }
-        }
-
-    //! We always create a virtual ECClassId column and later change it persistenceType to Persisted if required to.
-    // Index is created on it later in FinishTableDefinition
-    const bool canEdit = table->GetEditHandle().CanEdit();
-    if (!canEdit)
-        table->GetEditHandleR().BeginEdit();
-    
-    DbColumn* column = table->CreateColumn(COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
-    if (column == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    column->GetConstraintsR().SetNotNullConstraint();
-    if (!canEdit)
-        table->GetEditHandleR().EndEdit();
-
-    return table;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -833,9 +731,6 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
         if (!canEdit) table->GetEditHandleR().EndEdit();
         if (onlyCreateClassIdColumns)
             continue;
-
-        if (SUCCESS != table->EnsureMinimumNumberOfSharedColumns())
-            return ERROR;
         }
 
     return SUCCESS;
@@ -846,58 +741,30 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbMap::UpdateECClassIdColumnIfRequired(DbTable& table, bset<ClassMap*> const& classMaps) const
     {
-    DbColumn *existingClassIdCol = const_cast<DbColumn*>(table.GetFilteredColumnFirst(DbColumn::Kind::ECClassId));
-    ClassMap const* firstClassMap = *classMaps.begin();
-    bool addClassIdCol = false;
-    if (classMaps.size() == 1)
-        addClassIdCol = firstClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy;
-    else
-        addClassIdCol = classMaps.size() > 1;
-
-    //Check if already exist if does then see if need to change it persistence type or not. If yes then change to persisted and add index.
-    if (existingClassIdCol != nullptr)
-        {
-        if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
-            return SUCCESS;
-
-        if (existingClassIdCol->GetPersistenceType() != PersistenceType::Virtual)
-            return SUCCESS;
-
-        if (addClassIdCol)
-            {
-            if (DbColumn::MakePersisted(*existingClassIdCol) != SUCCESS)
-                {
-                BeAssert(false && "Changing persistence type from virtual to persisted failed");
-                return ERROR;
-                }
-
-            Utf8String indexName("ix_");
-            indexName.append(table.GetName()).append("_ecclassid");
-            return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {existingClassIdCol},
-                                              false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
-            }
-
+    if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing ||
+        table.GetECClassIdColumn().GetPersistenceType() != PersistenceType::Virtual)
         return SUCCESS;
-        }
 
-    DbColumn* ecClassIdColumn = table.CreateColumn(COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, addClassIdCol ? PersistenceType::Persisted : PersistenceType::Virtual);
-    if (ecClassIdColumn == nullptr)
+    ClassMap const* firstClassMap = *classMaps.begin();
+    bool makeNonVirtual = false;
+    if (classMaps.size() == 1)
+        makeNonVirtual = firstClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy;
+    else
+        makeNonVirtual = classMaps.size() > 1;
+
+    if (!makeNonVirtual)
+        return SUCCESS;
+
+    if (const_cast<DbColumn*> (&table.GetECClassIdColumn())->MakeNonVirtual() != SUCCESS)
         {
-        BeAssert(false && "Failed to create ECClassId column");
+        BeAssert(false && "Changing persistence type from virtual to persisted failed");
         return ERROR;
         }
 
-    ecClassIdColumn->GetConstraintsR().SetNotNullConstraint();
-    //whenever we create a class id column, we index it to speed up the frequent class id look ups
-    if (ecClassIdColumn->GetPersistenceType() == PersistenceType::Persisted)
-        {
-        Utf8String indexName("ix_");
-        indexName.append(table.GetName()).append("_ecclassid");
-        return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {ecClassIdColumn},
-                                          false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
-        }
-
-    return SUCCESS;
+    Utf8String indexName("ix_");
+    indexName.append(table.GetName()).append("_ecclassid");
+    return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {&table.GetECClassIdColumn()},
+                                      false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

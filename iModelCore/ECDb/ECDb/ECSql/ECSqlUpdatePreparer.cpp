@@ -101,7 +101,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             nativeSqlBuilder.AppendComma();
 
         bool first = true;
-        DbColumn const* overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetMasterOverflowColumn();
+        DbColumn const* overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetPhysicalOverflowColumn();
         nativeSqlBuilder.AppendEscaped(overflowColumn->GetName().c_str()).Append(BooleanSqlOperator::EqualTo);
         nativeSqlBuilder.Append("json_set(ifnull(").AppendEscaped(overflowColumn->GetName().c_str()).AppendComma().Append("'{}'),");
         for (size_t i : snippets.m_overflowPropertyIndexes)
@@ -184,18 +184,17 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         {
         // WHERE clause
         Utf8String systemWhereClause;
-        DbColumn const* classIdColumn = nullptr;
         DbTable const* table = &classMap.GetPrimaryTable();
+        DbColumn const& classIdColumn = table->GetECClassIdColumn();
 
-        if (table->TryGetECClassIdColumn(classIdColumn) &&
-            classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+        if (classIdColumn.GetPersistenceType() == PersistenceType::Persisted)
             {
             if (ctx.IsParentOfJoinedTable())
                 {
                 auto joinedTableClass = ctx.GetECDb().Schemas().GetECClass(ctx.GetJoinedTableClassId());
                 auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*joinedTableClass);
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    *classIdColumn,
+                    classIdColumn,
                     exp.GetClassNameExp()->IsPolymorphic()))
                     return ECSqlStatus::Error;
                 }
@@ -203,14 +202,14 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 {
                 auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    *classIdColumn,
+                    classIdColumn,
                     exp.GetClassNameExp()->IsPolymorphic()))
                     return ECSqlStatus::Error;
                 }
             else
                 {
                 if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    *classIdColumn,
+                    classIdColumn,
                     exp.GetClassNameExp()->IsPolymorphic()))
                     return ECSqlStatus::Error;
                 }

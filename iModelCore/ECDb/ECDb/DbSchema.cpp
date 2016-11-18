@@ -11,7 +11,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-#define OVERFLOW_COLUMN_NAME "SCOverflow"
 //****************************************************************************************
 //ExistingColumn
 //****************************************************************************************
@@ -274,60 +273,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName)
-    {
-    //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
-    //cases where schema authors want to map two ECClasses to the same existing table.
-    DbTable* table = CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
-    if (table == nullptr)
-        return nullptr;
 
-    std::vector<ExistingColumn> existingColumns;
-    if (ExistingColumn::GetColumns(existingColumns, m_ecdb, existingTableName) == ERROR)
-        {
-        BeAssert(false && "Failed to get column informations");
-        return nullptr;
-        }
-
-    if (!table->GetEditHandle().CanEdit())
-        table->GetEditHandleR().BeginEdit();
-
-    std::vector<DbColumn*> pkColumns;
-    std::vector<size_t> pkOrdinals;
-    for (ExistingColumn const& col : existingColumns)
-        {
-        DbColumn* column = table->CreateColumn(col.GetName().c_str(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
-        if (column == nullptr)
-            {
-            BeAssert(false && "Failed to create column");
-            return nullptr;
-            }
-
-        if (!col.GetDefault().empty())
-            column->GetConstraintsR().SetDefaultValueExpression(col.GetDefault().c_str());
-
-        if (col.IsNotNull())
-            column->GetConstraintsR().SetNotNullConstraint();
-
-        if (col.GetPrimaryKeyOrdinal() > 0)
-            {
-            pkColumns.push_back(column);
-            pkOrdinals.push_back(static_cast<size_t>(col.GetPrimaryKeyOrdinal() - 1));
-            }
-        }
-
-    if (!pkColumns.empty())
-        {
-        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
-            return nullptr;
-        }
-
-    table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
-    return table;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -1068,6 +1014,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
+    int sharedColumnCount = 0;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);
@@ -1084,7 +1031,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
         int primaryKeyOrdinal = stmt->IsColumnNull(pkOrdinalColIx) ? -1 : stmt->GetValueInt(pkOrdinalColIx);
         const DbColumn::Kind columnKind = Enum::FromInt<DbColumn::Kind>(stmt->GetValueInt(kindColIx));
 
-        DbColumn* column = table.CreateColumn(id, name, type, columnKind, persistenceType);
+        DbColumn* column = table.CreateColumn(id, Utf8String(name), type, columnKind, persistenceType);
         if (column == nullptr)
             {
             BeAssert(false);
@@ -1110,6 +1057,9 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
             pkColumns.push_back(column);
             pkOrdinals.push_back((size_t) primaryKeyOrdinal);
             }
+
+        if (Enum::Contains(columnKind, DbColumn::Kind::SharedDataColumn))
+            sharedColumnCount++;
         }
 
     if (!pkColumns.empty())
@@ -1117,6 +1067,8 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
         if (SUCCESS != table.CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
             return SUCCESS;
         }
+
+    table.InitializeSharedColumnNameGenerator(sharedColumnCount);
 
     return SUCCESS;
     }
@@ -1224,6 +1176,21 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
+DbTable::DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable) 
+    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
+      m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable), m_overflowColumn(nullptr)
+    {
+    BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
+        (tableType != Type::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for Type::Joined and must be null for any other DbTable::Type.");
+
+    if (tableType == Type::Joined && parentOfJoinedTable != nullptr)
+        const_cast<DbTable*>(parentOfJoinedTable)->m_joinedTables.push_back(this);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   05/2016
+//---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreatePrimaryKeyConstraint(std::vector<DbColumn*> const& pkColumns, std::vector<size_t> const* pkOrdinals)
     {
     if (GetEditHandleR().AssertNotInEditMode())
@@ -1288,71 +1255,6 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle 02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::EnsureMinimumNumberOfSharedColumns()
-    {
-    if (m_minimumSharedColumnCount < 0)
-        return SUCCESS; // no min count specified -> nothing to do
-
-    int existingSharedColCount = 0;
-    for (DbColumn const* col : m_orderedColumns)
-        {
-        if (col->IsShared())
-            existingSharedColCount++;
-        }
-
-    const int neededSharedColumns = m_minimumSharedColumnCount - existingSharedColCount;
-    if (neededSharedColumns <= 0)
-        return SUCCESS;
-
-    for (int i = 0; i < neededSharedColumns; i++)
-        {
-        if (CreateSharedColumn() == nullptr)
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                      Affan.Khan     02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::CreateMasterOverflowColumn()
-    {
-    if (EnsureMinimumNumberOfSharedColumns() != SUCCESS)
-        return ERROR;
-
-    if (GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster) == nullptr)
-        {
-        if (CreateColumn(OVERFLOW_COLUMN_NAME, DbColumn::Type::Text, DbColumn::Kind::OverflowMaster, PersistenceType::Persisted) == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle 02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::SetMinimumSharedColumnCount(int minimumSharedColumnCount)
-    {
-    //can only by one ECClass of this table
-    if (minimumSharedColumnCount < 0  ||
-        (m_minimumSharedColumnCount >= 0 && minimumSharedColumnCount != m_minimumSharedColumnCount))
-        {
-        BeAssert(false && "Cannot modify MinimumSharedColumnCount on an DbTable if it has been set already.");
-        return ERROR;
-        }
-
-    m_minimumSharedColumnCount = minimumSharedColumnCount;
-    return CreateMasterOverflowColumn();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateTrigger(Utf8CP triggerName, DbTrigger::Type type, Utf8CP condition, Utf8CP body)
@@ -1401,8 +1303,36 @@ BentleyStatus DbTable::RemoveConstraint(DbConstraint const& constraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persistenceType)
+DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persistenceType)
     {
+    if (colName.empty())
+        {
+        BeAssert(false && "DbTable::CreateColumn cannot be called if column name is null or empty");
+        return nullptr;
+        }
+
+    if (FindColumn(colName.c_str()) != nullptr)
+        {
+        BeAssert(false && "DbTable::CreateColumn> Column with specified name already exist");
+        return nullptr;
+        }
+
+    //Overflow property check
+    if (Enum::Intersects(kind, DbColumn::Kind::Overflow))
+        {
+        if (kind != DbColumn::Kind::Overflow)
+            {
+            BeAssert(false && "OverflowMaster should be the only flag on a column");
+            return nullptr;
+            }
+
+        if (GetFilteredColumnFirst(DbColumn::Kind::Overflow) != nullptr)
+            {
+            BeAssert(false && "There can only be exactly one overflow column per table");
+            return nullptr;
+            }
+        }
+
     if (!GetEditHandleR().CanEdit())
         {
         IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
@@ -1428,56 +1358,8 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type,
         id = DbColumnId(columnId.GetValue());
         }
 
-    //Overflow property check
-    bool overflowMaster = Enum::Intersects(kind, DbColumn::Kind::OverflowMaster);
-    if (overflowMaster)
-        {
-        if (kind != DbColumn::Kind::OverflowMaster)
-            {
-            BeAssert(false && "OverflowMaster should be the only flag on a column");
-            return nullptr;
-            }
-       
-        if (GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster) != nullptr)
-            {
-            BeAssert(false && "There can only be exactly one OverflowMaster column per table");
-            return nullptr;
-            }
-        }
 
-    //Overflow check
-    bool overflowSlave = Enum::Intersects(kind, DbColumn::Kind::OverflowSlave);
-    if (overflowSlave)
-        {
-        if (GetMasterOverflowColumn() == nullptr)
-            {
-            BeAssert(false && "OverflowMaster property is not present for this table");
-            return nullptr;
-            }
-        }
-
-    std::shared_ptr<DbColumn> newColumn = nullptr;
-    if (!Utf8String::IsNullOrEmpty(name))
-        {
-        if (FindColumn(name))
-            {
-            BeAssert(false && "Column name already exist");
-            return nullptr;
-            }
-
-        newColumn = std::make_shared<DbColumn>(id, *this, name, type, kind, resolvePersistenceType);
-        }
-    else
-        {
-        Utf8String generatedName;
-        do
-            {
-            m_columnNameGenerator.Generate(generatedName);
-            } while (FindColumn(generatedName.c_str()));
-
-        newColumn = std::make_shared<DbColumn>(id, *this, generatedName.c_str(), type, kind, resolvePersistenceType);
-        }
-
+    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
@@ -1490,10 +1372,12 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type,
     for (auto& eh : m_columnEvents)
         eh(ColumnEvent::Created, *newColumn);
 
-    m_cachedFlags.set(CACHED_CLASSID, false);
-    m_cachedFlags.set(CACHED_OVERFLOW, false);
-    m_overflowColumn = m_classIdColumn = nullptr;
-    
+    if (kind == DbColumn::Kind::Overflow)
+        m_overflowColumn = newColumnP;
+
+    if (Enum::Contains(kind, DbColumn::Kind::ECClassId))
+        m_classIdColumn = newColumnP;
+
     return newColumnP;
     }
 
@@ -1541,6 +1425,61 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
     auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
     m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
+    {
+    if (!tphInfo.UseSharedColumns())
+        {
+        BeAssert(false && "CreateSharedColumns must not be called if shared columns were not enabled by the respective CA");
+        return ERROR;
+        }
+
+    if (m_overflowColumn != nullptr)
+        return SUCCESS; //overflow already evaluated. WIP: Why is this called twice at all?
+
+    //the shared column count is the count of shared columns to be created excluding the overflow column
+    for (int i = 0; i < tphInfo.GetSharedColumnCount(); i++)
+        {
+        Utf8String generatedName;
+        m_sharedColumnNameGenerator.Generate(generatedName);
+        BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+        if (nullptr == CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Persisted))
+            return ERROR;
+        }
+
+    //the overflow column will hold its data as JSON. So the column data type is TEXT.
+    Utf8StringCR customOverflowColname = tphInfo.GetOverflowColumnName();
+    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::Overflow, PersistenceType::Persisted))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//---------------------------------------------------------------------------------------
+DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation)
+    {
+    Utf8String generatedName;
+    m_sharedColumnNameGenerator.Generate(generatedName);
+    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+
+    DbColumn* col = CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+    if (col == nullptr)
+        return nullptr;
+
+    if (addNotNullConstraint)
+        col->GetConstraintsR().SetNotNullConstraint();
+
+    if (addUniqueConstraint)
+        col->GetConstraintsR().SetUniqueConstraint();
+
+    col->GetConstraintsR().SetCollation(collation);
+    return col;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1626,34 +1565,6 @@ DbColumn const* DbTable::GetFilteredColumnFirst(DbColumn::Kind kind) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool DbTable::TryGetECClassIdColumn(DbColumn const*& classIdCol) const
-    {
-    if (!m_cachedFlags[CACHED_CLASSID])
-        {
-        m_classIdColumn = GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
-        m_cachedFlags[CACHED_CLASSID] = true;
-        }
-
-    classIdCol = m_classIdColumn;
-    return m_classIdColumn != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-DbColumn const* DbTable::GetMasterOverflowColumn() const
-    {
-    if (!m_cachedFlags[CACHED_OVERFLOW])
-        {
-        m_overflowColumn = GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster);
-        m_cachedFlags[CACHED_OVERFLOW] = true;
-        }
-
-    return m_overflowColumn;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
 bool DbTable::IsNullTable() const
     {
     return this == m_dbSchema.GetNullTable();
@@ -1723,37 +1634,17 @@ bool DbColumn::IsUnique() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan 02/2016
 //---------------------------------------------------------------------------------------
-DbColumn const* DbColumn::GetMasterOverflowColumn() const
+DbColumn const* DbColumn::GetPhysicalOverflowColumn() const
     {
     if (Enum::Intersects(m_kind, Kind::OverflowSlave))
         {
-        BeAssert(m_table.GetMasterOverflowColumn() != nullptr);
-        return m_table.GetMasterOverflowColumn();
+        BeAssert(m_table.GetPhysicalOverflowColumn() != nullptr);
+        return m_table.GetPhysicalOverflowColumn();
         }
 
     return nullptr;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Affan.Khan 02/2016
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus DbColumn::MakePersisted(DbColumn& column)
-    {
-    if (column.GetTableR().GetEditHandleR().AssertNotInEditMode())
-        return ERROR;
 
-    if (column.GetPersistenceType() == PersistenceType::Persisted)
-        return SUCCESS;
-
-    if (column.GetTable().GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual table cannot have persistence column");
-        return ERROR;
-        }
-
-    column.m_persistenceType = PersistenceType::Persisted;
-    return SUCCESS;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
@@ -1770,7 +1661,7 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
 
-    if (m_kind == DbColumn::Kind::OverflowMaster)
+    if (m_kind == DbColumn::Kind::Overflow)
         {
         BeAssert(false && "Cannot change Kind for a OverflowMaster column");
         return ERROR;
@@ -1780,6 +1671,26 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbColumn::MakeNonVirtual()
+    {
+    if (m_table.GetEditHandleR().AssertNotInEditMode())
+        return ERROR;
+
+    if (m_persistenceType == PersistenceType::Persisted)
+        return SUCCESS;
+
+    if (m_table.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Virtual table cannot have persistence column");
+        return ERROR;
+        }
+
+    m_persistenceType = PersistenceType::Persisted;
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
@@ -1877,6 +1788,7 @@ bool DbColumn::IsCompatible(DbColumn::Type target, DbColumn::Type source)
 
     return false;
     }
+
 
 
 //---------------------------------------------------------------------------------------
@@ -2222,5 +2134,169 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 
     return true;
     }
+
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, DbTable::Type tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+    {
+    DbTable* table = dbSchema.FindTableP(tableName);
+    if (table != nullptr)
+        {
+        if (table->GetType() != tableType)
+            {
+            std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
+            LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
+                         "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
+                         tableName,
+                         toStr(tableType == DbTable::Type::Existing), toStr(!table->IsOwnedByECDb()));
+            BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
+            }
+
+        if (table->HasExclusiveRootECClass())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Table %s is exclusively used by the ECClass with Id %s and therefore "
+                                                                        "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
+                                                                        tableName, table->GetExclusiveRootECClassId().ToString().c_str());
+            return nullptr;
+            }
+
+        if (exclusiveRootClassId.IsValid())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECClass with Id %s requests exclusive use of the table %s, "
+                                                                        "but it is already used by some other ECClass.",
+                                                                        exclusiveRootClassId.ToString().c_str(), tableName);
+            return nullptr;
+            }
+
+        return table;
+        }
+
+    if (tableType != DbTable::Type::Existing)
+        return CreateTableForOtherStrategies(dbSchema, tableName, tableType, isVirtual, primaryKeyColumnName, exclusiveRootClassId, primaryTable);
+
+    BeAssert(!exclusiveRootClassId.IsValid() && "For MapStrategy Existing we don't persist an exclusive class");
+    return CreateTableForExistingTableStrategy(dbSchema, tableName, primaryKeyColumnName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle       11/2016
+//---------------------------------------------------------------------------------------
+//static
+DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8CP tableName, DbTable::Type tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+    {
+    DbTable* table = dbSchema.CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
+    
+    if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
+        primaryKeyColumnName = "ECInstanceId"; //default name for PK column
+
+    DbColumn* pkColumn = table->CreateColumn(Utf8String(primaryKeyColumnName), DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
+    if (table->GetPersistenceType() == PersistenceType::Persisted)
+        {
+        std::vector<DbColumn*> pkColumns {pkColumn};
+        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
+            return nullptr;
+        }
+
+    //! We always create a virtual ECClassId column and later change it persistenceType to Persisted if required to.
+    // Index is created on it later in FinishTableDefinition
+    DbColumn* classIdColumn = table->CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
+    if (classIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    classIdColumn->GetConstraintsR().SetNotNullConstraint();
+
+    return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8CP existingTableName, Utf8CP primaryKeyColName)
+    {
+    //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
+    //cases where schema authors want to map two ECClasses to the same existing table.
+    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
+    if (table == nullptr)
+        return nullptr;
+
+    std::vector<ExistingColumn> existingColumns;
+    if (ExistingColumn::GetColumns(existingColumns, dbSchema.GetECDb(), existingTableName) == ERROR)
+        {
+        BeAssert(false && "Failed to get column informations");
+        return nullptr;
+        }
+
+    if (!table->GetEditHandle().CanEdit())
+        table->GetEditHandleR().BeginEdit();
+
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
+    for (ExistingColumn const& col : existingColumns)
+        {
+        DbColumn* column = table->CreateColumn(col.GetName().c_str(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        if (column == nullptr)
+            {
+            BeAssert(false && "Failed to create column");
+            return nullptr;
+            }
+
+        if (!col.GetDefault().empty())
+            column->GetConstraintsR().SetDefaultValueExpression(col.GetDefault().c_str());
+
+        if (col.IsNotNull())
+            column->GetConstraintsR().SetNotNullConstraint();
+
+        if (col.GetPrimaryKeyOrdinal() > 0)
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back(static_cast<size_t>(col.GetPrimaryKeyOrdinal() - 1));
+            }
+        }
+
+    if (!pkColumns.empty())
+        {
+        if (pkColumns.size() > 1)
+            {
+            BeAssert(false && "Multi-column PK not supported for MapStrategy ExistingTable");
+            return nullptr;
+            }
+
+        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return nullptr;
+
+        DbColumn* pkColumn = pkColumns[0];
+        if (!Utf8String::IsNullOrEmpty(primaryKeyColName) && !pkColumn->GetName().EqualsIAscii(primaryKeyColName))
+            {
+            LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
+                       primaryKeyColName, table->GetName().c_str());
+            return nullptr;
+            }
+
+        pkColumn->SetKind(DbColumn::Kind::ECInstanceId);
+        }
+
+    DbColumn* column = table->CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
+    if (column == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    column->GetConstraintsR().SetNotNullConstraint();
+
+    table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
+    return table;
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

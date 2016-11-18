@@ -2017,7 +2017,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, OverflowProperties)
+TEST_F(ECDbMappingTestFixture, OverflowColumns)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2109,6 +2109,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='GeometricElement2d' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>2</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2152,7 +2153,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
 
     const int elementExpectedColCount = 3;
     const int definitionElementExpectedColCount = 53;
-    int geometricElement2dExpectedColCount = 4;
+    int geometricElement2dExpectedColCount = 6;
     int geometricElement3dExpectedColCount = 9;
 
     std::vector<std::pair<Utf8String, int>> testItems;
@@ -2185,7 +2186,6 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
 
-    geometricElement2dExpectedColCount++;
     const int sub4ExpectedColCount = 3;
 
     testItems.clear();
@@ -3281,7 +3281,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
         "  <ECProperty propertyName='Name' typeName='string'/>"
         "  <ECProperty propertyName='Date' typeName='int'/>"
         "</ECEntityClass>"
-        "</ECSchema>", false);
+        "</ECSchema>", true);
 
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, testItem);

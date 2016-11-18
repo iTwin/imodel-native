@@ -76,7 +76,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             //BeSQLite built-in functions
-            {"SELECT NULL FROM ecsql.P WHERE InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Boolean, false)},
+            {"SELECT 10 FROM ecsql.P WHERE NOT InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             //ECDb built-in functions
             {"SELECT Base64ToBlob('Rm9vMTIzIQ==') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             {"SELECT BlobToBase64(RANDOMBLOB(5)) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
