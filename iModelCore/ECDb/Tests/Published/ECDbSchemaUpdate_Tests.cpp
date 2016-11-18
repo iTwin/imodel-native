@@ -7384,8 +7384,8 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
     SetupECDb("schemaupdate_addsharedcolumncount.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    BeFileName filePath(GetECDb().GetDbFileName());
-    GetECDb().CloseDb();
+    //BeFileName filePath(GetECDb().GetDbFileName());
+    //GetECDb().CloseDb();
 
     Utf8CP editedSchemaXml = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -7411,12 +7411,19 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-
-    //verify Adding new EndTable relationship for different briefcaseIds.
-    m_updatedDbs.clear();
+  
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(BeBriefcaseId::Master()), true, "Adding SharedColumnCount should be supported.");
+    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, true));
     ASSERT_FALSE(asserted);
+
+    ASSERT_TRUE(GetECDb().Schemas().GetECClass("TestSchema", "Base")->GetCustomAttribute("ShareColumns").IsValid());
+
+    ////verify Adding new EndTable relationship for different briefcaseIds.
+    //m_updatedDbs.clear();
+    //bool asserted = false;
+    //AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(BeBriefcaseId::Master()), true, "Adding SharedColumnCount should be supported.");
+    //ASSERT_FALSE(asserted);
+    //OpenBesqliteDb(filePath.GetNameUtf8().c_str())
     }
 
 //---------------------------------------------------------------------------------------

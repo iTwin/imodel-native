@@ -9,7 +9,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -420,7 +419,6 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         return ERROR;
 
     BeAssert(constraintId.IsValid());
-
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_RelationshipConstraintClass(ConstraintId,ClassId) VALUES(?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -447,7 +445,6 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         }
 
     stmt = nullptr;
-
     ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = end == ECRelationshipEnd_Source ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
     return ImportCustomAttributes(relationshipConstraint, ECContainerId(constraintId), containerType);
     }
@@ -625,7 +622,6 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
     bmap<ECClassCP, bvector<IECInstanceP> > customAttributeMap;
-
     //import CA classes first
     for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
         {
@@ -705,6 +701,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     {
+    
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
@@ -818,7 +815,9 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
 
     DbResult r = stmt->Step();
     if (r != BE_SQLITE_DONE)
+        {
         return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -826,9 +825,27 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
+BentleyStatus ECDbSchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
     CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Ordinal FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId.GetValue()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId.GetValue()))
+        return ERROR;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return ERROR;
+
+    ordinal = stmt->GetValueInt(0);
+
+    stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
         return ERROR;
 
@@ -843,7 +860,8 @@ BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId
 
     if (stmt->Step() != BE_SQLITE_DONE)
         return ERROR;
-
+    
+    BeAssert(m_ecdb.GetModifiedRowCount() > 0);
     return SUCCESS;
     }
 
@@ -852,9 +870,7 @@ BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
-    printf("ECClassId=%" PRId64 ", ECContainerId=%" PRId64 ", ContainerType=%d, Ordinal=%d\r\n", ecClassId.GetValue(), containerId.GetValue(), containerType, ordinal);
-    
-    if (DeleteCAEntry(ecClassId, containerId, containerType) != SUCCESS)
+    if (DeleteCAEntry(ordinal, ecClassId, containerId, containerType) != SUCCESS)
         return ERROR;
 
     return InsertCAEntry(customAttribute, ecClassId, containerId, containerType, ordinal);
@@ -1234,7 +1250,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
                 }
 
             BeAssert(ca->GetClass().HasId());
-            if (DeleteCAEntry(ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
+            int ordinal;
+            if (DeleteCAEntry(ordinal, ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
                 return ERROR;
             }
         else if (change.GetState() == ChangeState::Modified)
@@ -1471,6 +1488,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperties(ECPropertyChanges& propertyCh
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
+    
     if (!referenceChanges.IsValid())
         return SUCCESS;
 
