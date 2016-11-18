@@ -110,7 +110,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
         }
 
     FileDataQuery query(m_fileName, m_loads);
-    return query.Perform(m_tileBytes))
+    return query.Perform(m_tileBytes);
     }
 
 /*---------------------------------------------------------------------------------**//**

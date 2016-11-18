@@ -264,13 +264,12 @@ public:
 };
 
 //=======================================================================================
-// This object is created to read and load a single tile asynchronously. 
-// If caching is enabled, it will first attempt to read the data from the cache. If it's
-// not available it will call _ReadFromSource(). Once the data is available the _LoadTile
-// method is called. 
-// All methods of this class might be called from worker threads except for the constructor 
-// which is guaranteed to run on the client thread. If something you required is not thread 
-// safe you must capture it during construction.
+//! This object is created to read and load a single tile asynchronously. 
+//! If caching is enabled, it will first attempt to read the data from the cache. If it's
+//! not available it will call _ReadFromSource(). Once the data is available, _LoadTile is called. 
+//! All methods of this class might be called from worker threads except for the constructor 
+//! which is guaranteed to run on the client thread. If something you required is not thread 
+//! safe you must capture it during construction.
 // @bsiclass                                                    Mathieu.Marchand  11/2016
 //=======================================================================================
 struct TileLoader : RefCountedBase, NonCopyableClass
@@ -294,7 +293,7 @@ protected:
     BentleyStatus SaveToDb();
     BentleyStatus ReadFromDb();
 
-    //! Called from worker threads to get the data from the original location disk, web, or created locally.
+    //! Called from worker threads to get the data from the original location. E.g. disk, web, or created locally.
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
