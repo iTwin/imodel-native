@@ -30,11 +30,11 @@ ECUnitsClassLocaterPtr ECUnitsClassLocater::Create()
 bool ECUnitsClassLocater::LoadUnitsSchemas (ECSchemaReadContextR context)
     {
     SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
-    ECSchemaPtr koqSchema = context.LocateSchema (keyKoqSchema, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr koqSchema = context.LocateSchema (keyKoqSchema, SchemaMatchType::LatestWriteCompatible);
     POSTCONDITION (koqSchema.IsValid() && "Cannot load KOQ_SCHEMA", false);
 
     SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
-    ECSchemaPtr unitsSchema = context.LocateSchema (keyUnitsSchema, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr unitsSchema = context.LocateSchema (keyUnitsSchema, SchemaMatchType::LatestWriteCompatible);
     POSTCONDITION (unitsSchema.IsValid() && "Cannot load UNITS_SCHEMA", false);
 
     return true;
@@ -56,10 +56,10 @@ bool ECUnitsClassLocater::Initialize()
         }
     
     SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
-    m_koqSchema = m_context->GetFoundSchema (keyKoqSchema, SchemaMatchType::LatestCompatible);
+    m_koqSchema = m_context->GetFoundSchema (keyKoqSchema, SchemaMatchType::LatestWriteCompatible);
 
     SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
-    m_unitsSchema = m_context->LocateSchema (keyUnitsSchema, SchemaMatchType::LatestCompatible);
+    m_unitsSchema = m_context->LocateSchema (keyUnitsSchema, SchemaMatchType::LatestWriteCompatible);
 
     return true;
     }

@@ -2479,7 +2479,7 @@ ECSchemaCP GetSchema(Utf8String schemaName)
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
         return NULL;
 
-    return m_context.FindSchemaCP(key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    return m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2493,7 +2493,7 @@ ECSchemaCP       GetSchema()
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
         return NULL;
     
-    m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
     }
 
@@ -3282,7 +3282,7 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName (key, schemaName.c_str ()))
                 return NULL;
 
-            return context.LocateSchema (key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            return context.LocateSchema (key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
             }
         
     public:

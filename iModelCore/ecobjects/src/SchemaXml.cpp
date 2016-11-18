@@ -163,7 +163,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        if (ECObjectsStatus::Success != SchemaKey::ParseVersionString(key.m_versionMajor, key.m_versionWrite, key.m_versionMinor, versionString.c_str()))
+        if (ECObjectsStatus::Success != SchemaKey::ParseVersionString(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str()))
             {
             LOG.errorv("Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.m_schemaName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -181,7 +181,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
 
         // There are some schemas out there that reference the non-existent Unit_Attributes.1.1 schema.  We need to deliver 1.0, which does not match our criteria
         // for LatestCompatible.
-        if (0 == key.GetName().CompareTo("Unit_Attributes") && 1 == key.GetVersionMajor() && 1 == key.GetVersionMinor())
+        if (0 == key.GetName().CompareTo("Unit_Attributes") && 1 == key.GetVersionRead() && 1 == key.GetVersionMinor())
             key.m_versionMinor = 0;
         ECSchemaPtr referencedSchema = schemaOut->LocateSchema(key, m_schemaContext);
 
@@ -307,7 +307,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP    ecClass;
     BeXmlNodeP  classNode;
-    ECSchemaPtr conversionSchema = m_schemaContext.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor());
+    ECSchemaPtr conversionSchema = m_schemaContext.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionRead(), schemaOut->GetVersionMinor());
 
     for (classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
         {
@@ -400,7 +400,7 @@ bool SchemaXmlReaderImpl::IsECClassElementNode(BeXmlNodeR elementNode)
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlReader2::SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
     {
-    m_conversionSchema = context.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor());
+    m_conversionSchema = context.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionRead(), schemaOut->GetVersionMinor());
     }
 
 //---------------------------------------------------------------------------------------
@@ -839,7 +839,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    uint32_t versionMajor = DEFAULT_VERSION_MAJOR;
+    uint32_t versionRead = DEFAULT_VERSION_READ;
     uint32_t versionWrite = DEFAULT_VERSION_WRITE;
     uint32_t versionMinor = DEFAULT_VERSION_MINOR;
 
@@ -847,13 +847,13 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     Utf8String     versionString;
     if ((BEXML_Success != schemaNode->GetAttributeStringValue(versionString, SCHEMA_VERSION_ATTRIBUTE)) ||
-        (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, versionString.c_str())))
+        (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionRead, versionWrite, versionMinor, versionString.c_str())))
         {
         LOG.warningv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %s has been applied.",
-                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor).c_str());
+                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionRead, versionWrite, versionMinor).c_str());
         }
 
-    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionWrite, versionMinor).c_str());
+    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionRead, versionWrite, versionMinor).c_str());
 
     Utf8String alias; 
     // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
@@ -872,7 +872,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
             alias = schemaName;
         }
 
-    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, alias, versionMajor, versionWrite, versionMinor);
+    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, alias, versionRead, versionWrite, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 

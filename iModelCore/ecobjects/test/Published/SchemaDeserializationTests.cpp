@@ -48,7 +48,7 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_STREQ ("Widgets Display Label", schema->GetDisplayLabel ().c_str ());
         EXPECT_TRUE (schema->GetIsDisplayLabelDefined ());
         EXPECT_STREQ ("Widgets Description", schema->GetDescription ().c_str ());
-        EXPECT_EQ (9, schema->GetVersionMajor ());
+        EXPECT_EQ (9, schema->GetVersionRead ());
         EXPECT_EQ (6, schema->GetVersionMinor ());
 
     #ifdef DEBUG_PRINT
@@ -461,7 +461,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"InvalidVersionString.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ(1, schema->GetVersionMajor());
+    EXPECT_EQ(1, schema->GetVersionRead());
     EXPECT_EQ(0, schema->GetVersionMinor());
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
@@ -655,7 +655,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetDisplayLabel().c_str());
     EXPECT_FALSE(schema->GetIsDisplayLabelDefined());
     EXPECT_STREQ("", schema->GetDescription().c_str());
-    EXPECT_EQ(1, schema->GetVersionMajor());
+    EXPECT_EQ(1, schema->GetVersionRead());
     EXPECT_EQ(0, schema->GetVersionMinor());
 
     ECClassP pClass = schema->GetClassP("OnlyRequiredECClassAttributes");
@@ -706,7 +706,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_STREQ("Widgets Display Label", schema->GetDisplayLabel().c_str());
     EXPECT_TRUE(schema->GetIsDisplayLabelDefined());
     EXPECT_STREQ("Widgets Description", schema->GetDescription().c_str());
-    EXPECT_EQ(9, schema->GetVersionMajor());
+    EXPECT_EQ(9, schema->GetVersionRead());
     EXPECT_EQ(6, schema->GetVersionMinor());
 
     ECClassP pClass = schema->GetClassP("ClassDoesNotExistInSchema");

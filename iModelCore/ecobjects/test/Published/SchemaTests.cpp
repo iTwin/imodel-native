@@ -345,14 +345,14 @@ TEST_F(SchemaSearchTest, FindSchemaByName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectWrite, uint32_t expectMinor)
+static  void    ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectRead, uint32_t expectWrite, uint32_t expectMinor)
     {
     Utf8String    shortName;
-    uint32_t   versionMajor;
+    uint32_t   versionRead;
     uint32_t   versionWrite;
     uint32_t   versionMinor;
 
-    ECObjectsStatus status = ECSchema::ParseSchemaFullName(shortName, versionMajor, versionWrite, versionMinor, fullName);
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName(shortName, versionRead, versionWrite, versionMinor, fullName);
 
     if (expectFailure)
         {
@@ -363,7 +363,7 @@ static  void    ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, U
     EXPECT_TRUE(ECObjectsStatus::Success == status);
 
     EXPECT_STREQ(shortName.c_str(), expectName);
-    EXPECT_EQ(versionMajor, expectMajor);
+    EXPECT_EQ(versionRead, expectRead);
     EXPECT_EQ(versionWrite, expectWrite);
     EXPECT_EQ(versionMinor, expectMinor);
     }
@@ -1125,8 +1125,8 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         bpair<Utf8String, Utf8CP>const& entry = *it;
 
         SchemaKey key(entry.first.c_str(), 1, 0);
-        EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second) == ECObjectsStatus::Success);
-        EXPECT_EQ(key.m_versionMajor, atoi(entry.second));
+        EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionRead, key.m_versionMinor, entry.second) == ECObjectsStatus::Success);
+        EXPECT_EQ(key.m_versionRead, atoi(entry.second));
         EXPECT_EQ(key.m_versionMinor, atoi(strchr(entry.second, '.') + 1));
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
@@ -1172,7 +1172,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     testSchema->SetDisplayLabel("Test Schema");
 
     EXPECT_TRUE(testSchema->GetIsDisplayLabelDefined());
-    EXPECT_EQ(1, testSchema->GetVersionMajor());
+    EXPECT_EQ(1, testSchema->GetVersionRead());
     EXPECT_EQ(2, testSchema->GetVersionMinor());
     EXPECT_EQ(0, strcmp(testSchema->GetName().c_str(), "TestSchema"));
     EXPECT_EQ(0, strcmp(testSchema->GetAlias().c_str(), "ts"));
@@ -2067,13 +2067,13 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     ASSERT_EQ(true, ecProp->GetIsReadOnly());
     }
 
-void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
+void TestOverriding(Utf8CP schemaName, int readVersion, bool allowOverriding)
     {
     ECSchemaPtr schema;
     ECEntityClassP base;
     ECEntityClassP child;
 
-    ECSchema::CreateSchema(schema, schemaName, "ts", majorVersion, 0, 5);
+    ECSchema::CreateSchema(schema, schemaName, "ts", readVersion, 0, 5);
     schema->CreateEntityClass(base, "base");
     schema->CreateEntityClass(child, "child");
 
@@ -2322,11 +2322,11 @@ TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Latest));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Latest));
 
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SchemaMatchType::LatestWriteCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2354,10 +2354,10 @@ TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
     EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Latest));
     EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SchemaMatchType::Latest));
 
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SchemaMatchType::LatestWriteCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2431,10 +2431,10 @@ TEST_F(SchemaCacheTest, FilterSchema)
     EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Latest) != NULL);
     EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Latest) != NULL);
 
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 5), SchemaMatchType::LatestCompatible) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SchemaMatchType::LatestCompatible) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SchemaMatchType::LatestCompatible) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SchemaMatchType::LatestCompatible) != NULL);
+    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 5), SchemaMatchType::LatestWriteCompatible) != NULL);
+    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SchemaMatchType::LatestWriteCompatible) == NULL);
+    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SchemaMatchType::LatestWriteCompatible) == NULL);
+    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SchemaMatchType::LatestWriteCompatible) != NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2509,7 +2509,7 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     EXPECT_EQ(schema->SetAlias("Some new alias"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetDescription("Some new description"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetDisplayLabel("Some new label"), ECObjectsStatus::SchemaIsImmutable);
-    EXPECT_EQ(schema->SetVersionMajor(13), ECObjectsStatus::SchemaIsImmutable);
+    EXPECT_EQ(schema->SetVersionRead(13), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetVersionMinor(13), ECObjectsStatus::SchemaIsImmutable);
     }
 

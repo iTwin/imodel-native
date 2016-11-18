@@ -88,7 +88,7 @@ TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     SchemaKey key("Widgets", 9, 7);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema.IsValid());
-    EXPECT_TRUE(testSchema->GetVersionMajor()==9);
+    EXPECT_TRUE(testSchema->GetVersionRead()==9);
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
     }
 
