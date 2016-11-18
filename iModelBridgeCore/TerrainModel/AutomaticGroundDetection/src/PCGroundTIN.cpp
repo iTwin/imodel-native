@@ -1652,8 +1652,7 @@ GroundDetectionThreadPoolPtr PCGroundTINMT::GetWorkThreadPool()
     {
     if (m_newThreadPool == NULL)
         {
-        //unsigned int num_threads = std::thread::hardware_concurrency();        
-        unsigned int num_threads = 1;        
+        unsigned int num_threads = std::thread::hardware_concurrency();            
         m_newThreadPool = GroundDetectionThreadPool::Create(num_threads);
         }
 
@@ -1708,7 +1707,7 @@ GridCellEntryPtr PCGroundTINMT::_CreateGridCellEntry(DRange3d const& boundingBox
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PCGroundTINMT::_GetDistanceToTriangleFromPoint(double& distance, DPoint3d const& point) const
     {
-    BeMutexHolder lock(s_dtmLibCS);
+    //BeMutexHolder lock(s_dtmLibCS);
     return T_Super::_GetDistanceToTriangleFromPoint(distance, point);
     }
 
