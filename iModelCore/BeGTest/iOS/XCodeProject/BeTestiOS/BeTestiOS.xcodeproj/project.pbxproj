@@ -261,6 +261,14 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0700;
+				TargetAttributes = {
+					88FA902C14F584D60028AB2E = {
+						DevelopmentTeam = WLDT6Q3PUY;
+					};
+					88FA904D14F584D60028AB2E = {
+						DevelopmentTeam = WLDT6Q3PUY;
+					};
+				};
 			};
 			buildConfigurationList = 88FA902714F584D60028AB2E /* Build configuration list for PBXProject "BeTestiOS" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -461,6 +469,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "BeTestiOS/BeTestiOS-Prefix.pch";
 				HEADER_SEARCH_PATHS = "";
@@ -479,6 +488,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "BeTestiOS/BeTestiOS-Prefix.pch";
 				HEADER_SEARCH_PATHS = "";
@@ -497,6 +507,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/BeTestiOS.app/BeTestiOS";
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "BeTestiOS/BeTestiOS-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
@@ -528,6 +539,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/BeTestiOS.app/BeTestiOS";
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "BeTestiOS/BeTestiOS-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
