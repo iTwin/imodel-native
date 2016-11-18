@@ -149,6 +149,10 @@ size_t          GetMemorySize() { return _GetMemorySize(); }
 protected:
     virtual void    _DoWork() = 0;
     virtual size_t  _GetMemorySize() = 0;
+
+public:
+
+    void DoWork() { _DoWork(); }
 };
 
 /*=================================================================================**//**
@@ -161,6 +165,10 @@ friend struct GroundDetectionThreadPool;
 protected:
     virtual void    _DoWork() = 0;
     //virtual size_t  _GetMemorySize() = 0;
+
+public: 
+
+    void DoWork() { _DoWork(); };
 };
 
 

@@ -853,7 +853,8 @@ void QueryAllPointsForTriangleWork::_DoWork()
         m_PCGroundTriangle->PrefetchPoints();
         //Start densify work in a new queue
         DensifyTriangleWorkPtr pWork(DensifyTriangleWork::Create(m_PCGroundTin, *m_PCGroundTriangle));
-        m_PCGroundTin.GetThreadPool().QueueWork(*pWork);
+        pWork->DoWork();
+        //m_PCGroundTin.GetThreadPool().QueueWork(*pWork);
         }
     catch (...)
         {
@@ -908,7 +909,8 @@ void QueryAllPointsForFirstSeedPointWork::_DoWork()
         {
         m_pGridCellEntry->PrefetchPoints();
         FindFirstSeedPointWorkPtr pWork(FindFirstSeedPointWork::Create(m_PCGroundTin, *m_pGridCellEntry));
-        m_PCGroundTin.GetThreadPool().QueueWork(*pWork);
+        pWork->DoWork();
+        //m_PCGroundTin.GetThreadPool().QueueWork(*pWork);
         }
     catch (...)
         {
@@ -1650,7 +1652,8 @@ GroundDetectionThreadPoolPtr PCGroundTINMT::GetWorkThreadPool()
     {
     if (m_newThreadPool == NULL)
         {
-        unsigned int num_threads = std::thread::hardware_concurrency();        
+        //unsigned int num_threads = std::thread::hardware_concurrency();        
+        unsigned int num_threads = 1;        
         m_newThreadPool = GroundDetectionThreadPool::Create(num_threads);
         }
 
@@ -1781,11 +1784,17 @@ StatusInt PCGroundTINMT::_CreateInitialTIN()
         {
         GridCellEntryPtr pGridCellEntry = m_pGDGrid->GetGridCellEntry(i);
 
-        QueryAllPointsForFirstSeedPointWorkPtr pWork(QueryAllPointsForFirstSeedPointWork::Create(*this, *pGridCellEntry));
-        GetQueryThreadPool().QueueWork(*pWork);
+        //QueryAllPointsForFirstSeedPointWorkPtr pWork(QueryAllPointsForFirstSeedPointWork::Create(*this, *pGridCellEntry));
+        GroundDetectionWorkPtr pWork(QueryAllPointsForFirstSeedPointWork::Create(*this, *pGridCellEntry));
+        //GetQueryThreadPool().QueueWork(*pWork);
+        GetWorkThreadPool()->QueueWork(pWork);
         progressMonitor.InProgress();
         }
 
+    GetWorkThreadPool()->Start();
+    GetWorkThreadPool()->WaitAndStop();
+    GetWorkThreadPool()->ClearQueueWork();    
+    /*
     while (!GetQueryThreadPool().WaitUntilWorkDone(PROGESS_UPDATE_TIME) || !GetThreadPool().WaitUntilWorkDone(PROGESS_UPDATE_TIME))
         {
         progressMonitor.InProgress();
@@ -1794,6 +1803,7 @@ StatusInt PCGroundTINMT::_CreateInitialTIN()
             FlushThreadPoolWork();//process was cancelled; terminate thread pool...
             }
         }
+        
     progressMonitor.FinalStageProcessing();
     if (progressMonitor.WasCanceled() || progressMonitor.WasError())
         {
@@ -1801,7 +1811,7 @@ StatusInt PCGroundTINMT::_CreateInitialTIN()
         m_pReport->EndPhase(L"ABORT - Find Initial Seed Points");
         return ERROR;//User abort
         }
-
+        */
 
     //If we don't want to densify or classify, at least compute our parameters once.
     if (!m_pParams->GetDensifyTin())
@@ -1873,10 +1883,18 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
             {
             PCGroundTrianglePtr pTriangle = *triItr;
             BeAssert(pTriangle.IsValid());
-            QueryAllPointsForTriangleWorkPtr pWork(QueryAllPointsForTriangleWork::Create(*this, *pTriangle));
-            GetQueryThreadPool().QueueWork(*pWork);
+            //QueryAllPointsForTriangleWorkPtr pWork(QueryAllPointsForTriangleWork::Create(*this, *pTriangle));
+            GroundDetectionWorkPtr pWork(QueryAllPointsForTriangleWork::Create(*this, *pTriangle));             
+
+            //GetQueryThreadPool().QueueWork(*pWork);
+            GetWorkThreadPool()->QueueWork(pWork);
             }
 
+        GetWorkThreadPool()->Start();
+        GetWorkThreadPool()->WaitAndStop();
+        GetWorkThreadPool()->ClearQueueWork();    
+
+        /*
         while (!GetQueryThreadPool().WaitUntilWorkDone(PROGESS_UPDATE_TIME) || !GetThreadPool().WaitUntilWorkDone(PROGESS_UPDATE_TIME))
             {
             progressMonitor.InProgress();
@@ -1884,7 +1902,7 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
                 {
                 FlushThreadPoolWork();//process was cancelled; terminate thread pool...
                 }
-            }
+            }        
         progressMonitor.FinalStageProcessing();
         if (progressMonitor.WasCanceled() || progressMonitor.WasError())
             {
@@ -1894,6 +1912,8 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
             return ERROR;//User abort
             }
         m_pReport->EndCurrentIteration();
+
+            */
         }
 
     //Display some stat while processing to help debug
