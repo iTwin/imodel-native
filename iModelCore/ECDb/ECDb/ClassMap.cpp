@@ -84,7 +84,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
     if (needsToCreateTable)
         {
         const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(mappingInfo);
-        DbTable* table = const_cast<ECDbMap&>(GetDbMap()).FindOrCreateTable(&schemaImportContext, mappingInfo.GetTableName(), tableType,
+        DbTable* table = TableMapper::FindOrCreateTable(GetDbMap().GetDbSchemaR(), mappingInfo.GetTableName(), tableType,
                                                                            mappingInfo.MapsToVirtualTable(), mappingInfo.GetECInstanceIdColumnName(),
                                                                            isExclusiveRootClassOfTable ? mappingInfo.GetECClass().GetId() : ECClassId(),
                                                                            primaryTable);

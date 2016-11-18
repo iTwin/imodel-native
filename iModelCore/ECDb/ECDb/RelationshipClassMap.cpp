@@ -1140,7 +1140,6 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
         neighborColumn = precedingColsVisitor.GetColumns().back();
     else
         {
-
         PropertyMap const* succeedingPropMap = fkColInfo.GetPropertyMapAfterNavProp();
         GetColumnsPropertyMapVisitor succeedingColsVisitor(table);
         if (succeedingPropMap != nullptr)
@@ -1155,8 +1154,7 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
 
     if (neighborColumn == nullptr)
         {
-        DbColumn const* unused = nullptr;
-        position = table.TryGetECClassIdColumn(unused) ? 2 : 1;
+        position = table.GetECClassIdColumn().GetPersistenceType() == PersistenceType::Persisted ? 2 : 1;
         return SUCCESS;
         }
 

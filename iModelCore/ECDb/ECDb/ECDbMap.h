@@ -64,7 +64,6 @@ struct ECDbMap :NonCopyableClass
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;
         bool AssertIfIsNotImportingSchema() const;
-        DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }

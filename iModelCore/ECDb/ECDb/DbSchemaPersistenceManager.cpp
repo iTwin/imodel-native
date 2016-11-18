@@ -452,13 +452,11 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
             whereClause.append("(").append(notNullWhereExp).append(")");
         }
 
-    DbColumn const* classIdCol = nullptr;
-    if (!index.HasClassId() || !index.GetTable().TryGetECClassIdColumn(classIdCol))
+    DbColumn const& classIdCol = index.GetTable().GetECClassIdColumn();
+    if (!index.HasClassId() || classIdCol.GetPersistenceType() == PersistenceType::Virtual)
         return SUCCESS;
 
     BeAssert(index.HasClassId());
-
-    BeAssert(classIdCol != nullptr);
 
     ECClassCP ecclass = ecdb.Schemas().GetECClass(index.GetClassId());
     if (ecclass == nullptr)
@@ -484,7 +482,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         }
 
     Utf8String classIdFilter;
-    if (SUCCESS != buildECClassIdFilter(classIdFilter, storageDescription, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
+    if (SUCCESS != buildECClassIdFilter(classIdFilter, storageDescription, index.GetTable(), classIdCol, index.AppliesToSubclassesIfPartial()))
         return ERROR;
 
     if (classIdFilter.empty())

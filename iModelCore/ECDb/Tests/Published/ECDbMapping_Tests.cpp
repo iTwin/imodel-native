@@ -2017,7 +2017,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, OverflowProperties)
+TEST_F(ECDbMappingTestFixture, OverflowColumns)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -3281,7 +3281,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
         "  <ECProperty propertyName='Name' typeName='string'/>"
         "  <ECProperty propertyName='Date' typeName='int'/>"
         "</ECEntityClass>"
-        "</ECSchema>", false);
+        "</ECSchema>", true);
 
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, testItem);
