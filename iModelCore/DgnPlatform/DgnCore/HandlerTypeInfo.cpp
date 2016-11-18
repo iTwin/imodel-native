@@ -95,9 +95,9 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getCategoryString(Utf8StringR categoryStr, DgnCategoryId categoryId, DgnDbR dgnDb)
+static void getCategoryString(Utf8StringR categoryStr, DgnCategoryId categoryId, DgnDbR db)
     {
-    DgnCategoryCPtr category = DgnCategory::QueryCategory(categoryId, dgnDb);
+    DgnCategoryCPtr category = DgnCategory::Get(db, categoryId);
 
     if (!category.IsValid())
         return;

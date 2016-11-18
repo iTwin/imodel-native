@@ -35,8 +35,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (nullptr == elementHandler)
         return ERROR;
 
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId (model.GetDgnDb ()); // Do any categories exist? Test probably needs to add one...
-
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(model.GetDgnDb(), "TestCategory");
     if (!categoryId.IsValid ())
         return ERROR;
 

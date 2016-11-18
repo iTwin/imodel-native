@@ -72,9 +72,9 @@ void ViewAttachmentTest::SetUp()
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
-    m_attachmentCatId = DgnDbTestUtils::InsertCategory(db, "Attachments", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_attachmentCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Attachments", ColorDef::Cyan());
     ASSERT_TRUE(m_attachmentCatId.IsValid());
-    m_annotationCatId = DgnDbTestUtils::InsertCategory(db, "Annotations", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_annotationCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Annotations", ColorDef::Cyan());
     ASSERT_TRUE(m_annotationCatId.IsValid());
 
     // Set up a viewed model

@@ -979,18 +979,18 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectId(DgnCategory::QueryCategoryId(name, *db->m_db).GetValueUnchecked());
+        return new JsDgnObjectId(SpatialCategory::QueryCategoryId(*db->m_db, name).GetValueUnchecked());
         }
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        auto cat = DgnCategory::QueryCategory(DgnCategoryId(id->m_id), *db->m_db);
+        auto cat = SpatialCategory::Get(*db->m_db, DgnCategoryId(id->m_id));
         return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
         }
     static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectIdSet(DgnCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
+        return new JsDgnObjectIdSet(SpatialCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
         }
 
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
