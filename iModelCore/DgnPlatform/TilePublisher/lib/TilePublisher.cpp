@@ -1075,11 +1075,9 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
             longitude = geoLocation->longitude;
             latitude  = geoLocation->latitude;
             }
-        else
-            {
-            m_tileToEcef.InitIdentity();
-            return;
-            }
+
+        // NB: We have to translate to surface of globe even if we're not using the globe, because
+        // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
 
         ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
         ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
