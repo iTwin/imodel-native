@@ -95,7 +95,7 @@ protected:
         WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) :TileLoader(url, tile, loads, tile._GetTileName()) {}
         virtual ~WmsTileLoader() {};
 
-        BentleyStatus _GetFromSource() override;
+        folly::Future<BentleyStatus> _GetFromSource() override;
         BentleyStatus _LoadTile() override;
 
         WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }

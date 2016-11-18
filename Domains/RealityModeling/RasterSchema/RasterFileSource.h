@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
@@ -55,7 +54,7 @@ public:
         
         RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRootR()); }
 
-        BentleyStatus _GetFromSource() override;        
+        folly::Future<BentleyStatus> _GetFromSource() override;        
         BentleyStatus _LoadTile() override;
         };
 protected:
@@ -69,6 +68,5 @@ public:
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
 };
-
 
 END_BENTLEY_RASTER_NAMESPACE

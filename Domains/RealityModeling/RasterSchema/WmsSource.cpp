@@ -408,7 +408,7 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTile::WmsTileLoader::_GetFromSource()
+folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
     {
     TileTree::HttpDataQuery query(m_fileName, m_loads);
 
@@ -491,4 +491,3 @@ TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::LoadStatePtr loads)
 
     return TileLoader;
     }
-

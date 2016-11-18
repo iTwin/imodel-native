@@ -33,7 +33,7 @@ static HFCPtr<HRPPixelType> getTileQueryPixelType(HRARaster const& raster, Rende
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileTile::RasterTileLoader::_GetFromSource()
+folly::Future<BentleyStatus> RasterFileTile::RasterTileLoader::_GetFromSource()
     {
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
