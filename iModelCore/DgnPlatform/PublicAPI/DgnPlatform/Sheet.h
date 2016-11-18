@@ -8,22 +8,23 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnView.h>
-#include <DgnPlatform/ViewController.h>
+
+#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+    #include <DgnPlatform/TileTree.h>
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct SheetViewDefinition;
 END_BENTLEY_DGN_NAMESPACE
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
+#define BIS_CLASS_ViewAttachment "ViewAttachment"
 
 BEGIN_SHEET_NAMESPACE
 
-#define BIS_CLASS_ViewAttachment "ViewAttachment"
-
 //=======================================================================================
-//! A sheet model is a GraphicalModel2d that has the following characteristics:
+//! A Sheet::Model is a GraphicalModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup GROUP_DgnModel
@@ -51,11 +52,18 @@ public:
 };
 
 //=======================================================================================
+//! Sheet::Element
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Element : Document
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
+protected:
+    static Utf8CP str_Scale() {return "Scale";}
+    static Utf8CP str_Height() {return "Height";}
+    static Utf8CP str_Width() {return "Width";}
+    static Utf8CP str_Template() {return "Template";}
+    static Utf8CP str_Border() {return "Border";}
 
 public:
     explicit Element(CreateParams const& params) : T_Super(params) {}
@@ -85,44 +93,44 @@ public:
     DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
 
     //! Get the drawing scale of the sheet
-    double GetScale() const {return GetPropertyValueDouble("Scale");}
+    double GetScale() const {return GetPropertyValueDouble(str_Scale());}
 
     //! Set the drawing scale of the sheet.
     //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
-    DgnDbStatus SetScale(double v) {return SetPropertyValue("Scale", v);}
+    DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
 
     //! Get the height of the sheet
-    double GetHeight() const {return GetPropertyValueDouble("Height");}
+    double GetHeight() const {return GetPropertyValueDouble(str_Height());}
 
     //! Set the height of the sheet.
     //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
-    DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);}
+    DgnDbStatus SetHeight(double v) {return SetPropertyValue(str_Height(), v);}
 
     //! Get the width of the sheet
-    double GetWidth() const {return GetPropertyValueDouble("Width");}
+    double GetWidth() const {return GetPropertyValueDouble(str_Width());}
 
     //! Set the width of the sheet.
     //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
-    DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);}
+    DgnDbStatus SetWidth(double v) {return SetPropertyValue(str_Width(), v);}
 
     //! Get the sheet template, if any.
     //! @return an invalid ID if the sheet has no template.
-    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>("Template");}
+    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(str_Template());}
 
     //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue("Template", v);}
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v);}
 
     //! Get the sheet border, if any.
     //! @return an invalid ID if the sheet has no border.
-    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>("Border");}
+    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(str_Border());}
 
     //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue("Border", v);}
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
 };
 
 //=======================================================================================
-//! A ViewAttachment is a reference to a View, placed on a sheet.
+//! A Sheet::ViewAttachment is a reference to a View, placed on a sheet.
 //! The attachment specifies the Id of the View and the position on the sheet.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
@@ -145,13 +153,28 @@ public:
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
     ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement) : T_Super(CreateParams(db, model, QueryClassId(db), cat, placement))
         {
-        SetViewId(viewId);
+        SetAttachedViewId(viewId);
         SetCode(GenerateDefaultCode());
         }
 
-    DgnViewId GetViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
-    DgnDbStatus SetViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
+    ClipVectorPtr GetClips() const;
+    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
     };
+
+#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AttachmentTree : TileTree::QuadTree::Root
+{
+    DgnElementId m_attachmentId;
+    ViewDefinitionCPtr m_view;
+    ClipVectorCPtr m_clip;
+
+    AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP);
+    DgnElementId GetAttachmentId() const {return m_attachmentId;}
+};
 
 //=======================================================================================
 //! A Sheet::ViewController is used to control views of Sheet::Models
@@ -163,29 +186,37 @@ struct ViewController : Dgn::ViewController2d
     friend SheetViewDefinition;
 
 protected:
+    DEFINE_REF_COUNTED_PTR(AttachmentTree);
+    bvector<AttachmentTreePtr> m_attachments;
+
     ViewControllerCP _ToSheetView() const override {return this;}
-    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
+    void _DrawView(ViewContextR) override;
+    void _LoadState() override;
+    AttachmentTreePtr FindAttachment(DgnElementId attachId) const;
 
     //! Construct a new SheetViewController.
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
 };
+#endif
 
-
+//=======================================================================================
+// Sheet::Handlers
+//=======================================================================================
 namespace Handlers
 {
-    //! The ElementHandler for Sheet
+    //! The ElementHandler for Sheet::Elements
     struct EXPORT_VTABLE_ATTRIBUTE Element : dgn_ElementHandler::Document
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Sheet, Sheet::Element, Element, Document, DGNPLATFORM_EXPORT)
     };
 
-    //! The handler for ViewAttachment elements
+    //! The handler for Sheet::ViewAttachment elements
     struct Attachment : dgn_ElementHandler::Geometric2d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, Sheet::ViewAttachment, Attachment, Geometric2d, DGNPLATFORM_EXPORT);
     };
 
-    //! The ModelHandler for SheetModel
+    //! The ModelHandler for Sheet::Model
     struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
