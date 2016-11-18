@@ -777,7 +777,7 @@ protected:
 public:
     DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
 
-    void RemoveRangeIndex() {m_rangeIndex.release();}
+    void RemoveRangeIndex() {m_rangeIndex.reset();}
 
     RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
 

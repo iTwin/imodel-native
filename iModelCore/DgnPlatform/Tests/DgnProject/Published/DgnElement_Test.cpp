@@ -1336,7 +1336,7 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     {
     SetupSeedProject();
     
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "testCategory");
     PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelA");
     PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelB");
 
@@ -1421,7 +1421,7 @@ TEST_F(DgnElementTests, FederationGuid)
     SetupSeedProject();
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestModel");
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
 
     DgnElementId elementId;
     BeGuid federationGuid(true);
@@ -1609,7 +1609,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // create a PhysicalElement and set its PhysicalType
         {
-        DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
         PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestModel");
 
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
@@ -1709,7 +1709,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // create a TestElement2d and set its GraphicalType
         {
-        DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(GetDgnDb(), "TestCategory");
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(GetDgnDb(), "TestCategory");
         DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), "DrawingListModel");
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
         DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
@@ -1766,7 +1766,7 @@ TEST_F(DgnElementTests, EqualsTests)
     {
     SetupSeedProject();
 
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "testCategory");
     PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelA");
     PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelB");
 
@@ -1794,7 +1794,7 @@ TEST_F(DgnElementTests, EqualsTests)
 TEST_F(DgnElementTests, ElementIterator)
     {
     SetupSeedProject();
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
     const int numPhysicalObjects=5;
 
@@ -1833,7 +1833,7 @@ TEST_F(DgnElementTests, ElementIterator)
 TEST_F(DgnElementTests, TestSpatialLocation)
     {
     SetupSeedProject();
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
     SpatialLocationModelPtr physicalModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestPhysicalModel");
 

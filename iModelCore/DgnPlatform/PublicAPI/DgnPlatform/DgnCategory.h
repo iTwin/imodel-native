@@ -12,17 +12,18 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 
-#define BIS_CLASS_Category "Category"
-#define BIS_CLASS_SubCategory "SubCategory"
-
 DGNPLATFORM_TYPEDEFS(DgnCategory);
 DGNPLATFORM_TYPEDEFS(DgnSubCategory);
+DGNPLATFORM_TYPEDEFS(DrawingCategory);
+DGNPLATFORM_TYPEDEFS(SpatialCategory);
 DGNPLATFORM_REF_COUNTED_PTR(DgnCategory);
 DGNPLATFORM_REF_COUNTED_PTR(DgnSubCategory);
+DGNPLATFORM_REF_COUNTED_PTR(DrawingCategory);
+DGNPLATFORM_REF_COUNTED_PTR(SpatialCategory);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct SubCategory;}
+namespace dgn_ElementHandler {struct Category; struct DrawingCategory; struct SpatialCategory; struct SubCategory;}
 
 typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
@@ -169,7 +170,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId();}
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return SubCategoryAuthority::GetSubCategoryAuthorityId() == auth.GetAuthorityId();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -197,7 +198,7 @@ public:
     void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the description
 
     //! Create a DgnCode for the name of a sub-category of the specified category
-    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) {return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName);}
+    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) {return SubCategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName);}
 
     //! Create a DgnCode for the name of a sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
@@ -245,6 +246,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Category, DefinitionElement);
+    friend struct dgn_ElementHandler::Category;
+
 public:
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory
@@ -256,67 +259,9 @@ public:
         User        = 3,    //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
     };
 
-    //! The Scope of a category determines what types of models may use it.
-    //! @ingroup GROUP_DgnCategory
-    enum class Scope
-    {
-        Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
-        Physical    = 1,    //!< This category may only be used in physical models
-        Annotation  = 2,    //!< This category may only be used in annotation models (e.g. sheets or drawings)
-        Analytical  = 3,    //!< This category may only be used in analytical models
-    };
-
-    //! Holds the data which describes a category
-    struct Data
-    {
-        Utf8String m_descr;
-        Scope m_scope;
-        Rank m_rank;
-
-        Data(Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="") {Init(scope, rank, descr);}
-
-        void Init(Scope scope, Rank rank=Rank::User, Utf8StringCR descr="") {m_descr=descr; m_scope=scope; m_rank=rank;}
-
-        uint32_t GetMemSize() const {return static_cast<uint32_t> (sizeof(*this) + m_descr.length());}
-    };
-
-    //! Parameters used to construct a DgnCategory
-    //! @note If a domain or application (versus a user) is creating a DgnCategory for domain/application use, it is a best practice to set the code namespace of the category to the domain/application name.
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(DgnCategory::T_Super::CreateParams);
-
-        Data m_data;
-
-        //! Constructor from base class. Chiefly for internal use.
-        //! @private
-        explicit CreateParams(DgnElement::CreateParams const& params, Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(params), m_data(scope, rank, descr) {}
-
-        //! Constructs parameters for a category. Chiefly for internal use.
-        //! @private
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
-                Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) {}
-
-        //! Constructs parameters for creating a category.
-        //! @param[in]      db    The DgnDb in which the category resides
-        //! @param[in]      code  The code of the category.
-        //! @param[in]      scope The scope of the category
-        //! @param[in]      rank  The rank of the category
-        //! @param[in]      descr Optional category description
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCode const& code, Scope scope, Rank rank=Rank::User, Utf8StringCR descr="");
-
-        //! Constructs parameters for creating a category.
-        //! @param[in]      db    The DgnDb in which the category resides
-        //! @param[in]      name  The name of the category (which will be used as the code value)
-        //! @param[in]      scope The scope of the category
-        //! @param[in]      rank  The rank of the category
-        //! @param[in]      descr Optional category description
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank=Rank::User, Utf8StringCR descr="");
-    };
-private:
-    Data m_data;
+protected:
+    Utf8String m_descr;
+    Rank m_rank;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -324,7 +269,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId();}
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -333,7 +277,10 @@ protected:
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
     DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_rank) + m_descr.length());}
+
+    //! Construct a new DgnCategory with the specified parameters
+    explicit DgnCategory(CreateParams const& params) : T_Super(params), m_rank(Rank::User), m_descr("") {}
 
 public:
     static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
@@ -342,34 +289,20 @@ public:
     DgnSubCategoryId GetDefaultSubCategoryId() const {return GetDefaultSubCategoryId(GetCategoryId());} //!< Returns the ID of this category's default sub-category
     Utf8String GetCategoryName() const {return GetCode().GetValue();} //!< The name of this category
 
-    //! Construct a new DgnCategory with the specified parameters
-    explicit DgnCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) {}
-
-    //! Inserts this category into the DgnDb and initializes its default sub-category with the specified appearance.
-    //! @note Using DgnElement::Insert() instead of this method will also create a default sub-category, using a default appearance.
-    //! @param[in]      appearance The appearance associated with the default sub-category
-    //! @param[in]      status     Optional return status
-    //! @return The persistent DgnCategory, or nullptr if insertion failed.
-    DGNPLATFORM_EXPORT DgnCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
-
-    DgnCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnCategory>(*this, status);} //!< Updates this category in the DgnDb and returns the updated persistent category
-
-    Utf8CP GetDescription() const {return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str();} //!< The category description, or null if not defined.
-    Scope GetScope() const {return m_data.m_scope;} //!< The category's scope.
-    Rank GetRank() const {return m_data.m_rank;} //!< The category's rank.
+    Utf8CP GetDescription() const {return m_descr.empty() ? nullptr : m_descr.c_str();} //!< The category description, or null if not defined.
+    Rank GetRank() const {return m_rank;} //!< The category's rank.
 
     bool IsSystemCategory() const {return GetRank()==Rank::System;}
     bool IsUserCategory() const {return GetRank()==Rank::User;}
 
-    void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the category description.
-    void SetScope(Scope scope) {m_data.m_scope = scope;} //!< Set the category's scope.
-    void SetRank(Rank rank) {m_data.m_rank = rank;} //!< Set the category's rank.
+    void SetDescription(Utf8StringCR descr) {m_descr = descr;} //!< Set the category description.
+    void SetRank(Rank rank) {m_rank = rank;} //!< Set the category's rank.
 
-    static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return CategoryAuthority::CreateCategoryCode(categoryName, nameSpace);} //!< Creates a Code for a category name.
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnCode const& code, DgnDbR db); //!< Looks up the ID of a category by code.
-    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) {return QueryCategoryId(CreateCategoryCode(categoryName), db);} //!< Looks up the ID of a category by name.
-    static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) {return db.Elements().Get<DgnCategory>(categoryId);} //!< Looks up a category by ID.
-    static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) {return QueryCategory(QueryCategoryId(categoryName, db), db);} //!< Looks up a category by name.
+    //! Looks up the DgnCategoryId of a category by code.
+    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnCodeCR code);
+    //! Gets a DgnCategory by ID. 
+    //! @note It is better to use DrawingCategory::Get or SpatialCategory::Get if the type of category is known
+    static DgnCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DgnCategory>(categoryId);}
 
     //! Returns the ID of the default sub-category of the specified category
     DGNPLATFORM_EXPORT static DgnSubCategoryId GetDefaultSubCategoryId(DgnCategoryId categoryId);
@@ -377,24 +310,12 @@ public:
     //! Sets the appearance of the default SubCategory
     DGNPLATFORM_EXPORT void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
 
-    //! Make an iterator over all categories in the specified DgnDb
-    //! @param[in] db Iterate categories in this DgnDb
-    //! @param[in] whereClause The optional where clause starting with WHERE
-    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
-
     //! Returns an iterator over all sub-categories of this category
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     ElementIterator MakeSubCategoryIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const {return DgnSubCategory::MakeIterator(GetDgnDb(), GetCategoryId(), whereClause, orderByClause);}
 
-    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db); //! Returns the number of categories in the DgnDb
     size_t QuerySubCategoryCount() const {return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId());} //! Returns the number of sub-categories belonging to this category
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryFirstCategoryId(DgnDbR db); //!< Returns the ID of the first category found in the DgnDb
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryHighestCategoryId(DgnDbR db); //!< Returns the highest category ID found in the DgnDb
-
-    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Category);} //!< Returns the class ID used for categories.
-    static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for categories
 
     //! Get a string containing the list of characters that may NOT appear in category codes.
     static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}
@@ -403,30 +324,124 @@ public:
     DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name);
 };
 
+//=======================================================================================
+//! Categorizes 2d graphical elements.
+//! @ingroup GROUP_DgnCategory
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DrawingCategory : DgnCategory
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DrawingCategory, DgnCategory);
+    friend struct dgn_ElementHandler::DrawingCategory;
+
+protected:
+    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return DrawingCategoryAuthority::GetDrawingCategoryAuthorityId() == auth.GetAuthorityId();}
+    explicit DrawingCategory(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Creates a Code given a DrawingCategory name.
+    static DgnCode CreateCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return DrawingCategoryAuthority::CreateDrawingCategoryCode(categoryName, nameSpace);}
+
+    DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
+    DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
+
+    //! Inserts this DrawingCategory into the DgnDb and initializes its default sub-category with the specified appearance.
+    //! @param[in] appearance The appearance associated with the default sub-category
+    //! @param[in] status Optional return status
+    //! @return The persistent DrawingCategory, or nullptr if insert failed.
+    DGNPLATFORM_EXPORT DrawingCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
+    //! Updates this DrawingCategory in the DgnDb and returns the updated persistent DrawingCategory
+    DrawingCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DrawingCategory>(*this, status);} 
+
+    //! Make an iterator over all DrawingCategory elements in the specified DgnDb
+    //! @param[in] db Iterate DrawingCategory elements in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+
+    //! Queries for the DgnCategoryId of a DrawingCategory by name.
+    static DgnCategoryId QueryCategoryId(DgnDbR db, Utf8StringCR categoryName) {return T_Super::QueryCategoryId(db, CreateCode(categoryName));}
+    //! Gets a DrawingCategory by ID.
+    static DrawingCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DrawingCategory>(categoryId);}
+
+    //! Returns the class ID of DrawingCategory in the specified DgnDb
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingCategory));}
+};
+
+//=======================================================================================
+//! Categorizes a SpatialElement.
+//! @ingroup GROUP_DgnCategory
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialCategory : DgnCategory
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialCategory, DgnCategory);
+    friend struct dgn_ElementHandler::SpatialCategory;
+
+protected:
+    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return SpatialCategoryAuthority::GetSpatialCategoryAuthorityId() == auth.GetAuthorityId();}
+    explicit SpatialCategory(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Creates a Code given a SpatialCategory name.
+    static DgnCode CreateCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return SpatialCategoryAuthority::CreateSpatialCategoryCode(categoryName, nameSpace);}
+
+    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
+    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
+
+    //! Inserts this SpatialCategory into the DgnDb and initializes its default sub-category with the specified appearance.
+    //! @param[in] appearance The appearance associated with the default sub-category
+    //! @param[in] status Optional return status
+    //! @return The persistent SpatialCategory, or nullptr if insert failed.
+    DGNPLATFORM_EXPORT SpatialCategoryCPtr Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status=nullptr);
+    //! Updates this SpatialCategory in the DgnDb and returns the updated persistent SpatialCategory
+    SpatialCategoryCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<SpatialCategory>(*this, status);} 
+
+    //! Make an iterator over all SpatialCategory elements in the specified DgnDb
+    //! @param[in] db Iterate SpatialCategory elements in this DgnDb
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
+
+    //! Queries for the DgnCategoryId of a SpatialCategory by name.
+    static DgnCategoryId QueryCategoryId(DgnDbR db, Utf8StringCR categoryName) {return T_Super::QueryCategoryId(db, CreateCode(categoryName));}
+    //! Gets a SpatialCategory by ID.
+    static SpatialCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<SpatialCategory>(categoryId);}
+
+    //! Returns the class ID of SpatialCategory in the specified DgnDb
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory));}
+};
+
+//=======================================================================================
+//! Namespace containing handlers for category-related elements
+//! @private
+//=======================================================================================
 namespace dgn_ElementHandler
 {
-    //=======================================================================================
-    //! The handler for category elements.
-    //! @bsistruct                                                  Paul.Connelly   09/15
-    //=======================================================================================
+    //! The handler for Category elements.
     struct Category : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Category, DgnCategory, Category, Definition, DGNPLATFORM_EXPORT);
         DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
-        };
+    };
 
-    //=======================================================================================
-    //! The handler for sub-category elements.
-    //! @bsistruct                                                  Paul.Connelly   09/15
-    //=======================================================================================
+    //! The handler for DrawingCategory elements.
+    struct DrawingCategory : Category
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingCategory, Dgn::DrawingCategory, DrawingCategory, Category, DGNPLATFORM_EXPORT);
+    };
+
+    //! The handler for SpatialCategory elements.
+    struct SpatialCategory : Category
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialCategory, Dgn::SpatialCategory, SpatialCategory, Category, DGNPLATFORM_EXPORT);
+    };
+
+    //! The handler for SubCategory elements.
     struct SubCategory : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     protected:
         virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat) override;
-
     };
 }
 
 END_BENTLEY_DGN_NAMESPACE
-

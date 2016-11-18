@@ -12,7 +12,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_AuthorityHandler {struct Drawing; struct Link; struct Partition; struct Session; struct Sheet;};
+namespace dgn_AuthorityHandler {struct Drawing; struct DrawingCategory; struct Link; struct Partition; struct Session; struct Sheet; struct SpatialCategory; struct SubCategory;};
 
 //=======================================================================================
 //! A DgnAuthority issues and validates DgnCodes for coded objects like elements and models.
@@ -208,20 +208,57 @@ public:
 };
 
 //=======================================================================================
-//! The default code-issuing authority for categories and sub-categories.
-// @bsistruct                                                    Paul.Connelly   01/16
+//! The default code-issuing authority for DrawingCategory elements.
+// @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct CategoryAuthority : DgnAuthority
+struct DrawingCategoryAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(DgnElementCR) const override;
-public:
-    CategoryAuthority(CreateParams const& params) : T_Super(params) {}
+    friend struct dgn_AuthorityHandler::DrawingCategory;
 
-    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
-    DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetCategoryAuthorityId();
+protected:
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
+    DrawingCategoryAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateDrawingCategoryCode(Utf8StringCR codeValue, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetDrawingCategoryAuthorityId();
+};
+
+//=======================================================================================
+//! The default code-issuing authority for SpatialCategory elements.
+// @bsistruct                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct SpatialCategoryAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::SpatialCategory;
+
+protected:
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
+    SpatialCategoryAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateSpatialCategoryCode(Utf8StringCR codeValue, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetSpatialCategoryAuthorityId();
+};
+
+//=======================================================================================
+//! The default code-issuing authority for SubCategory elements.
+// @bsistruct                                                    Shaun.Sewall    11/16
+//=======================================================================================
+struct SubCategoryAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::SubCategory;
+
+protected:
+    DgnDbStatus _ValidateCode(DgnElementCR) const override;
+    SubCategoryAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR codeValue);
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetSubCategoryAuthorityId();
 };
 
 //=======================================================================================
@@ -354,9 +391,19 @@ namespace dgn_AuthorityHandler
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ResourceAuthority, ResourceAuthority, Resource, Authority, DGNPLATFORM_EXPORT)
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE Category : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE DrawingCategory : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_DrawingCategoryAuthority, DrawingCategoryAuthority, DrawingCategory, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialCategory : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SpatialCategoryAuthority, SpatialCategoryAuthority, SpatialCategory, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE SubCategory : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SubCategoryAuthority, SubCategoryAuthority, SubCategory, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Session : Authority

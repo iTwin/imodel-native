@@ -96,9 +96,10 @@ protected:
     friend struct ViewDefinition;
 
     DgnDbR m_dgndb;
+    DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     RotMatrix m_defaultDeviceOrientation;
-    bool m_defaultDeviceOrientationValid;
+    bool m_defaultDeviceOrientationValid = false;
     bool m_sceneReady = false;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -112,9 +113,11 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnAttachedToViewport(DgnViewportR) {}
+    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
+    DGNPLATFORM_EXPORT virtual void _LoadState();
+    DGNPLATFORM_EXPORT virtual void _StoreState();
 
     //! @return true to project un-snapped points to the view's ACS plane.
     //! @note Normally true for a 3d view. A 3d digitizier supplying real z values would not want this...maybe this would be a special ViewController?
@@ -223,11 +226,11 @@ public:
 
     //! Read the state of this controller from its definition elements.
     //! @see GetDefinitionR
-    DGNPLATFORM_EXPORT void LoadState();
+    void LoadState() {_LoadState();}
 
     //! Store the state of this controller to its definition elements. @note It is up to the caller to write the definition elements to the database if that is the goal.
     //! @see SaveDefinition
-    DGNPLATFORM_EXPORT void StoreState();
+    void StoreState() {_StoreState();}
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
     //! directed at the new view, and the previous view's state is unchanged.

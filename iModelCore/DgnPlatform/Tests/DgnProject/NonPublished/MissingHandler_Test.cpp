@@ -191,11 +191,8 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     ASSERT_TRUE(defaultModel.IsValid());
     ASSERT_TRUE(defaultModel->IsPhysicalModel());
 
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(db);
-    DgnCategory altCat(DgnCategory::CreateParams(db, "AltCategory", DgnCategory::Scope::Any));
-    ASSERT_TRUE(altCat.Insert(DgnSubCategory::Appearance()).IsValid());
-    m_alternateCategoryId = altCat.GetCategoryId();
-    ASSERT_TRUE(m_alternateCategoryId.IsValid());
+    m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
+    m_alternateCategoryId = DgnDbTestUtils::InsertSpatialCategory(db, "AltCategory");
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority("MissingHandlerTest", db);
     ASSERT_TRUE(authority.IsValid());
