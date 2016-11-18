@@ -199,17 +199,14 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (!ecClass.GetInvariantDisplayLabel().empty())
+    if (ecClass.GetIsDisplayLabelDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (!ecClass.GetInvariantDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecClass.GetClassType())))
         return ERROR;
@@ -301,17 +298,14 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (!ecEnum.GetInvariantDisplayLabel().empty())
+    if (ecEnum.GetIsDisplayLabelDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (!ecEnum.GetInvariantDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
@@ -508,17 +502,14 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_OK != stmt->BindText(3, ecProperty.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (!ecProperty.GetInvariantDisplayLabel().empty())
+    if (ecProperty.GetIsDisplayLabelDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (!ecProperty.GetInvariantDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindBoolean(6, ecProperty.GetIsReadOnly()))
         return ERROR;
@@ -724,17 +715,14 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (!ecSchema.GetInvariantDisplayLabel().empty())
+    if (ecSchema.GetIsDisplayLabelDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (!ecSchema.GetInvariantDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
         return ERROR;
@@ -828,7 +816,11 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
     if (BE_SQLITE_OK != stmt->BindText(5, caXml.c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    DbResult r = stmt->Step();
+    if (r != BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -860,6 +852,8 @@ BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
+    printf("ECClassId=%" PRId64 ", ECContainerId=%" PRId64 ", ContainerType=%d, Ordinal=%d\r\n", ecClassId.GetValue(), containerId.GetValue(), containerType, ordinal);
+    
     if (DeleteCAEntry(ecClassId, containerId, containerType) != SUCCESS)
         return ERROR;
 

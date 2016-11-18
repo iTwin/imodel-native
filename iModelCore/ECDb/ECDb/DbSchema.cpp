@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define OVERFLOW_COLUMN_NAME "SCOverflow"
 //****************************************************************************************
 //ExistingColumn
 //****************************************************************************************
@@ -1325,8 +1325,11 @@ BentleyStatus DbTable::CreateMasterOverflowColumn()
 
     if (GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster) == nullptr)
         {
-        if (CreateColumn("ECPropertyOverflowSet", DbColumn::Type::Text, DbColumn::Kind::OverflowMaster, PersistenceType::Persisted) == nullptr)
+        if (CreateColumn(OVERFLOW_COLUMN_NAME, DbColumn::Type::Text, DbColumn::Kind::OverflowMaster, PersistenceType::Persisted) == nullptr)
+            {
+            BeAssert(false);
             return ERROR;
+            }
         }
 
     return SUCCESS;
