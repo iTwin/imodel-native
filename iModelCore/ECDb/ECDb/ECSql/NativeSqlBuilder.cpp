@@ -234,7 +234,7 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, i
         Append(nativeSqlParameterName.c_str());
         }
     else
-        Append("?");
+        AppendFormatted("?");
 
     return *this;
     }

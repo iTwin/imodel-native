@@ -1047,10 +1047,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
 ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp)
     {
     BeAssert(exp->GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
-
+    
     Utf8CP parameterName = exp->GetParameterName();
     auto& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-
     int nativeSqlParameterCount = -1;
     ECSqlBinder* binder = nullptr;
     const auto binderAlreadyExists = exp->IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, parameterName);
@@ -1659,9 +1658,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         ECSqlStatus stat = ECSqlStatus::Success;
         BeAssert(valueExp != nullptr);
 
-        const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
-
         NativeSqlBuilder::List nativeSqlSnippets;
+        const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
+        PropertyNameExp const* targetPropertyExp = targetExp->GetPropertyNameExp(index);
+        bool isOverFlowPropertyMap = false;
+        if (targetPropertyExp->GetPropertyMap().IsData())
+            isOverFlowPropertyMap = static_cast<DataPropertyMap const&>(targetPropertyExp->GetPropertyMap()).IsOverflow();
+
 
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
@@ -1680,7 +1683,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
                 stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), targetNativeSqlSnippetCount);
                 }
             }
-        else if (targetNativeSqlSnippetCount > 0)
+        else if (targetNativeSqlSnippetCount > 0 || isOverFlowPropertyMap)
             stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
 
         if (!stat.IsSuccess())

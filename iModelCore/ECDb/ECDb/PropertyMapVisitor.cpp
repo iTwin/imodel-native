@@ -195,7 +195,7 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/, bool usePropertyNameAsAliasForSystemPropertyMaps /*= false*/) 
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps), m_writeData(false)
     {
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
@@ -241,8 +241,35 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenLeft();
 
-    result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-
+    if (propertyMap.IsOverflow())
+        {
+        DbColumn const* overFlowColumn = propertyMap.GetColumn().GetMasterOverflowColumn();
+        BeAssert(overFlowColumn != nullptr);
+        //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
+        if (m_writeData)
+            {
+            //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
+            result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
+            }
+        else
+            {
+            if (m_target == SqlTarget::Table)
+                {
+                result.GetSqlBuilderR().Append("json_extract(")
+                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                    .AppendComma().Append("'$.")
+                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+                }
+            else
+                {
+                result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+                }
+            }
+        }
+    else
+        {
+        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        }
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenRight();
 

@@ -980,7 +980,13 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                     propertySql.Append("CAST (").Append(r.GetSql()).Append(" AS ").Append(DbColumn::TypeToSql(colType)).Append(")");
                     }
                 else
+                    {
                     propertySql = r.GetSqlBuilder();
+                    if (auto of = dataProperty->GetColumn().GetMasterOverflowColumn())
+                        {
+                        propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
+                        }
+                    }
                 }
             else
                 {
@@ -1002,12 +1008,21 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                     propertySql = r.GetSqlBuilder();
                     //! Here we want rename or add column alias so it appear to be a basePropertyMap
                     //! But we only do that if column name differ
+                    bool appendAlias = false;
                     if (basePropertyMap != nullptr)
                         {
                         SingleColumnDataPropertyMap const* baseDataProperty = static_cast<SingleColumnDataPropertyMap const*>(basePropertyMap);
                         if (!r.GetColumn().GetName().EqualsI(baseDataProperty->GetColumn().GetName()))
                             {
                             propertySql.AppendSpace().AppendEscaped(baseDataProperty->GetColumn().GetName().c_str());
+                            appendAlias = true;
+                            }
+                        }
+                    if (!appendAlias)
+                        {
+                        if (auto of = dataProperty->GetColumn().GetMasterOverflowColumn())
+                            {
+                            propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
                             }
                         }
                     }

@@ -314,37 +314,22 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
-    int rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_EQ(modelKeys[0].GetECClassId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue()) << "SourceECInstanceId";
-        rowCount++;
-        }
-    ASSERT_EQ(10, rowCount) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM ts.ModelHasElements"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(10, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ONLY ts.ModelHasElements"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "non-polymorphic SELECT against abstract rel class should return 0 rows";
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasGeometric3dElements"));
-    rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_EQ(modelKeys[0].GetECClassId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue()) << "SourceECInstanceId";
-        rowCount++;
-        }
-    ASSERT_EQ(6, rowCount) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM ts.ModelHasGeometric3dElements"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(6, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasLinkElements"));
-    rowCount = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_EQ(modelKeys[0].GetECClassId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue()) << "SourceECInstanceId";
-        rowCount++;
-        }
-    ASSERT_EQ(4, rowCount) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM ts.ModelHasLinkElements"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.ElementDrivesElement"));

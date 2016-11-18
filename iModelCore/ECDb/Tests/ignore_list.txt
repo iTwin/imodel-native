@@ -6,10 +6,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#TFS 516115 will address this (Affan)
-ECDbMappingTestFixture.MismatchDataTypesInExistingTable
-ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
-
 #TFS 518176 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
@@ -27,16 +23,8 @@ ECSchemaUpdateTests.UpdateECDbMapCA_AddSharedColumnCount
 #TFS 521152
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 
-#TFS 521213
-ECSchemaUpdateTests.Add_Delete_ECProperty_ShareColumns
-
 #TFS 521141
-ECRelationshipInheritanceTestFixture.BasicCRUD
 ECSchemaUpdateTests.AddNewDerivedEndTableRelationship
-
-#TFS 521213
-ECSchemaUpdateTests.AddSharedColumnCount
-ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest

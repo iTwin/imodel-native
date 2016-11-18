@@ -48,7 +48,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     if (classMap.IsRelationshipClassMap())
         stat = PrepareInsertIntoRelationship(ctx, insertNativeSqlSnippets, exp , classMap);
     else
-        stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap);
+        stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap, exp);
     
     ctx.PopScope();
     return stat;
@@ -62,11 +62,12 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass
 (
 ECSqlPrepareContext& ctx, 
 NativeSqlSnippets& nativeSqlSnippets, 
-ClassMap const& classMap
+ClassMap const& classMap,
+InsertStatementExp const& exp
 )
     {
     PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
-    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
 
@@ -98,7 +99,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassLinkTableMap const& relationshipClassMap)
     {
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
-    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
 
@@ -205,6 +206,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         return status;
 
     PropertyNameListExp const* propNameListExp = exp.GetPropertyNameListExp();
+    size_t index = 0;
     for (Exp const* childExp : propNameListExp->GetChildren())
         {
         PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (childExp);
@@ -215,6 +217,13 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
             return stat;
 
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
+
+        if (propNameExp->GetPropertyMap().IsData())
+            {
+            if (static_cast<DataPropertyMap const&>(propNameExp->GetPropertyMap()).IsOverflow())
+                insertSqlSnippets.m_overflowPropertyIndexes.push_back(index);
+            }
+        index++;
         }
 
     status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp(), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
@@ -318,7 +327,8 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 void ECSqlInsertPreparer::BuildNativeSqlInsertStatement 
 (
 NativeSqlBuilder& insertBuilder, 
-NativeSqlSnippets const& insertSqlSnippets
+NativeSqlSnippets const& insertSqlSnippets,
+InsertStatementExp const& exp
 )
     {
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
@@ -326,7 +336,8 @@ NativeSqlSnippets const& insertSqlSnippets
     //the list will contain more than one snippet. Consequently the the list of ECSQL expressions is translated
     //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
     //before building the final SQLite sql string.
-    const std::vector<size_t> emptyIndexSkipList;
+
+    std::vector<size_t> const& emptyIndexSkipList = insertSqlSnippets.m_overflowPropertyIndexes;    
     auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, emptyIndexSkipList);
     auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, emptyIndexSkipList);
 
@@ -340,6 +351,17 @@ NativeSqlSnippets const& insertSqlSnippets
 
         insertBuilder.Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets);
         }
+    
+    //Just append the first overflow column as there is really just one and is repeated for every overflow property
+    DbColumn const* overflowColumn = nullptr;  
+    if (!insertSqlSnippets.m_overflowPropertyIndexes.empty())
+        {
+        if (!propertyNamesNativeSqlSnippets.empty())
+            insertBuilder.AppendComma();
+
+        overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetMasterOverflowColumn();;
+        insertBuilder.AppendEscaped(overflowColumn->GetName().c_str());
+        }
 
     insertBuilder.AppendParenRight();
     insertBuilder.Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
@@ -351,6 +373,33 @@ NativeSqlSnippets const& insertSqlSnippets
         insertBuilder.Append(insertSqlSnippets.m_pkValuesNativeSqlSnippets);
         }
 
+    //overflow value expression
+    if (overflowColumn != nullptr)
+        {
+        if (!valuesNativeSqlSnippets.empty())
+            insertBuilder.AppendComma();
+        insertBuilder.Append("json_object(");
+
+        bool first =true;
+        for (size_t i :insertSqlSnippets.m_overflowPropertyIndexes)
+            {
+            NativeSqlBuilder::List const& values = insertSqlSnippets.m_valuesNativeSqlSnippets[i];
+            NativeSqlBuilder::List const& properties = insertSqlSnippets.m_propertyNamesNativeSqlSnippets[i];
+            BeAssert(values.size() == properties.size());
+            for (size_t j = 0; j < values.size(); j++)
+                {
+                if (first)
+                    first = false;
+                else
+                    insertBuilder.AppendComma();
+
+                insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
+                }
+            }
+
+        insertBuilder.Append(")");
+        }
+    
     insertBuilder.AppendParenRight();
     }
 

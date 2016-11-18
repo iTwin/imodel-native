@@ -271,7 +271,7 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
     {
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
-
+    
     if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
         change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
     else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())

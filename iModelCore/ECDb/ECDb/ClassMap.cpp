@@ -995,7 +995,20 @@ DbColumn* ColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessStr
 
             }
 
+           
         outColumn = ApplySharedColumnStrategy();
+        if (outColumn == nullptr)
+            {
+            //!Create overflow column
+            outColumn = GetTable().CreateColumn(nullptr, colType, Enum::Or( DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+            if (addNotNullConstraint)
+                outColumn->GetConstraintsR().SetNotNullConstraint();
+
+            if (addUniqueConstraint)
+                outColumn->GetConstraintsR().SetUniqueConstraint();
+
+            outColumn->GetConstraintsR().SetCollation(collation);
+            }
         }
     else
         outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
@@ -1076,8 +1089,11 @@ DbColumn* ColumnFactory::ApplySharedColumnStrategy() const
     DbColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn))
         return const_cast<DbColumn*>(reusableColumn);
+    
+    if (GetTable().GetMasterOverflowColumn()  == nullptr)
+        return GetTable().CreateSharedColumn();
 
-    return GetTable().CreateSharedColumn();
+    return nullptr;
     }
 
 //------------------------------------------------------------------------------------------

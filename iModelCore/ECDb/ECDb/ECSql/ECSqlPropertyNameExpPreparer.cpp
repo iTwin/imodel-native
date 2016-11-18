@@ -106,7 +106,20 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
                 return true;
                 }
 
+            if (propertyMap.IsData())
+                {
+                return static_cast<DataPropertyMap const&>(propertyMap).IsOverflow();
+                }
+
             return false;
+            }
+        
+        if (currentScopeECSqlType == ECSqlType::Update)
+            {
+            if (propertyMap.IsData() && static_cast<DataPropertyMap const&>(propertyMap).IsOverflow())
+                {
+                return true;
+                }
             }
 
         switch (currentScope.GetExp().GetType())
@@ -184,6 +197,12 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
                                         ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::SelectView : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
 
+    bool isWriteData = (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList)
+        || (ecsqlType == ECSqlType::Update && exp.GetParent()->GetType() == Exp::Type::Assignment);
+
+    if (isWriteData)
+        sqlVisitor.EnableSqlForInsertOrUpdate();
+
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
         {
@@ -191,10 +210,11 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //(we must check for the prop name list clause, because if it shows up in the values list, it must not be ignored)
         //INSERT INTO Foo(SourceECClassId) -> ignore SourceECClassId if it maps to a virtual column
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
-        if (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList &&
-            r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
-            continue;
-
+        if (isWriteData)
+            {
+            if (r.GetColumn().GetPersistenceType() == PersistenceType::Virtual && !r.GetColumn().IsOverflow())
+                continue;
+            }
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
     }
