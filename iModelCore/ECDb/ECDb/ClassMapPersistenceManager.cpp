@@ -104,7 +104,7 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
             stmt->BindInt(4, tphInfo.GetSharedColumnCount());
 
         if (!tphInfo.GetOverflowColumnName().empty())
-            stmt->BindText(5, tphInfo.GetOverflowColumnName(), Statement::MakeCopy::No);
+            stmt->BindText(5, tphInfo.GetOverflowColumnName().c_str(), Statement::MakeCopy::No);
 
         if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
             stmt->BindInt(6, Enum::ToInt(tphInfo.GetJoinedTableInfo()));
@@ -191,9 +191,9 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         {
         const bool useSharedColumns = stmt->IsColumnNull(1) ? false : stmt->GetValueBoolean(1);
         const int sharedColumnCount = stmt->IsColumnNull(2) ? -1 : stmt->GetValueInt(2);
-        Utf8CP excessColumnName = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
+        Utf8CP overflowColumnName = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(4) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(4));
-        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(useSharedColumns, sharedColumnCount, excessColumnName, joinedTableInfo));
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(useSharedColumns, sharedColumnCount, overflowColumnName, joinedTableInfo));
         }
     else
         {

@@ -212,7 +212,7 @@ bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, E
         stratInfo.m_tphInfo.m_sharedColumnCount = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
         parameterIx++;
         if (!stmt->IsColumnNull(parameterIx))
-            stratInfo.m_tphInfo.m_excessColumnName.assign(stmt->GetValueText(parameterIx));
+            stratInfo.m_tphInfo.m_overflowColumnName.assign(stmt->GetValueText(parameterIx));
 
         parameterIx++;
         stratInfo.m_tphInfo.m_joinedTableInfo = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::JoinedTableInfo::None : (MapStrategyInfo::JoinedTableInfo) stmt->GetValueInt(parameterIx);

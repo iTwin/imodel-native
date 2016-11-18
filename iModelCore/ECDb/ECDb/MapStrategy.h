@@ -55,8 +55,8 @@ struct TablePerHierarchyInfo
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
         explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid), m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
-        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP overflowColumnName, JoinedTableInfo joinedTableInfo)
-            : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColumnName), m_joinedTableInfo(joinedTableInfo)
+        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP overflowColName, JoinedTableInfo joinedTableInfo)
+            : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColName), m_joinedTableInfo(joinedTableInfo)
             {}
 
         BentleyStatus Initialize(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
