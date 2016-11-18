@@ -46,7 +46,7 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::CreateTile()
+folly::Future<BentleyStatus> TileLoader::CreateTile()
     {
     if (m_loads != nullptr && m_loads->IsCanceled())
         {
@@ -70,53 +70,47 @@ BentleyStatus TileLoader::CreateTile()
         // If we failed to load from the db, try from the source.
         }
         
-    if (SUCCESS != _GetFromSource())
+    return _GetFromSource().then([=](BentleyStatus status)
         {
-        if (m_loads != nullptr && m_loads->IsCanceled())
-            m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
-        else
+        if (status != SUCCESS)
+            {
+            if (m_loads != nullptr && m_loads->IsCanceled())
+                m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
+            else
+                m_tile->SetNotFound();
+            return ERROR;
+            }
+
+        if (SUCCESS != LoadTile())
+            {
             m_tile->SetNotFound();
+            return ERROR;
+            }
 
-        return ERROR;
-        }
+        m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-    if (SUCCESS != LoadTile())
-        {
-        m_tile->SetNotFound();
-        return ERROR;
-        }
+        // On a successful load, store the tile in the cache.
+        SaveToDb();
 
-    m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-    // On a successful load, store the tile in the cache.
-    SaveToDb(); 
-
-    return SUCCESS;
+        return SUCCESS;
+        });
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::_GetFromSource()
+folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     {
     bool isHttp = (0 == strncmp("http:", m_fileName.c_str(), 5) || 0 == strncmp("https:", m_fileName.c_str(), 6));
 
     if (isHttp)
         {
         HttpDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
-        }
-    else
-        {
-        FileDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
+        return query.Perform(m_tileBytes);
         }
 
-    return SUCCESS;
+    FileDataQuery query(m_fileName, m_loads);
+    return query.Perform(m_tileBytes))
     }
 
 /*---------------------------------------------------------------------------------**//**

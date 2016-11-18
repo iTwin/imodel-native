@@ -295,7 +295,7 @@ protected:
     BentleyStatus ReadFromDb();
 
     //! Called from worker threads to get the data from the original location disk, web, or created locally.
-    DGNPLATFORM_EXPORT virtual BentleyStatus _GetFromSource();
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
     virtual BentleyStatus _LoadTile() = 0; 
@@ -309,7 +309,7 @@ public:
         };
 
     //! Called from worker threads to create a tile. Could be from cache or from source.
-    BentleyStatus CreateTile();
+    folly::Future<BentleyStatus> CreateTile();
 };
 
 //=======================================================================================
