@@ -532,7 +532,7 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName, bool specifyPropertyValues) const
     {
     PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
-    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId catid = DgnDbTestUtils::InsertSpatialCategory(*m_db, className);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
     bool addMultiAspect = false;

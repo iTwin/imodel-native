@@ -343,7 +343,7 @@ struct SystemAuthority
     {
         Local = 1LL,
         Material = 2LL,
-        Category = 3LL,
+        // 3LL is available
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
         Link = 6LL,
@@ -351,6 +351,9 @@ struct SystemAuthority
         Session = 8LL,
         Drawing = 9LL,
         Sheet = 10LL,
+        DrawingCategory = 11LL,
+        SpatialCategory = 12LL,
+        SubCategory = 13LL,
 
         // ............     Introduce new BuiltinIds here
         
@@ -407,7 +410,6 @@ DbResult DgnDb::CreateAuthorities()
         {
             { "Local", SystemAuthority::Local, dgn_AuthorityHandler::Local::GetHandler() },
             { "DgnMaterials", SystemAuthority::Material, dgn_AuthorityHandler::Material::GetHandler() },
-            { "DgnCategories", SystemAuthority::Category, dgn_AuthorityHandler::Category::GetHandler() },
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
@@ -416,6 +418,9 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnLinks", SystemAuthority::Link, dgn_AuthorityHandler::Link::GetHandler() },
             { "DgnDrawings", SystemAuthority::Drawing, dgn_AuthorityHandler::Drawing::GetHandler() },
             { "DgnSheets", SystemAuthority::Sheet, dgn_AuthorityHandler::Sheet::GetHandler() },
+            { "DgnDrawingCategories", SystemAuthority::DrawingCategory, dgn_AuthorityHandler::DrawingCategory::GetHandler() },
+            { "DgnSpatialCategories", SystemAuthority::SpatialCategory, dgn_AuthorityHandler::SpatialCategory::GetHandler() },
+            { "DgnSubCategories", SystemAuthority::SubCategory, dgn_AuthorityHandler::SubCategory::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -431,19 +436,27 @@ DbResult DgnDb::CreateAuthorities()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
+DgnCode DrawingCategoryAuthority::CreateDrawingCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Category, name, nameSpace);
+    return SystemAuthority::CreateCode(SystemAuthority::DrawingCategory, name, nameSpace);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SpatialCategoryAuthority::CreateSpatialCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::SpatialCategory, name, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CategoryAuthority::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
+DgnCode SubCategoryAuthority::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Category, name, categoryId);
+    return SystemAuthority::CreateCode(SystemAuthority::SubCategory, name, categoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,7 +496,9 @@ DgnCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR na
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthorityId ResourceAuthority::GetResourceAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Resource); }
 DgnAuthorityId MaterialAuthority::GetMaterialAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Material); }
-DgnAuthorityId CategoryAuthority::GetCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Category); }
+DgnAuthorityId DrawingCategoryAuthority::GetDrawingCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::DrawingCategory); }
+DgnAuthorityId SpatialCategoryAuthority::GetSpatialCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::SpatialCategory); }
+DgnAuthorityId SubCategoryAuthority::GetSubCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::SubCategory); }
 DgnAuthorityId GeometryPartAuthority::GetGeometryPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeometryPart); }
 DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuthority::GetId(SystemAuthority::TrueColor); }
 DgnAuthorityId LinkAuthority::GetLinkAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Link); }
@@ -675,47 +690,48 @@ DgnDbStatus SheetAuthority::_ValidateCode(DgnElementCR element) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategoryAuthority::_ValidateCode(DgnElementCR element) const
+DgnDbStatus DrawingCategoryAuthority::_ValidateCode(DgnElementCR element) const
     {
-    auto status = T_Super::_ValidateCode(element);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    DgnCodeCR code = element.GetCode();
-
-    // Reject illegal characters...
-    if (!DgnCategory::IsValidName(code.GetValue()))
-        return DgnDbStatus::InvalidName;
-
-    // Category codes have no namespace
-    DgnCategoryCP cat = dynamic_cast<DgnCategoryCP>(&element);
-    if (nullptr != cat)
-        return code.GetNamespace().empty() ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
-
-    // Only categories and sub-categories are supported...
-    DgnSubCategoryCP subcat = dynamic_cast<DgnSubCategoryCP>(&element);
-    if (nullptr == subcat)
+    if (nullptr == dynamic_cast<DrawingCategoryCP>(&element))
         return DgnDbStatus::InvalidCodeAuthority;
 
-    // all sub-category codes have namespace = category ID
-    uint64_t categoryIdVal;
-    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNamespace().c_str()) || subcat->GetCategoryId().GetValue() != categoryIdVal)
+    DgnCodeCR code = element.GetCode();
+    if (code.IsEmpty() || !DgnCategory::IsValidName(code.GetValue()) || !code.GetNamespace().empty())
         return DgnDbStatus::InvalidName;
 
-    // ###TODO_CODES? From obsolete DgnSubCategory::_SetCode():
-    if (element.GetElementId().IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
-        {
-        // default sub-category has same name as category
-        DgnCategoryCPtr cat = DgnCategory::QueryCategory(subcat->GetCategoryId(), subcat->GetDgnDb());
-        if (!cat.IsValid())
-            return DgnDbStatus::InvalidCategory;
-        else if ((code.GetValue().Equals(cat->GetCategoryName()) != subcat->IsDefaultSubCategory()))
-            return DgnDbStatus::InvalidName;
-        }
+    return T_Super::_ValidateCode(element);
+    }
 
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialCategoryAuthority::_ValidateCode(DgnElementCR element) const
+    {
+    if (nullptr == dynamic_cast<SpatialCategoryCP>(&element))
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    DgnCodeCR code = element.GetCode();
+    if (code.IsEmpty() || !DgnCategory::IsValidName(code.GetValue()) || !code.GetNamespace().empty())
+        return DgnDbStatus::InvalidName;
+
+    return T_Super::_ValidateCode(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SubCategoryAuthority::_ValidateCode(DgnElementCR element) const
+    {
+    if (nullptr == dynamic_cast<DgnSubCategoryCP>(&element))
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    DgnCodeCR code = element.GetCode();
+    if (code.IsEmpty() || code.GetNamespace().empty() || !DgnCategory::IsValidName(code.GetValue()))
+        return DgnDbStatus::InvalidName;
+
+    return T_Super::_ValidateCode(element);
     }
 
 /*---------------------------------------------------------------------------------**//**

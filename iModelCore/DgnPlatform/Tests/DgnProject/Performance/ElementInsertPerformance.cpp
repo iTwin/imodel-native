@@ -119,7 +119,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId catid = DgnDbTestUtils::InsertSpatialCategory(*m_db, TEST_NAME);
 
     StopWatch timer(true);
 
@@ -183,7 +183,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId catid = DgnDbTestUtils::InsertSpatialCategory(*m_db, TEST_NAME);
 
     StopWatch timer(true);
 
@@ -254,7 +254,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId catid = DgnDbTestUtils::InsertSpatialCategory(*m_db, TEST_NAME);
 
     StopWatch timer(true);
     Utf8String code;

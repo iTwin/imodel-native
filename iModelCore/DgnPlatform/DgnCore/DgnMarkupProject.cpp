@@ -145,7 +145,7 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void createImageCategory(DgnDbR db)
     {
-    DgnCategory imageCategory(DgnCategory::CreateParams(db, "RedlineImage", DgnCategory::Scope::Annotation, DgnCategory::Rank::System));
+    DrawingCategory imageCategory(db, "RedlineImage", DgnCategory::Rank::System);
     DgnSubCategory::Appearance appearance;
     appearance.SetInvisible (false);
     appearance.SetColor (ColorDef::MediumGrey());
@@ -528,17 +528,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         }
 
     //  ------------------------------------------------------------------
-    //  Make sure that we have at least one category
-    //  ------------------------------------------------------------------
-    if (!DgnCategory::QueryFirstCategoryId(*this).IsValid())
-        {
-        DgnCategory cat(DgnCategory::CreateParams(*this, Utf8String(fileName.GetFileNameWithoutExtension()).c_str(), DgnCategory::Scope::Any));
-        DgnSubCategory::Appearance defaultAppearance;
-        defaultAppearance.SetColor(ColorDef(0xff, 0xff, 0xff));
-        cat.Insert(defaultAppearance);
-        }
-
-    //  ------------------------------------------------------------------
     //  Mark all pre-existing models and views as internal. They will never be used directly by the app or the user.
     //  ------------------------------------------------------------------
     for (auto const& entry : ViewDefinition::MakeIterator(*this))
@@ -770,7 +759,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     view->GetDisplayStyle().SetViewFlags(flags);
 
     auto& catsel = view->GetCategorySelector();
-    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
+    for (ElementIteratorEntry categoryEntry : DrawingCategory::MakeIterator(db))
         catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
         
     return view;
@@ -783,7 +772,7 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
     {
     auto& db = GetDgnDb();
 
-    DgnCategoryId cat = DgnCategory::QueryCategoryId("RedlineImage", db);
+    DgnCategoryId cat = DrawingCategory::QueryCategoryId(db, "RedlineImage");
 
     DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
                             DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));

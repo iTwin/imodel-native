@@ -32,7 +32,7 @@
 
     <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
         <BaseClass>FunctionalElement</BaseClass>
-        <BaseClass>bis:ICompositeElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

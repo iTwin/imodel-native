@@ -203,7 +203,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
 }
 /*---------------------------------------------------------------------------------**//**
 * Method to create the Db with elements. Close and then open it for next operations
@@ -245,7 +245,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
 }
 
 /*---------------------------------------------------------------------------------**//**
