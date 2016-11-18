@@ -653,12 +653,12 @@ ECObjectsStatus ShareColumns::TryGetSharedColumnCount(int& sharedColumnCount) co
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ShareColumns::TryGetExcessColumnName(Utf8String& excessColumnName) const
+ECObjectsStatus ShareColumns::TryGetOverflowColumnName(Utf8String& excessColumnName) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
 
-    return CustomAttributeReader::TryGetTrimmedValue(excessColumnName, *m_ca, "ExcessColumnName");
+    return CustomAttributeReader::TryGetTrimmedValue(excessColumnName, *m_ca, "OverflowColumnName");
     }
 
 //---------------------------------------------------------------------------------------

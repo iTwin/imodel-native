@@ -172,3 +172,8 @@
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                   "HiddenProperties"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                         "ClassName"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES                     "PropertyNames"
+
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME                               "CalculatedProperties"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME                              "Property"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL                         "Label"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY                      "Priority"
