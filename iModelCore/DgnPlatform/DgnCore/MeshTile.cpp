@@ -1382,8 +1382,6 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     if (0 == nModels)
         return Status::NoGeometry;
 
-    auto nCompletedModels = 0;
-
     T_HOST.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
@@ -1399,6 +1397,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
 
     auto future = GenerateTilesFromModels(collector, modelIds, leafTolerance, maxPointsPerTile);
     auto status = future.get();
+    UNUSED_VARIABLE(status);
 
     m_completedModels.store(0);
     m_totalModels = 0;
