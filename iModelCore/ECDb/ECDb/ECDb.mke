@@ -38,6 +38,7 @@ ECDbAllHeaders = \
                 $(baseDir)IssueReporter.h \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
+                $(baseDir)ECDbSqlFunctions.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
@@ -183,6 +184,8 @@ $(o)ClassMapper$(oext):                                       $(baseDir)ClassMap
 $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMapPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  
 $(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbSqlFunctions$(oext):                                  $(baseDir)ECDbSqlFunctions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

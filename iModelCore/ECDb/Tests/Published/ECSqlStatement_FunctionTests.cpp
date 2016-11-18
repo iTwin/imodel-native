@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
+#include <Bentley/Base64Utilities.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -75,7 +76,10 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             //BeSQLite built-in functions
-            {"SELECT NULL FROM ecsql.P WHERE InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Boolean, false)},
+            {"SELECT NULL FROM ecsql.P WHERE InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            //ECDb built-in functions
+            {"SELECT Base64ToBlob('Rm9vMTIzIQ==') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
+            {"SELECT BlobToBase64(RANDOMBLOB(5)) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
         };
 
 
@@ -245,6 +249,160 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     ASSERT_STREQ("1,2,3", getStringScalar(ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, Base64Functions)
+    {
+    ECDbCR ecdb = SetupECDb("base64functions.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+
+    BeGuid guid(true);
+    void const* expectedBlob = &guid;
+    Utf8String expectedBase64Str;
+    Base64Utilities::Encode(expectedBase64Str, static_cast<Byte const*> (expectedBlob), sizeof(BeGuid));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(Bi, S) VALUES(:blobparam,BlobToBase64(:blobparam))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(stmt.GetParameterIndex("blobparam"), expectedBlob, sizeof(BeGuid), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    //ECSQL
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsql.P WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    //select clause item 0
+    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(0)) << stmt.GetECSql();
+
+
+    //select clause item 1
+    int actualBlobSize = -1;
+    void const* actualBlob = stmt.GetValueBinary(1, &actualBlobSize);
+    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Second select clause item in ECSQL " << stmt.GetECSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Second select clause item in ECSQL " << stmt.GetECSql();
+
+    //select clause item 2
+    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(2)) << stmt.GetECSql();
+
+    //select clause item 3
+    actualBlobSize = -1;
+    actualBlob = stmt.GetValueBinary(3, &actualBlobSize);
+    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
+    }
+
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsql.P WHERE ECInstanceId=?", expectedBase64Str.c_str());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    //select clause item 3
+    int actualBlobSize = -1;
+    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBinary(0, &actualBlobSize), sizeof(BeGuid))) << stmt.GetECSql();
+    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << stmt.GetECSql();
+    }
+
+    //BeSQLite
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    //select clause item 0
+    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(0)) << "SQL: " << stmt.GetSql();
+
+
+    //select clause item 1
+    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(1)) << "SQL: " << stmt.GetSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(1), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
+
+    //select clause item 2
+    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(2)) << "SQL: " << stmt.GetSql();
+
+    //select clause item 3
+    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(3)) << "SQL: " << stmt.GetSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(3), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
+    }
+
+    {
+    Utf8String sql;
+    sql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsqltest_P WHERE ECInstanceId=?", expectedBase64Str.c_str());
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(0)) << "SQL: " << stmt.GetSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(0), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
+    }
+
+
+    //NULL input
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsql.P LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+    ASSERT_TRUE(ecsqlStmt.IsValueNull(0)) << ecsqlStmt.GetECSql();
+    ASSERT_TRUE(ecsqlStmt.IsValueNull(1)) << ecsqlStmt.GetECSql();
+    ASSERT_TRUE(ecsqlStmt.IsValueNull(2)) << ecsqlStmt.GetECSql();
+    ASSERT_TRUE(ecsqlStmt.IsValueNull(3)) << ecsqlStmt.GetECSql();
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsqltest_P LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_TRUE(stmt.IsColumnNull(0)) << stmt.GetSql();
+    ASSERT_TRUE(stmt.IsColumnNull(1)) << stmt.GetSql();
+    ASSERT_TRUE(stmt.IsColumnNull(2)) << stmt.GetSql();
+    ASSERT_TRUE(stmt.IsColumnNull(3)) << stmt.GetSql();
+    }
+
+    //invalid input
+    {
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64() FROM ecsql.P"));
+    ecsqlStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob() FROM ecsql.P"));
+    ecsqlStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64(randomblob(10), 1000) FROM ecsql.P"));
+    ecsqlStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsql.P"));
+    ecsqlStmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob('a_d') FROM ecsql.P LIMIT 1")) << "invalid base64 string";
+    ASSERT_EQ(BE_SQLITE_ERROR, ecsqlStmt.Step()) << "invalid base64 string in ECSQL " << ecsqlStmt.GetECSql();
+    ecsqlStmt.Finalize();
+    BeTest::SetFailOnAssert(false);
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT BlobToBase64() FROM ecsqltest_P"));
+    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT Base64ToBlob() FROM ecsqltest_P"));
+    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT BlobToBase64(randomblob(10), 133) FROM ecsqltest_P"));
+    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsqltest_P"));
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Base64ToBlob('a_d') FROM ecsqltest_P LIMIT 1")) << "invalid base64 string";
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "invalid base64 string in ECSQL " << stmt.GetSql();
+    stmt.Finalize();
+
+    }
+    BeTest::SetFailOnAssert(true);
+    }
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/16
 //+---------------+---------------+---------------+---------------+---------------+------

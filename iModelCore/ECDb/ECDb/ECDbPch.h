@@ -19,6 +19,7 @@
 #include "IssueReporter.h"
 #include "ECSchemaComparers.h"
 #include "ECDbImpl.h"
+#include "ECDbSqlFunctions.h"
 #include "MapStrategy.h"
 #include "ECDbMap.h"
 #include "ClassMap.h"
