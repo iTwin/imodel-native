@@ -775,10 +775,9 @@ private:
     FutureElementTileResult ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context);
 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
-    FutureStatus GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
+    FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
 #endif
 
-    Status GenerateElementTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta);
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
@@ -789,7 +788,7 @@ public:
     TileModelDeltaPtr GetTileModelDelta(DgnModelId modelId) { auto const& found = m_modelDeltas.find(modelId); return found == m_modelDeltas.end() ? nullptr : found->second; }
 
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile, bool processModelsInParallel);
+    DGNPLATFORM_EXPORT Status GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
 };
 
 //=======================================================================================
