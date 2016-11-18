@@ -30,11 +30,10 @@ static HFCPtr<HRPPixelType> getTileQueryPixelType(HRARaster const& raster, Rende
     return new HRPPixelTypeV24R8G8B8();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileTile::RasterTileLoad::_ReadFromSource()
+BentleyStatus RasterFileTile::RasterTileLoader::_GetFromSource()
     {
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
@@ -61,7 +60,7 @@ BentleyStatus RasterFileTile::RasterTileLoad::_ReadFromSource()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileTile::RasterTileLoad::_LoadTile()
+BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
     {
     if (!m_image.IsValid())
         return ERROR;

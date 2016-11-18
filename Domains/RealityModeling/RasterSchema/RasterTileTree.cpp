@@ -158,10 +158,10 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
 
     for (auto const& node : m_missing)
         {
-        auto stat = node.second->GetLoadState();
-        if (stat == TileTree::Tile::LoadState::Ready)
+        auto stat = node.second->GetLoadStatus();
+        if (stat == TileTree::Tile::LoadStatus::Ready)
             node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != TileTree::Tile::LoadState::NotFound)
+        else if (stat != TileTree::Tile::LoadStatus::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 

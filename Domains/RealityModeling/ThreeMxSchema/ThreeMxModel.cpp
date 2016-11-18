@@ -165,10 +165,10 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
 
     for (auto const& node: m_missing)
         {
-        auto stat = node.second->GetLoadState();
-        if (stat == Tile::LoadState::Ready)
+        auto stat = node.second->GetLoadStatus();
+        if (stat == Tile::LoadStatus::Ready)
             node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadState::NotFound)
+        else if (stat != Tile::LoadStatus::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
@@ -591,7 +591,7 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
                 }
             }
         }
-    folly::via(&BeFolly::IOThreadPool::GetPool(), [&]()  
+    folly::via(&BeFolly::ThreadPool::GetIoPool(), [&]()  
         {  
         m_collector._AcceptTile(tile);  
         m_completedTiles++;
