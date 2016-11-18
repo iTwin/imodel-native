@@ -19,6 +19,7 @@
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
+//! Implement a way to connect to a ftp server and retrieve the content.
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct FtpClient : public SpatialEntityClient
@@ -40,6 +41,7 @@ struct FtpClient : public SpatialEntityClient
     };
 
 //=====================================================================================
+//! Handle a CURL ftp request with all the necessary parameters and response.
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct FtpRequest : public SpatialEntityRequest
@@ -49,6 +51,7 @@ struct FtpRequest : public SpatialEntityRequest
         static FtpRequestPtr Create(Utf8CP url);
 
         //! Get response from request.
+        //! See PublicApi/RealityAdmin/SpatialEntityClient.h for more details on the structure of a spatial entity response.
         SpatialEntityResponsePtr Perform() override;
         
     private:
@@ -57,15 +60,14 @@ struct FtpRequest : public SpatialEntityRequest
 
 //=====================================================================================
 //! Utility class to extract the required data from a zip file.
-//!
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct FtpDataHandler : public SpatialEntityDataHandler
     {
     public:
         //! Ftp data extraction.
+        //! See PublicApi/RealityPlatform/SpatialEntityData.h for more details on the structure of a spatial entity data.
         REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail);
-
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

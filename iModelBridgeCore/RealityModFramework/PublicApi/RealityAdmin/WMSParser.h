@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
@@ -18,7 +19,6 @@
 #define BEGIN_BENTLEY_WMSPARSER_NAMESPACE         BEGIN_BENTLEY_NAMESPACE namespace WMSParser {
 #define END_BENTLEY_WMSPARSER_NAMESPACE           }}
 #define USING_NAMESPACE_BENTLEY_WMSPARSER         using namespace BentleyApi::WMSParser;
-
 
 #define WMSPARSER_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_WMSPARSER_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_WMSPARSER_NAMESPACE
@@ -95,17 +95,19 @@ WMSPARSER_REF_COUNTED_PTR(WMSStyle)
 
 BEGIN_BENTLEY_WMSPARSER_NAMESPACE
 
+//=====================================================================================
 //! Status codes for WMSParser operations.
+//=====================================================================================
 enum class WMSParserStatus
     {
-    Success                 = SUCCESS,  //!< The operation was successful.
-    UnknownVersion,                     //!< Version is either undefined or we can't handle it.
-    UnknownNode,                        //!< Node is not known and will not be processed.
-    XmlReadError,                       //!< BeXML operation failed.
-    MissingMandatoryNode,               //!< Mandatory node is missing.
-    StringParsingError,                 //!< Error while parsing a string (name, title, etc.).
-    // *** Add new here.
-    UnknownError            = ERROR,    //!< The operation failed with an unspecified error.
+    Success                 = SUCCESS,  // The operation was successful.
+    UnknownVersion,                     // Version is either undefined or we can't handle it.
+    UnknownNode,                        // Node is not known and will not be processed.
+    XmlReadError,                       // BeXML operation failed.
+    MissingMandatoryNode,               // Mandatory node is missing.
+    StringParsingError,                 // Error while parsing a string.
+    //*** Add new here.
+    UnknownError            = ERROR,    // The operation failed with an unspecified error.
     };
 
 END_BENTLEY_WMSPARSER_NAMESPACE

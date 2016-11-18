@@ -30,19 +30,23 @@ typedef std::function<bool(RealityPlatform::SpatioTemporalDataPtr entity)> Conte
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+// Forward declaration.
 struct GeoCoordinationParams;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeoCoordinationParams)
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason            	     8/2016
+//=====================================================================================
 enum class ServerType
-{
+    {
     DEV,
     QA,
     PROD
-};
+    };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason            	     8/2016
+//=====================================================================================
 struct GeoCoordinationParams
     {
     private:
@@ -58,6 +62,9 @@ struct GeoCoordinationParams
         REALITYDATAPLATFORM_EXPORT Utf8String GetFilterString() const { return m_filterString; }
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason            	     8/2016
+//=====================================================================================
 struct ContextServicesWorkbench
     {
     private:

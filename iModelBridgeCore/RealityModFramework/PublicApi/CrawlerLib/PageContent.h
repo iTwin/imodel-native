@@ -18,19 +18,16 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
-//=======================================================================================
-//! @bsiclass
-// This class implements a WEB page content. A page content is composed of a Url object,
-// a textual content and a series of links from this page. 
-//=======================================================================================
+//=====================================================================================
+//! This class implements a WEB page content. A page content is composed of a Url object,
+//! a textual content and a series of links from this page. 
+//! @bsiclass                                   Alexandre.Gariepy                8/2015
+//=====================================================================================
 struct PageContent : public RefCountedBase
     {
     public:
-
-    //=======================================================================================
-    // Creates a page content. Note that after create a page content has the Url and text
-    // set yet the links are not set and must be added using the AddLink() method.
-    //=======================================================================================
+    //! Creates a page content. Note that after create a page content has the Url and text
+    //! set yet the links are not set and must be added using the AddLink() method.
     CRAWLERLIB_EXPORT static PageContentPtr Create(UrlCR url, WString const& text);
 
     virtual ~PageContent() {}
@@ -41,10 +38,8 @@ struct PageContent : public RefCountedBase
     WString const& GetText() const { return m_text; }
     void SetText(WString const& text) { m_text = text; }
 
-    //=======================================================================================
-    // Adds a link to the page content. There is no validation performed and thus an existing
-    // link can be added more than once.
-    //=======================================================================================
+    //! Adds a link to the page content. There is no validation performed and thus an existing
+    //! link can be added more than once.
     void AddLink(UrlCR link) { m_links.push_back(&link); }
     bvector<UrlCPtr> const& GetLinks() const { return m_links; }
 
@@ -52,7 +47,7 @@ struct PageContent : public RefCountedBase
     PageContent(UrlCR url, WString const& text);
     PageContent() = delete;
 
-    //Member attributes
+    //! Member attributes.
     Url m_url;
     bvector<UrlCPtr> m_links;
     WString m_text;

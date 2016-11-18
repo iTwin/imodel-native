@@ -38,6 +38,7 @@ using System.Reflection;
 using Bentley.ECSystem.Configuration;
 using System.Data.Common;
 using System.Data;
+using System.Threading;
 
 #if !IMSOFF
 using Microsoft.IdentityModel.Configuration;
@@ -211,7 +212,7 @@ namespace IndexECPlugin.Source
 
                         }
 
-                    IECQueryProvider helper;
+                    
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
                         {
@@ -230,15 +231,15 @@ namespace IndexECPlugin.Source
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                         }
 
-                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                     using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                         {
                         switch ( source.ToLower() )
                             {
                             case "index":
                                     {
-                                    helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
+                                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
                                     instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
                                     instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
@@ -247,7 +248,9 @@ namespace IndexECPlugin.Source
 
                             case "usgsapi":
                                     {
-                                    helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
                                     instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
                                     instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
@@ -256,20 +259,8 @@ namespace IndexECPlugin.Source
                             case "all":
                                     {
 
-                                    List<IECInstance> instanceList = new List<IECInstance>();
-                                        {
-                                        helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
-                                        instanceList = helper.CreateInstanceList().ToList();
-                                        instanceOverrider.Modify(instanceList, DataSource.Index, ConnectionString);
-                                        instanceComplement.Modify(instanceList, DataSource.Index, ConnectionString);
+                                    return QueryAllSources(query, querySettings, schema);
 
-                                        helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
-                                        IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                        instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
-                                        instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
-                                        instanceList.AddRange(instances);
-                                        return instanceList;
-                                        }
                                     }
                             default:
                                 //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
@@ -279,21 +270,21 @@ namespace IndexECPlugin.Source
                         }
                     }
                 }
-            catch ( System.Data.Common.DbException ex)
-                {
-                //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
-                //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
-                Log.Logger.error(String.Format("Query {0} aborted. DbException message : {1}", query.ID, ex.Message));
-                Exception innerEx = ex.InnerException;
-                while (innerEx != null)
-                    {
-                    Log.Logger.error(String.Format("Inner error message : {0}", ex.Message));
-                    innerEx = innerEx.InnerException;
-                    }
-                throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
-                }
             catch ( Exception e )
                 {
+                if ( e is System.Data.Common.DbException )
+                    {
+                    //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
+                    //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
+                    Log.Logger.error(String.Format("Query {0} aborted. DbException message : {1}. Stack Trace : {2}", query.ID, e.Message, e.StackTrace));
+                    Exception innerEx = e.InnerException;
+                    while ( innerEx != null )
+                        {
+                        Log.Logger.error(String.Format("Inner error message : {0}. Stack Trace : {1}", e.Message, e.StackTrace));
+                        innerEx = innerEx.InnerException;
+                        }
+                    throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
+                    }
                 Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}. Stack trace : {2}", query.ID, e.Message, e.StackTrace));
                 if ( e is UserFriendlyException )
                     {
@@ -304,6 +295,89 @@ namespace IndexECPlugin.Source
                     throw new Exception("Internal Error.");
                     }
                 }
+            }
+
+        private IEnumerable<IECInstance> QueryAllSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema)
+            {
+            List<IECInstance> instanceList = new List<IECInstance>();
+
+            IEnumerable<IECInstance> indexInstances = null;
+            List<Exception> exceptions = new List<Exception>();
+            Object exceptionsLock = new Object();
+            Thread indexQuery = new Thread(() =>
+            {
+                try
+                    {
+                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                    IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
+                    indexInstances = helper.CreateInstanceList().ToList();
+                    instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
+                    instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
+                    }
+                catch ( Exception e )
+                    {
+                    indexInstances = new List<IECInstance>();
+                    lock ( exceptionsLock )
+                        {
+                        exceptions.Add(e);
+                        Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                        }
+                    }
+            });
+
+            IEnumerable<IECInstance> usgsInstances = null;
+            Thread usgsQuery = new Thread(() =>
+            {
+                try
+                    {
+                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                    usgsInstances = helper.CreateInstanceList();
+                    instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                    instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                    }
+                catch ( Exception e )
+                    {
+                    usgsInstances = new List<IECInstance>();
+                    lock ( exceptionsLock )
+                        {
+                        exceptions.Add(e);
+                        Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                        }
+                    }
+            });
+            indexQuery.Start();
+            usgsQuery.Start();
+
+            indexQuery.Join();
+            usgsQuery.Join();
+
+            instanceList.AddRange(indexInstances);
+            instanceList.AddRange(usgsInstances);
+
+            if ( exceptions.Count != 0 )
+                {
+                if ( exceptions.Any(e => e is UserFriendlyException) )
+                    {
+                    //We throw this exception, since it is caused by the user's wrong input
+                    throw exceptions.First(e => e is UserFriendlyException);
+                    }
+                if ( instanceList.Count == 0 )
+                    {
+                    //We did not return any instance and there were errors. 
+                    //In this case, we throw the first one (DbExceptions in priority). 
+                    //
+                    if ( exceptions.Any(e => e is System.Data.Common.DbException) )
+                        {
+                        throw exceptions.First(e => e is System.Data.Common.DbException);
+                        }
+                    throw exceptions.First();
+                    }
+                }
+
+            return instanceList;
             }
 
         private void FileRetrievalOperation
