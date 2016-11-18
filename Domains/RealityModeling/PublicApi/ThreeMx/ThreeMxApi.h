@@ -58,7 +58,7 @@ public:
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
-    bvector<FPoint3d> const& GetPoints() const { return m_points; }
+    bvector<FPoint3d> const& GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
 };
 
@@ -89,8 +89,8 @@ struct SceneInfo
 * Multi-threaded loading of children:
 * The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on
 * the reality cache thread(s). That means that sometimes we'll attempt to draw a node and discover that it is too coarse for the current view, but its children are not loaded yet. In that
-* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_loadState". Only when the value
-* of m_loadState==Ready is it safe to use the m_children member.
+* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_loadStatus". Only when the value
+* of m_loadStatus==Ready is it safe to use the m_children member.
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
@@ -103,11 +103,10 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  11/2016
     //=======================================================================================
-    struct NodeLoad : Dgn::TileTree::TileLoad
+    struct Loader : Dgn::TileTree::TileLoader
         {
-        NodeLoad(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::LoadStatePtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
-
-        BentleyStatus _LoadTile() override { return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR()); };
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::LoadStatePtr loads) :TileLoader(url, tile, loads, tile._GetTileName()) {}
+        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR());};
         };
 
 private:
@@ -123,7 +122,7 @@ private:
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::LoadStatePtr) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::LoadStatePtr) override;
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
@@ -132,10 +131,10 @@ public:
     Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
-    void ClearGeometry() { m_geometry.clear(); }
+    void ClearGeometry() {m_geometry.clear();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
-    void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
     void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
