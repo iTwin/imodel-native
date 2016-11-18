@@ -94,9 +94,9 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         AddTable(*table);
         }
 
-    if (isTph && tphInfo.UseSharedColumns() && tphInfo.GetSharedColumnCount() > 0)
+    if (isTph && tphInfo.UseSharedColumns())
         {
-        if (SUCCESS != GetJoinedTable().SetMinimumSharedColumnCount(tphInfo.GetSharedColumnCount()))
+        if (SUCCESS != GetJoinedTable().CreateSharedColumns(tphInfo))
             {
             Issues().Report(ECDbIssueSeverity::Error,
                             "Only one ECClass per table can specify a shared column count. Found duplicate definition on ECClass '%s'.",
@@ -996,19 +996,7 @@ DbColumn* ColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessStr
             }
 
            
-        outColumn = ApplySharedColumnStrategy();
-        if (outColumn == nullptr)
-            {
-            //!Create overflow column
-            outColumn = GetTable().CreateColumn(nullptr, colType, Enum::Or( DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
-            if (addNotNullConstraint)
-                outColumn->GetConstraintsR().SetNotNullConstraint();
-
-            if (addUniqueConstraint)
-                outColumn->GetConstraintsR().SetUniqueConstraint();
-
-            outColumn->GetConstraintsR().SetCollation(collation);
-            }
+        outColumn = ApplySharedColumnStrategy(colType, addNotNullConstraint, addUniqueConstraint, collation);
         }
     else
         outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
@@ -1084,16 +1072,13 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::E
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* ColumnFactory::ApplySharedColumnStrategy() const
+DbColumn* ColumnFactory::ApplySharedColumnStrategy(DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
     DbColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn))
         return const_cast<DbColumn*>(reusableColumn);
     
-    if (GetTable().GetMasterOverflowColumn()  == nullptr)
-        return GetTable().CreateSharedColumn();
-
-    return nullptr;
+    return GetTable().CreateOverflowSlaveColumn(colType, addNotNullConstraint, addUniqueConstraint, collation);
     }
 
 //------------------------------------------------------------------------------------------

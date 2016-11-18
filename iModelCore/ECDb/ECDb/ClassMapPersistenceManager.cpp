@@ -103,8 +103,8 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
         if (tphInfo.GetSharedColumnCount() >= 0)
             stmt->BindInt(4, tphInfo.GetSharedColumnCount());
 
-        if (!tphInfo.GetExcessColumnName().empty())
-            stmt->BindText(5, tphInfo.GetExcessColumnName(), Statement::MakeCopy::No);
+        if (!tphInfo.GetOverflowColumnName().empty())
+            stmt->BindText(5, tphInfo.GetOverflowColumnName(), Statement::MakeCopy::No);
 
         if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
             stmt->BindInt(6, Enum::ToInt(tphInfo.GetJoinedTableInfo()));

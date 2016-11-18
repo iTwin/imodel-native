@@ -56,7 +56,7 @@ private:
     Utf8String m_format;
 
 public:
-    explicit DbSchemaNameGenerator(Utf8CP format = "ecdb_%s") :m_format(format), m_uniqueIdGenerator(1) {}
+    explicit DbSchemaNameGenerator(Utf8CP format) :m_format(format), m_uniqueIdGenerator(1) {}
     ~DbSchemaNameGenerator() {}
 
     void Generate(Utf8StringR generatedName)
@@ -100,8 +100,8 @@ public:
         DataColumn = 64, //! unshared data column
         SharedDataColumn = 128, //! shared data column
         RelECClassId = 256,
-        OverflowMaster =512,
-        OverflowSlave = 1024
+        Overflow = 512, //! physical overflow column (one per table)
+        OverflowSlave = 1024 //! virtual column pointing to JSON object in the physical overflow column
         };
 
     struct Constraints : NonCopyableClass
@@ -151,7 +151,7 @@ private:
     PrimaryKeyDbConstraint const* m_pkConstraint;
    
 public:
-    DbColumn(DbColumnId id, DbTable& table, Utf8CP name, Type type, Kind kind, PersistenceType persistenceType)
+    DbColumn(DbColumnId id, DbTable& table, Utf8StringCR name, Type type, Kind kind, PersistenceType persistenceType)
         : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind), m_pkConstraint(nullptr)
         {}
 
@@ -163,7 +163,7 @@ public:
     Type GetType() const { return m_type; }
     bool DoNotAllowDbNull() const { return m_pkConstraint != nullptr || m_constraints.HasNotNullConstraint(); }
     bool IsUnique() const;
-    DbColumn const* GetMasterOverflowColumn() const;
+    DbColumn const* GetPhysicalOverflowColumn() const;
     DbTable const& GetTable() const { return m_table; }
     DbTable& GetTableR() const { return m_table; }
     Constraints const& GetConstraints() const { return m_constraints; };
@@ -174,7 +174,7 @@ public:
     bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
-    bool IsOverflow() const { return GetMasterOverflowColumn() != nullptr; }
+    bool IsOverflow() const { return GetPhysicalOverflowColumn() != nullptr; }
     static Utf8CP TypeToSql(DbColumn::Type);
     static Type PrimitiveTypeToColumnType(ECN::PrimitiveType);
     static bool IsCompatible(Type lhs, Type rhs);
@@ -359,24 +359,21 @@ private:
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
-    int m_minimumSharedColumnCount;
     mutable DbColumn const* m_classIdColumn;
     mutable DbColumn const* m_overflowColumn;
     EditHandle m_editHandle;
     std::vector<DbTable const*> m_joinedTables;
     std::vector<std::function<void(ColumnEvent, DbColumn&)>> m_columnEvents;
-    DbColumn* CreateColumn(DbColumnId, Utf8CP name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
     mutable std::bitset<2> m_cachedFlags;
     const int CACHED_CLASSID = 0;
     const int CACHED_OVERFLOW = 1;
 
-    protected:
-        BentleyStatus CreateMasterOverflowColumn();
+    DbColumn* CreateColumn(DbColumnId, Utf8StringCR name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
 public:
     DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
-        : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%02x"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-        m_pkConstraint(nullptr), m_minimumSharedColumnCount(-1), 
+        : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
+        m_pkConstraint(nullptr),
         m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable), m_overflowColumn(nullptr)
         {
         BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
@@ -393,7 +390,7 @@ public:
     //!Otherwise the method returns nullptr
     DbTable const* GetParentOfJoinedTable() const { return m_parentOfJoinedTable; }
 
-    DbColumn const* GetMasterOverflowColumn() const;
+    DbColumn const* GetPhysicalOverflowColumn() const;
     DbTableId GetId() const { return m_id; }
     void SetId(DbTableId id) { m_id = id; }
     Utf8StringCR GetName() const { return m_name; }
@@ -404,12 +401,11 @@ public:
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
     ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
 
-    DbColumn* CreateColumn(Utf8CP name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
-    DbColumn* CreateSharedColumn() { return CreateColumn(nullptr, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Persisted); }
-    DbColumn* CreateColumn(Utf8CP name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
-    DbColumn* CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
-    BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
-    BentleyStatus EnsureMinimumNumberOfSharedColumns();
+    DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
+    BentleyStatus CreateSharedColumns(TablePerHierarchyInfo const&);
+    DbColumn* CreateOverflowSlaveColumn(DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation);
+    DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
+    DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
     std::vector<DbTable const*> const& GetJoinedTables() const { return m_joinedTables; }
 
     BentleyStatus CreateTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);

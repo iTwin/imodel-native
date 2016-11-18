@@ -833,9 +833,6 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
         if (!canEdit) table->GetEditHandleR().EndEdit();
         if (onlyCreateClassIdColumns)
             continue;
-
-        if (SUCCESS != table->EnsureMinimumNumberOfSharedColumns())
-            return ERROR;
         }
 
     return SUCCESS;

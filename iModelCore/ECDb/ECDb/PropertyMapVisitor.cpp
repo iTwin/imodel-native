@@ -243,7 +243,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
 
     if (propertyMap.IsOverflow())
         {
-        DbColumn const* overFlowColumn = propertyMap.GetColumn().GetMasterOverflowColumn();
+        DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
         BeAssert(overFlowColumn != nullptr);
         //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
         if (m_writeData)

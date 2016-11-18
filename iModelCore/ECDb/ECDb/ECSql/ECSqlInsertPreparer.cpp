@@ -359,7 +359,7 @@ InsertStatementExp const& exp
         if (!propertyNamesNativeSqlSnippets.empty())
             insertBuilder.AppendComma();
 
-        overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetMasterOverflowColumn();;
+        overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetPhysicalOverflowColumn();;
         insertBuilder.AppendEscaped(overflowColumn->GetName().c_str());
         }
 

@@ -982,7 +982,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                 else
                     {
                     propertySql = r.GetSqlBuilder();
-                    if (auto of = dataProperty->GetColumn().GetMasterOverflowColumn())
+                    if (auto of = dataProperty->GetColumn().GetPhysicalOverflowColumn())
                         {
                         propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
                         }
@@ -1020,7 +1020,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                         }
                     if (!appendAlias)
                         {
-                        if (auto of = dataProperty->GetColumn().GetMasterOverflowColumn())
+                        if (auto of = dataProperty->GetColumn().GetPhysicalOverflowColumn())
                             {
                             propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
                             }

@@ -11,7 +11,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-#define OVERFLOW_COLUMN_NAME "SCOverflow"
 //****************************************************************************************
 //ExistingColumn
 //****************************************************************************************
@@ -1288,71 +1287,6 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle 02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::EnsureMinimumNumberOfSharedColumns()
-    {
-    if (m_minimumSharedColumnCount < 0)
-        return SUCCESS; // no min count specified -> nothing to do
-
-    int existingSharedColCount = 0;
-    for (DbColumn const* col : m_orderedColumns)
-        {
-        if (col->IsShared())
-            existingSharedColCount++;
-        }
-
-    const int neededSharedColumns = m_minimumSharedColumnCount - existingSharedColCount;
-    if (neededSharedColumns <= 0)
-        return SUCCESS;
-
-    for (int i = 0; i < neededSharedColumns; i++)
-        {
-        if (CreateSharedColumn() == nullptr)
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                      Affan.Khan     02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::CreateMasterOverflowColumn()
-    {
-    if (EnsureMinimumNumberOfSharedColumns() != SUCCESS)
-        return ERROR;
-
-    if (GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster) == nullptr)
-        {
-        if (CreateColumn(OVERFLOW_COLUMN_NAME, DbColumn::Type::Text, DbColumn::Kind::OverflowMaster, PersistenceType::Persisted) == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle 02/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::SetMinimumSharedColumnCount(int minimumSharedColumnCount)
-    {
-    //can only by one ECClass of this table
-    if (minimumSharedColumnCount < 0  ||
-        (m_minimumSharedColumnCount >= 0 && minimumSharedColumnCount != m_minimumSharedColumnCount))
-        {
-        BeAssert(false && "Cannot modify MinimumSharedColumnCount on an DbTable if it has been set already.");
-        return ERROR;
-        }
-
-    m_minimumSharedColumnCount = minimumSharedColumnCount;
-    return CreateMasterOverflowColumn();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateTrigger(Utf8CP triggerName, DbTrigger::Type type, Utf8CP condition, Utf8CP body)
@@ -1401,8 +1335,46 @@ BentleyStatus DbTable::RemoveConstraint(DbConstraint const& constraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persistenceType)
+DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persistenceType)
     {
+    if (colName.empty())
+        {
+        BeAssert(false && "DbTable::CreateColumn cannot be called if column name is null or empty");
+        return nullptr;
+        }
+
+    if (FindColumn(colName.c_str()) != nullptr)
+        {
+        BeAssert(false && "DbTable::CreateColumn> Column with specified name already exist");
+        return nullptr;
+        }
+
+    //Overflow property check
+    if (Enum::Intersects(kind, DbColumn::Kind::Overflow))
+        {
+        if (kind != DbColumn::Kind::Overflow)
+            {
+            BeAssert(false && "OverflowMaster should be the only flag on a column");
+            return nullptr;
+            }
+
+        if (GetFilteredColumnFirst(DbColumn::Kind::Overflow) != nullptr)
+            {
+            BeAssert(false && "There can only be exactly one overflow column per table");
+            return nullptr;
+            }
+        }
+
+    //Overflow check
+    if (Enum::Intersects(kind, DbColumn::Kind::OverflowSlave))
+        {
+        if (GetPhysicalOverflowColumn() == nullptr)
+            {
+            BeAssert(false && "overflow column is not present for this table");
+            return nullptr;
+            }
+        }
+
     if (!GetEditHandleR().CanEdit())
         {
         IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
@@ -1428,56 +1400,8 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type,
         id = DbColumnId(columnId.GetValue());
         }
 
-    //Overflow property check
-    bool overflowMaster = Enum::Intersects(kind, DbColumn::Kind::OverflowMaster);
-    if (overflowMaster)
-        {
-        if (kind != DbColumn::Kind::OverflowMaster)
-            {
-            BeAssert(false && "OverflowMaster should be the only flag on a column");
-            return nullptr;
-            }
-       
-        if (GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster) != nullptr)
-            {
-            BeAssert(false && "There can only be exactly one OverflowMaster column per table");
-            return nullptr;
-            }
-        }
 
-    //Overflow check
-    bool overflowSlave = Enum::Intersects(kind, DbColumn::Kind::OverflowSlave);
-    if (overflowSlave)
-        {
-        if (GetMasterOverflowColumn() == nullptr)
-            {
-            BeAssert(false && "OverflowMaster property is not present for this table");
-            return nullptr;
-            }
-        }
-
-    std::shared_ptr<DbColumn> newColumn = nullptr;
-    if (!Utf8String::IsNullOrEmpty(name))
-        {
-        if (FindColumn(name))
-            {
-            BeAssert(false && "Column name already exist");
-            return nullptr;
-            }
-
-        newColumn = std::make_shared<DbColumn>(id, *this, name, type, kind, resolvePersistenceType);
-        }
-    else
-        {
-        Utf8String generatedName;
-        do
-            {
-            m_columnNameGenerator.Generate(generatedName);
-            } while (FindColumn(generatedName.c_str()));
-
-        newColumn = std::make_shared<DbColumn>(id, *this, generatedName.c_str(), type, kind, resolvePersistenceType);
-        }
-
+    std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, resolvePersistenceType);
     DbColumn* newColumnP = newColumn.get();
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
@@ -1541,6 +1465,61 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
     auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
     m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
+    {
+    if (!tphInfo.UseSharedColumns())
+        {
+        BeAssert(false && "CreateSharedColumns must not be called if shared columns were not enabled by the respective CA");
+        return ERROR;
+        }
+
+    if (GetFilteredColumnFirst(DbColumn::Kind::Overflow) != nullptr)
+        return SUCCESS; //overflow already evaluated. WIP: Why is this called twice at all?
+
+    //the shared column count is the count of shared columns to be created excluding the overflow column
+    for (int i = 0; i < tphInfo.GetSharedColumnCount(); i++)
+        {
+        Utf8String generatedName;
+        m_columnNameGenerator.Generate(generatedName);
+        BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+        if (nullptr == CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Persisted))
+            return ERROR;
+        }
+
+    //the overflow column will hold its data as JSON. So the column data type is TEXT.
+    Utf8StringCR customOverflowColname = tphInfo.GetOverflowColumnName();
+    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::Overflow, PersistenceType::Persisted))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//---------------------------------------------------------------------------------------
+DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation)
+    {
+    Utf8String generatedName;
+    m_columnNameGenerator.Generate(generatedName);
+    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+
+    DbColumn* col = CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+    if (col == nullptr)
+        return nullptr;
+
+    if (addNotNullConstraint)
+        col->GetConstraintsR().SetNotNullConstraint();
+
+    if (addUniqueConstraint)
+        col->GetConstraintsR().SetUniqueConstraint();
+
+    col->GetConstraintsR().SetCollation(collation);
+    return col;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1641,11 +1620,11 @@ bool DbTable::TryGetECClassIdColumn(DbColumn const*& classIdCol) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbColumn const* DbTable::GetMasterOverflowColumn() const
+DbColumn const* DbTable::GetPhysicalOverflowColumn() const
     {
     if (!m_cachedFlags[CACHED_OVERFLOW])
         {
-        m_overflowColumn = GetFilteredColumnFirst(DbColumn::Kind::OverflowMaster);
+        m_overflowColumn = GetFilteredColumnFirst(DbColumn::Kind::Overflow);
         m_cachedFlags[CACHED_OVERFLOW] = true;
         }
 
@@ -1723,12 +1702,12 @@ bool DbColumn::IsUnique() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan 02/2016
 //---------------------------------------------------------------------------------------
-DbColumn const* DbColumn::GetMasterOverflowColumn() const
+DbColumn const* DbColumn::GetPhysicalOverflowColumn() const
     {
     if (Enum::Intersects(m_kind, Kind::OverflowSlave))
         {
-        BeAssert(m_table.GetMasterOverflowColumn() != nullptr);
-        return m_table.GetMasterOverflowColumn();
+        BeAssert(m_table.GetPhysicalOverflowColumn() != nullptr);
+        return m_table.GetPhysicalOverflowColumn();
         }
 
     return nullptr;
@@ -1770,7 +1749,7 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
 
-    if (m_kind == DbColumn::Kind::OverflowMaster)
+    if (m_kind == DbColumn::Kind::Overflow)
         {
         BeAssert(false && "Cannot change Kind for a OverflowMaster column");
         return ERROR;
