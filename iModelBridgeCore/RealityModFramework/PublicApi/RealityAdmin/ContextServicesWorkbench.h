@@ -24,6 +24,10 @@
 
 #include <curl/curl.h>
 
+//! Callback function to filter spatialentities
+typedef std::function<bool(RealityPlatform::SpatioTemporalDataPtr entity)> ContextServicesWorkbench_FilterFunction;
+
+
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 struct GeoCoordinationParams;
@@ -57,6 +61,7 @@ struct GeoCoordinationParams
 struct ContextServicesWorkbench
     {
     private:
+        static bool default_filter(RealityPlatform::SpatioTemporalDataPtr entity) { return false; }
         Json::Value m_errorObj;
         Utf8String m_authorizationToken;
         BeFileName m_certificatePath;
@@ -92,7 +97,7 @@ struct ContextServicesWorkbench
         //REALITYDATAPLATFORM_EXPORT DetailedSpatialEntityListPtr GetSpatialEntityWithDetails() const { return m_contextList; }
         REALITYDATAPLATFORM_EXPORT RealityPlatform::SpatioTemporalSelector::ResolutionMap GetSelectedIds() const { return m_selectedIds; }
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadSpatialEntityWithDetails();
-        REALITYDATAPLATFORM_EXPORT void FilterSpatialEntity();
+        REALITYDATAPLATFORM_EXPORT void FilterSpatialEntity(ContextServicesWorkbench_FilterFunction pi_Func = default_filter);
         REALITYDATAPLATFORM_EXPORT Utf8String GetPackageParameters(bvector<Utf8String> selectedIds) const;
         REALITYDATAPLATFORM_EXPORT RealityPlatform::ResolutionCriteria GetResolution() { return m_selectedResolution; }
         REALITYDATAPLATFORM_EXPORT void SetResolution(RealityPlatform::ResolutionCriteria resolution) { m_selectedResolution = resolution; }
@@ -100,64 +105,5 @@ struct ContextServicesWorkbench
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackage();
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadFiles();
     };
-
-//=====================================================================================
-//! @bsiclass                                   Raphael.Lemieux                 01/2016
-// This should be provided and maintained by RealityModFramework
-//=====================================================================================
-/*struct DetailedSpatialEntityList : public RefCountedBase
-{
-private:
-    DetailedSpatialEntityList() : m_entityList() {};
-    bmap<Utf8String, DetailedSpatialEntityPtr> m_entityList;
-    void AddEntity(Utf8StringCR id, DetailedSpatialEntityPtr entity) { m_entityList.Insert(id, entity); };
-
-public:
-    //! Create from Json.
-    static DetailedSpatialEntityListPtr CreateFromJson(Utf8CP data);
-    //static bool IsValidJson(Utf8CP data);
-    //const DetailedSpatialEntityPtr GetEntity(Utf8StringCR id) const;
-    //const bool ContainsUsgsImagery() const;
-    const bmap<Utf8String, DetailedSpatialEntityPtr>& GetMap() const { return m_entityList; };
-};*/
-
-//=====================================================================================
-//! @bsiclass                                   Raphael.Lemieux                 01/2016
-// This should be provided and maintained by RealityModFramework
-//=====================================================================================
-/*struct DetailedSpatialEntity : public RefCountedBase
-{
-public:
-    //! Create from Json.
-    static DetailedSpatialEntityPtr Create(JsonValueCR instance) { return new DetailedSpatialEntity(instance); };
-
-    const Utf8String GetIdentifier() const { return GetChecked("Id").asString(); };
-    const DateTime& GetDate() const { return m_date; };
-    const double& GetResolution() const { return m_resolution; };
-    const Utf8String GetName() const { return GetUnchecked("Name").asString(); };
-    const Utf8String GetDescription() const { return GetUnchecked("Description").asString(); };
-    const Utf8String GetContactInformation() const { return GetUnchecked("ContactInformation").asString(); };
-    const Utf8String GetKeywords() const { return GetUnchecked("Keywords").asString(); };
-    const Utf8String GetLegal() const { return GetUnchecked("Legal").asString(); };
-    const Utf8String GetTermsOfUse() const { return GetUnchecked("TermsOfUse").asString(); };
-    const Utf8String GetDataSourceTypesAvailable() const { return GetUnchecked("DataSourceTypesAvailable").asString(); };
-    const Utf8String GetClassification() const { return GetUnchecked("Classification").asString(); };
-    const Utf8String GetDataProvider() const { return GetUnchecked("DataProvider").asString(); };
-    const Utf8String GetDataProviderName() const { return GetUnchecked("DataProviderName").asString(); };
-    const Utf8String GetThumbnailUrl() const { return GetUnchecked("ThumbnailURL").asString(); };
-    const double GetOcclusion() const { return (!m_instance.isMember("Occlusion") || m_instance["Occlusion"].isNull()) ? 0.0 : GetUnchecked("Occlusion").asDouble(); };
-    const UINT64 GetFileSize() const { return m_filesize; };
-
-private:
-    DetailedSpatialEntity(JsonValueCR instance);
-
-    JsonValueCR GetChecked(Utf8CP key) const { BeAssert(m_instance.isMember(key)); return m_instance[key]; };
-    JsonValueCR GetUnchecked(Utf8CP key) const { return m_instance[key]; };
-
-    Json::Value m_instance;
-    DateTime m_date;
-    double m_resolution;
-    UINT64 m_filesize;
-};*/
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

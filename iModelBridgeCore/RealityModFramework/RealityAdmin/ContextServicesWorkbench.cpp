@@ -173,39 +173,19 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   10/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void ContextServicesWorkbench::FilterSpatialEntity()
+void ContextServicesWorkbench::FilterSpatialEntity(ContextServicesWorkbench_FilterFunction pi_func)
     {
     BeAssert(m_downloadedSEWD);
 
-    bmap<Utf8String, RealityPlatform::SpatialEntityDataPtr>* SEDp = new bmap<Utf8String, RealityPlatform::SpatialEntityDataPtr>();
-
-    RealityConversionTools::JsonToSpatialEntityData(m_spatialEntityWithDetailsJson.c_str(), SEDp);
-    
     SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(m_spatialEntityWithDetailsJson.c_str());
     if (dataset.IsNull())
         return;
 
-    //bool removeLandsat = ->ContainsUsgsImagery();
-    RealityPlatform::SpatialEntityDataPtr entity;
-
     auto imageryIt(dataset->GetImageryGroupR().begin());
     while (imageryIt != dataset->GetImageryGroupR().end())
         {
-        auto iter = SEDp->find(imageryIt->get()->GetIdentifier().c_str());
-        if(iter == SEDp->end())
-            {
-            imageryIt++;
-            continue;
-            }
-
-        entity = iter->second;
-        if (entity.IsNull())
-            {
-            imageryIt++;
-            continue;
-            }
-
-        if (entity->GetCloudCover() > 50.0)// || (removeLandsat && entity->GetDataProvider().EqualsI(LANDSAT_PROVIDER)))
+        Json::Value occlusion = (*imageryIt)->GetValueFromJson("Occlusion");
+        if((occlusion.isNumeric() && occlusion.asFloat()  > 50.0) || pi_func(*imageryIt))
             {
             imageryIt = dataset->GetImageryGroupR().erase(imageryIt);
             }

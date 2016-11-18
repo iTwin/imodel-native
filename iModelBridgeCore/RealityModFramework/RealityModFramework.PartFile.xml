@@ -444,9 +444,7 @@
     <!-- ********************************************************************************************** -->
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <Bindings>
-            <!-- un-comment this if you want to deliver ignore_list.txt
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="RealityMod" SubPartDirectory="UnitTests/RealityMod"> Delivery/UnitTests/ignore_list.txt</Files>
-            -->
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.1.0.xsd</Files>
         </Bindings>
     </Part>

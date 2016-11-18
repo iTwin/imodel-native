@@ -87,9 +87,9 @@ class ContextServicesTestFixture : public testing::Test
 //-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, SimpleTest)
     {
-    bool thisTestIsnTReady = true;
-    ASSERT_TRUE(thisTestIsnTReady);
-    /*Utf8String token = GetToken();
+    /*bool thisTestIsnTReady = true;
+    ASSERT_TRUE(thisTestIsnTReady);*/
+    Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
     bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
@@ -115,7 +115,63 @@ TEST_F(ContextServicesTestFixture, SimpleTest)
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == RealityConversionTools::JsonToSpatialEntityData(cswBench->GetSpatialEntityWithDetailsJson().c_str(), SEDp));
 
+    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+
+    size_t i = dataset->GetImageryGroup().size();
+
+    ASSERT_TRUE(i >= 458);
+
+    i = dataset->GetTerrainGroup().size();
+
+    ASSERT_TRUE(i >= 9);
+
     cswBench->FilterSpatialEntity();
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());*/
+    RealityPlatform::SpatioTemporalSelector::ResolutionMap selectedIds = cswBench->GetSelectedIds();
+
+    i = selectedIds.size();
+
+    ASSERT_TRUE( i >= 3);
+
+    bvector<Utf8String> low = selectedIds[ResolutionCriteria::Low];
+    bvector<Utf8String> medium = selectedIds[ResolutionCriteria::Medium];
+    bvector<Utf8String> high = selectedIds[ResolutionCriteria::High];
+
+    i = low.size();
+    ASSERT_TRUE(i >= 2);
+
+    i = medium.size();
+    ASSERT_TRUE(i >= 17);
+
+    i = high.size();
+    ASSERT_TRUE(i >= 216);
+
+    cswBench->FilterSpatialEntity([](SpatioTemporalDataPtr entity) -> bool { Json::Value provider = entity->GetValueFromJson("DataProvider"); return provider.isString() ? provider.asString().EqualsI("Amazon Landsat 8") : false; });
+
+    selectedIds = cswBench->GetSelectedIds();
+
+    i = selectedIds.size();
+
+    ASSERT_TRUE(i >= 3);
+
+    low = selectedIds[ResolutionCriteria::Low];
+    medium = selectedIds[ResolutionCriteria::Medium];
+    high = selectedIds[ResolutionCriteria::High];
+
+    i = low.size();
+    ASSERT_TRUE(i >= 17);
+
+    i = medium.size();
+    ASSERT_TRUE(i >= 188);
+
+    i = high.size();
+    ASSERT_TRUE(i >= 216);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    }
+
+TEST_F(ContextServicesTestFixture, NameTest)
+    {
+        ASSERT_TRUE(false);
+    //https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/SpatialEntityWithDetailsView?polygon=%7bpoints:%5b%5b-79.25,38.57%5d,%5b-79.05,38.57%5d,%5b-79.05,38.77%5d,%5b-79.25,38.77%5d,%5b-79.25,38.57%5d%5d,coordinate_system:%274326%27%7d&$select=Name;
     }
