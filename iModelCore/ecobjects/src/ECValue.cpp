@@ -2499,7 +2499,7 @@ static ECClassCP getStructArrayClass (ECClassCR enablerClass, Utf8CP propertyNam
     if (auto structProperty = propertyP->GetAsStructProperty ())
         return &structProperty->GetType ();
     else if (auto arrayProp = propertyP->GetAsStructArrayProperty ())
-        return arrayProp->GetStructElementType ();
+        return &arrayProp->GetStructElementType ();
 
     return nullptr;
     }
@@ -2660,7 +2660,7 @@ static ECEnablerCP getStructArrayEnablerForDeepestLocation (ECValueAccessorCR va
 
     auto prop = va.DeepestLocationCR().GetECProperty();
     auto arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
-    auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+    auto structClass = nullptr != arrayProp ? &arrayProp->GetStructElementType() : nullptr;
     if (nullptr != structClass)
         {
         // NEEDSWORK: Why is GetEnablerForStructArrayMember() const, and why does it return a ref-counted ptr? (We obviously need somebody else to keep it alive for us, which they do...)
@@ -3845,7 +3845,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
     ECPropertyCP prop = enabler.LookupECProperty (containerIndex);
     StructArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
     ECClassCP structClass = nullptr;
-    if (nullptr == arrayProp || nullptr == (structClass = arrayProp->GetStructElementType()))
+    if (nullptr == arrayProp || nullptr == (structClass = &arrayProp->GetStructElementType()))
         return false;
 
     // find custom attribute on struct class
@@ -4364,7 +4364,7 @@ ECClassCP AdhocPropertyQuery::GetStructClass() const
     {
     auto prop = GetHost().GetEnabler().LookupECProperty (GetContainerPropertyIndex());
     auto arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
-    auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+    auto structClass = nullptr != arrayProp ? &arrayProp->GetStructElementType() : nullptr;
     if (nullptr == structClass)
         BeAssert (false);
 

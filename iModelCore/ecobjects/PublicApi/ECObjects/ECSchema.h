@@ -1119,9 +1119,9 @@ protected:
 
 public:
     //! Sets the ECClass to be used for the array's struct elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCP value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCR value);
     //! Gets the ECClass of the array's struct elements
-    ECOBJECTS_EXPORT ECStructClassCP    GetStructElementType() const;
+    ECOBJECTS_EXPORT ECStructClassCR    GetStructElementType() const;
 
     };
 
@@ -1539,7 +1539,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);

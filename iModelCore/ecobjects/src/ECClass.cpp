@@ -654,7 +654,7 @@ bool andAddProperty
         StructArrayECPropertyP destArray;
         StructArrayECPropertyCP sourceArray = sourceProperty->GetAsStructArrayProperty();
         destArray = new StructArrayECProperty(*this);
-        ECStructClassCP structElementType = sourceArray->GetStructElementType();
+        ECStructClassCR structElementType = sourceArray->GetStructElementType();
         destArray->SetStructElementType(structElementType);
 
         destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
@@ -981,7 +981,7 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCP structType)
+ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
     {
     ecProperty = new StructArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);

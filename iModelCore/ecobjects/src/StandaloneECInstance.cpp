@@ -926,7 +926,7 @@ bool MemoryECInstanceBase::_IsStructValidForArray (IECInstanceCR structInstance,
         ECPropertyCP ecprop = GetAsIECInstance()->GetEnabler().LookupECProperty (propIdx);
         StructArrayECPropertyCP arrayProp = ecprop ? ecprop->GetAsStructArrayProperty() : NULL;
         if (NULL != arrayProp)
-            return structInstance.GetEnabler().GetClass().Is (arrayProp->GetStructElementType());
+            return structInstance.GetEnabler().GetClass().Is (&arrayProp->GetStructElementType());
         }
 
     return false;

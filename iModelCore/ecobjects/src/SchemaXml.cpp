@@ -1118,7 +1118,7 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
         else if (prop->GetIsStructArray())
             {
             StructArrayECPropertyP arrayProperty = prop->GetAsStructArrayPropertyP();
-            WriteClass(*(arrayProperty->GetStructElementType()));
+            WriteClass(arrayProperty->GetStructElementType());
             }
         WriteCustomAttributeDependencies(*prop);
         }

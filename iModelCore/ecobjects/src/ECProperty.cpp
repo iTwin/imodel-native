@@ -1397,11 +1397,12 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         {
         return false;
         }
-    else
-        {
-        auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
-        return nullptr != myType && nullptr != baseType && 0 == strcmp (myType->GetFullName(), baseType->GetFullName());
-        }
+    
+    // if the struct type hasn't been set yet, we will say it cannot override
+    if (nullptr == m_structType)
+        return false;
+
+    return 0 == strcmp (m_structType->GetFullName(), baseArray->GetStructElementType().GetFullName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1412,7 +1413,7 @@ ECObjectsStatus StructArrayECProperty::_SetTypeName(Utf8StringCR typeName)
     ECStructClassCP structClass;
     ECObjectsStatus status = ResolveStructType(structClass, typeName, this->GetClass());
     if (ECObjectsStatus::Success == status)
-        return SetStructElementType(structClass);
+        return SetStructElementType(*structClass);
 
     m_originalTypeName = typeName;
     LOG.warningv("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
@@ -1434,30 +1435,31 @@ Utf8String StructArrayECProperty::_GetTypeName() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECStructClassCP StructArrayECProperty::GetStructElementType () const
+ECStructClassCR StructArrayECProperty::GetStructElementType () const
     {
-    return m_structType;
+    DEBUG_EXPECT(NULL != m_structType);
+    return *m_structType;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCP structType)
+ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCR structType)
     {        
-    PRECONDITION (NULL != structType, ECObjectsStatus::PreconditionViolated);
-
-    if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
+    if (&(structType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType->GetSchema()))
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
         }
 
     m_arrayKind = ARRAYKIND_Struct;
-    m_structType = structType;
- 
-    SetCachedTypeAdapter (NULL);
-    SetCachedMemberTypeAdapter (NULL);
-    InvalidateClassLayout();
+    if (m_structType != &structType)
+        {
+        m_structType = &structType;
+        SetCachedTypeAdapter(NULL);
+        SetCachedMemberTypeAdapter(NULL);
+        InvalidateClassLayout();
+        }
 
     return ECObjectsStatus::Success;
     }

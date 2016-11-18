@@ -1649,7 +1649,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 }
             else if (prop->GetIsStructArray())
                 {
-                typeClass = prop->GetAsStructArrayProperty()->GetStructElementType();
+                typeClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
                 }
             else if (prop->GetIsNavigation())
                 {
