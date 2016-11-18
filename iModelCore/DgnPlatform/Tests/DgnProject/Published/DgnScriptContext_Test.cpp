@@ -23,26 +23,22 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static DgnCategoryId getFirstCategory(DgnDbR db)
-    {
-    return (*DgnCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
 static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId mid = model.GetModelId();
 
-    DgnCategoryId cat = getFirstCategory(db);
-
     DgnElementPtr gelem;
     if (model.Is3d())
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
+        {
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
+        }
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+        {
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), categoryId, Placement2d()));
+        }
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
@@ -260,7 +256,7 @@ TEST_F(DgnScriptTest, RunScripts)
     Json::Value parms = Json::objectValue;
     parms["modeledElementIdStr"] = model->GetModeledElementId().ToString().c_str();
     parms["newModeledElementIdStr"] = newModel->GetModeledElementId().ToString().c_str();
-    parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
+    parms["categoryName"] = SpatialCategory::Get(*project, DgnDbTestUtils::GetFirstSpatialCategoryId(*project))->GetCategoryName();
     project->SaveChanges(); // digest other schema imports ??!!
     int retstatus = 0;
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
@@ -435,7 +431,7 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
         //ASSERT_STREQ("", retVal.c_str());
         ASSERT_NE(0, ids.size());
-        ElementIterator iterator = DgnCategory::MakeIterator(*m_db);
+        ElementIterator iterator = SpatialCategory::MakeIterator(*m_db);
         ASSERT_EQ(iterator.BuildIdSet<DgnCategoryId>().size(), ids.size());
         ASSERT_EQ((*iterator.begin()).GetElementId().GetValue(), ids.begin()->GetValue());
         }

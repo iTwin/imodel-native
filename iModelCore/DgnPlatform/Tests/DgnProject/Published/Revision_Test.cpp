@@ -364,7 +364,7 @@ TEST_F(RevisionTestFixture, Codes)
     CreateDgnDb();
     DgnDbR db = *m_testDb;
 
-    DgnCategoryCPtr defaultCat = DgnCategory::QueryCategory(m_testCategoryId, db);
+    SpatialCategoryCPtr defaultCat = SpatialCategory::Get(db, m_testCategoryId);
     DgnSubCategory subCat(DgnSubCategory::CreateParams(db, m_testCategoryId, "MySubCategory", DgnSubCategory::Appearance()));
     auto cpSubCat = subCat.Insert();
     EXPECT_TRUE(cpSubCat.IsValid());

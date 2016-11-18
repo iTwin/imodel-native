@@ -8,34 +8,20 @@
 #include <DgnPlatformInternal.h>
 
 #define CAT_PROP_Descr      "Descr"
-#define CAT_PROP_Scope      "Scope"
 #define CAT_PROP_Rank       "Rank"
 #define SUBCAT_PROP_Descr   "Descr"
 #define SUBCAT_PROP_Props   "Properties"
-
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-namespace dgn_ElementHandler
-{
-HANDLER_DEFINE_MEMBERS(Category);
-HANDLER_DEFINE_MEMBERS(SubCategory);
-}
-
-END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
+    DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_data.Init(
-            static_cast<Scope>(stmt.GetValueInt(params.GetSelectIndex(CAT_PROP_Scope))),
-            static_cast<Rank>(stmt.GetValueInt(params.GetSelectIndex(CAT_PROP_Rank))),
-            stmt.GetValueText(params.GetSelectIndex(CAT_PROP_Descr))
-            );
+        m_rank = static_cast<Rank>(stmt.GetValueInt(params.GetSelectIndex(CAT_PROP_Rank)));
+        m_descr = stmt.GetValueText(params.GetSelectIndex(CAT_PROP_Descr));
         }
 
     return status;
@@ -47,9 +33,8 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Scope), static_cast<int32_t>(m_data.m_scope));
-    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_data.m_rank));
+    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_rank));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,29 +46,16 @@ void DgnCategory::_CopyFrom(DgnElementCR el)
     auto other = dynamic_cast<DgnCategoryCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr != other)
-        m_data = other->m_data;
+        {
+        m_rank = other->m_rank;
+        m_descr = other->m_descr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategory::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCategoryCode(name)), m_data(scope, rank, descr)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategory::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, Scope scope, Rank rank, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), code), m_data(scope, rank, descr)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::QueryCategoryId(DgnCode const& code, DgnDbR db)
+DgnCategoryId DgnCategory::QueryCategoryId(DgnDbR db, DgnCodeCR code)
     {
     return DgnCategoryId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -144,15 +116,69 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryCPtr DgnCategory::Insert(DgnSubCategory::Appearance const& app, DgnDbStatus* stat)
+DrawingCategory::DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name)))
     {
-    auto cat = GetDgnDb().Elements().Insert<DgnCategory>(*this, stat);
-    if (!cat.IsValid())
-        return cat;
-    SetDefaultAppearance(app);
-    return cat;
+    m_rank = rank;
+    m_descr = descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingCategory::DrawingCategory(DgnDbR db, DgnCodeCR code, Rank rank, Utf8StringCR descr)
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), code))
+    {
+    m_rank = rank;
+    m_descr = descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
+    {
+    DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status);
+    if (!category.IsValid())
+        return nullptr;
+
+    SetDefaultAppearance(appearance);
+    return category;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialCategory::SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name)))
+    {
+    m_rank = rank;
+    m_descr = descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialCategory::SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank, Utf8StringCR descr)
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), code))
+    {
+    m_rank = rank;
+    m_descr = descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
+    {
+    SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status);
+    if (!category.IsValid())
+        return nullptr;
+
+    SetDefaultAppearance(appearance);
+    return category;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,36 +193,17 @@ DgnSubCategoryId DgnCategory::GetDefaultSubCategoryId(DgnCategoryId catId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementIterator DgnCategory::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
+ElementIterator DrawingCategory::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Category), whereClause, orderByClause);
+    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingCategory), whereClause, orderByClause);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnCategory::QueryCount(DgnDbR db)
+ElementIterator SpatialCategory::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_Category));
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::QueryFirstCategoryId(DgnDbR db)
-    {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Category) " LIMIT 1");
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
-    {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT max(ECInstanceId) FROM " BIS_SCHEMA(BIS_CLASS_Category));
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
+    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialCategory), whereClause, orderByClause);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,7 +398,7 @@ DgnDbStatus DgnSubCategory::_OnInsert()
         return DgnDbStatus::InvalidName;
 
     DgnCategoryId catId(GetParentId().GetValueUnchecked());
-    DgnCategoryCPtr cat = catId.IsValid() ? DgnCategory::QueryCategory(catId, GetDgnDb()) : nullptr;
+    DgnCategoryCPtr cat = catId.IsValid() ? DgnCategory::Get(GetDgnDb(), catId) : nullptr;
     return cat.IsValid() ? T_Super::_OnInsert() : DgnDbStatus::InvalidParent;
     }
 
@@ -408,7 +415,7 @@ bool DgnSubCategory::IsDefaultSubCategory() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnSubCategory::_GenerateDefaultCode() const
     {
-    DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb()) : nullptr;
+    DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::Get(GetDgnDb(), GetCategoryId()) : nullptr;
     if (cat.IsValid())
         return CreateSubCategoryCode(*cat, cat->GetCategoryName());
 
@@ -595,7 +602,7 @@ DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportConte
     {
     //  See if we already have a category with the same name in the destination Db.
     //  If so, we'll map the source category to it.
-    DgnCategoryCPtr srcCat = DgnCategory::QueryCategory(srcCatId, importer.GetSourceDb());
+    DgnCategoryCPtr srcCat = DgnCategory::Get(importer.GetSourceDb(), srcCatId);
     BeAssert(srcCat.IsValid());
     if (!srcCat.IsValid())
         {
@@ -603,7 +610,7 @@ DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportConte
         return DgnCategoryId();
         }
 
-    DgnCategoryId dstCatId = QueryCategoryId(srcCat->GetCategoryName(), importer.GetDestinationDb());
+    DgnCategoryId dstCatId = QueryCategoryId(importer.GetDestinationDb(), srcCat->GetCode());
     if (dstCatId.IsValid())
         {
         importer.AddCategory(srcCatId, dstCatId);
@@ -817,22 +824,6 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
                 return DgnDbStatus::BadArg;
             DgnCategory& el = (DgnCategory&) elIn;
             el.SetRank(static_cast<DgnCategory::Rank>(value.GetInteger()));
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Scope,
-        [] (ECValueR value, DgnElementCR elIn)
-            {
-            DgnCategory& el = (DgnCategory&) elIn;
-            value.SetInteger(static_cast<int32_t>(el.GetScope()));
-            return DgnDbStatus::Success;
-            },
-        [] (DgnElementR elIn, ECValueCR value)
-            {
-            if (!value.IsInteger())
-                return DgnDbStatus::BadArg;
-            DgnCategory& el = (DgnCategory&) elIn;
-            el.SetScope(static_cast<DgnCategory::Scope>(value.GetInteger()));
             return DgnDbStatus::Success;
             });
     }

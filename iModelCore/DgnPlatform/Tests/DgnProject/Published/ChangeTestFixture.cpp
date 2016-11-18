@@ -104,8 +104,7 @@ void ChangeTestFixture::OpenDgnDb()
     if (!m_testModelId.IsValid())
         {
         DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
-        DgnElementId partitionId = m_testDb->Elements().QueryElementIdByCode(partitionCode);
-        m_testModelId = DgnModelId(partitionId.GetValue());
+        m_testModelId = m_testDb->Models().QuerySubModelId(partitionCode);
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
@@ -123,7 +122,7 @@ void ChangeTestFixture::OpenDgnDb()
 
     if (!m_testCategoryId.IsValid())
         {
-        m_testCategoryId = DgnCategory::QueryCategoryId(DgnCategory::CreateCategoryCode("TestCategory"), *m_testDb);
+        m_testCategoryId = SpatialCategory::QueryCategoryId(*m_testDb, "TestCategory");
         ASSERT_TRUE(m_testCategoryId.IsValid());
         }
     }
@@ -144,7 +143,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    DgnCategory category(DgnCategory::CreateParams(*m_testDb, categoryName, DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
+    SpatialCategory category(*m_testDb, categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
@@ -196,7 +195,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(*m_testDb))
+    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");

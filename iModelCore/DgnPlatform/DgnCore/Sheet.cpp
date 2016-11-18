@@ -32,6 +32,7 @@ struct Tile : QuadTree::Tile
 
         Loader(Utf8StringCR url, Tile& tile, LoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
         BentleyStatus _LoadTile() override;
+        folly::Future<BentleyStatus> _GetFromSource() override;
     };
     Tile(AttachmentTree&, QuadTree::TileId id, Tile const* parent);
     TilePtr _CreateChild(QuadTree::TileId id) const override {return new Tile(GetAttachmentTree(), id, this);}
@@ -177,6 +178,14 @@ ModelPtr Sheet::Model::Create(ElementCR sheet)
 Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     {
     return new Sheet::ViewController(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> Sheet::Tile::Loader::_GetFromSource() 
+    {
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -30,7 +30,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
     if(!modelP.IsValid())
         return nullptr;
 
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
+    DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
     if(!categoryId.IsValid())
         return nullptr;
 
@@ -49,6 +49,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
 TEST_F(LinkElementTest, RoundTripUrlLink)
     {
     DgnDbR db = *GetDgnDb(L"RoundTripUrlLink");
+    DgnDbTestUtils::InsertDrawingCategory(db, "TestDrawingCategory");
 
     DgnElementCPtr annotation = InsertAnnotationElement();
     ASSERT_TRUE(annotation.IsValid());
@@ -103,6 +104,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     {
     //.............................................................................................
     DgnDbR db = *GetDgnDb(L"UrlLinkQuery");
+    DgnDbTestUtils::InsertDrawingCategory(db, "TestDrawingCategory");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result->GetElementId().IsValid());
@@ -192,6 +194,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
 TEST_F(LinkElementTest, OtherIterators)
     {
     DgnDbR db = *GetDgnDb(L"OtherIterators");
+    DgnDbTestUtils::InsertDrawingCategory(db, "TestDrawingCategory");
 
     DgnElementCPtr result1 = InsertAnnotationElement();
     ASSERT_TRUE(result1.IsValid());
@@ -238,6 +241,7 @@ TEST_F(LinkElementTest, Update)
     {
     //.............................................................................................
     DgnDbR db = *GetDgnDb(L"Update");
+    DgnDbTestUtils::InsertDrawingCategory(db, "TestDrawingCategory");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result.IsValid());
