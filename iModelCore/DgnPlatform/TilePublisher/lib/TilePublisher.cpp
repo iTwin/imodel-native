@@ -1362,7 +1362,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     rootRange = DRange3d::NullRange();
 
     static size_t           s_maxPointsPerTile = 250000;
-    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile, m_processModelsInParallel);
+    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile);
     if (TileGenerator::Status::Success != status)
         return ConvertStatus(status);
 
