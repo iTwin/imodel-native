@@ -103,10 +103,10 @@ CURLcode ContextServicesWorkbench::performCurl(Utf8StringCR url, Utf8StringCP wr
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   10/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails()
+BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails(Utf8String filter)
     {
     //First query to get the whole list of elements
-    CURLcode result = performCurl(createSpatialEntityWithDetailsViewUrl(), &m_spatialEntityWithDetailsJson);
+    CURLcode result = performCurl(createSpatialEntityWithDetailsViewUrl(filter), &m_spatialEntityWithDetailsJson);
     if (CURLE_OK != result)
         {
         if (result == CURLE_RECV_ERROR)
@@ -137,7 +137,7 @@ BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Spencer.Mason                    11/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl()
+Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl(Utf8String filter)
     {
     Utf8String tempRealityServerUrl = getBaseUrl();
     
@@ -145,6 +145,7 @@ Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl()
     listUrl.append(m_params.GetPolygonAsString(false));
     listUrl.append("],coordinate_system:'4326'}");
     listUrl.append(m_params.GetFilterString());
+    listUrl.append(filter);
 
     return listUrl;
     }

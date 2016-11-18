@@ -89,7 +89,7 @@ struct ContextServicesWorkbench
         BeFileName getBaseFolder();
         CURLcode performCurl(Utf8StringCR url, Utf8StringCP writeString = nullptr, FILE* fp = nullptr, Utf8StringCR postFields = Utf8String());
         
-        Utf8String createSpatialEntityWithDetailsViewUrl();;
+        Utf8String createSpatialEntityWithDetailsViewUrl(Utf8String filter = "");
         BentleyStatus downloadPackageId();
         BentleyStatus downloadPackageFile();
         BentleyStatus handlePackageFile();
@@ -103,7 +103,7 @@ struct ContextServicesWorkbench
 
         //REALITYDATAPLATFORM_EXPORT DetailedSpatialEntityListPtr GetSpatialEntityWithDetails() const { return m_contextList; }
         REALITYDATAPLATFORM_EXPORT RealityPlatform::SpatioTemporalSelector::ResolutionMap GetSelectedIds() const { return m_selectedIds; }
-        REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadSpatialEntityWithDetails();
+        REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadSpatialEntityWithDetails(Utf8String filter = "");
         REALITYDATAPLATFORM_EXPORT void FilterSpatialEntity(ContextServicesWorkbench_FilterFunction pi_Func = default_filter);
         REALITYDATAPLATFORM_EXPORT Utf8String GetPackageParameters(bvector<Utf8String> selectedIds) const;
         REALITYDATAPLATFORM_EXPORT RealityPlatform::ResolutionCriteria GetResolution() { return m_selectedResolution; }

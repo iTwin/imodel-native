@@ -2,4 +2,4 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 ContextServicesTestFixture.SimpleTest   # We don't want to run any ContextServices tests, during the build
-ContextServicesTestFixture.NameTest
+ContextServicesTestFixture.SelectTest

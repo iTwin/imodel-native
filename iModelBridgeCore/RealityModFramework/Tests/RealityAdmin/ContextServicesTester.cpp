@@ -87,8 +87,6 @@ class ContextServicesTestFixture : public testing::Test
 //-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, SimpleTest)
     {
-    /*bool thisTestIsnTReady = true;
-    ASSERT_TRUE(thisTestIsnTReady);*/
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
@@ -110,10 +108,6 @@ TEST_F(ContextServicesTestFixture, SimpleTest)
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
-
-    bvector<RealityPlatform::SpatialEntityDataPtr>* SEDp = new bvector<RealityPlatform::SpatialEntityDataPtr>();
-
-    ASSERT_TRUE(BentleyStatus::SUCCESS == RealityConversionTools::JsonToSpatialEntityData(cswBench->GetSpatialEntityWithDetailsJson().c_str(), SEDp));
 
     SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
 
@@ -170,8 +164,35 @@ TEST_F(ContextServicesTestFixture, SimpleTest)
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
     }
 
-TEST_F(ContextServicesTestFixture, NameTest)
+TEST_F(ContextServicesTestFixture, SelectTest)
     {
-        ASSERT_TRUE(false);
-    //https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/SpatialEntityWithDetailsView?polygon=%7bpoints:%5b%5b-79.25,38.57%5d,%5b-79.05,38.57%5d,%5b-79.05,38.77%5d,%5b-79.25,38.77%5d,%5b-79.25,38.57%5d%5d,coordinate_system:%274326%27%7d&$select=Name;
+    Utf8String token = GetToken();
+    ASSERT_TRUE(token.length() > 100);
+
+    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
+    GeoPoint2d p1, p2, p3, p4, p5;
+    p1.Init(-79.25, 38.57);
+    p2.Init(-79.05, 38.57);
+    p3.Init(-79.05, 38.77);
+    p4.Init(-79.25, 38.77);
+    p5.Init(-79.25, 38.57);
+    filterPolygon.push_back(p1);
+    filterPolygon.push_back(p2);
+    filterPolygon.push_back(p3);
+    filterPolygon.push_back(p4);
+    filterPolygon.push_back(p5);
+
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+
+    RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&$select=Name,Footprint"));
+
+    Json::Value json;
+    Json::Reader::Parse(cswBench->GetSpatialEntityWithDetailsJson(), json);
+    for(Json::Value instance : json["instances"])
+        {
+        ASSERT_TRUE(instance["properties"].size() == 2);
+        ASSERT_TRUE(instance["properties"].isMember("Name"));
+        }
     }
