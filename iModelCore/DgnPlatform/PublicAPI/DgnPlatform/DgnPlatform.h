@@ -510,6 +510,7 @@ struct ElementAlignedBox2d : BoundingBox2d
     double GetTop() const {return high.y;}
     double GetWidth() const {return XLength();}
     double GetHeight() const {return YLength();}
+    double GetAspectRatio() const {return XLength() / YLength();}
     void SetLeft(double left) {low.x = left;}
     void SetBottom(double bottom) {low.y = bottom;}
     void SetRight(double right) {high.x = right;}

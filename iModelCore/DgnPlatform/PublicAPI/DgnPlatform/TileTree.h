@@ -67,7 +67,7 @@ HTTP request caching:
  TileTree employs the RealityData::Cache class for saving/loading copies of tile data from HTTP request in a SQLite database in
  the temporary directory. When an HTTP-based tile is needed, the local cache is first checked and used if present. Otherwise
  an HTTP GET request is issued and the result is saved on arrival. The local cached is purged periodically so it doesn't
- grow beyond the "maxSize" argument passed to TileTree::Root::CreateCache. Tiles are always loaded via the TileLoad::_LoadTile
+ grow beyond the "maxSize" argument passed to TileTree::Root::CreateCache. Tiles are always loaded via the TileLoader::_LoadTile
  method regardless of whether their data comes from a local file, an HTTP request, or from the local cache.
 
 */
@@ -75,11 +75,11 @@ HTTP request caching:
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoad)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
-DEFINE_REF_COUNTED_PTR(TileLoad)
+DEFINE_REF_COUNTED_PTR(TileLoader)
 
 typedef std::chrono::steady_clock::time_point TimePoint;
 typedef std::shared_ptr<struct LoadState> LoadStatePtr;
@@ -124,36 +124,36 @@ struct LoadState : Tasks::ICancellationToken, NonCopyableClass
 struct Tile : RefCountedBase, NonCopyableClass
 {
     friend struct Root;
-    enum class LoadState : int {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
+    enum class LoadStatus : int {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
     typedef bvector<TilePtr> ChildTiles;
 
 protected:
     RootR   m_root;
     mutable ElementAlignedBox3d m_range;
     TileCP m_parent;
-    mutable BeAtomic<LoadState> m_loadState;
+    mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
-    mutable TimePoint m_childrenLastUsed; //! automatically updated whenever this tile is used for display
+    mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
 
 public:
-    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadState(LoadState::NotLoaded) {}
+    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
-    LoadState GetLoadState() const {return (LoadState) m_loadState.load();}
-    void SetIsReady() {return m_loadState.store(LoadState::Ready);}
-    void SetIsQueued() const {return m_loadState.store(LoadState::Queued);}
-    void SetNotLoaded() {return m_loadState.store(LoadState::NotLoaded);}
-    void SetNotFound() {return m_loadState.store(LoadState::NotFound);}
-    bool IsQueued() const {return m_loadState.load() == LoadState::Queued;}
-    bool IsAbandoned() const {return m_loadState.load() == LoadState::Abandoned;}
-    bool IsReady() const {return m_loadState.load() == LoadState::Ready;}
-    bool IsNotLoaded() const {return m_loadState.load() == LoadState::NotLoaded;}
-    bool IsNotFound() const {return m_loadState.load() == LoadState::NotFound;}
+    LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
+    void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
+    void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
+    void SetNotLoaded() {return m_loadStatus.store(LoadStatus::NotLoaded);}
+    void SetNotFound() {return m_loadStatus.store(LoadStatus::NotFound);}
+    bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
+    bool IsAbandoned() const {return m_loadStatus.load() == LoadStatus::Abandoned;}
+    bool IsReady() const {return m_loadStatus.load() == LoadStatus::Ready;}
+    bool IsNotLoaded() const {return m_loadStatus.load() == LoadStatus::NotLoaded;}
+    bool IsNotFound() const {return m_loadStatus.load() == LoadStatus::NotFound;}
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
@@ -177,7 +177,7 @@ public:
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    virtual TileLoadPtr _CreateTileLoad(LoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(LoadStatePtr) = 0;
 
     //! Get the name of this Tile.
     virtual Utf8String _GetTileName() const = 0;
@@ -265,7 +265,7 @@ public:
 
 //=======================================================================================
 // This object is created to read and load a single tile asynchronously. 
-// If caching is enable it will first attempt to read the data from the cache. If it's
+// If caching is enabled, it will first attempt to read the data from the cache. If it's
 // not available it will call _ReadFromSource(). Once the data is available the _LoadTile
 // method is called. 
 // All methods of this class might be called from worker threads except for the constructor 
@@ -273,7 +273,7 @@ public:
 // safe you must capture it during construction.
 // @bsiclass                                                    Mathieu.Marchand  11/2016
 //=======================================================================================
-struct TileLoad : RefCountedBase, NonCopyableClass
+struct TileLoader : RefCountedBase, NonCopyableClass
 {
 protected:
     Utf8String m_fileName;      // full file or URL name
@@ -282,34 +282,34 @@ protected:
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
     LoadStatePtr m_loads;
 
-    //! Constructor for TileLoad.
+    //! Constructor for TileLoader.
     //! @param[in] fileName full file name or URL name.
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoad(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
+    TileLoader(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
     BentleyStatus SaveToDb();
     BentleyStatus ReadFromDb();
 
-    //! Called from worker threads to read the data from the original location disk, web...
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromSource();
+    //! Called from worker threads to get the data from the original location disk, web, or created locally.
+    DGNPLATFORM_EXPORT virtual BentleyStatus _GetFromSource();
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
     virtual BentleyStatus _LoadTile() = 0; 
 
 public:
-    struct TileLoader
+    struct LoadFlag
         {
         Root& m_root;
-        TileLoader(Root& root) : m_root(root) {root.StartTileLoad();}
-        ~TileLoader() {m_root.DoneTileLoad();}
+        LoadFlag(Root& root) : m_root(root) {root.StartTileLoad();}
+        ~LoadFlag() {m_root.DoneTileLoad();}
         };
 
-    //! Called from worker threads to read the data. Could be from cache or from source.
-    BentleyStatus DoRead();
+    //! Called from worker threads to create a tile. Could be from cache or from source.
+    BentleyStatus CreateTile();
 };
 
 //=======================================================================================
@@ -382,21 +382,24 @@ struct DrawArgs
 };
 
 //=======================================================================================
+//! A QuadTree is a 2d TileTree that subdivides each tile into 4 child equal-sized tiles, each with one corner at the center of its parent.
+//! A tile in a QuadTree can be addressed by a TileId comprised of a level (depth) and a row/column numbers. 
+//! The root tile is {0,0,0} and it is not necessarily square.
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
 namespace QuadTree
 {
 //=======================================================================================
-//! Identifies a tile in a multiresolution quad tree
+//! Identifies a tile in a QuadTree
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct TileId
 {
-    uint8_t  m_zoomLevel;
+    uint8_t m_level;
     uint32_t m_row;
     uint32_t m_column;
     TileId() {}
-    TileId(uint8_t zoomLevel, uint32_t col, uint32_t row){m_zoomLevel=zoomLevel; m_column=col; m_row=row;}
+    TileId(uint8_t level, uint32_t col, uint32_t row) {m_level=level; m_column=col; m_row=row;}
 };
 
 //=======================================================================================
@@ -407,12 +410,13 @@ struct Root : TileTree::Root
 {
     DEFINE_T_SUPER(TileTree::Root)
 
-    ColorDef m_tileColor;                   //! for setting transparency
-    uint8_t m_maxZoom;                      //! the maximum zoom level for this map
-    uint32_t m_maxPixelSize;                //! the maximum size, in pixels, that a tile should stretched to. If the tile's size on screen is larger than this, use its children.
+    ColorDef m_tileColor;      //! for setting transparency
+    uint8_t m_maxZoom;         //! the maximum zoom level for this map
+    uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
 
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
+    void DrawInView(RenderContextR context);
 };
     
 //=======================================================================================
@@ -433,13 +437,29 @@ struct Tile : TileTree::Tile
     virtual TilePtr _CreateChild(TileId) const = 0;
     bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
     void TryHigherRes(TileTree::DrawArgsR args) const;
-    bool _HasChildren() const override {return m_id.m_zoomLevel < GetQuadRoot().m_maxZoom;}
+    bool _HasChildren() const override {return m_id.m_level < GetQuadRoot().m_maxZoom;}
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     ChildTiles const* _GetChildren(bool load) const override;
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
-    Utf8String _GetTileName() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_zoomLevel, m_id.m_column, m_id.m_row);}
+    Utf8String _GetTileName() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
+};
+
+//=======================================================================================
+// The ProgressiveTask for drawing QuadTree tiles as they arrive asynchronously.
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct ProgressiveTask : Dgn::ProgressiveTask
+{
+    Root& m_root;
+    DrawArgs::MissingNodes m_missing;
+    TimePoint m_nextShow;
+    LoadStatePtr m_loads;
+
+    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
+    ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
 
 }

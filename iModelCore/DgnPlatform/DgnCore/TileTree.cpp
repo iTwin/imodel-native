@@ -33,21 +33,20 @@ END_UNNAMED_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoad::LoadTile()
+BentleyStatus TileLoader::LoadTile()
     {
     // During the read we may have abandoned the tile. Do not waste time loading it.
     if (m_tile->IsAbandoned())
         return ERROR;
 
     BeAssert(m_tile->IsQueued());
-
     return _LoadTile();
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoad::DoRead()
+BentleyStatus TileLoader::CreateTile()
     {
     if (m_loads != nullptr && m_loads->IsCanceled())
         {
@@ -55,7 +54,7 @@ BentleyStatus TileLoad::DoRead()
         return ERROR;
         }
 
-    TileLoader loadFlag(m_tile->GetRootR());
+    LoadFlag loadFlag(m_tile->GetRootR());
 
     if (!m_tile->IsQueued())
         return SUCCESS; // this node was abandoned.
@@ -71,7 +70,7 @@ BentleyStatus TileLoad::DoRead()
         // If we failed to load from the db, try from the source.
         }
         
-    if (SUCCESS != _ReadFromSource())
+    if (SUCCESS != _GetFromSource())
         {
         if (m_loads != nullptr && m_loads->IsCanceled())
             m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
@@ -98,7 +97,7 @@ BentleyStatus TileLoad::DoRead()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoad::_ReadFromSource()
+BentleyStatus TileLoader::_GetFromSource()
     {
     bool isHttp = (0 == strncmp("http:", m_fileName.c_str(), 5) || 0 == strncmp("https:", m_fileName.c_str(), 6));
 
@@ -124,7 +123,7 @@ BentleyStatus TileLoad::_ReadFromSource()
 * Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoad::ReadFromDb()
+BentleyStatus TileLoader::ReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -171,7 +170,7 @@ BentleyStatus TileLoad::ReadFromDb()
 * Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoad::SaveToDb()
+BentleyStatus TileLoader::SaveToDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -377,7 +376,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
         return ERROR;
         }
 
-    TileLoadPtr loader = tile._CreateTileLoad(loads);
+    TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   
 
@@ -386,7 +385,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
 
     tile.SetIsQueued(); // mark as queued so we don't request it again.
 
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]() {return loader->DoRead();}); // add to download queue
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]() {return loader->CreateTile();}); // add to download queue
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,7 +416,7 @@ void Tile::SetAbandoned() const
         child->SetAbandoned();
 
     // this is actually a race condition, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
-    m_loadState.store(LoadState::Abandoned);
+    m_loadStatus.store(LoadStatus::Abandoned);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,7 +632,7 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     if (create && m_children.empty())
         {
         // this Tile has children, but we haven't created them yet. Do so now
-        uint8_t level = m_id.m_zoomLevel+1;
+        uint8_t level = m_id.m_level+1;
         uint32_t col = m_id.m_column*2;
         uint32_t row = m_id.m_row*2;
         for (int i=0; i<2; ++i)
@@ -720,4 +719,74 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)
         m_tileColor.SetAlpha((Byte) (255.* transparency));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuadTree::Root::DrawInView(RenderContextR context)
+    {
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, GetLocation(), now, now-GetExpirationTime());
+    Draw(args);
+    DEBUG_PRINTF("SheetView draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+
+    args.DrawGraphics(context);
+
+    // Do we still have missing tiles?
+    if (!args.m_missing.empty())
+        {
+        // yes, request them and schedule a progressive task to draw them as they arrive.
+        LoadStatePtr loads = std::make_shared<LoadState>();
+        args.RequestMissingTiles(*this, loads);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+    {
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
+
+    DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
+
+    for (auto const& node: m_missing)
+        {
+        auto stat = node.second->GetLoadStatus();
+        if (stat == Tile::LoadStatus::Ready)
+            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
+        else if (stat != Tile::LoadStatus::NotFound)
+            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
+        }
+
+    args.RequestMissingTiles(m_root, m_loads);
+    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
+
+    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
+
+    DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
+    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
+        {
+        m_loads = nullptr; // for debugging
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
+        return Completion::Finished;
+        }
+
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + std::chrono::seconds(1); // once per second
+        wantShow = WantShow::Yes;
+        }
+
+    return Completion::Aborted;
     }

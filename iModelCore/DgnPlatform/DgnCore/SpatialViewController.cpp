@@ -710,6 +710,7 @@ void DgnQueryQueue::Process()
             BeThreadUtilities::BeSleep(delay);
         }
 
+    BeMutexHolder holder(m_cv.GetMutex());
     m_state = State::Terminated;
     m_cv.notify_all();
     }
