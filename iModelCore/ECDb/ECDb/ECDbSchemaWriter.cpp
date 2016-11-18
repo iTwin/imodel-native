@@ -2104,7 +2104,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-
+        
         if (ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(m_ecdb, schemaChange.GetAlias().GetNew().Value().c_str()))
             {
             Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Alias is already used by another existing ECSchema.",
