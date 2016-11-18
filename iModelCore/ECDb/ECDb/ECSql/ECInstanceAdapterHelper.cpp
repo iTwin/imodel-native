@@ -207,14 +207,14 @@ std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create(ECN::EC
 ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex)
     : ECValueBindingInfo(Type::Array, ecsqlParameterIndex), m_arrayPropIndex(arrayPropIndex)
     {
-    auto structArrayProp = prop.GetAsStructArrayProperty();
+    StructArrayECPropertyCP structArrayProp = prop.GetAsStructArrayProperty();
     //if this is a struct array, generate bindings for the struct element type.
     //This is not necessary for prim arrays as they don't have any extra information needed
     //to read out the values
     if (nullptr != structArrayProp)
         {
-        auto structType = structArrayProp->GetStructElementType();
-        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(*structType);
+        ECStructClassCR structType = structArrayProp->GetStructElementType();
+        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(structType);
         }
     }
 
@@ -580,7 +580,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
         if (nullptr == structArrayProp)
             return false;
 
-        structType = structArrayProp->GetStructElementType();
+        structType = &structArrayProp->GetStructElementType();
         }
     else if (prop.GetIsStruct())
         structType = &prop.GetAsStructProperty()->GetType();

@@ -495,7 +495,7 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
                 }
             else if (property->GetIsStructArray())
                 {
-                cursorClass = property->GetAsStructArrayProperty()->GetStructElementType();
+                cursorClass = &property->GetAsStructArrayProperty()->GetStructElementType();
                 }
             }
         }

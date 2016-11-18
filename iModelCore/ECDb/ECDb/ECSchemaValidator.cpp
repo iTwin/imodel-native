@@ -190,7 +190,7 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, E
         {
         auto structArrayProp = ecProperty.GetAsStructArrayProperty();
         if (nullptr != structArrayProp)
-            structType = structArrayProp->GetStructElementType();
+            structType = &structArrayProp->GetStructElementType();
         }
 
     if (structType == nullptr)

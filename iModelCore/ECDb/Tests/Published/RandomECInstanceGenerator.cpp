@@ -857,7 +857,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
             generatedECInstance.AddArrayElements (ecProperty->GetName().c_str (), maxArrayEntries);
             for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                 {
-                auto structInstance = structArrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
+                auto structInstance = structArrayProperty->GetStructElementType().GetDefaultStandaloneEnabler()->CreateInstance();
                 BeAssert(structInstance.IsValid());
 
                 auto r = SetInstanceData (*structInstance);

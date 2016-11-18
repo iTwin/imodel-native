@@ -536,7 +536,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
     auto assertColumn = [] (ECClassCR expected, IECSqlValue const& colVal, bool checkIsNull)
         {
         ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsStructArray());
-        ASSERT_TRUE(colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
+        ASSERT_TRUE(&colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
         ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
         if (checkIsNull)
             {

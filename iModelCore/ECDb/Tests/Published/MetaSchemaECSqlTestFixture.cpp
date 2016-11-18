@@ -785,7 +785,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             if (structProp != nullptr)
                ASSERT_EQ(structProp->GetType().GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else if (structArrayProp != nullptr)
-                ASSERT_EQ(structArrayProp->GetStructElementType()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(structArrayProp->GetStructElementType().GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.StructClassId for neither struct nor struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 

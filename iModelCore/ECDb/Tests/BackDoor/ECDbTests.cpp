@@ -951,7 +951,7 @@ void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, Populat
                 StructArrayECPropertyCP structArrayProperty = ecProperty->GetAsStructArrayProperty();
                 for (uint32_t i = 0; i < arrayCount; i++)
                     {
-                    PopulateStructValue(value, *structArrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
+                    PopulateStructValue(value, structArrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
                     ecInstance->SetValue(ecProperty->GetName().c_str(), value, i);
                     }
                 }
