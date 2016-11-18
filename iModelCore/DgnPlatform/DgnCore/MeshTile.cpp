@@ -1382,6 +1382,8 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     if (0 == nModels)
         return Status::NoGeometry;
 
+    // unused - auto nCompletedModels = 0;
+
     T_HOST.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
@@ -1396,8 +1398,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(ITileCollector& collector, Dg
     m_progressMeter._IndicateProgress(0, nModels);
 
     auto future = GenerateTilesFromModels(collector, modelIds, leafTolerance, maxPointsPerTile);
-    auto status = future.get();
-    UNUSED_VARIABLE(status);
+    /* unused - auto status = */ future.get();
 
     m_completedModels.store(0);
     m_totalModels = 0;
@@ -1442,7 +1443,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     if (nullptr != generateMeshTiles)
         {
-        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
             ScopedHostAdopter   hostScope(*host);
 
@@ -1468,7 +1469,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         if (pCollector->_DoIncrementalModelPublish (dataDirectory, *modelPtr))
             modelDelta = TileModelDelta::Create (model, dataDirectory);
 
-        return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
             ScopedHostAdopter hostScope(*host);
             return pCollector->_BeginProcessModel(*modelPtr);
@@ -1478,8 +1479,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             ScopedHostAdopter hostScope(*host);
             if (Status::Success == status)
                 return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr, modelDelta.get());
-            else
-                return folly::makeFuture(ElementTileResult(status, nullptr));
+
+            return folly::makeFuture(ElementTileResult(status, nullptr));
             })
         .then([=](ElementTileResult result)
             {
@@ -1519,7 +1520,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITile
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext context)
     {
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]                                                         
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]                                                         
         {
         ScopedHostAdopter hostScope(context.m_host);
 
@@ -1557,7 +1558,7 @@ TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(Status sta
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementTileNodePtr parent, ElementTileContext context)
     {
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=]()
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
         ScopedHostAdopter hostScope(context.m_host);
 

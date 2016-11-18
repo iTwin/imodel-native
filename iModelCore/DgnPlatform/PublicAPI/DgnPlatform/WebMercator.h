@@ -54,9 +54,9 @@ struct MapTile : TileTree::QuadTree::Tile
 {
     DEFINE_T_SUPER(TileTree::QuadTree::Tile)
 
-    struct Loader : TileTree::TileLoad
+    struct Loader : TileTree::TileLoader
     {
-        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) : TileTree::TileLoad(url, tile, loads, tile._GetTileName()) {}
+        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
         BentleyStatus _LoadTile() override;
     };
 
@@ -66,7 +66,7 @@ struct MapTile : TileTree::QuadTree::Tile
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
-    TileTree::TileLoadPtr _CreateTileLoad(TileTree::LoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
 };
 
 //=======================================================================================

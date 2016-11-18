@@ -166,13 +166,14 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AttachmentTree : TileTree::QuadTree::Root
+struct AttachmentTree : TileTree::QuadTree::Root
 {
     DgnElementId m_attachmentId;
     ViewDefinitionCPtr m_view;
     ClipVectorCPtr m_clip;
+    Point2d m_pixels;
 
-    AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP);
+    AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP, uint32_t tileSize);
     DgnElementId GetAttachmentId() const {return m_attachmentId;}
 };
 
@@ -191,6 +192,7 @@ protected:
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
+    void _CreateTerrain(TerrainContextR context) override;
     void _LoadState() override;
     AttachmentTreePtr FindAttachment(DgnElementId attachId) const;
 
