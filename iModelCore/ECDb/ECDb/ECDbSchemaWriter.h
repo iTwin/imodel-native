@@ -38,7 +38,7 @@ private:
     BentleyStatus InsertECSchemaReferenceEntries(ECN::ECSchemaCR);
     BentleyStatus InsertCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
     BentleyStatus ReplaceCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
-    BentleyStatus DeleteCAEntry(ECN::ECClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
+    BentleyStatus DeleteCAEntry(int& ordinal, ECN::ECClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
     BentleyStatus UpdateECRelationshipConstraint(ECContainerId, ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
     BentleyStatus UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId, ECInstanceChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
@@ -64,7 +64,6 @@ private:
     bool IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;
 
     IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
-
     public:
     explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb(ecdb)
         {
