@@ -1565,9 +1565,10 @@ bool NavigationECProperty::Verify()
         }
 
     if (1 == thatConstraint->GetMultiplicity().GetUpperLimit())
-        m_valueKind = ValueKind::VALUEKIND_Primitive;
-    else
-        m_valueKind = ValueKind::VALUEKIND_Array;
+        m_valueKind = ValueKind::VALUEKIND_Navigation;
+    // Commenting out arrays at the moment
+    //else
+        //m_valueKind = ValueKind::VALUEKIND_Array;
 
     return true;
     }

@@ -340,6 +340,7 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     VALUEKIND_Primitive                      = 0x01, //!< The ECValue holds a Primitive type 
     VALUEKIND_Struct                         = 0x02, //!< The ECValue holds a struct
     VALUEKIND_Array                          = 0x04, //!< The ECValue holds an array
+    VALUEKIND_Navigation                     = 0x08, //!< The ECValue holds a navigation type
     };
 
 /*__PUBLISH_SECTION_END__*/

@@ -63,15 +63,16 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
 ECTypeDescriptor                ECTypeDescriptor::CreateNavigationTypeDescriptor(PrimitiveType type, bool isMultiple)
     {
     ECTypeDescriptor descriptor;
-    if (isMultiple)
+    /*if (isMultiple)
         {
         descriptor.m_typeKind = ValueKind::VALUEKIND_Array;
-        descriptor.m_arrayKind = ArrayKind::ARRAYKIND_Primitive;
+        descriptor.m_arrayKind = ArrayKind::ARRAYKIND_Navigation;
         }
     else
-        {
-        descriptor.m_typeKind = ValueKind::VALUEKIND_Primitive;
-        }
+        {*/
+        
+    //    }
+    descriptor.m_typeKind = ValueKind::VALUEKIND_Navigation;
     descriptor.m_primitiveType = type;
 
     return descriptor;

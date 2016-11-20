@@ -421,6 +421,44 @@ Utf8String ECValue::DateTimeInfo::MetadataToString () const
     return str;
     }
 
+//*********************** ECValue::NavigationInfo ***************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCR relationshipClass)
+    {
+    m_relClass = &relationshipClass;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
+    {
+    return m_relClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::NavigationInfo::Set(::int64_t id)
+    {
+    //if (PrimitiveType::PRIMITIVETYPE_Long != m_primitiveType)
+    //    return ECObjectsStatus::DataTypeNotSupported;
+    m_idLong = id;
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t ECValue::NavigationInfo::GetIdAsLong() const
+    {
+    return m_idLong;
+    }
+
 //*********************** ECValue ***************************************
 
 /*---------------------------------------------------------------------------------**//**
@@ -614,6 +652,14 @@ bool            ECValue::IsArray () const
     return GetKind() == VALUEKIND_Array; 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+bool            ECValue::IsNavigation() const
+    {
+    return GetKind() == VALUEKIND_Navigation;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -754,6 +800,15 @@ void            ECValue::SetToNull()
     {        
     FreeMemory ();
     SetIsNull (true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void            ECValue::SetNavigationToNull()
+    {
+    m_valueKind = VALUEKIND_Navigation;
+    SetToNull();
     }
    
 /*---------------------------------------------------------------------------------**//**
@@ -936,6 +991,15 @@ ECValue::ECValue (const Byte * data, size_t size)
     {
     ConstructUninitialized();
     SetBinary (data, size);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECValue::ECValue (ECRelationshipClassCR relationship, ::int64_t value)
+    {
+    ConstructUninitialized();
+    SetNavigationInfo(relationship, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2108,7 +2172,33 @@ bool            ArrayInfo::IsPrimitiveArray() const
 bool            ArrayInfo::IsStructArray() const
     {        
     return GetKind() == VALUEKIND_Struct; 
-    }  
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relClass, ::int64_t value)
+    {
+    Clear();
+    SetIsNull(false);
+
+    m_valueKind = VALUEKIND_Navigation;
+    
+    m_navigationInfo.Set(value);
+    m_navigationInfo.SetRelationship(relClass);
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECValue::NavigationInfo ECValue::GetNavigationInfo() const
+    {
+    BeAssert(IsNavigation());
+
+    return m_navigationInfo;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10

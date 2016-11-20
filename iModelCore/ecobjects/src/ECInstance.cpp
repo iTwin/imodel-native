@@ -562,6 +562,13 @@ ECObjectsStatus     IECInstance::ChangeValue (uint32_t propertyIndex, ECValueCR 
             }
         }
 
+    if (v.IsNavigation())
+        {
+        status = ValidateNavigationMetadata(propertyIndex, v);
+        if (status != ECObjectsStatus::Success)
+            return status;
+        }
+
     return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex); 
     }
 
@@ -1120,6 +1127,38 @@ ECObjectsStatus IECInstance::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32
         }
 
     return StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, *ecProperty);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                  11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::ValidateNavigationMetadata(uint32_t propertyIndex, ECValueCR v) const
+    {
+    if (v.IsNavigation() && !v.IsNull())
+        {
+        ECPropertyCP ecProperty = GetEnabler().LookupECProperty(propertyIndex);
+        if (nullptr == ecProperty)
+            return ECObjectsStatus::DataTypeMismatch;
+
+        NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
+        if (nullptr == navProp)
+            return ECObjectsStatus::DataTypeMismatch;
+
+        ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
+        if (!relClass->Is(navProp->GetRelationshipClass()))
+            return ECObjectsStatus::DataTypeMismatch;
+
+        ECRelationshipConstraintCP constraint;
+        if (ECRelatedInstanceDirection::Forward == navProp->GetDirection())
+            constraint = &relClass->GetSource();
+        else
+            constraint = &relClass->GetTarget();
+
+        if (!constraint->SupportsClass(GetEnabler().GetClass()))
+            return ECObjectsStatus::DataTypeMismatch;
+        }
+
+    return ECObjectsStatus::Success;
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -2788,12 +2827,37 @@ InstanceReadStatus  ReadNavigationPropertyValue(NavigationECPropertyP navigation
     // We always input string as the serialized type to handle the case where the instance is loaded in an environment where the type is different than when serialized
     if (navigationProperty->IsMultiple())
         {
-        Utf8String accessString;
-        CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
-        return ReadPrimitiveArrayValues(ecInstance, accessString, navigationProperty->GetType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
+        return InstanceReadStatus::XmlParseError;
+        //Utf8String accessString;
+        //CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
+        //return ReadPrimitiveArrayValues(ecInstance, accessString, navigationProperty->GetType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
         }
     else
-        return ReadSimplePropertyValue(navigationProperty->GetName(), navigationProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
+        {
+        // on entry, propertyValueNode is the xml node for the primitive property value.
+        InstanceReadStatus   ixrStatus;
+        ECValue              ecValue;
+        if (InstanceReadStatus::Success != (ixrStatus = ReadNavigationValue(ecValue, navigationProperty, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String)))
+            return ixrStatus;
+
+        if (ecValue.IsUninitialized())
+            {
+            //A malformed value was found.  A warning was shown; just move on.
+            return InstanceReadStatus::Success;
+            }
+
+        ECObjectsStatus setStatus;
+        Utf8String accessString;
+        CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
+        setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue);
+
+        if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
+            LOG.warningv("Unable to set value for property %s", navigationProperty->GetName().c_str());
+
+        BeAssert(ECObjectsStatus::Success == setStatus || ECObjectsStatus::PropertyValueMatchesNoChange == setStatus);
+
+        return InstanceReadStatus::Success;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3183,6 +3247,43 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
     return InstanceReadStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceReadStatus   ReadNavigationValue(ECValueR ecValue, NavigationECPropertyP navProperty, BeXmlNodeR primitiveValueNode, PrimitiveType serializedType)
+    {
+    PrimitiveType propertyType = navProperty->GetType();
+
+    // If we fail to read the property value for some reason, return it as null
+    ecValue.SetToNull();
+
+    BeXmlNodeP navValueNode = primitiveValueNode.GetFirstChild(BEXMLNODE_Element);
+
+    // On entry primitiveValueNode is the XML node that holds the value. 
+    // First check to see if the value is set to NULL
+    bool         nullValue;
+    if (BEXML_Success == navValueNode->GetAttributeBooleanValue(nullValue, XSI_NIL_ATTRIBUTE))
+        if (true == nullValue)
+            return InstanceReadStatus::Success;
+
+    if (PrimitiveType::PRIMITIVETYPE_Long == propertyType)
+        {
+        int64_t longValue;
+        BeXmlStatus status = primitiveValueNode.GetContentInt64Value(longValue);
+        if (BEXML_Success != status)
+            {
+            if (BEXML_ContentWrongType == status)
+                return InstanceReadStatus::TypeMismatch;
+            if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                ecValue.SetToNull();
+            return InstanceReadStatus::Success;
+            }
+
+        //ecValue.SetNavigationInfo(, longValue);
+        }
+
+    return InstanceReadStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
@@ -3566,8 +3667,28 @@ InstanceWriteStatus     WriteNavigationPropertyValue(NavigationECPropertyR navig
     else
         {
         m_xmlWriter->WriteElementStart(propertyName.c_str());
-        WritePrimitiveValue(ecValue, navigationProperty.GetType());
+
+        Utf8String typeString = "RelatedId:";
+        typeString = typeString.append(GetPrimitiveTypeString(navigationProperty.GetType()));
+        if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
+            return InstanceWriteStatus::XmlWriteError;
+        char outString[512];
+
+        if (PrimitiveType::PRIMITIVETYPE_Long == navigationProperty.GetType())
+            BeStringUtilities::Snprintf(outString, "%lld", ecValue.GetNavigationInfo().GetIdAsLong());
+
+        m_xmlWriter->WriteRaw(outString);
         m_xmlWriter->WriteElementEnd();
+
+        if (BEXML_Success != m_xmlWriter->WriteElementStart("RelationshipClass"))
+            return InstanceWriteStatus::XmlWriteError;
+
+        Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
+
+        m_xmlWriter->WriteRaw(className.c_str());
+        m_xmlWriter->WriteElementEnd(); // End of class name
+
+        m_xmlWriter->WriteElementEnd(); // End of NavProp
         }
 
     return InstanceWriteStatus::Success;

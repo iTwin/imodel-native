@@ -183,6 +183,8 @@ Utf8String    PropertyLayout::ToString ()
     Utf8String typeName;
     if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
         typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
+    else if (m_typeDescriptor.IsNavigation())
+        typeName = "navigation";
     else
         typeName = "struct";
 
@@ -725,7 +727,7 @@ void            ClassLayout::Factory::AddFixedSizeProperty (Utf8CP accessString,
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
     
-    if (!typeDescriptor.IsPrimitive())
+    if (!typeDescriptor.IsPrimitive() && !typeDescriptor.IsNavigation())
         {
         DEBUG_FAIL ("We currently only support fixed sized properties for primitive types");
         return;
@@ -874,20 +876,21 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
         else if (property->GetIsNavigation())
             {
             NavigationECPropertyP navProp = property->GetAsNavigationPropertyP();
-            PrimitiveType navPropType = navProp->GetType();
             bool isMultiple = navProp->IsMultiple();
+            ECTypeDescriptor typeDescriptor = ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), isMultiple);
 
-            if (!isMultiple && PrimitiveTypeIsFixedSize(navPropType))
+            if (!isMultiple && PrimitiveTypeIsFixedSize(typeDescriptor.GetPrimitiveType()))
                 {
                 if (addingFixedSizeProps)
-                    AddFixedSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                    AddFixedSizeProperty(propName.c_str(), typeDescriptor, navProp->GetIsReadOnly(), navProp->IsCalculated());
                 }
             else if (!addingFixedSizeProps)
                 {
-                if (isMultiple)
-                    AddVariableSizeProperty(propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(navPropType), navProp->GetIsReadOnly(), navProp->IsCalculated());
-                else
-                    AddVariableSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                // TODO
+                //if (isMultiple)
+                //    AddVariableSizeProperty(propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(), navProp->GetIsReadOnly(), navProp->IsCalculated());
+                //else
+                    AddVariableSizeProperty(propName.c_str(), typeDescriptor, navProp->GetIsReadOnly(), navProp->IsCalculated());
                 }
             }
         }
@@ -2716,6 +2719,54 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
+    {
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount(propertyLayout) == 0));
+    if (isInUninitializedFixedCountArray || IsPropertyValueNull(propertyLayout, useIndex, index))
+        {
+        v.SetNavigationToNull();
+        }
+    else
+        {
+        Byte const * pValue;
+        if (useIndex)
+            pValue = GetAddressOfPropertyValue(propertyLayout, index);
+        else
+            pValue = GetAddressOfPropertyValue(propertyLayout);
+
+        // Need to set the metadata first since the primitive type of the related instance id isn't know yet, but the 
+        // pointer to the relationship is always the same, Binary.
+        int64_t relClassValue;
+        memcpy(&relClassValue, pValue, sizeof(relClassValue));
+        void const* relClassP = (void const*) relClassValue;
+        ECClassCP ecClass = (ECClassCP) relClassP;
+        BeAssert(nullptr != ecClass);
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        BeAssert(nullptr != relClass);
+
+        if (PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
+            {
+            int64_t value;
+            Byte const * valueP = pValue + sizeof(int64_t);
+            memcpy(&value, valueP, sizeof(value));
+            v.SetNavigationInfo(*relClass, value);
+            }
+        else
+            {
+            BeAssert (false && "datatype not implemented");
+            return ECObjectsStatus::DataTypeNotSupported;
+            }
+        }
+
+    return status;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2740,6 +2791,10 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
             return v.SetPrimitiveArrayInfo (typeDescriptor.GetPrimitiveType(), arrayCount, isFixedArrayCount);
         else if (typeDescriptor.IsStructArray())
             return v.SetStructArrayInfo (arrayCount, isFixedArrayCount);
+        }
+    else if (typeDescriptor.IsNavigation())
+        {
+        return GetNavigationValueFromMemory(v, propertyLayout, false, 0);
         }
         
     POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);        
@@ -3086,7 +3141,68 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         }
 
     POSTCONDITION (false && "datatype not implemented", ECObjectsStatus::DataTypeNotSupported);
-    }                
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index)
+    {
+    bool isOriginalValueNull = IsPropertyValueNull(propertyLayout, useIndex, index);
+    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount(propertyLayout) == 0));
+
+    if (v.IsNull())
+        {
+        if (!isInUninitializedFixedCountArray)
+            SetPropertyValueNull(propertyLayout, useIndex, index, true);
+
+        if (isOriginalValueNull)
+            return ECObjectsStatus::PropertyValueMatchesNoChange;
+
+        return ECObjectsStatus::Success;
+        }
+    else if (!v.IsNavigation())
+        // For rigtht now need to specify both the related instance id and the relationship class pointer
+        return ECObjectsStatus::DataTypeMismatch;
+
+    if (isInUninitializedFixedCountArray)
+        ArrayResizer::CreateNullArrayElementsAt(GetClassLayout(), propertyLayout, *this, 0, GetReservedArrayCount(propertyLayout));
+
+    uint32_t offset = GetOffsetOfPropertyValue(propertyLayout, useIndex, index);
+
+#ifdef EC_TRACE_MEMORY 
+    wprintf(L"SetValue %ls of 0x%x at offset=%d to %ls.\n", propertyAccessString, this, offset, v.ToString().c_str());
+#endif    
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    
+    ECObjectsStatus result = ECObjectsStatus::Error;
+
+    // The relationship class pointer is stored as an int64_t before the actual value
+    int64_t relClassValue = (int64_t) v.GetNavigationInfo().GetRelationshipClass();
+    Byte const* relClassValueP = GetPropertyData() + offset;
+    if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
+        return ECObjectsStatus::PropertyValueMatchesNoChange;
+    
+    result = ModifyData(relClassValueP, &relClassValue, sizeof(relClassValue));
+    
+    if (ECObjectsStatus::Success == result && PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
+        {
+        int64_t value = v.GetNavigationInfo().GetIdAsLong();
+        Byte const* valueP = relClassValueP + sizeof(relClassValue);
+        if (!isOriginalValueNull && 0 == memcmp(valueP, &value, sizeof(value)))
+            return ECObjectsStatus::PropertyValueMatchesNoChange;
+
+        result = ModifyData(valueP, &value, sizeof(value));
+        }
+
+    if (ECObjectsStatus::Success == result)
+        {
+        SetPropertyValueNull(propertyLayout, useIndex, index, false);
+        return result;
+        }
+
+    POSTCONDITION(false && "datatype not implemented", ECObjectsStatus::DataTypeNotSupported);
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
@@ -3098,6 +3214,8 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
 
     if (typeDescriptor.IsPrimitive())
         return SetPrimitiveValueToMemory (v, propertyLayout, false, 0);
+    else if (typeDescriptor.IsNavigation())
+        return SetNavigationValueToMemory (v, propertyLayout, false, 0);
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);
     }      

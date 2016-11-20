@@ -575,6 +575,8 @@ protected:
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0);    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetNavigationValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  SetNavigationValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0);
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const;    
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, uint32_t propertyIndex, bool useArrayIndex = false, uint32_t arrayIndex = 0) const;

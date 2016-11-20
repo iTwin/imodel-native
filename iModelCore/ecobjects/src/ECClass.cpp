@@ -445,6 +445,7 @@ ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind ki
     case VALUEKIND_Primitive:   newProperty = new PrimitiveECProperty (*this); break;
     case VALUEKIND_Array:       newProperty = new PrimitiveArrayECProperty (*this); break;
     case VALUEKIND_Struct:      newProperty = new StructECProperty (*this); break;
+    case VALUEKIND_Navigation:  newProperty = new NavigationECProperty(*this); break;
     default:                    return ECObjectsStatus::Error;
         }
 

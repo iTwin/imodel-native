@@ -193,6 +193,27 @@ private:
         Utf8String MetadataToString () const;
         };
 
+    //! Structure to hold information about Navigation values
+    struct NavigationInfo
+        {
+    private:
+        ECRelationshipClassCP   m_relClass;
+
+        // If any more types are added make into a union or store everything as String and then parse
+        // into the different types
+        ::int64_t m_idLong;
+
+    public:
+        BentleyStatus SetRelationship(ECRelationshipClassCR relationshipClass);
+
+        //! Returns the relationship class that this navigation value was initialized with
+        ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
+
+        ECObjectsStatus Set(::int64_t id);
+
+        ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
+        };
+
     //! The union storing the actual data of this ECValue
     union
         {
@@ -207,6 +228,7 @@ private:
         DPoint3d            m_dPoint3d;         //!< If a DPoint3d primitive, holds the DPoint3d value
         ArrayInfo           m_arrayInfo;        //!< If an array value, holds the ArrayInfo struct defining the array
         BinaryInfo          m_binaryInfo;       //!< If a binary value, holds the BinaryInfo struct defining the binary data
+        NavigationInfo      m_navigationInfo;   //!< If a navigation value, holds the NavigationInfo struct 
         IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
@@ -294,6 +316,11 @@ public:
     //! @param[in] dateTime Date time value to set.
     ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
+    //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
+    //! @param[in] relationship The relationship used to initialize this ECValue from
+    //! @param[in] value        Value to initialize this ECValue from
+    ECOBJECTS_EXPORT explicit ECValue(ECRelationshipClassCR relationship, ::int64_t value);
+
     bool operator==(ECValueCR rhs) const { return Equals(rhs); }
     bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
 
@@ -323,6 +350,9 @@ public:
 
     //! Frees the values memory, if necessary, and sets the state to NULL.
     ECOBJECTS_EXPORT void           SetToNull(); 
+
+    //! Frees the values memory, if necessary, sets the type to BentleyAPI::ECN::VALUEKIND_NAVIGATION, and sets the state to NULL
+    ECOBJECTS_EXPORT void           SetNavigationToNull();
 
     //! Does a ShallowCopy of the supplied ECValue
     //! @param[in] v    The ECValue to copy from
@@ -391,6 +421,9 @@ public:
     //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Array).
     //! @return true if the ECValue content is an array. false otherwise.
     ECOBJECTS_EXPORT bool           IsArray () const;
+    //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Navigation).
+    //! @return true if the ECValue content is a navigation value. false otherwise.
+    ECOBJECTS_EXPORT bool           IsNavigation() const;
     //! Indicates whether the content of this ECValue is a struct (DgnPlatform::VALUEKIND_Struct).
     //! @return true if the ECValue content is a struct. false otherwise.
     ECOBJECTS_EXPORT bool           IsStruct () const;
@@ -451,6 +484,14 @@ public:
     
     //! Returns the array information defining this ECValue
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
+
+    //! Defined the navigation value for this ECValue
+    //! @param[in] relationshipClass The relationship used to set this ECValue
+    //! @param[in] value             Value to set this ECValue to
+    ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relaltionshipClass, ::int64_t value);
+
+    //! Returns the navigation information definig this ECValue
+    ECOBJECTS_EXPORT ECValue::NavigationInfo GetNavigationInfo() const;
     
     //! Returns the integer value, if this ECValue holds an Integer 
     ECOBJECTS_EXPORT int32_t        GetInteger () const;  

@@ -183,6 +183,13 @@ private:
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, uint32_t propertyIndex) const;
     ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const;
 
+    //! If the property is a Navigation property it looks at the relationship class and validates whether the relationship
+    //! supports this class
+    //! @param[in] propertyIndex Index of property to validate against (index is 1-based)
+    //! @param[in] v ECValue to validate
+    //! @return ECOBJECT_STATUS_Success if the validation was successful. ECObjectsStatus::DataTypeMismatch otherwise
+    ECObjectsStatus ValidateNavigationMetadata(uint32_t propertyIndex, ECValueCR v) const;
+
 protected:
     ECOBJECTS_EXPORT IECInstance();
     ECOBJECTS_EXPORT virtual ~IECInstance();

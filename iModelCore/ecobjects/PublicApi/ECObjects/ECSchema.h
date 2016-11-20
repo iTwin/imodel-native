@@ -141,7 +141,7 @@ struct ECTypeDescriptor
 {
 private:
     ValueKind       m_typeKind;
-
+    
     union
         {
         ArrayKind       m_arrayKind;
@@ -193,6 +193,8 @@ public:
     inline bool                 IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
     //! Returns true if the ECProperty is an Array property, and the array elements are Structs
     inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
+    //! Returns true if the ECProperty is a Navigation property
+    inline bool                 IsNavigation() const        { return (GetTypeKind() == VALUEKIND_Navigation); }
     //! Returns the primitive type of the ECProperty, if the property is a Primitive type
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
