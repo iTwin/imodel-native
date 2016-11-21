@@ -33,24 +33,27 @@ struct SQLiteNodeHeader
     bool        m_isTextured;               // Indicates if the node contains Texture or not
     int  m_parentNodeID; //Required when loading 
     std::vector<int>  m_apSubNodeID;
-    int  m_SubNodeNoSplitID;
+    int  m_SubNodeNoSplitID;//not used?
     bool        m_filtered;    
     size_t      m_nbFaceIndexes;
-    size_t        m_nbUvIndexes;
-    size_t        m_nbTextures;
-    int  m_graphID;
-    int  m_textureID;
-    int  m_uvID;
-    std::vector<int>  m_ptsIndiceID;
-    std::vector<int>  m_uvsIndicesID;
+    size_t        m_nbUvIndexes; //not used, we do metadata instead
+    size_t        m_nbTextures; //not used, we do metadata instead
+    int  m_graphID; //not used
+    int  m_textureID; //ID of texture, if -1 means same as NodeID and texture cannot be shared with other nodes
+    int  m_uvID; //not used
+    std::vector<int>  m_ptsIndiceID; //not used same as id
+    std::vector<int>  m_uvsIndicesID; //not used same as id
     size_t      m_numberOfMeshComponents;
     int*        m_meshComponents;
     size_t m_nodeCount;
 
+    float m_geometricResolution; // 0 if not set
+    float m_textureResolution; // 0 if not set
+
 
     std::vector<int> m_apNeighborNodeID[26];
 
-    std::vector<int> m_clipSetsID;
+    std::vector<int> m_clipSetsID; //Not used, I believe we just use the nodeID.
 
     SQLiteNodeHeader()
         {
@@ -58,6 +61,7 @@ struct SQLiteNodeHeader
         m_SubNodeNoSplitID = SQLiteNodeHeader::NO_NODEID;
         m_uvID = SQLiteNodeHeader::NO_NODEID;
         m_graphID = SQLiteNodeHeader::NO_NODEID;
+        m_geometricResolution = m_textureResolution = 0.0;
         }
     };
 
@@ -76,6 +80,7 @@ struct SQLiteIndexHeader
     int              m_rootNodeBlockID;
     size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
     bool                    m_isTerrain;                    //can the Scalable Mesh be used as a terrain, e.g. for design applications
+    float                   m_resolution;                   //Maximum resolution (of either texture or geometry) for the dataset. This may not be available in all areas. 0 if not computed.
     };
 
 struct SQLiteSourcesData

@@ -17,36 +17,34 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct IScalableMeshGroundExtractor;
+struct IScalableMeshTextureGenerator;
 
-typedef RefCountedPtr<IScalableMeshGroundExtractor> IScalableMeshGroundExtractorPtr;
+typedef RefCountedPtr<IScalableMeshTextureGenerator> IScalableMeshTextureGeneratorPtr;
 
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
+struct IScalableMeshTextureGenerator abstract: virtual public RefCountedBase
     {
     private:        
 
     protected:                         
              
-        //Synchonization with data sources functions
-        virtual StatusInt _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) = 0;        
+        //Synchonization with data sources functions        
+        virtual StatusInt _SetPixelSize(double pixelSize) = 0;
 
-        virtual StatusInt _SetExtractionArea(const bvector<DPoint3d>& area) = 0;
-
+        virtual StatusInt _SetTextureTempDir(const BeFileName& textureDir) = 0;
+              
+        virtual StatusInt _GenerateTexture(const bvector<DPoint3d>& area) = 0; 
           
     public:
-      
-        BENTLEY_SM_EXPORT StatusInt ExtractAndEmbed(const BeFileName& coverageTempDataFolder);                
 
-        BENTLEY_SM_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
-        
-        BENTLEY_SM_EXPORT static IScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);        
+        BENTLEY_SM_EXPORT StatusInt SetPixelSize(double pixelSize);
 
-        BENTLEY_SM_EXPORT static void GetTempDataLocation(BeFileName& textureSubFolderName , BeFileName& extraLinearFeatureFileName);        
-
+        BENTLEY_SM_EXPORT StatusInt SetTextureTempDir(const BeFileName& textureDir);
+              
+        BENTLEY_SM_EXPORT StatusInt GenerateTexture(const bvector<DPoint3d>& area);                        
     };
 
 

@@ -35,19 +35,25 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
     {
     private: 
 
-        IScalableMeshPtr m_scalableMesh;
+        IScalableMeshPtr  m_scalableMesh;
+        bvector<DPoint3d> m_extractionArea;       
+        WString           m_smTerrainPath;
+
+        StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);
 
     protected:                   
 
-        virtual StatusInt                    _ExtractAndEmbed() override;     
+        virtual StatusInt                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;     
 
-        explicit                            ScalableMeshGroundExtractor(IScalableMeshPtr& scalableMesh);
+        virtual StatusInt                   _SetExtractionArea(const bvector<DPoint3d>& area) override;
+
+        explicit                            ScalableMeshGroundExtractor(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);
 
         virtual                             ~ScalableMeshGroundExtractor();
     
 public:
 
-    static ScalableMeshGroundExtractorPtr Create(IScalableMeshPtr& scalableMesh);        
+    static ScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);        
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

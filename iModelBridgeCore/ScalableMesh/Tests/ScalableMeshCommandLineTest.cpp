@@ -509,7 +509,7 @@ void RunDTMTriangulateTest()
 
 void RunDTMSTMTriangulateTest()
     {
-    WString pathMeshes = L"E:\\makeTM\\mesh";
+    WString pathMeshes = L"E:\\makeTM\\lvl5-1";
     WString path = pathMeshes + WString(L".m");
     FILE* mesh = _wfopen(path.c_str(), L"rb");
     size_t nVerts = 0;
@@ -521,7 +521,7 @@ void RunDTMSTMTriangulateTest()
     bvector<int32_t> allIndices(nIndices);
     fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
     TerrainModel::BcDTMPtr bcdtm;
-    SortPoints(allVerts, allIndices);
+    //SortPoints(allVerts, allIndices);
     MakeDTM(bcdtm, allVerts, allIndices);
     }
 
@@ -786,7 +786,7 @@ void RunParseTree(WString& stmFileName)
 
 
     }
-
+/*
 void RunIntersectRayMetadata(WString& stmFileName)
     {
     StatusInt status;
@@ -829,7 +829,7 @@ void RunIntersectRayMetadata(WString& stmFileName)
         }
     //std::cout << elementId << std::endl;
     }
-
+    */
 void RunGetMeshParts(WString& stmFileName)
     {
     StatusInt status;
@@ -1120,7 +1120,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
-    //RunDTMSTMTriangulateTest();
+    RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);
@@ -1131,9 +1131,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
    // RunClipPlaneTest();
    // RunClipMeshTest();
-    WString stmFileName(argv[1]);
+  //  WString stmFileName(argv[1]);
     //RunGetMeshParts(stmFileName);
-    RunUpdateTest(stmFileName);
+   // RunUpdateTest(stmFileName);
     std::cout << "THE END" << std::endl;
     return 0;
 }

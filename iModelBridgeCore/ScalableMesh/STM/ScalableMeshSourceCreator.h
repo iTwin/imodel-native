@@ -92,7 +92,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         virtual StatusInt                   Save() override;
         virtual StatusInt                   Load() override;
         void                                SetupFileForCreation();// override;
-        StatusInt                           SyncWithSources();
+        StatusInt                           SyncWithSources(bool restrictLevelForPropagation);
         StatusInt                           SaveSources(SMSQLiteFilePtr& smSQLiteFile);
 
 
@@ -106,7 +106,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
 
-        virtual StatusInt                   CreateScalableMesh(bool isSingleFile) override;
+        virtual StatusInt                   CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation) override;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

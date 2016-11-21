@@ -1,5 +1,6 @@
 #include <ImagePP/h/ExportMacros.h>
 #include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/h/hstdcpp.h>
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
 #include <ImagePP/h/HIterators.h>

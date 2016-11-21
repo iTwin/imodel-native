@@ -12,6 +12,23 @@ struct SharedTextureManager
 
     SharedTextureManager() {}
 
+    ~SharedTextureManager()
+        {
+        assert(m_texMap.size() == 0);
+        assert(m_texDataMap.size() == 0);
+        /*
+        std::lock_guard<std::mutex> lock(m_texMutex);
+        for (auto& data : m_texMap)
+            {
+            SMMemoryPool::GetInstance()->RemoveItem(data.second, data.first, SMStoreDataType::Texture, (uint64_t)this);
+            }
+        for (auto& data : m_texDataMap)
+            {
+            SMMemoryPool::GetInstance()->RemoveItem(data.second, data.first, SMStoreDataType::DisplayTexture, (uint64_t)this);
+            }
+            */
+        }
+
     SMMemoryPoolItemId GetPoolIdForTexture(uint64_t texID)
         {
         std::lock_guard<std::mutex> lock(m_texMutex);
@@ -36,6 +53,18 @@ struct SharedTextureManager
         {
         std::lock_guard<std::mutex> lock(m_texMutex);
         m_texDataMap[texID] = id;
+        }    
+
+    void RemovePoolIdForTextureData(uint64_t texID)
+        {
+        std::lock_guard<std::mutex> lock(m_texMutex);
+        m_texDataMap.erase(texID);
+        }
+
+    void RemovePoolIdForTexture(uint64_t texID)
+        {
+        std::lock_guard<std::mutex> lock(m_texMutex);        
+        m_texMap.erase(texID);
         }
     };
 

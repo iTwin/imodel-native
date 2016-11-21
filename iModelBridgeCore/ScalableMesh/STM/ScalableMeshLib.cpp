@@ -17,10 +17,20 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include "SMMemoryPool.h"
 #include <CloudDataSource/DataSourceManager.h>
+#include <ImagePP/all/h/ImageppLib.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+struct SMImagePPHost : public ImageppLib::Host
+    {
+    virtual void             _RegisterFileFormat() override
+        {
+
+        }
+    };
+
 ScalableMeshLib::Host*        t_scalableTerrainModelHost;
+SMImagePPHost*        t_ippLibHost;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                     11/2010
@@ -58,7 +68,7 @@ void ScalableMeshLib::Host::Initialize()
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
-    m_smPaths = new bmap<WString, IScalableMeshPtr>();
+    m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
     //RegisterPODImportPlugin();
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
@@ -74,6 +84,12 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     {
     if (NULL == t_scalableTerrainModelHost)
         return;
+
+    if (t_ippLibHost != NULL)
+        {
+        t_ippLibHost->Terminate(onProgramExit);
+        delete t_ippLibHost;
+        }
          
     //Terminate host objects
     for(bvector<ObjEntry>::iterator itr=m_hostObj.begin(); itr!=m_hostObj.end(); ++itr)
@@ -109,7 +125,7 @@ void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WStri
 
 void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
     {
-    m_smPaths->insert(make_bpair(path, ref));
+    m_smPaths->insert(make_bpair(path, ref.get()));
     }
 
 /*======================================================================+
@@ -123,7 +139,12 @@ void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableM
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
-    {    
+    {   
+    if (!ImageppLib::IsInitialized())
+        {
+        t_ippLibHost = new SMImagePPHost();
+        ImageppLib::Initialize(*t_ippLibHost);
+        }
     BeAssert (NULL == t_scalableTerrainModelHost);  // cannot be called twice on the same thread
     if (NULL != t_scalableTerrainModelHost)
         return;    

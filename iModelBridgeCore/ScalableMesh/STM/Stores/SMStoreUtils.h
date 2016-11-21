@@ -225,6 +225,8 @@ template <class EXTENT> class SMIndexMasterHeader
         bool                    m_isTerrain;
         HPMBlockID              m_rootNodeBlockID;
 
+        float                   m_resolution;                  //Dataset resolution, usually dependent on the means of capture. 
+
         SMIndexMasterHeader<EXTENT>& operator=(const SQLiteIndexHeader& indexHeader);
         
         operator SQLiteIndexHeader();        
@@ -264,6 +266,7 @@ template <class EXTENT> class SMIndexNodeHeaderBase
         uint64_t    m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
         bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
         bool        m_isTextured;               // Indicates if the node contains Texture or not
+
 
 
         //INFORMATION NOT PERSISTED
@@ -306,6 +309,9 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         size_t      m_numberOfMeshComponents;
         int*        m_meshComponents = nullptr;
         size_t      m_nodeCount;
+
+        float       m_geometricResolution;     //smallest detail that can be represented by the node geometry 
+        float       m_textureResolution;       //smallest detail that can be represented by the node texture
 
         std::vector<HPMBlockID> m_apNeighborNodeID[MAX_NEIGHBORNODES_COUNT];    
         bool                    m_apAreNeighborNodesStitched[MAX_NEIGHBORNODES_COUNT];

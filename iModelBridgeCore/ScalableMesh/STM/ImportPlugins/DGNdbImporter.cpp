@@ -629,6 +629,7 @@ private:
                                 bset<int64_t> texIdSet;
                                 for (auto& texID : texIds)
                                     {
+                                    assert(texID < 10000);
                                     val["texId"].append(texID);
                                     texIdSet.insert(texID);
                                     }

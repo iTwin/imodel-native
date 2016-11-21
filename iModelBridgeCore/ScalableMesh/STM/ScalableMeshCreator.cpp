@@ -73,6 +73,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\Tools\ConfigurationManager.h>
 #endif
 
+#include "MosaicTextureProvider.h"
 
 #define SCALABLE_MESH_TIMINGS
 
@@ -199,9 +200,14 @@ IScalableMeshCreator::~IScalableMeshCreator ()
     }
 
 
-StatusInt IScalableMeshCreator::Create (bool isSingleFile)
+StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
     {
-    return m_implP->CreateScalableMesh(isSingleFile);
+    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
+    }
+
+void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
+    {
+    return m_implP->SetBaseExtraFilesPath(path);
     }
 
 
@@ -297,6 +303,13 @@ StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform
     }
 
 
+StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+    {
+    return m_implP->SetTextureProvider(provider, unitTransform);
+    }
+
+
+
 StatusInt IScalableMeshCreator::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
     {
     return SetGCS(GetGCSFactory().Create(gcsPtr));
@@ -364,11 +377,18 @@ IScalableMeshCreator::Impl::~Impl()
 StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(mosaicP, unitTransform);
+    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
+    m_scmPtr->TextureFromRaster(mosaicPtr, unitTransform);
     return SUCCESS;
     }
 
- 
+StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+    {
+    if (m_scmPtr.get() == nullptr) return ERROR;
+    m_scmPtr->TextureFromRaster(provider, unitTransform);
+    return SUCCESS;
+    }
+
 
 
 // TDORAY: This is a duplicate of version in ScalableMesh.cpp. Find a way to use the same fn.
@@ -493,7 +513,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     }
 
 
-int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
+int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
     {    
     int status = BSIERROR;
     return status;
@@ -506,8 +526,6 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
-
-                                                       HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
     {                                    
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
@@ -570,6 +588,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false,
                                        pMesher2_5d,
                                        pMesher3d);
+
+        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+        dataStore->SetProjectFilesPath(projectFilesPath);
 
         pDataIndex->SetGenerating(true);        
         }           
@@ -734,6 +755,10 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     }
 
 
+void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
+    {
+    m_baseExtraFilesPath = path;
+    }
 
 
 StatusInt IScalableMeshCreator::Impl::Load()

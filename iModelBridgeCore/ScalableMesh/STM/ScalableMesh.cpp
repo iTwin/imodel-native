@@ -25,6 +25,8 @@ extern bool   GET_HIGHEST_RES;
 
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
+#include <ScalableMesh/GeoCoords/Reprojection.h>
+
 
 #include "ScalableMeshQuery.h"
 #include "ScalableMeshSourcesPersistance.h"
@@ -32,8 +34,10 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #include <ScalableMesh\IScalableMeshSourceCollection.h>
 #include <ScalableMesh\IScalableMeshDocumentEnv.h>
+#include <ScalableMesh\IScalableMeshGroundExtractor.h>
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
+
 
 #include <CloudDataSource/DataSourceManager.h>
 
@@ -50,6 +54,8 @@ extern bool   GET_HIGHEST_RES;
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include "MosaicTextureProvider.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -131,9 +137,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {
-    return _TextureFromRaster(mosaicP, unitTransform);
+    return _TextureFromRaster(provider, unitTransform);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -354,6 +360,11 @@ void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     return _SetEditFilesBasePath(path);
     }
 
+Utf8String IScalableMesh::GetEditFilesBasePath()
+    {
+    return _GetEditFilesBasePath();
+    }
+
 IScalableMeshNodePtr IScalableMesh::GetRootNode()
     {
     return _GetRootNode();
@@ -377,9 +388,9 @@ int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDa
     return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus IScalableMesh::CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    return _CreateCoverage(coverageData, id);
+    return _CreateCoverage(coverageTempDataFolder, coverageData, id);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -594,7 +605,7 @@ bool ScalableMeshBase::LoadGCSFrom()
         return true;
 
     ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
-    BaseGCS::WktFlavor  wktFlavor;
+    BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
 
     bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
 
@@ -771,13 +782,13 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         if (!LoadGCSFrom())
             return BSIERROR; // Error loading layer gcs
 
-        bool hasPoints = m_smSQLitePtr->HasPoints();                 
+       // bool hasPoints = m_smSQLitePtr->HasPoints();                 
         
         bool isSingleFile = true;
                 
         isSingleFile = m_smSQLitePtr->IsSingleFile();
 
-        if (hasPoints || !isSingleFile)
+        //if (hasPoints || !isSingleFile)
             {    
 
 
@@ -942,6 +953,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         m_scalableMeshDTM[DTMAnalysisType::Precise]->SetAnalysisType(DTMAnalysisType::Precise);
         m_scalableMeshDTM[DTMAnalysisType::Fast] = ScalableMeshDTM::Create(this);
         m_scalableMeshDTM[DTMAnalysisType::Fast]->SetAnalysisType(DTMAnalysisType::Fast);
+        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly] = ScalableMeshDTM::Create(this);
+        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly]->SetAnalysisType(DTMAnalysisType::RawDataOnly);
         return BSISUCCESS;  
         }
     catch(...)
@@ -1440,12 +1453,12 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {
     auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(mosaicP,unitTransform);
+    m_scmIndexPtr->TextureFromRaster(provider, unitTransform);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
     m_scmIndexPtr = 0;
@@ -1909,6 +1922,11 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
     }
 
+template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
+    {
+    return Utf8String(m_baseExtraFilesPath);
+    }
+
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
     auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
@@ -2107,8 +2125,70 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+static bool s_doGroundExtract = true; 
+
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
+    WString newPath = m_path + L"_terrain.3sm";
+
+#if 0     
+    if (m_scmTerrainIndexPtr == nullptr)
+        {
+        StatusInt status;
+        m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
+        if (status != SUCCESS) return BSIERROR;
+        if (m_terrainP == nullptr)
+            {
+            auto sm = IScalableMeshNodeCreator::GetFor(newPath.c_str(),  status);            
+            sm->SetBaseExtraFilesPath(newPath);
+            sm->Create();
+            StatusInt addStatus;
+            auto node = sm->AddNode(addStatus);
+            DRange3d range;
+            GetRange(range);
+            node->SetNodeExtent(range);
+            node = 0;
+            sm->SaveToFile();
+            sm = 0;
+            //m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
+            }
+
+       // dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->SetMainIndexP(m_scmIndexPtr->CloneIndex(dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP()->GetDataStore()));
+        //m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+
+        }
+#endif       
+
+#ifndef VANCOUVER_API
+    if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
+        {        
+        IScalableMeshPtr scalableMeshPtr(this);
+
+        m_scmTerrainIndexPtr = 0;
+        m_terrainP = 0;
+        /*
+        int result = _wremove(newPath.c_str());
+        assert(result == 0);
+        */
+        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));        
+
+        smGroundExtractor->SetExtractionArea(coverageData);
+
+        StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);                
+
+        assert(status == SUCCESS);    
+                
+        Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain.3sm";
+        StatusInt openStatus;
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+        if (openStatus && smSQLiteFile != nullptr)
+            {
+            m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
+            m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+            }                
+        }
+#endif
+
     if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
     bvector<bvector<DPoint3d>> skirts;
@@ -2223,7 +2303,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
     {}
 
 // Inherited from IDTM   

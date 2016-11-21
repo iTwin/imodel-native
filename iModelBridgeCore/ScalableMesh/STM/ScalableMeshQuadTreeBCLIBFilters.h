@@ -40,6 +40,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBFilter1 : pub
         virtual bool        Filter (HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode, 
                                     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                     size_t numSubNodes) const;
+        virtual ISMPointIndexFilter* Clone() override
+            {
+            return new ScalableMeshQuadTreeBCLIBFilter1();
+            }
 
 };
 
@@ -75,7 +79,12 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBMeshFilter1 :
                                     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                     size_t numSubNodes) const;        
         
-        virtual bool        IsProgressiveFilter() const { return false; }        
+        virtual bool        IsProgressiveFilter() const { return false; }       
+
+        virtual ISMPointIndexFilter* Clone() override
+            {
+            return new ScalableMeshQuadTreeBCLIBMeshFilter1();
+            }
 };
 
   
@@ -92,7 +101,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilt
                                    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                    size_t numSubNodes) const;       
         
-        virtual bool        IsProgressiveFilter() const { return false; }        
+        virtual bool        IsProgressiveFilter() const { return false; }       
+        virtual ISMPointIndexFilter* Clone() override
+            {
+            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter();
+            }
     };
 
 #ifdef WIP_MESH_IMPORT

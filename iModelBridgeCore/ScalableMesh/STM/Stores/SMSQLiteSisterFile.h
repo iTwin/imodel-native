@@ -25,6 +25,10 @@ class SMSQLiteSisterFile
         SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
         BeFileName      m_projectFilesPath;
 
+        std::mutex m_defOpen;
+        std::mutex m_featureOpen;
+        std::mutex m_clipOpen;
+
         bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType);
 
         SMSQLiteSisterFile() = default;

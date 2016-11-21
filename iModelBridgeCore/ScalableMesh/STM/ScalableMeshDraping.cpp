@@ -654,7 +654,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     bvector<bool> clips;
     for (auto& node : nodes)
         {
-        if (m_scmPtr->IsTerrain())
+        if (!node->ArePoints3d())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, direction, transformedPt))
@@ -854,11 +854,22 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = targetedMesh->GetNodeQueryInterface();
     params->SetLevel(ComputeLevelForTransform(w2vMap));
+    if (m_type == DTMAnalysisType::Fast)
+        {
+        params->SetLevel(std::min((size_t)5, targetedMesh->GetTerrainDepth()));
+        targetedMesh->GetCurrentlyViewedNodes(m_nodeSelection);
+        }
 
-    IScalableMeshNodePtr node;
+    DVec3d direction = DVec3d::From(0, 0, -11);
+    bvector<IScalableMeshNodePtr> nodes;
+    params->SetDirection(direction);
     DPoint3d transformedPt = point;
     m_UorsToStorage.Multiply(transformedPt);
-    if (query->Query(node, &transformedPt, NULL, 0, params) != SUCCESS)
+    QueryNodesBasedOnParams(nodes, transformedPt, params, targetedMesh);
+
+
+
+    if (nodes.empty())
         {
 #ifdef VANCOUVER_API
         drapedTypeP = 0;
@@ -867,22 +878,39 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
 #endif
         return DTM_SUCCESS;
         }
-    BcDTMPtr bcdtm = node->GetBcDTM();
-    if (bcdtm == nullptr)
+    IScalableMeshNodePtr node = nodes.front();
+    DTMStatusInt result;
+    if (!node->ArePoints3d())
         {
+        BcDTMPtr bcdtm = node->GetBcDTM();
+        if (bcdtm == nullptr)
+            {
 #ifdef VANCOUVER_API
-        drapedTypeP = 0;
+            drapedTypeP = 0;
 #else
-       *drapedTypeP = 0;
+            *drapedTypeP = 0;
 #endif
-        return DTM_SUCCESS;
+            return DTM_SUCCESS;
+            }
+        result = bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, transformedPt);
+        if (elevationP != nullptr)
+            {
+            transformedPt.z = *elevationP;
+            m_transform.Multiply(transformedPt);
+            *elevationP = transformedPt.z;
+            }
         }
-    DTMStatusInt result = bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, transformedPt);
-    if (elevationP != nullptr)
+    else
         {
-        transformedPt.z = *elevationP;
-        m_transform.Multiply(transformedPt);
-        *elevationP = transformedPt.z;
+        DPoint3d pointOnDTM;
+        if (IntersectRay3D(pointOnDTM, direction, transformedPt, node))
+            {
+            transformedPt.z = pointOnDTM.z;
+            m_transform.Multiply(transformedPt);
+            *elevationP = transformedPt.z;
+            result = DTM_SUCCESS;
+            }
+        else result = DTM_ERROR;
         }
     return result;
     }
@@ -996,7 +1024,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
     bvector<bvector<DPoint3d>> coverages;
     IScalableMeshPtr targetedMesh = m_scmPtr;
     m_scmPtr->GetAllCoverages(coverages);
-    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+    if (!coverages.empty() && m_type!= DTMAnalysisType::RawDataOnly) targetedMesh = m_scmPtr->GetTerrainSM();
 
     if (m_type == DTMAnalysisType::Fast)
         {
