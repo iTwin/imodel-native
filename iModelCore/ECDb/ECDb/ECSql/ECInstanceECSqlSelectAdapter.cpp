@@ -411,7 +411,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetNavigationValue(IECInstanceR inst
     BeAssert(prop != nullptr && prop->GetIsNavigation() && "TODO: ECInstanceECSqlSelectAdapter expects that GetColumnInfo().GetProperty is never null. This is not the case for prim arrays. Please double-check the code.");
 
     ECClassId relClassId;
-    ECInstanceId navId = value.GetNavigation(&relClassId);
+    ECInstanceId navId = value.GetNavigation<ECInstanceId>(&relClassId);
     ECClassCP relClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(relClassId);
     if (relClass == nullptr || !relClass->IsRelationshipClass())
         {

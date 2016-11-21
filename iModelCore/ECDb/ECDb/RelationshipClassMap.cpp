@@ -54,7 +54,7 @@ DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColu
                 }
             }
         }
-    column = table.CreateColumn(columnName, DbColumn::Type::Integer, columnId, persType);
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnId, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();
@@ -454,7 +454,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             return ERROR;
 
         const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-        DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+        DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName, DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
         if (newFkCol == nullptr)
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
@@ -531,7 +531,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 if (readonly)
                     fkTable.GetEditHandleR().BeginEdit();
 
-                fkTableClassIdCol = fkTable.CreateColumn(colName, DbColumn::Type::Integer, kind, PersistenceType::Virtual);
+                fkTableClassIdCol = fkTable.CreateColumn(Utf8String(colName), DbColumn::Type::Integer, kind, PersistenceType::Virtual);
 
                 if (readonly)
                     fkTable.GetEditHandleR().EndEdit();
@@ -564,7 +564,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 if (readonly)
                     fkTable.GetEditHandleR().BeginEdit();
 
-                fkTableReferencedEndClassIdCol = fkTable.CreateColumn(colName, DbColumn::Type::Integer, kind, PersistenceType::Virtual);
+                fkTableReferencedEndClassIdCol = fkTable.CreateColumn(Utf8String(colName), DbColumn::Type::Integer, kind, PersistenceType::Virtual);
 
                 if (readonly)
                     fkTable.GetEditHandleR().EndEdit();
@@ -646,7 +646,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table,
     if (!canEdit)
         table.GetEditHandleR().BeginEdit();
 
-    relClassIdCol = table.CreateColumn(relClassIdColName, DbColumn::Type::Integer, DbColumn::Kind::RelECClassId, persType);
+    relClassIdCol = table.CreateColumn(Utf8String(relClassIdColName), DbColumn::Type::Integer, DbColumn::Kind::RelECClassId, persType);
     if (relClassIdCol == nullptr)
         return nullptr;
 
@@ -1154,7 +1154,8 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
 
     if (neighborColumn == nullptr)
         {
-        position = table.GetECClassIdColumn().GetPersistenceType() == PersistenceType::Persisted ? 2 : 1;
+        //after ECInstanceId and ECClassId DbColumns (the latter always exists (might be virtual though))
+        position = 2;
         return SUCCESS;
         }
 

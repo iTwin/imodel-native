@@ -94,8 +94,8 @@ public:
     ECDbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
-    Utf8CP GetTableName() const {return m_tableName.c_str();}
-    Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
+    Utf8StringCR GetTableName() const {return m_tableName;}
+    Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     //! Virtual tables are not persisted   
     bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }

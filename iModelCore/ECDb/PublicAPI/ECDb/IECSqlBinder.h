@@ -158,7 +158,7 @@ public:
     //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
     //!            if the relationshipECClassId is optional. ECDb does not validate the input.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindNavigation(ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId);
+    ECDB_EXPORT ECSqlStatus BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId);
     
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.

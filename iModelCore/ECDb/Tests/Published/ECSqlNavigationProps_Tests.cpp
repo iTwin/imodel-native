@@ -679,12 +679,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ASSERT_TRUE(stmt.GetColumnInfo(0).GetProperty() != nullptr && stmt.GetColumnInfo(0).GetProperty()->GetIsNavigation());
     
     ECClassId actualRelClassId;
-    ECInstanceId actualModelId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ECInstanceId actualModelId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
 
     //make use of default parameter in GetValueNavigation
-    actualModelId = stmt.GetValueNavigation(0);
+    actualModelId = stmt.GetValueNavigation<ECInstanceId>(0);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
 
     //alternative API via struct value
@@ -801,7 +801,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
 
     ECClassId actualRelClassId;
-    ECInstanceId actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ECInstanceId actualParentId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), actualParentId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
 
@@ -818,7 +818,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithoutParentKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
-    actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    actualParentId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_FALSE(actualParentId.IsValid());
     ASSERT_FALSE(actualRelClassId.IsValid());
     stmt.Finalize();
@@ -1257,7 +1257,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
             {
             verifiedElementWithSetNavProp = true;
 
-            ASSERT_EQ(modelKey.GetECInstanceId(), selStmt.GetValueNavigation(2)) << "Model via plain ECSQL";
+            ASSERT_EQ(modelKey.GetECInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(2)) << "Model via plain ECSQL";
 
             Json::Value const& modelJson = json["Model"];
             ASSERT_FALSE(modelJson.isNull()) << "Model is not expected to be null in the read ECInstance";

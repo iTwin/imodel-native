@@ -165,7 +165,7 @@ BeGuid IECSqlValue::GetGuid() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle  11/2016
 //---------------------------------------------------------------------------------------
-ECInstanceId IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) const
+BeInt64Id IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) const
     {
     ECSqlColumnInfo const& colInfo = GetColumnInfo();
     if (!colInfo.GetDataType().IsNavigation())
@@ -184,7 +184,7 @@ ECInstanceId IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) c
             *relationshipECClassId = relClassIdVal.GetId<ECN::ECClassId>();
         }
 
-    return navPropValue.GetValue(0).GetId<ECInstanceId>();
+    return navPropValue.GetValue(0).GetId<BeInt64Id>();
     }
 
 //--------------------------------------------------------------------------------------
