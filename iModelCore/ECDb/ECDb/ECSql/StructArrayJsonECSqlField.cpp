@@ -395,7 +395,7 @@ ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, E
     if (dataType.IsStructArray())
         {
         BeAssert(GetColumnInfo().GetProperty() != nullptr && "ColumnInfo::GetProperty should not return null for array property");
-        m_structArrayElementType = GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType();
+        m_structArrayElementType = &GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType();
         }
     else if (dataType.IsPrimitiveArray() && dataType.GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {

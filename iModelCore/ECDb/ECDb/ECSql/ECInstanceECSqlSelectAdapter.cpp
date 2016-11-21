@@ -265,7 +265,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
             {
             if (prop->GetIsStructArray())
                 {
-                if (SUCCESS != SetStructArrayElement(ecVal, *prop->GetAsStructArrayProperty()->GetStructElementType(), *arrayElementValue))
+                if (SUCCESS != SetStructArrayElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), *arrayElementValue))
                     return ERROR;
                 }
             else if (prop->GetIsPrimitiveArray())

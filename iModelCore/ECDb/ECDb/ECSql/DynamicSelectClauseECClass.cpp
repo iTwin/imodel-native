@@ -275,7 +275,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 return ECSqlStatus::Error;
 
             StructArrayECPropertyP structArrayProp = nullptr;
-            if (ECObjectsStatus::Success != GetClassR().CreateStructArrayProperty(structArrayProp, encodedPropName, asStruct))
+            if (ECObjectsStatus::Success != GetClassR().CreateStructArrayProperty(structArrayProp, encodedPropName, *asStruct))
                 return ECSqlStatus::Error;
 
             generatedProperty = structArrayProp;

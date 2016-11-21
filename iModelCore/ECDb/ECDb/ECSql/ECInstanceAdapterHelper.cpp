@@ -148,7 +148,7 @@ ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_
     //to read out the values
     if (nullptr != structArrayProp)
         {
-        ECClassCP structType = structArrayProp->GetStructElementType();
+        ECStructClassCR structType = structArrayProp->GetStructElementType();
         m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(*structType);
         }
     }
@@ -502,7 +502,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
         if (nullptr == structArrayProp)
             return false;
 
-        structType = structArrayProp->GetStructElementType();
+        structType = &structArrayProp->GetStructElementType();
         }
     else if (prop.GetIsStruct())
         structType = &prop.GetAsStructProperty()->GetType();

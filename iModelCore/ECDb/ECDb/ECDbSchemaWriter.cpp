@@ -475,7 +475,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         if (nullptr != structArrayProperty)
             {
-            if (SUCCESS != ImportECClass(*structArrayProperty->GetStructElementType()))
+            if (SUCCESS != ImportECClass(structArrayProperty->GetStructElementType()))
                 return ERROR;
             }
         }
@@ -571,7 +571,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType().GetId()))
                 return ERROR;
             }
 

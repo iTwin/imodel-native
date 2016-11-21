@@ -130,7 +130,7 @@ struct ECDbDateTimeTests : ECDbTestFixture
             {
             Utf8CP structArrayPropName = "arrayofstructwithdatetimes";
             StructArrayECPropertyCP arrayProp = testClass->GetPropertyP(structArrayPropName)->GetAsStructArrayProperty();
-            ECClassCP structType = arrayProp->GetStructElementType();
+            ECClassCP structType = &arrayProp->GetStructElementType();
             ASSERT_TRUE(structType != nullptr);
 
             const uint32_t arraySize = 3;
