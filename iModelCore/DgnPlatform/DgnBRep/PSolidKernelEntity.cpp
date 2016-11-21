@@ -334,7 +334,7 @@ PK_ENTITY_t PSolidUtil::GetEntityTagForModify(IBRepEntityR entity)
     if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
         return PK_ENTITY_null;
 
-    if (psEntity->IsOwnedEntity())
+    if (!psEntity->IsOwnedEntity())
         return PK_ENTITY_null;
 
     return psEntity->GetEntityTag();
