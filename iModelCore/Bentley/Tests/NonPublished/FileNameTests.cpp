@@ -41,7 +41,7 @@ TEST(BeFileName_Tests, BeGetTempPath)
     BeFileName bf1(L"");
     //BeFileName  bf2(L"/dir1/dir2/.txt");
     std::wstring strTempPath;
-    wchar_t wchPath[MAX_PATH];
+    WChar wchPath[MAX_PATH];
     if (GetTempPathW(MAX_PATH, wchPath))
         strTempPath = wchPath;
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeGetTempPath(bf1));
