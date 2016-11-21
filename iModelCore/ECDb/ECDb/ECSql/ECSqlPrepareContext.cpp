@@ -26,12 +26,12 @@ ECSqlPrepareContext::ExpScope::ExpScope(ExpCR exp, ExpScope const* parent, Optio
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType (ExpCR exp) const
+ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType(ExpCR exp) const
     {
-    switch (exp.GetType ())
+    switch (exp.GetType())
         {
-        case Exp::Type::SingleSelect:
-        case Exp::Type::Select:
+            case Exp::Type::SingleSelect:
+            case Exp::Type::Select:
                 return ECSqlType::Select;
             case Exp::Type::Insert:
                 return ECSqlType::Insert;
@@ -40,10 +40,10 @@ ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType (ExpCR exp) const
             case Exp::Type::Delete:
                 return ECSqlType::Delete;
             default:
-                {
-                BeAssert (m_parent != nullptr && "DetermineECSqlType");
-                return m_parent->GetECSqlType ();
-                }
+            {
+            BeAssert(m_parent != nullptr && "DetermineECSqlType");
+            return m_parent->GetECSqlType();
+            }
         }
     }
 
@@ -51,19 +51,19 @@ ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType (ExpCR exp) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScopeStack::Push (ExpCR exp, OptionsExp const* options)
+void ECSqlPrepareContext::ExpScopeStack::Push(ExpCR exp, OptionsExp const* options)
     {
     ExpScope const* parent = nullptr;
     if (Depth() > 0)
-        parent = & Current();
+        parent = &Current();
 
-    m_scopes.push_back (ExpScope (exp, parent, options));
+    m_scopes.push_back(ExpScope(exp, parent, options));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScopeStack::Pop ()
+void ECSqlPrepareContext::ExpScopeStack::Pop()
     {
     m_scopes.pop_back();
     }
@@ -71,26 +71,26 @@ void ECSqlPrepareContext::ExpScopeStack::Pop ()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-size_t ECSqlPrepareContext::ExpScopeStack::Depth () const 
-    { 
-    return m_scopes.size ();
+size_t ECSqlPrepareContext::ExpScopeStack::Depth() const
+    {
+    return m_scopes.size();
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current () const
+ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current() const
     {
-    BeAssert (!m_scopes.empty ());
-    return m_scopes.back ();
+    BeAssert(!m_scopes.empty());
+    return m_scopes.back();
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR () 
+ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR()
     {
-    BeAssert (!m_scopes.empty ());
-    return m_scopes.back ();
+    BeAssert(!m_scopes.empty());
+    return m_scopes.back();
     }
 
 //****************************** ECSqlPrepareContext ********************
@@ -122,7 +122,7 @@ ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedT
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR () const
+ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const
     {
     return m_ecsqlStatement;
     }
@@ -130,16 +130,16 @@ ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlPrepareContext::GetNativeSql () const 
-    { 
-    return m_nativeSqlBuilder.ToString ();
+Utf8CP ECSqlPrepareContext::GetNativeSql() const
+    {
+    return m_nativeSqlBuilder.ToString();
     }
 
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount () const 
+int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const
     {
     return m_nativeSqlSelectClauseColumnCount;
     }
@@ -147,7 +147,7 @@ int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (size_t value)
+void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value)
     {
     m_nativeSqlSelectClauseColumnCount += static_cast<int> (value);
     }
@@ -190,7 +190,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
     parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClass->GetECSqlName().c_str());
 
-    std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>( new JoinedTableInfo(classMap.GetClass()));
+    std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>(new JoinedTableInfo(classMap.GetClass()));
     auto propertyList = exp.GetPropertyNameListExp();
     auto valueList = exp.GetValuesExp();
     for (size_t i = 0; i < propertyList->GetChildrenCount(); i++)
@@ -205,7 +205,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
-        
+
         if (property->GetPropertyMap().IsSystem())
             {
             SystemPropertyMap const& systemPropertyMap = static_cast<SystemPropertyMap const&>(property->GetPropertyMap());
@@ -237,7 +237,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                     return nullptr;
                     }
                 }
-            }        
+            }
         else if (property->GetPropertyMap().IsData())
             {
             DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
@@ -410,7 +410,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinedTableInfo::BuildAssignmentExpression
         if (propI != prop.begin())
             out.AppendComma();
 
-        out.Append(*propI).Append("=").Append(*valueI);      
+        out.Append(*propI).Append("=").Append(*valueI);
         }
 
     return out;
