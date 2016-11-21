@@ -74,37 +74,41 @@ static int callback_progress_func(void *pClient,
 
     struct RealityDataDownload::FileTransfer *pFileTrans = (struct RealityDataDownload::FileTransfer *)pClient;
 
-    if (pFileTrans->filesize == 0 && dltotal > 0)
-        {
-        pFileTrans->filesize = (size_t)dltotal;
-        pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
-        }
+    int statusCode = 0;
+    if (NULL != pFileTrans->pHeartbeatFunc)
+        statusCode = pFileTrans->pHeartbeatFunc();
 
-    if (dlnow > pFileTrans->downloadedSizeStep)
+    if(statusCode == 0)
         {
-        if (pFileTrans->filesize == 0)
-            pFileTrans->downloadedSizeStep += pFileTrans->downloadedSizeStep;       // predefine step
-        else
-            pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
+        if (pFileTrans->filesize == 0 && dltotal > 0)
+            {
+            pFileTrans->filesize = (size_t)dltotal;
+            pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
+            }
+
+        if (dlnow > pFileTrans->downloadedSizeStep)
+            {
+            if (pFileTrans->filesize == 0)
+                pFileTrans->downloadedSizeStep += pFileTrans->downloadedSizeStep;       // predefine step
+            else
+                pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
 
             
-        if (NULL != pFileTrans->pProgressFunc)
-            {
-            int statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
-            if (0 != statusCode)
-                {
-                // An error occurred, delete incomplete file.
-                pFileTrans->fileStream.Close();
-                BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
-                }
-                
-            return statusCode;
+            if (NULL != pFileTrans->pProgressFunc)
+                statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
             }
         }
 
 #ifdef TRACE_DEBUG
     fprintf(stderr, "callback_progress_func total:%llu now: %llu\n", (size_t)dltotal, (size_t)dlnow);
 #endif
+
+    if (0 != statusCode)
+        {
+        // An error occurred, delete incomplete file.
+        pFileTrans->fileStream.Close();
+        BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
+        }
 
     return 0;
 }
@@ -430,7 +434,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isRetry)
     {
     // If cancel requested, don't queue new files
-    if(m_pHeartbeatFunc() != 0)
+    if(NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
         return SetupCurlStatus::Success;
 
     // If file already there, consider the download completed.

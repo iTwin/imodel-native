@@ -189,77 +189,7 @@ public:
                 writer->ToString(report);
             }
         };
-
-    //where the curl download ended, either in success or failure
-    struct DownloadResult
-        {
-        int                     errorCode; //code returned by curl
-        size_t                  downloadProgress; //a percentage of how much of the file was successfully downloaded
-        };
-
-    //results for a single file
-    struct TransferReport
-        {
-        AString                 url; //url that was contacted
-        size_t                  filesize; //size of the file
-        bvector<DownloadResult> retries; //the results of each retry performed
-        //time between when the download was added to the thread pool and when it either succeeded or failed its final retry
-        //important to note, that if the source limits the number of parallel downloads, this value may be artificially extended
-        std::time_t             timeSpent; 
-        };
-
-    //results of all downloads queued for a package
-    struct DownloadReport
-        {
-        size_t                  packageId;
-        bmap<WString, TransferReport*> results;
-        ~DownloadReport()
-            {
-            for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
-                delete (it->second);
-            }
-
-        REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
-            {
-            BeXmlWriterPtr writer = BeXmlWriter::Create();
-            BeAssert(writer.IsValid());
-            writer->SetIndentation(2);
-
-            //writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
-
-            writer->WriteElementStart("RealityDataDownload_DownloadReport");
-                {
-                writer->WriteAttribute("PackageId", packageId);
-                writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
-
-                for (bmap<WString, TransferReport*>::iterator it = results.begin(); it != results.end(); ++it)
-                    {
-                    writer->WriteElementStart("File");
-                        {
-                        writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
-                        TransferReport* tr = it->second;
-                        writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
-                        writer->WriteAttribute("filesize", tr->filesize);
-                        writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
-                        for(size_t i = 0; i < tr->retries.size(); ++i)
-                            {
-                            writer->WriteElementStart("DownloadAttempt");
-                                {
-                                writer->WriteAttribute("attemptNo", i+1);
-                                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
-                                writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
-                                }
-                            writer->WriteElementEnd();
-                            }
-                        }
-                    writer->WriteElementEnd();
-                    }
-                }
-                writer->WriteElementEnd();
-                writer->ToString(report);
-            }
-        };
-
+    
     //{{url, file},{url, file}}
     typedef bvector<url_file_pair>    UrlLink_UrlFile;
     //{{mirror set:{url, file}, {url, file}}, {mirror set: ...}} 
