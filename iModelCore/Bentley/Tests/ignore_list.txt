@@ -35,4 +35,4 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
     #       Which is: 2
     # [  FAILED  ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens (36 ms)
 
-DateTimeTests, ComputeOffsetToUtcInHns            
+DateTimeTests.ComputeOffsetToUtcInHns            
