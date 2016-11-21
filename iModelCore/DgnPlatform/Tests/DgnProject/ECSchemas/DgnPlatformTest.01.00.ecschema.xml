@@ -4,7 +4,7 @@
     <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
-
+	
   <ECClass typeName="TestElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
@@ -373,5 +373,46 @@
         <ECProperty propertyName="Country" typeName="string" />
         <ECProperty propertyName="Zip" typeName="int"/>
     </ECClass>
-
+	
+	<!--Class Hierarchy used by PerformanceElementsCRUDTests -->
+	<ECClass typeName="PerfElement" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:PhysicalElement</BaseClass>
+		<ECProperty propertyName="Str" typeName="string" />
+		<ECProperty propertyName="Long" typeName="long" />
+		<ECProperty propertyName="Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub1" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElement</BaseClass>
+		<ECProperty propertyName="Sub1Str" typeName="string" />
+		<ECProperty propertyName="Sub1Long" typeName="long" />
+		<ECProperty propertyName="Sub1Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub2" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElementSub1</BaseClass>
+		<ECProperty propertyName="Sub2Str" typeName="string" />
+		<ECProperty propertyName="Sub2Long" typeName="long" />
+		<ECProperty propertyName="Sub2Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub3" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElementSub2</BaseClass>
+		<ECProperty propertyName="Sub3Str" typeName="string" />
+		<ECProperty propertyName="Sub3Long" typeName="long" />
+		<ECProperty propertyName="Sub3Double" typeName="double" />
+	</ECClass>
+	
 </ECSchema>
