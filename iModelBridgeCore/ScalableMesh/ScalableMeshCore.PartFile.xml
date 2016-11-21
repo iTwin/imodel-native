@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
 
- <!--   <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
+    <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
       <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
       <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>
       <SubPart PartName="pcl"      PartFile="pcl"      Repository="Libsrc-Pcl"/>      
@@ -34,49 +34,47 @@
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
             <VendorAPI Domain="CloudDataSource" />
         </Bindings>
-    </Part>-->
+    </Part>
 
-   <!-- <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
+    <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>     
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>        
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />-->
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
-       <!-- <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
-        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>-->
+        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <!--<SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>-->
-        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="CloudDataSource" />
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
-       <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />-->
+       <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <!-- For Importer-->
-       <!-- <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
-        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
+        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>-->
-        <!--<Bindings>
+        <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
-    </Part>-->
+    </Part>
     
-    <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
+    <!--<Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
+        <SubPart PartName="ScalableMesh" />   
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />        
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe
             </Files>
-           <!-- <Files ProductDirectoryName="TMSchemas" >
-                Delivery\TerrainModel.01.00.ecschema.xml,Delivery\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
-            </Files>-->
-       </Bindings>
-    </Part>
 
-    <!--<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+        </Bindings>
+    </Part>-->
+
+    <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
@@ -100,7 +98,7 @@
       </Bindings>
   </Part>
 
-  <Part Name="DgnDbToSM" BentleyBuildMakeFile="Tests/DgnDbToSM.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+  <!--<Part Name="DgnDbToSM" BentleyBuildMakeFile="Tests/DgnDbToSM.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
     <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
     <SubPart PartName="ConceptStationDomain" PartFile="ConceptStation" Repository="ConceptStation"/>
     <SubPart PartName="ConceptStationBridge" PartFile="ConceptStation" Repository="ConceptStation"/>
@@ -210,7 +208,7 @@
         <Directories DirectoryListName="ScalableMeshSDK" />        
     </Product>
 
-  <!--<ProductDirectoryList ListName="ScalableMeshATP">
+  <ProductDirectoryList ListName="ScalableMeshATP">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
@@ -306,6 +304,11 @@
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <!--<SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
+        <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
+        <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>-->
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
@@ -392,6 +395,6 @@
     <SubPart PartName="DgnDbToSM" />
     <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
     <Directories DirectoryListName="DgnDbToSM" />
-  </Product>-->
+  </Product>
   
   </BuildContext>
