@@ -137,28 +137,23 @@ namespace IndexECPlugin.Source.QueryProviders
             IParamNameValueMap paramNameValueMap;
 
             IECClass ecClass = m_query.SearchClasses.First().Class;
+            List<IECProperty> propertyList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap, out propertyList);
 
-            IEnumerable<IECProperty> propertyList;
-            if ( m_query.SelectClause.SelectAllProperties )
-                {
-                propertyList = ecClass;
-                }
-            else
-                {
-                propertyList = m_query.SelectClause.SelectedProperties;
-                }
 
             IDbQuerier dbQuerier = new DbQuerier();
 
 #if BBOXQUERY
             bool removeSpatial = false;
-            if(m_polygonDescriptor != null && !propertyList.Any(prop => prop.IsSpatial()))
+            if(m_polygonDescriptor != null && !m_query.SelectClause.SelectAllProperties && !m_query.SelectClause.SelectedProperties.Any(prop => prop.IsSpatial()))
                 {
-                List<IECProperty> newPropList = propertyList.ToList();
-                newPropList.Add(ecClass.First(prop => prop.IsSpatial()));
-                propertyList = newPropList;
+                //This has been removed, since it is taken care of in CreateSqlCommandStringFromQuery. 
+
+                //List<IECProperty> newPropList = propertyList.ToList();
+                //newPropList.Add(ecClass.First(prop => prop.IsSpatial()));
+                //propertyList = newPropList;
+
                 removeSpatial = true;
                 }
 #endif

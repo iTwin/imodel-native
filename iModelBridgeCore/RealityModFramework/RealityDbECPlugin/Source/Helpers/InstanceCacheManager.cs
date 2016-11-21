@@ -133,10 +133,9 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 propertiesSelected = actualECClass;
                 }
-            List<IECProperty> basePropertiesSelected;
+            List<IECProperty> basePropertiesSelected = new List<IECProperty>();
             if ( actualECClass.Name != baseECClass.Name )
                 {
-                basePropertiesSelected = new List<IECProperty>();
                 foreach ( IECProperty prop in propertiesSelected )
                     {
                     if ( baseECClass.Contains(prop.Name) )
@@ -147,7 +146,7 @@ namespace IndexECPlugin.Source.Helpers
                 }
             else
                 {
-                basePropertiesSelected = propertiesSelected.ToList();
+                basePropertiesSelected.AddRange(propertiesSelected);
                 }
 
             try
@@ -238,10 +237,9 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 propertiesSelected = actualECClass;
                 }
-            List<IECProperty> basePropertiesSelected;
+            List<IECProperty> basePropertiesSelected = new List<IECProperty>();
             if ( actualECClass.Name != baseECClass.Name )
                 {
-                basePropertiesSelected = new List<IECProperty>();
                 foreach ( IECProperty prop in propertiesSelected )
                     {
                     if ( baseECClass.Contains(prop.Name) )
@@ -252,7 +250,7 @@ namespace IndexECPlugin.Source.Helpers
                 }
             else
                 {
-                basePropertiesSelected = propertiesSelected.ToList();
+                basePropertiesSelected.AddRange(propertiesSelected);
                 }
 
             try
