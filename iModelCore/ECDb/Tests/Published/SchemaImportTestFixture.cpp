@@ -198,7 +198,7 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, UseSharedColumns, SharedColumnCount, OverflowColumnName, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
