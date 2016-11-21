@@ -173,7 +173,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! @note Possible errors:
         //! - column does not refer to a NavigationECProperty
         template <class TBeInt64Id>
-        TBeInt64Id GetNavigation(ECN::ECClassId* relationshipECClassId)  const { return TBeInt64Id(GetNavigation(relationshipECClassId)); }
+        TBeInt64Id GetNavigation(ECN::ECClassId* relationshipECClassId)  const { return TBeInt64Id(GetNavigation(relationshipECClassId).GetValue()); }
 
         //! Used to access the value if it is a struct value
         //! @return Struct value
