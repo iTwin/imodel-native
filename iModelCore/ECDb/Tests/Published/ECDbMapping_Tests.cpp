@@ -2885,8 +2885,9 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     AssertSchemaImport(asserted, GetECDb(), testItem);
     ASSERT_FALSE(asserted);
     }
+    }
 
-    
+#ifdef WIP_MERGE_Maha    
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
@@ -9551,5 +9552,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_TRUE(mapStrategy.m_tphInfo.IsUnset());
     ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
     }
+
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE
