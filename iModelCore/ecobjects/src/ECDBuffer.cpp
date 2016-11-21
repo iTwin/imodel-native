@@ -3178,7 +3178,7 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
     ECObjectsStatus result = ECObjectsStatus::Error;
 
     // The relationship class pointer is stored as an int64_t before the actual value
-    int64_t relClassValue = (int64_t) v.GetNavigationInfo().GetRelationshipClass();
+    int64_t relClassValue = (int64_t) &v.GetNavigationInfo().GetRelationshipClass();
     Byte const* relClassValueP = GetPropertyData() + offset;
     if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
         return ECObjectsStatus::PropertyValueMatchesNoChange;

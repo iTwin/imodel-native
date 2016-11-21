@@ -265,9 +265,8 @@ void VerifyNavPropStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Ut
     EXPECT_STREQ(expectedValue, myTarget.GetUtf8CP()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
     ASSERT_TRUE(myTarget.IsNavigation());
 
-    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_TRUE(nullptr != relClass) << "";
-    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
+    ECRelationshipClassCR relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
+    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass.GetName().c_str());
     }
 
 void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
@@ -306,9 +305,8 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
     EXPECT_TRUE(myTarget.IsNavigation()) << "";
     EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetIdAsLong()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
-    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_TRUE(nullptr != relClass) << "";
-    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
+    ECRelationshipClassCR relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
+    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass.GetName().c_str());
     }
 
 void TestSettingNavPropLongValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)

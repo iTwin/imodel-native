@@ -1144,15 +1144,15 @@ ECObjectsStatus IECInstance::ValidateNavigationMetadata(uint32_t propertyIndex, 
         if (nullptr == navProp)
             return ECObjectsStatus::DataTypeMismatch;
 
-        ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
-        if (!relClass->Is(navProp->GetRelationshipClass()))
+        ECRelationshipClassCR relClass = v.GetNavigationInfo().GetRelationshipClass();
+        if (!relClass.Is(navProp->GetRelationshipClass()))
             return ECObjectsStatus::DataTypeMismatch;
 
         ECRelationshipConstraintCP constraint;
         if (ECRelatedInstanceDirection::Forward == navProp->GetDirection())
-            constraint = &relClass->GetSource();
+            constraint = &relClass.GetSource();
         else
-            constraint = &relClass->GetTarget();
+            constraint = &relClass.GetTarget();
 
         if (!constraint->SupportsClass(GetEnabler().GetClass()))
             return ECObjectsStatus::DataTypeMismatch;
@@ -3683,7 +3683,7 @@ InstanceWriteStatus     WriteNavigationPropertyValue(NavigationECPropertyR navig
         if (BEXML_Success != m_xmlWriter->WriteElementStart("RelationshipClass"))
             return InstanceWriteStatus::XmlWriteError;
 
-        Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
+        Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass().GetSchema(), ecValue.GetNavigationInfo().GetRelationshipClass());
 
         m_xmlWriter->WriteRaw(className.c_str());
         m_xmlWriter->WriteElementEnd(); // End of class name

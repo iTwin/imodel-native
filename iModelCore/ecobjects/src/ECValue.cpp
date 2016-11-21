@@ -434,9 +434,9 @@ BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCR rel
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
+ECRelationshipClassCR ECValue::NavigationInfo::GetRelationshipClass() const
     {
-    return m_relClass;
+    return *m_relClass;
     }
 
 //---------------------------------------------------------------------------------------
