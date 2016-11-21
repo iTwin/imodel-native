@@ -181,7 +181,7 @@ void DTMFeatureEnumerator::Initialize() const
     **  Count Number Of Roll Back Features
     */
     long numCleanUpFeatures = 0;
-    
+
     m_isInitialized = true;
     InitializeForSorting ();
 
@@ -613,13 +613,14 @@ errexit:
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
 void DTMMeshEnumerator::ScanAndMarkRegions () const
-    {  
+    {
     m_regionPointMask.resize (m_dtmP->numPoints);
+    std::fill_n(m_regionPointMask.begin(), m_dtmP->numPoints, false);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);
     regionEnumerator->SetReadSourceFeatures (false);
-      
+
     if (m_regionMode == RegionMode::RegionFeatureId)
         regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
     else if (m_regionMode == RegionMode::RegionUserTag)
@@ -828,10 +829,108 @@ void DTMMeshEnumerator::Reset ()
             }
         }
 
+int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const
+    {
+    int numFound = 0;
+    enum
+        {
+        unknown, inside, outside
+        } state = unknown;
+    bool foundPt = false;
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->cPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long P2 = clistAddrP(dtmP, clPtr)->pntNum;
+
+        if (testPnt == P2)
+            {
+            foundPt = true;
+            if (state != unknown)
+                return state == inside;
+            }
+        else
+            {
+            if (bcdtmList_testForRegionLineDtmObject(dtmP, P2, P1, featureNum))
+                {
+                state = inside;
+                if (foundPt)
+                    return false;
+                }
+            else if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, featureNum))
+                {
+                state = outside;
+                if (foundPt)
+                    return true;
+                }
+            }
+        clPtr = clistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    BeAssert(foundPt);
+    /*
+    ** Job Completed
+    */
+    return false;
+
+    }
+
+
+// This is a simple test as most cases they will only be one region scanned.
+int DTMMeshEnumerator::bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long dtmFeature = flistAddrP(dtmP, clPtr)->dtmFeature;
+
+        if (ftableAddrP(dtmP, dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            {
+            bool addRegion = false;
+            if (m_regionMode == RegionMode::RegionUserTag)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                    addRegion = true;
+                }
+            else if (m_regionMode == RegionMode::RegionFeatureId)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                    addRegion = true;
+                }
+            else
+                addRegion = true;
+
+            if (addRegion)
+                {
+                long testPnt = P2;
+                if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, dtmFeature))
+                    testPnt = P3;
+                if (bcdtmList_isPtInsideFeature(dtmP, P1, testPnt, dtmFeature))
+                    return true;
+                }
+
+            }
+        clPtr = flistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return false;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
-int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2) const
+int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum) const
 /*
 ** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
 */
@@ -844,6 +943,8 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
     while (clPtr != dtmP->nullPtr)
         {
         if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
+            {
+            if (featureNum == -1)
             {
             if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
                 {
@@ -859,6 +960,12 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
                     }
                 else
                     return(1);
+                }
+            }
+                else
+                {
+                if (featureNum == flistAddrP(dtmP, clPtr)->dtmFeature)
+                    return 1;
                 }
             }
         clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
@@ -957,7 +1064,7 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         P2 = P4;
         }
 
-    // pick one of the lines, and go anticlockwise till we find the 
+    // pick one of the lines, and go anticlockwise till we find the
     return false;
     }
 
@@ -1136,7 +1243,7 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     maxTptrPnt = -1;
     BlockedVectorDPoint3dR points = m_p_vec->m_polyface->Point();
     BlockedVectorDVec3dR normals = m_p_vec->m_polyface->Normal();
-    
+
     if (!m_p_vec->m_useRealPointIndexes)
         {
         numMeshPts = 0;
@@ -1261,7 +1368,7 @@ DRange3d DTMMeshEnumerator::GetRange() const
         {
         range.Extend (i.GetRange ());
         }
-    
+
     return range;
-    
+
     }

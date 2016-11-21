@@ -21,7 +21,6 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 
 TERRAINMODEL_TYPEDEFS (LandXMLImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, LandXMLImporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

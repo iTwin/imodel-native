@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -20,7 +20,7 @@ int aecFeature_create
     FeatureHandle *ftrHndlP
 );
 
-void aecFeature_destroy 
+void aecFeature_destroy
 (
     FeatureHandle ftrHndl
 );
@@ -44,7 +44,7 @@ int aecFeature_addPoints
     FeatureHandle ftrHndl,
     CFeaturePnt *ftrPntsP,
     DPoint3d *pntsP,
-    byte *flgsP,
+    unsigned char *flgsP,
     long numPnts
 );
 
@@ -58,7 +58,7 @@ int aecFeature_getPoints
     FeatureHandle ftrHndl,
     CFeaturePnt **ftrPntsPP,
     DPoint3d **pntsPP,
-    byte **pntFlgsPP,
+    unsigned char **pntFlgsPP,
     long *numPntsP
 );
 
@@ -73,14 +73,14 @@ int aecFeature_dpnt3dsToFtrpnts
 (
     CFeaturePnt **ftrPntsPP,
     DPoint3d *dpnt3dsP,
-    byte *pntflgsP,
+    unsigned char *pntflgsP,
     long numPnts
 );
 
 int aecFeature_ftrpntsToDpnt3ds
 (
     DPoint3d **dpnt3dsPP,
-    byte **pntflgsPP,
+    unsigned char **pntflgsPP,
     CFeaturePnt *ftrPntsP,
     long numPnts
 );

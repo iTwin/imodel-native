@@ -43,7 +43,7 @@ static int  aecDTM_assignFeatureStylesProc(void *, struct CIVdtmsrf *unused, int
 static int  aecDTM_getFeaturePoints(struct CIVdtmftr *, CIVdtmpnt **, long *);
 static int  aecDTM_getFeatureStyles(struct CIVdtmftr *, CIVdtmstynam **, long *);
 static int  aecDTM_getFeaturePayItems(struct CIVdtmftr *, CIVdtmpaynam **, long *);
-static int  aecDTM_setFeaturePoints(long, struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmpnt *, long, double*, byte *);
+static int  aecDTM_setFeaturePoints(long, struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmpnt *, long, double*, unsigned char *);
 static int  aecDTM_setFeatureStyles(struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmstynam *, long );
 static int  aecDTM_transferFeaturePoints(long, struct CIVdtmfil *, struct CIVdtmpnt *, CIVdtmpnt *, long, int);
 static int  aecDTM_preProcessMatchPnts(MatchInfo **, long, struct CIVdtmsrf *, struct CIVdtmftr *, struct CIVdtmpnt *, long, int);
@@ -101,7 +101,7 @@ int aecDTM_generateFeaturesFromPoints
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_countFeaturesProcess
- DESC: 
+ DESC:
  HIST: Original - twl 23-Oct-1998
  MISC: static
  KEYW: DTM LOAD FEATURE FROM POINTS
@@ -131,7 +131,7 @@ static int aecDTM_countFeaturesProcess
             case ( DTM_C_DTMCTR ) :  srf->ctrFtrf->nrec++;  break;
         }
 
-        if ( cnt++ == 100 ) 
+        if ( cnt++ == 100 )
         {
             aecTicker_show();
             cnt = 0;
@@ -197,7 +197,7 @@ static int aecDTM_featuresFromPointsProcess
         blkP->rec.ftr[index].numPnts++;
     }
 
-    if ( cnt++ == 100 ) 
+    if ( cnt++ == 100 )
     {
         aecTicker_show();
         cnt = 0;
@@ -248,7 +248,7 @@ void aecDTM_generateUniqueFeatureName
                 wcscpy ( wcDigits, &tmpOldName[idx] );
                 swscanf ( wcDigits, L"%ld", &cnt );
                 cnt++;
-                tmpOldName[idx] = '\0';                    
+                tmpOldName[idx] = '\0';
             }
 
             do
@@ -295,7 +295,7 @@ int aecDTM_generateFeatureStyles
     {
         for ( s = blk->rec.sty; blk->use < srf->styf->nrec  &&  sts == SUCCESS; blk->use++ )
         {
-            if ( j++ == 100 ) 
+            if ( j++ == 100 )
             {
                 aecTicker_show();
                 j = 0;
@@ -377,7 +377,7 @@ int aecDTM_getFeatureInfo
     long         *numStylesP,             /* <=  number of styles (or NULL)   */
     CIVdtmpaynam **payItemsPP,            /* <=  feature's pay items (or NULL)*/
     long         *numPayItemsP,           /* <=  number of pay items (or NULL)*/
-    byte      *flagP                   /* <=  feature's flag (or NULL)     */
+    unsigned char      *flagP                   /* <=  feature's flag (or NULL)     */
 )
 {
     int sts = SUCCESS;
@@ -476,7 +476,7 @@ static int aecDTM_getFeaturePoints
         else
             sts = DTM_M_MEMALF;
     }
-    
+
     return ( sts );
 }
 
@@ -578,9 +578,9 @@ static int aecDTM_getFeaturePayItems
        DTM_C_ADDONLY - If points have only been inserted or added.
        DTM_C_MOVONLY - If points have only been moved.
        DTM_C_ELVONLY - If the elevations of points have only been changed.
-    
+
  HIST: Original - twl 4-Jan-1999
- MISC: 
+ MISC:
  KEYW: DTM FEATURE SET INFO
 -----------------------------------------------------------------------------%*/
 
@@ -601,7 +601,7 @@ int aecDTM_setFeatureInfo
     long         numStyles,               /*  => number of styles (or NULL)   */
     CIVdtmpaynam *payItemsP,              /*  => pay items (or NULL)          */
     long         numPayItems,             /*  => # of pay items               */
-    byte      *flagP,                  /*  => feature's flag (or NULL)     */
+    unsigned char      *flagP,                  /*  => feature's flag (or NULL)     */
     BOOL                                  /*  => retriangulate (usually TRUE) */
 )
 {
@@ -624,9 +624,9 @@ int aecDTM_setFeatureInfo
         long nStyles;
         CIVdtmpaynam *payItems = NULL;
         long nPayItems;
-        byte flag;
+        unsigned char flag;
 
-        if ( ( sts = aecDTM_getFeatureInfo ( ftrP, srfP, 
+        if ( ( sts = aecDTM_getFeatureInfo ( ftrP, srfP,
                                       &guid, NULL, name, desc, parent, &pnts, &nPnts, &density,
                                       &styles, &nStyles, &payItems, &nPayItems, &flag ) ) == SUCCESS )
         {
@@ -661,7 +661,7 @@ int aecDTM_setFeatureInfo
                 for ( i = 1; i < nPnts; i++ )
                     pnts[i].flg |= DTM_C_PNTPUD;
             }
-    
+
             if ( pntDensityP )
                 density = *pntDensityP;
 
@@ -763,7 +763,7 @@ static int aecDTM_setFeaturePoints
     CIVdtmpnt *inputPntsP,      //  => Points to be assigned.
     long numInputPnts,          //  => Number of points.
     double *pntDensityP,        //  => Point density factor.
-    byte *flagP              //  => Feature flag settings.
+    unsigned char *flagP              //  => Feature flag settings.
 )
 {
     MatchInfo *matchListP = NULL;
@@ -786,7 +786,7 @@ static int aecDTM_setFeaturePoints
     if ( pntDensityP )
     {
 
-        // If the caller did not pass any new points he passed in 
+        // If the caller did not pass any new points he passed in
         // a new point density, get the existing points so we can
         // re-densify them.
 
@@ -821,8 +821,8 @@ static int aecDTM_setFeaturePoints
                     free ( inputPntsP );
 
                 inputPntsP = newPntsP;
-                numInputPnts = newNumPoints;  
-                bFree_inputPntsP = TRUE;                  
+                numInputPnts = newNumPoints;
+                bFree_inputPntsP = TRUE;
             }
 
 
@@ -837,7 +837,7 @@ static int aecDTM_setFeaturePoints
                             bPntsChanged = TRUE;
                 }
                 else
-                    bPntsChanged = TRUE;                    
+                    bPntsChanged = TRUE;
 
                 if ( bPntsChanged )
                     aecDTM_preProcessMatchPnts ( &matchListP, opt, srfP, ftrP, inputPntsP, numInputPnts, closeString );
@@ -851,7 +851,7 @@ static int aecDTM_setFeaturePoints
 
                     ftrP->numPnts = numInputPnts;
                 }
-                else if ( ftrP->p1 == &pntBlkP->rec.pnt[0] && ftrP->numPnts == pntBlkP->use && 
+                else if ( ftrP->p1 == &pntBlkP->rec.pnt[0] && ftrP->numPnts == pntBlkP->use &&
                      ( numInputPnts + closeString ) <= pntBlkP->alc )
                 {
                     aecDTM_transferFeaturePoints ( opt, pntFilP, &pntBlkP->rec.pnt[0], inputPntsP, numInputPnts, closeString );
@@ -871,16 +871,16 @@ static int aecDTM_setFeaturePoints
                         for ( i = 0; i < ftrP->numPnts; i++ )
                             aecDTM_deletePoint ( srfP, pntFilP, &ftrP->p1[i] );
 
-                        ftrP->p1 = p1P;      
-                        ftrP->numPnts = numInputPnts + closeString; 
-                    }                
+                        ftrP->p1 = p1P;
+                        ftrP->numPnts = numInputPnts + closeString;
+                    }
                 }
 
                 if ( flagP )
                     aecDTM_setFeatureFlag ( ftrP, srfP, flagP );
                 else
                 {
-                    byte tmpFlag;
+                    unsigned char tmpFlag;
                     tmpFlag = ftrP->flg;
                     aecDTM_setFeatureFlag ( ftrP, srfP, &tmpFlag );
                 }
@@ -888,7 +888,7 @@ static int aecDTM_setFeaturePoints
 
                 // If the entire feature must be retriangulated, triangulate each and
                 // every new point assigned to the feature.  Adjust triangle's point
-                // addresses that point to the feature's existing points that have 
+                // addresses that point to the feature's existing points that have
                 // not been changed but have been moved in memory.
                 // Then triangulate any additional points added to the feature.
 
@@ -899,7 +899,7 @@ static int aecDTM_setFeaturePoints
     }
     // If no points are being changed, the we only have to retriangulate the entire
     // feature if the exclude from triangulation bit has changed.
-    else if ( flagP && ( ( *flagP & DTM_C_FTRTIN ) != ( ftrP->flg & DTM_C_FTRTIN ) ) ) 
+    else if ( flagP && ( ( *flagP & DTM_C_FTRTIN ) != ( ftrP->flg & DTM_C_FTRTIN ) ) )
     {
         aecDTM_setFeatureFlag ( ftrP, srfP, flagP );
     }
@@ -1087,14 +1087,14 @@ static int aecDTM_preProcessMatchPnts
                 }
 
             }
-            break; 
+            break;
 
         case DTM_C_ELVONLY:
             // Nothing has to be done.  If elevations change only, triangles will
             // not be affected.
-            break;   
+            break;
 
-        default: 
+        default:
             pntdel.state = PNTEDT_INIT;
             pntdel.opt = PNTEDT_NOPATCH;
             pntdel.srf = srfP;
@@ -1104,7 +1104,7 @@ static int aecDTM_preProcessMatchPnts
                 for ( i = 0; i < numPnts && sts == SUCCESS; i++ )
                     sts = aecHash_insert ( xyzMatchHshTblP, &pntsP[i] );
             }
-            
+
             pntdel.state = PNTEDT_INIT;
             pntdel.srf = srfP;
 
@@ -1119,7 +1119,7 @@ static int aecDTM_preProcessMatchPnts
                     // For each old point that matches a new point, save
                     // the address of the old point.  If they don't match,
                     // delete and untriangulate the old point.
-                    if( VEQUAL( ftrP->p1[i].cor, pntsP[k].cor, AEC_C_TOL ) || 
+                    if( VEQUAL( ftrP->p1[i].cor, pntsP[k].cor, AEC_C_TOL ) ||
                         aecHash_find ( xyzMatchHshTblP, &ftrP->p1[i] ) )
                     {
                         if ( k < numPnts - 1 )
@@ -1148,7 +1148,7 @@ static int aecDTM_preProcessMatchPnts
                 // For each old point that matches a new point, save
                 // the address of the old point.  If they don't match,
                 // mark the new point as PNT_NEW.
-                if ( ( matchPntP = (struct CIVdtmpnt *)aecHash_find ( xyzMatchHshTblP, &pntsP[i] ) ) != NULL ) 
+                if ( ( matchPntP = (struct CIVdtmpnt *)aecHash_find ( xyzMatchHshTblP, &pntsP[i] ) ) != NULL )
                 {
                    (*matchListPP)[i].oldAddr = matchPntP;
                 }
@@ -1162,7 +1162,7 @@ static int aecDTM_preProcessMatchPnts
             break;
         }
     }
-   
+
     return ( sts );
 }
 
@@ -1225,7 +1225,7 @@ static int aecDTM_postProcessMatchPnts
                 }
             }
 
-            // Compare each triangle's point addresses with the old address pointers 
+            // Compare each triangle's point addresses with the old address pointers
             // stored in the hash table.  If a match is found, replace the trinangle's
             // point address with the corresponding new address found in the hash
             // table.
@@ -1262,7 +1262,7 @@ static int aecDTM_setFeatureStyles
     CIVdtmstynam *stylesP,                /*  => feature's styles (or NULL)   */
     long         numStyles               /*  => number of styles (or NULL)   */
 )
-{        
+{
     struct CIVdtmblk *styleBlkP;
     long allocSize;
     int i;
@@ -1277,18 +1277,18 @@ static int aecDTM_setFeatureStyles
 
             memset ( &ftrP->s1[i], 0, sizeof ( CIVdtmsty ) );
             wcscpy ( ftrP->s1[i].nam, stylesP[i] );
-        }      
+        }
 
         for ( i = numStyles; i < ftrP->numStyles; i++ )
             aecDTM_deleteStyle ( srfP, &ftrP->s1[i] );
-    
-        ftrP->numStyles = numStyles;         
+
+        ftrP->numStyles = numStyles;
     }
     else
     {
         aecDTM_findStyleBlock ( &styleBlkP, srfP, ftrP->s1 );
 
-        if ( ftrP->s1 == &styleBlkP->rec.sty[0] && ftrP->numStyles == styleBlkP->use && 
+        if ( ftrP->s1 == &styleBlkP->rec.sty[0] && ftrP->numStyles == styleBlkP->use &&
              numStyles <= styleBlkP->alc )
         {
             for ( i = 0; i < numStyles; i++ )
@@ -1337,16 +1337,16 @@ void aecDTM_setFeatureFlag
 (
     struct CIVdtmftr *ftrP,
     struct CIVdtmsrf *srfP,
-    byte *flagP
+    unsigned char *flagP
 )
 {
-    byte tmpFlag;
+    unsigned char tmpFlag;
     int i;
 
     if ( ( ftrP->flg & DTM_C_FTRTIN ) != ( *flagP & DTM_C_FTRTIN ) )
         aecDTM_setSurfaceTinOutOfDateFlag ( srfP );
 
-    tmpFlag = ftrP->flg;   
+    tmpFlag = ftrP->flg;
     ftrP->flg = 0;
 
     if ( *flagP & DTM_C_FTRTIN )    // Do not contour
@@ -1440,7 +1440,7 @@ int aecDTM_densifyFeaturePoints
         }
     }
     else
-    {        
+    {
         std::vector<int> divisors;
         *numOutputPntsP = 1;
 
@@ -1461,7 +1461,7 @@ int aecDTM_densifyFeaturePoints
             (*numOutputPntsP) += divisor;
             divisors.push_back ( divisor );
         }
-        
+
         *outputPntsPP = (CIVdtmpnt *) calloc ( *numOutputPntsP + 10, sizeof ( CIVdtmpnt ) );
 
         if ( *outputPntsPP )
@@ -1502,7 +1502,7 @@ int aecDTM_densifyFeaturePoints
                 }
 
                 memcpy ( &(*outputPntsPP)[(*numOutputPntsP)++], &inputPntsP[i+1], sizeof ( CIVdtmpnt ) );
-            }        
+            }
         }
         else
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PrivateAPI/dtmdefsXM.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,9 +32,9 @@ struct DTM_TIN_OBJ;
 */
 #define  DTM_MAX_DAT_OBJS 4096
 struct DTM_GUID
-{ 
+{
  unsigned long  data1    ; // Using Huntsville Definition
- unsigned short data2    ; 
+ unsigned short data2    ;
  unsigned short data3    ;
  char           data4[8] ;
 };
@@ -53,12 +53,12 @@ struct DTM_DAT_OBJ
    long     refCount,userStatus ;
    DTMTime32 creationTime,modifiedTime,userTime ;
    double   xMin,yMin,zMin,xMax,yMax,zMax ;
-   double   ppTol,plTol ; 
+   double   ppTol,plTol ;
    char     userName[DTM_FILE_SIZE] ;
    char     dataObjectFileName[DTM_FILE_SIZE] ;
    char     userMessage[256] ;
    DTM_FEATURE_CODE   *featureCodeP ;
-   DTMUserTag       *userTagP     ; 
+   DTMUserTag       *userTagP     ;
    DTM_DATA_POINT     *pointsP      ;
    DTM_GUID           *guidP        ;
   };
@@ -75,9 +75,9 @@ struct DTM_DAT_OBJ
 /*
 **   PCWD  Bit Definition Fields
 **   Bit = 0     Point In Void
-**   Bit = 1     Inserted Point 
+**   Bit = 1     Inserted Point
 **   Bit = 2     Inserted Point That Intersects Existing Tin Line
-*/ 
+*/
 /*
 ** Note PCWD contains bit fields . Bit 1 == Right Most Bit
 **
@@ -117,7 +117,7 @@ struct DTM_TIN_OBJ
 /* Spare variables For Future Use */
  long    SL1,SL2,SL3,SL4,SL5 ;
  DTMUserTag SI641,SI642,SI643,SI644,SI645 ;
- double  SD1,SD2,SD3,SD4,SD5 ; 
+ double  SD1,SD2,SD3,SD4,SD5 ;
  void    *SP1,*SP2,*SP3,*SP4,*SP5 ;
 /************************************/
  DPoint3d     *pointsP   ;
@@ -132,7 +132,7 @@ struct DTM_DRAPE_FEATURE_XM { DTMFeatureType dtmFeatureType ; DTMUserTag userTag
 struct DTM_DRAPE_DATA_XM { long DrapeType,DrapeLine,numFeatureTable ; double x,y,z ; DTM_DRAPE_FEATURE_XM *Features ; } ;
 struct DTMTinPointFeatures_XM { long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTMUserTag userTag ; DTM_GUID userGuid ; } ;
 
-struct DTM_FEATURE_XM 
+struct DTM_FEATURE_XM
 {
  DTMFeatureType dtmFeatureType ;      /* Dtm Feature Type          */
  DTMUserTag   userTag        ;      /* User Tag                  */
@@ -144,20 +144,20 @@ struct DTM_FEATURE_XM
 |                                                                    |
 |                                                                    |
 |                                                                    |
-+-------------------------------------------------------------------*/ 
++-------------------------------------------------------------------*/
 struct DTM_DRAPE_POINT_XM
-{ 
+{
  long   drapeLine ;                        /* Segment Number Of User Drape String             */
  long   drapeType ;                        /* Type Of Drape Point
-                                              ==  0  Drape Point External To Tin 
+                                              ==  0  Drape Point External To Tin
                                               ==  1  Drape Point Internal To Tin
-                                              ==  2  Drape Point On Break Line  
+                                              ==  2  Drape Point On Break Line
                                               ==  3  Drape Point On Break Triangle
                                               ==  4  Drape Point In Void                      */
  long   numDrapeFeatures ;                 /* Number Of Dtm Features At Drape Point           */
  double drapeX ;                           /* x Coordinate Of Drape Point                     */
  double drapeY ;                           /* y Coordinate Of Drape Point                     */
- double drapeZ ;                           /* z Coordinate Of Drape Point                     */ 
+ double drapeZ ;                           /* z Coordinate Of Drape Point                     */
  DTMTinPointFeatures_XM *drapeFeaturesP ;  /* Pointer To DTM Features At Drape Point          */
 } ;
 
@@ -165,15 +165,15 @@ struct DTM_DRAPE_POINT_XM
 |                                                                    |
 |  Typedefs For Side Slopes                                          |
 |                                                                    |
-+-------------------------------------------------------------------*/ 
++-------------------------------------------------------------------*/
 struct DTM_SIDE_SLOPE_TABLEXM
 {
-int     radialStatus;           // Internal DTM Use ** Radial Status.   1 = Calculate Side Slope,  0 = Do Not Calculate Side Slope   
-int     radialType;             // Internal DTM Use ** Radial Type,     1 = Concave , 2 = Edge , 3 = Convex  
+int     radialStatus;           // Internal DTM Use ** Radial Status.   1 = Calculate Side Slope,  0 = Do Not Calculate Side Slope
+int     radialType;             // Internal DTM Use ** Radial Type,     1 = Concave , 2 = Edge , 3 = Convex
 int     radialGenesis;          // Internal DTM Use ** Radial Genesis,  1 = User , 2 = Elevation Transition , 3 = Transition On Cut Fill Tin, 4 = Transition On Slope Tin, 5 = Convex Corner
 double  radialAngle;            // Internal DTM Use ** Radial Angle
 double  radialSlope;            // Internal DTM Use ** Radial Slope
-int     radialSolution;         // Internal DTM Use ** Radial Solution, 1 = Angle Slope Solution Found For Radial Option  0 = Angle Slope Solution Not Found For Radial Option 
+int     radialSolution;         // Internal DTM Use ** Radial Solution, 1 = Angle Slope Solution Found For Radial Option  0 = Angle Slope Solution Not Found For Radial Option
 DPoint3d     radialEndPoint;         // Internal DTM Use ** End Point Of Radial
 double  surfaceZ ;              // Internal DTM Use ** Surface z Value At the Radial Start Point
 
@@ -184,9 +184,9 @@ int     sideSlopeOption ;       // =>  1  Side Slope To Tin Object
                                 // =>  3  Side Slope Out A  Horizontal Distance
                                 // =>  4  Side Slope Up/Down A Vertical Distance
                                 // =>  5  Side Slope To Tin Surface Or Set Elevation Whichever Comes First
-                                // =>  6  Side Slope To Tin Surface Or Horizontal Distance Whichever Comes First     
-                                // =>  7  Side Slope To Tin Surface Or Up/Down A Vertical Distance Whichever Comes First     
-                                // =>  8  Side Slope To Set Elevation And Extend Obtuse Radials For Copy parallel applications     
+                                // =>  6  Side Slope To Tin Surface Or Horizontal Distance Whichever Comes First
+                                // =>  7  Side Slope To Tin Surface Or Up/Down A Vertical Distance Whichever Comes First
+                                // =>  8  Side Slope To Set Elevation And Extend Obtuse Radials For Copy parallel applications
 DTM_TIN_OBJ  *slopeToTin;       // => To tin object if slope option = to tin NULL otherwise
 double  toElev;                 // => To constant elevation if slope option is to elevation
 double  toDeltaElev;            // => To delta elevation if slope option is to delta elevation
@@ -202,7 +202,7 @@ int     isForceSlope;           // => Flag to indicate wether the slope is to be
 double  forcedSlope;            // => Value to use as force slope
 int     isRadialDir;            // => Flag to indicate whether slope direction is supplied
 double  radialDir;              // => Slope direction if isSlopeDir is true
-int     offsetDef ;             // => Offset Definition To Indicate whether the offsets apply ALONG_RADILADIR or ALONG_NORMALDIR 
+int     offsetDef ;             // => Offset Definition To Indicate whether the offsets apply ALONG_RADILADIR or ALONG_NORMALDIR
 
 int     isMinHorizLimit;        // => Flag to indicate whether we have a minimum horizontal limit
 double  limitMinHoriz;          // => Value of minimum horizontal limit IF isMinHorizLimit = true
@@ -221,7 +221,7 @@ double  maxFillThreshold;       // => Value of Fill threshold - fill must exceed
 |                                                                    |
 |  Hull Point List                                                   |
 |                                                                    |
-+-------------------------------------------------------------------*/ 
++-------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -229,11 +229,11 @@ double  maxFillThreshold;       // => Value of Fill threshold - fill must exceed
 |                                                                    |
 +-------------------------------------------------------------------*/
 /*
-** Data Structure For Sets Of Data Object 
+** Data Structure For Sets Of Data Object
 */
 struct DTM_DAT_OBJLIST { DTM_DAT_OBJ *Data ; long ListFlag ; } ;
 /*
-** Data Structure For Sets Of Data Object 
+** Data Structure For Sets Of Data Object
 */
 struct DTM_TIN_OBJLIST { DTM_TIN_OBJ *Tin  ; long TinIndex ; } ;
 
@@ -241,7 +241,7 @@ struct DTM_TIN_OBJLIST { DTM_TIN_OBJ *Tin  ; long TinIndex ; } ;
 |                                                                    |
 |                                                                    |
 |                                                                    |
-+-------------------------------------------------------------------*/ 
++-------------------------------------------------------------------*/
 struct DTM_SCAN_CONTEXT
 {
  long   dtmObjectType ;            /* Dtm Object Type <DTM_DAT_TYPE>,<DTM_TIN_TYPE>,<DTM_LAT_TYPE> */
@@ -249,7 +249,7 @@ struct DTM_SCAN_CONTEXT
  DTM_TIN_OBJ  *tinP   ;            /* Pointer To Tin  Object To Be Scanned           */
  DTM_LAT_OBJ  *latP   ;            /* Pointer To Lattice Object To Be Scanned        */
  DTM_TIN_OBJ  *clipTinP ;          /* Tin Object Pointer For Clipping Dtm Feature    */
- DTMFeatureType  dtmFeatureType ;  /* Dtm Feature Type To Be Loaded                  */    
+ DTMFeatureType  dtmFeatureType ;  /* Dtm Feature Type To Be Loaded                  */
  long         clipOption ;         /* Clip Option <None(0)>,<Inside(1)>,<Overlap(2)> */
  long         maxSpots ;           /* Max Spots To Be returned                       */
  long         scanOffset1 ;        /* Scan Offset 1                                  */
@@ -266,7 +266,7 @@ struct DTM_SCAN_CONTEXT
 /*       Do not use anything contained below in any new code          */
 /*                                                                    */
 /*                    vvvvv  Begins Here  vvvvv                       */
- 
+
 #define TINOBJ DTM_TIN_OBJ
 #define DATAOBJ DTM_DAT_OBJ
 #define LATOBJ DTM_LAT_OBJ
@@ -276,7 +276,7 @@ struct DTM_SCAN_CONTEXT
 
 struct TINOBJLIST { void *Tin  ; long TinIndex ; } ;
 struct DATAOBJLIST { DATAOBJ *Data ; long ListFlag ; } ;
-typedef   Int64        DTM_TAG_VAR ;
+typedef   int64_t        DTM_TAG_VAR ;
 
 struct GpkDtmPointFeatureList{ long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTM_TAG_VAR userTag ; } ;
 

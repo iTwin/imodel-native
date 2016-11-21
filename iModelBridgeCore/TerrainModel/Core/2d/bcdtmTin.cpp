@@ -12,6 +12,7 @@
 #include <TerrainModel\Core\partitionarray.h>
 #include <algorithm>
 #include <list>
+#include <mutex>
 
 #include <thread>
 
@@ -50,7 +51,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 **
 */
 int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
- long colinear=0,startTime,useMultiThread=TRUE ;
+ long colinear=0,startTime;
 /*
 ** Write Entry Message
 */
@@ -110,36 +111,19 @@ int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg
  else if( numDrapeHulls ) edgeOption = 5 ;
  else if( numHullLines  ) edgeOption = 6 ;
 /*
-** Single Thread Triangulate DTM Object
+** Triangulate DTM Object
 */
- if( useMultiThread == FALSE || DTM_NUM_PROCESSORS == 1 || dtmP->numPoints < (MINIMUM_POINTS_PER_TIN_THREAD * 2) )
-   {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Single Thread Triangulating") ;
-    startTime = bcdtmClock() ;
-    if( bcdtmTin_triangulateDtmObject(dtmP,&colinear)) goto errexit ;
-    if( tdbg ) bcdtmWrite_message(0,0,0,"** Triangulation Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
-    if( colinear == 1 )
-      {
-       bcdtmWrite_message(1,0,0,"All DTM Points Colinear") ;
-       goto errexit ;
-      }
-   }
-/*
-** Multi Thread Triangulate DTM Object
-*/
- else
-   {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Multi Thread Triangulating") ;
-    startTime = bcdtmClock() ;
-    if( bcdtmTin_multiThreadTriangulateDtmObject(dtmP,&colinear)) goto errexit ;
-    if( tdbg ) bcdtmWrite_message(0,0,0,"** Triangulation Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
-    if( colinear == 1 )
-      {
-       bcdtmWrite_message(1,0,0,"All DTM Points Colinear") ;
-       goto errexit ;
-      }
-   }
- if( dbg ) bcdtmWrite_message(0,0,0,"Triangulation Completed") ;
+if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating") ;
+startTime = bcdtmClock() ;
+if( bcdtmTin_triangulateDtmObject(dtmP,&colinear)) goto errexit ;
+if( tdbg ) bcdtmWrite_message(0,0,0,"** Triangulation Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
+if( colinear == 1 )
+    {
+    bcdtmWrite_message(1,0,0,"All DTM Points Colinear") ;
+    goto errexit ;
+    }
+
+if( dbg ) bcdtmWrite_message(0,0,0,"Triangulation Completed") ;
 /*
 ** Check For Check Stop Termination
 */
@@ -435,7 +419,7 @@ int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
+int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
 /*
 ** This is the controlling function for sorting dtm points into tiles and then triangulating them
 **
@@ -443,6 +427,11 @@ BENTLEYDTM_Private int bcdtmTin_triangulateDtmObject(BC_DTM_OBJ *dtmP,long *coli
 **
 */
 {
+ bool useMultiThread = true;
+
+ if (useMultiThread && DTM_NUM_PROCESSORS != 1 && dtmP->numPoints > (MINIMUM_POINTS_PER_TIN_THREAD * 2))
+     return bcdtmTin_multiThreadTriangulateDtmObject(dtmP, colinearPtsP);
+
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long p,node,leftPnt=0,rightPnt=0,topPnt=0,bottomPnt=0 ;
  long startTime,tinTime ;
@@ -614,7 +603,7 @@ void bcdtmTin_multiThreadTriangulationWorkerDtmObject (DTM_MULTI_THREAD *trgPara
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
+int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP,long *colinearPtsP )
 /*
 ** This is the controlling function for To Multi Thread A DTM Triangulation
 **
@@ -623,6 +612,7 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
+
  long n,p,node,numDtmPoints,numClist ;
  long startTime,tinTime ;
  long *sortOfsP=NULL,*longP ;
@@ -630,6 +620,7 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
  bvector<long> numThreadArrayPoints;
  long p1l,p1r,col1,p2l,p2r,col2,cListPtr,cListDelPtr ;
  int numThreads = DTM_NUM_PROCESSORS;
+
  std::vector<std::thread> threads;
  bvector<DTM_MULTI_THREAD> multiThread;
 /*
@@ -2336,7 +2327,7 @@ BENTLEYDTM_Public int bcdtmTin_getSwapTriangleDtmObject(BC_DTM_OBJ *dtmP,long st
 |                                                            |
 |                                                            |
 +-----------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType)
+int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType)
 /*
 ** This Function Inserts Dtm Features Into A Dtm Object
 */
@@ -2344,7 +2335,7 @@ BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dt
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long    pnt,closeFlag,firstPnt,startPnt,nextPnt,insertError,dtmFeatureNum,flPtr,numPriorPts;
  long    *tempOffsetP=NULL,drapeOption,insertOption,internalPoint,validateResult ;
- long    numFeatures = 0, numFeaturesError = 0, numFeaturesInserted = 0, numHullPts, numDrapeVoidPts, featureNum;
+ long    numFeatures = 0, numFeaturesError = 0, numFeaturesInserted = 0, numHullPts = 0, numDrapeVoidPts = 0, featureNum = 0;
  DTMFeatureType insFeatureType;
  char    dtmFeatureTypeName[100] ;
  DPoint3d     *hullPtsP=NULL,*featPtsP=NULL,*drapeVoidPtsP=NULL ;
@@ -3244,7 +3235,7 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureTableDtmObject(BC_DTM_OBJ *dtmP)
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   ofs1,ofs2,ftable,flist,delCount,dtmFeature ;
+ long   ofs1,ofs2,ftable,flist,delCount = 0,dtmFeature ;
  char   dtmFeatureTypeName[50] ;
  LongArray::iterator ofsP;
  // BC_DTM_FEATURE   *ftableP ;
@@ -4160,7 +4151,7 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObject(BC_DTM_OB
 BENTLEYDTM_Public int bcdtmTin_clipTinToBoundaryPolygonDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
- long   loop,pnt,pnt1,firstPnt,startPnt,nextPnt,insertError,dtmFeature ;
+ long   loop,pnt,pnt1,firstPnt = 0,startPnt,nextPnt,insertError,dtmFeature ;
  long   lineNum,knotPoint=0,knotDetected=FALSE,cleanTptrList=TRUE ;
  long   *offsetP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -4991,7 +4982,7 @@ BENTLEYDTM_Private int bcdtmTin_insertBoundaryLinesDtmObject(BC_DTM_OBJ *dtmP,BC
 */
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long  error,sp,np,numFeatures,dtmFeature ;
+ long  error = 0,sp,np,numFeatures,dtmFeature ;
  long  cp1,cp2,point,firstPoint,lastPoint,firstNewPoint ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DPoint3d  *p1P,*p2P ;

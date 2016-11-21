@@ -2,13 +2,13 @@
 |
 |     $Source: Core/2d/bcdtmTinVolume.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
-thread_local static long numVolTriangles=0 ; 
+#include "bcdtminlines.h"
+thread_local static long numVolTriangles=0 ;
 thread_local static double totTrgArea=0.0 ;
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -37,8 +37,8 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmFiles
 ** Write Status Message
 */
  if( dbg )
-   { 
-    bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files") ; 
+   {
+    bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files") ;
     bcdtmWrite_message(0,0,0,"fromDtmFileP = %s",fromDtmFileP) ;
     bcdtmWrite_message(0,0,0,"toDtmFileP   = %s",toDtmFileP) ;
    }
@@ -52,30 +52,30 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmFiles
 ** Check For Different Files
 */
  if( wcscmp(fromDtmFileP,toDtmFileP) == 0 )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Dtm Files The Same") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Read From Dtm File
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Reading From Dtm File %s",fromDtmFileP) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Reading From Dtm File %s",fromDtmFileP) ;
  if( bcdtmUtility_testForAndSetCurrentDtmObject(&fromDtmP,fromDtmFileP)) goto errexit ;
 /*
 ** Read To Dtm File
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Reading To Dtm File %s",toDtmFileP) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Reading To Dtm File %s",toDtmFileP) ;
  if( bcdtmRead_fromFileDtmObject(&toDtmP,toDtmFileP)) goto errexit ;
 /*
 ** Calculate Surface Balance Dtm Objects
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Surface To Surface Balance") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Surface To Surface Balance") ;
  if( bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects(fromDtmP,toDtmP,polygonPtsP,numPolygonPts,loadFunctionP,userP,fromAreaP,toAreaP,balanceP)) goto errexit ;
 /*
 ** Delete To Dtm Object
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Deleting To Dtm Object") ; 
- if( toDtmP != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Deleting To Dtm Object") ;
+ if( toDtmP != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ;
 /*
 ** Clean Up
 */
@@ -83,16 +83,16 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmFiles
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Files Error") ;
  return(ret) ;
 /*
 ** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS )  ret = DTM_ERROR ;
- if( toDtmP   != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ; 
- if( fromDtmP != NULL ) bcdtmObject_destroyDtmObject(&fromDtmP) ; 
+ if( toDtmP   != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ;
+ if( fromDtmP != NULL ) bcdtmObject_destroyDtmObject(&fromDtmP) ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -102,7 +102,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmFiles
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects
 (
- BC_DTM_OBJ *fromDtmP,             /* ==> Pointer To From Dtm Object                   */ 
+ BC_DTM_OBJ *fromDtmP,             /* ==> Pointer To From Dtm Object                   */
  BC_DTM_OBJ *toDtmP,               /* ==> Pointer To To Dtm Object                     */
  DPoint3d        *polygonPtsP,          /* ==> Pointer To Volume Polygon Points             */
  long       numPolygonPts,         /* ==> Number Of Volume Polygon Points              */
@@ -116,24 +116,24 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects
 ** This Function Calculates the Volume Balance Between Two Dtm Objects
 */
 {
- int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   intersectFlag=0,numRanges=0 ;
  double cut,fill,balance1,balance2,elevation ;
  double xMin1,yMin1,zMin1,xMax1,yMax1,zMax1 ;
  double xMin2,yMin2,zMin2,xMax2,yMax2,zMax2 ;
- double xDif,yDif,zDif ; 
+ double xDif,yDif,zDif ;
  VOLRANGETAB *rangeTableP=NULL ;
  DTM_POLYGON_OBJ *polyP=NULL ;
 /*
 ** Write Status Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects") ; 
-    bcdtmWrite_message(0,0,0,"fromDtmP      = %p",fromDtmP) ; 
-    bcdtmWrite_message(0,0,0,"toDtmP        = %p",toDtmP) ; 
-    bcdtmWrite_message(0,0,0,"polygonPtsP   = %p",polygonPtsP) ; 
-    bcdtmWrite_message(0,0,0,"numPolygonPts = %8ld",numPolygonPts) ; 
+    bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects") ;
+    bcdtmWrite_message(0,0,0,"fromDtmP      = %p",fromDtmP) ;
+    bcdtmWrite_message(0,0,0,"toDtmP        = %p",toDtmP) ;
+    bcdtmWrite_message(0,0,0,"polygonPtsP   = %p",polygonPtsP) ;
+    bcdtmWrite_message(0,0,0,"numPolygonPts = %8ld",numPolygonPts) ;
    }
 /*
 ** Test For Valid Dtm Objects
@@ -152,10 +152,10 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects
 /*
 ** Check For Old Tin Files
 */
- if( fromDtmP->ppTol == 0.0 || toDtmP->ppTol == 0.0) 
-   { 
+ if( fromDtmP->ppTol == 0.0 || toDtmP->ppTol == 0.0)
+   {
     bcdtmWrite_message(1,0,0,"Convert Old Dtm (dtmP) File(s)") ;
-    return(20) ; 
+    return(20) ;
    }
 /*
 ** Initialise variables
@@ -196,8 +196,8 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Balance Dtm Objects Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -236,7 +236,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmFile
 ** Write Entry Message
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"Surface To Plane Dtm File") ;
     bcdtmWrite_message(0,0,0,"dtmFileP       = %s",dtmFileP) ;
     bcdtmWrite_message(0,0,0,"rangeTableP    = %p",rangeTableP) ;
@@ -269,8 +269,8 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmFile
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm File Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm File Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm File Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm File Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -343,7 +343,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmObject
 ** Write Status Message
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"Surface To Plane Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"rangeTableP    = %p",rangeTableP) ;
@@ -357,7 +357,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmObject
        for( vrtP = rangeTableP ; vrtP < rangeTableP + numRanges ; ++vrtP )
          {
           bcdtmWrite_message(0,0,0,"%12.4lf %12.4lf",vrtP->Low,vrtP->High) ;
-         } 
+         }
        bcdtmWrite_message(0,0,0,"Polygon Points") ;
        for( p3dP = polygonPtsP ; p3dP < polygonPtsP + numPolygonPts ; ++p3dP )
          {
@@ -380,10 +380,10 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmObject
 /*
 ** Check For Old Tin Files
 */
- if( dtmP->ppTol == 0.0 ) 
-   { 
+ if( dtmP->ppTol == 0.0 )
+   {
     bcdtmWrite_message(1,0,0,"Convert Old Dtm (dtmP) File(s)") ;
-    return(20) ; 
+    return(20) ;
    }
 /*
 ** Initialise
@@ -392,10 +392,10 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmObject
  if( numRanges > 0 )
    {
     for( vrtP = rangeTableP ; vrtP < rangeTableP + numRanges ; ++vrtP )
-      { 
+      {
        vrtP->Cut  = 0.0 ;
        vrtP->Fill = 0.0 ;
-      }  
+      }
    }
 /*
 ** Clip Dtm To Polygon
@@ -418,8 +418,8 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToElevationDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm Object Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm Object Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm Object Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Plane Dtm Object Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -960,14 +960,14 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   nr,Surface=0 ;  
+ long   nr,Surface=0 ;
  double T1=0.0,T2=0.0,T3=0.0,B1=0.0,B2=0.0,B3=0.0     ;
  double cut,fill,area,zPrismMin=0.0,zPrismMax=0.0,zBotMin=0.0,zBotMax=0.0,zTopMin=0.0,zTopMax=0.0,prismVolume=0.0,rangeVolume=0.0 ;
  double rangeLow,rangeHigh,Zh,Zs,trgArea=0.0,percentDiff ;
  double P1,P2,P3,S1,S2,S3 ;
  double X4=0.0,Y4=0.0,Z4=0.0,X5=0.0,Y5=0.0,Z5=0.0 ;
  double Zp,Zsmin,Zsmax,Zsm1,Zsm2 ;
- double Qvol,Pvol,Rqvol,Rpvol,Zsmn,Zsmm,Zs2l,Zs2h,Zs3l,Zs3h ; 
+ double Qvol,Pvol,Rqvol,Rpvol,Zsmn,Zsmm,Zs2l,Zs2h,Zs3l,Zs3h ;
  double sumRangeVolume,sumRangeCut,sumRangeFill ;
 /*
 ** Only Process If Ranges Set And Cut And Fill Volumes Present
@@ -978,17 +978,17 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 **  Get Max & Min Values For Surface
 */
     Zh = ( Z1 + Z2  + Z3  ) / 3.0 ;
-    Zs = (SZ1 + SZ2 + SZ3 ) / 3.0 ; 
+    Zs = (SZ1 + SZ2 + SZ3 ) / 3.0 ;
     trgArea = bcdtmMath_coordinateTriangleArea(X1,Y1,X2,Y2,X3,Y3) ;
     prismVolume = trgArea * (Zs-Zh) ;
     if( prismVolume < 0.0 ) prismVolume = -prismVolume ;
 /*
 **  Determine Surface Type
-** 
+**
 **  Surface = 1 ** cutVolume  Only        -  No Vertical Overlap Of Triangles
 **  Surface = 2 ** fillVolume Only        -  No Vertical Overlap Of Triangles
 **  Surface = 3 ** cutVolume And fillVolume
-**  Surface = 4 ** cutVolume or fillVolume Only - Vertical Overlap Of Triangles 
+**  Surface = 4 ** cutVolume or fillVolume Only - Vertical Overlap Of Triangles
 */
     Surface = 3 ;                                                  //  cutVolume And fillVolume
     if( cutVolume != 0.0 && fillVolume == 0.0 ) Surface = 1 ;      //  cutVolume Only
@@ -1001,22 +1001,22 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
     if( Surface <= 2 )
       {
        zTopMin = zTopMax = T1 ;
-       if( zTopMin > T2 ) zTopMin = T2 ; 
-       if( zTopMin > T3 ) zTopMin = T3 ; 
+       if( zTopMin > T2 ) zTopMin = T2 ;
+       if( zTopMin > T3 ) zTopMin = T3 ;
        if( zTopMax < T2 ) zTopMax = T2 ;
-       if( zTopMax < T3 ) zTopMax = T3 ; 
+       if( zTopMax < T3 ) zTopMax = T3 ;
        zBotMin = zBotMax = B1 ;
        if( zBotMin > B2 ) zBotMin = B2 ;
-       if( zBotMin > B3 ) zBotMin = B3 ; 
+       if( zBotMin > B3 ) zBotMin = B3 ;
        if( zBotMax < B2 ) zBotMax = B2 ;
-       if( zBotMax < B3 ) zBotMax = B3 ; 
+       if( zBotMax < B3 ) zBotMax = B3 ;
        zPrismMin = zBotMin ;
        zPrismMax = zTopMax ;
-       if( zTopMin < zBotMax ) Surface = 4 ;     // cutVolume or fillVolume Only - Vertical Overlap Of Triangles        
+       if( zTopMin < zBotMax ) Surface = 4 ;     // cutVolume or fillVolume Only - Vertical Overlap Of Triangles
       }
 /*
 **  Determine Range Volumes
-*/                        
+*/
     sumRangeCut  = 0.0 ;
     sumRangeFill = 0.0 ;
     sumRangeVolume  = 0.0 ;
@@ -1033,7 +1033,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
           bcdtmWrite_message(0,0,0,"X1 = %12.5lf Y1 = %12.5lf Z1 = %12.5lf SZ1 = %12.5lf",X1,Y1,Z1,SZ1) ;
           bcdtmWrite_message(0,0,0,"X2 = %12.5lf Y2 = %12.5lf Z2 = %12.5lf SZ2 = %12.5lf",X2,Y2,Z2,SZ2) ;
           bcdtmWrite_message(0,0,0,"X3 = %12.5lf Y3 = %12.5lf Z3 = %12.5lf SZ3 = %12.5lf",X3,Y3,Z3,SZ3) ;
-         }  
+         }
 /*
 **     Set Surfaces
 */
@@ -1054,7 +1054,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
        if( S3 > Zsmax ) Zsmax = S3 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Zsmin = %12.5lf Zsmax = %12.5lf",Zsmin,Zsmax) ;
 /*
-**     Write Triangle Elevations 
+**     Write Triangle Elevations
 */
        if( dbg )
          {
@@ -1075,14 +1075,14 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
          {
           X4 = X2 ; Y4 = Y2 ; Z4 = P2 ; Z5 = S2 ;
           X2 = X1 ; Y2 = Y1 ; P2 = P1 ; S2 = S1 ;
-          X1 = X4 ; Y1 = Y4 ; P1 = Z4 ; S1 = Z5 ; 
+          X1 = X4 ; Y1 = Y4 ; P1 = Z4 ; S1 = Z5 ;
          }
-   
+
        else if( ( P3 > S3 && P1 <= S1 && P2 <= S2 )  || ( P3 < S3 && P1 >= S1 && P2 >= S2 )  )
          {
-          X4 = X3 ; Y4 = Y3 ; Z4 = P3 ; Z5 = S3 ; 
-          X3 = X1 ; Y3 = Y1 ; P3 = P1 ; S3 = S1 ; 
-          X1 = X4 ; Y1 = Y4 ; P1 = Z4 ; S1 = Z5 ; 
+          X4 = X3 ; Y4 = Y3 ; Z4 = P3 ; Z5 = S3 ;
+          X3 = X1 ; Y3 = Y1 ; P3 = P1 ; S3 = S1 ;
+          X1 = X4 ; Y1 = Y4 ; P1 = Z4 ; S1 = Z5 ;
          }
 /*
 **     Check P1 Is the Only Point Above Or Below The Other Surface
@@ -1108,7 +1108,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
           if( P3 <  S3 ) bcdtmWrite_message(0,0,0,"P3 <  S3") ;
          }
 /*
-**     Calculate Elevation Of Surface Intersection Point Of 1-2 
+**     Calculate Elevation Of Surface Intersection Point Of 1-2
 */
        if( P1 == P2 || S1 == S2 )
          {
@@ -1117,7 +1117,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
          }
        else  bcdtmMath_normalIntersectCordLines(X1,P1,X2,P2,X1,S1,X2,S2,&X4,&Z4)  ;
 /*
-**     Calculate XY Coordinates Of Surface Intersection Point Of 1-2 
+**     Calculate XY Coordinates Of Surface Intersection Point Of 1-2
 */
        if( P1 != P2 && fabs(P1-P2) > fabs(S1-S2)  )
          {
@@ -1131,16 +1131,16 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
           Y4 = Y1 +  ( Y2 - Y1 ) * fabs(Z4-S1) / fabs(S1-S2) ;
          }
 /*
-**     Calculate Elevation Of Surface Intersection Point Of 1-3 
+**     Calculate Elevation Of Surface Intersection Point Of 1-3
 */
-       if( P1 == P3 || S1== S3 ) 
+       if( P1 == P3 || S1== S3 )
          {
           if( P1 == P3 ) Z5 = P3 ;
           if( S1 == S3 ) Z5 = S3 ;
          }
        else bcdtmMath_normalIntersectCordLines(X1,P1,X3,P3,X1,S1,X3,S3,&X5,&Z5)  ;
 /*
-**     Calculate XY Coordinates Of Surface Intersection Point Of 1-3 
+**     Calculate XY Coordinates Of Surface Intersection Point Of 1-3
 */
        if( P1 != P3 && fabs(P1-P3) > fabs(S1-S3) )
          {
@@ -1168,7 +1168,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
        else           { Zsm1 = Z5 ; Zsm2 = Z4 ; }
 /*
 **     Determine Range Volumes
-*/           
+*/
        if( P1 < S1 ) { Pvol = fillVolume ; Qvol = cutVolume  ; }
        else          { Pvol = cutVolume  ; Qvol = fillVolume ; }
        for( nr = 0 ; nr < numRanges ; ++nr )
@@ -1177,7 +1177,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
           rangeHigh = rangeTableP[nr].High  ;
           if( Zsmin < rangeHigh && Zsmax > rangeLow )
             {
-             Rpvol = Rqvol = 0.0 ;             
+             Rpvol = Rqvol = 0.0 ;
              if( Zsmin >= rangeLow && Zsmax <= rangeHigh )
                {
                 Rpvol = Pvol ; Rqvol = Qvol ;
@@ -1188,11 +1188,11 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 **              Process Range Low For P1
 */
                 if( P1 <  S1 ) { Zsmn = P1 ; Zsmm = S1 ; }
-                else           { Zsmn = S1 ; Zsmm = P1 ; }  
+                else           { Zsmn = S1 ; Zsmm = P1 ; }
                 if( Zsmn >= rangeLow &&  Zsmm <= rangeHigh ) Rpvol = Pvol ;
                 else
                   {
-                   if( rangeLow < Zsmm && rangeHigh > Zsmn ) Rpvol = Pvol ;           
+                   if( rangeLow < Zsmm && rangeHigh > Zsmn ) Rpvol = Pvol ;
                    else                              Rpvol = 0.0  ;
                    if( rangeLow > Zsmn && rangeLow <  Zsmm )
                      {
@@ -1216,15 +1216,15 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 **              Initialise Variables For P2-P3
 */
                 if( P2 <= S2 ) { Zs2l = P2 ; Zs2h = S2 ; }
-                else           { Zs2l = S2 ; Zs2h = P2 ; } 
+                else           { Zs2l = S2 ; Zs2h = P2 ; }
                 if( P3 <= S3 ) { Zs3l = P3 ; Zs3h = S3 ; }
-                else           { Zs3l = S3 ; Zs3h = P3 ; } 
-                if( Zs2l <= Zs3l ) Zsmn = Zs2l ; 
-                else               Zsmn = Zs3l ;  
+                else           { Zs3l = S3 ; Zs3h = P3 ; }
+                if( Zs2l <= Zs3l ) Zsmn = Zs2l ;
+                else               Zsmn = Zs3l ;
                 if( Zs2h >= Zs3h ) Zsmm = Zs2h ;
                 else               Zsmm = Zs3h ;
-                if( Zsmn >= rangeLow && Zsmm <= rangeHigh ) 
-                  { 
+                if( Zsmn >= rangeLow && Zsmm <= rangeHigh )
+                  {
                    Rqvol = Qvol ;
                   }
                 else
@@ -1232,8 +1232,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 /*
 **                 Process Range Low For P2-P3
 */
-                   if( rangeLow < Zsmm && rangeHigh > Zsmn ) Rqvol = Qvol ; 
-                   else                                      Rqvol = 0.0 ;          
+                   if( rangeLow < Zsmm && rangeHigh > Zsmn ) Rqvol = Qvol ;
+                   else                                      Rqvol = 0.0 ;
                    if( rangeLow > Zsmn && rangeLow < Zsmm )
                      {
                       bcdtmTinVolume_prismToFlatPlane(rangeLow,X2,Y2,Zs2l,X3,Y3,Zs3l,X4,Y4,Z4,&cut,&fill,&area) ;
@@ -1260,32 +1260,32 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                       Rqvol = Rqvol + cut ;
                      }
                   }
-               } 
+               }
 /*
 **           Adjust For Rounding Errors
 */
              if( Rpvol < 0.0 ) Rpvol = 0.0 ;
-             if( Rqvol < 0.0 ) Rqvol = 0.0 ; 
+             if( Rqvol < 0.0 ) Rqvol = 0.0 ;
 /*
 **           Accumulate Range Volumes
 */
              if( P1 >  S1 )       /*  cutVolume On P1 */
-               { 
+               {
                 rangeTableP[nr].Cut  = rangeTableP[nr].Cut  + Rpvol ;
                 sumRangeCut = sumRangeCut + Rpvol ;
                }
-             else                  /* fillVolume On P1 */  
-               { 
+             else                  /* fillVolume On P1 */
+               {
                 rangeTableP[nr].Fill = rangeTableP[nr].Fill + Rpvol ;
                 sumRangeFill = sumRangeFill + Rpvol ;
                }
              if( P2 >= S2 && P3 >= S3 )    /*  cutVolume On Q */
-               { 
+               {
                 rangeTableP[nr].Cut  = rangeTableP[nr].Cut  + Rqvol ;
                 sumRangeCut = sumRangeCut + Rqvol ;
                }
-             else                  /* fillVolume On Q */  
-               { 
+             else                  /* fillVolume On Q */
+               {
                 rangeTableP[nr].Fill = rangeTableP[nr].Fill + Rqvol ;
                 sumRangeFill = sumRangeFill + Rqvol ;
                }
@@ -1303,8 +1303,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 3 ** cutVolume  = %20.15lf rangeCut  = %20.15lf Difference = %20.15lf%%",cutVolume,sumRangeCut,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
          }
 /*
 **     Check Range Fill Volumes For Surface Type 3
@@ -1318,8 +1318,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 3 ** fillVolume = %20.15lf rangeFill = %20.15lf Difference = %20.15lf%%",fillVolume,sumRangeFill,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
          }
       }
 /*
@@ -1347,7 +1347,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                    bcdtmTinVolume_prismToFlatPlane(rangeLow,X1,Y1,T1,X2,Y2,T2,X3,Y3,T3,&cut,&fill,&area) ;
                    rangeVolume = rangeVolume + fill  ;
                    bcdtmTinVolume_prismToFlatPlane(rangeHigh,X1,Y1,T1,X2,Y2,T2,X3,Y3,T3,&cut,&fill,&area) ;
-                   rangeVolume = rangeVolume - fill ;  
+                   rangeVolume = rangeVolume - fill ;
                   }
                 else if( rangeHigh <= zBotMax )
                   {
@@ -1365,7 +1365,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                      {
                       bcdtmTinVolume_prismToFlatPlane(rangeHigh,X1,Y1,T1,X2,Y2,T2,X3,Y3,T3,&cut,&fill,&area) ;
                       rangeVolume = rangeVolume - fill ;
-                     }   
+                     }
 /*
 **                 cutVolume Out Volumes Below Low Range
 */
@@ -1379,9 +1379,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 /*
 **           Accumulate Volumes
 */
-             if( rangeVolume < 0.0 ) rangeVolume = 0.0 ; 
+             if( rangeVolume < 0.0 ) rangeVolume = 0.0 ;
              if( Surface == 1) rangeTableP[nr].Cut  = rangeTableP[nr].Cut  + rangeVolume ;
-             if( Surface == 2) rangeTableP[nr].Fill = rangeTableP[nr].Fill + rangeVolume ;    
+             if( Surface == 2) rangeTableP[nr].Fill = rangeTableP[nr].Fill + rangeVolume ;
              sumRangeVolume = sumRangeVolume + rangeVolume ;
             }
          }
@@ -1397,8 +1397,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 1 ** cutVolume = %20.15lf rangeVolume = %20.15lf Difference = %20.15lf%%",cutVolume,sumRangeVolume,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
          }
 /*
 **     Check Range Volumes For Surface Type 2
@@ -1412,8 +1412,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 2 ** fillVolume = %20.15lf rangeVolume = %20.15lf Difference = %20.15lf%%",fillVolume,sumRangeVolume,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
          }
       }
 /*
@@ -1448,9 +1448,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
 /*
 **           Accumulate Volumes
 */
-             if( rangeVolume < 0.0 ) rangeVolume = 0.0 ; 
+             if( rangeVolume < 0.0 ) rangeVolume = 0.0 ;
              if( cutVolume  != 0.0 ) rangeTableP[nr].Cut  = rangeTableP[nr].Cut  + rangeVolume ;
-             if( fillVolume != 0.0 ) rangeTableP[nr].Fill = rangeTableP[nr].Fill + rangeVolume ;    
+             if( fillVolume != 0.0 ) rangeTableP[nr].Fill = rangeTableP[nr].Fill + rangeVolume ;
              sumRangeVolume = sumRangeVolume + rangeVolume ;
             }
          }
@@ -1466,8 +1466,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 4 ** cutVolume = %20.15lf rangeVolume = %20.15lf Difference = %20.15lf%%",cutVolume,sumRangeVolume,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
           if( fillVolume > 0.000001 && sumRangeVolume != fillVolume )
             {
              percentDiff = fabs(fillVolume-sumRangeVolume)/fillVolume * 100.0 ;
@@ -1475,8 +1475,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
                {
                 bcdtmWrite_message(0,0,0,"Surface Type 4 ** fillVolume = %20.15lf rangeVolume = %20.15lf Difference = %20.15lf%%",fillVolume,sumRangeVolume,percentDiff) ;
                 goto errexit ;
-               }  
-            } 
+               }
+            }
          }
       }
    }
@@ -1494,7 +1494,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculateRangeVolumes(double cutVolume,dou
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-}              
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1525,7 +1525,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmFiles
 ** Write Entry Message
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Files") ;
     bcdtmWrite_message(0,0,0,"fromDtmFileP   = %ws",fromDtmFileP) ;
     bcdtmWrite_message(0,0,0,"toDtmFileP     = %ws",toDtmFileP) ;
@@ -1542,10 +1542,10 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmFiles
 ** Check For Different Files
 */
  if( wcscmp(fromDtmFileP,toDtmFileP) == 0 )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Dtm Files The Same") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Read From Dtm File
 */
@@ -1561,7 +1561,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmFiles
 /*
 ** Delete To Dtm Objects
 */
- if( toDtmP != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ; 
+ if( toDtmP != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ;
 /*
 ** Clean Up
 */
@@ -1569,16 +1569,16 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmFiles
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Files Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Files Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Files Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Files Error") ;
  return(ret) ;
 /*
 ** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS )  ret = DTM_ERROR ;
- if( toDtmP   != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ; 
- if( fromDtmP != NULL ) bcdtmObject_destroyDtmObject(&fromDtmP) ; 
+ if( toDtmP   != NULL ) bcdtmObject_destroyDtmObject(&toDtmP) ;
+ if( fromDtmP != NULL ) bcdtmObject_destroyDtmObject(&fromDtmP) ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -1632,9 +1632,9 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 ** This Function Calculates The Surface To Surface Volumes Between Two Dtm Objects
 */
 {
- int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ; 
+ int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long            intersectFlag,saveTol=FALSE ;
- double          sppTol,splTol ;
+ double          sppTol = 0,splTol = 0;
  DPoint3d        *p3dP ;
  DTM_POLYGON_OBJ *polyP=NULL ;
  VOLRANGETAB     *vrtP ;
@@ -1644,7 +1644,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 ** Write Entry Message
 */
  startTime = bcdtmClock() ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Surface To Surface Dtm Objects") ;
     bcdtmWrite_message(0,0,0,"fromDtmP       = %p",fromDtmP) ;
@@ -1659,7 +1659,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
        for( vrtP = rangeTableP ; vrtP < rangeTableP + numRanges ; ++vrtP )
          {
           bcdtmWrite_message(0,0,0,"%12.4lf %12.4lf",vrtP->Low,vrtP->High) ;
-         } 
+         }
        bcdtmWrite_message(0,0,0,"Polygon Points") ;
        for( p3dP = polygonPtsP ; p3dP < polygonPtsP + numPolygonPts ; ++p3dP )
          {
@@ -1677,7 +1677,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
       {
        vrtP->Cut  = 0.0 ;
        vrtP->Fill = 0.0 ;
-      }  
+      }
    }
 /*
 ** Test For Valid Dtm Objects
@@ -1706,7 +1706,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 ** Check And Write Dtm Variables
 */
  if( cdbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"From DTM      = %p",fromDtmP ) ;
     bcdtmWrite_message(0,0,0,"ppTol         = %15.12lf",fromDtmP->ppTol ) ;
     bcdtmWrite_message(0,0,0,"plTol         = %15.12lf",fromDtmP->plTol ) ;
@@ -1756,8 +1756,8 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 /*
 ** Set Precision Tolerances For Volume Calculations
 */
-// fromDtmP->ppTol = fromDtmP->plTol = fromDtmP->mppTol * 100.0 ;  
-// toDtmP->ppTol   = toDtmP->plTol   = fromDtmP->mppTol * 100.0 ;  
+// fromDtmP->ppTol = fromDtmP->plTol = fromDtmP->mppTol * 100.0 ;
+// toDtmP->ppTol   = toDtmP->plTol   = fromDtmP->mppTol * 100.0 ;
 /*
 ** Get Intersect Polygons Between Dtm Hulls And Volume Polygon
 */
@@ -1766,13 +1766,13 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 /*
 ** Set Precision Tolerances For Volume Calculations
 */
- fromDtmP->ppTol = fromDtmP->plTol = fromDtmP->mppTol * 10000.0 ;  
-// toDtmP->ppTol   = toDtmP->plTol   = fromDtmP->mppTol * 100.0 ;  
+ fromDtmP->ppTol = fromDtmP->plTol = fromDtmP->mppTol * 10000.0 ;
+// toDtmP->ppTol   = toDtmP->plTol   = fromDtmP->mppTol * 100.0 ;
 /*
 **  Calculate Surface To Surface Volumes
 */
  numVolTriangles = 0 ;
- totTrgArea      = 0.0 ; 
+ totTrgArea      = 0.0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Surface To Surface Dtm Volumes") ;
  if( bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects(fromDtmP,toDtmP,polyP,rangeTableP,numRanges,loadFunctionP,userP,cutP,fillP,balanceP,cutAreaP, fillAreaP) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"numVolTriangles = %9ld Cut = %10.4lf Fill = %10.4lf Balance = %10.4lf CutArea = %10.4lf FillArea = %10.4lf",numVolTriangles,cutP,fillP,balanceP,cutAreaP, fillAreaP) ;
@@ -1787,7 +1787,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
    }
  if( saveFromDtmP  != NULL ) { fromDtmP = saveFromDtmP ; saveFromDtmP = NULL ; }
  if( cloneFromDtmP != NULL ) bcdtmObject_destroyDtmObject(&cloneFromDtmP) ;
- if( polyP != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ; 
+ if( polyP != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;
 /*
 ** Return
 */
@@ -1892,7 +1892,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleD
     np = nodeAddrP(dtmP,sp)->tPtr ;
     nodeAddrP(dtmP,sp)->tPtr = - (nodeAddrP(dtmP,sp)->tPtr + 1 ) ;
     sp = np ;
-   } while ( sp != Spnt ) ; 
+   } while ( sp != Spnt ) ;
 /*
 ** Calculate Volumes For All Triangles
 */
@@ -1901,12 +1901,12 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleD
    {
     if( nodeAddrP(dtmP,p1)->tPtr < 0 )
       {
-       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ) clc = dtmP->nullPtr ; 
+       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ) clc = dtmP->nullPtr ;
        else
          {
           clc = nodeAddrP(dtmP,p1)->cPtr ;
           if( ( p2 = bcdtmList_nextAntDtmObject(dtmP,p1,clistAddrP(dtmP,clc)->pntNum)) < 0 ) goto errexit ;
-         } 
+         }
        while ( clc != dtmP->nullPtr )
          {
           p3  = clistAddrP(dtmP,clc)->pntNum ;
@@ -1928,14 +1928,14 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleD
                    bcdtmTinVolume_interpolateZOnPlaneOfTriangle(0,TrgPts,X3,Y3,&SZ3) ;
                    bcdtmTinVolume_prismToFlatPlane(0.0,X1,Y1,(Z1-SZ1),X2,Y2,(Z2-SZ2),X3,Y3,(Z3-SZ3),&cut,&fill,&area) ;
                    *cutP  = *cutP  + cut ;  *fillP = *fillP + fill ; *areaP = *areaP + area ;
-                   if( numRanges > 0 ) 
+                   if( numRanges > 0 )
                      {
                       for( nr = rangeTableP ; nr < rangeTableP + numRanges ; ++nr ) { nr->Low -= Zmin ; nr->High -= Zmin ; }
                       if( bcdtmTinVolume_calculateRangeVolumes(cut,fill,rangeTableP,numRanges,X1,Y1,SZ1,X2,Y2,SZ2,X3,Y3,SZ3,Z1,Z2,Z3) ) goto errexit ;
                       for( nr = rangeTableP ; nr < rangeTableP + numRanges ; ++nr ) { nr->Low += Zmin ; nr->High += Zmin ; }
                      }
                   }
-               } 
+               }
             }
           p2 = p3 ;
          }
@@ -1977,7 +1977,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeBalance(double X1,double Y1,
  if( Zmin < SZ2 ) Zmin = SZ2 ;
  if( Zmin < SZ3 ) Zmin = SZ3 ;
  Zh = ( Z1 + Z2  + Z3  ) / 3.0 ;
- Zs = (SZ1 + SZ2 + SZ3 ) / 3.0 ; 
+ Zs = (SZ1 + SZ2 + SZ3 ) / 3.0 ;
  Area = bcdtmMath_coordinateTriangleArea(X1,Y1,X2,Y2,X3,Y3) ;
  if( Area < 0.0 ) Area = -Area ;
  *balanceP = (Zh-Zmin) * Area - (Zs-Zmin) * Area ;
@@ -2032,27 +2032,27 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleT
 /*
 ** Check For Marking Errors
 */
- if( NumMarked != NumUnMarked ) 
+ if( NumMarked != NumUnMarked )
    {
-    bcdtmWrite_message(0,0,0,"Number Marked = %6ld Number Un Marked = %6ld",NumMarked,NumUnMarked) ; ; 
-    bcdtmWrite_message(1,0,0,"Prismoidal Mark Error ") ; goto errexit ; 
+    bcdtmWrite_message(0,0,0,"Number Marked = %6ld Number Un Marked = %6ld",NumMarked,NumUnMarked) ; ;
+    bcdtmWrite_message(1,0,0,"Prismoidal Mark Error ") ; goto errexit ;
    }
 /*
 ** Mark Tptr Polygon
 */
  sp = Spnt ;
- do {  np = nodeAddrP(dtmP,sp)->tPtr ;  nodeAddrP(dtmP,sp)->tPtr = - (nodeAddrP(dtmP,sp)->tPtr + 1 ) ; sp = np ; } while ( sp != Spnt ) ; 
+ do {  np = nodeAddrP(dtmP,sp)->tPtr ;  nodeAddrP(dtmP,sp)->tPtr = - (nodeAddrP(dtmP,sp)->tPtr + 1 ) ; sp = np ; } while ( sp != Spnt ) ;
 /*
 **  Calculate Volumes For Tptr Polygon Points
 */
  sp = Spnt ;
- do 
+ do
    {
-    np = -nodeAddrP(dtmP,sp)->tPtr - 1 ;  
+    np = -nodeAddrP(dtmP,sp)->tPtr - 1 ;
     if( bcdtmTinVolume_calculateVolumesForPointDtmObject(dtmP,sp,rangeTableP,numRanges,Xmin,Ymin,Zmin,cutP,fillP,areaP)) goto errexit ;
-    nodeAddrP(dtmP,sp)->tPtr = np ; 
-    sp = np ; 
-   } while ( sp != Spnt ) ; 
+    nodeAddrP(dtmP,sp)->tPtr = np ;
+    sp = np ;
+   } while ( sp != Spnt ) ;
 /*
 ** Clean Up
 */
@@ -2073,7 +2073,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleT
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumMarked ) 
+BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumMarked )
 /*
 ** This Function Marks All Points Internal To a tPtr Polygon
 */
@@ -2089,7 +2089,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_D
 ** Scan Around Tptr Polygon And Mark Internal Points And Create Internal Tptr List
 */
  pp = Spnt ;
- sp = nodeAddrP(dtmP,Spnt)->tPtr ; 
+ sp = nodeAddrP(dtmP,Spnt)->tPtr ;
  do
    {
     ap = np = nodeAddrP(dtmP,sp)->tPtr ;
@@ -2112,11 +2112,11 @@ BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_D
                 nodeAddrP(dtmP,lp)->tPtr = lp ;
                }
             }
-         } 
+         }
        if(( ap = bcdtmList_nextAntDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
       }
-    pp = sp ;  
-    sp = np ; 
+    pp = sp ;
+    sp = np ;
    } while ( pp != Spnt ) ;
 /*
 ** Scan Tptr List And Mark Points
@@ -2131,7 +2131,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_D
       {
        lp  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if(nodeAddrP(dtmP,lp)->tPtr == dtmP->nullPnt )  
+       if(nodeAddrP(dtmP,lp)->tPtr == dtmP->nullPnt )
          { nodeAddrP(dtmP,Lpnt)->tPtr = lp ; Lpnt = lp ; nodeAddrP(dtmP,lp)->tPtr = lp ; }
       }
     Fpnt = np ;
@@ -2158,13 +2158,13 @@ BENTLEYDTM_Public int bcdtmTinVolume_markInternalTptrPolygonPointsDtmObject(BC_D
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumUnMarked ) 
+BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumUnMarked )
 /*
 ** This Function Marks All Points Internal To a tPtr Polygon
 */
@@ -2180,7 +2180,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC
 ** Scan Around Tptr Polygon And Un Mark Internal Points And Create Internal Tptr List
 */
  pp = Spnt ;
- sp = nodeAddrP(dtmP,Spnt)->tPtr ; 
+ sp = nodeAddrP(dtmP,Spnt)->tPtr ;
  do
    {
     ap = np = nodeAddrP(dtmP,sp)->tPtr ;
@@ -2203,11 +2203,11 @@ BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC
                 nodeAddrP(dtmP,lp)->tPtr = lp ;
                }
             }
-         } 
+         }
        if(( ap = bcdtmList_nextAntDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
       }
-    pp = sp ;  
-    sp = np ; 
+    pp = sp ;
+    sp = np ;
    } while ( pp != Spnt ) ;
 /*
 ** Scan Tptr List And Mark Points
@@ -2222,7 +2222,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC
       {
        lp  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if(nodeAddrP(dtmP,lp)->tPtr == Mark ) 
+       if(nodeAddrP(dtmP,lp)->tPtr == Mark )
          { nodeAddrP(dtmP,Lpnt)->tPtr = lp ; Lpnt = lp ; nodeAddrP(dtmP,lp)->tPtr = lp ; }
       }
     Fpnt = np ;
@@ -2249,13 +2249,13 @@ BENTLEYDTM_Public int bcdtmTinVolume_unmarkInternalTptrPolygonPointsDtmObject(BC
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumUnMarked,VOLRANGETAB *rangeTableP,long numRanges,double Xmin,double Ymin,double Zmin,double *cutP,double *fillP,double *areaP ) 
+BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long Spnt,long Mark,long *NumUnMarked,VOLRANGETAB *rangeTableP,long numRanges,double Xmin,double Ymin,double Zmin,double *cutP,double *fillP,double *areaP )
 /*
 ** This Function Marks All Points Internal To a tPtr Polygon
 */
@@ -2271,7 +2271,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygo
 ** Scan Around Tptr Polygon And Un Mark Internal Points And Create Internal Tptr List
 */
  pp = Spnt ;
- sp = nodeAddrP(dtmP,Spnt)->tPtr ; 
+ sp = nodeAddrP(dtmP,Spnt)->tPtr ;
  do
    {
     ap = np = nodeAddrP(dtmP,sp)->tPtr ;
@@ -2295,11 +2295,11 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygo
                 nodeAddrP(dtmP,lp)->tPtr = lp ;
                }
             }
-         } 
+         }
        if(( ap = bcdtmList_nextAntDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
       }
-    pp = sp ;  
-    sp = np ; 
+    pp = sp ;
+    sp = np ;
    } while ( pp != Spnt ) ;
 /*
 ** Scan Tptr List And Calculate Volumes Points
@@ -2315,7 +2315,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygo
       {
        lp  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if(nodeAddrP(dtmP,lp)->tPtr == Mark ) 
+       if(nodeAddrP(dtmP,lp)->tPtr == Mark )
          { nodeAddrP(dtmP,Lpnt)->tPtr = lp ; Lpnt = lp ; nodeAddrP(dtmP,lp)->tPtr = lp ; }
       }
     Fpnt = np ;
@@ -2343,7 +2343,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForMarkedInternalTptrPolygo
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2363,7 +2363,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForPointDtmObject(BC_DTM_OB
 /*
 ** If Void Point Dont Calculate Volume
 */
- if( ! bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) 
+ if( ! bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) )
    {
     clc = nodeAddrP(dtmP,P1)->cPtr ;
     if( ( P2 = bcdtmList_nextAntDtmObject(dtmP,P1,clistAddrP(dtmP,clc)->pntNum)) < 0 ) goto errexit ;
@@ -2393,17 +2393,17 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForPointDtmObject(BC_DTM_OB
                 bcdtmTinVolume_interpolateZOnPlaneOfTriangle(0,TrgPts,X3,Y3,&SZ3) ;
                 bcdtmTinVolume_prismToFlatPlane(0.0,X1,Y1,(Z1-SZ1),X2,Y2,(Z2-SZ2),X3,Y3,(Z3-SZ3),&cut,&fill,&area) ;
                 *cutP  = *cutP  + cut ;  *fillP = *fillP + fill ; *areaP = *areaP + area ;
-                if( numRanges > 0 ) 
+                if( numRanges > 0 )
                   {
                    for( nr = rangeTableP ; nr < rangeTableP + numRanges ; ++nr ) { nr->Low -= Zmin ; nr->High -= Zmin ; }
                    if( bcdtmTinVolume_calculateRangeVolumes(cut,fill,rangeTableP,numRanges,X1,Y1,SZ1,X2,Y2,SZ2,X3,Y3,SZ3,Z1,Z2,Z3) ) goto errexit ;
                    for( nr = rangeTableP ; nr < rangeTableP + numRanges ; ++nr ) { nr->Low += Zmin ; nr->High += Zmin ; }
                   }
                }
-            } 
+            }
          }
        P2 = P3 ;
-      } 
+      }
    }
 /*
 ** Clean Up
@@ -2457,7 +2457,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_intersectZLines(double P1,double P2,double 
  double d1,d2 ;
  d1 = P2-P1 ;
  d2 = S2-S1 ;
- if     ( d1 == 0.0 ) *z = P1 ; 
+ if     ( d1 == 0.0 ) *z = P1 ;
  else if( d2 == 0.0 ) *z = S1 ;
  else if( d1 == d2  ) *z = (P1+P2) / 2.0 ;
  else                 *z = (P1*d2 - S1*d1) / ( d2-d1) ;
@@ -2500,7 +2500,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Calculating Surface To Surface Tin Volumes") ;
     bcdtmWrite_message(0,0,0,"fromDtmP               = %p",fromDtmP) ;
@@ -2535,14 +2535,14 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 ** Consectutively Process Volume Polygons
 */
- totalPolyArea = 0.0 ; 
+ totalPolyArea = 0.0 ;
  totalPolyVoidArea = 0.0 ;
  for( pl = polygonP->polyListP ; pl < polygonP->polyListP + polygonP->numPolygons ; ++pl )
    {
-    polyArea = 0.0 ; 
+    polyArea = 0.0 ;
     voidArea = 0.0 ;
     numTriangles = 0 ;
-    totalPolyArea = totalPolyArea + pl->area ; 
+    totalPolyArea = totalPolyArea + pl->area ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Processing Volume Polygon %3ld of %3ld",(long)(pl-polygonP->polyListP)+1,polygonP->numPolygons) ;
     if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polygonP,(long)(pl-polygonP->polyListP),&polyPtsP,&numPolyPts)) goto errexit ;
 /*
@@ -2550,7 +2550,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 */
    if( loadFunctionP != NULL )
       {
-       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
+       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
        if( loadFunctionP(DTMFeatureType::Polygon,toDtmP->nullUserTag,toDtmP->nullFeatureId,polyPtsP,numPolyPts,userP) != DTM_SUCCESS ) goto errexit ;
       }
 /*
@@ -2562,13 +2562,13 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 **  Free DPoint3d Polygon Memory
 */
-    if( polyPtsP != NULL ) 
-      { 
+    if( polyPtsP != NULL )
+      {
        free(polyPtsP) ;
        polyPtsP = NULL ;
       }
 /*
-** Check Clipped Tin Area Against Polygon Area 
+** Check Clipped Tin Area Against Polygon Area
 */
     if( cdbg )
       {
@@ -2578,7 +2578,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
        bcdtmWrite_message(0,0,0,"Hull Area     = %20.10lf",hullArea)  ;
        bcdtmWrite_message(0,0,0,"Difference    = %20.10lf",hullArea-pl->area)  ;
        bcdtmWrite_message(0,0,0,"Difference(%%) = %20.10lf",diff*100.0) ;
-       if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ; 
+       if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ;
       }
 /*
 ** Check For Voids In DTM
@@ -2636,7 +2636,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
                    trgPts[2].x = pointAddrP(dtmP,p2)->x ; trgPts[2].y = pointAddrP(dtmP,p2)->y ;
                    polyVoidArea = polyVoidArea + bcdtmMath_coordinateTriangleArea(trgPts[0].x,trgPts[0].y,trgPts[1].x,trgPts[1].y,trgPts[2].x,trgPts[2].y) ;
                   }
-                ++numTriangles ; 
+                ++numTriangles ;
                }
              p2  = p3 ;
             }
@@ -2658,7 +2658,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
        bcdtmWrite_message(0,0,0,"Void  Area    = %20.10lf",polyVoidArea)  ;
        bcdtmWrite_message(0,0,0,"Difference    = %20.10lf",polyArea+polyVoidArea-pl->area) ;
        bcdtmWrite_message(0,0,0,"Difference(%%) = %20.10lf",diff*100.0) ;
-       if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ; 
+       if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ;
        totalPolyVoidArea = totalPolyVoidArea + polyVoidArea ;
       }
    }
@@ -2674,7 +2674,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
     bcdtmWrite_message(0,0,0,"numVolTriangles = %9ld Cut = %12.4lf Fill = %12.4lf Balance = %12.4lf CutArea = %12.4lf FillArea = %12.4lf",numVolTriangles,cutVolumeP,fillVolumeP,balanceVolumeP,cutAreaP, fillAreaP) ;
     if( numRanges > 0 )
       {
-       rangeCut = rangeFill = 0.0 ; 
+       rangeCut = rangeFill = 0.0 ;
        bcdtmWrite_message(0,0,0,"Volume Ranges") ;
        for( nr = 0 ; nr < numRanges ; ++nr )
          {
@@ -2695,12 +2695,12 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 ** Check Tin Structure
 */
- if( cdbg ) 
+ if( cdbg )
    {
     if( bcdtmCheck_tinComponentDtmObject(fromDtmP)) goto errexit ;
    }
 /*
-** Check Areas  
+** Check Areas
 */
  if( cdbg )
    {
@@ -2711,7 +2711,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
     bcdtmWrite_message(0,0,0,"Void  Area    = %20.10lf",totalPolyVoidArea)  ;
     bcdtmWrite_message(0,0,0,"Difference    = %20.10lf",(cutAreaP + fillAreaP)+totalPolyVoidArea-totalPolyArea) ;
     bcdtmWrite_message(0,0,0,"Difference(%%) = %20.10lf",diff*100.0) ;
-    if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ; 
+    if( diff > 0.001 ) bcdtmWrite_message(0,0,0,"Significant Area Differences") ;
    }
 /*
 ** Clean Up
@@ -2735,7 +2735,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject(BC_DTM_OBJ *dtmP,long trgNum,VOLRANGETAB *volRangeTableP,long numRanges,DPoint3d *trgPtsP,long numTrgPts,double &cutVolumeP,double &fillVolumeP,double &cutAreaP, double &fillAreaP,double &voidAreaP) 
+BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject(BC_DTM_OBJ *dtmP,long trgNum,VOLRANGETAB *volRangeTableP,long numRanges,DPoint3d *trgPtsP,long numTrgPts,double &cutVolumeP,double &fillVolumeP,double &cutAreaP, double &fillAreaP,double &voidAreaP)
 /*
 ** This Is The Controlling Routine For :-
 **
@@ -2746,7 +2746,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,p3,sp,np,clc,startPnt,numPts,numFeatures,lastPnt,priorLastPnt,calcVolumes,insertError; 
+ long   p1,p2,p3,sp,np,clc,startPnt,numPts,numFeatures,lastPnt,priorLastPnt,calcVolumes,insertError;
  DTMDirection direction;
  double trgArea,tptrArea=0.0,diff ;
 /*
@@ -2758,7 +2758,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
 */
  numPts       = dtmP->numPoints ;
  numFeatures  = dtmP->numFeatures ;
- cutVolumeP  = 0.0 ; 
+ cutVolumeP  = 0.0 ;
  fillVolumeP = 0.0 ;
  cutAreaP = 0.0;
  fillAreaP = 0.0;
@@ -2772,8 +2772,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
 /*
 **  Only Calculate Volumes For Triangles With Areas Greater Than 0.0001
 */
- if( trgArea > 0.0001 )  
-   { 
+ if( trgArea > 0.0001 )
+   {
 /*
 ** Insert Triangle Into Tin
 */
@@ -2786,7 +2786,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
        if( dbg ) bcdtmWrite_message(0,0,0,"Triangle Insert Error ** trgNum = %6ld trgArea = %12.7lf error = %2d startPnt = %9ld",trgNum,trgArea,insertError,startPnt) ;
        if( insertError == 11 || insertError == 12 )
          {
-          if( startPnt == dtmP->nullPnt ) calcVolumes = FALSE ; 
+          if( startPnt == dtmP->nullPnt ) calcVolumes = FALSE ;
           else
             {
              if( dbg ) bcdtmList_writeTptrListDtmObject(dtmP,startPnt) ;
@@ -2803,20 +2803,20 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
             }
          }
        else calcVolumes = FALSE ;
-      } 
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Secondary Triangle Completed") ;
 /*
 **  Check Connectivity Of Inserted Traingle
 */
     if( calcVolumes == TRUE )
       {
-       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0)) 
+       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0))
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Connectivity Error In Triangle Polygon ") ;
           calcVolumes = FALSE ;
           insertError = 12 ;
          }
-      } 
+      }
 /*
 **   Check For Only Two Points In Inserted Triangle
 */
@@ -2824,7 +2824,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Two Inserted Points") ;
        if(nodeAddrP(dtmP,nodeAddrP(dtmP,startPnt)->tPtr)->tPtr == startPnt ) calcVolumes = FALSE ;
-      } 
+      }
 /*
 **  Check Direction And Area Of Inserted Tptr Triangle
 */
@@ -2850,18 +2850,18 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
        if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Volumes") ;
        if( bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmObject(dtmP,volRangeTableP,numRanges,startPnt,trgPtsP,cutVolumeP,fillVolumeP,cutAreaP, fillAreaP,voidAreaP)) goto errexit ;
 /*
-**     Check Prismoidal Area Against Triangle Area 
+**     Check Prismoidal Area Against Triangle Area
 */
        if( TRUE )
          {
           diff = fabs(fabs((cutAreaP + fillAreaP)+voidAreaP-tptrArea)/tptrArea) ;
           if( trgArea > 0.01 && diff > 0.01 ) bcdtmWrite_message(0,0,0,"Prismoidal Area Difference ** trgNum = %6ld Tptr Triangle Area = %12.4lf Calculated Volume Area = %10.4lf Percentage Difference = %10.4lf",trgNum,tptrArea,cutAreaP + fillAreaP,diff*100.0) ;
-         } 
+         }
       }
     else
       {
        bcdtmWrite_message(0,0,0,"Triangle Insert Error ** trgNum = %6ld trgArea = %12.7lf error = %2d startPnt = %9ld",trgNum,trgArea,insertError,startPnt) ;
-      }  
+      }
 /*
 **  Null TPTR List
 */
@@ -2874,14 +2874,14 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Removing Inserted Points") ;
     for ( p1 = dtmP->numPoints - 1 ; p1 >= numPts ; --p1 )
       {
-       if( dbg ) bcdtmWrite_message(0,0,0,"Removing Point %9ld",p1) ; 
+       if( dbg ) bcdtmWrite_message(0,0,0,"Removing Point %9ld",p1) ;
 /*
 **     Remove Point From All Feature Lists
 */
        if( bcdtmInsert_removePointFromAllDtmFeaturesDtmObject(dtmP,p1)) goto errexit ;
-/* 
+/*
 **     Insert Deleted Lines
-*/  
+*/
        if( dtmP->numFeatures > numFeatures )
          {
           if( p1 == ftableAddrP(dtmP,dtmP->numFeatures-1)->dtmFeaturePts.firstPoint )
@@ -2894,7 +2894,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
              if( nodeAddrP(dtmP,p1)->hPtr == p3 ) nodeAddrP(dtmP,p2)->hPtr = p3 ;
              if( nodeAddrP(dtmP,p1)->hPtr == p2 ) nodeAddrP(dtmP,p3)->hPtr = p2 ;
              --dtmP->numFeatures ;
-            } 
+            }
          }
 /*
 **     Remove Inserted Point
@@ -2905,7 +2905,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
           p2  = clistAddrP(dtmP,clc)->pntNum ;
           clc = clistAddrP(dtmP,clc)->nextPtr ;
           if( bcdtmList_deleteLineDtmObject(dtmP,p1,p2)) goto errexit ;
-         }  
+         }
        nodeAddrP(dtmP,p1)->hPtr = dtmP->nullPnt ;
        nodeAddrP(dtmP,p1)->tPtr = dtmP->nullPnt ;
        nodeAddrP(dtmP,p1)->sPtr = dtmP->nullPnt ;
@@ -2929,10 +2929,10 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
          {
           bcdtmWrite_message(0,0,0,"Topology Error After Restoring Primary Tin ") ;
           goto errexit ;
-         } 
+         }
        else bcdtmWrite_message(0,0,0,"Tin Topology OK") ;
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -2960,7 +2960,7 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
 ** Assumes String Is Internal To Tin And Has Been Validated
 **
 ** drapeFlag    = 1   Drape Intersect Vertices On Tin Surface
-**              = 2   Break Intersect Vertices On Tin Surface 
+**              = 2   Break Intersect Vertices On Tin Surface
 ** insertFlag   = 1   Move Tin Lines That Are Not Linear Features
 **              = 2   Intersect Tin Lines
 **
@@ -2979,10 +2979,10 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
  *startPntP = dtmP->nullPnt ;
 /*
 ** Allocate Memory To Hold Point Numbers
-*/ 
+*/
  pointsP = ( long * ) malloc ( numTrgPts * sizeof(long)) ;
- if( pointsP == NULL ) 
-   { 
+ if( pointsP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
    }
@@ -3000,8 +3000,8 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
 */
     if( cdbg == 2 )
       {
-       if( bcdtmCheck_precisionDtmObject(dtmP,0)) 
-         { 
+       if( bcdtmCheck_precisionDtmObject(dtmP,0))
+         {
           bcdtmWrite_message(0,0,0,"Tin Precision Errors After Storing Point") ;
           goto errexit ;
          }
@@ -3023,8 +3023,8 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
  if( cdbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Checking Tin Precision After Storing Points") ;
-    if( bcdtmCheck_precisionDtmObject(dtmP,0)) 
-      { 
+    if( bcdtmCheck_precisionDtmObject(dtmP,0))
+      {
        bcdtmWrite_message(0,0,0,"Tin Precision Errors After Storing Points") ;
        goto errexit ;
       }
@@ -3032,11 +3032,11 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
 /*
 ** Write Area For Debug Purposes
 */
- if( dbg == 2 ) 
+ if( dbg == 2 )
    {
     ptsP = pointsP ;
     bcdtmWrite_message(0,0,0,"Points Area = %15.7lf",bcdtmMath_coordinateTriangleArea(pointAddrP(dtmP,*ptsP)->x,pointAddrP(dtmP,*ptsP)->y,pointAddrP(dtmP,*(ptsP+1))->x,pointAddrP(dtmP,*(ptsP+1))->y,pointAddrP(dtmP,*(ptsP+2))->x,pointAddrP(dtmP,*(ptsP+2))->y)) ;
-   } 
+   }
 /*
 ** Store Lines In Tin Object
 */
@@ -3046,7 +3046,7 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
     if( *(ptsP-1) != *ptsP )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Line %6ld %6ld",*(ptsP-1),*ptsP) ;
-       if( ( ret = bcdtmTinVolume_insertLineBetweenPointsDtmObject(dtmP,*(ptsP-1),*ptsP,drapeFlag)) != DTM_SUCCESS ) 
+       if( ( ret = bcdtmTinVolume_insertLineBetweenPointsDtmObject(dtmP,*(ptsP-1),*ptsP,drapeFlag)) != DTM_SUCCESS )
          {
           *startPntP = *pointsP ;
           goto errexit ;
@@ -3060,7 +3060,7 @@ BENTLEYDTM_Private int  bcdtmTinVolume_insertInternalTriangleIntoDtmObject(BC_DT
           else                                         bcdtmWrite_message(0,0,0,"Tin Precision OK") ;
          }
       }
-   } 
+   }
 /*
 ** Check Precision After Inserting Triangle
 */
@@ -3101,11 +3101,11 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
 ** This Function Stores A Point In The Tin Object
 **
 ** drapeFlag    = 1   Drape Intersect Vertices On Tin Surface
-**              = 2   Break Intersect Vertices On Tin Surface 
+**              = 2   Break Intersect Vertices On Tin Surface
 ** insertFlag   = 1   Move Tin Lines That Are Not Linear Features
 **              = 2   Intersect Tin Lines
 ** internalFlag = 1   Point Is Internal To Tin
-** 
+**
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -3127,9 +3127,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
  if( bcdtmFind_triangleForPointDtmObject(dtmP,x,y,&Zs,&pntType,&trgPnt1,&trgPnt2,&trgPnt3)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Point Type = %2ld",pntType) ;
 /*
-** If Point External Find Closest Hull Point Or Line  
+** If Point External Find Closest Hull Point Or Line
 */
- if( pntType == 0 ) 
+ if( pntType == 0 )
    {
     if( bcdtmFind_findClosestHullLineDtmObject(dtmP,x,y,&Zs,&pntType,&trgPnt1,&trgPnt2)) goto errexit ;
     if( dbg )
@@ -3138,13 +3138,13 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
        if( trgPnt1 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"Point[%8ld] = %20.15lf %20.15lf %10.4lf",trgPnt1,pointAddrP(dtmP,trgPnt1)->x,pointAddrP(dtmP,trgPnt1)->y,pointAddrP(dtmP,trgPnt1)->z) ;
        if( trgPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"Point[%8ld] = %20.15lf %20.15lf %10.4lf",trgPnt2,pointAddrP(dtmP,trgPnt2)->x,pointAddrP(dtmP,trgPnt2)->y,pointAddrP(dtmP,trgPnt2)->z) ;
       }
-    if( ! pntType ) 
+    if( ! pntType )
       {
        bcdtmWrite_message(2,0,0,"Cannot Not Find Closest Hull Line Or Point") ;
        goto errexit ;
-      } 
+      }
     if( pntType == 2 ) pntType = 3 ;
-   }  
+   }
 /*
 ** Write Out Point Type
 */
@@ -3177,7 +3177,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     else if( onLine3 && d3 <= d1 && d3 <= d2 && d3 < dtmP->plTol ) { pntType = 2 ; trgPnt2 = trgPnt1 ; trgPnt1 = trgPnt3 ; trgPnt3 = dtmP->nullPnt ; }
     if( pntType == 2 )
       {
-       if      ( nodeAddrP(dtmP,trgPnt1)->hPtr == trgPnt2 )   pntType = 3 ; 
+       if      ( nodeAddrP(dtmP,trgPnt1)->hPtr == trgPnt2 )   pntType = 3 ;
        else if ( nodeAddrP(dtmP,trgPnt2)->hPtr == trgPnt1 ) { pntType = 3 ; trgPnt3 = trgPnt1 ; trgPnt1 = trgPnt2 ; trgPnt2 = trgPnt3 ; trgPnt3 = dtmP->nullPnt ; }
       }
    }
@@ -3189,7 +3189,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     d1 = bcdtmMath_distanceOfPointFromLine(&onLine1,pointAddrP(dtmP,trgPnt1)->x,pointAddrP(dtmP,trgPnt1)->y,pointAddrP(dtmP,trgPnt2)->x,pointAddrP(dtmP,trgPnt2)->y,x,y,&Xi,&Yi) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"onLine1 = %2ld ** d1 = %20.15lf ** x = %20.15lf y = %20.15lf ** Xi = %20.15lf Yi = %20.15lf",onLine1,d1,x,y,Xi,Yi) ;
     x = Xi ;
-    y = Yi ; 
+    y = Yi ;
    }
 /*
 ** Check Point To Point Tolerance Line
@@ -3200,14 +3200,14 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     d2 = bcdtmMath_distance(x,y,pointAddrP(dtmP,trgPnt2)->x,pointAddrP(dtmP,trgPnt2)->y) ;
     if      ( d1 <= d2 && d1 < dtmP->ppTol ) { pntType = 1 ; trgPnt2 = trgPnt3 = dtmP->nullPnt ; }
     else if ( d2 <= d1 && d2 < dtmP->ppTol ) { pntType = 1 ; trgPnt1 = trgPnt2 ; trgPnt2 = trgPnt3 = dtmP->nullPnt ; }
-   }  
+   }
 /*
 ** Check For Precision Problem Occurring If Point Is Inserted Into Internal Line
 */
  if( pntType == 2 )
    {
     if( bcdtmInsert_checkForPointLinePrecisionErrorDtmObject(dtmP,trgPnt1,trgPnt2,x,y,&precisionError,&antPnt,&clkPnt)) goto errexit ;
-    if( precisionError ) 
+    if( precisionError )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error Detected While Inserting Point Onto Line") ;
        if( bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP,antPnt,trgPnt2,clkPnt,trgPnt1,x,y,&x,&y,&fixType))  goto errexit ;
@@ -3220,7 +3220,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error Not Fixed") ;
           goto errexit ;
-         }  
+         }
       }
    }
 /*
@@ -3235,7 +3235,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
        if( dbg ) bcdtmWrite_message(0,0,0,"Potential Precision Error Detected For Inserting Point On Hull Line") ;
        if( bcdtmInsert_fixPointHullTrianglePrecisionDtmObject(dtmP,trgPnt1,trgPnt2,trgPnt3,x,y,&x,&y,&fixType )) goto errexit ;
        if( ! fixType ) goto errexit ;
-      } 
+      }
    }
 /*
 ** Set z value For Point
@@ -3244,9 +3244,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
 /*
 ** Add Point To Tin
 */
- if( pntType > 1 ) 
-   { 
-    if( bcdtmInsert_addPointToDtmObject(dtmP,x,y,z,&newPnt)) goto errexit ; 
+ if( pntType > 1 )
+   {
+    if( bcdtmInsert_addPointToDtmObject(dtmP,x,y,z,&newPnt)) goto errexit ;
    }
  else newPnt = trgPnt1 ;
 /*
@@ -3256,7 +3256,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
 /*
 **  Set VoidFlag
 */
- voidFlag = 0 ;   
+ voidFlag = 0 ;
 /*
 **  Insert Point Into Tin
 */
@@ -3266,7 +3266,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
        bcdtmWrite_message(1,0,0,"Point %12.4lf %12.4lf %10.4lf External To Tin",x,y,z) ;
        goto errexit ;
     break   ;
-      
+
     case  1 :      /* Coincident With Existing Point     */
       newPnt = trgPnt1 ;
        pointAddrP(dtmP,newPnt)->z = z ;
@@ -3275,65 +3275,65 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     case  2 :      /* Coincident With Internal Tin Line  */
 
       bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,voidFlag) ;
-      if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ; 
-      if( (p2 = bcdtmList_nextClkDtmObject(dtmP,trgPnt1,trgPnt2)) < 0 ) goto errexit ; 
-      if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,p1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt2,newPnt,p2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,trgPnt2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,newPnt,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p2,trgPnt2)) goto errexit ; 
+      if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ;
+      if( (p2 = bcdtmList_nextClkDtmObject(dtmP,trgPnt1,trgPnt2)) < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,p1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt2,newPnt,p2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,trgPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,newPnt,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p2,trgPnt2)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,trgPnt1,trgPnt2) )
         {
-         if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,trgPnt1,trgPnt2,newPnt)) goto errexit ; 
+         if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,trgPnt1,trgPnt2,newPnt)) goto errexit ;
         }
 /*
 ** Store Entry In feature Table For Rebuilding Tin After Removing Secondary Triangle
 */
       if (bcdtmInsert_addToFeatureTableDtmObject (dtmP, NULL, 0, (DTMFeatureType)trgPnt1, trgPnt2, DTM_NULL_FEATURE_ID, newPnt, &tableEntry)) goto errexit;// DH storing pntsNums in the featureType and FeatureId.
-      
+
     break ;
 
     case  3 :      /* Coincident With External Tin Line  */
       bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,voidFlag) ;
-      if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ; 
-      if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,p1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ; 
-      if(bcdtmList_insertLineBeforePointDtmObject(dtmP,trgPnt2,newPnt,p1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,trgPnt2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,trgPnt1)) goto errexit ; 
+      if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,p1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineBeforePointDtmObject(dtmP,trgPnt2,newPnt,p1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,trgPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,trgPnt1)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,trgPnt1,trgPnt2) )
         {
          if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,trgPnt1,trgPnt2,newPnt)) goto errexit ;
-        }  
+        }
       nodeAddrP(dtmP,trgPnt1)->hPtr = newPnt ;
       nodeAddrP(dtmP,newPnt)->hPtr = trgPnt2 ;
 /*
 ** Store Entry In feature Table For Rebuilding Tin After Removing Secondary Triangle
 */
       if( bcdtmInsert_addToFeatureTableDtmObject(dtmP,NULL,0,(DTMFeatureType)trgPnt1,trgPnt2,DTM_NULL_FEATURE_ID,newPnt,&tableEntry)) goto errexit ; // DH storing pntsNums in the featureType and FeatureId.
-      
+
     break ;
 
     case  4 :   /* In Triangle                      */
-     bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPnt1,trgPnt2,trgPnt3,voidFlag) ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,trgPnt2)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt2,newPnt,trgPnt3)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt3,newPnt,trgPnt1)) goto errexit ; 
-      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt3,trgPnt2)) goto errexit ; 
+     bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPnt1,trgPnt2,trgPnt3,voidFlag) ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,trgPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt2,newPnt,trgPnt3)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt2,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt3,newPnt,trgPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt3,trgPnt2)) goto errexit ;
     break ;
 
     default :
       bcdtmWrite_message(1,0,0,"Illegal Point Find Code %6ld ",pntType) ;
       goto errexit ;
-    break   ; 
+    break   ;
    } ;
 /*
 ** If Point In Void Set Void Bit
@@ -3377,8 +3377,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 ** firstPnt    =     Start Point Of Line
 ** lastPnt     =     End Point Of Line
 ** drapeFlag   = 1   Drape Intersect Vertices On Tin Surface
-**             = 2   Break Intersect Vertices On Tin Surface 
-**  
+**             = 2   Break Intersect Vertices On Tin Surface
+**
 */
 {
  int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
@@ -3393,9 +3393,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 ** Initialise
 */
  p1 = dtmP->nullPnt ;
- p2 = dtmP->nullPnt ; 
+ p2 = dtmP->nullPnt ;
  p3 = dtmP->nullPnt ;
- insertPnt = firstPnt ; 
+ insertPnt = firstPnt ;
 /*
 ** Continue Insertion Until Insert Points Is Equal To Last Point
 */
@@ -3404,11 +3404,11 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 /*
 **   Check For Knot If So Return
 */
-    if( nodeAddrP(dtmP,insertPnt)->tPtr != dtmP->nullPnt ) 
+    if( nodeAddrP(dtmP,insertPnt)->tPtr != dtmP->nullPnt )
       {
        if( nodeAddrP(dtmP,nodeAddrP(dtmP,insertPnt)->tPtr)->tPtr == insertPnt )
          {
-          nodeAddrP(dtmP,nodeAddrP(dtmP,insertPnt)->tPtr)->tPtr = dtmP->nullPnt ; 
+          nodeAddrP(dtmP,nodeAddrP(dtmP,insertPnt)->tPtr)->tPtr = dtmP->nullPnt ;
          }
        else
          {
@@ -3418,7 +3418,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
       }
 /*
 **  Write Insertion Line
-*/ 
+*/
     if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Line Between %6ld and %6ld Angle = %12.10lf",insertPnt,lastPnt,bcdtmMath_getPointAngleDtmObject(dtmP,insertPnt,lastPnt)) ;
 /*
 **  Get Next Point
@@ -3429,7 +3429,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 /*
 **  A Knot Will Result In The Insert Line
 */
-    if( bkp == 8 ) 
+    if( bkp == 8 )
       {
        ret = 12 ;  //  Intersect Knot
        if( nodeAddrP(dtmP,p1)->tPtr == p2 ) nodeAddrP(dtmP,insertPnt)->tPtr = p1 ;
@@ -3440,16 +3440,16 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 **  Check For Potential Precision Problem
 */
     if( bkp == 2 )
-      { 
+      {
        if( bcdtmInsert_checkPointQuadrilateralPrecisionDtmObject(dtmP,insertPnt,p1,p3,p2,x,y,&precisionError)) goto errexit ;
-       if( precisionError ) 
+       if( precisionError )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error Detected While Inserting Line") ;
           if( bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP,insertPnt,p1,p3,p2,x,y,&x,&y,&fixType)) goto errexit ;
           if( fixType == 0 ) goto errexit ;
           else
             {
-             if( fixType == 1 )   bkp = 1 ; 
+             if( fixType == 1 )   bkp = 1 ;
              if( fixType == 2 ) { bkp = 1 ; p1 = p2 ; }
             }
          }
@@ -3459,22 +3459,22 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 */
     if( bkp == 1 || bkp == 2 || bkp == 3 )
       {
-       if( bkp == 1 )      
-         { 
-          x = pointAddrP(dtmP,p1)->x ; 
-          y = pointAddrP(dtmP,p1)->y ; 
-         } 
+       if( bkp == 1 )
+         {
+          x = pointAddrP(dtmP,p1)->x ;
+          y = pointAddrP(dtmP,p1)->y ;
+         }
        if( drapeFlag == 1 )  bcdtmInsert_getZvalueDtmObject(dtmP,p1,p2,x,y,&z) ;
        else                  bcdtmInsert_getZvalueDtmObject(dtmP,firstPnt,lastPnt,x,y,&z) ;
       }
 /*
 **  Passes Through Tin Point
-*/ 
-    if( bkp == 1 ) 
-      { 
-       nodeAddrP(dtmP,insertPnt)->tPtr = p1 ; 
-       pointAddrP(dtmP,p1)->z = z ; 
-       insertPnt = p1 ; 
+*/
+    if( bkp == 1 )
+      {
+       nodeAddrP(dtmP,insertPnt)->tPtr = p1 ;
+       pointAddrP(dtmP,p1)->z = z ;
+       insertPnt = p1 ;
       }
 /*
 **  Intersects Internal Line
@@ -3492,7 +3492,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 /*
 **     Set Void Bit In P4
 */
-       if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,p4)->PCWD) ; 
+       if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,p4)->PCWD) ;
 /*
 **     Delete p1-p2 And Add New Lines To Tin
 */
@@ -3507,23 +3507,23 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
          {
           if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p3,p4,p2)) goto errexit ;
           if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p4,p3,p1)) goto errexit ;
-         }  
+         }
 /*
 **     Store Entry In feature Table For Rebuilding Tin After Removing Secondary Triangle
 */
        if( bcdtmInsert_addToFeatureTableDtmObject(dtmP,NULL,0,(DTMFeatureType)p1,p2,DTM_NULL_FEATURE_ID,p4,&tableEntry)) goto errexit ; // DH storing pntsNums in the featureType and FeatureId.
 /*
 **     Intersects Tin Hull Line
-*/   
+*/
        if( bkp == 3 )
          {
           if(nodeAddrP(dtmP,p1)->hPtr == p2 ) { nodeAddrP(dtmP,p1)->hPtr = p4 ;nodeAddrP(dtmP,p4)->hPtr = p2 ; }
           if(nodeAddrP(dtmP,p2)->hPtr == p1 ) { nodeAddrP(dtmP,p2)->hPtr = p4 ;nodeAddrP(dtmP,p4)->hPtr = p1 ; }
-         } 
+         }
 /*
 **     Add Point To All Dtm Features
 */
-       if( dtmFeatureLine ) if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,p1,p2,p4)) goto errexit ; 
+       if( dtmFeatureLine ) if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,p1,p2,p4)) goto errexit ;
 /*
 **     Set Flag Byte For Intersect Point
 */
@@ -3531,15 +3531,15 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 /*
 **     Update TPTR List
 */
-       nodeAddrP(dtmP,insertPnt)->tPtr = p4 ; 
-       insertPnt = p4 ; 
+       nodeAddrP(dtmP,insertPnt)->tPtr = p4 ;
+       insertPnt = p4 ;
 /*
 **     Check Precision After Inserting Triangle
 */
        if( cdbg == 1 )
          {
-          if( bcdtmCheck_precisionDtmObject(dtmP,0)) 
-            { 
+          if( bcdtmCheck_precisionDtmObject(dtmP,0))
+            {
              bcdtmWrite_message(0,0,0,"Tin Precision Errors After Inserting Line Point") ;
              goto errexit ;
             }
@@ -3587,7 +3587,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
  long   hullPnt,hullPnt1,hullPnt2,firstPtr;
  DTMDirection direction;
  double d1,d2,n1,n2 ;
- double firstPntArea,hullPntArea ; 
+ double firstPntArea,hullPntArea ;
 /*
 ** Write Entry Message
 */
@@ -3598,9 +3598,9 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
  *pnt1P = dtmP->nullPnt ;
  *pnt2P = dtmP->nullPnt ;
  *pnt3P = dtmP->nullPnt ;
- *xP = 0.0 ; 
+ *xP = 0.0 ;
  *yP = 0.0 ;
- sp1 = dtmP->nullPnt ; 
+ sp1 = dtmP->nullPnt ;
  sp2 = dtmP->nullPnt ;
 /*
 ** Write Cyclic List For Point
@@ -3609,11 +3609,11 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
 /*
 **  Test If firstPnt and lastPnt Connected
 */
- if( bcdtmList_testLineDtmObject(dtmP,firstPnt,lastPnt)) 
-   { 
+ if( bcdtmList_testLineDtmObject(dtmP,firstPnt,lastPnt))
+   {
     *pnt1P = lastPnt ;
     return(1) ;
-   } 
+   }
 /*
 ** Set Internal Line Flag
 */
@@ -3633,10 +3633,10 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
        p2  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
        if( dbg ) bcdtmWrite_message(0,0,0,"p1 = %6ld p1->hPtr = %9ld p2 = %6ld p2->hPtr = %9ld",p1,nodeAddrP(dtmP,p1)->hPtr,p2,nodeAddrP(dtmP,p2)->hPtr) ;
-       if( nodeAddrP(dtmP,firstPnt)->hPtr == p1) 
-         { 
-          sp1 = p1 ; 
-          sp2 = p2 ; 
+       if( nodeAddrP(dtmP,firstPnt)->hPtr == p1)
+         {
+          sp1 = p1 ;
+          sp2 = p2 ;
          }
        else
          {
@@ -3665,8 +3665,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
       {
        p1 = sp1 ;
        p2 = sp2 ;
-      } 
-   }  
+      }
+   }
 /*
 ** Look At Points Either Side Of Index Point
 */
@@ -3685,7 +3685,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
 **  If Internal Get Intecept Point
 */
  if( internalLine )
-   { 
+   {
     if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Internal Line") ;
 /*
 ** Write Internal Line
@@ -3699,7 +3699,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
        *pnt1P = p1 ;
        *pnt2P = p2 ;
        return(8) ;
-      } 
+      }
 /*
 **  Test If p1-p2 is A Dtm Feature Line
 */
@@ -3713,7 +3713,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_getIntersectPointDtmObject(BC_DTM_OBJ *dtm
     if( dbg ) bcdtmWrite_message(0,0,0,"onLine1 = %2ld n1 = %20.16lf",onLine1,n1) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"onLine2 = %2ld n2 = %20.16lf",onLine1,n2) ;
     if( n1 > dtmP->plTol || nodeAddrP(dtmP,p1)->tPtr != dtmP->nullPnt ) onLine1 = 0 ;
-    if( n2 > dtmP->plTol || nodeAddrP(dtmP,p2)->tPtr != dtmP->nullPnt ) onLine2 = 0 ; 
+    if( n2 > dtmP->plTol || nodeAddrP(dtmP,p2)->tPtr != dtmP->nullPnt ) onLine2 = 0 ;
     if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->plTol = %12.10lf onLine1 = %2ld onLine2 =%2ld",dtmP->ppTol,onLine1,onLine2) ;
 onLine1 = 0 ;
     if     ( onLine1 && onLine2 )
@@ -3747,7 +3747,7 @@ onLine1 = 0 ;
     d2  = bcdtmMath_distance(*xP,*yP,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
     if( d1 < dtmP->ppTol ) onLine1 = 1 ;
     if( d2 < dtmP->ppTol ) onLine2 = 2 ;
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"onLine1 = %2ld d1 = %20.16lf",onLine1,d1) ;
        bcdtmWrite_message(0,0,0,"onLine2 = %2ld d2 = %20.16lf",onLine1,d2) ;
@@ -3774,7 +3774,7 @@ onLine1 = 0 ;
 */
  if( ! internalLine )
    {
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Insert Line Goes External") ;
        bcdtmWrite_message(0,0,0,"firstPnt = %6ld firstPnt->hPtr = %9ld ** lastPnt = %6ld lastPnt->hPtr = %9ld",firstPnt,nodeAddrP(dtmP,firstPnt)->hPtr,lastPnt,nodeAddrP(dtmP,lastPnt)->hPtr) ;
@@ -3789,7 +3789,7 @@ onLine1 = 0 ;
        if( hullPnt1 == p1 ) { *pnt1P = hullPnt1 ; return(1) ; }
        if( hullPnt2 == p2 ) { *pnt1P = hullPnt2 ; return(1) ; }
        hullPnt = hullPnt1 ;
-      } 
+      }
     firstPtr = nodeAddrP(dtmP,firstPnt)->hPtr ;
     nodeAddrP(dtmP,firstPnt)->hPtr = hullPnt ;
     bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtmP,firstPnt,&firstPntArea,&direction) ;
@@ -3801,7 +3801,7 @@ onLine1 = 0 ;
     nodeAddrP(dtmP,hullPnt)->hPtr = firstPtr ;
     if( dbg ) bcdtmWrite_message(0,0,0,"hullPnt ** Area = %20.15lf direction = %1ld",hullPntArea,direction) ;
     if( firstPntArea <= hullPntArea ) *pnt1P = p2 ;
-    else                              *pnt1P = p1 ;  
+    else                              *pnt1P = p1 ;
     return(1) ;
    }
 /*
@@ -3838,7 +3838,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
     bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,startPnt,&tptrArea,&tptrDirection) ;
    }
 /*
-** Initialise 
+** Initialise
 */
  cutP  = 0.0 ;
  fillP = 0.0 ;
@@ -3864,7 +3864,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
  (trgPtsP+1)->y = (trgPtsP+1)->y - yMin ;
  (trgPtsP+2)->y = (trgPtsP+2)->y - yMin ;
  trgPtsP->z = trgPtsP->z - zMin ;
- (trgPtsP+1)->z = (trgPtsP+1)->z - zMin ; 
+ (trgPtsP+1)->z = (trgPtsP+1)->z - zMin ;
  (trgPtsP+2)->z = (trgPtsP+2)->z - zMin ;
 /*
 ** Calculate Plane Coefficients For Triangle
@@ -3893,7 +3893,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
          {
           if( nodeAddrP(dtmP,firstPnt)->hPtr != p2 )
             {
-             ++numVolTriangles ;    
+             ++numVolTriangles ;
              bcdtmList_testForVoidTriangleDtmObject(dtmP,firstPnt,p2,p3,voidTriangle) ;
              if( ! voidTriangle )
                {
@@ -3904,7 +3904,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
                 bcdtmTinVolume_interpolateZOnPlaneOfTriangle(0,trgPtsP,X2,Y2,&sZ2) ;
                 bcdtmTinVolume_interpolateZOnPlaneOfTriangle(0,trgPtsP,X3,Y3,&sZ3) ;
                 bcdtmTinVolume_prismToFlatPlane(0.0,X1,Y1,(Z1-sZ1),X2,Y2,(Z2-sZ2),X3,Y3,(Z3-sZ3),cut,fill,cutArea, fillArea) ;
-                cutP  = cutP  + cut  ;  
+                cutP  = cutP  + cut  ;
                 fillP = fillP + fill ;
                 cutAreaP = cutAreaP + cutArea;
                 fillAreaP = fillAreaP + fillArea;
@@ -3916,7 +3916,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
                    for( vrTabP = volRangeTabP ; vrTabP < volRangeTabP + numRanges ; ++vrTabP ) { vrTabP->Low += zMin ; vrTabP->High += zMin ; }
                   }
                }
-             else 
+             else
                {
                 X1 = pointAddrP(dtmP,firstPnt)->x - xMin ; Y1 = pointAddrP(dtmP,firstPnt)->y - yMin ;
                 X2 = pointAddrP(dtmP,p2)->x - xMin ; Y2 = pointAddrP(dtmP,p2)->y - yMin ;
@@ -3925,7 +3925,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
                 voidAreaP = voidAreaP + area ;
                }
              volArea = volArea + area ;
-            } 
+            }
          }
        p2 = p3 ;
       }
@@ -3937,18 +3937,18 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
 **  Set firstPnt To nextPnt
 */
     if( nextPnt == firstPnt ) firstPnt = dtmP->nullPnt ;
-    else                      firstPnt = nextPnt ; 
+    else                      firstPnt = nextPnt ;
    }
 /*
 ** Compare Areas For Validation Purposes
 */
- if( cdbg ) 
+ if( cdbg )
    {
     if( (trgArea-volArea)/trgArea > 0.001 )
       {
        bcdtmWrite_message(0,0,0,"*** trgArea = %12.7lf tptrArea = %12.7lf volArea = %12.7lf",trgArea,tptrArea,volArea) ;
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -3969,7 +3969,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long startPnt,long *firstPntP ) 
+BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPointsDtmObject(BC_DTM_OBJ *dtmP,long startPnt,long *firstPntP )
 /*
 ** This Function Creates An Sptr List Of The Internal And Tptr Polygon Points
 ** The TPTR Polygon Must Be AntiClockwise
@@ -3988,7 +3988,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Adding Points Immediately Internal To Tptr Polygon") ;
  priorPnt = startPnt ;
- scanPnt  = nodeAddrP(dtmP,startPnt)->tPtr ; 
+ scanPnt  = nodeAddrP(dtmP,startPnt)->tPtr ;
  do
    {
     antPnt = nextPnt = nodeAddrP(dtmP,scanPnt)->tPtr ;
@@ -3997,24 +3997,24 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
       {
        if( nodeAddrP(dtmP,antPnt)->sPtr == dtmP->nullPnt && nodeAddrP(dtmP,antPnt)->tPtr == dtmP->nullPnt )
          {
-          if( lastPnt == dtmP->nullPnt ) 
-            { 
-             *firstPntP = antPnt ;  
-             lastPnt = antPnt ;  
+          if( lastPnt == dtmP->nullPnt )
+            {
+             *firstPntP = antPnt ;
+             lastPnt = antPnt ;
             }
-          else                            
-            { 
+          else
+            {
              nodeAddrP(dtmP,lastPnt)->sPtr = antPnt ;
-             lastPnt = antPnt ; 
+             lastPnt = antPnt ;
             }
           nodeAddrP(dtmP,antPnt)->sPtr = antPnt ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Adding Point %9ld To Sptr List",antPnt) ;
           ++numSptrPts ;
-         } 
+         }
        if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,scanPnt,antPnt)) < 0 ) goto errexit ;
       }
-    priorPnt = scanPnt ;  
-    scanPnt  = nextPnt ; 
+    priorPnt = scanPnt ;
+    scanPnt  = nextPnt ;
    } while ( priorPnt != startPnt ) ;
 /*
 **  Write Number Of Points In Sptr List
@@ -4033,10 +4033,10 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
       {
        scanPnt  = clistAddrP(dtmP,clPtr)->pntNum ;
        clPtr    = clistAddrP(dtmP,clPtr)->nextPtr ;
-       if(nodeAddrP(dtmP,scanPnt)->sPtr == dtmP->nullPnt && nodeAddrP(dtmP,scanPnt)->tPtr == dtmP->nullPnt )  
-         { 
-          nodeAddrP(dtmP,lastPnt)->sPtr = scanPnt ; 
-          lastPnt = scanPnt ; 
+       if(nodeAddrP(dtmP,scanPnt)->sPtr == dtmP->nullPnt && nodeAddrP(dtmP,scanPnt)->tPtr == dtmP->nullPnt )
+         {
+          nodeAddrP(dtmP,lastPnt)->sPtr = scanPnt ;
+          lastPnt = scanPnt ;
           nodeAddrP(dtmP,scanPnt)->sPtr = scanPnt ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Adding Point %9ld To Sptr List",scanPnt) ;
           ++numSptrPts ;
@@ -4052,7 +4052,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
 /*
 ** Add Tptr Polygon Points To Sptr List
 */
- scanPnt = startPnt ; 
+ scanPnt = startPnt ;
  do
    {
     if(nodeAddrP(dtmP,scanPnt)->sPtr != dtmP->nullPnt )
@@ -4063,15 +4063,15 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
 /*
 **   Add Tptr Polygon Point To Sptr List
 */
-    if( lastPnt == dtmP->nullPnt ) 
-      { 
+    if( lastPnt == dtmP->nullPnt )
+      {
        *firstPntP = scanPnt ;
        lastPnt  = scanPnt ;
       }
-    else                            
-      { 
-       nodeAddrP(dtmP,lastPnt)->sPtr = scanPnt ; 
-       lastPnt = scanPnt ; 
+    else
+      {
+       nodeAddrP(dtmP,lastPnt)->sPtr = scanPnt ;
+       lastPnt = scanPnt ;
       }
     nodeAddrP(dtmP,scanPnt)->sPtr = scanPnt ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Adding Point %9ld To Sptr List",scanPnt) ;
@@ -4099,4 +4099,4 @@ BENTLEYDTM_Public int bcdtmTinVolume_createSptrListOfInternalAndTptrPolygonPoint
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
