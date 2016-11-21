@@ -2326,7 +2326,7 @@ TEST(BeFileNameTests, SupplyDefaultNameParts)
 #if defined (_WIN32)
     expected = L"D:\\dir1\\dir2\\temp.txt";
 #else
-    expected = L"D:/dir1/dir2/temp.txt";
+    expected = L"/dir1/dir2/temp.txt";
 #endif
     defaultName = L"D:\\dir1\\dir2_1\\temp.txt";
     fileNameA_4.SupplyDefaultNameParts(defaultName);
@@ -2343,7 +2343,7 @@ TEST(BeFileNameTests, SupplyDefaultNameParts)
 #if defined (_WIN32)
     expected = L"D:\\dir1\\dir2\\temp.txt";
 #else
-    expected = L"D:/dir1/dir2/temp.txt";
+    expected = L"/dir1/dir2/temp.txt";
 #endif
     defaultName = L"D:\\dir1\\dir2_1\\temp.txt";
     fileNameA_5.SupplyDefaultNameParts(defaultName);
