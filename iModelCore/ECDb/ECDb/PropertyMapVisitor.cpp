@@ -269,6 +269,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
         {
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         }
+
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenRight();
 
