@@ -1870,7 +1870,7 @@ BentleyStatus BRepUtil::Modify::SweepBody(IBRepEntityR targetEntity, DVec3dCR pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SolidUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axis, double angle)
+BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axis, double angle)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
