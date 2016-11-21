@@ -57,6 +57,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include <CloudDataSource/DataSourceManager.h>
 
+//extern DataSourceManager s_dataSourceManager;
+
+
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 

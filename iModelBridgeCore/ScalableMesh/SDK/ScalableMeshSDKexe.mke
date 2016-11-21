@@ -76,6 +76,6 @@ EXE_TMP_DIR  = $(o)
 
 always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
-#    ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
+#   ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
 #    ~linkfile "$(BuildContext)Delivery/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml"
 
