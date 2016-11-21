@@ -2355,7 +2355,7 @@ TEST(BeFileNameTests, SupplyDefaultNameParts)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                  11/16
 //-----------------------------------------------------------------------------------------
-TEST(BeFileNameTests, CombineFileNames) 
+TEST(BeFileNameTests, CombineFileNames)
     {
     BeFileName  fileNameW(L"/dir1/dir2/file.txt");
     BeFileName bf = fileNameW.BeFileName::Combine({ L"D:\\dir1\\dir2_1\\temp.txt",

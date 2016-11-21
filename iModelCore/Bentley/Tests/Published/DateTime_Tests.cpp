@@ -1178,3 +1178,42 @@ TEST(DateTimeTests, CompareDates)
     ASSERT_TRUE(!date11.IsValid());
     ASSERT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date11, date12));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, ComputeOffsetToUtcInHns)
+    {
+    DateTime date(2013, 02, 14);
+    ASSERT_TRUE(date.IsValid());
+    int64_t offset = 0;
+
+    int64_t offset_expected = 0;
+    ASSERT_EQ(BentleyB0200::BentleyStatus::SUCCESS, date.ComputeOffsetToUtcInHns(offset));
+    EXPECT_EQ(offset_expected, offset);
+
+    DateTime date1(DateTime::Kind::Unspecified, 2013, 02, 14, 23, 23, 56, 888000);
+    ASSERT_TRUE(date1.IsValid());
+    offset = 0;
+
+    offset_expected = 0;
+    ASSERT_EQ(BentleyB0200::BentleyStatus::SUCCESS, date1.ComputeOffsetToUtcInHns(offset));
+    EXPECT_EQ(offset_expected, offset);
+
+    DateTime date2(DateTime::Kind::Utc, 2013, 02, 14, 23, 23, 56, 888000);
+    ASSERT_TRUE(date2.IsValid());
+    offset = 0;
+
+    offset_expected = 0;
+    ASSERT_EQ(BentleyB0200::BentleyStatus::SUCCESS, date2.ComputeOffsetToUtcInHns(offset));
+    EXPECT_EQ(offset_expected, offset);
+
+    DateTime local(DateTime::Kind::Local, 2012, 02, 14, 23, 23, 56, 888500);
+    ASSERT_TRUE(local.IsValid());
+    offset = 0;
+
+    offset_expected = 180000000000;
+    ASSERT_EQ(BentleyStatus::SUCCESS, local.ComputeOffsetToUtcInHns(offset)) << "This is Offset " << offset;
+    ASSERT_EQ(offset_expected, offset) << "This is Offset " << offset;
+    //EXPECT_EQ(offset_expected, offset);
+    }

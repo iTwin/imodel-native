@@ -158,3 +158,19 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeByteStream)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(Base64UtilitiesTests, AlphabetsMatching)
+    {
+    Utf8CP charStr = "";
+    ASSERT_TRUE(1 == Base64Utilities::MatchesAlphabet(charStr));
+    charStr = "FarhadKabir";
+    ASSERT_TRUE(1 == Base64Utilities::MatchesAlphabet(charStr));
+    charStr = "945/56*a";
+    ASSERT_TRUE(0 == Base64Utilities::MatchesAlphabet(charStr));
+    charStr = "x+y=2a/z";
+    ASSERT_TRUE(1 == Base64Utilities::MatchesAlphabet(charStr));
+    Utf8String baseString = Base64Utilities::Alphabet();
+    ASSERT_TRUE(1 == Base64Utilities::MatchesAlphabet(baseString.c_str()));
+    }

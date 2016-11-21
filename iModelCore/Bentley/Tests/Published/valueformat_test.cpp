@@ -8,6 +8,8 @@
 
 #include <Bentley/BeTest.h>
 #include <Bentley/ValueFormat.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/bmap.h>
 
 #define LOCS(str) str
 
@@ -357,3 +359,31 @@ TEST_F(DoubleFormatterTest, ReplaceDecimalSeparator)
     VERIFY_ReplaceDecimalSeparator( "100000.01"     ,"100000#01"        , "."   );
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                            Farhad.Kabir          11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleFormatterTest, SetAndGetPrecisionTwo)
+    {
+    DoubleFormatterPtr doubleFormatter = DoubleFormatter::Create();
+    Byte byte = 3;
+    doubleFormatter->SetPrecision(PrecisionType::Fractional, byte);
+    EXPECT_EQ((int)PrecisionFormat::FractionalQuarter, (int)doubleFormatter->GetPrecision());
+    byte = 1;
+    doubleFormatter->SetPrecision(PrecisionType::Decimal, byte);
+    EXPECT_EQ((int)PrecisionFormat::Decimal1Place, (int)doubleFormatter->GetPrecision());
+    byte = 0;
+    doubleFormatter->SetPrecision(PrecisionType::Fractional, byte);
+    EXPECT_EQ((int)PrecisionFormat::FractionalWhole, (int)doubleFormatter->GetPrecision());
+    byte = 0;
+    doubleFormatter->SetPrecision(PrecisionType::Scientific, byte);
+    EXPECT_EQ((int)PrecisionFormat::ScientificWhole, (int)doubleFormatter->GetPrecision());
+    byte = 8;
+    doubleFormatter->SetPrecision(PrecisionType::Scientific, byte);
+    EXPECT_EQ((int)PrecisionFormat::Scientific8Places, (int)doubleFormatter->GetPrecision());
+    byte = 2;
+    doubleFormatter->SetPrecision(PrecisionType::Fractional, byte);
+    EXPECT_EQ((int)PrecisionFormat::FractionalHalf, (int)doubleFormatter->GetPrecision());
+    byte = 7;
+    doubleFormatter->SetPrecision(PrecisionType::Decimal, byte);
+    EXPECT_EQ((int)PrecisionFormat::Decimal7Places, (int)doubleFormatter->GetPrecision());
+    }
