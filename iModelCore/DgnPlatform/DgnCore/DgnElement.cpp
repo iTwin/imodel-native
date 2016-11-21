@@ -784,7 +784,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     if (parentId == elemId)
         return true;
 
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId.Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     do
         {
         stmt->BindId(1, parentId);
@@ -943,7 +943,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
-    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority(), ECClassId());
     statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (HasUserLabel())
@@ -951,7 +951,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
-    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId);
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId, ECClassId());
 
     if (m_federationGuid.IsValid())
         statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
@@ -962,7 +962,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         return;
 
     statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId);
-    statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId);
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId, ECClassId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3353,7 +3353,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
+    m_categoryId = stmt.GetValueNavigation<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
     // Read GeomStream
     auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
@@ -3372,7 +3372,8 @@ void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     {
     T_Super::_BindWriteParams(stmt, forInsert);
 
-    stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
+    //WIP_NAV_PROP: Why does GeometricElement have m_categoryid if the categoryid is only defined on GeometricElement3d/2d?
+    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_Category), m_categoryId, ECClassId());
     m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 

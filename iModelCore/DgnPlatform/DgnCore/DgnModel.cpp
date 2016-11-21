@@ -611,7 +611,7 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
         return ;
         }
 
-    statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
+    statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId, ECClassId());
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
