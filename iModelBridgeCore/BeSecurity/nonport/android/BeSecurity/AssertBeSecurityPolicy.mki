@@ -10,7 +10,7 @@
 #   use.  It is not to be shipped to customers.
 #
 #----------------------------------------------------------------------------
-SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
 DerivativePolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
 
