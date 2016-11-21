@@ -56,7 +56,9 @@ TEST_F(BuddiClientTests, GetRegions_ResponseContainsRegionsXml_ReturnsRegions)
     BuddiClient client(GetHandlerPtr());
 
     Utf8String bodyXML = R"xml(<?xml version="1.0" encoding="utf-8"?>
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                           xmlns:xsd="http://www.w3.org/2001/XMLSchema">
                 <soap:Body>
                     <GetRegionsResponse xmlns="http://tempuri.org/">
                         <GetRegionsResult>
@@ -101,7 +103,9 @@ TEST_F(BuddiClientTests, GetRegions_ReceivesXmlWithWrongFormat_ReturnsUnxpectedE
     BuddiClient client(GetHandlerPtr());
 
     Utf8String bodyXML = R"xml(<?xml version="1.0" encoding="utf-8"?>
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xmlns:xsd="http://www.w3.org/2001/XMLSchema">
                 <soap:Body>
                     <GetRegionsResponse xmlns="http://tempuri.org/">
                         <GetRegionsResult>
@@ -210,6 +214,27 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsEmptyUrl_ReturnsUrlNotConfigured
                 <GetUrlResponse xmlns="http://tempuri.org/">
                   <GetUrlResult></GetUrlResult>
                 </GetUrlResponse>
+              </soap:Body>
+            </soap:Envelope>)xml";
+
+    GetHandler().ExpectOneRequest().ForAnyRequest(StubHttpResponse(HttpStatus::OK, bodyXML));
+
+    auto result = client.GetUrl("Foo")->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(BuddiError::UrlNotConfigured, result.GetError().GetStatus());
+    EXPECT_FALSE(result.GetError().GetMessage().empty());
+    }
+
+TEST_F(BuddiClientTests, GetUrl_ResponseUrlNotFound_ReturnsUrlNotConfiguredErrorWithMessage)
+    {
+    BuddiClient client(GetHandlerPtr());
+
+    Utf8String bodyXML = R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                           xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+                           xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <GetUrlResponse xmlns="http://tempuri.org/" />
               </soap:Body>
             </soap:Envelope>)xml";
 

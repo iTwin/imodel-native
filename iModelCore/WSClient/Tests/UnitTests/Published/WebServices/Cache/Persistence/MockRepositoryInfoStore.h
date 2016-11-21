@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockRepositoryInfoStore.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,10 +19,11 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockRepositoryInfoStore : public IRepositoryInfoStore
     {
-    MOCK_METHOD2 (CacheServerInfo, BentleyStatus (IDataSourceCache& cache, WSInfoCR info));
-    MOCK_METHOD1 (GetServerInfo, WSInfoCR (IDataSourceCache& cache));
-    MOCK_METHOD1 (SetCacheInitialized, BentleyStatus (IDataSourceCache& cache));
-    MOCK_METHOD1 (IsCacheInitialized, bool (IDataSourceCache& cache));
+    MOCK_METHOD1(SetCacheInitialized, BentleyStatus(IDataSourceCache&));
+    MOCK_METHOD1(IsCacheInitialized, bool(IDataSourceCache&));
+    MOCK_METHOD2(CacheServerInfo, BentleyStatus(IDataSourceCache&, WSInfoCR));
+    MOCK_METHOD1(PrepareServerInfo, BentleyStatus(IDataSourceCache&));
+    MOCK_METHOD0(GetServerInfo, WSInfo());
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

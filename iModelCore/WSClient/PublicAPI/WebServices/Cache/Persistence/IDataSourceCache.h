@@ -66,8 +66,20 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Misc
         //--------------------------------------------------------------------------------------------------------------------------------+
-        virtual BentleyStatus Create(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment, const ECDb::CreateParams& params) = 0;
-        virtual BentleyStatus Open(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment, const ECDb::OpenParams& params) = 0;
+
+        //! Create new cache database
+        //! @param cacheFilePath - file path where to store cache database
+        //! @param baseEnvironment - base environment for directories where cached files should be stored
+        //! @param params - custom DB creation parameters 
+        virtual BentleyStatus Create(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment, const ECDb::CreateParams& params) = 0;
+
+        //! Open existing cache database
+        //! @param cacheFilePath - file path where cache database is saved
+        //! @param baseEnvironment - base environment for directories where cached files should be stored
+        //! @param params - custom DB open parameters
+        virtual BentleyStatus Open(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment, const ECDb::OpenParams& params) = 0;
+
+        //! Close cache database connection
         virtual BentleyStatus Close() = 0;
 
         //! Register for ECSchema change events.
@@ -88,6 +100,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
 
         //! Returns path to sqlite database
         virtual BeFileName GetCacheDatabasePath() = 0;
+
+        //! Returns actual environment used by cache
+        virtual CacheEnvironmentCR GetEnvironment() = 0;
 
         //! Get IECDbAdapter for accessing common functionality
         virtual IECDbAdapterR GetAdapter() = 0;
@@ -178,7 +193,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
-        virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) = 0;
+        //! Cache file
+        //! @param objectId - object to cache file for
+        //! @param fileResult
+        //! @param cacheLocation - file location to use
+        virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation = FileCache::Auto) = 0;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Reading cached data
@@ -240,7 +259,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual BeFileName ReadFilePath(ObjectIdCR objectId) = 0;
         //! Returns cached file path or empty path if not found
         virtual BeFileName ReadFilePath(ECInstanceKeyCR instanceKey) = 0;
-        //! Read main file properties from cached instance.
+        //! Read standard file properties from cached instance. Does not involve cached file.
         //! @param instanceKey
         //! @param[out] fileName will be filled with file name or instance label if found.
         //! @param[out] fileSize will be filled with file size property value or 0 if not found.
@@ -401,7 +420,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Returns FileCache location that is setup for given object
         //! @param objectId
         //! @param defaultLocation - return value if object has no file cache location set
-        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
+        virtual FileCache GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

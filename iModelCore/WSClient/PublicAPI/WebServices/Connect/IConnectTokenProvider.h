@@ -9,8 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/SamlToken.h>
+#include <MobileDgn/Utils/Threading/AsyncTask.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014

@@ -144,11 +144,7 @@ void CacheNavigationTask::CacheFiles()
         return;
         }
 
-    m_ds->DownloadAndCacheFiles(
-        m_filesToDownload, 
-        FileCache::Persistent, 
-        m_onProgressCallback,
-        GetCancellationToken())
+    m_ds->DownloadAndCacheFiles(m_filesToDownload, FileCache::Auto, m_onProgressCallback, GetCancellationToken())
     ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult& result)
         {
         AddResult(result);

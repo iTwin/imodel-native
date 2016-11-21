@@ -55,24 +55,27 @@ m_cacheAccessThread(cacheAccessThread),
 m_cancellationToken(SimpleCancellationToken::Create()),
 m_temporaryDir(temporaryDir),
 m_fileDownloadManager(new FileDownloadManager(*this))
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
     {
-    CancelAllTasksAndWait();
+    // Prevent from hanging when destroyed after failed open/create
+    if (m_isOpen)
+        {
+        CancelAllTasks()->Wait();
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingDataSource::CancelAllTasksAndWait()
+AsyncTaskPtr<void> CachingDataSource::CancelAllTasks()
     {
     m_cancellationToken->SetCanceled();
-    m_cacheAccessThread->OnEmpty()->Wait();
+    return m_cacheAccessThread->OnEmpty();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -131,9 +134,13 @@ AsyncTaskPtr<CachingDataSource::OpenResult> CachingDataSource::OpenOrCreate
 IWSRepositoryClientPtr client,
 BeFileNameCR cacheFilePath,
 CacheEnvironmentCR cacheEnvironment,
-WorkerThreadPtr cacheAccessThread
+WorkerThreadPtr cacheAccessThread,
+ICancellationTokenPtr ct
 )
     {
+    if (nullptr == ct)
+        ct = SimpleCancellationToken::Create();
+
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     if (cacheAccessThread == nullptr)
@@ -146,9 +153,15 @@ WorkerThreadPtr cacheAccessThread
 
     return cacheAccessThread->ExecuteAsync([=]
         {
+        if (ct->IsCanceled())
+            {
+            openResult->SetError(Status::Canceled);
+            return;
+            }
+
         LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-                  cacheEnvironment.persistentFileCacheDir.c_str(),
-                  cacheEnvironment.temporaryFileCacheDir.c_str());
+            cacheEnvironment.persistentFileCacheDir.c_str(),
+            cacheEnvironment.temporaryFileCacheDir.c_str());
 
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn::No); // Allow concurrent multiple connection access
@@ -173,6 +186,12 @@ WorkerThreadPtr cacheAccessThread
                 }
             }
 
+        if (ct->IsCanceled())
+            {
+            openResult->SetError(Status::Canceled);
+            return;
+            }
+
         auto cacheTransactionManager = std::make_shared<CacheTransactionManager>(std::move(cache), cacheAccessThread);
         auto infoStore = std::make_shared<RepositoryInfoStore>(cacheTransactionManager.get(), client, cacheAccessThread);
 
@@ -187,41 +206,64 @@ WorkerThreadPtr cacheAccessThread
         auto txn = ds->StartCacheTransaction();
         if (ds->m_infoStore->IsCacheInitialized(txn.GetCache()))
             {
+            if (SUCCESS != ds->FinalizeOpen(txn))
+                {
+                openResult->SetError(Status::InternalCacheError);
+                return;
+                }
+            txn.Commit();
             openResult->SetSuccess(ds);
             return;
             }
 
-        ds->UpdateSchemas(nullptr)
-            ->Then(cacheAccessThread, [=] (Result updateResult)
+        ds->UpdateSchemas(ct)
+            ->Then(cacheAccessThread, [=] (Result result)
             {
-            if (!updateResult.IsSuccess())
+            if (!result.IsSuccess())
                 {
-                openResult->SetError(updateResult.GetError());
+                openResult->SetError(result.GetError());
                 return;
                 }
 
             auto txn = ds->StartCacheTransaction();
-            if (!ds->m_infoStore->IsCacheInitialized(txn.GetCache()))
+            if (SUCCESS != ds->m_infoStore->SetCacheInitialized(txn.GetCache()) ||
+                SUCCESS != ds->FinalizeOpen(txn))
                 {
-                if (SUCCESS != ds->m_infoStore->SetCacheInitialized(txn.GetCache()))
-                    {
-                    openResult->SetError(Status::InternalCacheError);
-                    BeAssert(false);
-                    }
+                openResult->SetError(Status::InternalCacheError);
+                return;
                 }
             txn.Commit();
-
             openResult->SetSuccess(ds);
             });
         })
             ->Then<OpenResult>([=]
             {
+            if (openResult->IsSuccess())
+                {
+                if (openResult->GetValue() == nullptr || !openResult->GetValue()->m_isOpen)
+                    {
+                    BeAssert(false);
+                    openResult->SetError({});
+                    }
+                }
+                
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
-                      openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
             return *openResult;
             });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachingDataSource::FinalizeOpen(CacheTransactionCR txn)
+    {
+    if (SUCCESS != m_infoStore->PrepareServerInfo(txn.GetCache()))
+        return ERROR;
+    m_isOpen = true;
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -454,7 +496,15 @@ bvector<SchemaKey> CachingDataSource::GetRepositorySchemaKeys(CacheTransactionCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSInfo CachingDataSource::GetServerInfo(CacheTransactionCR txn)
     {
-    return m_infoStore->GetServerInfo(txn.GetCache());
+    return GetServerInfo();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSInfo CachingDataSource::GetServerInfo()
+    {
+    return m_infoStore->GetServerInfo();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -966,8 +1016,7 @@ CachedResponseKey CachingDataSource::GetNavigationResponseKey(CacheTransactionCR
 +--------------------------------------------------------------------------------------*/
 WSQueryPtr CachingDataSource::GetNavigationQuery(CacheTransactionCR txn, ObjectIdCR parentId, ISelectProviderPtr selectProvider)
     {
-    WSInfo serverInfo = GetServerInfo(txn);
-
+    WSInfo serverInfo = GetServerInfo();
     if (serverInfo.GetVersion() < BeVersion(2, 0))
         {
         Utf8String schemaName = parentId.schemaName;
@@ -1029,7 +1078,7 @@ CachedResponseKey CachingDataSource::CreateSchemaListResponseKey(CacheTransactio
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                  
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCacheFiles
 (
@@ -1040,11 +1089,11 @@ ICancellationTokenPtr ct
 )
     {
     auto task = std::make_shared<DownloadFilesTask>(
-        shared_from_this(), 
+        shared_from_this(),
         m_fileDownloadManager,
-        std::move(filesToDownload), 
-        fileCacheLocation, 
-        std::move(onProgress), 
+        std::move(filesToDownload),
+        fileCacheLocation,
+        std::move(onProgress),
         ct);
 
     m_cacheAccessThread->Push(task);
@@ -1086,7 +1135,6 @@ ICancellationTokenPtr ct
             }
 
         auto txn = StartCacheTransaction();
-        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId, FileCache::Temporary);
 
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
@@ -1113,12 +1161,8 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        DownloadAndCacheFiles(
-            filesToDownload,
-            cacheLocation,
-            onProgress,
-            ct)
-        ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
+        DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, ct)
+            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
             {
             if (!result.IsSuccess())
                 {
@@ -1136,13 +1180,13 @@ ICancellationTokenPtr ct
                 }
             });
         })
-        ->Then<FileResult>([=]
+            ->Then<FileResult>([=]
             {
             return *finalResult;
             });
     }
 
-/*--------------------------------------------------------------------------------------+   
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::CacheFiles
@@ -1201,10 +1245,10 @@ ICancellationTokenPtr ct
             *finalResult = result;
             });
         })
-        ->Then<BatchResult>([=]
-        {
-        return *finalResult;
-        });
+            ->Then<BatchResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1295,7 +1339,7 @@ SyncOptions options
         std::move(onProgress),
         ct
         );
-        
+
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
