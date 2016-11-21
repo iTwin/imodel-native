@@ -165,10 +165,12 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
     {
+#if defined (NEEDS_WORK_RANGE_INDEX)
     Tile& tile = static_cast<Tile&>(*m_tile);
 ///    Root& root = tile.GetRoot();
 
 //    m_image = root.m_view->RenderTile(DRange2d::From(tile.m_corners.m_pts, 4), root.m_pixels);
+#endif
 
     return m_image.IsValid() ? SUCCESS : ERROR;
     }
@@ -215,30 +217,38 @@ Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_
     double south = north + tileSize;
     
     m_corners.m_pts[0].Init(east, north, 0.0);   //  | [0]     [1]
-    m_corners.m_pts[0].Init(west, north, 0.0);   //  y
-    m_corners.m_pts[0].Init(east, south, 0.0);   //  | [2]     [3]
-    m_corners.m_pts[0].Init(west, south, 0.0);   //  v
+    m_corners.m_pts[1].Init(west, north, 0.0);   //  y
+    m_corners.m_pts[2].Init(east, south, 0.0);   //  | [2]     [3]
+    m_corners.m_pts[3].Init(west, south, 0.0);   //  v
 
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
-
-#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Attachment::Tree::Load(Render::SystemP renderSys)
     {
-    if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
+    if (m_rootTile.IsValid() && (nullptr==renderSys || m_renderSystem==renderSys))
         return;
 
-    m_root = new Root(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
+    m_renderSystem = renderSys;
+    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : m_attachmentId(attachmentId)
+void Attachment::Tree::Draw(RenderContextR context)
+    {
+    Load(&context.GetTargetR().GetSystem());
+    DrawInView(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)  
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -261,15 +271,13 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
 
     m_view->GetViewDefinition().AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-    // max pixel size is half the length of the diagonal
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
-    auto& placement = attach->GetPlacement();
-    SetLocation(placement.GetTransform());
-    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
-#endif
+    // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
+    m_maxPixelSize = DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+
+    Transform location = attach->GetPlacement().GetTransform();
+    location.ScaleMatrixColumns(m_pixels.x, m_pixels.y, 1.0);
+    SetLocation(location);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
@@ -290,7 +298,6 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
     {
-#if defined (NEEDS_WORK_RANGE_INDEX)
     auto model = GetViewedModel();
     if (nullptr == model)
         {
@@ -317,7 +324,6 @@ void Sheet::ViewController::_LoadState()
 
     // save new list of attachment
     m_attachments = attachments;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,10 +335,8 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
 
     T_Super::_CreateTerrain(context);
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
     for (auto& attach : m_attachments)
-        attach->m_root->DrawInView(context);
-#endif
+        attach->Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

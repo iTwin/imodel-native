@@ -190,7 +190,7 @@ MapTile::MapTile(MapRootR root, QuadTree::TileId id, MapTileCP parent) : QuadTre
             m_corners.m_pts[i] = root.ToWorldPoint(llPts[i]);
         }
 
-m_range.InitFrom(m_corners.m_pts, 4);
+    m_range.InitFrom(m_corners.m_pts, 4);
 
     if (parent)
         parent->ExtendRange(m_range);

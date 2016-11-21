@@ -41,6 +41,7 @@ struct MapRoot : TileTree::QuadTree::Root
 
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileName(TileTree::TileCR tile) const override;
+    Utf8CP _GetName() const override {return "WebMercator";}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
