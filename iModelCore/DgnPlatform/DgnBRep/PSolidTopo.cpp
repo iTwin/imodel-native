@@ -16,7 +16,7 @@ BentleyStatus   PSolidTopo::GetBodyFaces (bvector<PK_FACE_t>& faces, PK_BODY_t b
     int         faceCount = 0;
     PK_FACE_t*  pFaceTagArray = NULL;
 
-    if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray))
+    if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray) || 0 == faceCount)
         return ERROR;
 
     faces.resize (faceCount);
@@ -36,7 +36,7 @@ BentleyStatus   PSolidTopo::GetBodyEdges (bvector<PK_EDGE_t>& edges, PK_BODY_t b
     int         edgeCount = 0;
     PK_EDGE_t*  pEdgeTagArray = NULL;
 
-    if (SUCCESS != PK_BODY_ask_edges (body, &edgeCount, &pEdgeTagArray))
+    if (SUCCESS != PK_BODY_ask_edges (body, &edgeCount, &pEdgeTagArray) || 0 == edgeCount)
         return ERROR;
 
     edges.resize (edgeCount);
@@ -56,7 +56,7 @@ BentleyStatus   PSolidTopo::GetBodyVertices (bvector<PK_VERTEX_t>& vertices, PK_
     int           vertexCount = 0;
     PK_VERTEX_t*  pVertexTagArray = NULL;
 
-    if (SUCCESS != PK_BODY_ask_vertices (body, &vertexCount, &pVertexTagArray))
+    if (SUCCESS != PK_BODY_ask_vertices (body, &vertexCount, &pVertexTagArray) || 0 == vertexCount)
         return ERROR;
 
     vertices.resize (vertexCount);
@@ -102,7 +102,7 @@ BentleyStatus   PSolidTopo::GetFaceEdges (bvector<PK_EDGE_t>& edges, PK_FACE_t f
     int         nEdges = 0;
     PK_EDGE_t*  edgesP = NULL;
 
-    if (SUCCESS != PK_FACE_ask_edges (face, &nEdges, &edgesP))
+    if (SUCCESS != PK_FACE_ask_edges (face, &nEdges, &edgesP) || 0 == nEdges)
         return ERROR;
 
     edges.resize (nEdges);
@@ -122,7 +122,7 @@ BentleyStatus   PSolidTopo::GetFaceVertices (bvector<PK_VERTEX_t>& vertices, PK_
     int           nVertex = 0;
     PK_VERTEX_t*  verticesP = NULL;
 
-    if (SUCCESS != PK_FACE_ask_vertices (face, &nVertex, &verticesP))
+    if (SUCCESS != PK_FACE_ask_vertices (face, &nVertex, &verticesP) || 0 == nVertex)
         return ERROR;
 
     vertices.resize (nVertex);
@@ -142,7 +142,7 @@ BentleyStatus   PSolidTopo::GetFaceLoops (bvector<PK_LOOP_t>& loops, PK_FACE_t f
     int         loopCount = 0;
     PK_LOOP_t*  pLoopTagArray = NULL;
 
-    if (SUCCESS != PK_FACE_ask_loops (face, &loopCount, &pLoopTagArray))
+    if (SUCCESS != PK_FACE_ask_loops (face, &loopCount, &pLoopTagArray) || 0 == loopCount)
         return ERROR;
 
     loops.resize (loopCount);
@@ -162,7 +162,7 @@ BentleyStatus   PSolidTopo::GetEdgeFaces (bvector<PK_FACE_t>& faces, PK_EDGE_t e
     int         faceCount = 0;
     PK_FACE_t*  pFaceTagArray = 0;
 
-    if (SUCCESS != PK_EDGE_ask_faces (edge, &faceCount, &pFaceTagArray))
+    if (SUCCESS != PK_EDGE_ask_faces (edge, &faceCount, &pFaceTagArray) || 0 == faceCount)
         return ERROR;
 
     faces.resize (faceCount);
@@ -201,7 +201,7 @@ BentleyStatus   PSolidTopo::GetEdgeFins (bvector<PK_FIN_t>& fins, PK_EDGE_t edge
     int         finCount = 0;
     PK_FIN_t*   pFinTagArray = NULL;
 
-    if (SUCCESS != PK_EDGE_ask_fins (edge, &finCount, &pFinTagArray))
+    if (SUCCESS != PK_EDGE_ask_fins (edge, &finCount, &pFinTagArray) || 0 == finCount)
         return ERROR;
 
     fins.resize (finCount);
@@ -221,7 +221,7 @@ BentleyStatus   PSolidTopo::GetVertexFaces (bvector<PK_FACE_t>& faces, PK_VERTEX
     int         faceCount = 0;
     PK_FACE_t*  pFaceTagArray = 0;
 
-    if (SUCCESS != PK_VERTEX_ask_faces (vertex, &faceCount, &pFaceTagArray))
+    if (SUCCESS != PK_VERTEX_ask_faces (vertex, &faceCount, &pFaceTagArray) || 0 == faceCount)
         return ERROR;
 
     faces.resize (faceCount);
@@ -241,7 +241,7 @@ BentleyStatus   PSolidTopo::GetVertexEdges (bvector<PK_EDGE_t>& edges, PK_VERTEX
     int         edgeCount = 0;
     PK_EDGE_t*  pEdgeTagArray = NULL;
 
-    if (SUCCESS != PK_VERTEX_ask_oriented_edges (vertex, &edgeCount, &pEdgeTagArray, nullptr))
+    if (SUCCESS != PK_VERTEX_ask_oriented_edges (vertex, &edgeCount, &pEdgeTagArray, nullptr) || 0 == edgeCount)
         return ERROR;
 
     edges.resize (edgeCount);
@@ -261,7 +261,7 @@ BentleyStatus   PSolidTopo::GetLoopFins (bvector<PK_FIN_t>& fins, PK_LOOP_t loop
     int         finCount = 0;
     PK_FIN_t*   pFinTagArray = NULL;
 
-    if (SUCCESS != PK_LOOP_ask_fins (loop, &finCount, &pFinTagArray))
+    if (SUCCESS != PK_LOOP_ask_fins (loop, &finCount, &pFinTagArray) || 0 == finCount)
         return ERROR;
 
     fins.resize (finCount);
@@ -342,7 +342,7 @@ BentleyStatus   PSolidTopo::GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, 
     int         nEdgeTags;
     PK_EDGE_t*  edgeTags = NULL;
 
-    if (SUCCESS != PK_LOOP_ask_edges(loopTag, &nEdgeTags, &edgeTags))
+    if (SUCCESS != PK_LOOP_ask_edges(loopTag, &nEdgeTags, &edgeTags) || 0 == nEdgeTags)
         return ERROR;
     
     loopEdges.resize(nEdgeTags);

@@ -855,262 +855,6 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromSolidPrimitive(entityOut, primitive, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromBSurface(entityOut, surface, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromPolyface(entityOut, meshData, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromLoft(entityOut, profiles, nProfiles, guides, nGuides, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromSweep(entityOut, profile, path, alignParallel, selfRepair, createSheet, lockDirection, twistAngle, scale, scalePoint, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOut, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromExtrusionToBody(entityOut, extrudeTo, profile, reverseDirection, nodeId);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanIntersect (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_intersect, PKI_BOOLEAN_OPTION_AllowDisjoint);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanSubtract (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanUnion (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::DoBoolean (targetEntity, toolEntities, nTools, PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::SewBodies (bvector<IBRepEntityPtr>& sewnEntities, bvector<IBRepEntityPtr>& unsewnEntities, IBRepEntityPtr* toolEntities, size_t nTools, double gapWidthBound, size_t nIterations)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    if (nTools < 2)
-        return ERROR;
-
-    PK_MARK_t   markTag = PK_ENTITY_null;
-
-    PK_MARK_create (&markTag);
-
-    bool                 isFirst = true;
-    Transform            targetTransform, invTargetTransform;
-    bvector<PK_ENTITY_t> toolEntityTags;
-
-    // Get tool bodies in coordinates of target...
-    for (size_t iTool = 0; iTool < nTools; ++iTool)
-        {
-        bool        isToolOwned;
-        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
-
-        if (!isToolOwned)
-            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
-            
-        if (isFirst)
-            {
-            isFirst = false;
-            targetTransform = toolEntities[iTool]->GetEntityTransform ();
-            invTargetTransform.InverseOf (targetTransform);
-            invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&gapWidthBound,  1);
-            }
-        else
-            {
-            Transform   toolTransform;
-
-            toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
-            PSolidUtil::TransformBody (toolEntityTag, toolTransform);
-            }
-
-        toolEntityTags.push_back (toolEntityTag);
-        }
-
-    int                       nSewnBodies = 0, nUnsewnBodies = 0, nProblems = 0;
-    PK_BODY_t*                sewnBodyTags = NULL;
-    PK_BODY_t*                unsewnBodyTags = NULL;
-    PK_BODY_problem_group_t*  problemGroup = NULL;
-    PK_BODY_sew_bodies_o_t    options;
-
-    PK_BODY_sew_bodies_o_m (options);
-
-    options.allow_disjoint_result = PK_LOGICAL_true;
-    options.number_of_iterations  = (int) nIterations;
-
-    BentleyStatus   status = (SUCCESS == PK_BODY_sew_bodies ((int) toolEntityTags.size (), &toolEntityTags.front (), gapWidthBound, &options, &nSewnBodies, &sewnBodyTags, &nUnsewnBodies, &unsewnBodyTags, &nProblems, &problemGroup) ? SUCCESS : ERROR);
-
-    if (SUCCESS == status)
-        {
-        if (sewnBodyTags)
-            {
-            for (int iSewn = 0; iSewn < nSewnBodies; ++iSewn)
-                sewnEntities.push_back (PSolidUtil::CreateNewEntity (sewnBodyTags[iSewn], targetTransform, true));
-            }
-
-        if (unsewnBodyTags)
-            {
-            for (int iUnsewn = 0; iUnsewn < nUnsewnBodies; ++iUnsewn)
-                unsewnEntities.push_back (PSolidUtil::CreateNewEntity (unsewnBodyTags[iUnsewn], targetTransform, true));
-            }
-
-        // Invalidate owned tool entities that are now reflected in sewn and unsewn lists...
-        for (size_t iTool = 0; iTool < nTools; ++iTool)
-            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
-        }
-    else
-        {
-        // Undo copy/transform of input entities...
-        PK_MARK_goto (markTag);
-        }
-
-    PK_MEMORY_free (sewnBodyTags);
-    PK_MEMORY_free (unsewnBodyTags);
-
-    if (problemGroup)
-        {
-        for (int iProblem = 0; iProblem < nProblems; ++iProblem)
-            PK_MEMORY_free (problemGroup[iProblem].edges);
-
-        PK_MEMORY_free (problemGroup);
-        }
-
-    PK_MARK_delete (markTag);
-
-    return status;
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    bool        isOwned;
-    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity, &isOwned);
-
-    if (!isOwned)
-        PK_ENTITY_copy(entityTag, &entityTag);
-
-    bvector<PK_BODY_t> bodies;
-
-    if (SUCCESS != PSolidUtil::DisjoinBody(bodies, entityTag))
-        {
-        if (!isOwned)
-            PK_ENTITY_delete(1, &entityTag);
-
-        return ERROR;
-        }
-
-    Transform entityTransform = entity.GetEntityTransform();
-
-    if (isOwned)
-        PSolidUtil::ExtractEntityTag(entity); // Invalidate input entity, will appear first in output bodies vector...
-
-    for (PK_BODY_t thisBody : bodies)
-        output.push_back(PSolidUtil::CreateNewEntity(thisBody, entityTransform, true));
-
-    return ERROR;
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::TopologyID::AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting)
@@ -1281,6 +1025,787 @@ BentleyStatus BRepUtil::TopologyID::VerticesFromId(bvector<ISubEntityPtr>& subEn
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curves, DRange3dCR targetRange, DVec3dCP defaultNormal, bool reverseClosure, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    if (curves.IsAnyRegionType())
+        return PSolidGeom::BodyFromCurveVector(entityOut, curves, nullptr, nodeId);
+
+    if (!curves.IsOpenPath() || targetRange.IsNull())
+        return ERROR;
+
+    DRay3d rayS, rayE;
+
+    if (!curves.GetStartEnd(rayS.origin, rayE.origin, rayS.direction, rayE.direction))
+        return ERROR;
+
+    rayS.direction.Negate();
+
+    bool              haveIntercept, treatAsHole = false;
+    double            fractionS, fractionE;
+    DPoint3d          intercept;
+    bvector<DPoint3d> closurePts;
+
+    haveIntercept = DRay3d::ClosestApproachUnboundedRayUnboundedRay(fractionS, fractionE, intercept, intercept, rayS, rayE);
+
+    if (haveIntercept && fractionS > 0.0 && fractionE > 0.0)
+        {
+        closurePts.push_back(rayE.origin);
+        closurePts.push_back(intercept);
+        closurePts.push_back(rayS.origin);
+
+        treatAsHole = reverseClosure;
+        }
+    else
+        {
+        DRange3d    localRange;
+        Transform   localToWorld, worldToLocal;
+
+        if (!curves.IsPlanarWithDefaultNormal(localToWorld, worldToLocal, localRange, defaultNormal))
+            return ERROR;
+
+        DVec3d      planeDir = DVec3d::From(0.0, 0.0, 1.0);
+
+        localToWorld.MultiplyMatrixOnly(planeDir);
+        planeDir.Normalize();
+
+        if (!haveIntercept)
+            intercept.Interpolate(rayS.origin, 0.5, rayE.origin);
+
+        DRay3d      testRay = DRay3d::FromOriginAndVector(intercept, planeDir);
+        DPoint3d    corners[8];
+        double      clearDist = 0.0;
+    
+        targetRange.Get8Corners(corners);
+
+        for (int i=0; i<8; i++)
+            {
+            double   closeParam;
+            DPoint3d closePt;
+
+            if (!testRay.ProjectPointUnbounded(closePt, closeParam, corners[i]))
+                continue;
+
+            double thisDist = closePt.Distance(corners[i]);
+
+            if (thisDist > clearDist)
+                clearDist = thisDist;
+            }
+
+        clearDist = 1.5 * DoubleOps::Max(clearDist, intercept.Distance(rayE.origin), intercept.Distance(rayS.origin));
+
+        DPoint3d    extE = DPoint3d::FromSumOf(rayE.origin, rayE.direction, clearDist);
+        DPoint3d    extS = DPoint3d::FromSumOf(rayS.origin, rayS.direction, clearDist);
+        
+        closurePts.push_back(rayE.origin);
+
+        if (rayE.origin.Distance(extE) > 1.0e-5)
+            closurePts.push_back(extE);
+
+        bool        evaluateArcPts = true;
+        DEllipse3d  arc;
+
+        if (haveIntercept)
+            {
+            arc = DEllipse3d::FromArcCenterStartEnd(intercept, extS, extE);
+
+            if (reverseClosure)
+                arc.ComplementSweep();
+            }
+        else if (rayE.direction.DotProduct(rayS.direction) < 0.999)
+            {
+            arc = DEllipse3d::FromPointsOnArc(extS, DPoint3d::FromSumOf(intercept, DVec3d::FromNormalizedCrossProduct(rayE.direction, planeDir), clearDist), extE);
+
+            if (reverseClosure)
+                arc.ComplementSweep();
+            }
+        else if (reverseClosure)
+            {
+            arc = DEllipse3d::FromPointsOnArc(extS, DPoint3d::FromSumOf(intercept, rayE.direction, -clearDist), extE);
+            }
+        else
+            {
+            evaluateArcPts = false;
+            }
+
+        if (evaluateArcPts)
+            {
+            DPoint3d  extA;
+
+            arc.FractionParameterToPoint(extA, 0.75);
+            closurePts.push_back(extA);
+
+            arc.FractionParameterToPoint(extA, 0.5);
+            closurePts.push_back(extA);
+
+            arc.FractionParameterToPoint(extA, 0.25);
+            closurePts.push_back(extA);
+            }
+
+        if (rayS.origin.Distance(extS) > 1.0e-5)
+            closurePts.push_back(extS);
+
+        closurePts.push_back(rayS.origin);
+        }
+
+    CurveVectorPtr tmpCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+
+    for (size_t iCurve = 0; iCurve < curves.size(); iCurve++)
+        {
+        ICurvePrimitivePtr curvePrimitive = curves.at(iCurve);
+
+        if (0 == iCurve || iCurve == curves.size()-1)
+            {
+            bvector<DPoint3d> linearPts;
+
+            switch (curvePrimitive->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    linearPts.push_back(curvePrimitive->GetLineCP()->point[0]);
+                    linearPts.push_back(curvePrimitive->GetLineCP()->point[1]);
+                    break;
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    linearPts = *curvePrimitive->GetLineStringCP();
+                    break;
+
+                default:
+                    break;
+                }
+                
+            if (0 != linearPts.size())
+                {
+                if (0 == iCurve && !closurePts.empty())
+                    {
+                    if (closurePts.size() > 1)
+                        closurePts.pop_back();
+
+                    linearPts[0] = closurePts.back();
+                    closurePts.pop_back();
+                    }
+
+                if (iCurve == curves.size()-1 && !closurePts.empty())
+                    {
+                    if (closurePts.size() > 1)
+                        closurePts.erase(closurePts.begin());
+
+                    linearPts[linearPts.size()-1] = closurePts.front();
+                    closurePts.erase(closurePts.begin());
+                    }
+
+                tmpCurves->Add(ICurvePrimitive::CreateLineString(linearPts));
+                continue;
+                }
+            }
+
+        tmpCurves->Add(curvePrimitive);
+        }
+
+    if (closurePts.size() > 1)
+        tmpCurves->Add(ICurvePrimitive::CreateLineString(closurePts));
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector(entityOut, *tmpCurves, nullptr, nodeId))
+        return ERROR;
+
+    if (treatAsHole)
+        {
+        IBRepEntityPtr planeEntity;
+        CurveVectorPtr planeCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(DSegment3d::From(rayE.origin, rayS.origin)));
+
+        if (SUCCESS != BRepUtil::Create::SweptBodyFromOpenCurveVector(planeEntity, *planeCurve, targetRange, &rayE.direction, true, 0L))
+            return ERROR;
+
+        if (SUCCESS != BRepUtil::Modify::BooleanSubtract(planeEntity, &entityOut, 1))
+            return ERROR;
+
+        if (nodeId)
+            PSolidTopoId::AssignProfileBodyIds(PSolidUtil::GetEntityTag(*planeEntity), nodeId); // NEEDSWORK: More robust topology assignment is required...
+
+        entityOut = planeEntity;
+        }
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::SweptBodyFromOpenCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curves, DRange3dCR targetRange, DVec3dCP defaultNormal, bool extend, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (!curves.IsOpenPath() || targetRange.IsNull())
+        return ERROR;
+
+    DVec3d      planeDir = DVec3d::From(0.0, 0.0, 1.0);
+    DPoint3d    planePt = DPoint3d::From(0.0, 0.0, 0.0);
+    DRange3d    localRange;
+    Transform   localToWorld, worldToLocal;
+
+    if (!curves.IsPlanarWithDefaultNormal(localToWorld, worldToLocal, localRange, defaultNormal))
+        return ERROR;
+
+    localToWorld.MultiplyMatrixOnly(planeDir);
+    planeDir.Normalize();
+    localToWorld.Multiply(planePt);
+    
+    DRay3d      sweepVector = DRay3d::FromOriginAndVector(planePt, planeDir);
+    DRange1d    depthRange = targetRange.GetCornerRange(sweepVector);
+
+    if (depthRange.Length() < 1.0e-5)
+        return ERROR;
+
+    DRay3d      rayS, rayE;
+
+    if (!curves.GetStartEnd(rayS.origin, rayE.origin, rayS.direction, rayE.direction))
+        return ERROR;
+
+    rayS.direction.Negate();
+
+    bool              isPhysicallyClosed = false;
+    double            fractionS, fractionE;
+    DPoint3d          intercept;
+    bvector<DPoint3d> extendPtsS;
+    bvector<DPoint3d> extendPtsE;
+
+    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay(fractionS, fractionE, intercept, intercept, rayS, rayE) && fractionS > 0.0 && fractionE > 0.0)
+        {
+        extendPtsS.push_back(intercept);
+        extendPtsS.push_back(rayS.origin);
+
+        extendPtsE.push_back(rayE.origin);
+        extendPtsE.push_back(intercept);
+
+        isPhysicallyClosed = true;
+        }
+    else
+        {
+        DRange1d rangeS = targetRange.GetCornerRange(rayS);
+        DRange1d rangeE = targetRange.GetCornerRange(rayE);
+
+        if (rangeS.high > 0.0)
+            {
+            extendPtsS.push_back(DPoint3d::FromSumOf(rayS.origin, rayS.direction, rangeS.high));
+            extendPtsS.push_back(rayS.origin);
+            }
+
+        if (rangeE.high > 0.0)
+            {
+            extendPtsE.push_back(rayE.origin);
+            extendPtsE.push_back(DPoint3d::FromSumOf(rayE.origin, rayE.direction, rangeE.high));
+            }
+        }
+
+    CurveVectorPtr tmpCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    for (size_t iCurve = 0; iCurve < curves.size(); iCurve++)
+        {
+        ICurvePrimitivePtr curvePrimitive = curves.at(iCurve);
+
+        if (0 == iCurve || iCurve == curves.size()-1)
+            {
+            bvector<DPoint3d> linearPts;
+
+            switch (curvePrimitive->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    linearPts.push_back(curvePrimitive->GetLineCP()->point[0]);
+                    linearPts.push_back(curvePrimitive->GetLineCP()->point[1]);
+                    break;
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    linearPts = *curvePrimitive->GetLineStringCP();
+                    break;
+
+                default:
+                    break;
+                }
+                
+            if (0 != linearPts.size())
+                {
+                if (0 == iCurve && !extendPtsS.empty())
+                    {
+                    linearPts[0] = extendPtsS.front();
+                    extendPtsS.clear();
+                    }
+
+                if (iCurve == curves.size()-1 && !extendPtsE.empty())
+                    {
+                    linearPts[linearPts.size()-1] = extendPtsE.back();
+                    extendPtsE.clear();
+                    }
+
+                tmpCurves->Add(ICurvePrimitive::CreateLineString(linearPts));
+                continue;
+                }
+            }
+
+        tmpCurves->Add(curvePrimitive);
+        }
+
+    if (isPhysicallyClosed)
+        {
+        if (extendPtsE.size() > 1)
+            tmpCurves->Add(ICurvePrimitive::CreateLineString(extendPtsE));
+
+        if (extendPtsS.size() > 1)
+            tmpCurves->Add(ICurvePrimitive::CreateLineString(extendPtsS));
+        }
+    else
+        {
+        if (extendPtsE.size() > 1)
+            tmpCurves->Add(ICurvePrimitive::CreateLineString(extendPtsE));
+
+        // NOTE: Can't insert start extension to front of curve as we don't want it to get entity id 1...
+        }
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector(entityOut, *tmpCurves, nullptr, nodeId))
+        return ERROR;
+
+    // NOTE: Can now insert start extension and assign it the entity for the last segment...
+    if (!isPhysicallyClosed && extendPtsS.size() > 1)
+        {
+        PK_BODY_t   bodyTag = PSolidUtil::GetEntityTag(*entityOut);
+        PK_EDGE_t   edgeTag = PK_ENTITY_null;
+        Transform   worldToSolid;
+    
+        worldToSolid.InverseOf(entityOut->GetEntityTransform());
+        worldToSolid.Multiply (&extendPtsS.front(), (int) extendPtsS.size());
+
+        if (SUCCESS != PSolidUtil::ImprintSegment(bodyTag, &edgeTag, &extendPtsS.front()))
+            return ERROR;
+
+        if (nodeId)
+            {
+            int numEdges = 0; // First edge of wire body will have been assigned an entity id of 1...
+            PK_BODY_ask_edges(bodyTag, &numEdges, nullptr);
+            PSolidTopoId::AttachEntityId (edgeTag, nodeId, numEdges);
+            }
+        }
+
+    if (0.0 != depthRange.low)
+        {
+        DPoint3d translation;
+
+        translation.Scale(sweepVector.direction, depthRange.low);
+
+        if (!entityOut->ApplyTransform(Transform::From(translation)))
+            return ERROR;
+        }
+
+    sweepVector.direction.ScaleToLength(depthRange.Length());
+
+    return BRepUtil::Modify::SweepBody(entityOut, sweepVector.direction);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromSolidPrimitive(entityOut, primitive, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromBSurface(entityOut, surface, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromPolyface(entityOut, meshData, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromLoft(entityOut, profiles, nProfiles, guides, nGuides, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromSweep(entityOut, profile, path, alignParallel, selfRepair, createSheet, lockDirection, twistAngle, scale, scalePoint, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOut, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidGeom::BodyFromExtrusionToBody(entityOut, extrudeTo, profile, reverseDirection, nodeId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanIntersect(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean(targetEntity, toolEntities, nTools, PK_boolean_intersect, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanSubtract(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean(targetEntity, toolEntities, nTools, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanUnion(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    return PSolidUtil::DoBoolean(targetEntity, toolEntities, nTools, PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double depth, bool inside)
+    {
+    // NOTE: The MicroStation Connect version of this method specifies the profile as a CurveVector instead of a sheet body.
+    //       There are some issues with that implementation worth mentioning in case anyone believes it's a good idea to bring that code over.
+    //       1) AddNodeIdAttributes is being called instead of AssignProfileBodyIds; that results in less robust face ids.
+    //       2) Open profiles are only extended not closed, so depth options other than "through all" aren't supported.
+    //       3) The face ids of swept open profiles change depending on whether the start point is currently in or out of the target range.
+    //       4) Does not resolve node Id conflicts between the target and tool body, this is likely just a bug and not intended.
+    //       I prefer keeping this method simple and instead providing helper methods for creating the tool body.
+    //       See BRepUtil::Create::CutProfileBodyFromOpenCurveVector and BRepUtil::Create::SweptBodyFromOpenCurveVector.
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (!target.IsValid())
+        return ERROR;
+
+    PK_ENTITY_t planarToolTag = PSolidUtil::GetEntityTag(planarTool);
+
+    if (PK_ENTITY_null == planarToolTag)
+        return ERROR;
+
+    bvector<PK_FACE_t> toolFaces;
+    DRay3d faceRay;
+
+    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, planarToolTag) ||
+        SUCCESS != PSolidUtil::GetPlanarFaceData(&faceRay.origin, &faceRay.direction, toolFaces.front()))
+        return ERROR;
+
+    planarTool.GetEntityTransform().Multiply(faceRay.origin);
+    planarTool.GetEntityTransform().MultiplyMatrixOnly(faceRay.direction); // This is probably not necessary.
+    faceRay.direction.Normalize(); 
+
+    DRange1d depthRange;
+
+    if (CutDepthMode::Blind == depthMode)
+        {
+        depthRange.low  = (directionMode == CutDirectionMode::Forward)  ? 0.0 : -depth;
+        depthRange.high = (directionMode == CutDirectionMode::Backward) ? 0.0 : depth;
+        }
+    else
+        {
+        DRange3d targetRange = target->GetEntityRange();
+
+        if (targetRange.IsNull())
+            return ERROR;
+
+        depthRange = targetRange.GetCornerRange(faceRay);
+        double margin = 1.0E-5 * depthRange.Length();
+
+        switch (directionMode)
+            {
+            case CutDirectionMode::Forward:
+                depthRange.low = 0.0;
+                depthRange.high += margin;
+                break;
+
+            case CutDirectionMode::Backward:
+                depthRange.high = 0.0;
+                depthRange.low  -= margin;
+                break;
+
+            default:
+                depthRange.ExtendBySignedShift(margin);
+                break;
+            }
+        }                                                                                                                                                             
+
+     if (!depthRange.IsPositiveLength())
+        return ERROR;                                             
+
+    IBRepEntityPtr toolCopy = planarTool.Clone();
+    
+    if (!toolCopy.IsValid())
+        return ERROR;
+
+    if (depthRange.low != 0.0)
+        {
+        DPoint3d translation;
+
+        translation.Scale(faceRay.direction, depthRange.low);
+        
+        if (!toolCopy->ApplyTransform(Transform::From(translation)))
+            return ERROR;
+        }
+
+    DVec3d sweepVector;
+
+    sweepVector.Scale(faceRay.direction, depthRange.Length());
+
+    if (SUCCESS != SweepBody(toolCopy, sweepVector))
+        return ERROR;
+
+    // NOTE: We do want to resolve id conflicts between target and tool...node ids won't be assigned/modified unless target already has node ids...
+    return PSolidUtil::DoBoolean(target, &toolCopy, 1, inside ? PK_boolean_subtract : PK_boolean_intersect, PKI_BOOLEAN_OPTION_AllowDisjoint);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool        isOwned;
+    PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity, &isOwned);
+
+    if (!isOwned)
+        PK_ENTITY_copy(entityTag, &entityTag);
+
+    bvector<PK_BODY_t> bodies;
+
+    if (SUCCESS != PSolidUtil::DisjoinBody(bodies, entityTag))
+        {
+        if (!isOwned)
+            PK_ENTITY_delete(1, &entityTag);
+
+        return ERROR;
+        }
+
+    Transform entityTransform = entity.GetEntityTransform();
+
+    if (isOwned)
+        PSolidUtil::ExtractEntityTag(entity); // Invalidate input entity, will appear first in output bodies vector...
+
+    for (PK_BODY_t thisBody : bodies)
+        output.push_back(PSolidUtil::CreateNewEntity(thisBody, entityTransform, true));
+
+    return ERROR;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SewBodies(bvector<IBRepEntityPtr>& sewnEntities, bvector<IBRepEntityPtr>& unsewnEntities, IBRepEntityPtr* toolEntities, size_t nTools, double gapWidthBound, size_t nIterations)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    if (nTools < 2)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create (&markTag);
+
+    bool                 isFirst = true;
+    Transform            targetTransform, invTargetTransform;
+    bvector<PK_ENTITY_t> toolEntityTags;
+
+    // Get tool bodies in coordinates of target...
+    for (size_t iTool = 0; iTool < nTools; ++iTool)
+        {
+        bool        isToolOwned;
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+
+        if (!isToolOwned)
+            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
+            
+        if (isFirst)
+            {
+            isFirst = false;
+            targetTransform = toolEntities[iTool]->GetEntityTransform ();
+            invTargetTransform.InverseOf (targetTransform);
+            invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&gapWidthBound,  1);
+            }
+        else
+            {
+            Transform   toolTransform;
+
+            toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
+            PSolidUtil::TransformBody (toolEntityTag, toolTransform);
+            }
+
+        toolEntityTags.push_back (toolEntityTag);
+        }
+
+    int                       nSewnBodies = 0, nUnsewnBodies = 0, nProblems = 0;
+    PK_BODY_t*                sewnBodyTags = NULL;
+    PK_BODY_t*                unsewnBodyTags = NULL;
+    PK_BODY_problem_group_t*  problemGroup = NULL;
+    PK_BODY_sew_bodies_o_t    options;
+
+    PK_BODY_sew_bodies_o_m (options);
+
+    options.allow_disjoint_result = PK_LOGICAL_true;
+    options.number_of_iterations  = (int) nIterations;
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_sew_bodies ((int) toolEntityTags.size (), &toolEntityTags.front (), gapWidthBound, &options, &nSewnBodies, &sewnBodyTags, &nUnsewnBodies, &unsewnBodyTags, &nProblems, &problemGroup) ? SUCCESS : ERROR);
+
+    if (SUCCESS == status)
+        {
+        if (sewnBodyTags)
+            {
+            for (int iSewn = 0; iSewn < nSewnBodies; ++iSewn)
+                sewnEntities.push_back (PSolidUtil::CreateNewEntity (sewnBodyTags[iSewn], targetTransform, true));
+            }
+
+        if (unsewnBodyTags)
+            {
+            for (int iUnsewn = 0; iUnsewn < nUnsewnBodies; ++iUnsewn)
+                unsewnEntities.push_back (PSolidUtil::CreateNewEntity (unsewnBodyTags[iUnsewn], targetTransform, true));
+            }
+
+        // Invalidate owned tool entities that are now reflected in sewn and unsewn lists...
+        for (size_t iTool = 0; iTool < nTools; ++iTool)
+            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
+        }
+    else
+        {
+        // Undo copy/transform of input entities...
+        PK_MARK_goto (markTag);
+        }
+
+    PK_MEMORY_free (sewnBodyTags);
+    PK_MEMORY_free (unsewnBodyTags);
+
+    if (problemGroup)
+        {
+        for (int iProblem = 0; iProblem < nProblems; ++iProblem)
+            PK_MEMORY_free (problemGroup[iProblem].edges);
+
+        PK_MEMORY_free (problemGroup);
+        }
+
+    PK_MARK_delete (markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SweepBody(IBRepEntityPtr& targetEntity, DVec3dCR path)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (!targetEntity.IsValid())
+        return ERROR;
+
+    bool        isOwned;
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTag(*targetEntity, &isOwned);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    if (!isOwned)
+        PK_ENTITY_copy(targetEntityTag, &targetEntityTag);
+
+    double      distance;
+    DVec3d      pathVec;
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity->GetEntityTransform());
+    invTargetTransform.MultiplyMatrixOnly(pathVec, path);
+    distance = pathVec.Normalize();
+
+    BentleyStatus   status = PSolidUtil::SweepBodyVector(targetEntityTag, pathVec, distance);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+    else if (!isOwned)
+        targetEntity = PSolidUtil::CreateNewEntity(targetEntityTag, targetEntity->GetEntityTransform(), true);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
 
 
 

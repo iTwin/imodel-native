@@ -59,7 +59,7 @@ folly::Future<BentleyStatus> TileLoader::CreateTile()
     if (!m_tile->IsQueued())
         return SUCCESS; // this node was abandoned.
 
-    if (SUCCESS == ReadFromDb())
+    if (SUCCESS == _ReadFromDb())
         {
         if (SUCCESS == LoadTile())
             {
@@ -90,7 +90,7 @@ folly::Future<BentleyStatus> TileLoader::CreateTile()
         m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
         // On a successful load, store the tile in the cache.
-        SaveToDb();
+        _SaveToDb();
 
         return SUCCESS;
         });
@@ -117,7 +117,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 * Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::ReadFromDb()
+BentleyStatus TileLoader::_ReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -164,7 +164,7 @@ BentleyStatus TileLoader::ReadFromDb()
 * Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::SaveToDb()
+BentleyStatus TileLoader::_SaveToDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
