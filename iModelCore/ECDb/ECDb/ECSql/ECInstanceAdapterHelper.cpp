@@ -22,7 +22,7 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
         {
         StructECPropertyCP structProp = ecProperty.GetAsStructProperty();
         BeAssert(structProp != nullptr);
-        ECClassCR structType = structProp->GetType();
+        ECStructClassCR structType = structProp->GetType();
         return StructECValueBindingInfo::Create(enabler, structType, propertyAccessString, ecsqlParameterIndex);
         }
 
@@ -85,7 +85,7 @@ std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     {
     return std::unique_ptr<StructECValueBindingInfo>(new StructECValueBindingInfo(parentEnabler, structType, parentPropertyAccessString, ecsqlParameterIndex));
     }
@@ -94,7 +94,7 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNestedStruct(ECN::ECClassCR structType)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNestedStruct(ECN::ECStructClassCR structType)
     {
     return Create(*structType.GetDefaultStandaloneEnabler(), structType, nullptr, UNSET_INDEX);
     }
@@ -102,7 +102,7 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     : ECValueBindingInfo(Type::Struct, ecsqlParameterIndex)
     {
     for (ECPropertyCP memberProp : structType.GetProperties(true))
@@ -149,7 +149,7 @@ ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_
     if (nullptr != structArrayProp)
         {
         ECStructClassCR structType = structArrayProp->GetStructElementType();
-        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(*structType);
+        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(structType);
         }
     }
 

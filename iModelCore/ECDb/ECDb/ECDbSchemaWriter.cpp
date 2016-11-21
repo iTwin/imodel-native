@@ -303,8 +303,11 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
-        return ERROR;
+    if (!ecEnum.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
 
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
@@ -355,17 +358,14 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
    
-    if (!koq.GetDisplayLabel().empty())
+    if (koq.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
    
-    if (!koq.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, koq.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(5, koq.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindText(6, koq.GetPersistenceUnit().c_str(), Statement::MakeCopy::No))
         return ERROR;

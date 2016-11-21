@@ -124,11 +124,11 @@ struct StructECValueBindingInfo : ECValueBindingInfo
     private:
         std::map<ECN::ECPropertyId, std::unique_ptr<ECValueBindingInfo>> m_memberBindingInfos;
 
-        StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
+        StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
 
     public:
-        static std::unique_ptr<StructECValueBindingInfo> Create(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
-        static std::unique_ptr<StructECValueBindingInfo> CreateForNestedStruct(ECN::ECClassCR structType);
+        static std::unique_ptr<StructECValueBindingInfo> Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
+        static std::unique_ptr<StructECValueBindingInfo> CreateForNestedStruct(ECN::ECStructClassCR);
 
         ~StructECValueBindingInfo() {}
 
