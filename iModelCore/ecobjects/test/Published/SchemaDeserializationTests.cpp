@@ -121,7 +121,7 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_STREQ ("Struct1", pProperty->GetTypeName ().c_str ());
         StructArrayECPropertyP structArrayProperty = pProperty->GetAsStructArrayPropertyP ();
         EXPECT_TRUE (NULL != structArrayProperty);
-        EXPECT_EQ (schema->GetClassP ("Struct1"), structArrayProperty->GetStructElementType ());
+        EXPECT_EQ (schema->GetClassP ("Struct1"), &structArrayProperty->GetStructElementType ());
         EXPECT_EQ (0, structArrayProperty->GetMinOccurs ());
         EXPECT_EQ (UINT_MAX, structArrayProperty->GetMaxOccurs ());
         EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined ());

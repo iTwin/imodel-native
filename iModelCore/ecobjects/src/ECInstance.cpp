@@ -1367,9 +1367,9 @@ static ECObjectsStatus setECValueUsingFullAccessString (Utf8Char* asBuffer, Utf8
             if (!arrayProp)
                 return ECObjectsStatus::Error;
 
-            ECClassCP structClass = arrayProp->GetStructElementType();
+            ECClassCR structClass = arrayProp->GetStructElementType();
 
-            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str());
+            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetSchemaKey(), structClass.GetName().c_str());
             if (standaloneEnabler.IsNull())
                 return ECObjectsStatus::Error;
 
@@ -2901,18 +2901,18 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     else if (ARRAYKIND_Struct == arrayKind)
         {
         StructArrayECPropertyP structArray = arrayProperty->GetAsStructArrayPropertyP();
-        ECClassCP   structMemberType = structArray->GetStructElementType();
+        ECClassCR   structMemberType = structArray->GetStructElementType();
         for (BeXmlNodeP arrayValueNode = propertyValueNode.GetFirstChild (BEXMLNODE_Element); NULL != arrayValueNode; arrayValueNode = arrayValueNode->GetNextSibling(BEXMLNODE_Element))
             {
             // the Name of each node element is the class name of structMemberType.
             // For polymorphic arrays, the Name might also be the name of a class that has structMemberType as a BaseType.
             ECClassCP   thisMemberType;
             Utf8String  arrayMemberType (arrayValueNode->GetName());
-            m_context.ResolveSerializedClassName (arrayMemberType, structMemberType->GetSchema());
-            if (nullptr == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str (), structMemberType)))
+            m_context.ResolveSerializedClassName (arrayMemberType, structMemberType.GetSchema());
+            if (nullptr == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str (), &structMemberType)))
                 {
                 LOG.warningv ("Incorrect structType found in %s.  Expected: %s  Found: %s",
-                    accessString.c_str (), structMemberType->GetName().c_str(), arrayValueNode->GetName ());
+                    accessString.c_str (), structMemberType.GetName().c_str(), arrayValueNode->GetName ());
                 continue;
                 }
 
@@ -3867,7 +3867,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
                 }
 
             ECClassCR   structClass = structInstance->GetClass();
-            BeAssert (structClass.Is (arrayProperty.GetAsStructArrayProperty()->GetStructElementType()));
+            BeAssert (structClass.Is (&arrayProperty.GetAsStructArrayProperty()->GetStructElementType()));
 
             m_xmlWriter->WriteElementStart (Utf8String(structClass.GetName().c_str()).c_str());
 

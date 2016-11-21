@@ -258,12 +258,11 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
         if (nullptr == structArrayProperty)
             return ERROR;
 
-        ECClassCP structType = structArrayProperty->GetStructElementType();
-        BeAssert(structType != nullptr);
+        ECClassCR structType = structArrayProperty->GetStructElementType();
         for (uint32_t ii = 0; ii < length; ii++)
             {
-            IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance(0);
-            ECInstanceFromJson(*structInstance, jsonValue[ii], *structType, "");
+            IECInstancePtr structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstanceFromJson(*structInstance, jsonValue[ii], structType, "");
             ECValue ecStructValue;
             ecStructValue.SetStruct(structInstance.get());
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecStructValue, ii);
@@ -684,7 +683,7 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
         StructArrayECPropertyCP structArrayProperty = property.GetAsStructArrayProperty();
         BeAssert(nullptr != structArrayProperty);
 
-        ECClassCP structType = structArrayProperty->GetStructElementType();
+        ECClassCP structType = &structArrayProperty->GetStructElementType();
         BeAssert(nullptr != structType);
 
         for (rapidjson::SizeType i = 0; i < size; i++)

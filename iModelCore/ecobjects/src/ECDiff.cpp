@@ -2493,7 +2493,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
             ECStructClassCP structTypeClass = typeClass->GetStructClassCP();
             if (structTypeClass == NULL)
                 return MergeStatus::Failed;
-            if (mergedClass.CreateStructArrayProperty (newStructProperty, defaultProperty->GetName(), structTypeClass) != ECObjectsStatus::Success)
+            if (mergedClass.CreateStructArrayProperty (newStructProperty, defaultProperty->GetName(), *structTypeClass) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
             newProperty = newStructProperty;
             }
@@ -2602,7 +2602,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         ArrayECPropertyP newProperty;
         if (srcProperty->GetKind() == ARRAYKIND_Struct)
             {
-            ECClassCP resolvedType = srcProperty->GetAsStructArrayProperty()->GetStructElementType();
+            ECClassCP resolvedType = &srcProperty->GetAsStructArrayProperty()->GetStructElementType();
             if (IsPartOfMergeSchema(*resolvedType))
                 {
                 status = ResolveClassFromMergeContext (resolvedType, resolvedType->GetName().c_str());
@@ -2617,7 +2617,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
                 return MergeStatus::ErrorClassNotFound;
 
             StructArrayECPropertyP newStructProp;
-            if (mergeClass.CreateStructArrayProperty(newStructProp, srcProperty->GetName(), resolvedStructType) != ECObjectsStatus::Success)
+            if (mergeClass.CreateStructArrayProperty(newStructProp, srcProperty->GetName(), *resolvedStructType) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
             newProperty = newStructProp;
             }

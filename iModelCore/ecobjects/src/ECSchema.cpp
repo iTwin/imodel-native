@@ -215,14 +215,6 @@ Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECValidatedName::GetDisplayLabel() const
-    {
-    return m_displayLabel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECValidatedName::SetName (Utf8CP name)
     {
     // Note that this method can be called with an un-encoded name (e.g. called by users creating schemas dynamically),
@@ -241,7 +233,7 @@ void ECValidatedName::SetName (Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECValidatedName::SetDisplayLabel (Utf8CP label)
+void ECValidatedName::SetDisplayLabel(Utf8CP label)
     {
     if (NULL == label || '\0' == *label)
         {
@@ -1649,7 +1641,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 }
             else if (prop->GetIsStructArray())
                 {
-                typeClass = prop->GetAsStructArrayProperty()->GetStructElementType();
+                typeClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
                 }
             else if (prop->GetIsNavigation())
                 {
