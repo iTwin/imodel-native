@@ -2301,6 +2301,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                         "            </ClassMap>"
                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                        "              <SharedColumnCount>4</SharedColumnCount>"
                         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                         "            </ShareColumns>"
                         "        </ECCustomAttributes>"
@@ -2340,20 +2341,20 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     ASSERT_FALSE(asserted);
 
     //verify Number and Names of Columns in BaseClass
-    BeSQLite::Statement statement;
-    const int expectedColCount = 5;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(testDb, "SELECT * FROM rs_Base"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    Statement statement;
+    const int expectedColCount = 8;
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(testDb, "SELECT * FROM rs_Base"));
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02";
+    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP0sc1sc2sc3sc4scoverflow";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {
         actualColumnNames.append(statement.GetColumnName(i));
         }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+    ASSERT_STREQ(expectedColumnNames, actualColumnNames.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3454,30 +3455,30 @@ TEST_F(ECDbMappingTestFixture, TPH_ShareColumnsCA)
     //verify ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
     ASSERT_EQ(s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
-    ASSERT_EQ(s1.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
     ASSERT_EQ(s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
-    ASSERT_EQ(s2.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
     ASSERT_EQ(s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
-    ASSERT_EQ(s3.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
     ASSERT_EQ(s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
-    ASSERT_EQ(s4.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
     ASSERT_EQ(s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
-    ASSERT_EQ(s5.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
 
     //verify No of Columns in BaseClass
     Statement statement;
-    ASSERT_EQ(statement.Prepare(db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
-    ASSERT_EQ(statement.Step(), DbResult::BE_SQLITE_ROW);
-    ASSERT_EQ(5, statement.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(4, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1sc01sc02";
+    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP1scoverflow";
     Utf8String actualColumnNames;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < statement.GetColumnCount(); i++)
         {
         actualColumnNames.append(statement.GetColumnName(i));
         }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+    ASSERT_STREQ(expectedColumnNames, actualColumnNames.c_str());
     }
 
 //---------------------------------------------------------------------------------------

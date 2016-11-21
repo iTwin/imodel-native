@@ -427,7 +427,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "MapStrategy INTEGER NOT NULL,"
                            "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "SharedColumnCount INTEGER,"
-                           "ExcessColumnName TEXT,"
+                           "OverflowColumnName TEXT,"
                            "JoinedTableInfo INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
