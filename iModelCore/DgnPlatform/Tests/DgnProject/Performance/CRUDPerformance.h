@@ -27,7 +27,7 @@ struct CRUDPerformance : public DgnDbTestFixture
     protected:
         static const int s_initialInstanceCount = 100;
         static const int s_opCount = 5;
-        static const uint64_t s_firstElementId = UINT64_C(1099511627783);
+        static const uint64_t s_firstElementId = UINT64_C(1099511627785);
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
 

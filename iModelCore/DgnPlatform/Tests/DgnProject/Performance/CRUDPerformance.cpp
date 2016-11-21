@@ -220,7 +220,7 @@ static bool useEllipse = true;
 void CRUDPerformance::AddGeometry(DgnElementPtr element) const
     {
     GeometrySourceP geomElem = element->ToGeometrySourceP();
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*element->GetModel(), DgnCategory::QueryHighestCategoryId(*m_db), DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*element->GetModel(), geomElem->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
     if (useEllipse)
         ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     else
@@ -236,7 +236,7 @@ void CRUDPerformance::AddGeometry(DgnElementPtr element) const
 void CRUDPerformance::ExtendGeometry(DgnElementPtr element) const
     {
     GeometrySourceP geomElem = element->ToGeometrySourceP();
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*element->GetModel(), DgnCategory::QueryHighestCategoryId(*m_db), DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*element->GetModel(), geomElem->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
     if (useEllipse)
         ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
     else
@@ -252,7 +252,9 @@ void CRUDPerformance::ExtendGeometry(DgnElementPtr element) const
 void CRUDPerformance::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName) const
     {
     PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
-    DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(*m_db);
+    Utf8String categoryName;
+    categoryName.Sprintf("%s_cId", modelName);
+    DgnCategoryId catId = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
 
     bool addMultiAspect = false;
     bool addExtKey = false;
