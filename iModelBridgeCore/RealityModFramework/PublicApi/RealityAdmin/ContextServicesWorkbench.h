@@ -100,6 +100,7 @@ struct ContextServicesWorkbench
         REALITYDATAPLATFORM_EXPORT Utf8String GetSpatialEntityWithDetailsJson() { return m_spatialEntityWithDetailsJson; }
         REALITYDATAPLATFORM_EXPORT BeFileName GetPackageFileName() { return m_packageFileName; }
         REALITYDATAPLATFORM_EXPORT GeoCoordinationParamsCR GetUiParameters() const { return m_params; }
+        REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId() const { return m_instanceId; }
 
         //REALITYDATAPLATFORM_EXPORT DetailedSpatialEntityListPtr GetSpatialEntityWithDetails() const { return m_contextList; }
         REALITYDATAPLATFORM_EXPORT RealityPlatform::SpatioTemporalSelector::ResolutionMap GetSelectedIds() const { return m_selectedIds; }
