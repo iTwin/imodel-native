@@ -138,7 +138,7 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool assignNodeIds)
+BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
     {
     if (0 == nTools || !targetEntity.IsValid ())
         return ERROR;
@@ -181,7 +181,7 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
     uint32_t highestNodeId, lowestNodeId;
 
     // If node ids are assigned to target body, avoid duplicate node ids with tool bodies...otherwise assume caller doesn't care about ids...
-    if (assignNodeIds && SUCCESS == PSolidTopoId::FindNodeIdRange (targetEntityTag, highestNodeId, lowestNodeId))
+    if (resolveNodeIdConflicts && SUCCESS == PSolidTopoId::FindNodeIdRange (targetEntityTag, highestNodeId, lowestNodeId))
         {
         for (PK_ENTITY_t toolEntityTag: toolEntityTags)
             {

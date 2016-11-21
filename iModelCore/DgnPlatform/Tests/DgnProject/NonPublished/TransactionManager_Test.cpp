@@ -236,8 +236,7 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 static void testModelUndoRedo(DgnDbR db)
     {
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysical");
-
-    auto category = DgnCategory::QueryFirstCategoryId(db);
+    DgnCategoryId category = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
 
     TestElementPtr templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el1 = templateEl->Insert();
@@ -542,6 +541,13 @@ static void testRangeIndex()
 TEST_F(TransactionManagerTests, UndoRedo)
     {
     SetupSeedProject();
+
+    CloseDb();
+    BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
+    DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.dgndb");
+    OpenDb(m_db, outFileName, mode);
+    
     auto& txns = m_db->Txns();
     m_db->SaveChanges();
 
@@ -1275,9 +1281,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     auto& txns = db.Txns();
 
     // Set up a dependency between two elements, and register a callback
-    DgnCategory cat(DgnCategory::CreateParams(db, "Root", DgnCategory::Scope::Any));
-    EXPECT_TRUE(cat.Insert(DgnSubCategory::Appearance()).IsValid());
-    DgnElementId rootId = cat.GetElementId();
+    DgnElementId rootId = DgnDbTestUtils::InsertSpatialCategory(db, "Root");
 
     Byte textureBytes[] = { 1, 2, 3 };
     ImageSource textureData(ImageSource::Format::Jpeg, ByteStream(textureBytes, 3));

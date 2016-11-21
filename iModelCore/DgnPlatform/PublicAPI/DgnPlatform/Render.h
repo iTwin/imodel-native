@@ -27,19 +27,19 @@ struct GraphicBuilderPtr;
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 enum class RenderMode
-    {
+{
     Wireframe      = 0,
     HiddenLine     = 3,
     SolidFill      = 4,
     SmoothShade    = 6,
-    };
+};
 
 /*=================================================================================**//**
 * Flags for view display style
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ViewFlags
-    {
+{
 private:
     RenderMode m_renderMode;
 
@@ -138,7 +138,7 @@ public:
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-    };
+};
 
 //=======================================================================================
 //! A rendering task to be performed on the render thread.
