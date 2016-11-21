@@ -752,7 +752,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
 
-    DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
+    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 
     for (auto const& node: m_missing)
         {
@@ -768,7 +768,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
-    DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
+    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
         m_loads = nullptr; // for debugging
