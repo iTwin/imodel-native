@@ -2193,7 +2193,7 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relClass, ::int
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECValue::NavigationInfo ECValue::GetNavigationInfo() const
+ECValue::NavigationInfo const& ECValue::GetNavigationInfo() const
     {
     BeAssert(IsNavigation());
 

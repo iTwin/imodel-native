@@ -65,6 +65,7 @@ public:
     ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
     };
 
+
 //=======================================================================================
 //! Variant-like object used to set and retrieve property values in \ref ECN::IECInstance "ECInstances".
 //! @remarks It does not represent a "live" reference into the underlying ECN::IECInstance
@@ -78,6 +79,28 @@ public:
     //! Performs a shallow copy
     void ShallowCopy (ECValueCR v);
 //__PUBLISH_SECTION_START__
+
+public:
+    //! Structure to hold information about Navigation values
+    struct NavigationInfo
+        {
+        private:
+            ECRelationshipClassCP   m_relClass;
+
+            // If any more types are added make into a union or store everything as String and then parse
+            // into the different types
+            ::int64_t m_idLong;
+
+        public:
+            BentleyStatus SetRelationship(ECRelationshipClassCR relationshipClass);
+
+            //! Returns the relationship class that this navigation value was initialized with
+            ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
+
+            ECObjectsStatus Set(::int64_t id);
+
+            ECOBJECTS_EXPORT::int64_t GetIdAsLong() const;
+        };
 private:
     union
         {
@@ -193,27 +216,7 @@ private:
         Utf8String MetadataToString () const;
         };
 
-    //! Structure to hold information about Navigation values
-    struct NavigationInfo
-        {
-    private:
-        ECRelationshipClassCP   m_relClass;
-
-        // If any more types are added make into a union or store everything as String and then parse
-        // into the different types
-        ::int64_t m_idLong;
-
-    public:
-        BentleyStatus SetRelationship(ECRelationshipClassCR relationshipClass);
-
-        //! Returns the relationship class that this navigation value was initialized with
-        ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
-
-        ECObjectsStatus Set(::int64_t id);
-
-        ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
-        };
-
+    
     //! The union storing the actual data of this ECValue
     union
         {
@@ -491,7 +494,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relaltionshipClass, ::int64_t value);
 
     //! Returns the navigation information definig this ECValue
-    ECOBJECTS_EXPORT ECValue::NavigationInfo GetNavigationInfo() const;
+    ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;
     
     //! Returns the integer value, if this ECValue holds an Integer 
     ECOBJECTS_EXPORT int32_t        GetInteger () const;  
