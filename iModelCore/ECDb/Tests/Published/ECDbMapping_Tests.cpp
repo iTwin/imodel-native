@@ -2887,6 +2887,97 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     }
 
     
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, NotNullConstraint)
+    {
+    //NotNull constraint on FK Relationship for OwnTable
+            {
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "<ECEntityClass typeName='Foo' modifier='None' >"
+                "   <ECProperty propertyName='FooProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Goo' modifier='None' >"
+                "   <ECProperty propertyName='GooProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+                "        <ECCustomAttributes>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+                "            </ForeignKeyRelationshipMap>"
+                "        </ECCustomAttributes>"
+                "    <Source cardinality='(0,1)' polymorphic='false'>"
+                "      <Class class = 'Foo' />"
+                "    </Source>"
+                "    <Target cardinality='(1,1)' polymorphic='false'>"
+                "      <Class class = 'Goo' />"
+                "    </Target>"
+                "</ECRelationshipClass>"
+                "</ECSchema>", true, "NotNull constarint is honoured when a single class is mapped to a table.");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Statement sqlstmt;
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignKeyId'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(0, sqlstmt.GetValueInt(0));
+            }
+
+            //NotNull constraint on FK Relationship for SharedTable CA 
+            {
+
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "<ECEntityClass typeName='Parent' modifier='None' >"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                <MapStrategy>"
+                "                   <Strategy>SharedTable</Strategy>"
+                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                "                 </MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "   <ECProperty propertyName='ParentProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Child' modifier='None' >"
+                "   <BaseClass>Parent</BaseClass>"
+                "   <ECProperty propertyName='ChildAProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
+                "        <ECCustomAttributes>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+                "            </ForeignKeyRelationshipMap>"
+                "        </ECCustomAttributes>"
+                "    <Source cardinality='(0,1)' polymorphic='false'>"
+                "      <Class class = 'Parent' />"
+                "    </Source>"
+                "    <Target cardinality='(1,N)' polymorphic='false'>"
+                "      <Class class = 'Child' />"
+                "    </Target>"
+                "</ECRelationshipClass>"
+                "</ECSchema>", true, "NotNull constarint is honoured when multiple classes are mapped to a same table.");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Statement sqlstmt;
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignKeyId'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(0, sqlstmt.GetValueInt(0));
+            }
     }
 
 //---------------------------------------------------------------------------------------
