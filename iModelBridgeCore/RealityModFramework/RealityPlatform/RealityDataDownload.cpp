@@ -434,7 +434,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isRetry)
     {
     // If cancel requested, don't queue new files
-    if(m_pHeartbeatFunc() != 0)
+    if(NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
         return SetupCurlStatus::Success;
 
     // If file already there, consider the download completed.
