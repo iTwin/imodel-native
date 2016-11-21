@@ -564,7 +564,7 @@ ICancellationTokenPtr ct
         ecIdsOut.push_back(statement.GetValueId<ECInstanceId>(ecInstanceIdcolumn));
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         return ERROR;
 
     return SUCCESS;
@@ -591,7 +591,7 @@ ICancellationTokenPtr ct
         keysOut.Insert(classId, statement.GetValueId<ECInstanceId>(ecInstanceIdcolumn));
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         return ERROR;
 
     return SUCCESS;
@@ -609,8 +609,8 @@ int ecClassIdColumn,
 int ecInstanceIdcolumn
 )
     {
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (ct && ct->IsCanceled())
             return ERROR;
@@ -620,7 +620,7 @@ int ecInstanceIdcolumn
         keysOut.Insert(ecClassId, ecInstanceId);
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         return ERROR;
 
     return SUCCESS;

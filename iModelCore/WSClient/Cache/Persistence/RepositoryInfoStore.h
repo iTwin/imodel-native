@@ -30,7 +30,7 @@ struct RepositoryInfoStore : public IRepositoryInfoStore
         std::shared_ptr<InfoListener> m_infoListener;
         WorkerThreadPtr m_thread;
 
-        BeCriticalSection m_infoMutex;
+        BeMutex m_infoMutex;
         WSInfo m_info;
 
     private:
