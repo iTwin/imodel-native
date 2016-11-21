@@ -31,7 +31,7 @@ void KindOfQuantity::SetName(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR KindOfQuantity::GetFullName () const
+Utf8StringCR KindOfQuantity::GetFullName() const
     {
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
@@ -42,7 +42,7 @@ Utf8StringCR KindOfQuantity::GetFullName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String KindOfQuantity::GetQualifiedName (ECSchemaCR primarySchema) const
+Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const
     {
     Utf8String alias;
     Utf8StringCR name = GetName();
@@ -61,7 +61,6 @@ Utf8String KindOfQuantity::GetQualifiedName (ECSchemaCR primarySchema) const
 
 //Following two methods need to be exported as the ValidatedName struct does not export its methods.
 void KindOfQuantity::SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
-Utf8StringCR KindOfQuantity::GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
 ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
     {

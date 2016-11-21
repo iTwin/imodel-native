@@ -68,13 +68,15 @@ private:
     Utf8String          m_displayLabel;
     bool                m_hasExplicitDisplayLabel;
 public:
-    ECValidatedName() : m_hasExplicitDisplayLabel (false) { }
+    ECValidatedName() : m_hasExplicitDisplayLabel(false) {}
 
-    Utf8StringCR        GetName() const                 { return m_name; }
-    bool                IsDisplayLabelDefined() const   { return m_hasExplicitDisplayLabel; }
-    Utf8StringCR        GetDisplayLabel() const;
-    void                SetName (Utf8CP name);
-    void                SetDisplayLabel (Utf8CP label);
+    Utf8StringCR        GetName() const { return m_name; }
+    bool                IsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
+    Utf8StringCR        GetDisplayLabel() const { return m_displayLabel; }
+#if !defined (DOCUMENTATION_GENERATOR)
+    void                SetName(Utf8CP name);
+    void                SetDisplayLabel(Utf8CP label);
+#endif
     };
 
 //=======================================================================================
@@ -1662,9 +1664,9 @@ friend struct SchemaXmlReaderImpl;
 
     public:
         //! The ECSchema that this enumeration is defined in
-        ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
+        ECSchemaCR GetSchema() const { return m_schema; }
         //! The name of this Enumeration
-        ECOBJECTS_EXPORT Utf8StringCR GetName() const;
+        Utf8StringCR GetName() const { return m_validatedName.GetName(); }
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
         //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
@@ -1686,20 +1688,20 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT Utf8String GetTypeName() const;
 
         //! Whether the display label is explicitly defined or not
-        ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+        bool GetIsDisplayLabelDefined() const { return m_validatedName.IsDisplayLabelDefined(); }
         //! Sets the display label of this ECEnumeration
         ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this ECEnumeration.  If no display label has been set explicitly, it will return the name of the ECEnumeration
         ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
         //! Gets the invariant display label for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
+        Utf8StringCR GetInvariantDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
         //! Sets the description of this ECEnumeration
-        ECOBJECTS_EXPORT void SetDescription(Utf8CP value) { m_description = value; }
+        void SetDescription(Utf8CP value) { m_description = value; }
         //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
         ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
         //! Gets the invariant description for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
+        Utf8StringCR GetInvariantDescription() const { return m_description; }
 
         //! Gets the IsStrict flag of this enum. True means that values on properties will be enforced.
         bool GetIsStrict() const { return m_isStrict; }
@@ -1838,22 +1840,28 @@ struct KindOfQuantity : NonCopyableClass
         //! Gets a qualified name of the enumeration, prefixed by the schema alias if it does not match the primary schema.
         ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
+        //! Whether the display label is explicitly defined or not
+        bool GetIsDisplayLabelDefined() const { return m_validatedName.IsDisplayLabelDefined(); }
+        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
+        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
         ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
-        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-
+        Utf8StringCR GetInvariantDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
         void SetDescription(Utf8CP value) { m_description = value; }
-        //! Gets the description of this KindOfQuantity.
-        Utf8StringCR GetDescription() const { return m_description; };
+        
+        Utf8StringCR GetDescription() const {/*TODO: should this be localized?*/ return m_description; };
 
-        //! Sets the Unit of measuerement used for persisting the information
+        //! Gets the invariant description of this KindOfQuantity.
+        Utf8StringCR GetInvariantDescription() const { return m_description; };
+
+
+        //! Sets the Unit of measurement used for persisting the information
         //! @param[in]  value  The new value to apply
         void SetPersistenceUnit(Utf8CP value) { m_persistenceUnit = value; }
-        //! Gets the Unit of measuerement used for persisting the information
+        //! Gets the Unit of measurement used for persisting the information
         Utf8StringCR GetPersistenceUnit() const { return m_persistenceUnit; };
 
         //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
