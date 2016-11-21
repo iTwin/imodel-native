@@ -62,7 +62,7 @@ void RepositoryInfoStore::CacheServerInfo(WSInfoCR info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RepositoryInfoStore::CacheServerInfo(IDataSourceCache& cache, WSInfoCR info)
     {
-    BeCriticalSectionHolder lock(m_infoMutex);
+    BeMutexHolder lock(m_infoMutex);
     m_info = info;
 
     PropertySpec prop(ECDbProperty_ServerInfo, ECDbProperty_NAMESPACE);
@@ -79,7 +79,7 @@ BentleyStatus RepositoryInfoStore::CacheServerInfo(IDataSourceCache& cache, WSIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSInfo RepositoryInfoStore::GetServerInfo()
     {
-    BeCriticalSectionHolder lock(m_infoMutex);
+    BeMutexHolder lock(m_infoMutex);
     BeAssert(m_info.IsValid());
     return m_info;
     }
@@ -89,7 +89,7 @@ WSInfo RepositoryInfoStore::GetServerInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RepositoryInfoStore::PrepareServerInfo(IDataSourceCache& cache)
     {
-    BeCriticalSectionHolder lock(m_infoMutex);
+    BeMutexHolder lock(m_infoMutex);
     m_info = ReadServerInfo(cache);
     if (!m_info.IsValid())
         return ERROR;

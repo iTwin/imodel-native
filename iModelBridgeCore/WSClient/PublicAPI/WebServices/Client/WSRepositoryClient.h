@@ -171,24 +171,6 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
-        //! @param objectId - object identifier
-        //! @param propertiesJson - object properties that need to be updated
-        //!            <br> remoteId is optional. If supplied this implies that there are instances related to that instance that needs creation.
-        //! @param filePath [optional] file
-        //! @param ct [optional] cancellation token
-        //! NOTES for different server versions:
-        //!     WSG 2.0: creation format is fully supported. <b>When root instanceId is specified, POST will be done to that instance, if and only if, the objectId parameter has an empty remoteId.</b>
-        //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
-        //!     Server version can be checked by using GetWSClient()->GetServerInfo()
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
-            (
-            ObjectIdCR objectId,
-            JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName(),
-            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
-            ) const = 0;
-    
         //! Update specified object and optionally a file with one operation
         //! @param objectId object identifier
         //! @param propertiesJson object properties that need to be updated

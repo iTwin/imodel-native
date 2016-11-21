@@ -2185,7 +2185,7 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
     ECDbAdapter adapter(db);
 
