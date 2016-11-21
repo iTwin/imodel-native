@@ -13,7 +13,7 @@
 PointoolsCommonSrcDir=$(SrcRoot)Pointools/PointoolsCommon/
 PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
 
-SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
 #DerivativePolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
 
