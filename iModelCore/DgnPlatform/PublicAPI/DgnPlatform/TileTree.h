@@ -290,8 +290,8 @@ protected:
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
-    virtual BentleyStatus _SaveToDb();
-    virtual BentleyStatus _ReadFromDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
 
     //! Called from worker threads to get the data from the original location. E.g. disk, web, or created locally.
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
