@@ -603,6 +603,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void         Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
+    void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
+
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
     virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
@@ -762,7 +764,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     ISMPointIndexFilter<POINT, EXTENT>* filter, 
                     bool balanced, 
                     bool textured,
-                    bool propagatesDataDown, 
+                    bool propagatesDataDown,
+                    bool needsNeighbors,
                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
 
@@ -781,6 +784,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
 
         StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+
+        StatusInt           ChangeGeometricError(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
         

@@ -4591,7 +4591,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
         {
-        printf("Saving cloud format to local directory ");
+        printf("Saving cloud format to local directory... ");
         }
     else
         {
@@ -4625,6 +4625,14 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
+
+    double geometricError = std::numeric_limits<double>::max();
+    bool   changeGeometricError = false;
+    if (pTestNode->GetAttributeDoubleValue(geometricError, "geometric_error") == BEXML_Success)
+        {
+        changeGeometricError = true;
+        }
+
     // remove trailing slashes if any
     size_t position;
     if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
@@ -4635,12 +4643,19 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
 
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+        if (changeGeometricError)
+            {
+            status = smFile->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
+            }
+        else
+            {
+            status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+            }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }

@@ -267,7 +267,8 @@ template <class EXTENT> class SMIndexNodeHeaderBase
         bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
         bool        m_isTextured;                // Indicates if the node contains Texture or not
 
-        map<size_t, EXTENT> m_childrenExtents;   // Only used and required by Cesium 3D tile format
+        map<size_t, EXTENT> m_childrenExtents;   // Only used and required by Cesium 3D tiles format
+        double      m_geometryResolution = -1.0;        // Only used and required by Cesium 3D tiles format
 
 
 

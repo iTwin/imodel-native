@@ -542,7 +542,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
     // But looking at other Cesium 3D tiles datasets (Marseille, Orlando) the computed tolerance seem to be something like this
     // and seems to work reasonably well as long as the bounding volume tightly fits the data :
-    double tolerance = 16 / pow(2, header->m_level); // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
+    double tolerance = header->m_geometryResolution == -1 ? 64 / pow(2, header->m_level) : header->m_geometryResolution; // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
 
     assert(tolerance > 0);
     // SM_NEEDS_WORK : is there a transformation to apply at some point?

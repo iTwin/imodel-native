@@ -356,6 +356,8 @@ public:
 
     void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
 
+    void NeedToLoadNeighbors(const bool& needsNeighbors);
+
     /**----------------------------------------------------------------------------
     Indicates if node is leaf
 
@@ -544,6 +546,11 @@ public:
     Unloads the present tile if delay loaded.
     -----------------------------------------------------------------------------*/
     virtual void Unload();
+
+    /**----------------------------------------------------------------------------
+    Disconnects the present tile if delay loaded.
+    -----------------------------------------------------------------------------*/
+    virtual void Disconnect();
 
     /**----------------------------------------------------------------------------
     This method indicates if the node is loaded or not.
@@ -1188,6 +1195,7 @@ protected:
         uint64_t           m_nodeId; 
         bool               m_isDirty;
         std::mutex         m_ptsLock;
+        bool               m_loadNeighbors;
         
         static std::map<size_t, SMNodeGroup*> s_OpenGroups;
         static int s_GroupID;    
@@ -1535,6 +1543,10 @@ public:
         m_isGenerating = isGenerating;
         if (m_pRootNode != nullptr) m_pRootNode->SetGenerating(isGenerating);
         }
+    void SetNeedsNeighbors(bool needsNeighbors)
+        {
+        m_loadNeighbors = needsNeighbors;
+        }
 
 #ifndef NDEBUG
     void                ValidateNeighbors();
@@ -1576,6 +1588,8 @@ protected:
     bool                    m_indexHeaderDirty;
 
     bool                    m_isGenerating;
+
+    bool                    m_loadNeighbors;
 
     bool                    m_needsBalancing;
 

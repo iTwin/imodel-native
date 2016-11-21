@@ -576,28 +576,31 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
             }
         }
    
-     for (size_t neighborPosIndex = 0; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
-        {            
-        for (size_t neigborIndex = 0; neigborIndex < UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].size(); neigborIndex++)
-            {            
-            assert(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerInitialized == true && UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_alternateID == 0);
-            assert(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].IsValid());
-
-            s_createdNodeMutex.lock(); 
-
-            CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerID));
-
-            if (nodeIter == m_createdNodeMap->end())
-                {                  
-                UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].push_back(UNCONSTTHIS->CreateNewNode(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex]));
-                m_createdNodeMap->insert(std::pair<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerID, UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].back()));                
-                }
-            else
+    if (m_loadNeighbors)
+        {
+        for (size_t neighborPosIndex = 0; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
+            {
+            for (size_t neigborIndex = 0; neigborIndex < UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].size(); neigborIndex++)
                 {
-                UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].push_back(nodeIter->second);
-                }                        
+                assert(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerInitialized == true && UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_alternateID == 0);
+                assert(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].IsValid());
 
-            s_createdNodeMutex.unlock(); 
+                s_createdNodeMutex.lock();
+
+                CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerID));
+
+                if (nodeIter == m_createdNodeMap->end())
+                    {
+                    UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].push_back(UNCONSTTHIS->CreateNewNode(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex]));
+                    m_createdNodeMap->insert(std::pair<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerID, UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].back()));
+                    }
+                else
+                    {
+                    UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].push_back(nodeIter->second);
+                    }
+
+                s_createdNodeMutex.unlock();
+                }
             }
         }
 
@@ -701,8 +704,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 {
                 for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                     {
-                    UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0); 
-                    UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL)
+                        {
+                        UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
+                        UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
+                        }
                     }
                 }
             }
@@ -710,6 +716,76 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
         m_loaded = false;
         }
 
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Alain.Robert 10/10
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Disconnect()
+    {
+    if (IsLoaded())
+        {
+        SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
+
+        for (size_t indexNode = 0; indexNode < MAX_NEIGHBORNODES_COUNT; indexNode++)
+            {
+            if (UNCONSTTHIS->m_apNeighborNodes[indexNode].size() > 0)
+                {
+                UNCONSTTHIS->m_apNeighborNodes[indexNode].clear();
+                }
+            }
+
+        if (!UNCONSTTHIS->m_nodeHeader.m_IsLeaf)
+            {
+            if (UNCONSTTHIS->m_pSubNodeNoSplit != NULL)
+                {
+                UNCONSTTHIS->m_pSubNodeNoSplit->SetParentNodePtr(0);
+                
+                s_createdNodeMutex.lock();
+
+                CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_pSubNodeNoSplit->GetBlockID().m_integerID));
+
+                if (nodeIter != m_createdNodeMap->end())
+                    {
+                    m_createdNodeMap->erase(nodeIter);
+                    }
+                else
+                    {
+                    assert(false); // node was not inserted into the created node map?
+                    }
+
+                s_createdNodeMutex.unlock();
+                UNCONSTTHIS->m_pSubNodeNoSplit = NULL;
+                }
+            else
+                {
+                for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                    {
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL)
+                        {
+                        UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
+                        
+                        s_createdNodeMutex.lock();
+
+                        CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_apSubNodes[indexNode]->GetBlockID().m_integerID));
+
+                        if (nodeIter != m_createdNodeMap->end())
+                            {
+                            m_createdNodeMap->erase(nodeIter);
+                            }
+                        else
+                            {
+                            assert(false); // node was not inserted into the created node map?
+                            }
+
+                        s_createdNodeMutex.unlock();
+                        UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
+                        }
+                    }
+                UNCONSTTHIS->m_apSubNodes.clear();
+                }
+            }
+        }
     }
 
 
@@ -5830,6 +5906,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::GetAll
     }
 
 //=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 11/15
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::NeedToLoadNeighbors(const bool& needsNeighbors)
+    {
+    m_loadNeighbors = needsNeighbors;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT>
@@ -6782,12 +6866,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!IsLoaded())
         Load();
 
-    // Add node header data
+    // Fetch node header data
     uint32_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
     SMStreamingStore<EXTENT>* streamingStore(dynamic_cast<SMStreamingStore<EXTENT>*>(this->GetDataStore().get()));
     assert(streamingStore != nullptr);
     streamingStore->SerializeHeaderToBinary(&this->m_nodeHeader, headerData, headerSize);
+
+
     pi_pGroup->AddNode(ConvertBlockID(GetBlockID()), headerData, headerSize);
     delete[] headerData.release();
     
@@ -7621,6 +7707,8 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_isGenerating = true;
+    m_loadNeighbors = true;
+
     // If a store is provided ...
     if (m_dataStore != NULL)
         {

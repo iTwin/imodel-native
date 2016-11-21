@@ -82,7 +82,7 @@ public:
     typedef HFCPtr<SMNodeDistributor<Type, Queue>> Ptr;
     SMNodeDistributor(unsigned int concurrency = std::thread::hardware_concurrency()
                       //, unsigned int concurrency = 2
-                      , typename Queue::size_type max_items_per_thread = 500)
+                      , typename Queue::size_type max_items_per_thread = 5000)
         : capacity{ concurrency * max_items_per_thread },
         m_concurrency{ concurrency }
         {
@@ -95,7 +95,7 @@ public:
     SMNodeDistributor(Function function
                       , unsigned int concurrency = std::thread::hardware_concurrency()
                       //, unsigned int concurrency = 2
-                      , typename Queue::size_type max_items_per_thread = 500
+                      , typename Queue::size_type max_items_per_thread = 5000
                       )
         : capacity{ concurrency * max_items_per_thread }
         {
@@ -125,7 +125,7 @@ public:
         this->SpawnThreads();
         }
 
-    void AddWorkItem(Type &&value)
+    void AddWorkItem(Type &&value, bool notify = true)
         {
         std::unique_lock<std::mutex> lock(*this);
         while (Queue::size() == capacity)
@@ -138,11 +138,11 @@ public:
 #endif
             wait(lock, [this]
                 {
-                return Queue::size() < capacity;
+                return Queue::size() < capacity / 2;
                 });
             }
         Queue::push(std::forward<Type>(value));
-        notify_one();
+        if (notify) notify_one();
         }
 
     template <typename Function>
@@ -159,6 +159,11 @@ public:
         notify_all();
         }
 
+    void Go()
+        {
+        notify_all();
+        }
+
 private:
     template <typename Function>
     void Consume(Function process)
@@ -166,6 +171,7 @@ private:
         std::unique_lock<std::mutex> lock(*this);
         while (true) {
             if (!Queue::empty()) {
+                assert(lock.owns_lock());
                 Type item{ std::move(Queue::front()) };
                 Queue::pop();
                 notify_one();

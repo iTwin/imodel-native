@@ -1333,6 +1333,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         ScalableMeshNode() {};
 
+        ~ScalableMeshNode() { m_node = nullptr; }
+
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
             return m_node;
