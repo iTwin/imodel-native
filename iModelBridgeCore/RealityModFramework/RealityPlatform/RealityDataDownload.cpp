@@ -149,6 +149,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -176,6 +177,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -225,6 +227,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_L
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -426,6 +429,10 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 //
 SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isRetry)
     {
+    // If cancel requested, don't queue new files
+    if(m_pHeartbeatFunc() != 0)
+        return SetupCurlStatus::Success;
+
     // If file already there, consider the download completed.
     while (ft != nullptr && ft->fromCache && BeFileName::DoesPathExist(ft->filename.c_str()))
         {
@@ -483,6 +490,7 @@ SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isR
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, ft);
 
         ft->pProgressFunc = m_pProgressFunc;
+        ft->pHeartbeatFunc = m_pHeartbeatFunc;
         ft->progressStep = m_progressStep;
 
         ft->mirrors[0].DownloadStart = std::time(nullptr);

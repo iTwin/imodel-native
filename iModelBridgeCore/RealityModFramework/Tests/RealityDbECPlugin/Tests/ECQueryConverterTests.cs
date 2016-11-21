@@ -46,15 +46,16 @@ namespace IndexECPlugin.Tests
 
             SQLQueryBuilder sqlQueryBuilder = new StandardSQLQueryBuilder();
 
-            ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);
+            ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);            
 
             string sqlCommand;
             string sqlCount;
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -73,8 +74,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-
-
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -100,8 +100,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
             GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
 
             //TSql100Parser parser = new TSql100Parser(false);
@@ -123,6 +124,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(nameColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -148,9 +150,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
             GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -170,6 +172,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(idColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -202,8 +205,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
             GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -225,7 +229,7 @@ namespace IndexECPlugin.Tests
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(tableString) + @".*WHERE.*\(.*" + Regex.Escape(idColumnString) + @".*OR.*" + Regex.Escape(idColumnString) + @".*\).*AND.*" + Regex.Escape(idColumnString) + ".*");
 
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -262,8 +266,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -277,7 +282,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -319,8 +324,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -334,7 +340,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT .*" + firstOrSecondIdColumn + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
 
         [Test]
@@ -362,8 +368,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -409,8 +416,9 @@ namespace IndexECPlugin.Tests
 
             DataReadingHelper helper;
             IParamNameValueMap paramNameValueMap;
+            List<IECProperty> propList;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap, out propList);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -432,7 +440,8 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT.*" + idOrName + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-            //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;        
+            //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;     
+            Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
         }
     }
