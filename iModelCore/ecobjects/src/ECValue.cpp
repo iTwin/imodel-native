@@ -2104,6 +2104,17 @@ uint32_t        ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype
             return 0;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+uint32_t        ECValue::GetNavigationValueSize (PrimitiveType primitiveType)
+    {
+    // Initialize with the size of the pointer for the relationship class
+    uint32_t size = sizeof(int64_t);
+    size += GetFixedPrimitiveValueSize(primitiveType);
+    return size;
+    }
       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09

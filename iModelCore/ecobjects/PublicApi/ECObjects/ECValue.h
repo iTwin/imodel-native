@@ -683,6 +683,11 @@ public:
     //! @returns The sizeof the given type, if it is a fixed size primitive 
     static ECOBJECTS_EXPORT uint32_t GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
+    //! For a navigation value with a primitive type, returns the number of bytes required to represent the navigation value with the specified type
+    //! @param[in] primitiveType    The type to measure
+    //! @returns The sizeof the navigation value with the given type, if it is a fixed size primitive
+    static ECOBJECTS_EXPORT uint32_t GetNavigationValueSize (PrimitiveType primitiveType);
+
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT Utf8String       ToString () const;
     

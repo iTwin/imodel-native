@@ -199,7 +199,7 @@ Utf8String    PropertyLayout::ToString ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PropertyLayout::IsFixedSized () const
     {
-    if (m_typeDescriptor.IsStruct())
+    if (m_typeDescriptor.IsStruct() || m_typeDescriptor.IsNavigation())
         return true;
 
     return ( ( m_typeDescriptor.IsPrimitive() || 
@@ -709,7 +709,7 @@ void            ClassLayout::Factory::AddProperty (Utf8CP accessString, ECTypeDe
             if ( ! m_underConstruction->m_propertyLayouts[i]->m_typeDescriptor.IsStruct())
                 m_underConstruction->m_propertyLayouts[i]->m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
             }
-        } 
+        }
 
     uint32_t        parentStructIndex = GetParentStructIndex(accessString);
     PropertyLayoutP propertyLayout = new PropertyLayout (accessString, parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
@@ -733,7 +733,11 @@ void            ClassLayout::Factory::AddFixedSizeProperty (Utf8CP accessString,
         return;
         }
     
-    uint32_t size = ECValue::GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
+    uint32_t size = 0;
+    if (typeDescriptor.IsNavigation())
+        size = ECValue::GetNavigationValueSize(typeDescriptor.GetPrimitiveType());
+    else
+        size = ECValue::GetFixedPrimitiveValueSize(typeDescriptor.GetPrimitiveType());
  
     uint32_t modifierFlags = 0;
     if (isReadOnly)
