@@ -238,6 +238,15 @@ ICancellationTokenPtr ct
         })
             ->Then<OpenResult>([=]
             {
+            if (openResult->IsSuccess())
+                {
+                if (openResult->GetValue() == nullptr || !openResult->GetValue()->m_isOpen)
+                    {
+                    BeAssert(false);
+                    openResult->SetError({});
+                    }
+                }
+                
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
                 openResult->IsSuccess() ? "succeeded" : "failed", end - start);
