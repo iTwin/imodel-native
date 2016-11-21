@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "WebServicesTestsHelper.h"
+#include <Bentley/BeDirectoryIterator.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
 
 bool operator <= (const DateTime& lhs, const DateTime& rhs)
@@ -205,6 +206,11 @@ Http::Response StubWSInfoHttpResponseWebApi21()
 Http::Response StubWSInfoHttpResponseWebApi22()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 2));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi23()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 3));
     }
 
 Http::Response StubWSInfoHttpResponseWebApi24()
@@ -407,7 +413,7 @@ void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
     {
     if (!filePath.GetDirectoryName().DoesPathExist())
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(filePath.GetDirectoryName()));
-    
+
     uint32_t written = 0;
 
     BeFile file;
@@ -421,6 +427,20 @@ void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
 
     status = file.Close();
     EXPECT_EQ(BeFileStatus::Success, status);
+    }
+
+std::set<Utf8String> GetFolderContent(BeFileNameCR dir)
+    {
+    std::set<Utf8String> names;
+
+    BeFileName name;
+    bool isDir;
+    for (BeDirectoryIterator it(dir); it.GetCurrentEntry(name, isDir, false) == SUCCESS; it.ToNext())
+        {
+        names.insert(Utf8String(name));
+        }
+
+    return names;
     }
 
 END_WSCLIENT_UNITTESTS_NAMESPACE

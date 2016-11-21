@@ -34,15 +34,10 @@ struct DataSourceCache : public IDataSourceCache
         BentleyStatus ExecuteWithinTransaction(std::function<BentleyStatus()> execute);
 
         BentleyStatus InitializeCreatedDb();
-        void SetupOpenState(CacheEnvironmentCR environment);
+        void SetupOpenState(CacheEnvironmentCR baseEnvironment);
         void ClearRuntimeCaches();
 
-        BentleyStatus UpgradeIfNeeded
-            (
-            BeFileNameCR cacheFilePath,
-            CacheEnvironmentCR environment,
-            const ECDb::OpenParams& params
-            );
+        BentleyStatus UpgradeIfNeeded(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment, const ECDb::OpenParams& params);
 
         std::shared_ptr<ECSqlStatement> GetReadInstanceStatement(ECClassCR ecClass, Utf8CP remoteId);
         std::shared_ptr<ECSqlStatement> GetReadInstanceStatement(ECClassCR ecClass, ECInstanceId ecInstanceId);
@@ -57,14 +52,14 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus Create
             (
             BeFileNameCR cacheFilePath,
-            CacheEnvironmentCR environment,
+            CacheEnvironmentCR baseEnvironment,
             const ECDb::CreateParams& params = ECDb::CreateParams()
             ) override;
 
         WSCACHE_EXPORT BentleyStatus Open
             (
             BeFileNameCR cacheFilePath,
-            CacheEnvironmentCR environment,
+            CacheEnvironmentCR baseEnvironment,
             const ECDb::OpenParams& params = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)
             ) override;
 
@@ -78,9 +73,11 @@ struct DataSourceCache : public IDataSourceCache
 
         WSCACHE_EXPORT BentleyStatus Reset() override;
 
-        WSCACHE_EXPORT static BentleyStatus DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment);
+        WSCACHE_EXPORT static BentleyStatus DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment);
 
         WSCACHE_EXPORT BeFileName GetCacheDatabasePath() override;
+        WSCACHE_EXPORT CacheEnvironmentCR GetEnvironment() override;
+
         WSCACHE_EXPORT IECDbAdapterR GetAdapter() override;
         WSCACHE_EXPORT IExtendedDataAdapter& GetExtendedDataAdapter() override;
         WSCACHE_EXPORT ObservableECDb& GetECDb() override;
@@ -135,7 +132,7 @@ struct DataSourceCache : public IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) override;
 
-        WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) override;
+        WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation = FileCache::Auto) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Reading cached data

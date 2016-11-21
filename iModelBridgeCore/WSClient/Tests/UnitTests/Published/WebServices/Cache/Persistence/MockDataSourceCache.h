@@ -60,7 +60,9 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD0 (Reset,
             BentleyStatus ());
         MOCK_METHOD0 (GetCacheDatabasePath,
-            BeFileName ());
+            BeFileName());
+        MOCK_METHOD0(GetEnvironment,
+            CacheEnvironmentCR());
         MOCK_METHOD0 (GetAdapter,
             IECDbAdapterR ());
         MOCK_METHOD0 (GetExtendedDataAdapter,

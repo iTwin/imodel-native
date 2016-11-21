@@ -193,7 +193,8 @@ struct WebApiV1 : public WebApi
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
-            Utf8String eTag = nullptr,
+            Utf8StringCR eTag = nullptr,
+            BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;

@@ -43,8 +43,6 @@ MultiCompileDepends = $(_MakeFileSpec)
 # Sources to compile
 $(o)StubInstances$(oext)            : $(wsClientUnitTestsDir)Utils/StubInstances.cpp ${MultiCompileDepends}
 
-$(o)TestAppPathProvider$(oext)      : $(wsClientUnitTestsDir)Utils/TestAppPathProvider.cpp ${MultiCompileDepends}
-
 $(o)ValuePrinter$(oext)             : $(wsClientUnitTestsDir)Utils/ValuePrinter.cpp ${MultiCompileDepends}
 
 $(o)WebServicesTestsHelper$(oext)   : $(wsClientUnitTestsDir)Utils/WebServicesTestsHelper.cpp ${MultiCompileDepends}

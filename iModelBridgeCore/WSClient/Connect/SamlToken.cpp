@@ -31,7 +31,7 @@ m_token(std::move(token))
     WString error;
     BeXmlStatus status;
 
-    BeMutexHolder mutexHolder(m_domMutex);
+    BeMutexHolder lock(m_domMutex);
 
     m_dom = BeXmlDom::CreateAndReadFromString(status, m_token.c_str(), m_token.size(), &error);
     if (BeXmlStatus::BEXML_Success != status)
@@ -62,6 +62,9 @@ m_token(other.m_token)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlToken& SamlToken::operator=(const SamlToken& other)
     {
+    if (this == &other)
+        return *this;
+
     // Hold onto both mutexes since we are accessing both
     BeMutexHolder lock(m_domMutex);
     BeMutexHolder otherLock(other.m_domMutex);
