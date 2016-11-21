@@ -383,9 +383,16 @@ InsertStatementExp const& exp
         bool first =true;
         for (size_t i :insertSqlSnippets.m_overflowPropertyIndexes)
             {
+            PropertyNameExp const* pn = exp.GetPropertyNameListExp()->GetPropertyNameExp(i);
             NativeSqlBuilder::List const& values = insertSqlSnippets.m_valuesNativeSqlSnippets[i];
             NativeSqlBuilder::List const& properties = insertSqlSnippets.m_propertyNamesNativeSqlSnippets[i];
             BeAssert(values.size() == properties.size());
+            bool addBlobToBase64Func = false;
+            if (pn->GetPropertyMap().GetProperty().GetIsPrimitiveArray() || (pn->GetPropertyMap().GetProperty().GetIsPrimitive() && pn->GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                {
+                addBlobToBase64Func = true;
+                }
+            
             for (size_t j = 0; j < values.size(); j++)
                 {
                 if (first)
@@ -393,7 +400,10 @@ InsertStatementExp const& exp
                 else
                     insertBuilder.AppendComma();
 
-                insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
+                if (addBlobToBase64Func)
+                    insertBuilder.Append("'").Append(properties[j]).Append("', BlobToBase64(").Append(values[j]).Append(")");
+                else
+                    insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
                 }
             }
 

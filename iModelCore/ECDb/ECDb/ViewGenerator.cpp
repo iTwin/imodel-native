@@ -966,6 +966,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
             if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
                 {
                 ToSqlPropertyMapVisitor toSqlVisitor(*requireJoinToTableForDataProperties, ToSqlPropertyMapVisitor::SqlTarget::Table, requireJoinToTableForDataProperties->GetName().c_str(), false, false);
+                if (m_viewAccessStringList && m_captureViewAccessStringList)
+                    toSqlVisitor.EnableDebugView();
+                    
                 if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                     {
                     BeAssert(false);
@@ -991,6 +994,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
             else
                 {
                 ToSqlPropertyMapVisitor toSqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, systemContextTableAlias, false, false);
+                if (m_viewAccessStringList && m_captureViewAccessStringList)
+                    toSqlVisitor.EnableDebugView();
+
                 if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                     {
                     BeAssert(false);
@@ -1000,8 +1006,25 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                 ToSqlPropertyMapVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
                 if (generateECClassView && r.GetColumn().IsShared())
                     {
-                    const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(r.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
-                    propertySql.Append("CAST (").Append(r.GetSql()).Append(" AS ").Append(DbColumn::TypeToSql(colType)).Append(")");
+                    if (r.GetPropertyMap().GetProperty().GetIsStructArray())
+                        {
+                        if (r.GetColumn().GetType() != DbColumn::Type::Text)
+                            propertySql.Append("CAST (").Append(r.GetSql()).Append(" AS TEXT)");
+                        else
+                            propertySql.Append(r.GetSql());
+                        }
+                    else if (r.GetPropertyMap().GetProperty().GetIsPrimitiveArray())
+                        {
+                        if (r.GetColumn().GetType() != DbColumn::Type::Blob)
+                            propertySql.Append("CAST (").Append(r.GetSql()).Append(" AS BLOB)");
+                        else
+                            propertySql.Append(r.GetSql());
+                        }
+                    else
+                        {
+                        const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(r.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
+                        propertySql.Append("CAST (").Append(r.GetSql()).Append(" AS ").Append(DbColumn::TypeToSql(colType)).Append(")");
+                        }
                     }
                 else
                     {

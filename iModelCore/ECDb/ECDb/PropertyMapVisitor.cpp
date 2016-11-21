@@ -195,7 +195,7 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/, bool usePropertyNameAsAliasForSystemPropertyMaps /*= false*/) 
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps), m_writeData(false)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps), m_writeData(false), m_forDebugView(false)
     {
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
@@ -222,7 +222,6 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
                 return ToNativeSql(static_cast<ECClassIdPropertyMap const&>(propertyMap));
             case PropertyMap::Type::ECInstanceId:
                 return ToNativeSql(static_cast<ECInstanceIdPropertyMap const&>(propertyMap));
-
             default:
                 BeAssert(false);
                 return ERROR;
@@ -255,10 +254,23 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
             {
             if (m_target == SqlTarget::Table)
                 {
-                result.GetSqlBuilderR().Append("json_extract(")
+                bool addBlobToBase64Func = false;
+                if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                    {
+                    addBlobToBase64Func = true;
+                    }
+
+                if (addBlobToBase64Func && !m_forDebugView)
+                    result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
+                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                    .AppendComma().Append("'$.")
+                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
+                else
+                    result.GetSqlBuilderR().Append("json_extract(")
                     .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
                     .AppendComma().Append("'$.")
                     .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+
                 }
             else
                 {
