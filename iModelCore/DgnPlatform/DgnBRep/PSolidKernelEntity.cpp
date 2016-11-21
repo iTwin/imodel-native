@@ -227,6 +227,20 @@ PK_ENTITY_t ExtractEntityTag()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetEntityTag(PK_ENTITY_t entityTag)
+    {
+    PK_MEMORY_block_f(&m_block);
+
+    if (m_owned)
+        PK_ENTITY_delete(1, &m_entityTag);
+
+    m_entityTag = entityTag;
+    m_owned = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
@@ -320,13 +334,25 @@ PK_ENTITY_t PSolidUtil::GetEntityTagForModify(IBRepEntityR entity)
     if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
         return PK_ENTITY_null;
 
-    PK_ENTITY_t entityTag;
+    if (psEntity->IsOwnedEntity())
+        return PK_ENTITY_null;
 
-    // *** IMPORTANT *** Extract fails for a non-owning/cached entity ptr. We must create a copy to make sure it's not freed!!!
-    if (PK_ENTITY_null == (entityTag = psEntity->ExtractEntityTag()))
-        PK_ENTITY_copy(psEntity->GetEntityTag(), &entityTag);
+    return psEntity->GetEntityTag();
+    }
 
-    return entityTag;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidUtil::SetEntityTag(IBRepEntityR entity, PK_ENTITY_t entityTag)
+    {
+    PSolidKernelEntity* psEntity;
+
+    if (nullptr == (psEntity = dynamic_cast <PSolidKernelEntity*> (&entity)))
+        return false;
+
+    psEntity->SetEntityTag(entityTag);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
