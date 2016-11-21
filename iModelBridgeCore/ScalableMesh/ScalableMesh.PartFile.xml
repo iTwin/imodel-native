@@ -69,11 +69,11 @@
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />        
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe
-            </Files>-->
+            </Files>
            <!-- <Files ProductDirectoryName="TMSchemas" >
                 Delivery\TerrainModel.01.00.ecschema.xml,Delivery\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
             </Files>-->
-       <!-- </Bindings>
+       </Bindings>
     </Part>
 
     <!--<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
