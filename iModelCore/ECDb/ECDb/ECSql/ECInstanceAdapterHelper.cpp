@@ -437,8 +437,6 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
 //static
 BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, NavigationECValueBindingInfo const& valueBindingInfo)
     {
-    //WIP_NAV_PROP: this needs to be adjusted once navigation values are supported by ECValues/ECInstances
-    //Right now, they lose the RelECClassId information and just hold the id
     ECValue value;
     if (ECObjectsStatus::Success != instanceInfo.GetInstance().GetValue(value, valueBindingInfo.GetPropertyIndex()))
         return ERROR;
@@ -446,8 +444,13 @@ BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder,
     if (value.IsNull())
         return binder.BindNull() == ECSqlStatus::Success ? SUCCESS : ERROR;
 
-    ECInstanceId navId((uint64_t) value.GetLong());
-    return binder.BindNavigation(navId, ECClassId()) == ECSqlStatus::Success ? SUCCESS : ERROR;
+    ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
+    ECInstanceId navId((uint64_t) navInfo.GetIdAsLong());
+    ECClassId relClassId;
+    if (navInfo.GetRelationshipClass() != nullptr)
+        relClassId = navInfo.GetRelationshipClass()->GetId();
+
+    return binder.BindNavigation(navId, relClassId) == ECSqlStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

@@ -168,7 +168,7 @@ BeGuid IECSqlValue::GetGuid() const
 ECInstanceId IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) const
     {
     ECSqlColumnInfo const& colInfo = GetColumnInfo();
-    if (colInfo.GetProperty() == nullptr || !colInfo.GetProperty()->GetIsNavigation())
+    if (!colInfo.GetDataType().IsNavigation())
         {
         LOG.error("ECSqlStatement::GetValueNavigation> This method can only be called for a NavigationECProperty column.");
         return ECInstanceId();
