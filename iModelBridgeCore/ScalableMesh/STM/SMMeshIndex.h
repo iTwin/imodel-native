@@ -591,6 +591,30 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
 
+	virtual void RefreshDisplayMesh()
+	{
+		auto meshesPtr = GetDisplayMeshes();
+		if (meshesPtr->size() > 0)
+		{
+			IScalableMeshDisplayCacheManagerPtr displayCacheManagerPtr;
+			bvector<uint64_t>                   appliedClips;
+			displayCacheManagerPtr = const_cast<SmCachedDisplayMeshData&>((*meshesPtr)[0]).GetDisplayCacheManager();
+			appliedClips = const_cast<SmCachedDisplayMeshData&>((*meshesPtr)[0]).GetAppliedClips();
+
+			RemoveDisplayMesh();
+
+			bset<uint64_t> clipsToApply;
+			for (auto& clip : appliedClips) clipsToApply.insert(clip);
+
+			Transform reprojectTransform = Transform::FromIdentity();
+			HFCPtr<SMPointIndexNode<POINT, EXTENT>> nodeP = dynamic_cast<SMPointIndexNode<POINT,EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this));
+			ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(nodeP, reprojectTransform));
+
+			meshNode->LoadMesh(false, clipsToApply, displayCacheManagerPtr, true);
+			IScalableMeshCachedDisplayNodePtr displayNodePtr = meshNode;
+		}
+	}
+
 
     virtual void RemoveDisplayData()
         {                                

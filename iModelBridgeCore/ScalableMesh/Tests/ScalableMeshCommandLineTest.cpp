@@ -35,6 +35,89 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 
+//TEMP copied because geomlibs lkg was not up to date
+static double s_defaultRelTol = 1.0e-12;
+static double s_defaultAbsTol = 1.0e-14;
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+template<typename T>
+static bool sort_zyx
+(
+T xA,
+T yA,
+T zA,
+T xB,
+T yB,
+T zB,
+double absTol = s_defaultAbsTol,
+double relTol = s_defaultRelTol
+)
+    {
+    double tol = absTol;
+
+    if (0.0 != relTol)
+        tol += relTol *
+        (fabs(xA) + fabs(xB)
+        + fabs(yA) + fabs(yB)
+        + fabs(zA) + fabs(zB));
+
+    double ntol = -tol;
+
+    T dz = zB - zA;
+
+    if (dz > tol)
+        return false;
+    if (dz < ntol)
+        return true;
+
+    T dy = yB - yA;
+
+    if (dy > tol)
+        return false;
+    if (dy < ntol)
+        return true;
+
+    T dx = xB - xA;
+
+    if (dx > tol)
+        return false;
+    if (dx < ntol)
+        return true;
+
+    return false;
+    }
+
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+DPoint3dZYXTolerancedSortComparison::DPoint3dZYXTolerancedSortComparison(double absTol, double relTol)
+    : m_absTol(absTol), m_relTol(relTol)
+    {}
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+bool DPoint3dZYXTolerancedSortComparison::operator() (const DPoint3d& pointA, const DPoint3d &pointB) const
+    {
+    return sort_zyx<double>(pointA.x, pointA.y, pointA.z, pointB.x, pointB.y, pointB.z, m_absTol, m_relTol);
+    }
+
+
+
+/*--------------------------------------------------------------------------------**//**
+                                                                                     * @bsimethod                                                    EarlinLutz      04/2012
+                                                                                     +--------------------------------------------------------------------------------------*/
+bool DVec3dZYXSortComparison::operator () (const DVec3d& vecA, const DVec3d &vecB) const
+    {
+    return sort_zyx<double>(vecA.x, vecA.y, vecA.z, vecB.x, vecB.y, vecB.z);
+    }
+
+
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
     std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -94,11 +177,19 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
     int status = bcdtmObject_storeTrianglesInDtmObject(dtmP->GetTinHandle(), DTMFeatureType::GraphicBreak, &allVerts[0], (int)allVerts.size(), &indices[0], (int)indices.size() / 3);
 
     assert(status == SUCCESS);
-
+        {
+        WString str(L"e:\\makeTM\\clipIssue");
+        str.append(L".bcdtm");
+        bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
+        }
     //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
     status = bcdtmObject_triangulateStmTrianglesDtmObject(dtmP->GetTinHandle());
     assert(status == SUCCESS);
-
+        {
+        WString str(L"e:\\makeTM\\clipIssue");
+        str.append(L".tin");
+        bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
+        }
 
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmP);
     en->SetMaxTriangles(2000000);
@@ -518,7 +609,7 @@ void RunDTMTriangulateTest()
 
 void RunDTMSTMTriangulateTest()
     {
-    WString pathMeshes = L"E:\\makeTM\\lvl5-1";
+    WString pathMeshes = L"E:\\makeTM\\test1";
     WString path = pathMeshes + WString(L".m");
     FILE* mesh = _wfopen(path.c_str(), L"rb");
     size_t nVerts = 0;
@@ -1152,7 +1243,7 @@ Dgn::DgnPlatformLib::Initialize(host, false);
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
-  // RunDTMSTMTriangulateTest();
+   RunDTMSTMTriangulateTest();
   //  RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);

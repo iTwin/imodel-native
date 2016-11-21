@@ -346,6 +346,7 @@ void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bve
         for (auto& consumer : m_consumers)
             {
             consumer->RemoveDisplayMesh();
+			//m_displayCacheManagerPtr->_SetCacheDirty(true);
             }
         }
     }
