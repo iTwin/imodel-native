@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsAngle.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -35,6 +35,19 @@ double GetDegrees (){return m_angle.Degrees ();}
 void SetRadians (double radians){m_angle = AngleInDegrees::FromRadians (radians);}
 void SetDegrees (double degrees){m_angle = AngleInDegrees::FromDegrees (degrees);}
 
+bool AlmostEqualAllowPeriodShift (JsAngleP other)
+    {
+    if (other == nullptr)
+        return false;
+    return Angle::NearlyEqualAllowPeriodShift (m_angle.Radians (), other->m_angle.Radians ());
+    }
+
+bool AlmostEqualNoPeriodShift (JsAngleP other)
+    {
+    if (other == nullptr)
+        return false;
+    return m_angle.AlmostEqual (other->m_angle);
+    }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
