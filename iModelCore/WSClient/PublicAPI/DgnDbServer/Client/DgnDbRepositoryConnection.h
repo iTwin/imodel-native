@@ -199,7 +199,7 @@ private:
     DgnDbServerFilesTaskPtr MasterFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // Wait while bim file is initialized
-    void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDbServerFileResultPtr finalResult) const;
+    void WaitForInitializedBIMFile(BeGuid fileGuid, DgnDbServerFileResultPtr finalResult) const;
 
     //! Queries briefcase file instance from this repository.
     DgnDbServerFileTaskPtr GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
