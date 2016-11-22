@@ -1953,8 +1953,8 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 8));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+    testItems.push_back(std::make_pair("ts_Parent", 7));
+    AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
 
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, P2");
 
@@ -1999,8 +1999,8 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 8));
-        AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+        testItems.push_back(std::make_pair("ts_Parent", 7));
+        AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
 
         ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, -P2, +P3, +P4, +P5");
 
@@ -2337,7 +2337,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 9));
+    testItems.push_back(std::make_pair("ts_Parent", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedColumnCountForSubClasses");
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -2388,7 +2388,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
 
         //Verify number of columns after upgrade
         testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 9));
+        testItems.push_back(std::make_pair("ts_Parent", 8));
         AssertColumnCount(GetECDb(), testItems, "SharedColumnCountForSubClasses");
 
         GetECDb().CloseDb();
@@ -2430,7 +2430,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 8));
+    testItems.push_back(std::make_pair("ts_Sub1", 7));
     AssertColumnCount(GetECDb(), testItems, "SharedColumnCountWithJoinedTable");
 
     BeFileName filePath(GetECDb().GetDbFileName());
@@ -2483,7 +2483,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
         //Verify number of columns after upgrade
         testItems.clear();
         testItems.push_back(std::make_pair("ts_Parent", 3));
-        testItems.push_back(std::make_pair("ts_Sub1", 8));
+        testItems.push_back(std::make_pair("ts_Sub1", 7));
         AssertColumnCount(GetECDb(), testItems, "SharedColumnCountWithJoinedTable");
 
         GetECDb().CloseDb();
@@ -7385,9 +7385,6 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
     SetupECDb("schemaupdate_addsharedcolumncount.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    //BeFileName filePath(GetECDb().GetDbFileName());
-    //GetECDb().CloseDb();
-
     Utf8CP editedSchemaXml = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -7414,17 +7411,8 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "</ECSchema>";
   
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, true));
+    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, false, "Modifying ShareColumns CA in schema update is not allowed"));
     ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(GetECDb().Schemas().GetECClass("TestSchema", "Base")->GetCustomAttribute("ShareColumns").IsValid());
-
-    ////verify Adding new EndTable relationship for different briefcaseIds.
-    //m_updatedDbs.clear();
-    //bool asserted = false;
-    //AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(BeBriefcaseId::Master()), true, "Adding SharedColumnCount should be supported.");
-    //ASSERT_FALSE(asserted);
-    //OpenBesqliteDb(filePath.GetNameUtf8().c_str())
     }
 
 //---------------------------------------------------------------------------------------
@@ -7486,10 +7474,8 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "   </ECEntityClass>"
         "</ECSchema>";
 
-    //verify Adding new EndTable relationship for different briefcaseIds.
-    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(BeBriefcaseId::Master()), true, "Deleting SharedColumnCount should be supported.");
+    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, false, "Modifying ShareColumns CA in schema update is not allowed"));
     ASSERT_FALSE(asserted);
     }
 
