@@ -1075,6 +1075,10 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
             longitude = geoLocation->longitude;
             latitude  = geoLocation->latitude;
             }
+
+        // NB: We have to translate to surface of globe even if we're not using the globe, because
+        // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
+
         ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
         ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }
@@ -1540,6 +1544,11 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     WriteModelsJson(json, allModelSelectors);
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
+
+    AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
+    transform.Multiply(projectExtents, projectExtents);
+    json["projectExtents"]["low"] = PointToJson(projectExtents.low);
+    json["projectExtents"]["high"] = PointToJson(projectExtents.high);
 
     return Status::Success;
     }
