@@ -210,15 +210,20 @@ DGNPLATFORM_EXPORT static BentleyStatus RestoreEntityFromMemory(IBRepEntityPtr&,
 //! @return The tag value.
 DGNPLATFORM_EXPORT static PK_ENTITY_t GetEntityTag(IBRepEntityCR, bool* isOwned = nullptr);
 
-//! Get the tag value of the solid kernel entity suitable for modification by first attempting ExtractEntityTag, and if it fails creating a copy of the entity.
+//! Get the tag value of the solid kernel entity for modification.
 //! @note To be used by application in operations where the entity is consumed or modified such as being a tool body in a union.
-//! @return The tag value.
+//! @remarks This method will return a null tag if the entity isn't "owned" by this instance (Application may then choose to copy the entity).
 DGNPLATFORM_EXPORT static PK_ENTITY_t GetEntityTagForModify(IBRepEntityR entity);
 
 //! Extract and take ownership of solid kernel entity associated with this instance. Input entity will be set to the null tag and the caller is responsible for freeing extracted entity.
 //! @note To be used by application in operations where the entity is consumed or modified such as being a tool body in a union.
-//! @remarks This method will return a null tag if the entity isn't "owned" by this instance (Application may then choose to copy the entity, see GetEntityTagForModify).
+//! @remarks This method will return a null tag if the entity isn't "owned" by this instance (Application may then choose to copy the entity).
 DGNPLATFORM_EXPORT static PK_ENTITY_t ExtractEntityTag(IBRepEntityR entity);
+
+//! Set the tag value that the solid kernel uses to identify the entity and delete the existing entity.
+//! @note To be used by applications after a modify operation where a new entity has been created such as having to copy a non-owned entity.
+//! @return The true if entity tag was changed.
+DGNPLATFORM_EXPORT static bool SetEntityTag(IBRepEntityR entity, PK_ENTITY_t entityTag);
 
 //! Return body tag for supplied face, edge, or vertex topological entity.
 DGNPLATFORM_EXPORT static PK_BODY_t GetBodyForEntity(PK_ENTITY_t entityTag);
@@ -274,7 +279,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CheckBody(PK_BODY_t body, bool checkGeom
 DGNPLATFORM_EXPORT static bool AreBodiesEqual(PK_BODY_t body1Tag, PK_BODY_t body2Tag, double tolerance, TransformCP deltaTransform1To2);
 DGNPLATFORM_EXPORT static BentleyStatus MassProperties(double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], PK_BODY_t bodyTag, TransformCP transform, double tolerance);
 
-DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
+DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
 DGNPLATFORM_EXPORT static bool LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransform, bvector<PK_ENTITY_t>& subEntities, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, size_t maxFace, size_t maxEdge, size_t maxVertex, DRay3dCR boresite, double maxEdgeDistance, double maxVertexDistance);
 DGNPLATFORM_EXPORT static bool RayTestFace(PK_FACE_t faceTag, TransformCR bodyTransform, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, DRay3dCR boresite);
 DGNPLATFORM_EXPORT static bool ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bodyTransform, PK_ENTITY_t& entityTag, DPoint3dR point, DPoint2dR param, double& distance, DPoint3dCR testPt);
