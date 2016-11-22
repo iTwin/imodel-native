@@ -70,6 +70,9 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -100,6 +103,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RoadRailCategory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

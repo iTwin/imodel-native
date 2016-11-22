@@ -169,8 +169,7 @@ RoadIntersectionPtr RoadIntersection::Create(PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailPhysicalDomain::QueryRoadCategoryId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetRoad(model.GetDgnDb()));
 
     return new RoadIntersection(createParams);
     }
@@ -183,8 +182,7 @@ ElevatedRoadIntersectionPtr ElevatedRoadIntersection::Create(PhysicalModelR mode
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailPhysicalDomain::QueryRoadCategoryId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetRoad(model.GetDgnDb()));
 
     return new ElevatedRoadIntersection(createParams);
     }

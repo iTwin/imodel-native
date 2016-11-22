@@ -35,6 +35,7 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\LinearReferencing.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalDomain.h" />
@@ -49,6 +50,7 @@
     <ClCompile Include="LinearReferencing.cpp" />
     <ClCompile Include="RoadClass.cpp" />
     <ClCompile Include="RoadDesignSpeed.cpp" />
+    <ClCompile Include="RoadRailCategory.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />
     <ClCompile Include="RoadSegment.cpp" />

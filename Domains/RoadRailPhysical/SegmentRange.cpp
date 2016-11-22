@@ -116,8 +116,7 @@ RoadRangePtr RoadRange::Create(PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailPhysicalDomain::QueryRoadCategoryId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetRoad(model.GetDgnDb()));
 
     return new RoadRange(createParams);
     }
@@ -146,8 +145,7 @@ RailRangePtr RailRange::Create(PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailPhysicalDomain::QueryTrackCategoryId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetTrack(model.GetDgnDb()));
 
     return new RailRange(createParams);
     }

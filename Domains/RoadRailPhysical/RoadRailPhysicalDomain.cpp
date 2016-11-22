@@ -179,13 +179,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    DgnCategory roadCategory(DgnCategory::CreateParams(dgndb, BRRP_CATEGORY_Road, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    roadCategory.Insert(DgnSubCategory::Appearance());
-    BeAssert(roadCategory.GetCategoryId().IsValid());
-
-    DgnCategory trackCategory(DgnCategory::CreateParams(dgndb, BRRP_CATEGORY_Track, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    trackCategory.Insert(DgnSubCategory::Appearance());
-    BeAssert(trackCategory.GetCategoryId().IsValid());
+    RoadRailCategory::InsertDomainCategories(dgndb);
 
     auto authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadCrossSection, dgndb);
     BeAssert(authorityPtr.IsValid());
@@ -226,26 +220,4 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         authorityPtr->Insert();
         BeAssert(authorityPtr->GetAuthorityId().IsValid());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailPhysicalDomain::QueryRoadCategoryId(DgnDbCR dgnDb)
-    {
-    static Utf8String s_categoryName(BRRP_CATEGORY_Road);
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(s_categoryName, const_cast<DgnDbR>(dgnDb)); // NEEDSWORK_CONST
-    BeAssert(categoryId.IsValid());
-    return categoryId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailPhysicalDomain::QueryTrackCategoryId(DgnDbCR dgnDb)
-    {
-    static Utf8String s_categoryName(BRRP_CATEGORY_Track);
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(s_categoryName, const_cast<DgnDbR>(dgnDb)); // NEEDSWORK_CONST
-    BeAssert(categoryId.IsValid());
-    return categoryId;
     }

@@ -53,6 +53,8 @@ $(o)RoadClass$(oext) : $(_MakeFilePath)RoadClass.cpp ${MultiCompileDepends} $(ap
 
 $(o)RoadDesignSpeed$(oext) : $(_MakeFilePath)RoadDesignSpeed.cpp ${MultiCompileDepends} $(appPublicApi)RoadDesignSpeed.h
 
+$(o)RoadRailCategory$(oext) : $(_MakeFilePath)RoadRailCategory.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailCategory.h
+
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
 
 $(o)Segment$(oext) : $(_MakeFilePath)Segment.cpp ${MultiCompileDepends} $(appPublicApi)Segment.h

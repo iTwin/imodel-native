@@ -225,6 +225,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
 // Includes
 //-----------------------------------------------------------------------------------------
 #include "RoadRailPhysical.h"
+#include "RoadRailCategory.h"
 #include "RoadRailPhysicalDomain.h"
 #include "ElementAspects.h"
 #include "LinearReferencing.h"
