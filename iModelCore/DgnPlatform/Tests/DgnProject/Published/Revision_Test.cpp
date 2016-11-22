@@ -11,6 +11,11 @@
 #include <array>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
+// #define DEBUG_REVISION_TEST_MANUAL 1
+#ifdef DEBUG_REVISION_TEST_MANUAL 
+#include <windows.h>
+#endif
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -219,7 +224,7 @@ TEST_F(RevisionTestFixture, Workflow)
     // Create an initial revision
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
-    
+
     Utf8String initialParentRevId = m_testDb->Revisions().GetParentRevisionId();
 
     // Create and save multiple revisions
@@ -249,14 +254,14 @@ TEST_F(RevisionTestFixture, Workflow)
         RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
- 
+
     // Check the updated revision id
     Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
     ASSERT_TRUE(mergedParentRevId != initialParentRevId);
 
     // Abandon changes, and test that the parent revision and elements do not change
     m_testDb->AbandonChanges();
-    
+
     Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
     }
@@ -1023,3 +1028,171 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     DgnRevisionPtr noChangesRevision = CreateRevision();
     ASSERT_FALSE(noChangesRevision.IsValid());
     }
+
+#ifdef DEBUG_REVISION_TEST_MANUAL
+// Tests that are useful for one off testing and performance. These aren't included
+// as part of the build, but used whenever necessary
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CreateAndMergePerformance)
+    {
+    // Setup a model with a few elements
+    CreateDgnDb();
+    m_testDb->SaveChanges("Created Initial Model");
+
+    // Create an initial revision
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    Utf8String initialParentRevId = m_testDb->Revisions().GetParentRevisionId();
+
+    StopWatch timer(false);
+    double generateRevTime = 0.0;
+    double mergeRevTime = 0.0;
+
+    // Create and save multiple revisions
+    BackupTestFile();
+    bvector<DgnRevisionPtr> revisions;
+    int dimension = 100;
+    int numRevisions = 100;
+    for (int revNum = 0; revNum < numRevisions; revNum++)
+        {
+        InsertFloor(dimension, dimension);
+        m_testDb->SaveChanges("Inserted floor");
+
+        timer.Start();
+        DgnRevisionPtr revision = CreateRevision();
+        timer.Stop();
+        generateRevTime += timer.GetElapsedSeconds();
+
+        ASSERT_TRUE(revision.IsValid());
+
+        revisions.push_back(revision);
+        }
+    RestoreTestFile();
+
+    // Dump all revisions
+    for (DgnRevisionPtr const& rev : revisions)
+        DumpRevision(*rev);
+
+    // Merge all the saved revisions
+    timer.Start();
+    for (DgnRevisionPtr const& rev : revisions)
+        {
+        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+        ASSERT_TRUE(status == RevisionStatus::Success);
+        }
+    timer.Stop();
+    mergeRevTime += timer.GetElapsedSeconds();
+
+    // Check the updated revision id
+    Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    ASSERT_TRUE(mergedParentRevId != initialParentRevId);
+
+    // Abandon changes, and test that the parent revision and elements do not change
+    m_testDb->AbandonChanges();
+
+    Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    ASSERT_TRUE(newParentRevId == mergedParentRevId);
+
+    LOG.infov("Time taken to generate revisions is %f", generateRevTime);
+    LOG.infov("Time taken to merge revisions is %f", mergeRevTime);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+uint64_t GetFileLastModifiedTime(BeFileNameCR pathname)
+    {
+    time_t mtime;
+    if (BeFileNameStatus::Success != pathname.GetFileTime(nullptr, nullptr, &mtime, pathname.c_str()))
+        {
+        BeAssert(false);
+        return 0;
+        }
+
+    return (uint64_t) mtime;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergeFolderWithRevisions)
+    {
+    BeFileName startingFile("D:\\temp\\Performance\\Failure\\RevisionTestCopy.ibim", true);
+
+    m_testFileName = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(startingFile.c_str(), m_testFileName.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+    OpenDgnDb();
+
+    bvector<BeFileName> revPathnames;
+    BeFileListIterator fileList("D:\\temp\\Performance\\Failure\\DgnDbRev\\*.rev", false);
+    BeFileName currFileName;
+    while (SUCCESS == fileList.GetNextFileName(currFileName))
+        revPathnames.push_back(currFileName);
+
+    std::sort(revPathnames.begin(), revPathnames.end(), [] (BeFileNameCR a, BeFileNameCR b)
+        {
+        uint64_t aModTime = GetFileLastModifiedTime(a);
+        uint64_t bModTime = GetFileLastModifiedTime(b);
+
+        return aModTime < bModTime;
+        });
+
+    Utf8String dbGuid = m_testDb->GetDbGuid().ToString();
+    for (BeFileNameCR revPathname : revPathnames)
+        {
+        Utf8String parentRevId = m_testDb->Revisions().GetParentRevisionId();
+        Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+
+        if (status != RevisionStatus::Success)
+            LOG.infov("Failed to merge revision: %s", revId.c_str());
+        else
+            LOG.infov("Success merging revision: %s", revId.c_str());
+
+        ASSERT_TRUE(status == RevisionStatus::Success);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergeSpecificRevision)
+    {
+    BeFileName startingFile("D:\\temp\\Performance\\Failure\\RevisionTest.ibim", true);
+
+    m_testFileName = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(startingFile.c_str(), m_testFileName.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+    OpenDgnDb();
+
+    BeFileName revPathname("D:\\temp\\Performance\\Failure\\DgnDbRev\\41469a8668091298800aae142eae402e6ac95842.rev", true); // 77th merge
+    Utf8String parentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
+    Utf8String dbGuid = m_testDb->GetDbGuid().ToString();
+    DgnRevisionPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
+
+    fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+
+    if (status != RevisionStatus::Success)
+        LOG.infov("Failed to merge revision: %s", revId.c_str());
+    else
+        LOG.infov("Success merging revision: %s", revId.c_str());
+
+    ASSERT_TRUE(status == RevisionStatus::Success);
+    }
+
+
+#endif

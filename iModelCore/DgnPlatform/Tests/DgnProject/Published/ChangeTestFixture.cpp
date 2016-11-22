@@ -6,6 +6,8 @@
 #include "ChangeTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
+// #define DEBUG_REVISION_TEST_COMPRESSION 1
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -167,6 +169,19 @@ DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
     return testAuthority->GetAuthorityId();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+double randFraction()
+    {
+#ifdef DEBUG_REVISION_TEST_COMPRESSION
+    return (double) rand() / RAND_MAX;
+#else
+    return 0.0;
+#endif
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -174,12 +189,12 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    DPoint3d sizeOfBlock = DPoint3d::From(1 + randFraction(), 1 + randFraction(), 1 + randFraction());
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(randFraction(), randFraction(), randFraction()), sizeOfBlock, true);
     ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(testGeomPtr.IsValid());
 
-    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
+    DPoint3d centerOfBlock = DPoint3d::From(x + randFraction(), y + randFraction(), z + randFraction());
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
     BentleyStatus status = builder->Finish(*testElement);
