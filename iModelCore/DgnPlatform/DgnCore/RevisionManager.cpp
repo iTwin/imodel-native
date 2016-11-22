@@ -7,47 +7,136 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/SHA1.h>
+#include <BeSqlite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include "DgnChangeIterator.h"
 
+// #define DEBUG_REVISION_KEEP_FILES 1
+
 USING_NAMESPACE_BENTLEY_SQLITE
+
+#define REVISION_LZMA_MARKER   "RevLzma"
+
+//=======================================================================================
+// LZMA Header written to the top of the revision file
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+struct RevisionLzmaHeader
+{
+private:
+    uint16_t m_sizeOfHeader;
+    char    m_idString[10];
+    uint16_t m_formatVersionNumber;
+    uint16_t m_compressionType;
+
+public:
+    static const int formatVersionNumber = 0x10;
+    enum CompressionType
+        {
+        LZMA2 = 2
+        };
+
+    RevisionLzmaHeader()
+        {
+        CharCP idString = REVISION_LZMA_MARKER;
+        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
+        memset(this, 0, sizeof(*this));
+        m_sizeOfHeader = (uint16_t)sizeof(RevisionLzmaHeader);
+        strcpy(m_idString, idString);
+        m_compressionType = CompressionType::LZMA2;
+        m_formatVersionNumber = formatVersionNumber;
+        }
+
+    int GetVersion() { return m_formatVersionNumber; }
+
+    bool IsValid()
+        {
+        if (m_sizeOfHeader != sizeof(RevisionLzmaHeader))
+            return false;
+
+        if (strcmp(m_idString, REVISION_LZMA_MARKER))
+            return false;
+
+        if (formatVersionNumber != m_formatVersionNumber)
+            return false;
+
+        return m_compressionType == LZMA2;
+        }
+};
 
 //=======================================================================================
 //! Writes the contents of a change stream to a file
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStreamFileWriter : ChangeStream
+struct RevisionFileStreamWriter : ChangeStream
 {
 private:
+    BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
-    BeFile m_file;
+    BeFileLzmaOutStream* m_outLzmaFileStream;
     DgnDbCR m_dgndb; // Only for debugging
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    11/2016
+    //---------------------------------------------------------------------------------------
+    BentleyStatus StartOutput()
+        {
+        BeAssert(m_outLzmaFileStream == nullptr);
+        m_outLzmaFileStream = new BeFileLzmaOutStream();
+
+        BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true /* createAlways */);
+        if (fileStatus != BeFileStatus::Success)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RevisionLzmaHeader header;
+        uint32_t bytesWritten;
+        ZipErrors zipStatus = m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
+        if (zipStatus != ZIP_SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        zipStatus = m_lzmaEncoder.StartCompress(*m_outLzmaFileStream);
+        if (zipStatus != ZIP_SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    11/2016
+    //---------------------------------------------------------------------------------------
+    void FinishOutput()
+        {
+        if (m_outLzmaFileStream == nullptr)
+            return;
+
+        m_lzmaEncoder.FinishCompress();
+
+        delete m_outLzmaFileStream;
+        m_outLzmaFileStream = nullptr;
+        }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
     DbResult _OutputPage(const void *pData, int nData) override
         {
-        BeFileStatus fileStatus;
-
-        if (!m_file.IsOpen())
+        if (nullptr == m_outLzmaFileStream)
             {
-            fileStatus = m_file.Create(m_pathname.c_str(), true);
-            if (fileStatus != BeFileStatus::Success)
-                {
-                BeAssert(false);
+            if (SUCCESS != StartOutput())
                 return BE_SQLITE_ERROR;
-                }
             }
-
-        fileStatus = m_file.Write(nullptr, pData, (uint32_t) nData);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        return BE_SQLITE_OK;
+            
+        ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(pData, nData);
+        return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
         }
 
     //---------------------------------------------------------------------------------------
@@ -55,8 +144,7 @@ private:
     //---------------------------------------------------------------------------------------
     void _Reset() override
         {
-        if (m_file.IsOpen())
-            m_file.Close();
+        FinishOutput();
         }
 
     //---------------------------------------------------------------------------------------
@@ -73,137 +161,83 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeStreamFileWriter(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb) {}
-    ~ChangeStreamFileWriter() {}
+    RevisionFileStreamWriter(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) {}
+    ~RevisionFileStreamWriter() {}
 };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::CloseCurrentFile()
+BentleyStatus RevisionFileStreamReader::StartInput()
     {
-    BeAssert(m_currentFileIndex >= 0);
-    if (!m_currentFile.IsOpen())
+    BeAssert(m_inLzmaFileStream == nullptr);
+    m_inLzmaFileStream = new BeFileLzmaInStream();
+
+    StatusInt status = m_inLzmaFileStream->OpenInputFile(m_pathname);
+    if (status != SUCCESS)
         {
         BeAssert(false);
         return ERROR;
         }
-    BeFileStatus fileStatus = m_currentFile.Close();
-    if (fileStatus != BeFileStatus::Success)
-        return ERROR;
 
-    m_currentTotalBytes = 0;
-    m_currentByteIndex = 0;
+    RevisionLzmaHeader  header;
+    uint32_t actuallyRead;
+    m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
+    if (actuallyRead != sizeof(header) || !header.IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ZipErrors zipStatus = m_lzmaDecoder.StartDecompress(*m_inLzmaFileStream);
+    if (zipStatus != ZIP_SUCCESS)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::OpenNextFile(bool& completedAllFiles)
+void RevisionFileStreamReader::FinishInput()
     {
-    m_currentFileIndex++;
-    if (m_currentFileIndex >= (int) m_pathnames.size())
-        {
-        completedAllFiles = true;
-        return SUCCESS;
-        }
-    completedAllFiles = false;
+    if (m_inLzmaFileStream == nullptr)
+        return;
 
-    BeFileStatus fileStatus = m_currentFile.Open(m_pathnames[m_currentFileIndex], BeFileAccess::Read);
-    if (fileStatus != BeFileStatus::Success)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    fileStatus = m_currentFile.GetSize(m_currentTotalBytes);
-    if (fileStatus != BeFileStatus::Success)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_currentByteIndex = 0;
-    return SUCCESS;
+    m_lzmaDecoder.FinishDecompress();
+    delete m_inLzmaFileStream;
+    m_inLzmaFileStream = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::ReadNextPage(void *pData, int *pnData)
+DbResult RevisionFileStreamReader::_InputPage(void *pData, int *pnData)
     {
-    uint32_t bytesRead;
-    BeFileStatus fileStatus = m_currentFile.Read(pData, &bytesRead, *pnData);
-    if (fileStatus != BeFileStatus::Success)
+    if (nullptr == m_inLzmaFileStream)
         {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    *pnData = (int) bytesRead;
-    m_currentByteIndex += bytesRead;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-bool ChangeStreamFileReader::IsCurrentFileComplete() const
-    {
-    return m_currentByteIndex >= m_currentTotalBytes;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-DbResult ChangeStreamFileReader::_InputPage(void *pData, int *pnData)
-    {
-    BentleyStatus status;
-
-    if (m_currentFileIndex < 0 || IsCurrentFileComplete())
-        {
-        if (m_currentFileIndex >= 0)
-            {
-            status = CloseCurrentFile();
-            if (SUCCESS != status)
-                return BE_SQLITE_ERROR;
-            }
-
-        bool completedAllFiles;
-        status = OpenNextFile(completedAllFiles);
-        if (SUCCESS != status)
+        if (SUCCESS != StartInput())
             return BE_SQLITE_ERROR;
-
-        if (completedAllFiles)
-            {
-            *pnData = 0;
-            return BE_SQLITE_OK;
-            }
         }
-
-    status = ReadNextPage(pData, pnData);
-    if (SUCCESS != status)
-        return BE_SQLITE_ERROR;
-
-    return BE_SQLITE_OK;
+    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) pData, pnData);
+    return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-void ChangeStreamFileReader::_Reset()
+void RevisionFileStreamReader::_Reset()
     {
-    if (m_currentFile.IsOpen())
-        CloseCurrentFile();
-    m_currentFileIndex = -1;
-    m_currentTotalBytes = 0;
-    m_currentByteIndex = 0;
+    FinishInput();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+ChangeSet::ConflictResolution RevisionFileStreamReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
     {
     Utf8CP tableName = nullptr;
     int nCols, indirect;
@@ -363,11 +397,13 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
 //---------------------------------------------------------------------------------------
 DgnRevision::~DgnRevision()
     {
+#ifndef DEBUG_REVISION_KEEP_FILES
     if (m_changeStreamFile.DoesPathExist())
         {
         BeFileNameStatus status = m_changeStreamFile.BeDeleteFile();
         BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
         }
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -389,16 +425,16 @@ BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
 //---------------------------------------------------------------------------------------
 void DgnRevision::Dump(DgnDbCR dgndb) const
     {
-    LOG.infov("Id : %s\n", m_id.c_str());
-    LOG.infov("ParentId : %s\n", m_parentId.c_str());
-    LOG.infov("Initial ParentId : %s\n", m_initialParentId.c_str());
-    LOG.infov("DbGuid: %s\n", m_dbGuid.c_str());
-    LOG.infov("User Name: %s\n", m_userName.c_str());
-    LOG.infov("Summary: %s\n", m_summary.c_str());
-    LOG.infov("ChangeStreamFile: %ls\n", m_changeStreamFile.c_str());
-    LOG.infov("DateTime: %s\n", m_dateTime.ToUtf8String().c_str());
+    LOG.infov("Id : %s", m_id.c_str());
+    LOG.infov("ParentId : %s", m_parentId.c_str());
+    LOG.infov("Initial ParentId : %s", m_initialParentId.c_str());
+    LOG.infov("DbGuid: %s", m_dbGuid.c_str());
+    LOG.infov("User Name: %s", m_userName.c_str());
+    LOG.infov("Summary: %s", m_summary.c_str());
+    LOG.infov("ChangeStreamFile: %ls", m_changeStreamFile.c_str());
+    LOG.infov("DateTime: %s", m_dateTime.ToUtf8String().c_str());
 
-    ChangeStreamFileReader fs(m_changeStreamFile, dgndb);
+    RevisionFileStreamReader fs(m_changeStreamFile, dgndb);
     fs.Dump("Revision Contents:\n", dgndb, false, 0);
     }
 
@@ -426,7 +462,8 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
         return RevisionStatus::FileNotFound;
         }
 
-    ChangeStreamFileReader fs (m_changeStreamFile, dgndb);
+    RevisionFileStreamReader fs(m_changeStreamFile, dgndb);
+
     Utf8String id = DgnRevisionIdGenerator::GenerateId(m_parentId, fs);
     if (m_id != id)
         {
@@ -691,7 +728,8 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
-    ChangeStreamFileWriter writer(pathname, m_dgndb);
+    RevisionFileStreamWriter writer(pathname, m_dgndb);
+
     DbResult result = writer.FromChangeGroup(changeGroup);
     if (BE_SQLITE_OK != result)
         {

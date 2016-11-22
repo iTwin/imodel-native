@@ -56,7 +56,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CurveTopologyIdFromEdge(CurveTopologyId&
 DGNPLATFORM_EXPORT static BentleyStatus AssignConeFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus AssignSlabFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus AssignTorusFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
-DGNPLATFORM_EXPORT static BentleyStatus AssignProfileBodyIds(PK_BODY_t bodyTag, uint32_t nodeId);
+DGNPLATFORM_EXPORT static BentleyStatus AssignProfileBodyIds(PK_BODY_t bodyTag, uint32_t nodeId, bool singleHoleLoopPriority = false);
 DGNPLATFORM_EXPORT static uint32_t AssignSweptProfileLateralIds(int nLaterals, int* baseArray, int* laterals);
 DGNPLATFORM_EXPORT static BentleyStatus AssignEdgeIds(PK_BODY_t bodyTag, uint32_t nodeId, bool overrideExisting); // NOTE: Edges normally identified by a pair of faces, not this attribute stored on the edge...
 DGNPLATFORM_EXPORT static BentleyStatus AssignFaceIds(PK_BODY_t bodyTag, uint32_t nodeId, bool overrideExisting);
@@ -114,7 +114,7 @@ DGNPLATFORM_EXPORT static BentleyStatus GetBodyEdgesAndFaces(bvector<PK_ENTITY_t
 
 DGNPLATFORM_EXPORT static BentleyStatus GetFaceEdges(bvector<PK_EDGE_t>& edges, PK_FACE_t face);
 DGNPLATFORM_EXPORT static BentleyStatus GetFaceVertices(bvector<PK_VERTEX_t>& vertices, PK_FACE_t face);
-DGNPLATFORM_EXPORT static BentleyStatus GetFaceLoops(bvector<PK_LOOP_t>& edges, PK_FACE_t face);
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceLoops(bvector<PK_LOOP_t>& loops, PK_FACE_t face);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetEdgeFaces(bvector<PK_FACE_t>& faces, PK_EDGE_t edge);
 DGNPLATFORM_EXPORT static BentleyStatus GetEdgeVertices(bvector<PK_VERTEX_t>& vertices, PK_EDGE_t edge);

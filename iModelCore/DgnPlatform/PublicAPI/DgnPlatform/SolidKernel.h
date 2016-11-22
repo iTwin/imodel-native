@@ -622,6 +622,20 @@ struct Modify
     //! @param[in] angle The sweep angle. (value in range of -2pi to 2pi)
     //! @return SUCCESS if spin could be completed.
     DGNPLATFORM_EXPORT static BentleyStatus SpinBody(IBRepEntityR target, DRay3dCR axis, double angle);
+
+    //! Modify the target body by adding a pad or pocket constructed from the sheet tool body and its imprint on the target body.
+    //! @param[in,out] target The target body to modify, can be a sheet or solid.
+    //! @param[in] tool The planar sheet body for the emboss profile.
+    //! @param[in] reverseDirection true to reverse tool surface normal. Material is added in the opposite direction as the surface normal (points outwards from solid).
+    //! @return SUCCESS if emboss operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus Emboss(IBRepEntityR target, IBRepEntityCR tool, bool reverseDirection);
+
+    //! Modify the target sheet body by thickening to create a solid body.
+    //! @param[in,out] target The target sheet body to thicken.
+    //! @param[in] frontDistance The offset distance in the direction of the sheet body face normal.
+    //! @param[in] backDistance The offset distance in the opposite direction of the sheet body face normal.
+    //! @return SUCCESS if thicken could be completed.
+    DGNPLATFORM_EXPORT static BentleyStatus ThickenSheet(IBRepEntityR target, double frontDistance, double backDistance);
     };
 
 //! Support for persistent topological ids on faces, edges, and vertices.
