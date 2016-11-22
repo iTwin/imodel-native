@@ -70,6 +70,7 @@ TEST(FormattingTest, Simple)
 		EXPECT_EQ(fp, fp2);
 	}
 
+#ifdef NOT_NOW
 	FormatingScannerCursor curs = FormatingScannerCursor(nullptr, 0);   // just a core scanner
 
 	EXPECT_STREQ ("11100000", numFmt.ByteToBinaryText(curs.GetConstants().Get2ByteMask()).c_str());
@@ -92,5 +93,5 @@ TEST(FormattingTest, Simple)
 	char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
 	EXPECT_EQ(2, curs.GetConstants().GetSequenceLength(uni[0]));
 	EXPECT_TRUE(curs.GetConstants().IsTrailingByteValid(uni[1]));
-
+#endif
 }
