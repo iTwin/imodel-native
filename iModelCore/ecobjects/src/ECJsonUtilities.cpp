@@ -376,14 +376,28 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                     }
 
                 //WIP_NAV_PROP Need to process RelECClassId member
-                ECValue ecValue;
-                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, childJsonValue["Id"], navProp->GetType()))
+                const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["Id"], INT64_C(0));
+                if (navId == INT64_C(0))
                     {
                     status = ERROR;
                     continue;
                     }
 
-                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
+                //WIP_NAV_PROP this is wrong. We need to find the correct rel class from the RelECClassId entry in the JSON
+                //This needs changes in ECObjects though
+                ECRelationshipClassCP navRelClass = navProp->GetRelationshipClass();
+                if (childJsonValue.isMember("RelECClassId"))
+                    {
+                    const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["RelECClassId"], INT64_C(0));
+                    if (relClassId == INT64_C(0))
+                        {
+                        status = ERROR;
+                        continue;
+                        }
+                    //WIP_NAV_PROP: to populate a nav prop ECValue we need an ECRelationshipClassCP. How to get to it?
+                    }
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ECValue(*navRelClass, navId));
                 if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                     status = ERROR;
 
@@ -799,14 +813,28 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                     continue;
                     }
 
-                ECValue ecValue;
-                if (SUCCESS != ECPrimitiveValueFromJson(ecValue, json["Id"], navProp->GetType()))
+                const uint64_t navId = (uint64_t) Int64FromJson(json["Id"], INT64_C(0));
+                if (navId == INT64_C(0))
                     {
                     status = ERROR;
                     continue;
                     }
 
-                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
+                //WIP_NAV_PROP this is wrong. We need to find the correct rel class from the RelECClassId entry in the JSON
+                //This needs changes in ECObjects though
+                ECRelationshipClassCP navRelClass = navProp->GetRelationshipClass();
+                if (json.HasMember("RelECClassId"))
+                    {
+                    const uint64_t relClassId = (uint64_t) Int64FromJson(json["RelECClassId"], INT64_C(0));
+                    if (relClassId == INT64_C(0))
+                        {
+                        status = ERROR;
+                        continue;
+                        }
+                    //WIP_NAV_PROP: to populate a nav prop ECValue we need an ECRelationshipClassCP. How to get to it?
+                    }
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ECValue(*navRelClass, navId));
                 if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
                     status = ERROR;
 
