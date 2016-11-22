@@ -212,7 +212,7 @@ DgnViewId PublisherParams::GetViewId(DgnDbR db) const
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
         auto view = ViewDefinition::QueryView(entry.GetId(), db);
-        if (view.IsValid() && view->IsSpatialView())
+        if (view.IsValid() && (view->IsSpatialView() || view->IsDrawingView()))
             {
             viewId = view->GetViewId();
             break;

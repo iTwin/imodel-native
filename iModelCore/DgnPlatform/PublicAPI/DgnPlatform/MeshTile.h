@@ -354,10 +354,10 @@ struct TileGeometry : RefCountedBase
         };
     struct TileStrokes
         {
-        TileDisplayParamsPtr    m_displayParams;
-        bvector<DPoint3d>       m_strokes;
+        TileDisplayParamsPtr        m_displayParams;
+        bvector<bvector<DPoint3d>>  m_strokes;
 
-        TileStrokes (TileDisplayParamsR displayParams, bvector<DPoint3d>&& strokes) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)) { }
+        TileStrokes (TileDisplayParamsR displayParams, bvector<bvector<DPoint3d>>&& strokes) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
@@ -379,32 +379,34 @@ protected:
     TileGeometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) = 0;
-    virtual T_TileStrokes _GetStrokes (double chordTolerance) { return T_TileStrokes(); }
-    virtual bool _IsPolyface() const = 0;
+    virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) { return T_TileStrokes(); }
+    virtual bool _DoDecimate() const { return false; }
+    virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
 
     void SetFacetCount(size_t numFacets);
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 public:
     TileDisplayParamsPtr GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount(IFacetOptionsR options) const;
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
     T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
-    bool IsPolyface() const { return _IsPolyface(); }
-    T_TileStrokes GetStrokes (double chordTolerance) { return _GetStrokes(chordTolerance); }
+    bool DoDecimate() const { return _DoDecimate(); }
+    bool DoVertexCluster() const { return _DoVertexCluster(); }
+    T_TileStrokes GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
 
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an IBRepEntity
     static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
     //! Create a TileGeometry for text.
-    static TileGeometryPtr Create(TextStringR textString, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
+    static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
 
 };
 

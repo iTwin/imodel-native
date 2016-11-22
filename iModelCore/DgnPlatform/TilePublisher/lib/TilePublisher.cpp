@@ -1335,11 +1335,20 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     auto spatialView = m_viewController._ToSpatialView();
-    if (nullptr == spatialView)
+    auto drawingView = m_viewController._ToDrawingView();
+    
+    if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
         return Status::NoGeometry;
         }
+
+    DgnModelIdSet viewedModels;
+
+    if (nullptr != spatialView)
+        viewedModels = spatialView->GetViewedModels();
+    else
+        viewedModels.insert (drawingView->GetViewedModelId());
 
     Json::Value     value;
     value["asset"]["version"] = "0.0";
@@ -1362,7 +1371,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     rootRange = DRange3d::NullRange();
 
     static size_t           s_maxPointsPerTile = 250000;
-    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile, m_processModelsInParallel);
+    auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile, m_processModelsInParallel);
     if (TileGenerator::Status::Success != status)
         return ConvertStatus(status);
 
@@ -1438,7 +1447,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
     OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
@@ -1450,7 +1459,11 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
 
     json["name"] = view.GetName();
-    json["modelSelector"] = view.GetModelSelectorId().ToString();
+
+    auto spatialView = view.ToSpatialView();
+    if (nullptr != spatialView)
+        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
+
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
@@ -1514,17 +1527,19 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
         auto viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
-        SpatialViewDefinitionCP spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
-        if (nullptr == spatialView)
+        if (!viewDefinition.IsValid())
             continue;
 
         Json::Value entry(Json::objectValue);
 
-        allModelSelectors.insert(spatialView->GetModelSelectorId());
-        allCategorySelectors.insert(spatialView->GetCategorySelectorId());
-        allDisplayStyles.insert(spatialView->GetDisplayStyleId());
+        auto spatialView = viewDefinition->ToSpatialView();
+        if (nullptr != spatialView)
+            allModelSelectors.insert(spatialView->GetModelSelectorId());
 
-        GetSpatialViewJson(entry, *spatialView, transform);
+        allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
+        allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
+
+        GetViewJson(entry, *viewDefinition, transform);
         viewsJson[view.GetId().ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default

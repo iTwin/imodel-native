@@ -888,12 +888,12 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doDecimate, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
 
-    if (doDecimate)
+    if (doVertexCluster)
         {
         DVec3d      cross;
 
@@ -924,7 +924,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     for (size_t i = 0; i < 3; i++)
         {
         VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId);
-        newTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
+        newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
     BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
@@ -945,7 +945,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
             VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId);
-            dupTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
         AddTriangle(dupTriangle);
@@ -956,7 +956,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doDecimate)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doVertexCluster)
     {
     TilePolyline    newPolyline;
 
@@ -964,7 +964,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId 
         {
         VertexKey vertex(point, nullptr, nullptr, entityId);
 
-        newPolyline.m_indices.push_back (doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        newPolyline.m_indices.push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
     m_mesh->AddPolyline (newPolyline);
     }
@@ -1126,7 +1126,6 @@ TileNodePList TileNode::GetTiles()
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
     : m_params(params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1141,6 +1140,26 @@ size_t TileGeometry::GetFacetCount(IFacetOptionsR options) const
     return (m_facetCount = _GetFacetCount(counter));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
+    {                    
+
+    bvector <bvector<bvector<DPoint3d>>> strokesArray;
+
+    curve.CollectLinearGeometry (strokesArray, &facetOptions);
+
+    for (auto& loop : strokesArray)
+        {
+        for (auto& loopStrokes : loop)
+            {
+            transform.Multiply(loopStrokes, loopStrokes);
+            strokes.push_back (std::move(loopStrokes));
+            }
+        }
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -1153,9 +1172,9 @@ private:
         : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual bool _IsPolyface () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
+    virtual bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
-    virtual T_TileStrokes _GetStrokes (double chordTolerance) override;
+    virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
 public:
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
         {
@@ -1163,6 +1182,7 @@ public:
         }
 };
 
+    
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -1176,7 +1196,6 @@ private:
         : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual bool _IsPolyface() const override { return false; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
     static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
@@ -1194,25 +1213,82 @@ private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
 
-    TextStringTileGeometry(TextStringR text, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, true, db), m_text(&text) { }
+    TextStringTileGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
+        : TileGeometry(transform, range, elemId, params, true, db), m_text(&text) 
+        { 
+        InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
+        }
 
-    virtual bool _IsPolyface() const override { return false; }
+    virtual bool _DoVertexCluster() const override { return false; }
 
 public:
-    static TileGeometryPtr Create(TextStringR textString, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
+    static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
         {
-        return new TextStringTileGeometry(textString, tf, range, elemId, params, db);
+        return new TextStringTileGeometry(textString, transform, range, elemId, params, db);
         }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
+    {
+    DRange2d            textRange = m_text->GetRange();
+    double              minDimension = std::min (textRange.high.x - textRange.low.x, textRange.high.y - textRange.low.y) * GetTransform().ColumnXMagnitude();
+    static const double s_minGlyphRatio = 1.0; 
+    
+    return minDimension < s_minGlyphRatio * facetOptions.GetChordTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     {
-    InitGlyphCurves();
 
-    T_TilePolyfaces     polyfaces;
+    T_TilePolyfaces             polyfaces;
+    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+
+    if (DoGlyphBoxes(facetOptions))
+        {
+        DVec3d              xAxis, yAxis;
+        DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
+        DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
+
+        m_text->ComputeGlyphAxes(xAxis, yAxis);
+        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
+
+        for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
+            {
+            if (nullptr != glyphs[iGlyph])
+                {
+                DRange2d                range = glyphs[iGlyph]->GetExactRange();
+                bvector<DPoint3d>       box(5);
+
+                box[0].x = box[3].x = box[4].x = range.low.x;
+                box[1].x = box[2].x = range.high.x;
+
+                box[0].y = box[1].y = box[4].y = range.low.y;
+                box[2].y = box[3].y = range.high.y;
+
+                Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
+
+                polyfaceBuilder->AddTriangulation (box);
+                }
+            }
+        }
+    else
+        {
+        for (auto& glyphCurve : m_glyphCurves)
+            polyfaceBuilder->AddRegion(*glyphCurve);
+        }
+
+    PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
+
+    if (polyface.IsValid())
+        {
+        polyface->Transform(GetTransform());
+        polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+        }
 
     return polyfaces;
     }
@@ -1220,11 +1296,23 @@ virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual T_TileStrokes _GetStrokes (double chordTolerance) override
+virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override
     {
+    T_TileStrokes               strokes;
+
+    if (DoGlyphBoxes(facetOptions))
+        return strokes;
+
     InitGlyphCurves();
 
-    T_TileStrokes       strokes;
+    bvector<bvector<DPoint3d>>  strokePoints;
+
+    for (auto& glyphCurve : m_glyphCurves)
+        if (!glyphCurve->IsAnyRegionType())
+            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, GetTransform());
+
+    if (!strokePoints.empty())
+        strokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
 
     return strokes;
     }
@@ -1257,12 +1345,6 @@ void  InitGlyphCurves() const
     DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
 
     m_text->ComputeGlyphAxes(xAxis, yAxis);
-
-#ifdef NEEDS_WORK
-   if (text.GetGlyphSymbology(sGraphic->m_currGeometryParams))
-        m_context.CookGeometryParams(sGraphic->m_currGeometryParams, *graphic);
-#endif
-
     Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
 
     for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
@@ -1286,9 +1368,9 @@ void  InitGlyphCurves() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(TextStringR textString, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db)
     {
-    return TextStringTileGeometry::Create(textString, tf, range, entityId, params, db);
+    return TextStringTileGeometry::Create(textString, transform, range, entityId, params, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1352,27 +1434,19 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (double chordTolerance) 
+TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     {
-    CurveVectorPtr  curveVector = m_geometry->GetAsCurveVector();
-    T_TileStrokes   tileStrokes;
+    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
+    T_TileStrokes       tileStrokes;
 
-    if (!curveVector.IsValid() || curveVector->IsAnyRegionType())
-        return tileStrokes;
-
-    IFacetOptionsPtr    facetOptions = CreateFacetOptions (chordTolerance, NormalMode::Never);
-    Transform           transform = GetTransform();
-    bvector <bvector<bvector<DPoint3d>>> strokesArray;
-
-    curveVector->CollectLinearGeometry (strokesArray, facetOptions.get());
-
-    for (auto& loop : strokesArray)
+    if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
         {
-        for (auto& strokes : loop)
-            {
-            transform.Multiply(strokes, strokes);
-            tileStrokes.push_back (TileStrokes(*GetDisplayParams(), std::move(strokes)));
-            }
+        bvector<bvector<DPoint3d>>  strokePoints;
+
+        collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
+
+        if (!strokePoints.empty())
+            tileStrokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
         }
 
     return tileStrokes;
@@ -1467,12 +1541,16 @@ TileGeometry::T_TilePolyfaces TileGeometry::GetPolyfaces(double chordTolerance, 
 IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
     {
     auto facetOptions = createTileFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
-
     bool normalsRequired = false;
+
     switch (normalMode)
         {
-        case NormalMode::Always:    normalsRequired = true; break;
-        case NormalMode::CurvedSurfacesOnly:    normalsRequired = m_isCurved; break;
+        case NormalMode::Always:    
+            normalsRequired = true; 
+            break;
+        case NormalMode::CurvedSurfacesOnly:    
+            normalsRequired = m_isCurved; 
+            break;
         }
 
     facetOptions->SetNormalsRequired(normalsRequired);
@@ -1955,29 +2033,6 @@ public:
         }
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     11/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileSimplifyGraphic : SimplifyGraphic
-{             
-    DEFINE_T_SUPER (SimplifyGraphic)
-
-TileSimplifyGraphic (Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR viewContext) : SimplifyGraphic(params, processor, viewContext) { }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     1/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _AddTextString(TextStringCR text) override
-    {
-    // Temporary -- until thread safety on text stroking is sorted out.
-    static BeMutex      s_strokeMutex;
-    BeMutexHolder       lock(s_strokeMutex);
-
-    T_Super::_AddTextString (text);
-    }
-  
-
-};  // TileSimplifyGraphic
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -2001,7 +2056,7 @@ private:
 
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
         {
-        return new TileSimplifyGraphic(params, m_processor, *this);
+        return new SimplifyGraphic(params, m_processor, *this);
         }
 
     virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
@@ -2126,10 +2181,12 @@ private:
     virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
     virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
     virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
+    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
-    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
+
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
+    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
     TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
@@ -2335,10 +2392,9 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
-    IBRepEntityPtr   clone = const_cast<IBRepEntityP>(&solid);
-    DRange3d                range = clone->GetEntityRange();
-
-    Transform localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
+    IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
+    DRange3d        range = clone->GetEntityRange();
+    Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
 
     localToTile.Multiply(range, range);
 
@@ -2347,6 +2403,29 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, SimplifyGraphic& gf) 
+    {
+    static BeMutex s_tempFontMutex;
+    BeMutexHolder lock(s_tempFontMutex);        // Temporary - until we resolve the font threading issues.
+
+    TextStringPtr   clone = textString.Clone();
+    Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
+    DRange2d        range2d   = clone->GetRange();
+    DRange3d        range     = DRange3d::From (range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
+
+    Transform::FromProduct (localToTile, clone->ComputeTransform()).Multiply (range, range);
+                               
+    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+
+    AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
+
+    return true;
+
     }
 
 //=======================================================================================
@@ -2467,8 +2546,8 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate          = !m_isLeaf && geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
-                bool        doVertexCluster     = !doDecimate && rangePixels < s_vertexClusterThresholdPixels;
+                bool        doDecimate          = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                bool        doVertexCluster     = !doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels;
 
                 if (doDecimate)
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
@@ -2488,7 +2567,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
             }
         if (doPolylines)
             {
-            auto                tileStrokesArray = geom->GetStrokes(tolerance);
+            auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
             for (auto& tileStrokes : tileStrokesArray)
                 {
@@ -2507,7 +2586,8 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                 if (geometryCount < s_maxGeometryIdCount)
                     elemId = geom->GetEntityId();
 
-                meshBuilder->AddPolyline (tileStrokes.m_strokes, elemId, rangePixels < s_vertexClusterThresholdPixels);
+                for (auto& strokePoints : tileStrokes.m_strokes)
+                    meshBuilder->AddPolyline (strokePoints, elemId, rangePixels < s_vertexClusterThresholdPixels);
                 }
             }
         }
