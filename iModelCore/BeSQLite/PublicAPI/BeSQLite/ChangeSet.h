@@ -233,20 +233,20 @@ public:
     //! @see ApplyChanges
     ConflictResolution OnConflict(ConflictCause cause, Changes::Change iter) { return _OnConflict(cause, iter); }
 
-    //! Create a ChangeSet or PatchSet from a ChangeTracker. The ChangeSet can then be saved persistently.
+    //! Create a ChangeSet/ChangeStream from a ChangeTracker. The ChangeSet can then be saved persistently.
     //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
     //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) { return _FromChangeTrack(tracker, setType); }
 
-    //! Create a ChagneSet or PathSet by merging the contents of a ChangeGroup
+    //! Create a ChangeSet/ChangeStream by merging the contents of a ChangeGroup
     //! @param[in] changeGroup ChangeGroup to be merged together. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeGroup(ChangeGroup& changeGroup) { return _FromChangeGroup(changeGroup); }
 
-    //! Apply all of the changes in an ChangeSet to the supplied database.
+    //! Apply all of the changes in this IChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _InputPage to send the stream

@@ -51,6 +51,8 @@ $(o)DownloadVfs$(oext)  : $(SQLiteDir)DownloadVfs.cpp $(baseDir)/PublicAPI/BeSQL
 
 $(o)L10N$(oext)         : $(baseDir)L10N.cpp $(baseDir)/PublicAPI/BeSQLite/L10N.h ${MultiCompileDepends}
 
+$(o)BeLzma$(oext)     : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

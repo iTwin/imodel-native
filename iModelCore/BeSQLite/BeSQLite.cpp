@@ -7,16 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
 
-// lzma stuff includes Windows.h! Include it first!
-#include "liblzma/Types.h"
-#include "liblzma/Lzma2Enc.h"
-#include "liblzma/Lzma2Dec.h"
-#undef min
-#undef max
-
 #define SQLITE_AMALGAMATION 1
 
 #include <BeSQLite/ChangeSet.h>
+#include <BeSQLite/BeLzma.h>
 #include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
@@ -3472,6 +3466,7 @@ public:
         }
 };
 
+
 #define EMBEDDED_LZMA_MARKER   "EmLzma"
 //=======================================================================================
 // The first EmbeddedFileBlob for an embedded file starts with this structure.  If
@@ -3482,32 +3477,39 @@ struct   EmbeddedLzmaHeader
 {
 private:
     uint16_t m_sizeOfHeader;
-    char    m_idString [10];
+    char    m_idString[10];
     uint16_t m_formatVersionNumber;
     uint16_t m_compressionType;
 
 public:
     static const int formatVersionNumber = 0x10;
-    enum CompressionType
+    enum CompressionType : uint16_t
         {
-        NO_COMPRESSION  = 0,
-        LZMA2           = 2
+        NO_COMPRESSION = 0,
+        LZMA2 = 2
         };
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                   John.Gooding    01/2013
+    //---------------------------------------------------------------------------------------
     EmbeddedLzmaHeader(CompressionType compressionType)
         {
         CharCP idString = EMBEDDED_LZMA_MARKER;
-        BeAssert((strlen(idString)+ 1) <= sizeof(m_idString));
-        memset(this, 0, sizeof (*this));
-        m_sizeOfHeader = (uint16_t)sizeof (EmbeddedLzmaHeader);
+        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
+        memset(this, 0, sizeof(*this));
+        m_sizeOfHeader = (uint16_t)sizeof(EmbeddedLzmaHeader);
         strcpy(m_idString, idString);
         m_compressionType = compressionType;
         m_formatVersionNumber = formatVersionNumber;
         }
 
-    int GetVersion() {return m_formatVersionNumber;}
-    bool IsLzma2() {return LZMA2 == m_compressionType;}
-    bool IsUncompressed() {return NO_COMPRESSION == m_compressionType;}
+    int GetVersion() { return m_formatVersionNumber; }
+    bool IsLzma2() { return LZMA2 == m_compressionType; }
+    bool IsUncompressed() { return NO_COMPRESSION == m_compressionType; }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                   John.Gooding    01/2013
+    //---------------------------------------------------------------------------------------
     bool IsValid()
         {
         if (m_sizeOfHeader != sizeof(EmbeddedLzmaHeader))
@@ -3567,12 +3569,12 @@ static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeBriefca
     if (supportRandomAccess)
         chunkSize = getDictionarySize(chunkSize);
 
-    BeFileLzmaInFromMemory inStream(data, size);
+    MemoryLzmaInStream inStream(data, size);
     PropertyBlobOutStream outStream(db, id, chunkSize);
 
     uint32_t dictionarySize = std::min(size, chunkSize);
 
-    LzmaEncoder encoder(dictionarySize);
+    LzmaEncoder encoder(dictionarySize, false);
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
     uint32_t bytesWritten;
@@ -3580,7 +3582,7 @@ static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeBriefca
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
 
-    if (encoder.Compress(outStream, inStream, nullptr, false) != ZIP_SUCCESS)
+    if (encoder.CompressStream(outStream, inStream) != ZIP_SUCCESS)
         return BE_SQLITE_IOERR;
 
     DbResult rc = outStream.Flush();
@@ -3664,7 +3666,8 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
 
     uint32_t dictionarySize = static_cast <uint32_t> (std::min(filesize, (uint64_t) chunkSize));
 
-    LzmaEncoder encoder(dictionarySize);
+    LzmaEncoder encoder(dictionarySize, supportRandomAccess);
+
     if (supportRandomAccess)
         //  Forces LZMA to process input in chunks that correspond to block size.
         encoder.SetBlockSize(dictionarySize);
@@ -3675,7 +3678,7 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
 
-    ZipErrors compressResult = encoder.Compress(outStream, inStream, nullptr, supportRandomAccess);
+    ZipErrors compressResult = encoder.CompressStream(outStream, inStream);
     if (compressResult != ZIP_SUCCESS)
         {
         LOG.errorv("LzmaEncoder::Compress returned %d", compressResult);
@@ -4028,7 +4031,9 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
     if (header.IsLzma2())
         {
         LzmaDecoder decoder;
-        ZipErrors result = decoder.Uncompress(outStream, inStream, true, progress);
+        decoder.SetProgressTracker(progress);
+
+        ZipErrors result = decoder.DecompressStream(outStream, inStream);
         if (ZIP_SUCCESS != result)
             {
             outName.BeDeleteFile();
@@ -4109,9 +4114,9 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
         return  BE_SQLITE_ERROR;
 
     PropertyBlobInStream    inStream(m_db, id);
-    LzmaOutToBvectorStream  outStream(callerBuffer);
+    MemoryLzmaOutStream  outStream(callerBuffer);
     callerBuffer.resize(0);
-    outStream.Reserve((size_t)actualSize);
+    callerBuffer.reserve((size_t)actualSize);
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
     uint32_t actuallyRead;
@@ -4122,7 +4127,7 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
     if (header.IsLzma2())
         {
         LzmaDecoder decoder;
-        ZipErrors result = decoder.Uncompress(outStream, inStream, true, nullptr);
+        ZipErrors result = decoder.DecompressStream(outStream, inStream);
 
         BeAssert(callerBuffer.size() == actualSize);
 
@@ -5018,826 +5023,6 @@ Utf8String BeIdSet::ToString() const
     return ToReadableString();
     }
 
-// Functions needed for 7z.  These are for a C API that simulates C++.
-static void *allocFor7z(void *p, size_t size)   {return malloc(size);}
-static void freeFor7z(void *p, void *address)    {free(address);}
-static SRes readFor7z(void *p, void *buf, size_t *size);
-static size_t writeFor7z(void *p, const void *buf, size_t size);
-static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize);
-
-//=======================================================================================
-// Provides an implementation of the 7z C struct ISeqInStream.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct SeqInStreamImpl : ::ISeqInStream
-{
-private:
-    ILzmaInputStream& m_stream;
-
-public:
-    SeqInStreamImpl(ILzmaInputStream& in) : m_stream(in) {Read = readFor7z;}
-    ILzmaInputStream& GetStream() {return m_stream;}
-    SRes ReadData(void *buf, size_t *size) {return Read(this, buf, size);}
-    uint64_t GetSize() {return m_stream._GetSize();}
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-BeFileLzmaInFromMemory::BeFileLzmaInFromMemory(void const*data, uint32_t size) : m_mutex(BeDbMutex::MutexType::Fast), m_data(data), m_size(size), m_offset(0) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaInFromMemory::_Read(void* data, uint32_t size, uint32_t& actuallyRead)
-    {
-    BeDbMutexHolder   __holder(m_mutex);
-
-    actuallyRead = std::min(size, m_size-m_offset);
-    if (0 == actuallyRead)
-        //  The file-based implementation does not treat EOF as an error.
-        return ZIP_SUCCESS;
-
-    memcpy(data,(char*)m_data + m_offset, actuallyRead);
-    m_offset += actuallyRead;
-
-    return ZIP_SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2013
-//---------------------------------------------------------------------------------------
-StatusInt BeFileLzmaInStream::OpenInputFile(BeFileNameCR fileName)
-    {
-    if (m_file.IsOpen())
-        return BSIERROR;
-
-    m_bytesRead = 0;
-    BeFileStatus    result = m_file.Open(fileName.GetName(), BeFileAccess::Read);
-    if (BeFileStatus::Success != result)
-        return (StatusInt)result;
-
-    BeFileName::GetFileSize(m_fileSize, fileName.GetName());
-    m_file.SetPointer(0, BeFileSeekOrigin::Begin);
-
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2013
-//---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuallyRead)
-    {
-    BeFileStatus result = m_file.Read(data, &actuallyRead, size);
-    m_bytesRead += actuallyRead;
-
-    if (BeFileStatus::Success != result)
-        {
-        LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld, error = %x", result, m_bytesRead, m_fileSize, m_file.GetLastError());
-        }
-
-    return BeFileStatus::Success != result ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
-    }
-
-//=======================================================================================
-// Provides an implementation of the 7z C struct ISeqOutStream.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct SeqOutStreamImpl : ::ISeqOutStream
-{
-private:
-    ILzmaOutputStream&  m_stream;
-
-public:
-    ILzmaOutputStream& GetStream() {return m_stream;}
-    SeqOutStreamImpl(ILzmaOutputStream& outStream) : m_stream(outStream) {Write = writeFor7z;}
-    size_t WriteData(const void *buf, size_t size) {return Write(this, buf, size);}
-    void SetAlwaysFlush(bool flushOnEveryWrite) {m_stream._SetAlwaysFlush(flushOnEveryWrite);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct MemoryLzmaOutStream : ILzmaOutputStream
-{
-private:
-    bvector<Byte>& m_out;
-
-public:
-    //  UInt32 GetOffset() {return m_offset;}
-    MemoryLzmaOutStream(bvector<Byte>& out) : m_out(out) {m_out.resize(0);}
-
-    ZipErrors _Write(void const* data, uint32_t writeSize, uint32_t&bytesWritten) override
-        {
-        size_t oldSize = m_out.size();
-        m_out.resize(oldSize + writeSize);
-        memcpy(&m_out[oldSize], data, writeSize);
-        bytesWritten = writeSize;
-        return ZIP_SUCCESS;
-        }
-
-    void _SetAlwaysFlush(bool flushOnEveryWrite) override {}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct MemoryLzmaInStream : ILzmaInputStream
-{
-private:
-    uint32_t    m_offset;
-    uint32_t    m_limit;
-    void const* m_data;
-
-    uint32_t    m_headerOffset;
-    uint32_t    m_headerLimit;
-    void const* m_headerData;
-
-public:
-    uint32_t GetOffset() {return m_offset;}
-    MemoryLzmaInStream(void const*data, uint32_t size) : m_offset(0), m_limit(size), m_data(data), m_headerData(nullptr), m_headerOffset(0), m_headerLimit(0) {}
-    void SetHeaderData(void*headerData, uint32_t headerSize) {m_headerData = headerData; m_headerLimit = headerSize;}
-    //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
-    //  be concerned with preventing race conditions
-    virtual ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override
-        {
-        uint32_t readFromHeader = 0;
-        if (m_headerData)
-            {
-            readFromHeader = std::min(m_headerLimit-m_headerOffset, size);
-            memcpy(data, (Byte*)m_headerData + m_headerOffset, readFromHeader);
-            if ((m_headerOffset += readFromHeader) >=  m_headerLimit)
-                m_headerData = nullptr; //  don't use it again
-            BeAssert(size >= readFromHeader);
-            size -= readFromHeader;
-            data = (Byte*)data + readFromHeader;
-            }
-
-        actuallyRead = size;
-        if (size > (m_limit - m_offset))
-            actuallyRead = m_limit - m_offset;
-        memcpy(data, (Byte*)m_data + m_offset, actuallyRead);
-        m_offset += actuallyRead;
-        actuallyRead += readFromHeader;
-        return ZIP_SUCCESS;
-        }
-
-    virtual uint64_t _GetSize() override {return m_limit + m_headerLimit;}
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-BeFileStatus BeFileLzmaOutStream::CreateOutputFile(BeFileNameCR fileName, bool createAlways)
-    {
-    if (m_file.IsOpen())
-        return BeFileStatus::UnknownError;
-
-    m_bytesWritten = 0;
-    BeFileStatus    result = m_file.Create(fileName.GetName(), createAlways);
-    if (BeFileStatus::Success != result)
-        return result;
-
-    m_file.SetPointer(0, BeFileSeekOrigin::Begin);
-
-    return BeFileStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-void BeFileLzmaOutStream::_SetAlwaysFlush(bool flushOnEveryWrite) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaOutStream::_Write(void const* data, uint32_t size, uint32_t& bytesWritten)
-    {
-    //  The LZMA2 multi-threading support ensures that calls to _Read are sequential and do not overlap, so this code does not need to
-    //  be concerned with preventing race conditions
-    BeFileStatus result = m_file.Write(&bytesWritten, data, size);
-    //  We check m_bytesWritten at the end to verify that we have processed exactly the expected number of bytes.
-    m_bytesWritten += bytesWritten;
-
-    if (bytesWritten != size)
-        LOG.errorv("BeFileLzmaOutStream::_Write %u requested, %u written", size, bytesWritten);
-    if (BeFileStatus::Success != result)
-        return ZIP_ERROR_WRITE_ERROR;
-
-    return ZIP_SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaOutToBvectorStream::_Write(void const* data, uint32_t size, uint32_t& bytesWritten)
-    {
-    //  The LZMA2 multi-threading support  ensures that calls to _Read are sequential and do not overlap, so this code does not need to
-    //  be concerned with preventing race conditions
-    auto currSize = m_buffer.size();
-    m_buffer.resize(currSize+size);
-    memcpy(&m_buffer[currSize], data, size);
-    bytesWritten = size;
-    return ZIP_SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    12/2014
-//---------------------------------------------------------------------------------------
-void LzmaOutToBvectorStream::Reserve(size_t min)
-    {
-    if (min < m_buffer.capacity())
-        return;
-
-    m_buffer.reserve(min);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-void LzmaOutToBvectorStream::_SetAlwaysFlush(bool flushOnEveryWrite) {}
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct          ICompressProgressImpl : ::ICompressProgress
-{
-    ICompressProgressTracker*   m_tracker;
-    ICompressProgressImpl(ICompressProgressTracker* tracker) : m_tracker(tracker) {Progress = progressFor7z;}
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-static SRes readFor7z(void *p, void *buf, size_t *size)
-    {
-    SeqInStreamImpl* pImpl = static_cast <SeqInStreamImpl*>(p);
-
-    uint32_t bytesRead = 0;
-    ZipErrors zipError = pImpl->GetStream()._Read(buf, (uint32_t)*size, bytesRead);
-    *size = bytesRead;
-
-    return ZIP_SUCCESS == zipError ? SZ_OK : SZ_ERROR_READ;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-static size_t writeFor7z(void *p, const void *buf, size_t size)
-    {
-    SeqOutStreamImpl* pImpl = static_cast<SeqOutStreamImpl*>(p);
-    uint32_t bytesWritten;
-    pImpl->GetStream()._Write(buf, (uint32_t)size, bytesWritten);
-
-    return bytesWritten;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize)
-    {
-    ICompressProgressImpl* impl = (ICompressProgressImpl*)p;
-
-    BeAssert(impl->m_tracker);  //  SetICompressProgress does not use a ICompressProgressImpl with m_tracker == NULL;
-
-    if (impl->m_tracker->_Progress(inSize, (int64_t)outSize) != ZIP_SUCCESS)
-        return SZ_ERROR_PROGRESS;
-
-    return SZ_OK;
-    }
-
-#define DECODE_INPUT_BUFFER_SIZE (32 * 1024)
-#define ENCODE_INPUT_BUFFER_SIZE (32 * 1024)
-#define DECODE_OUTPUT_BUFFER_SIZE (32 * 1024)
-#define DGNDB_LZMA_MARKER   "LzmaDgnDb"
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-static ZipErrors translate7ZipError(SRes code, bool readingFromFile)
-    {
-    switch (code)
-        {
-        case SZ_OK:
-            return ZIP_SUCCESS;
-        case SZ_ERROR_DATA:
-        case SZ_ERROR_ARCHIVE:
-        case SZ_ERROR_NO_ARCHIVE:
-            return ZIP_ERROR_BAD_DATA;
-
-        case SZ_ERROR_INPUT_EOF:
-            return ZIP_ERROR_END_OF_DATA;
-
-        case SZ_ERROR_READ:
-            if (readingFromFile)
-                return ZIP_ERROR_READ_ERROR;
-
-            return ZIP_ERROR_BLOB_READ_ERROR;
-
-        case SZ_ERROR_OUTPUT_EOF:
-        case SZ_ERROR_WRITE:
-            return ZIP_ERROR_WRITE_ERROR;
-
-        case SZ_ERROR_PROGRESS:
-            return ZIP_ERROR_ABORTED;  //  ICompressProgress returned something other than ZIP_SUCCESS
-        }
-
-    BeAssert(ZIP_SUCCESS == code);
-    return ZIP_ERROR_UNKNOWN;
-    }
-
-//=======================================================================================
-//  A compressed Bim file starts with LzmaDgnDbHeader.  This is not the same as an
-//  EmbeddedLzmaHeader.  A EmbeddedLzmaHeader is used for any type of embedded file.
-//  If a compressed Bim file is stored as an embedded file, it also gets a
-//  EmbeddedLzmaHeader as part of the embedded stream.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct          LzmaDgnDbHeader
-{
-private:
-    uint16_t        m_sizeOfHeader;
-    char            m_idString [10];
-    uint16_t        m_formatVersionNumber;
-    uint16_t        m_compressionType;
-    uint64_t        m_sourceSize;
-
-public:
-    static const int formatVersionNumber = 0x10;
-    enum CompressionType
-        {
-        LZMA2   = 2
-        };
-
-    LzmaDgnDbHeader(CharCP idString, CompressionType compressionType, uint64_t sourceSize)
-        {
-        BeAssert((strlen(idString)+ 1) <= sizeof(m_idString));
-        memset(this, 0, sizeof (*this));
-        m_sizeOfHeader = (uint16_t)sizeof (LzmaDgnDbHeader);
-        strcpy(m_idString, idString);
-        m_compressionType = compressionType;
-        m_formatVersionNumber = formatVersionNumber;
-        m_sourceSize = sourceSize;
-        }
-
-    LzmaDgnDbHeader()
-        {
-        memset(this, 0, sizeof (*this));
-        }
-
-    int GetVersion() {return m_formatVersionNumber;}
-    bool IsLzma2() {return true;}
-    bool IsValid()
-        {
-        if (strcmp(m_idString, DGNDB_LZMA_MARKER))
-            return false;
-
-        if (formatVersionNumber != m_formatVersionNumber)
-            return false;
-
-        return m_compressionType == LZMA2;
-        }
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/13
-//=======================================================================================
-struct SevenZImpl
-{
-private:
-    ::ISzAlloc m_szAlloc;
-    ::ICompressProgress* m_compressProgress;
-    SeqInStreamImpl m_inStream;
-    SeqOutStreamImpl m_outStream;
-
-public:
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    SevenZImpl(ILzmaOutputStream&outStream, ILzmaInputStream&inStream) : m_outStream(outStream), m_inStream(inStream)
-        {
-        m_szAlloc.Alloc = allocFor7z;
-        m_szAlloc.Free = freeFor7z;
-        m_compressProgress = nullptr;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    void SetICompressProgress(::ICompressProgressImpl& compressProgress)
-        {
-        m_compressProgress = nullptr == compressProgress.m_tracker ? nullptr : &compressProgress;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors DoDecode(CLzmaDec& decodeState, uint64_t unpackSize)
-        {
-        int thereIsSize = (unpackSize != (uint64_t)(int64_t)-1);
-        Byte inBuf[DECODE_INPUT_BUFFER_SIZE];
-        Byte outBuf[DECODE_OUTPUT_BUFFER_SIZE];
-
-        size_t inPos = 0, inSize = 0, outPos = 0;
-        uint64_t totalRead = 0, totalWritten = 0;
-        LzmaDec_Init(&decodeState);
-        for (;;)
-            {
-            if (inPos == inSize)
-                {
-                inSize = DECODE_INPUT_BUFFER_SIZE;
-                m_inStream.ReadData(inBuf, &inSize);
-                totalRead += inSize;
-                inPos = 0;
-                }
-
-            SRes res;
-            SizeT inProcessed = inSize - inPos;
-            SizeT outProcessed = DECODE_OUTPUT_BUFFER_SIZE - outPos;
-            ELzmaFinishMode finishMode = LZMA_FINISH_ANY;
-            ELzmaStatus status;
-            if (thereIsSize && outProcessed > unpackSize)
-                {
-                outProcessed = (SizeT)unpackSize;
-                finishMode = LZMA_FINISH_END;
-                }
-
-            res = LzmaDec_DecodeToBuf(&decodeState, outBuf + outPos, &outProcessed, inBuf + inPos, &inProcessed, finishMode, &status);
-            inPos += inProcessed;
-            outPos += outProcessed;
-            unpackSize -= outProcessed;
-
-            if (m_outStream.WriteData(outBuf, outPos) != outPos)
-                return ZIP_ERROR_WRITE_ERROR;
-
-            totalWritten += outPos;
-            if (nullptr != m_compressProgress)
-                {
-                res = m_compressProgress->Progress(m_compressProgress, totalRead, totalWritten);
-                }
-
-            outPos = 0;
-
-            if (res != SZ_OK || thereIsSize && unpackSize == 0)
-                return translate7ZipError(res, false);
-
-            if (inProcessed == 0 && outProcessed == 0)
-                {
-                if (thereIsSize || status != LZMA_STATUS_FINISHED_WITH_MARK)
-                    return ZIP_ERROR_BAD_DATA;
-
-                return translate7ZipError(res, false);
-                }
-            }
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors DoDecode2(CLzma2Dec& decodeState)
-        {
-        Byte inBuf[DECODE_INPUT_BUFFER_SIZE];
-        ScopedArray<Byte> scopedOutputBuf(DECODE_OUTPUT_BUFFER_SIZE);
-        Byte* outBuf = scopedOutputBuf.GetData();
-
-        uint64_t totalRead = 0;
-        uint64_t totalWritten = 0;
-
-        size_t inPos = 0, inSize = 0, outPos = 0;
-        Lzma2Dec_Init(&decodeState);
-        for (;;)
-            {
-            if (inPos == inSize)
-                {
-                inSize = DECODE_INPUT_BUFFER_SIZE;
-                //  We ignore the read error here. It probably means end-of-stream.  We count on LZMA detecting that it
-                //  has hit the end of the input data without hitting the end of the stream.  As a failsafe Export verifies that the output file is the expected size.
-                m_inStream.ReadData(inBuf, &inSize);
-                totalRead += inSize;
-                inPos = 0;
-                }
-
-            SRes res;
-            SizeT inProcessed = inSize - inPos;
-            SizeT outProcessed = DECODE_OUTPUT_BUFFER_SIZE - outPos;
-            ELzmaFinishMode finishMode = LZMA_FINISH_ANY;
-            ELzmaStatus status;
-
-            res = Lzma2Dec_DecodeToBuf(&decodeState, outBuf + outPos, &outProcessed, inBuf + inPos, &inProcessed, finishMode, &status);
-            inPos += inProcessed;
-            outPos += outProcessed;
-
-            if (m_outStream.WriteData(outBuf, outPos) != outPos)
-                return ZIP_ERROR_WRITE_ERROR;
-
-            totalWritten += outPos;
-            outPos = 0;
-
-            if (nullptr != m_compressProgress && SZ_OK == res)
-                res = m_compressProgress->Progress(m_compressProgress, totalRead, totalWritten);
-
-            if (res != SZ_OK)
-                return translate7ZipError(res, false);
-
-            if (inProcessed == 0 && outProcessed == 0)
-                {
-                if (status != LZMA_STATUS_FINISHED_WITH_MARK)
-                    return ZIP_ERROR_END_OF_DATA;
-
-                return translate7ZipError(res, false);
-                }
-            }
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors DoInitAndDecode2()
-        {
-        ZipErrors res = ZIP_SUCCESS;
-
-        CLzma2Dec decodeState;
-        Lzma2Dec_Construct(&decodeState);
-
-        //  1 byte describing the properties and 8 bytes of uncompressed size
-        Byte header;
-
-        size_t  readSize = sizeof (header);
-        if (m_inStream.ReadData(&header, &readSize) != BSISUCCESS)
-            return ZIP_ERROR_BAD_DATA;
-
-        Lzma2Dec_Allocate(&decodeState, header, &m_szAlloc);
-
-        res = DoDecode2(decodeState);
-        Lzma2Dec_Free(&decodeState, &m_szAlloc);
-
-        return res;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors Uncompress(bool isLzma2)
-        {
-        BeAssert(isLzma2);
-        return DoInitAndDecode2();
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors Compress1(::CLzmaEncProps*encProps)
-        {
-        ::CLzmaEncHandle enc = LzmaEnc_Create(&m_szAlloc);
-        if (enc == 0)
-            return ZIP_ERROR_UNKNOWN;
-
-        int res = LzmaEnc_SetProps(enc, encProps);
-        if (SZ_OK != res)
-            return translate7ZipError(res, true);
-
-        Byte header[LZMA_PROPS_SIZE + 8];
-        size_t headerSize = LZMA_PROPS_SIZE;
-
-        res = LzmaEnc_WriteProperties(enc, header, &headerSize);
-        if (SZ_OK != res)
-            return translate7ZipError(res, true);
-
-        uint64_t sourceSize = m_inStream.GetSize();
-        for (unsigned i = 0; i < 8; i++)
-            header[headerSize++] = (Byte)(sourceSize >> (8 * i));
-
-        if (m_outStream.WriteData(header, headerSize) != headerSize)
-            return ZIP_ERROR_WRITE_ERROR;
-
-        //  Compress progress may be NULL.
-        res = LzmaEnc_Encode(enc, &m_outStream, &m_inStream, m_compressProgress, &m_szAlloc, &m_szAlloc);
-        if (SZ_OK != res)
-            return translate7ZipError(res, true);
-
-        LzmaEnc_Destroy(enc, &m_szAlloc, &m_szAlloc);
-
-        return ZIP_SUCCESS;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   John.Gooding    01/2013
-    //---------------------------------------------------------------------------------------
-    ZipErrors Compress2(::CLzma2EncProps*encProps, bool supportRandomAccess)
-        {
-        ::CLzma2EncHandle enc = Lzma2Enc_Create(&m_szAlloc, &m_szAlloc);
-        if (enc == 0)
-            return ZIP_ERROR_UNKNOWN;
-
-        int res = Lzma2Enc_SetProps(enc, encProps);
-        if (SZ_OK != res)
-            return ZIP_ERROR_UNKNOWN;
-
-        Byte header;
-        size_t headerSize = sizeof (header);
-        header = Lzma2Enc_WriteProperties(enc);
-
-        if (m_outStream.WriteData(&header, headerSize) != headerSize)
-            return ZIP_ERROR_WRITE_ERROR;
-
-        if (supportRandomAccess)
-            //  Setting alwaysFlush to true forces PropertyBlobOutStream to create a new embedded blob for each write. Since LZMA2 calls
-            //  _Write whenever it finishes processing a a block this creates a one-to-one mapping from input blocks to embedded blobs.
-            //  That makes it possible to read and expand any given block, randomly accessing the blocks.
-            m_outStream.SetAlwaysFlush(true);
-
-        res = Lzma2Enc_Encode(enc, &m_outStream, &m_inStream, m_compressProgress);
-        Lzma2Enc_Destroy(enc);
-
-        if (SZ_OK != res)
-            return translate7ZipError(res, true);
-
-        return ZIP_SUCCESS;
-    }
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::UncompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* tracker)
-    {
-    WString targetFileW(targetFile, BentleyCharEncoding::Utf8);
-    WString sourceFileW(sourceFile, BentleyCharEncoding::Utf8);
-
-    return UncompressDgnDb(BeFileName(targetFileW.c_str()), BeFileName(sourceFileW.c_str()), tracker);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::UncompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* tracker)
-    {
-    BeFileLzmaInStream  inStream;
-    if (inStream.OpenInputFile(sourceFile) != BSISUCCESS)
-        return ZIP_ERROR_CANNOT_OPEN_INPUT;
-
-    BeFileLzmaOutStream outStream;
-    if (outStream.CreateOutputFile(targetFile) != BeFileStatus::Success)
-        return ZIP_ERROR_CANNOT_OPEN_OUTPUT;
-
-    //  Advance past header
-    LzmaDgnDbHeader     lzmaDgndbHeader;
-
-    uint32_t readSize = sizeof (lzmaDgndbHeader);
-    inStream._Read(&lzmaDgndbHeader, readSize, readSize);
-    if (readSize != sizeof (lzmaDgndbHeader) || !lzmaDgndbHeader.IsValid())
-        return ZIP_ERROR_BAD_DATA;
-
-    BeAssert(lzmaDgndbHeader.IsLzma2());
-    return Uncompress(outStream, inStream, true, tracker);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::UncompressDgnDbBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize)
-    {
-    //  Set up the input stream
-    MemoryLzmaInStream  inStream(inputBuffer, inputSize);
-    if (headerSize != sizeof(EmbeddedLzmaHeader) + 1)
-        return ZIP_ERROR_BAD_DATA;
-
-    EmbeddedLzmaHeader  dgndbHeader(EmbeddedLzmaHeader::LZMA2);
-    memcpy(&dgndbHeader, header, sizeof(EmbeddedLzmaHeader));
-
-    if (!dgndbHeader.IsValid())
-        return ZIP_ERROR_BAD_DATA;
-
-    inStream.SetHeaderData(header + sizeof(EmbeddedLzmaHeader), 1);
-
-    //  Set up the output stream
-    MemoryLzmaOutStream outStream(out);
-
-    return Uncompress(outStream, inStream, true, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::Uncompress(bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize)
-    {
-    MemoryLzmaInStream  inStream(inputBuffer, inputSize);
-    MemoryLzmaOutStream outStream(out);
-
-    return Uncompress(outStream, inStream, true, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::Uncompress(ILzmaOutputStream& out, ILzmaInputStream& in, bool isLzma2, ICompressProgressTracker* tracker)
-    {
-    SevenZImpl  sevenZ(out, in);
-
-    ICompressProgressImpl progressImpl(tracker);
-    sevenZ.SetICompressProgress(progressImpl);
-
-    return sevenZ.Uncompress(isLzma2);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-LzmaEncoder::LzmaEncoder(uint32_t dictionarySize) : m_enc2Props(nullptr)
-    {
-    uint32_t level = 7;
-    dictionarySize = getDictionarySize(dictionarySize);
-
-    m_enc2Props = new CLzma2EncProps();
-    Lzma2EncProps_Init(m_enc2Props);
-    m_enc2Props->lzmaProps.dictSize = (int)dictionarySize;
-    m_enc2Props->lzmaProps.level = level;
-    m_enc2Props->numTotalThreads = 8;
-    Lzma2EncProps_Normalize(m_enc2Props);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-void LzmaEncoder::SetBlockSize(uint32_t blockSize)
-    {
-    m_enc2Props->blockSize = blockSize < m_enc2Props->lzmaProps.dictSize ? m_enc2Props->lzmaProps.dictSize : blockSize;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-LzmaEncoder::~LzmaEncoder()
-    {
-    delete m_enc2Props;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::CompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* tracker, bool supportRandomAccess)
-    {
-    WString targetFileW(targetFile, BentleyCharEncoding::Utf8);
-    WString sourceFileW(sourceFile, BentleyCharEncoding::Utf8);
-
-    return CompressDgnDb(BeFileName(targetFileW.c_str()), BeFileName(sourceFileW.c_str()), tracker, supportRandomAccess);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::CompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* tracker, bool supportRandomAccess)
-    {
-    if (!BeFileName::DoesPathExist(sourceFile.GetName()))
-        return ZIP_ERROR_FILE_DOES_NOT_EXIST;
-
-    BeFileLzmaInStream  inStream;
-    if (BSISUCCESS != inStream.OpenInputFile(sourceFile))
-        return ZIP_ERROR_CANNOT_OPEN_INPUT;
-
-    BeFileLzmaOutStream outStream;
-    if (BeFileStatus::Success != outStream.CreateOutputFile(targetFile))
-        return ZIP_ERROR_CANNOT_OPEN_OUTPUT;
-
-    SevenZImpl  sevenZ(outStream, inStream);
-
-    ICompressProgressImpl progressImpl(tracker);
-    sevenZ.SetICompressProgress(progressImpl);
-
-    LzmaDgnDbHeader     lzmaDgndbHeader(DGNDB_LZMA_MARKER, LzmaDgnDbHeader::LZMA2, inStream._GetSize());
-    uint32_t bytesWritten;
-    if (outStream._Write(&lzmaDgndbHeader, sizeof (lzmaDgndbHeader), bytesWritten) != ZIP_SUCCESS)
-        return ZIP_ERROR_WRITE_ERROR;
-
-    return sevenZ.Compress2(m_enc2Props, supportRandomAccess);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::Compress(ILzmaOutputStream& outStream, ILzmaInputStream& inStream, ICompressProgressTracker* tracker, bool supportRandomAccess)
-    {
-    SevenZImpl  sevenZ(outStream, inStream);
-
-    ICompressProgressImpl progressImpl(tracker);
-    sevenZ.SetICompressProgress(progressImpl);
-
-    return sevenZ.Compress2(m_enc2Props, supportRandomAccess);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::Compress(bvector<Byte>& out, void const *input, uint32_t sizeInput, ICompressProgressTracker* tracker, bool supportRandomAccess)
-    {
-    MemoryLzmaInStream  inStream(input, sizeInput);
-    MemoryLzmaOutStream outStream(out);
-
-    ZipErrors result = Compress(outStream, inStream, tracker, supportRandomAccess);
-    return result;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2013
 //---------------------------------------------------------------------------------------
@@ -5868,4 +5053,139 @@ void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
 BeSQLiteLib::ILanguageSupport* s_languageSupport;
 void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
 BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() {return s_languageSupport;}
+
+#define DB_LZMA_MARKER   "LzmaDgnDb"
+
+//=======================================================================================
+//  A compressed Bim file starts with DbLzmaHeader.  This is not the same as an
+//  EmbeddedLzmaHeader.  A EmbeddedLzmaHeader is used for any type of embedded file.
+//  If a compressed Bim file is stored as an embedded file, it also gets a
+//  EmbeddedLzmaHeader as part of the embedded stream.
+// @bsiclass                                                    John.Gooding    01/2013
+//=======================================================================================
+struct DbLzmaHeader
+{
+private:
+    uint16_t        m_sizeOfHeader;
+    char            m_idString[10];
+    uint16_t        m_formatVersionNumber;
+    uint16_t        m_compressionType;
+    uint64_t        m_sourceSize;
+
+public:
+    static const int formatVersionNumber = 0x10;
+    enum CompressionType
+        {
+        LZMA2 = 2
+        };
+
+    DbLzmaHeader(CharCP idString, CompressionType compressionType, uint64_t sourceSize)
+        {
+        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
+        memset(this, 0, sizeof(*this));
+        m_sizeOfHeader = (uint16_t)sizeof(DbLzmaHeader);
+        strcpy(m_idString, idString);
+        m_compressionType = compressionType;
+        m_formatVersionNumber = formatVersionNumber;
+        m_sourceSize = sourceSize;
+        }
+
+    DbLzmaHeader()
+        {
+        memset(this, 0, sizeof(*this));
+        }
+
+    int GetVersion() { return m_formatVersionNumber; }
+    bool IsLzma2() { return true; }
+    bool IsValid()
+        {
+        if (strcmp(m_idString, DB_LZMA_MARKER))
+            return false;
+
+        if (formatVersionNumber != m_formatVersionNumber)
+            return false;
+
+        return m_compressionType == LZMA2;
+        }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2013
+//---------------------------------------------------------------------------------------
+// static
+ZipErrors LzmaUtility::CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progressTracker, uint32_t dictionarySize, bool supportRandomAccess)
+    {
+    if (!BeFileName::DoesPathExist(sourceFile.GetName()))
+        return ZIP_ERROR_FILE_DOES_NOT_EXIST;
+
+    BeFileLzmaInStream  inStream;
+    if (BSISUCCESS != inStream.OpenInputFile(sourceFile))
+        return ZIP_ERROR_CANNOT_OPEN_INPUT;
+
+    BeFileLzmaOutStream outStream;
+    if (BeFileStatus::Success != outStream.CreateOutputFile(targetFile))
+        return ZIP_ERROR_CANNOT_OPEN_OUTPUT;
+
+    DbLzmaHeader  dbLzmaHeader(DB_LZMA_MARKER, DbLzmaHeader::LZMA2, inStream._GetSize());
+    uint32_t bytesWritten;
+    if (outStream._Write(&dbLzmaHeader, sizeof(dbLzmaHeader), bytesWritten) != ZIP_SUCCESS)
+        return ZIP_ERROR_WRITE_ERROR;
+
+    LzmaEncoder encoder(dictionarySize, supportRandomAccess);
+    encoder.SetProgressTracker(progressTracker);
+    return encoder.CompressStream(outStream, inStream);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2013
+//---------------------------------------------------------------------------------------
+// static
+ZipErrors LzmaUtility::DecompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress)
+    {
+    BeFileLzmaInStream  inStream;
+    if (inStream.OpenInputFile(sourceFile) != BSISUCCESS)
+        return ZIP_ERROR_CANNOT_OPEN_INPUT;
+
+    BeFileLzmaOutStream outStream;
+    if (outStream.CreateOutputFile(targetFile) != BeFileStatus::Success)
+        return ZIP_ERROR_CANNOT_OPEN_OUTPUT;
+
+    //  Advance past header
+    DbLzmaHeader     lzmaDbHeader;
+
+    uint32_t readSize = sizeof(lzmaDbHeader);
+    inStream._Read(&lzmaDbHeader, readSize, readSize);
+    if (readSize != sizeof(lzmaDbHeader) || !lzmaDbHeader.IsValid())
+        return ZIP_ERROR_BAD_DATA;
+
+    BeAssert(lzmaDbHeader.IsLzma2());
+
+    LzmaDecoder decoder;
+    decoder.SetProgressTracker(progress);
+    return decoder.DecompressStream(outStream, inStream);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2013
+//---------------------------------------------------------------------------------------
+// static
+ZipErrors LzmaUtility::DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize)
+    {
+    MemoryLzmaInStream  inStream(inputBuffer, inputSize);
+
+    if (headerSize != sizeof(EmbeddedLzmaHeader) + 1)
+        return ZIP_ERROR_BAD_DATA;
+
+    EmbeddedLzmaHeader  dgndbHeader(EmbeddedLzmaHeader::LZMA2);
+    memcpy(&dgndbHeader, header, sizeof(EmbeddedLzmaHeader));
+    if (!dgndbHeader.IsValid())
+        return ZIP_ERROR_BAD_DATA;
+
+    inStream.SetHeaderData(header + sizeof(EmbeddedLzmaHeader), 1);
+
+    MemoryLzmaOutStream outStream(out);
+
+    LzmaDecoder decoder;
+    return decoder.DecompressStream(outStream, inStream);
+    }
 
