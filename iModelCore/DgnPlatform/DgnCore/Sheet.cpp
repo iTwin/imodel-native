@@ -158,19 +158,15 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     return new Sheet::ViewController(*this);
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
     {
-#if defined (NEEDS_WORK_RANGE_INDEX)
     Tile& tile = static_cast<Tile&>(*m_tile);
-///    Root& root = tile.GetRoot();
+    Tree& root = tile.GetTree();
 
-//    m_image = root.m_view->RenderTile(DRange2d::From(tile.m_corners.m_pts, 4), root.m_pixels);
-#endif
+    DgnViewport::GetTileViewport()._CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
 
     return m_image.IsValid() ? SUCCESS : ERROR;
     }

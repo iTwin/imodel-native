@@ -8,18 +8,11 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-        #define MESHTILE_NO_FOLLY
-#endif
-
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
-
-#if !defined(MESHTILE_NO_FOLLY)
 #include <folly/futures/Future.h>
-#endif
 
 #include <DgnPlatform/DgnPlatformLib.h>
 
@@ -764,7 +757,6 @@ private:
             { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
         };
 
-#if !defined(MESHTILE_NO_FOLLY)
     typedef folly::Future<Status> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
@@ -776,7 +768,6 @@ private:
 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
-#endif
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);

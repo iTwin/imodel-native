@@ -1231,6 +1231,34 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     m_sync.InvalidateController();
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/16
+//=======================================================================================
+struct NoTileViewport : TileViewport
+{
+  folly::Future<Render::Image> _CreateTile(ViewControllerR, DRange3dCR npc, Point2dCR tileSize) override {return Image();}
+};
+
+static RefCountedPtr<TileViewport> s_tileCreator;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileViewport& DgnViewport::GetTileViewport()
+    {
+    if (!s_tileCreator.IsValid())
+        SetTileViewport(new NoTileViewport());
+
+    return *s_tileCreator.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetTileViewport(TileViewport* creator)
+    {
+    s_tileCreator = creator;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
