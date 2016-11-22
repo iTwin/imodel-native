@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+
 #include <vector>
 #include <queue>
 
@@ -59,3 +61,4 @@ public:
 
 } // namespace BeFolly
 
+#endif //BENTLEY_CONFIG_NO_THREAD_SUPPORT
