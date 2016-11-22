@@ -64,9 +64,9 @@ struct          BeNumerical
     //! @return 0 if equal within the closest possible tolerance, -1 if sv1 is less than sv2, and 1 if sv1 is greater than sv2
     static int Compare (double sv1, double sv2)
         {
-        if (fabs (sv2 - sv1) < ComputeComparisonTolerance (sv1, sv2))
-            return 0;
-        return sv1 < sv2? -1: 1;
+        if (fabs(sv2 - sv1) < ComputeComparisonTolerance(sv1, sv2))
+             return 0;
+        return sv1 < sv2 ? -1 : 1;
         }
 };
 
