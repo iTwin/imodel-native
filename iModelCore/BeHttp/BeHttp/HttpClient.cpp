@@ -83,6 +83,27 @@ Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
 #endif
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus HttpClient::HttpDateToUnixMillis(uint64_t& unixMilliseconds, Utf8CP dateStr)
+    {
+#if defined (HTTP_LIB_CURL)
+    time_t time = curl_getdate(dateStr, nullptr);
+
+    if (-1 == time)
+        return ERROR;
+
+    unixMilliseconds = time * 1000;
+
+    return SUCCESS;
+#else
+    #error unknown http lib
+    return ERROR;
+#endif
+
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/

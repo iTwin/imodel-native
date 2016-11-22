@@ -15,7 +15,16 @@
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
-typedef bmap<Utf8String, Utf8String> HttpHeaderMap;
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+struct CompareInsensitiveUtfString
+    {
+    bool operator()(Utf8String const& lhs, Utf8String const& rhs) const { return (lhs.CompareToI(rhs) < 0); }
+    };
+
+// RFC 7230 states: "Each header field consists of a name followed by a colon (":") and the field value. Field names are case-insensitive.
+typedef bmap<Utf8String, Utf8String, CompareInsensitiveUtfString> HttpHeaderMap;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpRequestHeaders)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpResponseHeaders)
@@ -29,7 +38,7 @@ protected:
     HttpHeaderMap m_headers;
 
 public:
-    // Return referance to internal map
+    // Return reference to internal map
     HttpHeaderMap const& GetMap() const {return m_headers;}
 
     // Set header field value. Pass empty to remove previous value
