@@ -9,7 +9,6 @@
 #include <Bentley/Formatting.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>
-#include <math.h>
 
 USING_NAMESPACE_BENTLEY
 
@@ -348,7 +347,6 @@ int NumericFormat::FormatInteger (int n, char* bufOut, int bufLen)
 
 	if (len > (--bufLen))
 		len = bufLen;
-	// msvc-only: memcpy_s(bufOut, bufLen, &buf[ind], len);
     memcpy(bufOut, &buf[ind], len);
 	return len - 1;
 }
@@ -459,7 +457,6 @@ int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
 
 	if (ind > bufLen)
 		ind = bufLen;
-	// msvc-only: memcpy_s(buf, bufLen, locBuf, ind);
     memcpy(buf, locBuf, ind);
 	return ind;
 }
@@ -782,20 +779,49 @@ bool UnicodeConstant::GetTrailingBits(unsigned char c, CharP outBits)
 	return false;
 }
 
+bool UnicodeConstant::IsLittleEndian()
+{
+    return m_isLittleEndian;
+}
+
+bool UnicodeConstant::ForceBigEndian()
+{
+    m_isLittleEndian = false;
+    return m_isLittleEndian;
+}
+
+//bool UnicodeConstant::GetSymbolBits(unsigned char c, CharP outBits)
+//	{
+//	return true;
+//	}
+
+
+// FormattingScannerCursor implementation
+
+size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
+{
+    bool end = m_unicodeConst->IsLittleEndian();
+    if (end || wordSize <= 1)
+        return index;
+    int i = (int)(--wordSize) - (int)index;
+    return i; // (int)(--wordSize) - (int)index;
+}
+
 //---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormatingScannerCursor::FormatingScannerCursor(CharCP utf8Text, int scanLength)
+FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength)
 {
 	m_text = utf8Text;
 	m_cursorPosition = 0;
 	m_lastScannedCount = 0;
 	m_code.word = 0;
 	m_isASCII = false;
-	m_unicodeConst = UnicodeConstant();
-	m_totalScanLength = strlen(utf8Text);
-	if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
+    m_status = ScannerCursorStatus::Success;
+	m_unicodeConst = new UnicodeConstant();
+    m_totalScanLength = (nullptr == utf8Text) ? 0 : strlen(utf8Text);
+    if (scanLength > 0 && scanLength <= m_totalScanLength)
 		m_totalScanLength = scanLength;
 }
 

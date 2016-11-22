@@ -11,6 +11,7 @@
 #include "Bentley.h"
 #include "WString.h"
 #include "RefCounted.h"
+#include <math.h>
 
 BENTLEY_NAMESPACE_TYPEDEFS(Formatting);
 
@@ -21,7 +22,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameterSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericTriad)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
-
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 typedef RefCountedPtr<NumericFormat>   NumericFormatBPtr;
 
 enum class ParameterCode
@@ -196,6 +197,12 @@ enum class ParameterCategory
 	Mapping = 14
 };
 
+enum class ScannerCursorStatus
+{
+	Success = 0,
+	InvalidSymbol = 1,
+	IncompleteSequence = 2
+};
 
 static const char * GetParameterCategoryName(ParameterCategory parcat)
 {
@@ -278,33 +285,6 @@ public:
 	BENTLEYDLL_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
 	BENTLEYDLL_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
 };
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct FormatParameterSet : NumericFormat
-{
-private:
-	RoundingType        m_roundType;
-	double              m_roundFactor;
-	// unused - Utf8Char            m_leftPadding;
-	// unused - Utf8Char            m_rightPadding;
-	// unused - int                 m_boundaryLength;
-	// unused - FieldAlignment      m_alignment;
-
-public:
-
-	FormatParameterSet()
-	{
-		m_roundType = RoundingType::RoundAwayFrom0;
-		m_roundFactor = 0.5;
-		// unused - m_leftPadding;
-		// unused - m_rightPadding;
-		// unused - m_boundaryLength;
-		// unused - m_alignment;
-	}
-};
-
 
 //=======================================================================================
 //! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
@@ -402,7 +382,7 @@ private:
 public:
 
 	BENTLEYDLL_EXPORT FormatDictionary() { InitLoad(); }
-	BENTLEYDLL_EXPORT size_t GetCount() { return m_paramList.size(); }
+	BENTLEYDLL_EXPORT int GetCount() { return (int)m_paramList.size(); }
 	BENTLEYDLL_EXPORT void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
 	BENTLEYDLL_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
 	BENTLEYDLL_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
@@ -416,17 +396,17 @@ struct UnicodeConstant
 {
 private:
 
-	static const unsigned char m_twoByteMask = 0xE0;   // 11100000 - complement will select 5 upper bits
-	static const unsigned char m_twoByteMark = 0xC0;   // 11000000
-	static const unsigned char m_threeByteMask = 0xF0; // 11110000  - complement will select 4 upper bits
-	static const unsigned char m_threeByteMark = 0xE0; // 11100000
-	static const unsigned char m_fourByteMask = 0xF8;  // 11111000  - complement will select 3 upper bits
-	static const unsigned char m_fourByteMark = 0xF0;  // 11110000
-	static const unsigned char m_trailingByteMask = 0xC0; // 11000000 - complement will select trailing bits
-	static const unsigned char m_trailingByteMark = 0x80; // 10000000 - indicator of the trailing bytes and also an ASCII char
-	static const unsigned char m_trailingBits = 0x3F; // 00111111
-	static const size_t m_upperBitShift = 6;
-	bool m_isLittleEndian;
+    static const unsigned char m_twoByteMask = 0xE0;      // 11100000 - complement will select 5 upper bits
+    static const unsigned char m_twoByteMark = 0xC0;      // 11000000
+    static const unsigned char m_threeByteMask = 0xF0;    // 11110000  - complement will select 4 upper bits
+    static const unsigned char m_threeByteMark = 0xE0;    // 11100000
+    static const unsigned char m_fourByteMask = 0xF8;     // 11111000  - complement will select 3 upper bits
+    static const unsigned char m_fourByteMark = 0xF0;     // 11110000
+    static const unsigned char m_trailingByteMask = 0xC0; // 11000000 - complement will select trailing bits
+    static const unsigned char m_trailingByteMark = 0x80; // 10000000 - indicator of the trailing bytes and also an ASCII char
+    static const unsigned char m_trailingBits = 0x3F;     // 00111111
+    static const size_t m_upperBitShift = 6;
+    bool m_isLittleEndian;
 
 	static bool CheckEndian()
 	{
@@ -438,38 +418,52 @@ private:
 
 public:
 	BENTLEYDLL_EXPORT UnicodeConstant() { m_isLittleEndian = CheckEndian(); }
-	BENTLEYDLL_EXPORT const char Get2ByteMask() { return m_twoByteMask; }
-	BENTLEYDLL_EXPORT const char Get3ByteMask() { return m_threeByteMask; }
-	BENTLEYDLL_EXPORT const char Get4ByteMask() { return m_fourByteMask; }
-	BENTLEYDLL_EXPORT const char Get2ByteMark() { return m_twoByteMark; }
-	BENTLEYDLL_EXPORT const char Get3ByteMark() { return m_threeByteMark; }
-	BENTLEYDLL_EXPORT const char Get4ByteMark() { return m_fourByteMark; }
-	BENTLEYDLL_EXPORT const char GetTrailingByteMask() { return m_trailingByteMask; }
-	BENTLEYDLL_EXPORT const char GetTrailingByteMark() { return m_trailingByteMark; }
-	BENTLEYDLL_EXPORT const char GetTrailingBitsMask() { return m_trailingBits; }
-	BENTLEYDLL_EXPORT const size_t GetSequenceLength(unsigned char c);
-	BENTLEYDLL_EXPORT bool IsTrailingByteValid(unsigned char c);
-	BENTLEYDLL_EXPORT bool GetTrailingBits(unsigned char c, CharP outBits);
+    BENTLEYDLL_EXPORT const char Get2ByteMask() { return m_twoByteMask; }                 // 11100000 - complement will select 5 upper bits
+    BENTLEYDLL_EXPORT const char Get3ByteMask() { return m_threeByteMask; }				  // 11000000
+    BENTLEYDLL_EXPORT const char Get4ByteMask() { return m_fourByteMask; }				  // 11110000  - complement will select 4 upper bits
+    BENTLEYDLL_EXPORT const char Get2ByteMark() { return m_twoByteMark; }				  // 11100000
+    BENTLEYDLL_EXPORT const char Get3ByteMark() { return m_threeByteMark; }				  // 11111000  - complement will select 3 upper bits
+    BENTLEYDLL_EXPORT const char Get4ByteMark() { return m_fourByteMark; }				  // 11110000
+    BENTLEYDLL_EXPORT const char GetTrailingByteMask() { return m_trailingByteMask; }	  // 11000000 - complement will select trailing bits
+    BENTLEYDLL_EXPORT const char GetTrailingByteMark() { return m_trailingByteMark; }	  // 10000000 - indicator of the trailing bytes and also an ASCII char
+    BENTLEYDLL_EXPORT const char GetTrailingBitsMask() { return m_trailingBits; }		  // 00111111
+    BENTLEYDLL_EXPORT const size_t GetSequenceLength(unsigned char c);
+    BENTLEYDLL_EXPORT bool IsTrailingByteValid(unsigned char c);
+    BENTLEYDLL_EXPORT bool GetTrailingBits(unsigned char c, CharP outBits);
+    BENTLEYDLL_EXPORT bool IsLittleEndian();
+    BENTLEYDLL_EXPORT bool ForceBigEndian();
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct FormatingScannerCursor
+struct FormattingScannerCursor
 {
 private:
 	CharCP m_text;            // pointer to the head of the string
 	size_t m_totalScanLength; // this is the total length of the byte sequence that ought to be scanned/parsed
 	size_t m_cursorPosition;  // the index of the next byte to be scanned
-	int m_lastScannedCount;   // the number of bytes processed in the last step
+    size_t m_lastScannedCount;   // the number of bytes processed in the last step
 	union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
 	bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
-	UnicodeConstant m_unicodeConst; // reference to constants and character processors
+    UnicodeConstantP m_unicodeConst; // reference to constants and character processors
+    ScannerCursorStatus m_status;
+
+    // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
+    // returns the physical index of the same array adjusted by endianness. The little endian is default 
+    //  and the index will be returned unchaged. This function does not check if supplied 
+
 
 public:
-	//! Construct a cursor attached to the given Utf8 string 
-	BENTLEYDLL_EXPORT FormatingScannerCursor(CharCP utf8Text, int scanLength);
-	BENTLEYDLL_EXPORT UnicodeConstant GetConstants() { return m_unicodeConst; }
+    BENTLEYDLL_EXPORT size_t TrueIndex(size_t index, size_t wordSize);
+    //! Construct a cursor attached to the given Utf8 string 
+    BENTLEYDLL_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
+    BENTLEYDLL_EXPORT UnicodeConstant* GetConstants() { return m_unicodeConst; }
+    BENTLEYDLL_EXPORT size_t GetNextSymbol();
+    BENTLEYDLL_EXPORT bool IsError() { return (m_status != ScannerCursorStatus::Success); }
+    BENTLEYDLL_EXPORT ScannerCursorStatus GetOperationStatus() { return m_status; }
+    BENTLEYDLL_EXPORT bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
+    BENTLEYDLL_EXPORT bool IsASCII() { return m_isASCII; }
 };
 
 END_BENTLEY_NAMESPACE
