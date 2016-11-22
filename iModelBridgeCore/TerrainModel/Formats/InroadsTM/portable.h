@@ -79,7 +79,7 @@
 // MicroStation Header Files
 //-------------------------------------------------------------------
 
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <Bentley\stg\guid.h>
 #include <Geom/GeomApi.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -268,7 +268,7 @@ inline void GetUserNameW (WCharP l, unsigned long* size)
     }
 inline void GetLocalTime (SYSTEMTIME* pSystemTime)
     {
-    Int64 now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
+    int64_t now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
     tm nowTM;
     BeTimeUtilities::ConvertUnixMillisToLocalTime (nowTM, now);
     pSystemTime->wYear = (WORD)(nowTM.tm_year + 1900);

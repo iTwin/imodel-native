@@ -862,6 +862,7 @@ errexit :
     goto cleanup ;
     }
 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1136,7 +1137,7 @@ errexit:
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
     (
     BC_DTM_OBJ *dtmP,
     long       firstPnt,
@@ -1365,7 +1366,7 @@ BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM
  long   n,precisionError,pointOnLine,dtmFeatureLine,fixType,loop,numLoop ;
  double dx,dy,d1,d2,d3,d4,d5,xMin,xMax,yMin,yMax,ratio ;
  double angle1,angle12,angle14,angle3,angle32,angle34,x,y ;
- double angle,angleInc,saveX,saveY,factor ;
+ double angle,angleInc,saveX,saveY,factor = 0.0;
 /*
 ** Write Entry Message
 */
@@ -4207,7 +4208,7 @@ errexit :
          bcdtmWrite_message(0, 0, 0, "Removing inserted Points\n");
 
      long point = pointNumP[0];
-     
+
      while (point != dtmP->nullPnt)
          {
          if (DTM_SUCCESS != bcdtmEdit_deletePointDtmObject(dtmP, point, 1))
@@ -6139,8 +6140,8 @@ BENTLEYDTM_Public int bcdtmInsert_colinearStringDtmObject(BC_DTM_OBJ *dtmP,DPoin
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p1,p2,fndType,pnt1,pnt2,pnt3,newPnt,lastPnt=0 ;
- long   hullPnt1,hullPnt2,onLine,lineFound ;
- double n1,n2,n3,x,y ;
+ long   hullPnt1 = 0,hullPnt2 = 0,onLine,lineFound ;
+ double n1,n2 = 0.0,n3,x,y ;
  DPoint3d    *p3dP ;
 /*
 ** Write Entry Message
@@ -8715,7 +8716,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   insert,startPnt,numPolygons,isInternal=FALSE,checkForInternal=TRUE;
+ long   insert,startPnt,numPolygons = 0,isInternal=FALSE,checkForInternal=TRUE;
  DTMDirection direction;
  DPoint3d    *p3dP,*regionPtsP=NULL ;
  double area ;
@@ -8972,7 +8973,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
  DPoint3d *p3dP ;
  DTMDrapePoint *drapeP,*drapePtsP=NULL ;
  bvector<DTMDrapePoint> drapePts;
- double dd,xi,yi,z ;
+ double dd = 0.0,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
  DPoint3d *pnt1P,*pnt2P ;
 /*
@@ -9083,7 +9084,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
  DPoint3d *p3dP ;
  DTMDrapePoint *drapeP,*drapePtsP=NULL ;
  bvector<DTMDrapePoint> drapePts;
- double dd,xi,yi,z ;
+ double dd = 0.0,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
  DPoint3d *pnt1P,*pnt2P ;
 /*

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LidarImporter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -21,7 +21,7 @@ DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmObject
 BC_DTM_OBJ *dtmP,                  // Pointer To DTM Object
 WCharCP lasFileNameP,             // LAS File Name
 const bvector<LidarImporter::Classification>* importFeatures,
-UInt64& totalNumLidarPoints,     // Number Of Lidar Points Imported For Each Feature
+uint64_t& totalNumLidarPoints,     // Number Of Lidar Points Imported For Each Feature
 bvector<long>* numLidarPoints              // Number Of Lidar Points Imported For Each Feature
 );
 DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, Bentley::GeoCoordinates::BaseGCSPtr& gcs);
@@ -41,7 +41,7 @@ bool LidarImporter::IsFileSupported (WCharCP filename)
         if (file.Open (filename, BeFileAccess::Read, BeFileSharing::None) == BeFileStatus::Success)
             {
             char header[4];
-            UInt32 bytesRead = 0;
+            uint32_t bytesRead = 0;
             if (file.Read (header, &bytesRead, 4) == BeFileStatus::Success && bytesRead == 4)
                 {
                 file.Close ();
@@ -102,7 +102,7 @@ ImportedTerrain LidarImporter::_ImportTerrain (WCharCP name) const
         {
         BcDTMPtr dtm = BcDTM::Create ();
 
-        UInt64 totalNumLidarPoints;
+        uint64_t totalNumLidarPoints;
         if (bcdtmFormatLidar_importLasFileFeaturesDtmObject (dtm->GetTinHandle (), m_fileName.GetWCharCP (), nullptr, totalNumLidarPoints, nullptr) == DTM_SUCCESS)
             return ImportedTerrain (dtm.get (), m_name.GetWCharCP (), nullptr, true);
         }
@@ -113,7 +113,7 @@ BcDTMPtr LidarImporter::ImportTerrain (const bvector<LidarImporter::Classificati
     {
     BcDTMPtr dtm = BcDTM::Create ();
 
-    UInt64 totalNumLidarPoints;
+    uint64_t totalNumLidarPoints;
     if (bcdtmFormatLidar_importLasFileFeaturesDtmObject (dtm->GetTinHandle (), m_fileName.GetWCharCP (), &classificationFilter, totalNumLidarPoints, nullptr) == DTM_SUCCESS)
         return dtm;
     return nullptr;
@@ -128,4 +128,3 @@ bvector<LidarImporter::ClassificationInfo> const& LidarImporter::GetClassificati
         }
     return m_classificationInfo;
     }
- 

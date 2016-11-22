@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmttn.h                                            aec    08-Feb-1994     */
@@ -193,9 +193,9 @@
 
 /*  Planar interpolation
 
-        TMIalloc_planar, 
-    TMIinit_planar, 
-    TMIplanar, 
+        TMIalloc_planar,
+    TMIinit_planar,
+    TMIplanar,
     TMIfree_planar
 */
 #ifdef HARD_CODED_STRINGS
@@ -203,7 +203,7 @@
 #define PLANAR_TriM "PLAN"                                         /* DO_NOT_TRANSLATE */
 #endif
 #ifndef PLANAR
-#define PLANAR PLANAR_TriM   
+#define PLANAR PLANAR_TriM
 #endif
 
 #ifndef PLANAR_D_TriM
@@ -215,8 +215,8 @@
 
 /* planar aspect interpolation
 
-    TMIalloc_aspect, 
-    TMIinit_aspect, 
+    TMIalloc_aspect,
+    TMIinit_aspect,
     TMIaspect,
     TMIfree_aspect
 */
@@ -238,9 +238,9 @@ aspect of the triangle."                                           /* DO_NOT_TRA
 
 /* planar slope interpolation
 
-    TMIalloc_slope, 
-    TMIinit_slope, 
-    TMIslope, 
+    TMIalloc_slope,
+    TMIinit_slope,
+    TMIslope,
     TMIfree_slope
 */
 
@@ -261,9 +261,9 @@ slope of the triangle."                                            /* DO_NOT_TRA
 
 /* inverse distance weighting interpolation
 
-    TMIalloc_inverse, 
-    TMIinit_inverse, 
-    TMIinverse, 
+    TMIalloc_inverse,
+    TMIinit_inverse,
+    TMIinverse,
     TMIfree_inverse
 */
 
@@ -294,7 +294,7 @@ from triangle vertices."                                           /* DO_NOT_TRA
 #define OLDVERSN      5  /* file is old version   */
 
 /*   ERRORS   */
- 
+
 #define NOPNTINDB     2  /* No Elements Found in Data Base */
 #define NOCONPROD     4  /* No contours produced */
 #define ERRPRODET     6  /* Error creating an Elevation Table */
@@ -367,7 +367,7 @@ from triangle vertices."                                           /* DO_NOT_TRA
 #define    ERSVXYHDR        116 /* error saving point file header */
 #define    ERSVXYREC        118 /* error saving point record to .xyz */
 #define    ERSVTNHDR        120 /* error saving tin file header */
-#define    ERSVTNREC        122 /* error saving triangle record to .tin */ 
+#define    ERSVTNREC        122 /* error saving triangle record to .tin */
 
 #define ERLONGNAME              126 /* name too long */
 #define MATRIXSET               128 /* matrix is already set */
@@ -414,12 +414,12 @@ struct TXrange
 
 struct TXsymbology
 {
-   byte clr_index;
-   byte red;
-   byte green;
-   byte blue;
-   byte weight;
-   byte style;
+   unsigned char clr_index;
+   unsigned char red;
+   unsigned char green;
+   unsigned char blue;
+   unsigned char weight;
+   unsigned char style;
 };
 
 #if !defined (mdl)
@@ -427,25 +427,25 @@ struct TXsymbology
 struct TXxyz      /*   XYZ record  */
 {
 #ifndef BITFIELDS_REVERSED
-  byte pd :1;
-  byte rsrv :1; 
-  byte type :6;  /* file type */
-  byte weight;
-  byte weight_flag :1;
-  byte processed :1;
-  byte dummy :6;
-  byte r1 :7;
-  byte deleted :1;    /*   point is deletd */
+  unsigned char pd :1;
+  unsigned char rsrv :1;
+  unsigned char type :6;  /* file type */
+  unsigned char weight;
+  unsigned char weight_flag :1;
+  unsigned char processed :1;
+  unsigned char dummy :6;
+  unsigned char r1 :7;
+  unsigned char deleted :1;    /*   point is deletd */
 #else
-  byte deleted :1;    /*   point is deletd */
-  byte r1 :7;
-  byte dummy :6;
-  byte processed :1;
-  byte weight_flag :1;
-  byte weight;
-  byte type :6;  /* file type */
-  byte rsrv :1; 
-  byte pd :1;
+  unsigned char deleted :1;    /*   point is deletd */
+  unsigned char r1 :7;
+  unsigned char dummy :6;
+  unsigned char processed :1;
+  unsigned char weight_flag :1;
+  unsigned char weight;
+  unsigned char type :6;  /* file type */
+  unsigned char rsrv :1;
+  unsigned char pd :1;
 #endif
   long  x;             /*   X  coordinate   */
   long  y;             /*   Y  coordinate   */
@@ -462,30 +462,30 @@ struct TXtin   /*  TIN record  */
   TXTP n23;   /*  adjacent triangle to edge p2-p3 */
   TXTP n31;   /*  adjacent triangle to edge p3-p1 */
 #ifndef BITFIELDS_REVERSED
-  byte b12 :1;        /*  p1-p2 is part of a break line */
-  byte b23 :1;        /*  p2-p3 is part of a break line */
-  byte b31 :1;        /*  p3-p1 is part of a break line */
-  byte deleted :1;    /*  triangle is deleted  */
-  byte user_bit  :1;  /*  This bit can be used as another processed bit*/
-  byte removed :1;    /*  triangle is removed from network */
-  byte processed :1;  /*  triangle is processed for current
+  unsigned char b12 :1;        /*  p1-p2 is part of a break line */
+  unsigned char b23 :1;        /*  p2-p3 is part of a break line */
+  unsigned char b31 :1;        /*  p3-p1 is part of a break line */
+  unsigned char deleted :1;    /*  triangle is deleted  */
+  unsigned char user_bit  :1;  /*  This bit can be used as another processed bit*/
+  unsigned char removed :1;    /*  triangle is removed from network */
+  unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
-  byte planar :1;     /*  the terrain is planer in this area */
+  unsigned char planar :1;     /*  the terrain is planer in this area */
                                /*  no byte alignment needed here because
                                    of how data was written  (wbw 2/93) */
 #else
-  byte planar :1;     /*  the terrain is planer in this area */
+  unsigned char planar :1;     /*  the terrain is planer in this area */
                                /*  no byte alignment needed here because
                                    of how data was written  (wbw 2/93) */
-  byte processed :1;  /*  triangle is processed for current
+  unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
-  byte removed :1;    /*  triangle is removed from network */
-  byte user_bit  :1;  /*  This bit can be used as another processed bit*/
-  byte deleted :1;    /*  triangle is deleted  */
-  byte b31 :1;        /*  p3-p1 is part of a break line */
-  byte b23 :1;        /*  p2-p3 is part of a break line */
-  byte b12 :1;        /*  p1-p2 is part of a break line */
-#endif	
+  unsigned char removed :1;    /*  triangle is removed from network */
+  unsigned char user_bit  :1;  /*  This bit can be used as another processed bit*/
+  unsigned char deleted :1;    /*  triangle is deleted  */
+  unsigned char b31 :1;        /*  p3-p1 is part of a break line */
+  unsigned char b23 :1;        /*  p2-p3 is part of a break line */
+  unsigned char b12 :1;        /*  p1-p2 is part of a break line */
+#endif
 } ;
 
 #endif /* mdl */
@@ -541,7 +541,7 @@ struct TXfeature
 
   unsigned long exclude :1;  /*  if set, exclude this feature
                  from triangulation */
-#endif	
+#endif
 };
 
 struct TXfile     /*  output file descriptor  */
@@ -564,7 +564,7 @@ struct TXfile     /*  output file descriptor  */
   unsigned long triangulate :1;  /* TRUE for immediate triangulation */
   unsigned long exclude :1;      /*  if set, exclude this file from triangulation */
   unsigned long exercised :1;    /*  TRUE if the file has been exercised     */
-#endif	
+#endif
 };
 
 
@@ -596,9 +596,9 @@ struct TXinterpol
 
 typedef struct
 {
-  byte  magic[3]; // Do not convert to unicode.
+  unsigned char  magic[3]; // Do not convert to unicode.
   wchar_t  version;
-} hdr_magic;  
+} hdr_magic;
 
 typedef struct
 {
@@ -616,7 +616,7 @@ typedef struct
   unsigned long   non_elevation:1;
   unsigned long   projection:1;
   unsigned long   projection_set:1;
-#endif	
+#endif
 } hdr_flags;
 
 typedef struct
@@ -624,7 +624,7 @@ typedef struct
   wchar_t        name[PROJ_SIZE_TriM+1];
   wchar_t        vertical[DATUM_SIZE_TriM+1];
   wchar_t        horizontal[DATUM_SIZE_TriM+1];
-} hdr_projection;  
+} hdr_projection;
 
 /*   XYZ file header  */
 
@@ -712,13 +712,13 @@ struct FLnode
   struct FLpetal    *p;     /* first petal in a circular list
                      of petals which orbit the node */
   struct FLjust_point *pnt; /* geometry of node */
-  wchar_t          type;    /* type = 1,3,-1,-2,-3.  Refers to 
+  wchar_t          type;    /* type = 1,3,-1,-2,-3.  Refers to
                    location of node on triangle.
                    1 = vertex of type 1 tri. 3 = center
                    of type 3 tri. -1 = exit edge of
                    type 1 tri.  -2 = edge of type 2 tri.
                    -3 = edge of type 3 tri. */
-  struct FLnode     *nxt_nd; /* next node in the list of node 
+  struct FLnode     *nxt_nd; /* next node in the list of node
                     assoc. with a network */
   wchar_t        visited;
 };
@@ -728,13 +728,13 @@ struct FLpetal
   struct FLnode *nd;        /* end node of the petal */
   struct FLtin  *start_t;
   struct FLtin  *end_t;
-  struct FLjust_point *pnt; /* list of points from start to end of 
+  struct FLjust_point *pnt; /* list of points from start to end of
                    the petal */
   double dist;            /* xy length of list of points */
   wchar_t   trend;         /*   ?  */
   short  no_t;            /* number of tins */
   struct FLpetal *nxt_p;    /* next petal pointer for the circular
-                   list of pointers which orbit a 
+                   list of pointers which orbit a
                    start node */
 };
 
@@ -788,7 +788,7 @@ struct TXparams
 #else
    unsigned long design_comp_set : 1;
    unsigned long env_comp_set : 1;
-#endif	
+#endif
 };
 
 
@@ -854,16 +854,16 @@ struct TXOfile     /*  output file descriptor  */
   long  no_deleted;  /*  number of deleted records */
   TXHP data;  /*  pointer to first data header  */
 #ifndef BITFIELDS_REVERSED
-  byte fence_exists :1;  /* =1 if user has defined a fence */
-  byte connect :1;       /* TRUE if the points should be connected  */
-  byte exercised :1;     /* TRUE if the file has been exercised     */
-  byte triangulate :1;   /* TRUE for immediate triangulation */
+  unsigned char fence_exists :1;  /* =1 if user has defined a fence */
+  unsigned char connect :1;       /* TRUE if the points should be connected  */
+  unsigned char exercised :1;     /* TRUE if the file has been exercised     */
+  unsigned char triangulate :1;   /* TRUE for immediate triangulation */
 #else
-  byte triangulate :1;   /* TRUE for immediate triangulation */
-  byte exercised :1;     /* TRUE if the file has been exercised     */
-  byte connect :1;       /* TRUE if the points should be connected  */
-  byte fence_exists :1;  /* =1 if user has defined a fence */
-#endif	
+  unsigned char triangulate :1;   /* TRUE for immediate triangulation */
+  unsigned char exercised :1;     /* TRUE if the file has been exercised     */
+  unsigned char connect :1;       /* TRUE if the points should be connected  */
+  unsigned char fence_exists :1;  /* =1 if user has defined a fence */
+#endif
 };
 
 #endif /* mdl */
