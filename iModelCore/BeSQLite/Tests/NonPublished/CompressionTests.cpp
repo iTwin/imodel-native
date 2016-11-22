@@ -9,6 +9,7 @@
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/BeLzma.h>
 
 #include <zlib/zlib.h>
 #include <zlib/zip/zip.h>
@@ -49,10 +50,14 @@ static void runCompressFileTest()
     nameCompressedFile.AppendToPath(L"CompressTest");
     nameCompressedFile.AppendToPath(L"compressSeed.imodel");
 
-    BeSQLite::LzmaEncoder   encoder(2 * 1024 * 1024);
-    BeSQLite::ZipErrors result = encoder.CompressDgnDb(nameCompressedFile, nameOriginalFile, &abortTracker, true);
+    uint32_t dictionarySize = 2 * 1024 * 1024;
+    bool supportRandomAccess = true;
+    BeSQLite::ZipErrors result;
+
+    result = BeSQLite::LzmaUtility::CompressDb(nameCompressedFile, nameOriginalFile, &abortTracker, dictionarySize, supportRandomAccess);
     EXPECT_EQ(BeSQLite::ZIP_ERROR_ABORTED, result);
-    result = encoder.CompressDgnDb(nameCompressedFile, nameOriginalFile, nullptr, true);
+
+    result = BeSQLite::LzmaUtility::CompressDb(nameCompressedFile, nameOriginalFile, nullptr, dictionarySize, supportRandomAccess);
     EXPECT_EQ(BeSQLite::ZIP_SUCCESS, result);
 
     BeFileName nameUncompressedFile;
@@ -60,11 +65,10 @@ static void runCompressFileTest()
     nameUncompressedFile.AppendToPath(L"CompressTest");
     nameUncompressedFile.AppendToPath(L"uncompress.db");
 
-    BeSQLite::LzmaDecoder decoder;
-    result = decoder.UncompressDgnDb(nameUncompressedFile, nameCompressedFile, &abortTracker);
+    result = BeSQLite::LzmaUtility::DecompressDb(nameUncompressedFile, nameCompressedFile, &abortTracker);
     EXPECT_EQ(BeSQLite::ZIP_ERROR_ABORTED, result);
 
-    result = decoder.UncompressDgnDb(nameUncompressedFile, nameCompressedFile, nullptr);
+    result = BeSQLite::LzmaUtility::DecompressDb(nameUncompressedFile, nameCompressedFile, nullptr);
     EXPECT_EQ(BeSQLite::ZIP_SUCCESS, result);
 
     uint64_t sizeOriginal, sizeUncompressed;
@@ -164,13 +168,12 @@ public:
         compressed.resize(lenInput/3); //  avoid too many resizes
 
         uint64_t beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
-        BeSQLite::LzmaEncoder     encoder(1 << (m_level+10));
-        encoder.Compress(compressed, input, (uint32_t)lenInput, nullptr, true);
+        BeSQLite::LzmaEncoder  encoder(1 << (m_level+10), true /*=supportRandomAccess*/);
+        encoder.CompressBuffer(compressed, input, (uint32_t)lenInput);
 
         uint64_t afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
         BeSQLite::LzmaDecoder  decoder;
-
-        decoder.Uncompress(out, &compressed[0], (uint32_t)compressed.size());
+        decoder.DecompressBuffer(out, &compressed[0], (uint32_t)compressed.size());
 
         uint64_t afterUncompress = BeTimeUtilities::QueryMillisecondsCounter();
 
@@ -184,8 +187,8 @@ public:
         {
         compressed.resize(lenInput/3); //  avoid too many resizes
 
-        BeSQLite::LzmaEncoder     encoder(1 << (m_level+10));
-        encoder.Compress(compressed, input, (uint32_t)lenInput, nullptr, true);
+        BeSQLite::LzmaEncoder encoder(1 << (m_level+10), true /*=supportRandomAccess*/);
+        encoder.CompressBuffer(compressed, input, (uint32_t)lenInput);
         }
     };
 

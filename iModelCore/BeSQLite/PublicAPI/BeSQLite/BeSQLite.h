@@ -173,10 +173,6 @@ BESQLITE_TYPEDEFS(DbFile);
 BESQLITE_TYPEDEFS(Statement);
 BESQLITE_TYPEDEFS(NamedParams);
 
-#ifndef __LZMA2_ENC_H
-typedef struct _CLzma2EncProps CLzma2EncProps;
-#endif
-
 #if !defined (DOCUMENTATION_GENERATOR)
 #ifndef GUID_DEFINED
 #define GUID_DEFINED
@@ -2785,133 +2781,10 @@ public:
     ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {auto stat=_Read(data, bufSize, bytesActuallyRead); Finish(); return stat;}
 };
 
-//__PUBLISH_SECTION_END__
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct ILzmaOutputStream
-{
-    virtual ZipErrors _Write(void const* data, uint32_t size, uint32_t&bytesWritten) = 0;
-    virtual void _SetAlwaysFlush(bool flushOnEveryWrite) = 0;
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct ILzmaInputStream
-{
-    virtual ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) = 0;
-    virtual uint64_t _GetSize() = 0;
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct BeFileLzmaInStream : ILzmaInputStream
-{
-private:
-    BeFile   m_file;
-    uint64_t m_fileSize;
-    uint64_t m_bytesRead;
-
-public:
-    virtual ~BeFileLzmaInStream() {}
-    BE_SQLITE_EXPORT StatusInt OpenInputFile(BeFileNameCR fileName);
-    BE_SQLITE_EXPORT ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override;
-    uint64_t _GetSize() override {return m_fileSize;}
-    uint64_t GetBytesRead() {return m_bytesRead;}
-    BeFile& GetBeFile() {return m_file;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct BeFileLzmaInFromMemory : ILzmaInputStream
-{
-private:
-    BeDbMutex m_mutex;
-    void const* m_data;
-    uint32_t m_size;
-    uint32_t m_offset;
-
-public:
-    BE_SQLITE_EXPORT BeFileLzmaInFromMemory(void const*data, uint32_t size);
-    BE_SQLITE_EXPORT ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override;
-    uint64_t _GetSize() override {return m_size;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct BeFileLzmaOutStream : ILzmaOutputStream
-{
-private:
-    BeFile      m_file;
-    uint64_t    m_bytesWritten;
-
-public:
-    virtual ~BeFileLzmaOutStream() {}
-    BE_SQLITE_EXPORT BeFileStatus CreateOutputFile(BeFileNameCR fileName, bool createAlways = true);
-    BE_SQLITE_EXPORT ZipErrors _Write(void const* data, uint32_t size, uint32_t& bytesWritten) override;
-    BE_SQLITE_EXPORT void _SetAlwaysFlush(bool flushOnEveryWrite) override;
-    uint64_t GetBytesWritten() {return m_bytesWritten;}
-    BeFile& GetBeFile() {return m_file;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct LzmaOutToBvectorStream : ILzmaOutputStream
-{
-private:
-    bvector<Byte>& m_buffer;
-
-public:
-    LzmaOutToBvectorStream(bvector<Byte>& v) : m_buffer(v) {}
-    virtual ~LzmaOutToBvectorStream() {}
-    void Reserve(size_t min);
-    BE_SQLITE_EXPORT ZipErrors _Write(void const* data, uint32_t size, uint32_t& bytesWritten) override;
-    BE_SQLITE_EXPORT void _SetAlwaysFlush(bool flushOnEveryWrite) override;
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/13
-//=======================================================================================
-struct LzmaEncoder
-{
-private:
-    CLzma2EncProps* m_enc2Props;
-
-public:
-
-    void SetBlockSize(uint32_t blockSize);
-    BE_SQLITE_EXPORT LzmaEncoder(uint32_t dictionarySize);
-    BE_SQLITE_EXPORT ~LzmaEncoder();
-    BE_SQLITE_EXPORT ZipErrors CompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* progress, bool supportRandomAccess);
-    BE_SQLITE_EXPORT ZipErrors CompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress, bool supportRandomAccess);
-    BE_SQLITE_EXPORT ZipErrors Compress(ILzmaOutputStream& out, ILzmaInputStream& in, ICompressProgressTracker* progress, bool supportRandomAccess);
-    BE_SQLITE_EXPORT ZipErrors Compress(bvector<Byte>& out, void const *input, uint32_t sizeInput, ICompressProgressTracker* progress, bool supportRandomAccess);
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/13
-//=======================================================================================
-struct LzmaDecoder
-{
-    BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* progress);
-    BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress);
-    BE_SQLITE_EXPORT ZipErrors Uncompress(ILzmaOutputStream& out, ILzmaInputStream& in, bool isLzma2, ICompressProgressTracker* progress = nullptr);
-    BE_SQLITE_EXPORT ZipErrors Uncompress(bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize);
-    //! Use this method to decompress a blob of an embedded file. It is assumed that the blob does not have its own header and trailer.
-    BE_SQLITE_EXPORT ZipErrors UncompressDgnDbBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize);
-};
-
 #define SQLITE_FORMAT_SIGNATURE     "SQLite format 3"
 #define DOWNLOAD_FORMAT_SIGNATURE   "Download SQLite"
 #define SQLZLIB_FORMAT_SIGNATURE    "ZV-zlib"
 #define SQLSNAPPY_FORMAT_SIGNATURE  "ZV-snappy"
-
-//__PUBLISH_SECTION_START__
 
 #define BEDB_PROPSPEC_NAMESPACE "be_Db"
 #define BEDB_PROPSPEC_EMBEDBLOB_NAME "EmbdBlob"
@@ -2942,6 +2815,23 @@ struct Properties
 
     //! Build version of BeSqlite (e.g. 06.10.00.00) used to create this database; useful for diagnostics.
     static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
+};
+
+//=======================================================================================
+//! Utility to compress/decompress Db-s
+// @bsiclass                                                  Ramanujam.Raman    11/16
+//=======================================================================================
+struct LzmaUtility
+{
+    //! Compress a Db file
+    static BE_SQLITE_EXPORT ZipErrors CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progressTracker, uint32_t dictionarySize, bool supportRandomAccess);
+
+    // Decompress a Db file
+    static BE_SQLITE_EXPORT ZipErrors DecompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress);
+
+    //! Decompress the blob of an EmbeddedFile in the Db. It is assumed that the blob does not have its own header and trailer, but rather the standard EmbeddedFile headers.
+    //! @remarks To be deprecated
+    static ZipErrors DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize); //!< @private
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
