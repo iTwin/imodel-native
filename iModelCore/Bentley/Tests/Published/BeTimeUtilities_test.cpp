@@ -111,6 +111,7 @@ TEST(BeTimeUtilitiesTests, StopWatch)
 //     This method calculates time difference between local time zone of machine and
 //     GMT/UTC time in milli seconds.
 
+#if defined (NOT_NOW)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       11/16
 //---------------------------------------------------------------------------------------
@@ -139,6 +140,7 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
     ASSERT_TRUE(stat == BentleyStatus::SUCCESS);
     EXPECT_EQ(expectedMillis, actualMillis);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       10/16
