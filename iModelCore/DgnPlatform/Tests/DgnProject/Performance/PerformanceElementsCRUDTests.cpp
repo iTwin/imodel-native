@@ -255,7 +255,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
     {
     PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
     Utf8String categoryName;
-    categoryName.Sprintf("%s_cId", modelName);
+    categoryName.Sprintf("%s_Category", modelName);
     DgnCategoryId catId = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
 
     bool addMultiAspect = false;
