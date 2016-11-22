@@ -134,23 +134,25 @@ public:
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
+    //! @param[in] waitForInitialized Wait for initialized repository.
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note This method uses name and description properties from dgn_Proj namespace as repository name and description. If name property is not set, it will use the filename instead.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
     //! @param[in] repositoryName Explicit repository name.
     //! @param[in] description Explicit description of the repository.
+    //! @param[in] waitForInitialized Wait for initialized repository.
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note CreateNewRepository without repositoryName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description, bool waitForInitialized = true,
                                                                                      Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a repository from server

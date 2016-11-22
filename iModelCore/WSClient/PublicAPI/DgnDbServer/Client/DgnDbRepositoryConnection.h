@@ -198,6 +198,9 @@ private:
     //! Internal master files query.
     DgnDbServerFilesTaskPtr MasterFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    // Wait while bim file is initialized
+    void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDbServerFileResultPtr finalResult) const;
+
     //! Queries briefcase file instance from this repository.
     DgnDbServerFileTaskPtr GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
@@ -336,11 +339,12 @@ public:
     //! Replace a master file on the server.
     //! @param[in] filePath The path to the BIM file to upload.
     //! @param[in] fileInfo Details of the file.
+    //! @param[in] waitForInitialized Wait for new file to be initialized
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
     //! @note Part of master file replacement. See LockRepository.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Cancels master file creation and unlocks the repository.
     //! @param[in] cancellationToken
@@ -357,7 +361,7 @@ public:
     //! @param[in] fileId DbGuid of the queried master file 
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFilesTaskPtr GetMasterFilesById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr GetMasterFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a copy of the master file from the repository
     //! @param[in] localFile Location where the downloaded file should be placed.

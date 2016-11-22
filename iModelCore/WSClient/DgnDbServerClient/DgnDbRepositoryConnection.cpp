@@ -406,9 +406,44 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuidCR file
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             10/2016
+//---------------------------------------------------------------------------------------
+void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDbServerFileResultPtr finalResult) const
+    {
+    bool fileInitialized = false;
+    int retriesLeft = 100;
+    const Utf8String methodName = "DgnDbClient::WaitForInitializedBIMFile";
+    BeThreadUtilities::BeSleep(1000);
+
+    while (!fileInitialized && retriesLeft > 0)
+        {
+        auto masterFilesResult = GetMasterFileById(fileGuid)->GetResult();
+        if (!masterFilesResult.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, masterFilesResult.GetError().GetMessage().c_str());
+            finalResult->SetError(masterFilesResult.GetError());
+            return;
+            }
+
+        auto masterFile = masterFilesResult.GetValue();
+        fileInitialized = masterFile->GetInitialized();
+        
+        if (!fileInitialized)
+            BeThreadUtilities::BeSleep(200);
+        retriesLeft--;
+        }
+
+    if (!fileInitialized)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Repository is not initialized.");
+        finalResult->SetError({ DgnDbServerError::Id::RepositoryIsNotInitialized });
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::UploadNewMasterFile";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -458,6 +493,12 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
                         {
                         finalResult->SetError(initializationResult.GetError());
                         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializationResult.GetError().GetMessage().c_str());
+                        return;
+                        }
+
+                    if (waitForInitialized)
+                        {
+                        WaitForInitializedBIMFile(createdFileInfo->GetFileId(), finalResult);
                         }
                     });
                 });
@@ -550,13 +591,21 @@ DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFiles(ICancellationT
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFilesById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::GetMasterFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
     {
+
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
     filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::FileId, fileId.ToString().c_str());
     query.SetFilter(filter);
-    return MasterFilesQuery(query, cancellationToken);
+
+    return MasterFilesQuery(query, cancellationToken)->Then<DgnDbServerFileResult>([=](DgnDbServerFilesResult filesResult)
+        {
+        if (!filesResult.IsSuccess())
+            return DgnDbServerFileResult::Error(filesResult.GetError());
+
+        return DgnDbServerFileResult::Success(*filesResult.GetValue().begin());
+        });
     }
 
 //---------------------------------------------------------------------------------------
