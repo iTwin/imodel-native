@@ -279,9 +279,14 @@ struct TileLoad : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_fileName;      // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
+    TileLoadsPtr m_loads;
+
+    // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
-    TileLoadsPtr m_loads;
+    Utf8String m_contentType;   // MIME type of the data. Can be empty.
+    uint64_t m_expirationDate;  // Expiration date. Will be 0 when not available.
+    bool m_cachingAllowed;      // Turn off caching for sensitive information.
 
     //! Constructor for TileLoad.
     //! @param[in] fileName full file name or URL name.
@@ -289,7 +294,7 @@ protected:
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
     TileLoad(Utf8StringCR fileName, TileR tile, TileLoadsPtr& loads, Utf8StringCR cacheKey)
-        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_cachingAllowed(true) {}
 
     BentleyStatus LoadTile();
 
@@ -332,6 +337,11 @@ struct HttpDataQuery
 
     //! Valid only after a call to perform.
     Http::Response& GetResponse() {return m_response;}
+
+    Utf8CP GetContentType() const { return m_response.GetHeaders().GetContentType(); }
+
+    //! Parse expiration date from the response. Return false if caching is not allowed.
+    DGNPLATFORM_EXPORT bool GetCacheContolExpirationDate(uint64_t& expiration);
 
     //! Perform http request and wait for the result.
     DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);

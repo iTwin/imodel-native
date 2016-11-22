@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
+#include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_TILETREE
 
-#define TABLE_NAME_TileTree "TileTree"
+//#define TABLE_NAME_TileTree "TileTree"    // Initial version with "Filename, Data, DataSize, Created"
+#define TABLE_NAME_TileTree "TileTree_v2"   // Added 'ContentType' and 'Expires'.
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -108,6 +110,10 @@ BentleyStatus TileLoad::_ReadFromSource()
 
         if (SUCCESS != query.Perform(m_tileBytes))
             return ERROR;
+
+        m_contentType = query.GetContentType();
+
+        m_cachingAllowed = query.GetCacheContolExpirationDate(m_expirationDate);
         }
     else
         {
@@ -115,6 +121,9 @@ BentleyStatus TileLoad::_ReadFromSource()
 
         if (SUCCESS != query.Perform(m_tileBytes))
             return ERROR;
+
+        m_contentType = "";     // unknown 
+        m_expirationDate = 0;   // unknown 
         }
 
     return SUCCESS;
@@ -136,7 +145,7 @@ BentleyStatus TileLoad::ReadFromDb()
         RealityData::Cache::AccessLock lock(*cache);
 
         CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
             return ERROR;
 
         stmt->ClearBindings();
@@ -146,6 +155,8 @@ BentleyStatus TileLoad::ReadFromDb()
 
         m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
         m_tileBytes.SetPos(0);
+        m_contentType = stmt->GetValueText(2);    
+        m_expirationDate = stmt->GetValueInt64(3);
 
         uint64_t rowId = stmt->GetValueInt64(2);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
@@ -174,9 +185,12 @@ BentleyStatus TileLoad::ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoad::SaveToDb()
     {
+    if (!m_cachingAllowed)
+        return ERROR;
+
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
-        return ERROR;
+        return ERROR; 
 
     BeAssert(!m_cacheKey.empty());
     BeAssert(m_tileBytes.HasData());
@@ -185,7 +199,7 @@ BentleyStatus TileLoad::SaveToDb()
 
     // "INSERT OR REPLACE" so we can update old data that we failed to load.
     CachedStatementPtr stmt;
-    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Created,Expires) VALUES (?,?,?,?,?,?)");
 
     BeAssert(rc == BE_SQLITE_OK);
     BeAssert(stmt.IsValid());
@@ -194,9 +208,9 @@ BentleyStatus TileLoad::SaveToDb()
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
     stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
-
-    if (m_tile.IsValid()) // for the root, store NULL for time. That way it will never get purged.
-        stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
+    stmt->BindInt64(5, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(6, m_expirationDate);
 
     rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
@@ -242,6 +256,53 @@ BentleyStatus HttpDataQuery::Perform(ByteStream& data)
     return SUCCESS;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
+    {
+    expirationDate = 0;
+
+    if (!m_response.IsSuccess())
+        return false;
+         
+    Utf8String cacheControl = m_response.GetHeaders().GetCacheControl();
+    size_t offset = 0;
+    Utf8String directive;
+    while ((offset = cacheControl.GetNextToken(directive, ",", offset)) != Utf8String::npos)
+        {
+        // Not parsed:
+        // "private" : means that the cache is for a single user. This is what we have.
+        // "s-maxage": max age for shared cache(aka proxies). We have a private single-user cache, not relevant.
+
+        if (directive.StartsWith("no-cache") || directive.StartsWith("no-store"))
+            {
+            // We are not allowed to cache this response. It may contain sensitive information, requires usage tracking by the server...
+            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            return false;
+            }
+
+        if (directive.StartsWith("max-age="))
+            {
+            int maxAge = atoi(directive.c_str() + strlen("max-age="));
+
+            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + (maxAge * 1000);
+            }
+        }
+
+    // if cache-control did not provide a max-age we must use 'Expires' directive if present.
+    if (0 == expirationDate)
+        {        
+        Utf8CP expiresStr = m_response.GetHeaders().GetValue("Expires");
+        if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
+            {
+            // if we cannot find an expiration date we are still allowed to cache.
+            }
+        }
+       
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -272,7 +333,13 @@ BentleyStatus TileCache::_Prepare() const
     if (m_db.TableExists(TABLE_NAME_TileTree))
         return SUCCESS;
         
-    Utf8CP ddl = "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Created BIGINT";
+    Utf8CP ddl = "Filename CHAR PRIMARY KEY,"
+                 "Data BLOB,"
+                 "DataSize BIGINT,"
+                 "ContentType TEXT," 
+                 "Created BIGINT,"
+                 "Expires BIGINT";
+
     if (BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, ddl))
         return SUCCESS;
 
