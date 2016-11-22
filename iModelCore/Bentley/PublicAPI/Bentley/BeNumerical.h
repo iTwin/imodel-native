@@ -58,25 +58,15 @@ struct          BeNumerical
         return (uv < 1.0)? DBL_EPSILON: NextafterDelta(uv);
         }
 
-    //! Compare two values to the specified tolerance.
-    //! @param[in] sv1  a value
-    //! @param[in] sv2  another value
-    //! @param[in] tolerance  tolerance value which defaults to 0.00001 (mgds_fc_epsilon).
-    //! @return 0 if equal within the specified tolerance, -1 if sv1 is less than sv2, and 1 if sv1 is greater than sv2
-    static int CompareUsingTolerance(double sv1, double sv2, double tolerance = 0.00001)
-        {
-        if (fabs(sv2 - sv1) < tolerance)
-            return 0;
-        return sv1 < sv2 ? -1 : 1;
-        }
-
     //! Compare two values to the closest tolerance possible.
     //! @param[in] sv1  a value
     //! @param[in] sv2  another value
     //! @return 0 if equal within the closest possible tolerance, -1 if sv1 is less than sv2, and 1 if sv1 is greater than sv2
     static int Compare (double sv1, double sv2)
         {
-        return CompareUsingTolerance (sv1, sv2, ComputeComparisonTolerance(sv1, sv2));
+        if (fabs(sv2 - sv1) < ComputeComparisonTolerance(sv1, sv2))
+             return 0;
+        return sv1 < sv2 ? -1 : 1;
         }
 };
 
