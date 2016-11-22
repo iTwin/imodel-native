@@ -223,7 +223,7 @@ Utf8String NativeSqlBuilder::Pop()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex)
+NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex)
     {
     if (!Utf8String::IsNullOrEmpty(ecsqlParameterName))
         {
@@ -234,7 +234,7 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, i
         Append(nativeSqlParameterName.c_str());
         }
     else
-        AppendFormatted("?");
+        AppendFormatted("?%d", globalIndex);
 
     return *this;
     }
@@ -242,11 +242,11 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, i
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex)
+NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex)
     {
-    AppendParameter(ecsqlParameterName, ecsqlParameterComponentIndex);
+    AppendParameter(ecsqlParameterName, ecsqlParameterComponentIndex, globalIndex);
 
-    m_parameterIndexMappings.push_back(ECSqlParameterIndex(ecsqlParameterIndex, ecsqlParameterComponentIndex));
+    m_parameterIndexMappings.push_back(ECSqlParameterIndex(ecsqlParameterIndex, ecsqlParameterComponentIndex, globalIndex));
 
     return *this;
     }

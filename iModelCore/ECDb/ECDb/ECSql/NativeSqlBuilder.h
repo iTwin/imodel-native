@@ -25,11 +25,13 @@ struct NativeSqlBuilder
         private:
             int m_index;
             int m_componentIndex;
-
+            int m_globalIndex;
         public:
-            ECSqlParameterIndex(int index, int componentIndex) : m_index(index), m_componentIndex(componentIndex) {}
+            ECSqlParameterIndex(int index, int componentIndex, int globalIndex) : m_index(index), m_componentIndex(componentIndex), m_globalIndex(globalIndex) {}
+            
             int GetIndex() const { return m_index; }
             int GetComponentIndex() const { return m_componentIndex; }
+            int GetGlobalIndex() const { return m_globalIndex; }
             };
 
         typedef std::vector<NativeSqlBuilder> List;
@@ -69,9 +71,9 @@ struct NativeSqlBuilder
         NativeSqlBuilder& Append(SqlSetQuantifier);
         NativeSqlBuilder& Append(UnarySqlOperator);
         //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex);
+        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex);
         //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex);
+        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex);
 
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
 

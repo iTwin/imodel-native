@@ -2424,6 +2424,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         {
         ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
         }
+    ASSERT_EQ(3, i);
 
     IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(idx++);  //arrayOfST1
     i = 0;
@@ -2435,7 +2436,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
         i++;
         }
-
+    ASSERT_EQ(3, i);
     ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
     }
 
@@ -2598,7 +2599,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
             {
             ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
             }
-
+        ASSERT_EQ(3, i);
         IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(idx++);  //arrayOfST1
         i = 0;
         for (auto itor : arrayOfST1v)
@@ -2609,6 +2610,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
             ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
             i++;
             }
+        ASSERT_EQ(3, i);
 
         ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
         }
