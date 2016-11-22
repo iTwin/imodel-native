@@ -1079,6 +1079,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
 
     ASSERT_TRUE(ecdb.IsDbOpen());
 
+    ECClassCP relClassGen = ecdb.Schemas().GetECClass("np", "ParentHasChildren");
+    ASSERT_TRUE(relClassGen != nullptr && relClassGen->IsRelationshipClass());
+    ECRelationshipClassCR relClass = *relClassGen->GetRelationshipClassCP();
+
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;
@@ -1098,12 +1102,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
     ASSERT_TRUE(elementInserter.IsValid());
 
     IECInstancePtr elementInst = elementClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECValue v;
-    v.SetUtf8CP("TestCode-1", true);
-    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Code", v));
-    v.Clear();
-    v.SetLong(modelKey.GetECInstanceId().GetValue());
-    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", v));
+    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Code", ECValue("TestCode-1", true)));
+    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", ECValue(relClass, modelKey.GetECInstanceId().GetValue())));
 
     ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
@@ -1130,7 +1130,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
     }
 
     ECSqlStatement selStmt;
-    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Code, Model.Id FROM np.DgnElement"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Code, Model FROM np.DgnElement"));
 
     ECInstanceECSqlSelectAdapter selAdapter(selStmt);
     bool verifiedElementWithSetNavProp = false;
@@ -1144,15 +1144,19 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             {
             verifiedElementWithSetNavProp = true;
 
-            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueInt64(3)) << "Model.Id via plain ECSQL";
+            ECClassId actualRelClassId;
+            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueNavigation<ECInstanceId>(3, &actualRelClassId).GetValue()) << "Model via plain ECSQL";
+            ASSERT_EQ(relClass.GetId().GetValue(), actualRelClassId.GetValue()) << "Model via plain ECSQL";
+
             ECValue v;
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
-            ASSERT_FALSE(v.IsNull()) << "Model.Id is not expected to be null in the read ECInstance";
-            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), v.GetLong());
+            ASSERT_FALSE(v.IsNull()) << "Model is not expected to be null in the read ECInstance";
+            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), v.GetNavigationInfo().GetIdAsLong()) << "Model via ECInstance";
+            ASSERT_EQ(relClass.GetId().GetValue(), v.GetNavigationInfo().GetRelationshipClass().GetId().GetValue()) << "Model via ECInstance";
             }
         else
             {
-            ASSERT_TRUE(selStmt.IsValueNull(3)) << "Model.Id via plain ECSQL";
+            ASSERT_TRUE(selStmt.IsValueNull(3)) << "Model via plain ECSQL";
 
             ECValue v;
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
@@ -1315,7 +1319,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
                                       "    <ECEntityClass typeName='PhysicalElement'>"
                                       "     <ECCustomAttributes>"
                                       "         <ShareColumns xmlns='ECDbMap.02.00'>"
-                                      "         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                      "              <SharedColumnCount>4</SharedColumnCount>"
+                                      "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                                       "         </ShareColumns>"
                                       "     </ECCustomAttributes>"
                                       "       <BaseClass>SpatialElement</BaseClass>"
