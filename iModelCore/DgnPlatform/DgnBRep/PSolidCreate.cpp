@@ -2579,7 +2579,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
                         bvector<IBRepEntityPtr> sewn;
                         bvector<IBRepEntityPtr> unsewn;
 
-                        if (SUCCESS == BRepUtil::Modify::SewBodies (sewn, unsewn, &tools.front(), tools.size(), 1.0))
+                        if (SUCCESS == BRepUtil::Modify::SewBodies (sewn, unsewn, tools, 1.0))
                             {
                             if (0 == sewn.size())
                                 return ERROR;
@@ -2598,7 +2598,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 
                                 if (0 != unsewn.size())
                                     {
-                                    if (SUCCESS != BRepUtil::Modify::BooleanUnion (entityOut, &unsewn.front(), unsewn.size()))
+                                    if (SUCCESS != PSolidUtil::DoBoolean(*entityOut, &unsewn.front(), unsewn.size(), PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint))
                                         return ERROR;
                                     }
                                 }

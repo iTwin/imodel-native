@@ -491,12 +491,11 @@ struct Create
 
     //! @param[out] out The new body.
     //! @param[in] profiles The cross sections profiles.
-    //! @param[in] nProfiles The profile count.
-    //! @param[in] guides An optional set of guide curves for constrolling the loft.
-    //! @param[in] nGuides The guide curve count.
+    //! @param[in] guides An optional set of guide curves for controlling the loft.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
+    //! @note Requires a minimum input of 2 profiles, or 1 profile and 1 guide to produce a valid loft.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, uint32_t nodeId = 0L);
 
     //! Create a new sheet or solid body by sweeping a cross section profile along a path.
     //! @param[out] out The new body.
@@ -526,7 +525,14 @@ struct Create
 //! Support for modification of bodies.
 struct Modify
     {
-    enum StepFacesOption
+    enum class BooleanMode
+        {                       
+        Unite       = 0, //!< Unite target with one or more tool entities.
+        Subtract    = 1, //!< Subtract one or more tool entities from target entity.
+        Intersect   = 2, //!< Intersect target with one or more tool entities.
+        };
+
+    enum class StepFacesOption
         {
         AddNone           = 0, //!< Don't create any step faces.
         AddSmooth         = 1, //!< Create step faces at smooth boundary edges.
@@ -556,26 +562,19 @@ struct Modify
         AngleDistance           = 4, //!< Angle (radians) and left distance.
         };
 
-    //! Modify the target body by intersecting with one or more tool bodies.
+    //! Perform the specified boolean operation between the target body and tool body.
     //! @param[in,out] target The target body to modify.
-    //! @param[in,out] tools A list of one or more tool bodies (consumed in boolean).
-    //! @param[in] nTools Count of tool bodies.
+    //! @param[in,out] tool The tool body (consumed in boolean).
+    //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanIntersect(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, IBRepEntityR tool, BooleanMode mode);
 
-    //! Modify the target body by subtracting one or more tool bodies.
+    //! Perform the specified boolean operation between the target body and one or more tool bodies.
     //! @param[in,out] target The target body to modify.
-    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
-    //! @param[in] nTools Count of tool bodies.
+    //! @param[in,out] tools A vector of one or more tool bodies (consumed in boolean).
+    //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanSubtract(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
-
-    //! Modify the target body by uniting with one or more tool bodies.
-    //! @param[in,out] target The target body to modify.
-    //! @param[in,out] tools Array of one or more tool bodies (consumed in boolean).
-    //! @param[in] nTools Count of tool bodies.
-    //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanUnion(IBRepEntityPtr& target, IBRepEntityPtr* tools, size_t nTools);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, bvector<IBRepEntityPtr>& tools, BooleanMode mode);
 
     //! Modify the target body by subtracting a cut body produced from sweeping the sheet tool body according to the specified cut direction and depth.
     //! @param[in,out] target The target body to modify.
@@ -585,29 +584,44 @@ struct Modify
     //! @param[in] distance To specify the cut depth for CutDepthMode::Blind.
     //! @param[in] inside Whether to remove material inside profile or outside profile.
     //! @return SUCCESS if cut operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityPtr& target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
-
-    //! Separate a disjoint body into multiple bodies. If the input body does not have disjoint regions, it will be unchanged, however
-    //! the input entity will still be invalidated and returned in the output vector.
-    DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<IBRepEntityPtr>& output, IBRepEntityR entity);
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityR target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
 
     //! Sew the given set of sheet bodies together by joining those that share edges in common.
     //! @param[out] sewn The new bodies produced by sewing.
     //! @param[out] unsewn The bodies that were not able to be sewn.
     //! @param[in,out] tools The array of sheet bodies. (invalidated after sew).
-    //! @param[in] nTools Count of tool bodies.
     //! @param[in] gapWidthBound Defines a limit on the width of the gap between sheet body edges that will be allowed to remain.
     //! @param[in] nIterations To request repeated sew attempts that automatically increase gap up to limit set by gapWidthBound.
     //! @return SUCCESS if some bodies were able to be sewn together.
-    DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, IBRepEntityPtr* tools, size_t nTools, double gapWidthBound, size_t nIterations = 1);
+    DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, bvector<IBRepEntityPtr>& tools, double gapWidthBound, size_t nIterations = 1);
+
+    //! Separate a disjoint body into multiple bodies. If the input body does not have disjoint regions, it will be unchanged and the output vector will be empty.
+    //! In the case of a disjoint body, the original entity will reference the first region, and any additional regions will be returned in the output vector.
+    //! @return SUCCESS if operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<IBRepEntityPtr>& additionalEntities, IBRepEntityR entity);
+
+    //! Modify the target body by removing redundant topology. An example of redundant topology would be an edge where the faces on either side have identical surface geometry.
+    //! @param[in,out] target The target body to modify.
+    //! @return SUCCESS if operation was completed.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteRedundantTopology(IBRepEntityR target);
+
+    //! Reverse the surface normals of the target sheet body.
+    //! @param[in,out] target The target sheet body to reverse the orientation of.
+    //! @return SUCCESS if surface normals could be negated.
+    DGNPLATFORM_EXPORT static BentleyStatus ReverseOrientation(IBRepEntityR target);
 
     //! Modify the target body by sweeping along a path vector.
     //! @param[in,out] target The target body to sweep. A wire body becomes a sheet, and a sheet body becomes a solid.
     //! @param[in] path A scaled vector to define the sweep direction and distance.
     //! @return SUCCESS if sweep could be completed.
-    DGNPLATFORM_EXPORT static BentleyStatus SweepBody(IBRepEntityPtr& target, DVec3dCR path);
+    DGNPLATFORM_EXPORT static BentleyStatus SweepBody(IBRepEntityR target, DVec3dCR path);
 
-    // NEEDSWORK: Add method that calls PK_BODY_reverse_orientation for sheet bodies...
+    //! Modify the target body by spinning along an arc specified by a revolve axis and sweep angle.
+    //! @param[in,out] target The target body to spin. A wire body becomes a sheet, and a sheet body becomes a solid.
+    //! @param[in] axis The revolve axis.
+    //! @param[in] angle The sweep angle. (value in range of -2pi to 2pi)
+    //! @return SUCCESS if spin could be completed.
+    DGNPLATFORM_EXPORT static BentleyStatus SpinBody(IBRepEntityR target, DRay3dCR axis, double angle);
     };
 
 //! Support for persistent topological ids on faces, edges, and vertices.

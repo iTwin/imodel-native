@@ -1812,6 +1812,7 @@ public:
 
     //! Get a writable reference to the ElementAlignedBox2d of this Placement2d.
     ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
+    void SetElementBox(ElementAlignedBox2dCR box) {m_boundingBox = box;}
 
     //! Convert the origin and angle of this Placement2d into a Transform.
     Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle.Radians(), 1.0, 1.0); return t;}
