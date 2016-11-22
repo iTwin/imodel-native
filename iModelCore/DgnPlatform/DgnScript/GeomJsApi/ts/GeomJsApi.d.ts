@@ -240,6 +240,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static CreateRadians (value : cxx_double) : AngleP;
         Radians : cxx_double;
         Degrees : cxx_double;
+
+        AlmostEqualAllowPeriodShift (other: AngleP) : cxx_bool;
+        AlmostEqualNoPeriodShift (other: AngleP) : cxx_bool;
         OnDispose(): void;
         Dispose(): void;
     }
