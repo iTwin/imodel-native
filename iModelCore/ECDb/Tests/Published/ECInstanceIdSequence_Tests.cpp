@@ -130,13 +130,7 @@ ECClassCR ecClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceKey InsertRelation
-(
-ECDbR ecdb,
-ECRelationshipClassCR relationClass,
-IECInstancePtr source,
-IECInstancePtr target
-)
+ECInstanceKey InsertRelation(ECDbR ecdb, ECRelationshipClassCR relationClass, IECInstancePtr source, IECInstancePtr target)
     {
     StandaloneECRelationshipEnablerPtr enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(relationClass);
     IECRelationshipInstancePtr relation = enabler->CreateRelationshipInstance();
