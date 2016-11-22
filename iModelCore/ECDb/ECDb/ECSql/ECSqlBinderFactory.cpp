@@ -125,14 +125,17 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
 //---------------------------------------------------------------------------------------
 bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
     {
-    //noop binder is only needed for INSERT as in that case we don't translate the parameter into a native SQL token.
-    //The ECSQL user however might still bind to the ECSQL parameter which then is a no-op.
-    if (ctx.GetCurrentScope().GetECSqlType() != ECSqlType::Insert)
+    const ECSqlType ecsqlType = ctx.GetCurrentScope().GetECSqlType();
+    if (ecsqlType == ECSqlType::Select || ecsqlType == ECSqlType::Delete ||
+        (ecsqlType == ECSqlType::Update && ctx.GetCurrentScope().GetExp().GetType() != Exp::Type::AssignmentList))
         return false;
 
-    BeAssert(ctx.GetCurrentScope().IsRootScope() && "Nested ECSQL INSERT is not expected to be supported by this code.");
 
-    BeAssert(sysPropertyKind != ECSqlSystemPropertyKind::ECClassId && "Inserting into ECClassId is not supported and should have been caught before");
+    //only INSERT and UPDATE SET clauses require no-op binders because they directly translate to columns. All other expressions
+    //can use constant values for virtual columns and therefore don't need no-op binders.
+    
+    BeAssert(sysPropertyKind != ECSqlSystemPropertyKind::ECClassId && "Inserting/updating ECClassId is not supported and should have been caught before");
+    BeAssert(propMap.GetType() != PropertyMap::Type::ECClassId && "Inserting/updating ECClassId is not supported and should have been caught before");
 
     if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
         {
@@ -158,14 +161,11 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
             return constraintClassIdPropMap.IsVirtual(*contextTable);
             }
-            case PropertyMap::Type::ECClassId:
-                //WIP_TABLECONTEXT
-                return static_cast<ECClassIdPropertyMap const&>(propMap).IsVirtual(propMap.GetClassMap().GetJoinedTable());
             case PropertyMap::Type::NavigationRelECClassId:
                 return static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap).IsVirtual();
 
             default:
-                return false;;
+                return false;
         }
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
