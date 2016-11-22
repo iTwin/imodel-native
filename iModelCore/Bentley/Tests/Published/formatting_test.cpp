@@ -61,7 +61,7 @@ TEST(FormattingTest, Simple)
 	FormatParameterP fp, fp1, fp2;
 	size_t count = fd.GetCount();
 
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < (int)count; i++)
 	{
 		fp = fd.GetParameterByIndex(i);
 		fp1 = fd.FindParameterByCode(fp->GetParameterCode());
