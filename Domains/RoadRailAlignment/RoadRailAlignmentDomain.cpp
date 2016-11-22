@@ -48,9 +48,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(Dgn::DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    DgnCategory alignmentCategory(DgnCategory::CreateParams(dgndb, BRRA_CATEGORY_Alignment, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    alignmentCategory.Insert(DgnSubCategory::Appearance());
-    BeAssert(alignmentCategory.GetCategoryId().IsValid());
+    AlignmentCategory::InsertDomainCategories(dgndb);
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority(BRRA_AUTHORITY_Alignment, dgndb);
     BeAssert(authority.IsValid());
@@ -59,17 +57,6 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
         authority->Insert();
         BeAssert(authority->GetAuthorityId().IsValid());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailAlignmentDomain::QueryAlignmentCategoryId(Dgn::DgnDbCR dgnDb)
-    {
-    static Utf8String s_categoryName(BRRA_CATEGORY_Alignment);
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(s_categoryName, const_cast<DgnDbR>(dgnDb)); // NEEDSWORK_CONST
-    BeAssert(categoryId.IsValid());
-    return categoryId;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -45,6 +45,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 $(o)Alignment$(oext) : $(_MakeFilePath)Alignment.cpp ${MultiCompileDepends} $(appPublicApi)Alignment.h
 
+$(o)AlignmentCategory$(oext) : $(_MakeFilePath)AlignmentCategory.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentCategory.h
+
 $(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
 
 $(o)AlignmentPair$(oext) : $(_MakeFilePath)AlignmentPair.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPair.h

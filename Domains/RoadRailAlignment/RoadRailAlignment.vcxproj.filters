@@ -67,6 +67,9 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentCategory.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml" />
@@ -106,6 +109,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AlignmentPairIntersection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlignmentCategory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

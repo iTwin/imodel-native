@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\RoadRailAlignment\Alignment.h" />
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentModel.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h" />
@@ -44,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Alignment.cpp" />
+    <ClCompile Include="AlignmentCategory.cpp" />
     <ClCompile Include="AlignmentModel.cpp" />
     <ClCompile Include="AlignmentPair.cpp" />
     <ClCompile Include="AlignmentPairEditor.cpp" />

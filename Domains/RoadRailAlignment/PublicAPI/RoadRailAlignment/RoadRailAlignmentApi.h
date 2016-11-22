@@ -165,6 +165,7 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
 #include "AlignmentModel.h"
 #include "Alignment.h"
 #include "AlignmentReferent.h"
+#include "AlignmentCategory.h"
 #include "RoadRailAlignmentDomain.h"
 #include "GeometryDebug.h"
 #include "GeometryHelper.h"

@@ -19,8 +19,7 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    return new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailAlignmentDomain::QueryAlignmentCategoryId(model.GetDgnDb())));
+    return new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::Get(model.GetDgnDb())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,8 +240,7 @@ AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveV
     if (!alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), 
-        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
+    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
     createParams.SetParentId(alignment.GetElementId());
 
     return new AlignmentHorizontal(createParams, horizontalGeometry);
@@ -285,8 +283,7 @@ AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVecto
     if (!alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), 
-        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
+    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
     createParams.SetParentId(alignment.GetElementId());
 
     return new AlignmentVertical(createParams, verticalGeometry);

@@ -25,7 +25,6 @@ protected:
 public:
     RoadRailAlignmentDomain();
 
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId QueryAlignmentCategoryId(Dgn::DgnDbCR);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnAuthorityId QueryAlignmentAuthorityId(Dgn::DgnDbCR dgndb);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::DgnDbR);

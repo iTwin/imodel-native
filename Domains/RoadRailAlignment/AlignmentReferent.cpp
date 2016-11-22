@@ -36,8 +36,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, DistanceExpr
     if (!alignment.GetModelId().IsValid() || !alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()),
-        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
+    CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
     params.SetParentId(alignment.GetElementId());
 
     AlignmentStationPtr retVal(new AlignmentStation(params, distanceExpression, restartValue));
