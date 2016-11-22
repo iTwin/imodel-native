@@ -45,6 +45,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCountDefined = true;
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+   m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
@@ -145,6 +147,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;
     if (!m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(4);
     else SetNumberOfSubNodesOnSplit(8);
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
     
     for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
         {
@@ -196,6 +200,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -274,6 +280,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -354,6 +362,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -413,6 +423,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
