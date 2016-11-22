@@ -5700,6 +5700,16 @@ const EXTENT& SMPointIndexNode<POINT, EXTENT>::GetContentExtent() const
     return(m_nodeHeader.m_contentExtent);
     }
 
+template<class POINT, class EXTENT>
+double SMPointIndexNode<POINT, EXTENT>::GetMinResolution() const
+{
+    // We do not call invariants for simple accessors as they are extensively called within reorganising methods
+
+    if (!IsLoaded())
+        Load();
+
+    return std::min(m_nodeHeader.m_geometricResolution, m_nodeHeader.m_textureResolution);
+}
 
 
 //=======================================================================================
@@ -7778,6 +7788,14 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveM
     pi_pDataStore->StoreMasterHeader(&masterHeader, sizeof(masterHeader));
 
     return SUCCESS;
+    }
+
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT>> SMPointIndex<POINT, EXTENT>::FindLoadedNode(uint64_t id) const
+    {
+    if (m_createdNodeMap.count((int64_t)id) == 0)
+        return nullptr;
+
+    return m_createdNodeMap.find((int64_t)id)->second;
     }
 
 #ifdef INDEX_DUMPING_ACTIVATED

@@ -21,6 +21,8 @@ template <typename POINT> class ScalableMeshMemoryPools
                         
         size_t                  m_genericPoolSize;                
         SMMemoryPoolPtr         m_genericPool;
+        size_t                  m_videoPoolSize;
+        SMMemoryPoolPtr         m_videoPool;
 
         ScalableMeshMemoryPools();
         static ScalableMeshMemoryPools* m_instance;
@@ -28,6 +30,7 @@ template <typename POINT> class ScalableMeshMemoryPools
     public:
         static ScalableMeshMemoryPools* Get();                        
         SMMemoryPoolPtr& GetGenericPool();
+        SMMemoryPoolPtr& GetVideoPool();
     };
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
@@ -36,6 +39,10 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     m_genericPool = SMMemoryPool::GetInstance();
     bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
     assert(result == true);
+
+    m_videoPoolSize = 500000000; 
+    m_videoPool = SMMemoryPool::GetInstanceVideo();
+    m_videoPool->SetMaxSize(m_videoPoolSize);
     }
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPools<POINT>::Get()
@@ -50,6 +57,11 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPoo
 template <typename POINT> SMMemoryPoolPtr& ScalableMeshMemoryPools<POINT>::GetGenericPool()
     {
     return m_genericPool;
+    }
+
+template <typename POINT> SMMemoryPoolPtr& ScalableMeshMemoryPools<POINT>::GetVideoPool()
+    {
+    return m_videoPool;
     }
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>* ScalableMeshMemoryPools<POINT>::m_instance = nullptr;

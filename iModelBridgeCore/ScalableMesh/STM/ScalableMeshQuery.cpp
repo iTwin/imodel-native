@@ -2596,6 +2596,18 @@ StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVect
     return _GetDisplayClipVectors(clipVectors);
     }
 
+void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemory)
+    {
+    return _SetIsInVideoMemory(isInVideoMemory);
+    }
+
+IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
+    {
+    auto index = ((ScalableMesh<DPoint3d>*)smP)->GetMainIndexP();
+    auto node = index->FindLoadedNode(nodeId);
+    return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);
+    }
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */

@@ -40,6 +40,13 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem;
 template <typename DataType> class SMStoredMemoryPoolMultiItems;
 
 
+enum class SMMemoryPoolType
+{
+    CPU = 0,
+    GPU = 1
+};
+
+
 
 class SMMemoryPool;
 typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
@@ -154,6 +161,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
         void SetDirty() { m_dirty = true; }
+
+        SMMemoryPoolType m_poolId;
     };
 
 
@@ -1129,14 +1138,16 @@ class SMMemoryPool : public RefCountedBase
     private : 
 
         static SMMemoryPoolPtr           s_memoryPool; 
+        static SMMemoryPoolPtr           s_videoMemoryPool;
 
         uint64_t                                  m_maxPoolSizeInBytes;
         atomic<uint64_t>                          m_currentPoolSizeInBytes;
         bvector<bvector<SMMemoryPoolItemBasePtr>> m_memPoolItems;
-        bvector<bvector<std::mutex*>>             m_memPoolItemMutex;
+        bvector<bvector<std::recursive_mutex*>>             m_memPoolItemMutex;
         bvector<bvector<clock_t>>                 m_lastAccessTime;
         uint64_t                                  m_nbBins;
         mutex                                     m_increaseBinMutex;
+        SMMemoryPoolType m_id;
 
         
         //std::mutex                 m_poolItemMutex;
@@ -1146,7 +1157,7 @@ class SMMemoryPool : public RefCountedBase
         atomic<bool>               m_lastAvailableInd;
         */
 
-        SMMemoryPool();
+        SMMemoryPool(SMMemoryPoolType type);
             
         virtual ~SMMemoryPool();
 
@@ -1154,6 +1165,7 @@ class SMMemoryPool : public RefCountedBase
     public : 
 
         static SMMemoryPoolItemId s_UndefinedPoolItemId;
+
         
             
         template<typename T>
@@ -1265,11 +1277,19 @@ class SMMemoryPool : public RefCountedBase
 
         static SMMemoryPoolPtr GetInstance()
             {
-            if (s_memoryPool == 0)
-                s_memoryPool = new SMMemoryPool;     
+            if (s_memoryPool == 0) 
+                s_memoryPool = new SMMemoryPool(SMMemoryPoolType::CPU);     
             
             return s_memoryPool;
             }
+
+        static SMMemoryPoolPtr GetInstanceVideo()
+        {
+            if (s_videoMemoryPool == 0)
+                s_videoMemoryPool = new SMMemoryPool(SMMemoryPoolType::GPU);
+
+            return s_videoMemoryPool;
+        }
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

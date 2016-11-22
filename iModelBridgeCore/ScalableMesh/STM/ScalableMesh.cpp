@@ -407,7 +407,7 @@ IScalableMeshPtr IScalableMesh::GetTerrainSM()
     return _GetTerrainSM();
     }
 
-Transform  IScalableMesh::GetReprojectionTransform()
+Transform  IScalableMesh::GetReprojectionTransform() const
     {
     return _GetReprojectionTransform();
     }
@@ -2273,7 +2273,7 @@ template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
     return m_terrainP;
     }
 
-template <class POINT>  Transform  ScalableMesh<POINT>::_GetReprojectionTransform()
+template <class POINT>  Transform  ScalableMesh<POINT>::_GetReprojectionTransform() const
     {
     return m_reprojectionTransform;
     }
