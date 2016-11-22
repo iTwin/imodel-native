@@ -750,6 +750,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
 
         // the memcpy takes care of these...            
         case VALUEKIND_Array:
+        case VALUEKIND_Navigation:
         case PRIMITIVETYPE_Boolean:
         case PRIMITIVETYPE_Integer:
         case PRIMITIVETYPE_Long:

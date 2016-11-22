@@ -454,5 +454,21 @@ TEST_F(NavigationECPropertyTests, InstanceWithNavProp_String)
     {
     InstanceWithNavProp(PrimitiveType::PRIMITIVETYPE_String);
     }
+
+TEST_F(NavigationECPropertyTests, ValueCopyTest)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    ECRelationshipClassP relClass;
+    schema->CreateRelationshipClass(relClass, "RelClass");
+
+    ECValue v;
+    v = ECValue(*relClass, 42LL);
+
+    ASSERT_FALSE(v.IsNull()) << "The value is null after the copy when it shouldn't be.";
+    ASSERT_TRUE(v.IsNavigation()) << "The value is not a navigation";
+    EXPECT_EQ(42LL, v.GetNavigationInfo().GetIdAsLong()) << "Value did not have expected value";
+    EXPECT_STREQ(relClass->GetName().c_str(), v.GetNavigationInfo().GetRelationshipClass().GetName().c_str()) << "Value did not have the expected relationship";
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE
 
