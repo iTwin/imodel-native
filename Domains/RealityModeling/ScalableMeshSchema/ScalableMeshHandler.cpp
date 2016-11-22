@@ -42,6 +42,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
     {
+    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
     return m_range;
     }
 
@@ -175,7 +176,8 @@ static Byte s_transparency = 100;
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                              
                               Dgn::RenderContextR                         context,
-                              const DMatrix4d&                            storageToUors)
+                              const DMatrix4d&                            storageToUors,
+                              ScalableMeshDisplayCacheManager*            mgr)
     {    
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
 
@@ -309,16 +311,19 @@ protected:
     IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     const DMatrix4d&                        m_storageToUorsTransfo;    
+    IScalableMeshDisplayCacheManager*       m_displayNodesCache;
     uint64_t                                m_nextShow;
 
     ScalableMeshProgressiveTask (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                  ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                 DMatrix4d&                              storageToUorsTransfo) 
+                                    DMatrix4d&                              storageToUorsTransfo,
+                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
     : m_storageToUorsTransfo(storageToUorsTransfo)
         {    
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_nextShow = 0;
+        m_displayNodesCache = cacheManager.get();
         }
 
 public:
@@ -390,11 +395,13 @@ ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                       DMatrix4d&                              storageToUorsTransfo, 
-                      TerrainContextR                         context) 
+                      TerrainContextR                            context,
+                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
     {
     context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
                                                                                             currentDrawingInfoPtr,
-                                                                                            storageToUorsTransfo));
+                                                                                                        storageToUorsTransfo,
+                                                                                                        cacheManager));
     }
 
 };  
@@ -557,12 +564,22 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
     assert(status == SUCCESS);
 
 
-    if (s_waitQueryComplete)
+    if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
         while (!m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
+            BeThreadUtilities::BeSleep (200);
             }
         }
+
+
+        if (!m_isProgressiveDisplayOn)
+            {
+            while (!m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
+                {
+                BeThreadUtilities::BeSleep (200);
+                }
+            }
 
     bool needProgressive;
     
@@ -601,7 +618,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (needProgressive)
         {
-        ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
+        ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
         }
 #endif
     }                 
@@ -622,10 +639,9 @@ struct  ScalableMeshTileNode : ModelTileNode
     {
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
-    DgnModelId              m_modelId;
 
-    ScalableMeshTileNode(DgnModelId modelId, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
-        m_modelId(modelId), m_node(node), m_transform(transform), ModelTileNode(transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
+    ScalableMeshTileNode(DgnModelCR model, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
+        m_node(node), m_transform(transform), ModelTileNode(model, transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
         {}
 
 
@@ -667,7 +683,7 @@ struct  ScalableMeshTileNode : ModelTileNode
                 }
             builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
-                builder->AddTriangle(*visitor, m_modelId, false, twoSidedTriangles);
+                builder->AddTriangle(*visitor, GetModel().GetModelId(), false, twoSidedTriangles);
 
             tileMeshes.push_back(builder->GetMesh());
             }
@@ -682,7 +698,7 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
     DRange3d transformedRange = node->GetContentExtent();
     if (transformedRange.IsNull() || transformedRange.IsEmpty()) transformedRange = node->GetNodeExtent();
     transformDbToTile.Multiply(transformedRange, transformedRange);
-    rootTile = new ScalableMeshTileNode(GetModelId(), node, transformedRange, transformDbToTile, childIndex, parent);
+    rootTile = new ScalableMeshTileNode(*this, node, transformedRange, transformDbToTile, childIndex, parent);
 
     for (auto& child : node->GetChildrenNodes())
         {
@@ -693,7 +709,7 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
         }
     }
 
-TileGenerator::Status ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile)
+TileGenerator::Status ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector)
     {
     if (!m_smPtr.IsValid())
         return TileGenerator::Status::NoGeometry;
@@ -796,6 +812,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     {
     m_tryOpen = false;               
     m_forceRedraw = false;
+    m_isProgressiveDisplayOn = true;
 
    // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
    // appData->m_smTerrainPhysicalModelP = this;
@@ -823,11 +840,17 @@ ScalableMeshModel::~ScalableMeshModel()
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject) 
     {    
     assert(m_smPtr == nullptr);
+    m_path = smFilename;
+
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
+    size_t nOfModels = allScalableMeshes.size();
+    allScalableMeshes.clear();
 
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
-    clipFileBase.AppendUtf8(std::to_string(GetModelId().GetValue()).c_str());
+    clipFileBase.AppendUtf8(std::to_string(nOfModels-1).c_str());
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
     if (m_smPtr->IsTerrain())
@@ -857,6 +880,24 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
+
+        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
+            {
+            DRange3d smExtent, smExtentUors;
+            m_smPtr->GetRange(smExtent);
+            Transform trans;
+            trans.InitFromScaleFactors(scale.x, scale.y, scale.z);
+            trans.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
+            if (0 == status || 1 == status)
+                m_smPtr->SetReprojection(*projGCS, approxTransform);
+            }
         }
     else
         {
@@ -929,6 +970,11 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
     }
 
 
+BeFileName ScalableMeshModel::GetPath()
+    {
+    return m_path;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -951,6 +997,28 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
     return tmFileName;
     }
 
+void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->ClearOverviews(targetSM.get());
+    if (targetSM.get() == m_smPtr.get())
+        {
+        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+        }
+    if (targetSM.get() == m_smPtr->GetTerrainSM().get())
+        {
+        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
+        if (m_currentDrawingInfoPtr.IsValid())
+            {
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
+            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
+            }
+        }
+    }
+
+void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
+    {
+    m_progressiveQueryEngine->InitScalableMesh(targetSM);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     3/2016
@@ -973,6 +1041,14 @@ bool ScalableMeshModel::IsTerrain()
     {
     if (m_smPtr.get() == nullptr) return false;
     return m_smPtr->IsTerrain();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre    10/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
+    {
+    m_isProgressiveDisplayOn = isProgressiveDisplayOn;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1064,6 +1140,20 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
     m_properties.FromJson(v);
+
+    if (m_smPtr == 0 && !m_tryOpen)
+    {
+        //BeFileName smFileName(((this)->m_properties).m_fileId);
+        BeFileName smFileName;
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+
+        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        {
+            OpenFile(smFileName, GetDgnDb());
+        }
+
+        m_tryOpen = true;
+    }
     }
 
 

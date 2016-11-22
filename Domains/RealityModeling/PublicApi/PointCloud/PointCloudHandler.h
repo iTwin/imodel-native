@@ -40,10 +40,10 @@ public:
 
             //! Parameters to create a new instance of a PointCloudModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
-            //! @param[in] code The Code for the DgnModel
+            //! @param[in] modeledElementId The new DgnModel will model this element
             //! @param[in] fileUri File URI of the PointCloud file.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileUri) :
-                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileUri(fileUri)
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId, Utf8StringCR fileUri) :
+                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), modeledElementId), m_fileUri(fileUri)
                 {}
         };
         

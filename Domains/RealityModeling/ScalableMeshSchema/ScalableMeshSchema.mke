@@ -90,6 +90,7 @@ DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
 
 LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)Units$(libext) \

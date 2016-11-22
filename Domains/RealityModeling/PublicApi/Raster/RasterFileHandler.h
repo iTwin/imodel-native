@@ -18,20 +18,6 @@ struct RasterFileModelHandler;
 struct RasterRoot;
 
 //=======================================================================================
-// @bsiclass                                                    Eric.Paquet     06/2015
-//=======================================================================================
-struct RasterFileProperties
-    {
-    Utf8String  m_fileUri;          //! File URI provided by the application. Used to resolve the local file name.  
-    DMatrix4d   m_sourceToWorld;    //! Transformation from source(lower-left origin) to BIM coordinate. 
-                                    //! This transform may contains a reprojection approximation(source Gcs to BIM Gcs) if one was required.
-
-                                RasterFileProperties();
-    void                        ToJson(Json::Value&) const;
-    void                        FromJson(Json::Value const&);                
-    };
-
-//=======================================================================================
 // A DgnModel to reference a raster file. This holds the name of the file and a transform 
 // to position the raster in the BIM.
 // Note that the a rasterfile may also have a its own geo-reference(matrix, GCS or both) stored in it,
@@ -49,27 +35,28 @@ public:
         {
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
-        Utf8String m_fileUri;
-        DMatrix4dCP m_sourceToWorldP;   //! Optional transformation from source(lower-left origin) to BIM coordinate. If not provide we use source georeference.
-
+        DMatrix4dCP m_sourceToWorldP;   //! Optional transformation from source(lower-left origin) to BIM coordinate. If not provided we use the source georeference.
+        Dgn::RepositoryLinkCP m_link;   //! Link to the raster file.
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-            CreateParams(Dgn::DgnModel::CreateParams const& params) : T_Super(params) {}
+            CreateParams(Dgn::DgnModel::CreateParams const& params) : T_Super(params) { m_link = nullptr; m_sourceToWorldP = nullptr;  }
 
             //! Parameters to create a new instance of a RasterFileModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
-            //! @param[in] code The Code for the DgnModel
-            //! @param[in] fileUri File URI of the raster file.
+            //! @param[in] link The file link.
             //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileUri, DMatrix4dCP sourceToWorld) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileUri(fileUri), m_sourceToWorldP(sourceToWorld)
-                {}
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::RepositoryLinkCR link, DMatrix4dCP sourceToWorld) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), link.GetElementId()), m_sourceToWorldP(sourceToWorld),
+                m_link(&link)
+                {
+                BeAssert(link.GetElementId().IsValid());
+                }
         };
-
 
 private:
 
-    RasterFileProperties    m_fileProperties;
+    DMatrix4d               m_sourceToWorld;    //! Transformation from source(lower-left origin) to BIM coordinate. 
+                                                //! This transform may contains a reprojection approximation(source Gcs to BIM Gcs) if one was required.
     mutable bool            m_loadFileFailed = false;       //! if we failed to open the file, we won't try again again...
 
 protected:
@@ -79,7 +66,7 @@ protected:
     RasterFileModel(CreateParams const& params);
 
     //! Create a new RasterFileModel object to be stored in the DgnDb.
-    RasterFileModel(CreateParams const& params, RasterFileProperties const& properties);
+    RasterFileModel(CreateParams const& params, DMatrix4dCR sourceToWorld);
 
     //! Destruct a RasterFileModel object.
     ~RasterFileModel();
@@ -87,10 +74,12 @@ protected:
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
+
+    bool _IsParallelToGround() const override;
     
 public:
 
-    DMatrix4dCR  GetSourceToWorld() const { return m_fileProperties.m_sourceToWorld; }
+    DMatrix4dCR  GetSourceToWorld() const { return m_sourceToWorld; }
 
     //! Query the DgnClassId of the RasterFileModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the RasterFileModel class - it does @em not return the class of a specific instance.

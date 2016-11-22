@@ -13,7 +13,7 @@
 BEGIN_UNNAMED_NAMESPACE
 USING_NAMESPACE_TILETREE
 
-static Utf8String GetMagicString() { return "3MXBO"; }
+static Utf8String GetMagicString() {return "3MXBO";}
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
@@ -131,7 +131,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
     {
     BeAssert(IsQueued());
-    m_loadState.store(LoadState::Loading);
+    m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
 
@@ -186,7 +186,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
 
-            NodePtr nodeptr  = new Node(this);
+            NodePtr nodeptr  = new Node(GetRootR(), this);
 
             if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;
@@ -317,6 +317,10 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
 //----------------------------------------------------------------------------------------
 BentleyStatus SceneInfo::Read(StreamBuffer& buffer) 
     {
+    // If we weren't able to read the file...
+    if (0 == buffer.GetSize())
+        return ERROR;
+
     Json::Value val;
     Json::Reader reader;
     Utf8CP buffStr = (Utf8CP) buffer.GetData();

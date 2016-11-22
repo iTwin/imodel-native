@@ -58,7 +58,7 @@ public:
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
-    bvector<FPoint3d> const& GetPoints() const { return m_points; }
+    bvector<FPoint3d> const& GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
 };
 
@@ -89,8 +89,8 @@ struct SceneInfo
 * Multi-threaded loading of children:
 * The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on
 * the reality cache thread(s). That means that sometimes we'll attempt to draw a node and discover that it is too coarse for the current view, but its children are not loaded yet. In that
-* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_loadState". Only when the value
-* of m_loadState==Ready is it safe to use the m_children member.
+* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_loadStatus". Only when the value
+* of m_loadStatus==Ready is it safe to use the m_children member.
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
@@ -99,6 +99,15 @@ struct Node : Dgn::TileTree::Tile
     DEFINE_T_SUPER(Dgn::TileTree::Tile);
     friend struct Scene;
     typedef std::forward_list<GeometryPtr> GeometryList;
+
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    //=======================================================================================
+    struct Loader : Dgn::TileTree::TileLoader
+        {
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::LoadStatePtr loads) :TileLoader(url, tile, loads, tile._GetTileName()) {}
+        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR());};
+        };
 
 private:
     double m_maxDiameter; // maximum diameter
@@ -112,17 +121,20 @@ private:
     Utf8String GetChildFile() const;
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
+    //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::LoadStatePtr) override;
+
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxDiameter(0.0) {}
+    Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
+    void ClearGeometry() {m_geometry.clear();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
-    void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
     void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
@@ -196,7 +208,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT Dgn::Render::TileGenerator::Status _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
+    THREEMX_EXPORT Dgn::Render::TileGenerator::Status _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.
@@ -225,7 +237,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE

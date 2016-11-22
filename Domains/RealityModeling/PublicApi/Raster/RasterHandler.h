@@ -49,13 +49,14 @@ public:
     //! Get the clip boundary.  Might be null.
     RASTER_EXPORT CurveVectorCP GetBoundaryCP() const;
 
-    //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of outer type. Use null to remove.
+    //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of CurveVector::BOUNDARY_TYPE_Outer type. 
+    //! Use null to remove boundary.
     RASTER_EXPORT StatusInt SetBoundary(CurveVectorP pBoundary);
 
     //! Get the clip mask list.
     RASTER_EXPORT MaskVector const& GetMasks() const;
 
-    //! Set the clip mask list.  Curve must be of inner type.
+    //! Set the clip mask list.  Curve must be of CurveVector::BOUNDARY_TYPE_Inner type.
     RASTER_EXPORT StatusInt SetMasks(MaskVector const&);
 
     //! Add a single clip mask to the list. Curve is not copied, its refcount will be incremented. Curve must be of inner type.
@@ -78,6 +79,8 @@ protected:
 
     mutable RasterRootPtr m_root;
 
+    double m_depthBias = 0.0;       //! A display offset in world units applied to the raster in the view Z direction. Only relevant when raster is parallel to the ground(XY plane).
+
     RasterClip m_clips;
     
     //! Destruct a RasterModel object.
@@ -95,9 +98,15 @@ protected:
 //    virtual void _DrawModel(Dgn::ViewContextR) override;
     
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParamsCR params) override;
-    Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-    Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _InitFrom(Dgn::DgnModelCR other) override;
+
+    void _WriteJsonProperties(Json::Value& v) const override;
+    void _ReadJsonProperties(Json::Value const& v) override;
+
+    void ComputeDepthTransformation(TransformR transfo, Dgn::ViewContextR context) const;
+
+    virtual bool _IsParallelToGround() const {return false;}
 
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
@@ -108,7 +117,15 @@ public:
 
     //! Set the clips of this RasterModel.
     RASTER_EXPORT void SetClip(RasterClipCR);
-};
+
+    Utf8String GetDescription() const;
+
+    RASTER_EXPORT bool IsParallelToGround() const;
+
+    void SetDepthBias(double val) { BeAssert(IsParallelToGround()); m_depthBias = val; }
+    double GetDepthBias() const { return m_depthBias; }
+
+    };
 
 //=======================================================================================
 // Model handler for raster

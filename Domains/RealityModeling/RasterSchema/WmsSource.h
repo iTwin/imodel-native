@@ -27,24 +27,24 @@ private:
 
     Transform m_cartesianToWorldApproximation;  //! linear transform from Wms gcs to Bim world. Only used when reprojection fails.
 
-    WmsMap m_mapInfo; 
+    WmsMap m_mapInfo;
+
+    Http::Credentials m_credentials;
+    Http::Credentials m_proxyCredentials;
 
     bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
+
+    std::atomic<Http::HttpStatus> m_lastHttpError;
 
     GeoCoordinates::BaseGCSPtr m_gcs;   //! WMS Gcs. Might be NULL if we cannot create one.
 
     WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system);
 
     virtual ~WmsSource() {};
-
-    Utf8String BuildTileUrl(TileId const& tileId);
-
+    
     static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
     static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
-
-    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
-
-    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads) override;
+    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) const override;
 
     StatusInt ComputeLinearApproximation(TransformR cartesianToWorld);
 
@@ -59,7 +59,18 @@ public:
 
     GeoCoordinates::BaseGCSP GetGcsP() const { return m_gcs.get(); }
 
+    bool IsReverseAxis() const { return m_reverseAxis; }
+
     StatusInt ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesian) const;
+
+    Http::HttpStatus GetLastHttpError() const { return m_lastHttpError; }
+    void SetLastHttpError(Http::HttpStatus const& lastError) { m_lastHttpError = lastError; }
+
+    Http::CredentialsCR GetCredentials() const { return m_credentials; }
+    void SetCredentials(Http::Credentials const& credentials) { m_credentials = credentials; }
+    
+    Http::CredentialsCR GetProxyCredentials() const { return m_proxyCredentials; }
+    void SetProxyCredentials(Http::Credentials const& credentials) { m_proxyCredentials = credentials; }
 };
 
 //=======================================================================================
@@ -72,17 +83,38 @@ public:
     typedef WmsSource root_type;
 
 protected:
-    root_type const& GetSource() const { return (root_type&) m_root; }
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  9/2016
+    //=======================================================================================
+    struct WmsTileLoader : TileTree::TileLoader
+        {
+        Http::Credentials m_credentials;
+        Http::Credentials m_proxyCredentials;
+        Utf8String m_contentType;
+
+        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) :TileLoader(url, tile, loads, tile._GetTileName()) {}
+        virtual ~WmsTileLoader() {};
+
+        folly::Future<BentleyStatus> _GetFromSource() override;
+        BentleyStatus _LoadTile() override;
+
+        WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }
+        };
+
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::LoadStatePtr) override;
+
+    root_type const& GetSource() const { return static_cast<root_type const&>(m_root); }
+    root_type& GetSourceR() { return static_cast<root_type&>(m_root); }
 
 public:
     WmsTile(WmsSourceR root, TileId id, WmsTileCP parent);
-
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override;
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
     //! Cartesian(in WMS gcs) corners of this tile. 
     void GetCartesianCorners(DPoint3dP pCorners) const;
+
+    
 };
 
 END_BENTLEY_RASTER_NAMESPACE

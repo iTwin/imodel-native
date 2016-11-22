@@ -76,6 +76,9 @@ DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_WmsModel, RasterModel)
 private:
     WmsMap m_map;
 
+    Http::Credentials m_credentials;
+    Http::Credentials m_proxyCredentials;
+
 protected:
     friend struct WmsModelHandler;
     
@@ -84,6 +87,8 @@ protected:
 
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
+
+    bool _IsParallelToGround() const override { return true; }
 
     virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const override;
 
@@ -94,7 +99,14 @@ protected:
     WmsModel(CreateParams const& params, WmsMap const& prop);
 
 public:
-    
+    RASTER_EXPORT WmsMap const& GetMap() const;    
+
+    //! Return the last http error. If HttpStatus::Unauthorized or HttpStatus::ProxyAuthenticationRequired then 
+    //! the connection must be authenticate before we try to contact the server again.
+    RASTER_EXPORT Http::HttpStatus GetLastHttpError() const;
+
+    //! Authenticate the connection. If successful, the credentials are saved for the session.
+    RASTER_EXPORT Http::HttpStatus Authenticate(Http::Credentials const& credentials, Http::Credentials const& proxyCredentials);
 };
 
 //=======================================================================================
@@ -107,7 +119,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTER_EXPORT)
 
 public:
-    RASTER_EXPORT static Dgn::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
+    RASTER_EXPORT static WmsModelPtr CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, WmsMap const& prop);
 };
 
 END_BENTLEY_RASTER_NAMESPACE

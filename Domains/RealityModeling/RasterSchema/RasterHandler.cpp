@@ -52,7 +52,7 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const override { descr = m_infoString; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DgnDbStatus::Success; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override { return DgnDbStatus::Success; }
     virtual void _SetHilited(DgnElement::Hilited newState) const override { m_hilited = newState; }
@@ -66,18 +66,30 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     mutable DgnElement::Hilited m_hilited;
     };
 
+/*---------------------------------------------------------------------------------**//**
+* Hack: RasterHandler should be selecting a specific category rather than a random one.
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnCategoryId getDefaultCategoryId(DgnDbR db)
+    {
+    ElementIterator iterator = SpatialCategory::MakeIterator(db);
+    if (iterator.begin() == iterator.end())
+        return DgnCategoryId();
+
+    return (*iterator.begin()).GetId<DgnCategoryId>();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
 RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, RasterModel& model)
     :m_dgnDb(model.GetDgnDb()),
-    m_categoryId(DgnCategory::QueryFirstCategoryId(model.GetDgnDb())),
+    m_categoryId(getDefaultCategoryId(model.GetDgnDb())),
     m_hilited(DgnElement::Hilited::None),
     m_infoString(model.GetName())
     {
     if (m_infoString.empty())
-        m_infoString = model.GetCode().GetValueCP();
+        m_infoString = model.GetName();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     Render::GeometryParams geomParams;
@@ -96,7 +108,6 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
 
     builder->Finish(*this);
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
@@ -127,7 +138,6 @@ StatusInt RasterClip::SetBoundary(CurveVectorP pBoundary)
         return SUCCESS;
         }
 
-    //&&MM validate. The Z-value?
     if (CurveVector::BOUNDARY_TYPE_Outer != pBoundary->GetBoundaryType()) 
         return ERROR;
 
@@ -144,7 +154,6 @@ StatusInt RasterClip::SetMasks(RasterClip::MaskVector const& masks)
     {
     for (auto const& mask : masks)
         {
-        //&&MM validate. The Z-value?
         if (CurveVector::BOUNDARY_TYPE_Inner != mask->GetBoundaryType())
             return ERROR;
         }
@@ -161,7 +170,6 @@ StatusInt RasterClip::SetMasks(RasterClip::MaskVector const& masks)
 //----------------------------------------------------------------------------------------
 StatusInt RasterClip::AddMask(CurveVectorR curve)
     {
-    //&&MM validate. The Z-value?
     if (CurveVector::BOUNDARY_TYPE_Inner != curve.GetBoundaryType())
         return ERROR;
 
@@ -293,7 +301,6 @@ ClipVectorCP RasterClip::GetClipVector() const
 //----------------------------------------------------------------------------------------
 RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
     {
-    //m_loadStatus = LoadRasterStatus::Unloaded;
     }
 
 //----------------------------------------------------------------------------------------
@@ -301,7 +308,6 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -377,8 +383,11 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
+    Transform depthTransfo;
+    ComputeDepthTransformation(depthTransfo, context);
+
     auto now = std::chrono::steady_clock::now();
-    TileTree::DrawArgs args(context, m_root->GetLocation(), now, now - m_root->GetExpirationTime());
+    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), now, now - m_root->GetExpirationTime());
     args.SetClip(GetClip().GetClipVector());
 
     m_root->Draw(args);
@@ -389,12 +398,80 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        TileTree::TileLoadsPtr loads = std::make_shared<TileTree::TileLoads>();
+        TileTree::LoadStatePtr loads = std::make_shared<TileTree::LoadState>();
         args.RequestMissingTiles(*m_root, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads));
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads, depthTransfo));
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR context) const
+    {
+    BeAssert(m_root.IsValid());
+
+    if (0.0 == GetDepthBias() || context.GetViewport() == nullptr || !IsParallelToGround())
+        {
+        transfo.InitIdentity();
+        return;
+        }
+    
+    static double s_depthFactor = 1.0;
+
+    DVec3d viewZ;
+    context.GetViewport()->GetRotMatrix().GetRow(viewZ, 2);
+
+    DVec3d trans;
+    trans.ScaleToLength(viewZ, GetDepthBias()*s_depthFactor);
+
+    if (!context.IsCameraOn())
+        {
+        transfo.InitFrom(trans);
+        return;
+        }
+
+    auto const& cam = context.GetViewport()->GetCamera();
+    
+    ElementAlignedBox3d box = m_root->GetRootTile()->GetRange();
+
+    DPoint3d lowerLeft = box.low;
+    DPoint3d lowerRight = DPoint3d::From(box.high.x, box.low.y, box.low.z);
+    DPoint3d topLeft = DPoint3d::From(box.low.x, box.high.y, box.low.z);    
+
+    // Push raster corners toward the back of the viewport. 
+    DPoint3d lowerLeftBias = DPoint3d::FromSumOf(lowerLeft, trans);
+    DPoint3d lowerRightBias = DPoint3d::FromSumOf(lowerRight, trans);
+    DPoint3d topLeftBias = DPoint3d::FromSumOf(topLeft, trans);    
+        
+    DPlane3d biasPlane = DPlane3d::From3Points(lowerLeftBias, lowerRightBias, topLeftBias);
+    
+    // Camera eye to corners rays.
+    DRay3d lowerLeftRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), lowerLeft);
+    DRay3d lowerRightRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), lowerRight);
+    DRay3d topLeftRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), topLeft);
+    
+    // Project corners to the bias plane in the eye-corners direction.
+    double intParam;
+    DPoint3d newCorners[3];
+    if (!lowerLeftRay.Intersect(newCorners[0], intParam, biasPlane) ||
+        !lowerRightRay.Intersect(newCorners[1], intParam, biasPlane) ||
+        !topLeftRay.Intersect(newCorners[2], intParam, biasPlane))
+        {
+        transfo.InitIdentity();
+        return;
+        }
+
+    Transform transA;
+    transA.InitFromPlaneOf3Points(lowerLeft, lowerRight, topLeft);
+    Transform transAInverse;
+    transAInverse.InverseOf(transA);
+
+    Transform transB;
+    transB.InitFromPlaneOf3Points(newCorners[0], newCorners[1], newCorners[2]);
+      
+    transfo.InitProduct(transB, transAInverse);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
@@ -414,40 +491,34 @@ void RasterModel::SetClip(RasterClipCR clip)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+Utf8String RasterModel::GetDescription() const
+    {
+    RefCountedCPtr<RepositoryLink> pLink = ILinkElementBase<RepositoryLink>::Get(GetDgnDb(), GetModeledElementId());
+    if (!pLink.IsValid())
+        return "";
+
+    return pLink->GetDescription();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+void RasterModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& stmt, ForInsert forInsert)
     {
-    // Shoud have been added by RasterModelHandler::_GetClassParams() if not make sure the handler is registred.
-    BeAssert(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip) != -1); 
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    // Shoud have been added by RasterModelHandler::_GetClassParams() if not make sure the handler is registered.
+    BeAssert(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip) != -1); 
 
     bvector<uint8_t> clipData;
     m_clips.ToBlob(clipData, GetDgnDb());
     
     if(clipData.empty())
-        statement.BindNull(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip));
+        stmt.BindNull(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip));
     else
-        statement.BindBinary(statement.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
-
-    return DgnDbStatus::Success;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  7/2016
-//----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  7/2016
-//----------------------------------------------------------------------------------------
-DgnDbStatus RasterModel::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
+        stmt.BindBinary(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     }
 
 //----------------------------------------------------------------------------------------
@@ -489,3 +560,29 @@ void RasterModelHandler::_GetClassParams(ECSqlClassParamsR params)
     T_Super::_GetClassParams(params);
     params.Add(RASTER_MODEL_PROP_Clip, ECSqlClassParams::StatementType::All);
     }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::_WriteJsonProperties(Json::Value& v) const
+    {
+    v["depthBias"] = m_depthBias;
+
+    T_Super::_WriteJsonProperties(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::_ReadJsonProperties(Json::Value const& v)
+    {
+    m_depthBias = v.isMember("depthBias") ? v["depthBias"].asDouble() : 0.0;
+
+    T_Super::_ReadJsonProperties(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+bool RasterModel::IsParallelToGround() const {return _IsParallelToGround();}

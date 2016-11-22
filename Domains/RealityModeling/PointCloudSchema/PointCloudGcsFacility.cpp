@@ -49,20 +49,20 @@ GeoCoordinates::BaseGCS::WktFlavor PointCloudGcsFacility::GetWKTFlavor(WString* 
     int64_t charInd = wktStr.size() - 1;
     for (charInd = wktStr.size() - 1; charInd >= 0; charInd--)
         {
-        if (wktStr[charInd] == L']')
+        if (wktStr[(size_t)charInd] == L']')
             {
             break;
             }
         else
-        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < PointCloudGcsFacility::WktFlavor_End))
+        if (((short)wktStr[(size_t)charInd] >= 1) || ((short)wktStr[(size_t)charInd] < PointCloudGcsFacility::WktFlavor_End))
             {
-            wktFlavor = (PointCloudGcsFacility::WktFlavor)wktStr[charInd];            
+            wktFlavor = (PointCloudGcsFacility::WktFlavor)wktStr[(size_t)charInd];            
             }
         }
 
     if (wktStrWithoutFlavor != 0)
         {   
-        *wktStrWithoutFlavor = wktStr.substr(0, charInd + 1);
+        *wktStrWithoutFlavor = wktStr.substr(0, (size_t)(charInd + 1));
         }
 
     GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;

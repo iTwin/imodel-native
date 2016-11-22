@@ -173,22 +173,21 @@ void WmsMap::FromJson(Json::Value const& v)
     m_axisOrder = (AxisOrder)wmsValue.get("axisOrder", Json::Value((uint32_t)AxisOrder::Default)).asUInt();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
+WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR link, WmsMap const& mapInfo)
     {
+    if (!link.GetElementId().IsValid())        // link must be persisted.
+        return nullptr;
+
     DgnClassId classId(db.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
 
     if(!mapInfo.HasValidParameters())
-        return DgnModelId();  // Can't create model, Return an invalid model id.
+        return nullptr;  // Can't create model.
 
-    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(modelName)), mapInfo);
-
-    modelP->Insert();
-    return modelP->GetModelId();
+    return new WmsModel(DgnModel::CreateParams(db, classId, link.GetElementId()), mapInfo);
     }
 
 //----------------------------------------------------------------------------------------
@@ -255,5 +254,64 @@ void WmsModel::_ReadJsonProperties(Json::Value const& v)
     T_Super::_ReadJsonProperties(v);
     m_map.FromJson(v);
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+WmsMap const& WmsModel::GetMap() const
+    {
+    return m_map;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+Http::HttpStatus WmsModel::GetLastHttpError() const
+    {
+    if (m_root.IsValid())
+        return static_cast<WmsSource*>(m_root.get())->GetLastHttpError();
+
+    return Http::HttpStatus::None;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Http::Credentials const& proxyCredentials)
+    {
+    _Load(nullptr);
+    if (!m_root.IsValid())
+        return Http::HttpStatus::None;
+
+    Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
+    Http::Request request(m_root->_ConstructTileName(*m_root->GetRootTile()));
+    request.SetResponseBody(responseBody);
+
+    if (credentials.IsValid())
+        request.SetCredentials(credentials);
+
+    if (proxyCredentials.IsValid())
+        request.SetProxyCredentials(proxyCredentials);
+
+    Http::Response response = request.Perform();
+
+    if (Http::ConnectionStatus::OK != response.GetConnectionStatus())
+        return Http::HttpStatus::None;
+
+    Http::HttpStatus status = response.GetHttpStatus();
+    if (Http::HttpStatus::OK == status)
+        {
+        // Save the credentials for the session.
+        m_credentials = credentials;
+        m_proxyCredentials = proxyCredentials;
+
+        // Stop all pending tiles if any. We will recreate a new root with the new credentials.
+        //TBD: Should we clear the cache? It matters only if the new users have access to a different set of tiles.
+        m_root = nullptr;
+        }
+
+    return status;
+    }
+
 
 

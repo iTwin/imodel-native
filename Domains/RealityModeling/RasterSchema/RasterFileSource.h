@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
@@ -21,8 +20,6 @@ protected:
     RasterFileModel&    m_model;
     Transform           m_physicalToSource;  //! Transformation from raster file true origin to a lower-left origin. In pixel unit.    
     DMap4d              m_physicalToWorld;   //! Including units change and reprojection approximation if any.
-
-    folly::Future<BentleyStatus> _RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads) override;
 
     RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system);
     ~RasterFileSource();
@@ -42,6 +39,24 @@ public:
 //=======================================================================================
 struct RasterFileTile : RasterTile
 {
+public:
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  9/2016
+    //=======================================================================================
+    struct RasterTileLoader : TileTree::TileLoader
+        {
+        Render::Image m_image;  // filled by _ReadFromSource
+
+        RasterTileLoader(TileTree::TileR tile, TileTree::LoadStatePtr loads, Utf8StringCR cacheKey)
+            :TileTree::TileLoader("", tile, loads, cacheKey) {};
+            
+        virtual ~RasterTileLoader(){}
+        
+        RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRootR()); }
+
+        folly::Future<BentleyStatus> _GetFromSource() override;        
+        BentleyStatus _LoadTile() override;
+        };
 protected:
     
 public:
@@ -49,10 +64,9 @@ public:
 
     RasterFileTile(RasterFileSourceR root, TileId id, RasterFileTileCP parent);
 
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override { BeAssert(!"not expected we load from _RequestTile"); return ERROR; }
-
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
-};
 
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
+};
 
 END_BENTLEY_RASTER_NAMESPACE
