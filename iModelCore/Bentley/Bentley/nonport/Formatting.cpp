@@ -9,6 +9,7 @@
 #include <Bentley/Formatting.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>
+#include <math.h>
 
 USING_NAMESPACE_BENTLEY
 
@@ -347,7 +348,8 @@ int NumericFormat::FormatInteger (int n, char* bufOut, int bufLen)
 
 	if (len > (--bufLen))
 		len = bufLen;
-	memcpy_s(bufOut, bufLen, &buf[ind], len);
+	// msvc-only: memcpy_s(bufOut, bufLen, &buf[ind], len);
+    memcpy(bufOut, &buf[ind], len);
 	return len - 1;
 }
 
@@ -457,7 +459,8 @@ int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
 
 	if (ind > bufLen)
 		ind = bufLen;
-	memcpy_s(buf, bufLen, locBuf, ind);
+	// msvc-only: memcpy_s(buf, bufLen, locBuf, ind);
+    memcpy(buf, locBuf, ind);
 	return ind;
 }
 

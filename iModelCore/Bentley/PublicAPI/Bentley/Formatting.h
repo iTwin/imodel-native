@@ -287,10 +287,10 @@ struct FormatParameterSet : NumericFormat
 private:
 	RoundingType        m_roundType;
 	double              m_roundFactor;
-	Utf8Char            m_leftPadding;
-	Utf8Char            m_rightPadding;
-	int                 m_boundaryLength;
-	FieldAlignment      m_alignment;
+	// unused - Utf8Char            m_leftPadding;
+	// unused - Utf8Char            m_rightPadding;
+	// unused - int                 m_boundaryLength;
+	// unused - FieldAlignment      m_alignment;
 
 public:
 
@@ -298,10 +298,10 @@ public:
 	{
 		m_roundType = RoundingType::RoundAwayFrom0;
 		m_roundFactor = 0.5;
-		m_leftPadding;
-		m_rightPadding;
-		m_boundaryLength;
-		m_alignment;
+		// unused - m_leftPadding;
+		// unused - m_rightPadding;
+		// unused - m_boundaryLength;
+		// unused - m_alignment;
 	}
 };
 
