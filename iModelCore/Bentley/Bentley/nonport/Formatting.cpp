@@ -548,7 +548,7 @@ void FormatDictionary::InitLoad()
 FormatParameterP FormatDictionary::GetParameterByIndex(int index)
 {
 	FormatParameterP par = nullptr;
-	if (0 <= index && GetCount() > index)
+	if (0 <= index && (int)GetCount() > index)
 	{
 		par = &m_paramList[index];
 	}
@@ -792,7 +792,7 @@ FormatingScannerCursor::FormatingScannerCursor(CharCP utf8Text, int scanLength)
 	m_isASCII = false;
 	m_unicodeConst = UnicodeConstant();
 	m_totalScanLength = strlen(utf8Text);
-	if (scanLength > 0 && scanLength <= m_totalScanLength)
+	if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
 		m_totalScanLength = scanLength;
 }
 
