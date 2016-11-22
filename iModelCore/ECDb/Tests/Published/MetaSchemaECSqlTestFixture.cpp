@@ -89,15 +89,15 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
             {
-            if (!expectedSchema.GetDisplayLabel().empty())
-                ASSERT_STREQ(expectedSchema.GetDisplayLabel().c_str(), val.GetText()) << "ECSchemaDef.DisplayLabel";
+            if (expectedSchema.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedSchema.GetInvariantDisplayLabel().c_str(), val.GetText()) << "ECSchemaDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.DisplayLabel";
             }
         else if (colName.EqualsI("Description"))
             {
-            if (!expectedSchema.GetDescription().empty())
-                ASSERT_STREQ(expectedSchema.GetDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
+            if (!expectedSchema.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedSchema.GetInvariantDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.Description";
 
@@ -195,8 +195,8 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (!expectedClass.GetDisplayLabel().empty())
-                ASSERT_STREQ(expectedClass.GetDisplayLabel().c_str(), val.GetText()) << "ECClassDef.DisplayLabel";
+            if (expectedClass.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedClass.GetInvariantDisplayLabel().c_str(), val.GetText()) << "ECClassDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECClassDef.DisplayLabel";
 
@@ -205,8 +205,8 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("Description"))
             {
-            if (!expectedClass.GetDescription().empty())
-                ASSERT_STREQ(expectedClass.GetDescription().c_str(), val.GetText()) << "ECClassDef.Description";
+            if (!expectedClass.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedClass.GetInvariantDescription().c_str(), val.GetText()) << "ECClassDef.Description";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECClassDef.Description";
 
@@ -367,8 +367,8 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (!expectedEnum.GetDisplayLabel().empty())
-                ASSERT_STREQ(expectedEnum.GetDisplayLabel().c_str(), val.GetText()) << "ECEnumerationDef.DisplayLabel";
+            if (expectedEnum.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedEnum.GetInvariantDisplayLabel().c_str(), val.GetText()) << "ECEnumerationDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECEnumerationDef.DisplayLabel";
 
@@ -377,8 +377,8 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("Description"))
             {
-            if (!expectedEnum.GetDescription().empty())
-                ASSERT_STREQ(expectedEnum.GetDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
+            if (!expectedEnum.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedEnum.GetInvariantDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECEnumerationDef.Description";
 
@@ -535,8 +535,8 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (!expectedKoq.GetDisplayLabel().empty())
-                ASSERT_STREQ(expectedKoq.GetDisplayLabel().c_str(), val.GetText()) << "KindOfQuantityDef.DisplayLabel";
+            if (expectedKoq.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedKoq.GetInvariantDisplayLabel().c_str(), val.GetText()) << "KindOfQuantityDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.DisplayLabel";
 
@@ -545,8 +545,8 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
 
         if (colName.EqualsI("Description"))
             {
-            if (!expectedKoq.GetDescription().empty())
-                ASSERT_STREQ(expectedKoq.GetDescription().c_str(), val.GetText()) << "KindOfQuantityDef.Description";
+            if (!expectedKoq.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedKoq.GetInvariantDescription().c_str(), val.GetText()) << "KindOfQuantityDef.Description";
             else
                 ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.Description";
 
@@ -686,8 +686,8 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (!expectedProp.GetDisplayLabel().empty())
-                ASSERT_STREQ(expectedProp.GetDisplayLabel().c_str(), val.GetText()) << "ECPropertyDef.DisplayLabel for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            if (expectedProp.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedProp.GetInvariantDisplayLabel().c_str(), val.GetText()) << "ECPropertyDef.DisplayLabel for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.DisplayLabel";
 
@@ -696,8 +696,8 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("Description"))
             {
-            if (!expectedProp.GetDescription().empty())
-                ASSERT_STREQ(expectedProp.GetDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            if (!expectedProp.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedProp.GetInvariantDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Description";
             continue;
