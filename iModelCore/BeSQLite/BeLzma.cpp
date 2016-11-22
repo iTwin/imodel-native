@@ -944,7 +944,7 @@ public:
             
             if (inProcessed == 0 /* && outProcessed == 0 */)
                 {
-                BeAssert(false && "Nothing in the input has been processed - is this even possible??!!");
+                BeAssert(false && "Nothing in the input has been processed - is this even possible?");
                 return ZIP_ERROR_END_OF_DATA;
                 //return (status == LZMA_STATUS_FINISHED_WITH_MARK) ? ZIP_SUCCESS : ZIP_ERROR_END_OF_DATA;
                 }
