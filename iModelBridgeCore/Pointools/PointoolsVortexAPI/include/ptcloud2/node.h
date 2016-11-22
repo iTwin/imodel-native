@@ -50,8 +50,8 @@ public:
 	Node() 
 	{ 
 		memset(_child, 0, sizeof(void*)*8); 
-		memset(_lower, 0, sizeof(void*)*3); 
-		memset(_upper, 0, sizeof(void*)*3); 
+		memset(_lower, 0, sizeof(float)*3); 
+		memset(_upper, 0, sizeof(float)*3); 
 		_pointCount = 0;
 		_parent = 0; 
 		_depth = 0;
@@ -105,8 +105,8 @@ public:
 
 	Node &operator = (const Node& b)
 	{
-		memcpy(_lower, b._lower, sizeof(void*)*3);
-		memcpy(_upper, b._upper, sizeof(void*)*3);
+		memcpy(_lower, b._lower, sizeof(float)*3);
+		memcpy(_upper, b._upper, sizeof(float)*3);
 		memcpy(_child, b._child, sizeof(void*)*8);
 		_parent = b._parent;
 		_depth = b._depth;

@@ -47,7 +47,7 @@ struct Meta
 		meta.sizeof_nodeid = NODE_ID_SIZE;
 		meta.iswchar = DATATREE_USEWCHAR;
 		memset(meta.res,0,2);
-		memset(meta.res,0,256);
+		memset(meta.res_,0,256);
 	}
 };
 }	// namespace datatree

@@ -25,7 +25,7 @@ struct Calibration
 	void pinHole()
 	{
 		k1 = k2 = k3 = k4 = p1 = p2 = 0;
-		double intrin[] = {200, 0, 320, 200, 240, 0, 0, 1};
+		double intrin[] = {200.0, 0.0, 320.0, 0.0, 200.0, 240.0, 0.0, 0.0, 1.0};
 		memcpy(intrinsic, intrin, sizeof(double)*9);
 		extrinsic = mmatrix4d::identity();
 	}

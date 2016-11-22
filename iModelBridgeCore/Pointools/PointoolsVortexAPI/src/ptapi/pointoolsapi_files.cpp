@@ -924,6 +924,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
         wchar_t fpath[260];
         wchar_t fname[260];
 
+        fpath[0] = 0;
         wcscpy(fpath, strptr);
 		size_t pathlen = wcslen(fpath);
 

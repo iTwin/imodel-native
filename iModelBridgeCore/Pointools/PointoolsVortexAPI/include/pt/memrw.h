@@ -130,7 +130,8 @@ struct MemRW
 	{
 		int size = static_cast<int>(wcslen(s) + 1);
 			
-		if (checkSize(size*2+sizeof(int)))
+        int ss = sizeof(int);
+		if (checkSize(size*2+ss))
 		{	
 			write(size);
 			memcpy(&wdata[byte_size], s, size * sizeof(wchar_t));

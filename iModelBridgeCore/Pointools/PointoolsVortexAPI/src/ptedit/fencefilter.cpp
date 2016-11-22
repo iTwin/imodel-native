@@ -172,20 +172,18 @@ bool FenceSelect::generateHullPlanes()
 		return false;
 	}
 #else
-    DPoint3dP chull = new DPoint3d[fence.numPoints()];
+    std::unique_ptr<DPoint3d[]> chull(new DPoint3d[fence.numPoints()]);
     int hullNbPts = -1;
     // &&RB The following geomlibs function call must be tested
-    if ( false == bsiDPoint3dArray_convexHullXY(chull, &hullNbPts, reinterpret_cast<DPoint3dP>(vertices), fence.numPoints()))
+    if ( false == bsiDPoint3dArray_convexHullXY(chull.get(), &hullNbPts, reinterpret_cast<DPoint3dP>(vertices), fence.numPoints()))
     {
         assert(hullNbPts <= fence.numPoints());
 
-        int numEdges = hullNbPts;
-        isConvex = numEdges == fence.numPoints();
-
+        isConvex = hullNbPts == fence.numPoints();
         pt::vector3d p30,p31, p32;
 
         /* create planes */ 
-        for (int i=0; i<numEdges; i++)
+        for (int i=0; i<hullNbPts; i++)
         {
             auto p0 = chull[i];
             auto p1 = chull[i+1];

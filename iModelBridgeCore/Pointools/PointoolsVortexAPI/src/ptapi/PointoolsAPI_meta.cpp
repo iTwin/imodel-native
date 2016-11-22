@@ -227,9 +227,10 @@ PTres		PTAPI	ptGetMetaTag( PThandle metadataHandle, const PTstr tagName, PTstr v
 	
 	FileMeta *meta = i->second;
 
-	wchar_t tagName_str[PT_MAX_META_STR_LEN];
+	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
 	wcsncpy(tagName_str, tagName, PT_MAX_META_STR_LEN);
-	
+    tagName_str[PT_MAX_META_STR_LEN] = 0;
+
     wchar_t * context;
 	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
 	wchar_t *second_tok = wcstok( nullptr, L".", &context);
@@ -275,8 +276,9 @@ PTres		PTAPI	ptSetMetaTag( PThandle metadataHandle, const PTstr tagName, const P
 	
 	FileMeta *meta = i->second;
 
-	wchar_t tagName_str[PT_MAX_META_STR_LEN];
+	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
 	wcsncpy(tagName_str, tagName, PT_MAX_META_STR_LEN);
+    tagName_str[PT_MAX_META_STR_LEN] = 0;
 	
     wchar_t * context;
 	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
@@ -459,8 +461,9 @@ PTres		PTAPI	ptGetUserMetaTagByName( PThandle h , const PTstr sectionDotName, PT
 
 	FileMeta *meta = i->second;
 
-	wchar_t tagName_str[PT_MAX_META_STR_LEN];
+	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
 	wcsncpy(tagName_str, sectionDotName, PT_MAX_META_STR_LEN);
+    tagName_str[PT_MAX_META_STR_LEN] = 0;
 	
     wchar_t * context;
 	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
