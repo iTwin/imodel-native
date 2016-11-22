@@ -2255,12 +2255,8 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    BeFileName filePath(GetECDb().GetDbFileName());
-    GetECDb().CloseDb();
-
-    Utf8CP editedSchemaXml =
+    SchemaItem updatedSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2276,32 +2272,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>";
+        "</ECSchema>", false, "Changing ShareColumns CA is not supported in ECSchema Update");
 
-    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Update ECDbMapCA add SharedColumnCount is supported");
+    AssertSchemaImport(asserted, GetECDb(), updatedSchema);
     ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Update ECDbMapCA add SharedColumnCount is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Db modifications are not supported");
-    ASSERT_FALSE(asserted);
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        //Verify number of columns
-        std::vector<std::pair<Utf8String, int>> testItems;
-        testItems.push_back(std::make_pair("ts_Parent", 8));
-        AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
-
-        GetECDb().CloseDb();
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3107,7 +3082,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "             <SharedColumnCount>4</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3135,7 +3112,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
@@ -3154,7 +3131,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "             <SharedColumnCount>4</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3175,7 +3154,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //verify number of columns
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
@@ -3208,7 +3187,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "             <SharedColumnCount>4</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3229,7 +3210,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify Column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 5));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
@@ -3247,7 +3228,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "             <SharedColumnCount>4</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3275,7 +3258,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
@@ -3293,8 +3276,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3342,8 +3325,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     GetECDb().SaveChanges();
     SchemaItem deleteFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3383,8 +3366,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     GetECDb().SaveChanges();
     SchemaItem deleteGoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "</ECSchema>", true, "Delete class containing ECDbMap CA should be successful");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), deleteGoo);
@@ -3398,8 +3381,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     GetECDb().SaveChanges();
     SchemaItem addGoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3439,8 +3422,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     GetECDb().SaveChanges();
     SchemaItem addFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -3772,17 +3755,18 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3818,7 +3802,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
@@ -3838,6 +3822,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3884,6 +3869,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3934,6 +3920,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3967,6 +3954,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3992,7 +3980,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 5));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
@@ -4010,6 +3998,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4048,7 +4037,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
@@ -7447,9 +7436,6 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "</ECSchema>");
     SetupECDb("schemaupdate_deletesharedcolumncount.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-
-    BeFileName filePath(GetECDb().GetDbFileName());
-    GetECDb().CloseDb();
 
     Utf8CP editedSchemaXml = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"

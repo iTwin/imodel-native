@@ -2926,7 +2926,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
 
     ecdb.SaveChanges();
 
-    const int elementExpectedColCount = 2;
+    const int elementExpectedColCount = 3;
     const int definitionElementExpectedColCount = 52;
     int geometricElement2dExpectedColCount = 5;
     int geometricElement3dExpectedColCount = 8;
@@ -3175,7 +3175,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                               "         <BaseClass>rs:Sub1</BaseClass>"
                               "        <ECProperty propertyName='P2' typeName='int' />"
                               "    </ECEntityClass>"
-                              "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
+                              "</ECSchema>", true, "MapStrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
     Utf8String ecdbFilePath;
     {
@@ -3196,13 +3196,13 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
 
     //verify Number and Names of Columns in BaseClass
     Statement statement;
-    const int expectedColCount = 8;
+    const int expectedColCount = 7;
     ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(testDb, "SELECT * FROM rs_Base"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP0sc1sc2sc3sc4scoverflow";
+    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP0sc1sc2sc3scoverflow";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {
