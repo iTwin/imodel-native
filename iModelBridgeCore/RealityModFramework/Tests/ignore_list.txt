@@ -1,12 +1,14 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-ContextServicesTestFixture.BasicTest   # We don't want to run any ContextServices tests, during the build
+ContextServicesTestFixture.ConceptStationTest   # We don't want to run any ContextServices tests, during the build
 ContextServicesTestFixture.SelectTest
 ContextServicesTestFixture.FilterTest
-ContextServicesTestFixture.USGSTest
+ContextServicesTestFixture.USTest
 ContextServicesTestFixture.AustraliaTest
 ContextServicesTestFixture.ChinaTest
 ContextServicesTestFixture.SourceTest
+ContextServicesTestFixture.USGSTest
+ContextServicesTestFixture.IndexTest
 ContextServicesTestFixture.PackageIdTest
 ContextServicesTestFixture.PackageDownloadTest

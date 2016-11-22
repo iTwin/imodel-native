@@ -23,20 +23,6 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 #define CCH_MAXLABEL 80 
 #define CX_MARGIN    12 
 
-/*typedef struct tagLABELBOX 
-    {  // box 
-    RECT rcText;    // coordinates of rectangle containing text 
-    BOOL fSelected; // TRUE if the label is selected 
-    BOOL fEdit;     // TRUE if text is selected 
-    int nType;      // rectangular or elliptical 
-    int ichCaret;   // caret position 
-    int ichSel;     // with ichCaret, delimits selection 
-    int nXCaret;    // window position corresponding to ichCaret 
-    int nXSel;      // window position corresponding to ichSel 
-    int cchLabel;   // length of text in atchLabel 
-    TCHAR atchLabel[CCH_MAXLABEL];
-    } LABELBOX, *PLABELBOX;*/
-
 //=====================================================================================
 //! @bsiclass                          Spencer.Mason                            10/2016
 //=====================================================================================
@@ -85,8 +71,13 @@ class ContextServicesTestFixture : public testing::Test
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
+// Get the SpatialEntityWithDetailsView from a footprint
+// Ensure a certain amount of results
+// Ensure a certain amount of non-landsat results
+// Test SpatioTemporal filtering
+// Make sure no errors occur during package download
 //-------------------------------------------------------------------------------------
-TEST_F(ContextServicesTestFixture, BasicTest)
+TEST_F(ContextServicesTestFixture, ConceptStationTest)
     {
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
@@ -163,8 +154,16 @@ TEST_F(ContextServicesTestFixture, BasicTest)
     ASSERT_TRUE(i >= 216);
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+
+    WCharCP packageFile = cswBench->GetPackageFileName().GetName();
+    ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
+    BeFileName::EmptyAndRemoveDirectory(packageFile);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Test the 'select' function; to return only certain fields
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, SelectTest)
     {
     Utf8String token = GetToken();
@@ -198,6 +197,10 @@ TEST_F(ContextServicesTestFixture, SelectTest)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Test the 'filter' function; to return only certain data types
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, FilterTest)
     {
     Utf8String token = GetToken();
@@ -233,7 +236,11 @@ TEST_F(ContextServicesTestFixture, FilterTest)
     ASSERT_TRUE(i >= 1);
     }
 
-TEST_F(ContextServicesTestFixture, USGSTest)
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure a certain amount of results for an area in the USA
+//-------------------------------------------------------------------------------------
+TEST_F(ContextServicesTestFixture, USTest)
     {
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
@@ -268,6 +275,10 @@ TEST_F(ContextServicesTestFixture, USGSTest)
     ASSERT_TRUE(i >= 9);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure a certain amount of results for an area in Australia
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, AustraliaTest)
     {
     Utf8String token = GetToken();
@@ -303,6 +314,10 @@ TEST_F(ContextServicesTestFixture, AustraliaTest)
     ASSERT_TRUE(i >= 1);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure a certain amount of results for an area in China
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, ChinaTest)
     {
     Utf8String token = GetToken();
@@ -338,51 +353,11 @@ TEST_F(ContextServicesTestFixture, ChinaTest)
     ASSERT_TRUE(i >= 1);
     }
 
-/*TEST_F(ContextServicesTestFixture, PagingTest)
-{
-    Utf8String token = GetToken();
-    ASSERT_TRUE(token.length() > 100);
-
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
-
-    RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
-
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
-
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
-
-    size_t fullSetSize = dataset->GetImageryGroup().size() + dataset->GetTerrainGroup().size();
-
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&$top=100"));
-
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
-
-    size_t topSize = dataset->GetImageryGroup().size() + dataset->GetTerrainGroup().size();
-    
-    ASSERT_TRUE(topSize <= 100); // < if there are less than 100 results 
-
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&$skip=100"));
-
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
-
-    size_t skipSize = dataset->GetImageryGroup().size() + dataset->GetTerrainGroup().size();
-
-    ASSERT_TRUE(skipSize >= (fullSetSize - 100)); // > if there are less than 100 results in the full set
-}*/
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Test the source function to ensure that when you call the usgsapi, you only get 
+// usgs results
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, SourceTest)
     {
     Utf8String token = GetToken();
@@ -432,6 +407,100 @@ TEST_F(ContextServicesTestFixture, SourceTest)
     ASSERT_TRUE(high.size() == highSize);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure that the usgsapi is returning values
+//-------------------------------------------------------------------------------------
+TEST_F(ContextServicesTestFixture, USGSTest)
+{
+    Utf8String token = GetToken();
+    ASSERT_TRUE(token.length() > 100);
+
+    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
+    GeoPoint2d p1, p2, p3, p4, p5;
+    p1.Init(-79.25, 38.57);
+    p2.Init(-79.05, 38.57);
+    p3.Init(-79.05, 38.77);
+    p4.Init(-79.25, 38.77);
+    p5.Init(-79.25, 38.57);
+    filterPolygon.push_back(p1);
+    filterPolygon.push_back(p2);
+    filterPolygon.push_back(p3);
+    filterPolygon.push_back(p4);
+    filterPolygon.push_back(p5);
+
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+
+    RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&source=usgsapi"));
+
+    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+
+    size_t i = dataset->GetImageryGroup().size();
+
+    ASSERT_TRUE(i >= 299);
+
+    i = dataset->GetTerrainGroup().size();
+
+    ASSERT_TRUE(i >= 7);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+
+    WCharCP packageFile = cswBench->GetPackageFileName().GetName();
+    ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
+    BeFileName::EmptyAndRemoveDirectory(packageFile);
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure that the index api is returning values
+//-------------------------------------------------------------------------------------
+TEST_F(ContextServicesTestFixture, IndexTest)
+    {
+    Utf8String token = GetToken();
+    ASSERT_TRUE(token.length() > 100);
+
+    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
+    GeoPoint2d p1, p2, p3, p4, p5;
+    p1.Init(-79.25, 38.57);
+    p2.Init(-79.05, 38.57);
+    p3.Init(-79.05, 38.77);
+    p4.Init(-79.25, 38.77);
+    p5.Init(-79.25, 38.57);
+    filterPolygon.push_back(p1);
+    filterPolygon.push_back(p2);
+    filterPolygon.push_back(p3);
+    filterPolygon.push_back(p4);
+    filterPolygon.push_back(p5);
+
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+
+    RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails("&source=index"));
+
+    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(cswBench->GetSpatialEntityWithDetailsJson().c_str());
+
+    size_t i = dataset->GetImageryGroup().size();
+
+    ASSERT_TRUE(i >= 159);
+
+    i = dataset->GetTerrainGroup().size();
+
+    ASSERT_TRUE(i >= 2);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+
+    WCharCP packageFile = cswBench->GetPackageFileName().GetName();
+    ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
+    BeFileName::EmptyAndRemoveDirectory(packageFile);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure that PackageRequest is returning a valid file name
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, PackageIdTest)
     {
     Utf8String token = GetToken();
@@ -462,8 +531,16 @@ TEST_F(ContextServicesTestFixture, PackageIdTest)
     ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
 
     ASSERT_TRUE(cswBench->GetInstanceId().Contains(".xrdp"));
+
+    WCharCP packageFile = cswBench->GetPackageFileName().GetName();
+    ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
+    BeFileName::EmptyAndRemoveDirectory(packageFile);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// Ensure that the package file is on the file system, after calling a PreparedPackage
+//-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, PackageDownloadTest)
     {
     Utf8String token = GetToken();
