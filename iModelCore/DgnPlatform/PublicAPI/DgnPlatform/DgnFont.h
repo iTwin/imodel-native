@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnFont.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,8 +33,19 @@ public:
     DRange2d GetExactRange() const { return _GetExactRange(); }
     virtual BentleyStatus _FillGpa(GPArrayR) const = 0;
     BentleyStatus FillGpa(GPArrayR gpa) const { return _FillGpa(gpa); }
+    virtual CurveVectorPtr _GetCurveVector (bool& isFilled) const { return nullptr; } 
+    CurveVectorPtr GetCurveVector (bool& isFilled) const;
     virtual bool _IsBlank() const = 0;
     bool IsBlank() const { return _IsBlank(); }
+protected:
+    enum class DoFixup
+        {
+        Always,
+        IfHoles,
+        Never,
+        };
+    virtual DoFixup _DoFixup () const = 0;
+        
 };
 
 //=======================================================================================

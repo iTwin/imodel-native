@@ -54,6 +54,7 @@ public:
     virtual bool _IsBlank() const override { return m_isBlank; }
     static DgnRscGlyph* CreateUnitSpaceGlyph();
     void SetWidthDirect(double width, double exactWidth) { m_range.high.x = width; m_exactRange.high.x = exactWidth; }
+    DoFixup _DoFixup () const override { return DoFixup::IfHoles; }
 };
 
 //---------------------------------------------------------------------------------------

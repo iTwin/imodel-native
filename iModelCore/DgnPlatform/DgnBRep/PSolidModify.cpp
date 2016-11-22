@@ -138,13 +138,12 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
+BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
     {
-    if (0 == nTools || !targetEntity.IsValid ())
+    if (0 == nTools)
         return ERROR;
 
-    bool        isOwned;
-    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTag (*targetEntity, &isOwned);
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
     if (PK_ENTITY_null == targetEntityTag)
         return ERROR;
@@ -152,42 +151,38 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
     PK_MARK_t            markTag = PK_ENTITY_null;
     bvector<PK_ENTITY_t> toolEntityTags;
 
-    PK_MARK_create (&markTag);
-
-    if (!isOwned)
-        PK_ENTITY_copy (targetEntityTag, &targetEntityTag);
+    PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
  
-    invTargetTransform.InverseOf (targetEntity->GetEntityTransform ());
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     // Get tool bodies in coordinates of target...
     for (size_t iTool = 0; iTool < nTools; ++iTool)
         {
-        bool        isToolOwned;
-        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTagForModify(*toolEntities[iTool]);
 
-        if (!isToolOwned)
-            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
-            
+        if (PK_ENTITY_null == toolEntityTag)
+            continue;
+
         Transform   toolTransform;
 
-        toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
-        PSolidUtil::TransformBody (toolEntityTag, toolTransform);                                                                                                                                                
+        toolTransform.InitProduct(invTargetTransform, toolEntities[iTool]->GetEntityTransform());
+        PSolidUtil::TransformBody(toolEntityTag, toolTransform);                                                                                                                                                
 
-        toolEntityTags.push_back (toolEntityTag);
+        toolEntityTags.push_back(toolEntityTag);
         }
 
     uint32_t highestNodeId, lowestNodeId;
 
     // If node ids are assigned to target body, avoid duplicate node ids with tool bodies...otherwise assume caller doesn't care about ids...
-    if (resolveNodeIdConflicts && SUCCESS == PSolidTopoId::FindNodeIdRange (targetEntityTag, highestNodeId, lowestNodeId))
+    if (resolveNodeIdConflicts && SUCCESS == PSolidTopoId::FindNodeIdRange(targetEntityTag, highestNodeId, lowestNodeId))
         {
         for (PK_ENTITY_t toolEntityTag: toolEntityTags)
             {
             uint32_t highestToolNodeId, lowestToolNodeId;
 
-            if (SUCCESS == PSolidTopoId::FindNodeIdRange (toolEntityTag, highestToolNodeId, lowestToolNodeId))
+            if (SUCCESS == PSolidTopoId::FindNodeIdRange(toolEntityTag, highestToolNodeId, lowestToolNodeId))
                 {
                 if (highestToolNodeId < lowestNodeId)
                     {
@@ -203,14 +198,14 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
                     {
                     int32_t increment = abs ((int) highestNodeId - (int) lowestToolNodeId) + 1;
 
-                    PSolidTopoId::IncrementNodeIdAttributes (toolEntityTag, increment);
+                    PSolidTopoId::IncrementNodeIdAttributes(toolEntityTag, increment);
                     highestNodeId = highestToolNodeId + increment;
                     lowestNodeId  = (lowestNodeId < lowestToolNodeId ? lowestNodeId : lowestToolNodeId);
                     }
                 }
             else
                 {
-                PSolidTopoId::AddNodeIdAttributes (toolEntityTag, ++highestNodeId, false);
+                PSolidTopoId::AddNodeIdAttributes(toolEntityTag, ++highestNodeId, false);
                 }
             }
         }
@@ -219,21 +214,17 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
 
     if (SUCCESS == status)
         {
-        // Invalidate owned tool entities that were consumed in boolean...
+        // Invalidate tool entities that were consumed in boolean...
         for (size_t iTool = 0; iTool < nTools; ++iTool)
-            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
-
-        // Update target in case it wasn't owned and we had to make a copy...
-        if (!isOwned)
-            targetEntity = PSolidUtil::CreateNewEntity (targetEntityTag, targetEntity->GetEntityTransform (), true);
+            PSolidUtil::ExtractEntityTag(*toolEntities[iTool]);
         }
     else
         {
         // Undo copy/transform of input entities...
-        PK_MARK_goto (markTag);
+        PK_MARK_goto(markTag);
         }
 
-    PK_MARK_delete (markTag);
+    PK_MARK_delete(markTag);
 
     return status;
     }

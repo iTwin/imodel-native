@@ -10,6 +10,7 @@
 
 #include "DgnDb.h"
 #include "TxnManager.h"
+#include <BeSqlite/BeLzma.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -119,34 +120,28 @@ public:
 ENUM_IS_FLAGS(DgnRevision::Include);
 
 //=======================================================================================
-//! Streams the contents of multiple files containing serialized change streams
+//! Streams the contents of a file containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
+struct RevisionFileStreamReader : BeSQLite::ChangeStream
 {
 private:
     DgnDbCR m_dgndb; // Used only for debugging
-    bvector<BeFileName> m_pathnames;
+    BeFileName m_pathname;
 
-    BeFile m_currentFile;
-    int m_currentFileIndex = -1;
-    uint64_t m_currentTotalBytes = 0;
-    uint64_t m_currentByteIndex = 0;
+    BeSQLite::LzmaDecoder m_lzmaDecoder;
+    BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
+    
+    BentleyStatus StartInput();
+    void FinishInput();
 
-    BentleyStatus CloseCurrentFile();
-    BentleyStatus OpenNextFile(bool& completedAllFiles);
-    BentleyStatus ReadNextPage(void *pData, int *pnData);
-
-    bool IsCurrentFileComplete() const;
-
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    DGNPLATFORM_EXPORT virtual void _Reset() override;
-    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+    virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    virtual void _Reset() override;
+    virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
-    ChangeStreamFileReader(bvector<BeFileName> pathnames, DgnDbCR dgnDb) : m_pathnames(pathnames), m_dgndb(dgnDb) {}
-    ChangeStreamFileReader(BeFileNameCR pathname, DgnDbCR dgnDb) : m_dgndb(dgnDb) { m_pathnames.push_back(pathname); }
-    ~ChangeStreamFileReader() {}
+    RevisionFileStreamReader(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb), m_inLzmaFileStream(nullptr) {}
+    ~RevisionFileStreamReader() {}
 };
 
 //=======================================================================================
