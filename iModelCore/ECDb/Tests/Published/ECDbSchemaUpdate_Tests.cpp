@@ -7002,12 +7002,12 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
     AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add new Derived EndTable relationship should succeed as it doens't change db schema");
     ASSERT_FALSE(asserted);
 
-    ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
-    ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
-
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
+        ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
 
         GetECDb().Schemas().CreateECClassViewsInDb();
         //Insert Test Data
@@ -7037,12 +7037,13 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ModelHasElements"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        ASSERT_EQ(8, stmt.GetValueInt(0)) << stmt.GetECSql();
+        ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
 
         stmt.Finalize();
+        //FROM ONLY abstract class is expected to return 0 rows
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ONLY ts.ModelHasElements"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql();
 
         stmt.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ModelHasGeometricElements"));
