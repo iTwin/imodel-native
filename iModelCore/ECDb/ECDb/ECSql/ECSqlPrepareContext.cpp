@@ -99,7 +99,7 @@ ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECSqlWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
     {}
 
 //-----------------------------------------------------------------------------------------

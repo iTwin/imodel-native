@@ -1071,10 +1071,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
             parameterBuilder.AppendParenLeft();
 
         if (binderAlreadyExists)
-            parameterBuilder.AppendParameter(parameterName, i);
+            parameterBuilder.AppendParameter(parameterName, i, 0);
         else
             {
-            parameterBuilder.AppendParameter(parameterName, exp->GetParameterIndex(), i);
+            parameterBuilder.AppendParameter(parameterName, exp->GetParameterIndex(), i, ctx.NextParameterIndex());
             }
 
         if (exp->HasParentheses())

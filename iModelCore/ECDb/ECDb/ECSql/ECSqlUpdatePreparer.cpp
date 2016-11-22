@@ -100,22 +100,27 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!propertyListSnippets.empty())
             nativeSqlBuilder.AppendComma();
 
-        bool first = true;
         DbColumn const* overflowColumn = exp.GetClassNameExp()->GetInfo().GetMap().GetJoinedTable().GetPhysicalOverflowColumn();
         nativeSqlBuilder.AppendEscaped(overflowColumn->GetName().c_str()).Append(BooleanSqlOperator::EqualTo);
-        nativeSqlBuilder.Append("json_set(ifnull(").AppendEscaped(overflowColumn->GetName().c_str()).AppendComma().Append("'{}'),");
+        nativeSqlBuilder.Append("json_set(ifnull(").AppendEscaped(overflowColumn->GetName().c_str()).AppendComma().Append("'{}')");
         for (size_t i : snippets.m_overflowPropertyIndexes)
             {
-            if (first)
-                first = false;
-            else
-                nativeSqlBuilder.AppendComma();
-
+            PropertyMap const& propertyMap = exp.GetAssignmentListExp()->GetAssignmentExp(i)->GetPropertyNameExp()->GetPropertyMap();
             NativeSqlBuilder::List const& propertyNamesNativeSqlSnippets = snippets.m_propertyNamesNativeSqlSnippets[i];
             NativeSqlBuilder::List const& valuesNativeSqlSnippets = snippets.m_valuesNativeSqlSnippets[i];
+
+            bool addBlobToBase64Func = false;
+            if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                {
+                addBlobToBase64Func = true;
+                }
+
             for (size_t j = 0; j < propertyNamesNativeSqlSnippets.size(); j++)
                 {
-                nativeSqlBuilder.Append("'$.").Append(propertyNamesNativeSqlSnippets[j]).Append("',").Append(valuesNativeSqlSnippets[j]);
+                if (addBlobToBase64Func)
+                    nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[j]).Append("',BlobToBase64(").Append(valuesNativeSqlSnippets[j]).Append(")");
+                else
+                    nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[j]).Append("',").Append(valuesNativeSqlSnippets[j]);
                 }
             }
 

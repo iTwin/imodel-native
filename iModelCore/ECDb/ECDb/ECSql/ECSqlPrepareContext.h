@@ -350,6 +350,8 @@ struct ECSqlPrepareContext
 
 
             };
+
+
     private:
         ECDbCR m_ecdb;
         ECSqlWriteToken const* m_writeToken;
@@ -364,7 +366,7 @@ struct ECSqlPrepareContext
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
         ECN::ECClassId m_joinedTableClassId;
-
+        int m_nextParamterIndex;
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlWriteToken const*);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId, ECSqlWriteToken const*);
@@ -400,6 +402,16 @@ struct ECSqlPrepareContext
 
         bool IsEmbeddedStatement() const { return m_parentCtx != nullptr; }
         bool IsPrimaryStatement() const { return !IsEmbeddedStatement(); }
+
+        int NextParameterIndex()
+            {
+            if (m_nextParamterIndex < 0)
+                m_nextParamterIndex = 1;
+            else
+                m_nextParamterIndex++;
+
+            return m_nextParamterIndex;
+            }
     };
 
 

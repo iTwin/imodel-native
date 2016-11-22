@@ -285,6 +285,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 
         //add binder for the ecinstanceid parameter
         ECSqlInsertPreparedStatement* preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
+        int sqliteIndex = ctx.NextParameterIndex();
         size_t ecinstanceidBinderIndex = 0;
         ECSqlBinder* ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ctx, ECSqlTypeInfo(PRIMITIVETYPE_Long));
         if (ecinstanceidBinder == nullptr)
@@ -295,7 +296,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 
         preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         //add SQLite parameter for the ecinstanceid (internal parameters's ECSqlParameterIndex is made negative to distinguish them from real ECSQL parameter)
-        nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter(nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
+        nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter("ecidauto", (-1) * (int) ecinstanceidBinderIndex, 1, sqliteIndex);
         }
 
     if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))
@@ -344,16 +345,8 @@ InsertStatementExp const& exp
     insertBuilder.Append("INSERT INTO ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet);
 
     insertBuilder.AppendSpace().AppendParenLeft().Append(propertyNamesNativeSqlSnippets);
-    if (!insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets.empty())
-        {
-        if (!propertyNamesNativeSqlSnippets.empty())
-            insertBuilder.AppendComma();
-
-        insertBuilder.Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets);
-        }
-    
     //Just append the first overflow column as there is really just one and is repeated for every overflow property
-    DbColumn const* overflowColumn = nullptr;  
+    DbColumn const* overflowColumn = nullptr;
     if (!insertSqlSnippets.m_overflowPropertyIndexes.empty())
         {
         if (!propertyNamesNativeSqlSnippets.empty())
@@ -363,15 +356,16 @@ InsertStatementExp const& exp
         insertBuilder.AppendEscaped(overflowColumn->GetName().c_str());
         }
 
-    insertBuilder.AppendParenRight();
-    insertBuilder.Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
-    if (!insertSqlSnippets.m_pkValuesNativeSqlSnippets.empty())
+    if (!insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets.empty())
         {
-        if (!valuesNativeSqlSnippets.empty())
+        if (!propertyNamesNativeSqlSnippets.empty() || overflowColumn!= nullptr)
             insertBuilder.AppendComma();
 
-        insertBuilder.Append(insertSqlSnippets.m_pkValuesNativeSqlSnippets);
+        insertBuilder.Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets);
         }
+    
+        insertBuilder.AppendParenRight();
+    insertBuilder.Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
 
     //overflow value expression
     if (overflowColumn != nullptr)
@@ -383,9 +377,16 @@ InsertStatementExp const& exp
         bool first =true;
         for (size_t i :insertSqlSnippets.m_overflowPropertyIndexes)
             {
+            PropertyNameExp const* pn = exp.GetPropertyNameListExp()->GetPropertyNameExp(i);
             NativeSqlBuilder::List const& values = insertSqlSnippets.m_valuesNativeSqlSnippets[i];
             NativeSqlBuilder::List const& properties = insertSqlSnippets.m_propertyNamesNativeSqlSnippets[i];
             BeAssert(values.size() == properties.size());
+            bool addBlobToBase64Func = false;
+            if (pn->GetPropertyMap().GetProperty().GetIsPrimitiveArray() || (pn->GetPropertyMap().GetProperty().GetIsPrimitive() && pn->GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                {
+                addBlobToBase64Func = true;
+                }
+            
             for (size_t j = 0; j < values.size(); j++)
                 {
                 if (first)
@@ -393,13 +394,24 @@ InsertStatementExp const& exp
                 else
                     insertBuilder.AppendComma();
 
-                insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
+                if (addBlobToBase64Func)
+                    insertBuilder.Append("'").Append(properties[j]).Append("', BlobToBase64(").Append(values[j]).Append(")");
+                else
+                    insertBuilder.Append("'").Append(properties[j]).Append("',").Append(values[j]);
                 }
             }
 
         insertBuilder.Append(")");
         }
     
+    if (!insertSqlSnippets.m_pkValuesNativeSqlSnippets.empty())
+        {
+        if (!valuesNativeSqlSnippets.empty() || overflowColumn != nullptr)
+            insertBuilder.AppendComma();
+
+        insertBuilder.Append(insertSqlSnippets.m_pkValuesNativeSqlSnippets);
+        }
+
     insertBuilder.AppendParenRight();
     }
 
