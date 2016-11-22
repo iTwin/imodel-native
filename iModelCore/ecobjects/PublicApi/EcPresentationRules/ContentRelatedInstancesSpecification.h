@@ -40,6 +40,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this content specification.
+        virtual ContentSpecification* _Clone() const override {return new ContentRelatedInstancesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

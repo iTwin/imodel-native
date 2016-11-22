@@ -40,6 +40,9 @@ protected:
     //! Constructor.
     ECOBJECTS_EXPORT ContentSpecification(int priority, bool showImages = false);
 
+    //! Copy constructor.
+    ECOBJECTS_EXPORT ContentSpecification(ContentSpecificationCR);
+
     //! Returns XmlElement name that is used to read/save this rule information.
     virtual CharCP                       _GetXmlElementName () const = 0;
 
@@ -49,9 +52,15 @@ protected:
     //! Writes rule information to given XmlNode.
     virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
+    //! Clones this content specification.
+    virtual ContentSpecification*        _Clone() const = 0;
+
 public:
     //! Destructor.
     ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
+    
+    //! Clones this content specification.
+    ContentSpecification*                                 Clone() const {return _Clone();}
 
     //! Reads specification from XML.
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);

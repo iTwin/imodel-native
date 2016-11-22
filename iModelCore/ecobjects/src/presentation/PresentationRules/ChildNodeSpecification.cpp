@@ -40,6 +40,17 @@ ChildNodeSpecification::ChildNodeSpecification (int priority, bool alwaysReturns
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
+    : m_priority(other.m_priority), m_id(other.m_id), m_alwaysReturnsChildren(other.m_alwaysReturnsChildren),
+    m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
+    m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
+    {
+    CommonTools::CopyRules(m_nestedRules, other.m_nestedRules);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::~ChildNodeSpecification ()
