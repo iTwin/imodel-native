@@ -499,7 +499,6 @@ TEST_F(JoinedTableECDbMapStrategyTests, BasicCRUD)
         {
         ECDbR ecdb = SetupECDb("JoinedTableTest.ecdb", testSchema);
         ASSERT_TRUE(ecdb.IsDbOpen());
-
         for (Utf8StringCR nonSelectECSql : nonSelectECSqls)
             {
             assertNonSelectECSql(ecdb, testSchema.m_name.c_str(), nonSelectECSql.c_str());
