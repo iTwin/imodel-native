@@ -558,6 +558,7 @@ typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSCACHE)( PTuint maxPoints );
 typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSQUERY)( void );
 typedef PThandle (__stdcall * PTCREATEKNNQUERY)(PTfloat *vertices, PTint numQueryVertices, PTint k, PTfloat queryLOD);
 typedef PTbool (__stdcall * PTRESETQUERY)( PThandle query );
+typedef PTbool(__stdcall * PTRESETQUERYPROGRESSIVE)(PThandle query);
 typedef PTres (__stdcall *PTSETQUERYRGBMODE)( PThandle query, PTenum mode );
 
 typedef PTres (__stdcall *PTSETQUERYLAYERMASK)( PThandle query, PTubyte layerMask );
@@ -766,6 +767,7 @@ extern PTSETQUERYSCOPE ptSetQueryScope;
 extern PTSETQUERYLAYERMASK ptSetQueryLayerMask;
 
 extern PTRESETQUERY ptResetQuery;
+extern PTRESETQUERYPROGRESSIVE ptResetQueryProgressive;
 
 /* units */ 
 extern PTSETHOSTUNITS ptSetHostUnits;

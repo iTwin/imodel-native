@@ -26,6 +26,7 @@ namespace pointsengine
 
     public:
                                     VoxelQueryState     (void);
+                                    VoxelQueryState     (ClientID id, PointIndex lastPointIndex);
 
         void                        clear               (void);
 

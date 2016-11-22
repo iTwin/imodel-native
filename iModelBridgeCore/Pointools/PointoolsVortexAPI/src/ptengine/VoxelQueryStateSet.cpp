@@ -6,9 +6,17 @@ namespace pointsengine
 {
     typedef VoxelQueryState SS;
 
+
     VoxelQueryState::VoxelQueryState(void)
     {
         clear();
+    }
+
+    VoxelQueryState::VoxelQueryState(ClientID id, PointIndex lastPointIndex) : VoxelQueryState()
+    {
+        setClientID(id);
+
+        setLastPoint(lastPointIndex);
     }
 
     void VoxelQueryState::clear(void)
@@ -20,15 +28,27 @@ namespace pointsengine
 
     bool VoxelQueryStateSet::setQueryState(VoxelQueryState & state)
     {
-        try
+        VoxelQueryState *existingState;
+                                                            // If state already exists for state's ClientID
+        if (existingState = getQueryState(state.getClientID()))
         {
-            voxelQueryStates.push_back(state);
+                                                            // Update the existing state
+            *existingState = state;
         }
-        catch (...)
+        else
         {
-            return false;
+                                                            // It doesn't exist, so add a new query state
+            try
+            {
+                voxelQueryStates.push_back(state);
+            }
+            catch (...)
+            {
+                                                            // An error occcured, so return false
+                return false;
+            }
         }
-
+                                                            // Return OK
         return true;
     }
 
