@@ -1231,24 +1231,14 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     m_sync.InvalidateController();
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/16
-//=======================================================================================
-struct NoTileViewport : TileViewport
-{
-  folly::Future<Render::Image> _CreateTile(ViewControllerR, DRange3dCR npc, Point2dCR tileSize) override {return Image();}
-};
 
-static RefCountedPtr<TileViewport> s_tileCreator;
+static RefCountedPtr<TileViewport> s_tileVp;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileViewport& DgnViewport::GetTileViewport()
+TileViewport* DgnViewport::GetTileViewport()
     {
-    if (!s_tileCreator.IsValid())
-        SetTileViewport(new NoTileViewport());
-
-    return *s_tileCreator.get();
+    return s_tileVp.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1256,7 +1246,7 @@ TileViewport& DgnViewport::GetTileViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SetTileViewport(TileViewport* creator)
     {
-    s_tileCreator = creator;
+    s_tileVp = creator;
     }
 
 /*---------------------------------------------------------------------------------**//**

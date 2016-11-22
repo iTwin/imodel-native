@@ -178,7 +178,7 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
-    DGNPLATFORM_EXPORT static TileViewport& GetTileViewport();
+    DGNPLATFORM_EXPORT static TileViewport* GetTileViewport();
     DGNPLATFORM_EXPORT static void SetTileViewport(TileViewport*);
 
     double GetFrustumFraction() const {return m_frustFraction;}

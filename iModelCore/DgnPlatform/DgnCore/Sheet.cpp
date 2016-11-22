@@ -166,7 +166,9 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     Tile& tile = static_cast<Tile&>(*m_tile);
     Tree& root = tile.GetTree();
 
-    DgnViewport::GetTileViewport()._CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
+    auto vp = DgnViewport::GetTileViewport();
+    if (vp)
+        vp->_CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
 
     return m_image.IsValid() ? SUCCESS : ERROR;
     }
