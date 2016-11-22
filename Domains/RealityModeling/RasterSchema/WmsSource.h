@@ -90,7 +90,6 @@ protected:
         {
         Http::Credentials m_credentials;
         Http::Credentials m_proxyCredentials;
-        Utf8String m_contentType;
 
         WmsTileLoad(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
         virtual ~WmsTileLoad() {};

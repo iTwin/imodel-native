@@ -427,12 +427,14 @@ BentleyStatus WmsTile::WmsTileLoad::_ReadFromSource()
         return ERROR;
         }
 
-    m_contentType = query.GetResponse().GetHeaders().GetContentType();
+    m_contentType = query.GetContentType();    
     if (m_contentType.EqualsI("application/vnd.ogc.se_xml"))
         {
         // Report WMS error in the tile, root or model??
         return ERROR;
         }
+
+    m_cachingAllowed = query.GetCacheContolExpirationDate(m_expirationDate);
 
     return SUCCESS;
     }
@@ -445,13 +447,14 @@ BentleyStatus WmsTile::WmsTileLoad::_LoadTile()
     WmsTile& rasterTile = static_cast<WmsTile&>(*m_tile);
 
     Render::Image image;
-
-    //&&MM would like to use contentType but when coming from the DB we do not have this information. >> todo add it to the db + expiration
-    if (rasterTile.GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_PNG))
+    
+    if (m_contentType.EqualsIAscii(CONTENT_TYPE_PNG) ||
+        (m_contentType.empty() && rasterTile.GetSource().GetMapInfo().m_format.EqualsIAscii(CONTENT_TYPE_PNG)))
         {
         image = Render::Image::FromPng(m_tileBytes.GetData(), m_tileBytes.GetSize(), Render::Image::Format::Rgb);
         }
-    else if (rasterTile.GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_JPEG))
+    else if (m_contentType.EqualsIAscii(CONTENT_TYPE_JPEG) ||
+             (m_contentType.empty() && rasterTile.GetSource().GetMapInfo().m_format.EqualsIAscii(CONTENT_TYPE_JPEG)))
         {
         image = Render::Image::FromJpeg(m_tileBytes.GetData(), m_tileBytes.GetSize(), Render::Image::Format::Rgb);
         }
