@@ -50,7 +50,7 @@ CCompOpts + -DVANCOUVER_API
 %endif
 
 #Uncomment this to allow generating design meshes
-#CCompOpts + -DWIP_MESH_IMPORT
+#CCompOpts + -DWIP_MESH_IMPORT 
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -74,6 +74,9 @@ CCompOpts + -wd4244
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
+
+#x86 build. signed/unsigned mismatch and int64/size_t issues.
+CCompOpts + -wd4018 -wd4309 -wd4305
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
