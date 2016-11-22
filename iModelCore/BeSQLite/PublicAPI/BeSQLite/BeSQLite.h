@@ -1274,7 +1274,7 @@ struct StatementCache : NonCopyableClass
     friend struct CachedStatement;
 private:
     typedef std::list<CachedStatementPtr> Entries;
-    mutable BeDbMutex m_mutex;
+    mutable BeMutex m_mutex;
     mutable Entries m_entries;
     uint32_t m_size;
     Entries::iterator FindEntry(Utf8CP) const;
@@ -1282,7 +1282,7 @@ private:
     BE_SQLITE_EXPORT void FindStatement(CachedStatementPtr&, Utf8CP) const;
 
 public:
-    StatementCache(uint32_t size) : m_mutex(BeDbMutex::MutexType::Recursive) {m_size=size;}
+    StatementCache(uint32_t size) {m_size=size;}
     ~StatementCache() {Empty();}
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
@@ -2119,7 +2119,7 @@ public:
 
 protected:
     DbFile* m_dbFile;
-    mutable StatementCache* m_statements;
+    StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -2217,8 +2217,8 @@ public:
     //! build if no transaction is active. If you really want to allow implicit transactions, turn this flag on.
     BE_SQLITE_EXPORT void SetAllowImplictTransactions(bool val);
 
-    //! Get the StatementCache for this Db. The StatmentCache for a Db is not allocated until the first call to this method.
-    BE_SQLITE_EXPORT StatementCache& GetStatementCache() const;
+    //! Get the StatementCache for this Db. 
+    StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
 
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
     //! be Reset (see Statement::Reset) and returned without the need to re-Prepare it. If, however, the SQL string has not been used before (or maybe just
