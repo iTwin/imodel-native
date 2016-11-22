@@ -205,10 +205,6 @@ static int decomposeConicTo(FT_Vector const* ftVecControl, FT_Vector const* ftVe
     parseState->m_bufferOffset += (sizeof(currCurve->wType) + sizeof(currCurve->cpfx));
 
     POINTFX* currPoint = reinterpret_cast<POINTFX*>(parseState->m_buffer + parseState->m_bufferOffset);
-    // currPoint->x = parseState->m_lastContourPoint.x;
-    // currPoint->y = parseState->m_lastContourPoint.y;
-
-    // ++currPoint;
     currPoint->x = ftPosToFIXED(ftVecControl->x);
     currPoint->y = ftPosToFIXED(ftVecControl->y);
 
@@ -246,10 +242,6 @@ static int decomposeCubicTo(FT_Vector const* ftVecControl1, FT_Vector const* ftV
     parseState->m_bufferOffset += (sizeof(currCurve->wType) + sizeof(currCurve->cpfx));
 
     POINTFX* currPoint = reinterpret_cast<POINTFX*>(parseState->m_buffer + parseState->m_bufferOffset);
-    // currPoint->x = parseState->m_lastContourPoint.x;
-    // currPoint->y = parseState->m_lastContourPoint.y;
-
-    // ++currPoint;
     currPoint->x = ftPosToFIXED(ftVecControl1->x);
     currPoint->y = ftPosToFIXED(ftVecControl1->y);
 

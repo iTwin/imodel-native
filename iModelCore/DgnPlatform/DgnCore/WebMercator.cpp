@@ -92,22 +92,6 @@ WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
     y = LatitudeToAngle(Angle::DegreesToRadians(latLong.latitude)) * EarthRadius();
     }
 
-//=======================================================================================
-// The ProgressiveTask for drawing WebMercator tiles as they arrive asynchronously.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct WebMercatorProgressive : ProgressiveTask
-{
-    MapRootR m_root;
-    DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
-    LoadStatePtr m_loads;
-
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
-    ~WebMercatorProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
-};
-
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,8 +111,8 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MapTile::Loader::_LoadTile()
     {
-    MapRootR mapRoot = static_cast<MapRootR>(m_tile->GetRootR());
     MapTileR tile = static_cast<MapTileR>(*m_tile);
+    MapRootR mapRoot = tile.GetMapRoot();
 
     auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
@@ -160,7 +144,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     {
-    if (m_id.m_zoomLevel < 1) // level 0 tile never re-projects properly
+    if (m_id.m_level < 1) // level 0 tile never re-projects properly
         return ERROR;
 
     IGraphicBuilder::TileCorners corners;
@@ -186,7 +170,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
 MapTile::MapTile(MapRootR root, QuadTree::TileId id, MapTileCP parent) : QuadTree::Tile(root, id, parent)
     {
     // First, convert from tile coordinates to LatLong.
-    double nTiles = (1 << id.m_zoomLevel);
+    double nTiles = (1 << id.m_level);
     double east  = columnToLongitude(id.m_column, nTiles);
     double west  = columnToLongitude(id.m_column+1, nTiles);
     double north = rowToLatitude(id.m_row, nTiles);
@@ -277,69 +261,8 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
     Load(&context.GetTargetR().GetSystem());
 
-    if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root->GetLocation(), now, now-m_root->GetExpirationTime());
-    m_root->Draw(args);
-    DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    // Do we still have missing tiles?
-    if (!args.m_missing.empty())
-        {
-        // yes, request them and schedule a progressive task to draw them as they arrive.
-        LoadStatePtr loads = std::make_shared<LoadState>();
-        args.RequestMissingTiles(*m_root, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing, loads));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
-
-    DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
-
-    for (auto const& node: m_missing)
-        {
-        auto stat = node.second->GetLoadState();
-        if (stat == Tile::LoadState::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadState::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
+    if (m_root.IsValid())
+        m_root->DrawInView(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

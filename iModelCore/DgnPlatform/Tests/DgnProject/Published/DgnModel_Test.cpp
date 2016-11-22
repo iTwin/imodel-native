@@ -37,7 +37,7 @@ struct DgnModelTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId cat = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
     DgnElementPtr elem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
@@ -53,7 +53,7 @@ DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placem
 //---------------------------------------------------------------------------------------
 DgnElementId DgnModelTests::InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(*m_db);
+    DgnCategoryId cat = DgnDbTestUtils::GetFirstDrawingCategoryId(*m_db);
     DgnElementPtr elem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
@@ -169,6 +169,7 @@ void DgnModelTests::CheckEmptyModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModelTests::TestRangeIndex2d()
     {
+    DgnDbTestUtils::InsertDrawingCategory(*m_db, "TestDrawingCategory");
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
@@ -258,6 +259,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         double width2 = 2.2;
 
         // Create a sheet
+        DgnDbTestUtils::InsertDrawingCategory(*db, "TestDrawingCategory");
         DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "SheetListModel");
         auto sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, "Sheet1");
         auto sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1);

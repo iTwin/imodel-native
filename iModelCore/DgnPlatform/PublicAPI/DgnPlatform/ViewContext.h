@@ -88,16 +88,16 @@ protected:
     bool m_ignoreViewRange = false;
     bool m_scanRangeValid = false;
     bool m_stopAfterTimeout = false;
-    uint64_t                m_endTime = 0;     // abort after this time.
-    Render::ViewFlags       m_viewflags;
-    DrawPurpose             m_purpose;
-    DRange3d                m_npcSubRange;
-    DMap4d                  m_worldToNpc;
-    DMap4d                  m_worldToView;
-    ScanCriteria            m_scanCriteria;
-    Render::FrustumPlanes   m_frustumPlanes;
-    DgnViewportP            m_viewport = nullptr;
-    ClipPrimitiveCPtr       m_volume;
+    uint64_t m_endTime = 0;     // abort after this time.
+    Render::ViewFlags m_viewflags;
+    DrawPurpose m_purpose;
+    DRange3d m_npcSubRange;
+    DMap4d m_worldToNpc;
+    DMap4d m_worldToView;
+    ScanCriteria m_scanCriteria;
+    Render::FrustumPlanes m_frustumPlanes;
+    DgnViewportP m_viewport = nullptr;
+    ClipPrimitiveCPtr m_volume;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);

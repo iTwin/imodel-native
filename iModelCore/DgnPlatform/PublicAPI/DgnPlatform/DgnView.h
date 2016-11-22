@@ -597,6 +597,9 @@ public:
     //! Get the extents of this view
     DVec3d GetExtents() const {return _GetExtents();}
 
+    //! Get the aspect ratio (width/height) of this view
+    double GetAspectRatio() const {auto extents=GetExtents(); return extents.x/extents.y;}
+
     //! Set the extents of this view
     void SetExtents(DVec3dCR delta) {_SetExtents(delta);}
 
@@ -688,6 +691,8 @@ public:
     //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
+
+    Render::Image RenderTile(DRange2dCR npc, Point2dCR size) const;
 
     //! Create a thumbnail for this ViewDefinition.
     //! @param[out] image The thumbnail image.

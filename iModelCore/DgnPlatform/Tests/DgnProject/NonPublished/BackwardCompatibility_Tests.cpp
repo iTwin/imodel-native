@@ -37,7 +37,7 @@ struct BackwardsCompatibilityTests : public DgnDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model)
     {
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(model.GetDgnDb());
+    DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(model.GetDgnDb());
     if (!categoryId.IsValid())
         return ERROR;
 

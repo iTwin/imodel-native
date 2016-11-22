@@ -96,7 +96,7 @@ void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode 
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

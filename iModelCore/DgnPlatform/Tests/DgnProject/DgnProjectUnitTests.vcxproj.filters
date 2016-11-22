@@ -280,6 +280,9 @@
     <ClCompile Include="Published\CreateFromInstance_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\CRUDPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -341,6 +344,9 @@
     </ClInclude>
     <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h">
       <Filter>UnitTests</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\CRUDPerformance.h">
+      <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

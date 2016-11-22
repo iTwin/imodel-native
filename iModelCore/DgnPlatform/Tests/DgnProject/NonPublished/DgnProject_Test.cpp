@@ -383,7 +383,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         struct ProjectProperties
             {
             uint32_t modelCount;
-            size_t categoryCount;
+            size_t spatialCategoryCount;
             size_t viewCount;
             size_t styleCount;  
             };
@@ -400,7 +400,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
                 properties.modelCount++;
                 }
             properties.viewCount = ViewDefinition::QueryCount(*project);
-            properties.categoryCount = DgnCategory::QueryCount(*project);
+            properties.spatialCategoryCount = SpatialCategory::MakeIterator(*project).BuildIdSet<DgnCategoryId>().size();
 #ifdef STYLE_REWRITE_06
             properties.styleCount = project->LineStyles().MakeIterator().QueryCount();
 #else
@@ -413,7 +413,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         void compareProjectProperties(ProjectProperties& projProp, ProjectProperties& projPropV)
             {
             EXPECT_EQ(projProp.modelCount, projPropV.modelCount)<<"Model count does not match";
-            EXPECT_EQ(projProp.categoryCount, projPropV.categoryCount)<<"Category count does not match";
+            EXPECT_EQ(projProp.spatialCategoryCount, projPropV.spatialCategoryCount)<<"SpatialCategory count does not match";
             EXPECT_EQ(projProp.viewCount, projPropV.viewCount)<<"View count does not match";
             EXPECT_EQ(projProp.styleCount, projPropV.styleCount)<<"Style count does not match";
             }
@@ -735,7 +735,7 @@ TEST_F(ElementUriTests, Test1)
     ASSERT_TRUE(db.IsValid());
 
     DgnModelId mid = db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
-    DgnCategoryId catId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db);
+    DgnCategoryId catId = SpatialCategory::QueryCategoryId(*db, s_seedFileInfo.categoryName);
 
     DgnElementCPtr el;
     DgnElementCPtr elNoProps;

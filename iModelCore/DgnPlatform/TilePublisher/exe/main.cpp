@@ -48,7 +48,6 @@ enum class ParamId
     GlobeTerrain,
     DisplayGlobe,
     NoReplace,
-    SingleThreaded,
     Incremental,
     Invalid,
 };
@@ -84,7 +83,6 @@ static CommandParam s_paramTable[] =
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
-        { L"st", L"singlethreaded", L"Process models sequentially", false, true },
         { L"up", L"update", L"Update existing tileset from model changes", false, true },
     };
 
@@ -165,7 +163,6 @@ private:
     bool            m_displayGlobe = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
     bool            m_overwriteExisting = true;
-    bool            m_parallelModels = true;
     bool            m_publish = false;
 
     DgnViewId GetViewId(DgnDbR db) const;
@@ -181,9 +178,8 @@ public:
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
-    GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+    GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
-    bool GetProcessModelsInParallel() const { return m_parallelModels; }
     bool GetIncremental() const { return m_publish; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
@@ -369,9 +365,6 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::NoReplace:
                 m_overwriteExisting = false;
                 break;
-            case ParamId::SingleThreaded:
-                m_parallelModels = false;
-                break;
             case ParamId::Incremental:
                 m_publish = true;
                 break;
@@ -437,13 +430,11 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool parallelModels, bool publishIncremental)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental)
         : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
-
-        m_processModelsInParallel = parallelModels;
 
         auto& db = viewController.GetDgnDb();
         for (auto& view : ViewDefinition::MakeIterator(db))
@@ -744,8 +735,8 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, 
-                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetProcessModelsInParallel(), createParams.GetIncremental());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
+                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {
