@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnTrueTypeFont.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -69,6 +69,7 @@ public:
     virtual BentleyStatus _FillGpa(GPArrayR) const override;
     virtual bool _IsBlank() const override;
     FT_Face GetFace() const { return m_face; }
+    DoFixup _DoFixup () const override { return DoFixup::Always; }
 };
 
 //---------------------------------------------------------------------------------------
@@ -192,22 +193,22 @@ static int decomposeConicTo(FT_Vector const* ftVecControl, FT_Vector const* ftVe
     if (NULL == parseState->m_buffer)
         {
         parseState->m_bufferSize += (2 * sizeof(uint16_t/*WORD*/));
-        parseState->m_bufferSize += (3 * sizeof(POINTFX));
+        parseState->m_bufferSize += (2 * sizeof(POINTFX));
 
         return 0;
         }
 
     TTPOLYCURVE* currCurve = reinterpret_cast<TTPOLYCURVE*>(parseState->m_buffer + parseState->m_bufferOffset);
     currCurve->wType = TT_PRIM_QSPLINE;
-    currCurve->cpfx = 3;
+    currCurve->cpfx = 2;
 
     parseState->m_bufferOffset += (sizeof(currCurve->wType) + sizeof(currCurve->cpfx));
 
     POINTFX* currPoint = reinterpret_cast<POINTFX*>(parseState->m_buffer + parseState->m_bufferOffset);
-    currPoint->x = parseState->m_lastContourPoint.x;
-    currPoint->y = parseState->m_lastContourPoint.y;
+    // currPoint->x = parseState->m_lastContourPoint.x;
+    // currPoint->y = parseState->m_lastContourPoint.y;
 
-    ++currPoint;
+    // ++currPoint;
     currPoint->x = ftPosToFIXED(ftVecControl->x);
     currPoint->y = ftPosToFIXED(ftVecControl->y);
 
@@ -216,7 +217,7 @@ static int decomposeConicTo(FT_Vector const* ftVecControl, FT_Vector const* ftVe
     currPoint->y = ftPosToFIXED(ftVecTo->y);
 
     parseState->m_bufferOffset += (currCurve->cpfx * sizeof(POINTFX));
-    parseState->m_currentContour->cb += ((2 * sizeof(uint16_t/*WORD*/)) + (3 * sizeof(POINTFX)));
+    parseState->m_currentContour->cb += ((2 * sizeof(uint16_t/*WORD*/)) + (2 * sizeof(POINTFX)));
     parseState->m_lastContourPoint.x = currPoint->x;
     parseState->m_lastContourPoint.y = currPoint->y;
 
@@ -233,22 +234,22 @@ static int decomposeCubicTo(FT_Vector const* ftVecControl1, FT_Vector const* ftV
     if (NULL == parseState->m_buffer)
         {
         parseState->m_bufferSize += (2 * sizeof(uint16_t/*WORD*/));
-        parseState->m_bufferSize += (4 * sizeof(POINTFX));
+        parseState->m_bufferSize += (3 * sizeof(POINTFX));
 
         return 0;
         }
 
     TTPOLYCURVE* currCurve = reinterpret_cast<TTPOLYCURVE*>(parseState->m_buffer + parseState->m_bufferOffset);
     currCurve->wType = TT_PRIM_CSPLINE;
-    currCurve->cpfx = 4;
+    currCurve->cpfx = 3;
 
     parseState->m_bufferOffset += (sizeof(currCurve->wType) + sizeof(currCurve->cpfx));
 
     POINTFX* currPoint = reinterpret_cast<POINTFX*>(parseState->m_buffer + parseState->m_bufferOffset);
-    currPoint->x = parseState->m_lastContourPoint.x;
-    currPoint->y = parseState->m_lastContourPoint.y;
+    // currPoint->x = parseState->m_lastContourPoint.x;
+    // currPoint->y = parseState->m_lastContourPoint.y;
 
-    ++currPoint;
+    // ++currPoint;
     currPoint->x = ftPosToFIXED(ftVecControl1->x);
     currPoint->y = ftPosToFIXED(ftVecControl1->y);
 
@@ -261,7 +262,7 @@ static int decomposeCubicTo(FT_Vector const* ftVecControl1, FT_Vector const* ftV
     currPoint->y = ftPosToFIXED(ftVecTo->y);
 
     parseState->m_bufferOffset += currCurve->cpfx * sizeof(POINTFX);
-    parseState->m_currentContour->cb += ((2 * sizeof(uint16_t/*WORD*/)) + (4 * sizeof(POINTFX)));
+    parseState->m_currentContour->cb += ((2 * sizeof(uint16_t/*WORD*/)) + (3 * sizeof(POINTFX)));
     parseState->m_lastContourPoint.x = currPoint->x;
     parseState->m_lastContourPoint.y = currPoint->y;
 
@@ -360,10 +361,10 @@ static size_t decomposeOutline(FT_Outline& outline, Byte* buffer, size_t bufferS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static void toDPoint4d(DPoint4d* pt, POINTFX* pPoint)
+static void toDPoint4d(DPoint4d* pt, POINTFX* pPoint, double npcScale)
     {
-    pt->x = ((double)(pPoint->x.value + (double)pPoint->x.fract / 65536.0));
-    pt->y = ((double)(pPoint->y.value + (double)pPoint->y.fract / 65536.0));
+    pt->x = (((double)(pPoint->x.value + (double)pPoint->x.fract / 65536.0)) / npcScale);
+    pt->y = (((double)(pPoint->y.value + (double)pPoint->y.fract / 65536.0)) / npcScale);
     pt->z = 0.0;
     pt->w = 1.0;
     }
@@ -371,7 +372,7 @@ static void toDPoint4d(DPoint4d* pt, POINTFX* pPoint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGONHEADER* lpHeader, size_t size)
+static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGONHEADER* lpHeader, size_t size, double npcScale)
     {
     TTPOLYGONHEADER* lpStart = lpHeader;
     TTPOLYCURVE* lpCurve;
@@ -396,13 +397,13 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
                 if (TT_PRIM_LINE == lpCurve->wType)
                     {
                     DPoint4d pt;
-                    toDPoint4d(&pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)));
+                    toDPoint4d(&pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
 
                     gpa.Add(GraphicsPoint(pt));
 
                     for (i = 0; i < lpCurve->cpfx; ++i)
                         {
-                        toDPoint4d(&pt, &lpCurve->apfx[i]);
+                        toDPoint4d(&pt, &lpCurve->apfx[i], npcScale);
                         gpa.Add(GraphicsPoint(pt));
                         }
                     }
@@ -439,11 +440,11 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
                         pt1 = pMem1;
                         }
 
-                    toDPoint4d(pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)));
+                    toDPoint4d(pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
                     ++pt;
 
                     for (i = 0, pFixed = lpCurve->apfx; i < lpCurve->cpfx; ++i, ++pt, ++pFixed)
-                        toDPoint4d(pt, pFixed);
+                        toDPoint4d(pt, pFixed, npcScale);
 
                     if (numPoles > 3)
                         {
@@ -466,10 +467,10 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
                 }
 
             // Add points to close curve. Depending on the specific font and glyph being used, these may not always be needed, but it never hurts. Our last point could have been a curve so we need to add that point again.
-            toDPoint4d(&ptLast, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)));
+            toDPoint4d(&ptLast, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
             gpa.Add(GraphicsPoint(ptLast));
 
-            toDPoint4d(&ptHead, &lpHeader->pfxStart);
+            toDPoint4d(&ptHead, &lpHeader->pfxStart, npcScale);
             gpa.Add(GraphicsPoint(ptHead));
 
             // Move on to next polygon.
@@ -503,7 +504,7 @@ BentleyStatus DgnTrueTypeGlyph::_FillGpa(GPArrayR gpa) const
     data.resize(dataSize);
     decomposeOutline(m_face->glyph->outline, &data[0], dataSize);
     
-    convertNativeGlyphToGraphicsPoints(gpa, reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size());
+    convertNativeGlyphToGraphicsPoints(gpa, reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size(), m_face->units_per_EM);
     gpa.SetArrayMask(HPOINT_ARRAYMASK_FILL);
     
     return SUCCESS;

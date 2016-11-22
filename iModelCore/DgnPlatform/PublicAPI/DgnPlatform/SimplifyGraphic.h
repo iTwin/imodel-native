@@ -25,7 +25,6 @@ protected:
     IGeometryProcessorR m_processor;
     ViewContextR m_context;
     IFacetOptionsPtr m_facetOptions;
-    DVec3d m_textAxes[2];
     bool m_inPatternDraw;
     bool m_inSymbolDraw;
     bool m_inTextDraw;
@@ -122,8 +121,6 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
-
     DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}

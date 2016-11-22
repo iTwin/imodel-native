@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                                                                                                                         m
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1155,8 +1155,7 @@ private:
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     virtual bool _IsPolyface () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
-
-    virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
+    virtual T_TileStrokes _GetStrokes (double chordTolerance) override;
 public:
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
         {
@@ -1177,7 +1176,6 @@ private:
         : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
     virtual bool _IsPolyface() const override { return false; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
@@ -1186,6 +1184,112 @@ public:
         return new SolidKernelTileGeometry(solid, tf, range, elemId, params, db);
         }
 };
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct TextStringTileGeometry : TileGeometry
+{
+private:
+    TextStringPtr                   m_text;
+    mutable bvector<CurveVectorPtr> m_glyphCurves;
+
+    TextStringTileGeometry(TextStringR text, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
+        : TileGeometry(tf, range, elemId, params, true, db), m_text(&text) { }
+
+    virtual bool _IsPolyface() const override { return false; }
+
+public:
+    static TileGeometryPtr Create(TextStringR textString, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
+        {
+        return new TextStringTileGeometry(textString, tf, range, elemId, params, db);
+        }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
+    {
+    InitGlyphCurves();
+
+    T_TilePolyfaces     polyfaces;
+
+    return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual T_TileStrokes _GetStrokes (double chordTolerance) override
+    {
+    InitGlyphCurves();
+
+    T_TileStrokes       strokes;
+
+    return strokes;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual size_t _GetFacetCount(FacetCounter& counter) const override 
+    { 
+    InitGlyphCurves();
+    size_t              count = 0;
+
+    for (auto& glyphCurve : m_glyphCurves)
+        count += counter.GetFacetCount(*glyphCurve);
+
+    return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/    
+void  InitGlyphCurves() const
+    {
+    if (!m_glyphCurves.empty())
+        return;
+
+    DVec3d              xAxis, yAxis;
+    DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
+    DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
+
+    m_text->ComputeGlyphAxes(xAxis, yAxis);
+
+#ifdef NEEDS_WORK
+   if (text.GetGlyphSymbology(sGraphic->m_currGeometryParams))
+        m_context.CookGeometryParams(sGraphic->m_currGeometryParams, *graphic);
+#endif
+
+    Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
+
+    for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
+        {
+        if (nullptr != glyphs[iGlyph])
+            {
+            bool            isFilled = false;
+            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
+
+            if (glyphCurveVector.IsValid())
+                {
+                glyphCurveVector->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
+                m_glyphCurves.push_back(glyphCurveVector);
+                }
+            }
+        }                                                                                                           
+    }
+};
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometryPtr TileGeometry::Create(TextStringR textString, TransformCR tf, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db)
+    {
+    return TextStringTileGeometry::Create(textString, tf, range, entityId, params, db);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -1221,9 +1325,13 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
         return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
         }
 
+    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
+
+    if (curveVector.IsValid() && !curveVector->IsAnyRegionType())       // Non region curveVectors....
+        return T_TilePolyfaces();
+
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
 
-    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
     ISolidPrimitivePtr  solidPrimitive = curveVector.IsNull() ? m_geometry->GetAsISolidPrimitive() : nullptr;
     MSBsplineSurfacePtr bsplineSurface = solidPrimitive.IsNull() && curveVector.IsNull() ? m_geometry->GetAsMSBsplineSurface() : nullptr;
 
@@ -1244,20 +1352,30 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
+TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (double chordTolerance) 
     {
     CurveVectorPtr  curveVector = m_geometry->GetAsCurveVector();
+    T_TileStrokes   tileStrokes;
 
     if (!curveVector.IsValid() || curveVector->IsAnyRegionType())
-        return nullptr;
+        return tileStrokes;
 
     IFacetOptionsPtr    facetOptions = CreateFacetOptions (chordTolerance, NormalMode::Never);
-    CurveVectorPtr      strokedCurveVector = curveVector->Stroke (*facetOptions);
+    Transform           transform = GetTransform();
+    bvector <bvector<bvector<DPoint3d>>> strokesArray;
 
-    if (strokedCurveVector.IsValid())
-        strokedCurveVector->TransformInPlace (GetTransform());
-            
-    return strokedCurveVector;
+    curveVector->CollectLinearGeometry (strokesArray, facetOptions.get());
+
+    for (auto& loop : strokesArray)
+        {
+        for (auto& strokes : loop)
+            {
+            transform.Multiply(strokes, strokes);
+            tileStrokes.push_back (TileStrokes(*GetDisplayParams(), std::move(strokes)));
+            }
+        }
+
+    return tileStrokes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1837,6 +1955,30 @@ public:
         }
 };
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     11/2016
++===============+===============+===============+===============+===============+======*/
+struct TileSimplifyGraphic : SimplifyGraphic
+{             
+    DEFINE_T_SUPER (SimplifyGraphic)
+
+TileSimplifyGraphic (Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR viewContext) : SimplifyGraphic(params, processor, viewContext) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     1/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _AddTextString(TextStringCR text) override
+    {
+    // Temporary -- until thread safety on text stroking is sorted out.
+    static BeMutex      s_strokeMutex;
+    BeMutexHolder       lock(s_strokeMutex);
+
+    T_Super::_AddTextString (text);
+    }
+  
+
+};  // TileSimplifyGraphic
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1859,7 +2001,7 @@ private:
 
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
         {
-        return new SimplifyGraphic(params, m_processor, *this);
+        return new TileSimplifyGraphic(params, m_processor, *this);
         }
 
     virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
@@ -1967,6 +2109,7 @@ private:
     TileGeometryList            m_curElemGeometries;
     TileModelDeltaP             m_modelDelta;
     double                      m_minRangeDiagonal;
+    double                      m_minTextBoxSize;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -1987,15 +2130,17 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
-    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
 
 public:
     TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_modelDelta(modelDelta),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0)
         {
+        static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
+
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
+        m_minTextBoxSize  = s_minTextBoxSize * tolerance;
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
 
@@ -2007,6 +2152,19 @@ public:
         // Avoid processing any elements with range smaller than roughly half a pixel...
         return range.DiagonalDistance() < m_minRangeDiagonal;
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     11/2016
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
+        {
+        DRange2d        range = textString.GetRange();
+        Transform       transformToTile = Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform(), textString.ComputeTransform());
+        double          minTileDimension = transformToTile.ColumnXMagnitude() * std::min(range.XLength(), range.YLength());
+
+        return minTileDimension < m_minTextBoxSize ? UnhandledPreference::Box : UnhandledPreference::Curve;
+        }
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2330,36 +2488,26 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
             }
         if (doPolylines)
             {
-            CurveVectorPtr          strokes = geom->GetStrokedCurve(tolerance);
-
-            if (!strokes.IsValid())
-                continue;
-
-            TileDisplayParamsPtr    displayParams = geom->GetDisplayParams();
-            TileMeshMergeKey key(*displayParams, false, false);
-
-            TileMeshBuilderPtr meshBuilder;
-            auto found = builderMap.find(key);
-            if (builderMap.end() != found)
-                meshBuilder = found->second;
-            else
-                builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
-
-            for (auto& curvePrimitive : *strokes)
+            auto                tileStrokesArray = geom->GetStrokes(tolerance);
+        
+            for (auto& tileStrokes : tileStrokesArray)
                 {
-                bvector<DPoint3d> const* lineString = curvePrimitive->GetLineStringCP ();
+                TileDisplayParamsPtr    displayParams = tileStrokes.m_displayParams;
+                TileMeshMergeKey key(*displayParams, false, false);
 
-                if (nullptr == lineString)
-                    {
-                    BeAssert (false);
-                    continue;
-                    }
+                TileMeshBuilderPtr meshBuilder;
+                auto found = builderMap.find(key);
+                if (builderMap.end() != found)
+                    meshBuilder = found->second;
+                else
+                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
+
 
                 DgnElementId elemId;
                 if (geometryCount < s_maxGeometryIdCount)
                     elemId = geom->GetEntityId();
 
-                meshBuilder->AddPolyline (*lineString, elemId, rangePixels < s_vertexClusterThresholdPixels);
+                meshBuilder->AddPolyline (tileStrokes.m_strokes, elemId, rangePixels < s_vertexClusterThresholdPixels);
                 }
             }
         }
