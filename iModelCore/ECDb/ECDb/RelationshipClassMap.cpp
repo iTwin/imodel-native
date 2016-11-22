@@ -270,12 +270,12 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, ClassMappingInfo const& classMapInfo)
+MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     {   
     //Don't call base class method as end table map requires its own handling
-    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && MapStrategyExtendedInfo::IsForeignKeyMapping(classMapInfo.GetMapStrategy()));
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
-    RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
+    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && MapStrategyExtendedInfo::IsForeignKeyMapping(ctx.GetClassMappingInfo().GetMapStrategy()));
+    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
+    RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
     if (GetClass().HasBaseClasses())
         return MapSubClass(relClassMappingInfo) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
@@ -373,7 +373,7 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
     if (MappingStatus::Error == MapProperties(ctx))
         return MappingStatus::Error;
 
-    AddIndexToRelationshipEnd(ctx, classMapInfo);
+    AddIndexToRelationshipEnd(ctx);
     return MappingStatus::Success;
     }
 
@@ -961,10 +961,10 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(ClassMappingContext& ctx)
     {
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
-    RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
+    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
+    RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
     const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
@@ -1079,7 +1079,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
 
     ClassMap const* classMap = GetDbMap().GetClassMap(singleNavProperty->GetClass());
     TablePerHierarchyInfo const& tphInfo = classMap->GetMapStrategy().GetTphInfo();
-    if (tphInfo.IsValid() && tphInfo.UseSharedColumns())
+    if (tphInfo.IsValid() && tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
         {
         //table uses shared columns, so FK col position cannot depend on NavigationProperty position
         fkColInfo.Assign(columnName.c_str(), true, nullptr, nullptr);
@@ -1098,7 +1098,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             if (precedingPropMap != nullptr)
                 break;
 
-            //no preceding prop map exists, continue until suceeding prop map is found
+            //no preceding prop map exists, continue until succeeding prop map is found
             continue;
             }
 
@@ -1187,18 +1187,18 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, E
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, ClassMappingInfo const& classMapInfo)
+MappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     {
     BeAssert(!MapStrategyExtendedInfo::IsForeignKeyMapping(GetMapStrategy()) &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
-    MappingStatus stat = DoMapPart1(context, classMapInfo);
+    MappingStatus stat = DoMapPart1(ctx);
     if (stat != MappingStatus::Success)
         return stat;
 
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
-    RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
+    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
+    RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
     ECRelationshipConstraintCR sourceConstraint = relationshipClass.GetSource();
@@ -1216,7 +1216,7 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
     if (stat != MappingStatus::Success)
         return stat;
 
-    stat = DoMapPart2(context, classMapInfo);
+    stat = DoMapPart2(ctx);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -1224,8 +1224,6 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing &&
         (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId())) 
         {
-        RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
-
         //Create FK from Source-Primary to LinkTable
         DbTable const* sourceTable = *relationClassMapInfo.GetSourceTables().begin();
         DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
@@ -1240,7 +1238,7 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
         }
 
 
-    AddIndices(context, classMapInfo);
+    AddIndices(ctx);
     return MappingStatus::Success;
     }
 
@@ -1381,13 +1379,13 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relationsh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                            09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx)
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
         return;
 
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
-    RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
+    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
+    RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
     RelationshipMappingInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
     const bool enforceUniqueness = !relationshipClassMapInfo.AllowDuplicateRelationships();
@@ -1414,11 +1412,11 @@ void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& schemaImport
                 break;
         }
 
-    AddIndex(schemaImportContext, RelationshipIndexSpec::Source, sourceIsUnique);
-    AddIndex(schemaImportContext, RelationshipIndexSpec::Target, targetIsUnique);
+    AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Source, sourceIsUnique);
+    AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Target, targetIsUnique);
 
     if (enforceUniqueness)
-        AddIndex(schemaImportContext, RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
+        AddIndex(ctx.GetImportCtx(), RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
 
 

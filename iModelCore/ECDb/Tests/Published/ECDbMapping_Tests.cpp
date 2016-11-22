@@ -1949,12 +1949,12 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
+TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaImports)
     {
     ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
@@ -1993,8 +1993,8 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
 
     SchemaItem secondSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+        "<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' alias='ts' />"
         "    <ECEntityClass typeName='Sub3'>"
         "        <BaseClass>ts:Parent</BaseClass>"
         "        <ECProperty propertyName='Prop3' typeName='double' />"
@@ -2013,6 +2013,235 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable)
     AssertColumnCount(ecdb, testItems, "After second schema import");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
+    {
+    ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Base1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase1_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base1</BaseClass>"
+        "        <ECProperty propertyName='PropSub1_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='PropSub11_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub12' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='PropSub12_1' typeName='double' />"
+        "    </ECEntityClass>"
+
+        "    <ECEntityClass typeName='Base2' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase2_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base2</BaseClass>"
+        "        <ECProperty propertyName='PropSub2_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub21' modifier='None'>"
+        "        <BaseClass>Sub2</BaseClass>"
+        "        <ECProperty propertyName='PropSub21_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub22' modifier='None'>"
+        "        <BaseClass>Sub2</BaseClass>"
+        "        <ECProperty propertyName='PropSub22_1' typeName='double' />"
+        "    </ECEntityClass>"
+
+        "    <ECEntityClass typeName='Base3' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase3_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub3' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base3</BaseClass>"
+        "        <ECProperty propertyName='PropSub3_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub31' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Sub3</BaseClass>"
+        "        <ECProperty propertyName='PropSub31_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub311' modifier='None'>"
+        "        <BaseClass>Sub31</BaseClass>"
+        "        <ECProperty propertyName='PropSub311_1' typeName='double' />"
+        "    </ECEntityClass>"
+
+        "    <ECEntityClass typeName='Base4' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase4_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub4' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base4</BaseClass>"
+        "        <ECProperty propertyName='PropSub4_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub41' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Sub4</BaseClass>"
+        "        <ECProperty propertyName='PropSub41_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub411' modifier='None'>"
+        "        <BaseClass>Sub41</BaseClass>"
+        "        <ECProperty propertyName='PropSub411_1' typeName='double' />"
+        "    </ECEntityClass>"
+
+        "    <ECEntityClass typeName='Base5' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase5_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub5' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base5</BaseClass>"
+        "        <ECProperty propertyName='PropSub5_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub51' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Sub5</BaseClass>"
+        "        <ECProperty propertyName='PropSub51_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub511' modifier='None'>"
+        "        <BaseClass>Sub51</BaseClass>"
+        "        <ECProperty propertyName='PropSub511_1' typeName='double' />"
+        "    </ECEntityClass>"
+
+        "    <ECEntityClass typeName='Base6' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PropBase6_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub6' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base6</BaseClass>"
+        "        <ECProperty propertyName='PropSub6_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub61' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Sub6</BaseClass>"
+        "        <ECProperty propertyName='PropSub61_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub611' modifier='None'>"
+        "        <BaseClass>Sub61</BaseClass>"
+        "        <ECProperty propertyName='PropSub611_1' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    std::vector<std::pair<Utf8CP, std::vector<Utf8CP>>> expectedTableLayouts {
+            //Base1 hierarchy
+            {"ts_Base1", {"ECInstanceId", "ECClassId", "PropBase1_1", "PropSub1_1"}},
+            {"ts_Sub11", {"Base1ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+            {"ts_Sub12", {"Base1ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+            //Base2 hierarchy
+            {"ts_Base2", {"ECInstanceId", "ECClassId", "PropBase2_1", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+            {"ts_Sub21", {"Base2ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+            {"ts_Sub22", {"Base2ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+            //Base3 hierarchy
+            {"ts_Base3", {"ECInstanceId", "ECClassId", "PropBase3_1", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+            {"ts_Sub311", {"Base3ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+            //Base4 hierarchy
+            {"ts_Base4", {"ECInstanceId", "ECClassId", "PropBase4_1", "PropSub4_1", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+            {"ts_Sub411", {"Base4ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+            //Base5 hierarchy
+            {"ts_Base5", {"ECInstanceId", "ECClassId", "PropBase5_1", "PropSub5_1"}},
+            {"ts_Sub51", {"Base5ECInstanceId", "ECClassId", "PropSub51_1", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+            //Base6 hierarchy
+            {"ts_Base6", {"ECInstanceId", "ECClassId", "PropBase6_1", "PropSub6_1"}},
+            {"ts_Sub61", {"Base6ECInstanceId", "ECClassId", "sc1", "sc2", "sc3", "sc4", "scoverflow"}},
+
+        };
+
+    for (std::pair<Utf8CP, std::vector<Utf8CP>> const& expectedTableLayout : expectedTableLayouts)
+        {
+        Utf8CP tableName = expectedTableLayout.first;
+        std::vector<Utf8CP> const& expectedColNames = expectedTableLayout.second;
+        bvector<Utf8String> actualColNames;
+        ASSERT_TRUE(ecdb.GetColumns(actualColNames, tableName));
+        ASSERT_EQ(expectedColNames.size(), actualColNames.size()) << tableName;
+        for (size_t i = 0; i < expectedColNames.size(); i++)
+            {
+            ASSERT_STRCASEEQ(expectedColNames[i], actualColNames[i].c_str()) << tableName;
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2221,6 +2450,85 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
 
     AssertColumnCount(ecdb, testItems, "after third schema import");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ShareColumnsCA_TableLayout)
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='BaseClass' modifier='None'>"
+                        "        <ECCustomAttributes>"
+                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                        "            </ClassMap>"
+                        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                        "            </ShareColumns>"
+                        "        </ECCustomAttributes>"
+                        "        <ECProperty propertyName='P1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='ChildDomainClassA' modifier='None'>"
+                        "        <BaseClass>BaseClass</BaseClass>"
+                        "        <ECProperty propertyName='P2' typeName='double' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='ChildDomainClassB' modifier='None'>"
+                        "        <BaseClass>BaseClass</BaseClass>"
+                        "        <ECProperty propertyName='P3' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='DerivedA' modifier='None'>"
+                        "        <BaseClass>ChildDomainClassA</BaseClass>"
+                        "        <ECProperty propertyName='P4' typeName='double' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='DerivedB' modifier='None'>"
+                        "        <BaseClass>ChildDomainClassA</BaseClass>"
+                        "        <ECProperty propertyName='P5' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "ShareColumnsCA.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //verify tables
+    ASSERT_TRUE(db.TableExists("rc_BaseClass"));
+    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassA"));
+    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassB"));
+    ASSERT_FALSE(db.TableExists("rc_DerivedA"));
+    ASSERT_FALSE(db.TableExists("rc_DerivedB"));
+
+    //verify ECSqlStatments
+    ECSqlStatement s1, s2, s3, s4, s5;
+    ASSERT_EQ(s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
+    ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
+    ASSERT_EQ(s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
+    ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
+    ASSERT_EQ(s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
+    ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
+    ASSERT_EQ(s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
+    ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
+    ASSERT_EQ(s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
+    ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
+
+    //verify No of Columns in BaseClass
+    Statement statement;
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(4, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP1scoverflow";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < statement.GetColumnCount(); i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames, actualColumnNames.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3412,84 +3720,6 @@ TEST_F(ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
     statment.Finalize();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, TPH_ShareColumnsCA)
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                        "    <ECEntityClass typeName='BaseClass' modifier='None'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.02.00'>"
-                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                        "            </ClassMap>"
-                        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                        "            </ShareColumns>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='P1' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='ChildDomainClassA' modifier='None'>"
-                        "        <BaseClass>BaseClass</BaseClass>"
-                        "        <ECProperty propertyName='P2' typeName='double' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='ChildDomainClassB' modifier='None'>"
-                        "        <BaseClass>BaseClass</BaseClass>"
-                        "        <ECProperty propertyName='P3' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='DerivedA' modifier='None'>"
-                        "        <BaseClass>ChildDomainClassA</BaseClass>"
-                        "        <ECProperty propertyName='P4' typeName='double' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='DerivedB' modifier='None'>"
-                        "        <BaseClass>ChildDomainClassA</BaseClass>"
-                        "        <ECProperty propertyName='P5' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "ShareColumnsCA.ecdb");
-    ASSERT_FALSE(asserted);
-
-    //verify tables
-    ASSERT_TRUE(db.TableExists("rc_BaseClass"));
-    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassA"));
-    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassB"));
-    ASSERT_FALSE(db.TableExists("rc_DerivedA"));
-    ASSERT_FALSE(db.TableExists("rc_DerivedB"));
-
-    //verify ECSqlStatments
-    ECSqlStatement s1, s2, s3, s4, s5;
-    ASSERT_EQ(s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
-    ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
-    ASSERT_EQ(s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
-    ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
-    ASSERT_EQ(s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
-    ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
-    ASSERT_EQ(s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
-    ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
-    ASSERT_EQ(s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
-    ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
-
-    //verify No of Columns in BaseClass
-    Statement statement;
-    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(4, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "ECInstanceIdECClassIdP1scoverflow";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < statement.GetColumnCount(); i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames, actualColumnNames.c_str());
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15

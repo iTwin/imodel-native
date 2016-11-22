@@ -59,8 +59,9 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
     {
+    m_shareColumnsMode = ShareColumnsMode::No; //default
     //first check whether column sharing is inherited from base class.
-    if (baseMapStrategy != nullptr && baseMapStrategy->GetTphInfo().UseSharedColumns())
+    if (baseMapStrategy != nullptr && baseMapStrategy->GetTphInfo().GetShareColumnsMode() != ShareColumnsMode::No)
         {
         if (shareColumnsCA.IsValid())
             {
@@ -70,32 +71,12 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             return ERROR;
             }
 
-        m_useSharedColumns = true;
+        m_shareColumnsMode = ShareColumnsMode::Yes;
         m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
         m_overflowColumnName.assign(baseMapStrategy->GetTphInfo().GetOverflowColumnName());
         return SUCCESS;
         }
 
-    //then check whether the base class CA indicates column sharing (if AppliesToSubclassesOnly the base class map strategy doesn't have column sharing yet)
-    if (baseClassShareColumnsCA != nullptr && baseClassShareColumnsCA->IsValid())
-        {
-        if (shareColumnsCA.IsValid())
-            {
-            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
-                            ecClass.GetFullName());
-
-            return ERROR;
-            }
-
-        m_useSharedColumns = true;
-        if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetSharedColumnCount(m_sharedColumnCount))
-            return ERROR;
-
-        if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetOverflowColumnName(m_overflowColumnName))
-            return ERROR;
-
-        return SUCCESS;
-        }
 
     //now see whether it is enabled for this class
     if (shareColumnsCA.IsValid()) //CA exists on this class
@@ -105,16 +86,19 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         if (ECObjectsStatus::Success != shareColumnsCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly))
             return ERROR;
 
-        m_useSharedColumns = !applyToSubclassesOnly;
+        if (applyToSubclassesOnly)
+            m_shareColumnsMode = ShareColumnsMode::ApplyToSubclassesOnly;
+        else
+            m_shareColumnsMode = ShareColumnsMode::Yes;
 
-        if (m_useSharedColumns)
-            {
-            if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(m_sharedColumnCount))
-                return ERROR;
+        int customShareColCount = 1; //default is 1 if not set in the CA
+        if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
+            return ERROR;
 
-            if (ECObjectsStatus::Success != shareColumnsCA.TryGetOverflowColumnName(m_overflowColumnName))
-                return ERROR;
-            }
+        m_sharedColumnCount = customShareColCount;
+
+        if (ECObjectsStatus::Success != shareColumnsCA.TryGetOverflowColumnName(m_overflowColumnName))
+            return ERROR;
         }
 
     return SUCCESS;

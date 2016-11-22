@@ -85,7 +85,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExtendedInfo const& mapStrategyExtInfo)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(ClassId, MapStrategy, UseSharedColumns, SharedColumnCount, OverflowColumnName, JoinedTableInfo) VALUES (?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(ClassId, MapStrategy, ShareColumnsMode, SharedColumnCount, OverflowColumnName, JoinedTableInfo) VALUES (?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -98,7 +98,8 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
         {
         TablePerHierarchyInfo const& tphInfo = mapStrategyExtInfo.GetTphInfo();
         BeAssert(tphInfo.IsValid());
-        stmt->BindBoolean(3, tphInfo.UseSharedColumns());
+        if (tphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::No)
+            stmt->BindInt(3, Enum::ToInt(tphInfo.GetShareColumnsMode()));
 
         if (tphInfo.GetSharedColumnCount() >= 0)
             stmt->BindInt(4, tphInfo.GetSharedColumnCount());
@@ -174,7 +175,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
     loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, UseSharedColumns, SharedColumnCount, OverflowColumnName, JoinedTableInfo "
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, OverflowColumnName, JoinedTableInfo "
                                                       "FROM ec_ClassMap WHERE ClassId=?");
     if (stmt == nullptr)
         {
@@ -189,16 +190,16 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
-        const bool useSharedColumns = stmt->IsColumnNull(1) ? false : stmt->GetValueBoolean(1);
+        const TablePerHierarchyInfo::ShareColumnsMode shareColumnsMode = stmt->IsColumnNull(1) ? TablePerHierarchyInfo::ShareColumnsMode::No : Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(stmt->GetValueInt(1));
         const int sharedColumnCount = stmt->IsColumnNull(2) ? -1 : stmt->GetValueInt(2);
         Utf8CP overflowColumnName = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(4) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(4));
-        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(useSharedColumns, sharedColumnCount, overflowColumnName, joinedTableInfo));
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode, sharedColumnCount, overflowColumnName, joinedTableInfo));
         }
     else
         {
         BeAssert(stmt->IsColumnNull(1) && stmt->IsColumnNull(2) && stmt->IsColumnNull(3) && stmt->IsColumnNull(4) &&
-                 "UseSharedColumns, SharedColumnCount, OverflowColumnName, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
+                 "ShareColumnsMode, SharedColumnCount, OverflowColumnName, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 

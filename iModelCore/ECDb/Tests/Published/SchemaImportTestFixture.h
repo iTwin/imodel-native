@@ -74,18 +74,25 @@ protected:
 
         struct TablePerHierarchyInfo
             {
-            bool m_useSharedColumns;
+            enum class ShareColumnsMode
+                {
+                No = 0,
+                Yes = 1,
+                ApplyToSubclassesOnly = 2
+                };
+
+            ShareColumnsMode m_sharedColumnsMode;
             int m_sharedColumnCount;
             Utf8String m_overflowColumnName;
             JoinedTableInfo m_joinedTableInfo;
 
-            TablePerHierarchyInfo() : m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
-            TablePerHierarchyInfo(bool useSharedColumns, int sharedColumnCount, JoinedTableInfo jti) : m_useSharedColumns(useSharedColumns), m_sharedColumnCount(sharedColumnCount), m_joinedTableInfo(jti) {}
-            TablePerHierarchyInfo(bool useSharedColumns, int sharedColumnCount, Utf8CP overflowColumnName, JoinedTableInfo jti) : m_useSharedColumns(useSharedColumns), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColumnName), m_joinedTableInfo(jti) {}
-            explicit TablePerHierarchyInfo(JoinedTableInfo jti) : m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(jti) {}
+            TablePerHierarchyInfo() : m_sharedColumnsMode(ShareColumnsMode::No), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
+            TablePerHierarchyInfo(ShareColumnsMode sharedColumnsMode, int sharedColumnCount, JoinedTableInfo jti) : m_sharedColumnsMode(sharedColumnsMode), m_sharedColumnCount(sharedColumnCount), m_joinedTableInfo(jti) {}
+            TablePerHierarchyInfo(ShareColumnsMode sharedColumnsMode, int sharedColumnCount, Utf8CP overflowColumnName, JoinedTableInfo jti) : m_sharedColumnsMode(sharedColumnsMode), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColumnName), m_joinedTableInfo(jti) {}
+            explicit TablePerHierarchyInfo(JoinedTableInfo jti) : m_sharedColumnsMode(ShareColumnsMode::No), m_sharedColumnCount(-1), m_joinedTableInfo(jti) {}
 
-            bool IsUnset() const { return !m_useSharedColumns && m_joinedTableInfo == JoinedTableInfo::None; }
-            bool operator==(TablePerHierarchyInfo const& rhs) const { return m_useSharedColumns == rhs.m_useSharedColumns && m_sharedColumnCount == rhs.m_sharedColumnCount && m_joinedTableInfo == rhs.m_joinedTableInfo && m_overflowColumnName.Equals(rhs.m_overflowColumnName); }
+            bool IsUnset() const { return m_sharedColumnsMode == ShareColumnsMode::No && m_joinedTableInfo == JoinedTableInfo::None; }
+            bool operator==(TablePerHierarchyInfo const& rhs) const { return m_sharedColumnsMode == rhs.m_sharedColumnsMode && m_sharedColumnCount == rhs.m_sharedColumnCount && m_joinedTableInfo == rhs.m_joinedTableInfo && m_overflowColumnName.Equals(rhs.m_overflowColumnName); }
             };
 
         Strategy m_strategy;

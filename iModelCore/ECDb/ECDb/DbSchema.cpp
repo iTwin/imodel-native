@@ -1425,17 +1425,15 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
     {
-    if (!tphInfo.UseSharedColumns())
+    if (m_overflowColumn != nullptr)
         {
-        BeAssert(false && "CreateSharedColumns must not be called if shared columns were not enabled by the respective CA");
-        return ERROR;
+        BeAssert(false && "CreateSharedColumns should not be called twice");
+        return SUCCESS; //overflow already evaluated. WIP: Why is this called twice at all?
         }
 
-    if (m_overflowColumn != nullptr)
-        return SUCCESS; //overflow already evaluated. WIP: Why is this called twice at all?
-
-    //the shared column count is the count of shared columns to be created excluding the overflow column
-    for (int i = 0; i < tphInfo.GetSharedColumnCount(); i++)
+    //the shared column count is the count of shared columns to be created including the overflow column
+    BeAssert(tphInfo.GetSharedColumnCount() > 0);
+    for (int i = 0; i < tphInfo.GetSharedColumnCount() - 1; i++)
         {
         Utf8String generatedName;
         m_sharedColumnNameGenerator.Generate(generatedName);

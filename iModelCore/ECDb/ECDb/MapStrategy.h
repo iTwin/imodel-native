@@ -42,9 +42,16 @@ struct MapStrategyExtendedInfo;
 //+===============+===============+===============+===============+===============+=====
 struct TablePerHierarchyInfo
     {
+    public:
+        enum class ShareColumnsMode
+            {
+            No = 0,
+            Yes = 1,
+            ApplyToSubclassesOnly = 2
+            };
     private:
         bool m_isValid;
-        bool m_useSharedColumns;
+        ShareColumnsMode m_shareColumnsMode;
         int m_sharedColumnCount;
         Utf8String m_overflowColumnName;
         JoinedTableInfo m_joinedTableInfo;
@@ -54,16 +61,16 @@ struct TablePerHierarchyInfo
 
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
-        explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid), m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
-        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP overflowColName, JoinedTableInfo joinedTableInfo)
-            : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColName), m_joinedTableInfo(joinedTableInfo)
+        explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid), m_shareColumnsMode(ShareColumnsMode::No), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
+        TablePerHierarchyInfo(ShareColumnsMode shareColumnsMode, int sharedColumnCount, Utf8CP overflowColName, JoinedTableInfo joinedTableInfo)
+            : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_sharedColumnCount(sharedColumnCount), m_overflowColumnName(overflowColName), m_joinedTableInfo(joinedTableInfo)
             {}
 
         BentleyStatus Initialize(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
 
         //!@return true if the respective MapStrategy is TablePerHierarchy. false if MapStrategy is not TablePerHierarchy
         bool IsValid() const { return m_isValid; }
-        bool UseSharedColumns() const { return m_useSharedColumns; }
+        ShareColumnsMode GetShareColumnsMode() const { return m_shareColumnsMode; }
         int GetSharedColumnCount() const { return m_sharedColumnCount; }
         Utf8StringCR GetOverflowColumnName() const { return m_overflowColumnName; }
         JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }

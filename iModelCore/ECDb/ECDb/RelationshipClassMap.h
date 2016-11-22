@@ -150,9 +150,9 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const&);
+        void AddIndexToRelationshipEnd(ClassMappingContext&);
 
-        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
+        virtual MappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8CP colName, bool makeNotNull) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
@@ -200,15 +200,15 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
     private:
         RelationshipClassLinkTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
+        virtual MappingStatus _Map(ClassMappingContext&) override;
 
         MappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
-        void AddIndices(SchemaImportContext&, ClassMappingInfo const&);
+        void AddIndices(ClassMappingContext&);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
 
         bool GetConstraintECInstanceIdColumnName(Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTable const& table) const;
-        virtual BentleyStatus _Load( ClassMapLoadContext&, DbClassMapLoadContext const&) override;
+        virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);

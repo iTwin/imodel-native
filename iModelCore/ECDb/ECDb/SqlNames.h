@@ -93,6 +93,11 @@ static_assert(1 == (int) JoinedTableInfo::JoinedTable, "Persisted enum JoinedTab
 #define SQLVAL_JoinedTableInfo_ParentOfJoinedTable "2"
 static_assert(2 == (int) JoinedTableInfo::ParentOfJoinedTable, "Persisted enum JoinedTableInfo has changed");
 
+//** Enum ShareColumnsMode
+static_assert(0 == (int) TablePerHierarchyInfo::ShareColumnsMode::No, "Persisted enum TablePerHierarchyInfo::ShareColumnsMode has changed");
+static_assert(1 == (int) TablePerHierarchyInfo::ShareColumnsMode::Yes, "Persisted enum TablePerHierarchyInfo::ShareColumnsMode has changed");
+static_assert(2 == (int) TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly, "Persisted enum TablePerHierarchyInfo::ShareColumnsMode has changed");
+
 //** Enum MapStrategy
 #define SQLVAL_MapStrategy_NotMapped "0"
 static_assert(0 == (int) MapStrategy::NotMapped, "Persisted enum MapStrategy has changed");

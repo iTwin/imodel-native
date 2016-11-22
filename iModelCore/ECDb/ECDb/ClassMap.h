@@ -125,6 +125,26 @@ struct ClassMap : RefCountedBase
 
             };
 
+    protected:
+        struct ClassMappingContext : NonCopyableClass
+            {
+            private:
+                SchemaImportContext& m_importCtx;
+                ClassMappingInfo const& m_classMappingInfo;
+                bool m_createSharedColumnsAfterMappingProperties;
+
+            public:
+                ClassMappingContext(SchemaImportContext& importCtx, ClassMappingInfo const& classMappingInfo)
+                    : m_importCtx(importCtx), m_classMappingInfo(classMappingInfo), m_createSharedColumnsAfterMappingProperties(false)
+                {}
+
+                SchemaImportContext& GetImportCtx() const { return m_importCtx; }
+                ClassMappingInfo const& GetClassMappingInfo() const { return m_classMappingInfo; }
+
+                bool IsCreateSharedColumnsAfterMappingProperties() const { return m_createSharedColumnsAfterMappingProperties; }
+                void SetCreateSharedColumnsAfterMappingProperties() { m_createSharedColumnsAfterMappingProperties = true; }
+            };
+
     private:
         ECDb const& m_ecdb;
         Type m_type;
@@ -147,10 +167,10 @@ struct ClassMap : RefCountedBase
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
  
-        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
-        MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
-        MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
-        MappingStatus MapProperties(SchemaImportContext&);
+        virtual MappingStatus _Map(ClassMappingContext&);
+        MappingStatus DoMapPart1(ClassMappingContext&);
+        MappingStatus DoMapPart2(ClassMappingContext&);
+        MappingStatus MapProperties(ClassMappingContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
@@ -160,14 +180,15 @@ struct ClassMap : RefCountedBase
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
-        MappingStatus MapSystemColumns();
+        BentleyStatus MapSystemColumns();
+
     public:
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
 
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
-        MappingStatus Map(SchemaImportContext& ctx, ClassMappingInfo const& info) { return _Map(ctx, info); }
+        MappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(DbMapSaveContext&);
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
@@ -217,7 +238,7 @@ struct NotMappedClassMap : public ClassMap
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}
 
-    virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
+    virtual MappingStatus _Map(ClassMappingContext&) override;
     virtual BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:

@@ -68,7 +68,6 @@ private:
     explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb(ecdb)
         {
         m_customAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
-        m_customAttributeValidator.Accept("ECDbMap:ShareColumns.SharedColumnCount");
         m_customAttributeValidator.Reject("ECDbMap:*");
         }
 
