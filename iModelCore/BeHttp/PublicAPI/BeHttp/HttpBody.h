@@ -62,10 +62,11 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpFileBody : HttpBody
 private:
     mutable BeFile m_file;
     BeFileName m_filePath;
-    bool m_fileCreated = false;
 
 private:
+    BentleyStatus OpenFile(BeFileAccess access = BeFileAccess::Read);
     BentleyStatus CreateFile();
+    BentleyStatus PrepareForWrite();
 
     HttpFileBody(BeFileNameCR filePath) : m_filePath (filePath) {}
     virtual ~HttpFileBody() {Close ();}
