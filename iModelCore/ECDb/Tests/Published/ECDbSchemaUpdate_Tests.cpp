@@ -6168,8 +6168,9 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString("existingTableUpdate.ecdb", BentleyCharEncoding::Utf8).c_str()));
+    ECDbR ecdb = SetupECDb("existingTableUpdate.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
     // Create existing table and insert rows
     ecdb.ExecuteSql("CREATE TABLE test_Employee(Id INTEGER PRIMARY KEY, Name TEXT);");
     ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (101, 'Affan Khan');");
@@ -6180,8 +6181,8 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     // Map ECSchema to exisitng table
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap'/>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap'/>"
         "   <ECEntityClass typeName='Employee' modifier='None' >"
         "       <ECCustomAttributes>"
         "           <ClassMap xmlns='ECDbMap.02.00'>"
@@ -6213,8 +6214,8 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     // Map ECSchema to exisitng table
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap'/>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap'/>"
         "   <ECEntityClass typeName='Employee' modifier='None' >"
         "       <ECCustomAttributes>"
         "           <ClassMap xmlns='ECDbMap.02.00'>"
@@ -6239,10 +6240,10 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "    <ECRelationshipClass typeName='EmployeeHasTitle' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
-        "        <Source cardinality='(0,N)' polymorphic='false'>"
+        "        <Source multiplicity='(0..*)' polymorphic='false' roleLabel='Employee'>"
         "            <Class class='Employee'/>"
         "        </Source>"
-        "        <Target cardinality='(0,1)' polymorphic='false'>"
+        "        <Target multiplicity='(0..1)' polymorphic='false' roleLabel='Title'>"
         "            <Class class='Title'/>"
         "        </Target>"
         "    </ECRelationshipClass>'"

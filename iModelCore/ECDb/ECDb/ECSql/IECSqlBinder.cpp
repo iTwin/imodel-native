@@ -144,7 +144,7 @@ ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindNavigation(ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId)
+ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId)
     {
     IECSqlStructBinder& navPropBinder = _BindStruct();
 

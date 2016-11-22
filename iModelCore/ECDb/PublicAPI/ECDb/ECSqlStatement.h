@@ -180,7 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
         //!            if the relationshipECClassId is optional. ECDb does not validate the input.
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindNavigationValue(int parameterIndex, ECInstanceId relatedInstanceId, ECN::ECClassId relationshipECClassId) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
+        ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
 
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.
@@ -384,7 +384,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @return BeInt64Id value
         //! @note Possible errors:
         //! - column data does not hold a BeInt64Id
-        template <class TBeInt64Id> TBeInt64Id GetValueId(int columnIndex) const { return TBeInt64Id(GetValueUInt64(columnIndex)); }
+        template <class TBeInt64Id> 
+        TBeInt64Id GetValueId(int columnIndex) const { return TBeInt64Id(GetValueUInt64(columnIndex)); }
 
         //! Gets the value of the specific column as a BeGuid
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -400,7 +401,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @return ECInstanceId of the related ECInstance
         //! @note Possible errors:
         //! - column does not refer to a NavigationECProperty
-        ECInstanceId GetValueNavigation(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigation(relationshipECClassId); }
+        template <class TBeInt64Id>
+        TBeInt64Id GetValueNavigation(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigation<TBeInt64Id>(relationshipECClassId); }
 
         //! Gets the array value of the specified column.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

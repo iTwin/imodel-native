@@ -42,6 +42,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
         "            <ClassMap xmlns='ECDbMap.02.00'>"
         "                <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>demo_rtree</TableName>"
+        "                <ECInstanceIdColumn>ECInstanceId</ECInstanceIdColumn>"
         "            </ClassMap>"
         "       </ECCustomAttributes>"
         "       <ECProperty typeName='double' propertyName='MinX' />"

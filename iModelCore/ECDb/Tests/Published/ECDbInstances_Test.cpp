@@ -337,12 +337,12 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     PrimitiveECPropertyP doubleProp2;
     struct2->CreatePrimitiveProperty(doubleProp2, "Struct2DoubleMember", PRIMITIVETYPE_Double);
     StructArrayECPropertyP structArrayProperty2;
-    struct2->CreateStructArrayProperty(structArrayProperty2, "NestedArray", struct1);
+    struct2->CreateStructArrayProperty(structArrayProperty2, "NestedArray", *struct1);
 
     ECEntityClassP testClass;
     schema->CreateEntityClass(testClass, "TestClass");
     StructArrayECPropertyP nestedArrayProperty;
-    testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", struct2);
+    testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", *struct2);
 
     bvector<ECSchemaCP> schemas;
     schemas.push_back(schema.get());

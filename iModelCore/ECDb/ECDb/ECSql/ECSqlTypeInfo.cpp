@@ -290,7 +290,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         {
         ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
         if (arrayProperty->GetIsStructArray())
-            structType = arrayProperty->GetAsStructArrayProperty()->GetStructElementType();
+            structType = &arrayProperty->GetAsStructArrayProperty()->GetStructElementType();
         else if (arrayProperty->GetIsPrimitiveArray())
             primitiveType = arrayProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
 

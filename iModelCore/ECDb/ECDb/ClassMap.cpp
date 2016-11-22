@@ -1052,7 +1052,7 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::E
             return nullptr;
         }
 
-    DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName.c_str(), colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+    DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
     if (newColumn == nullptr)
         {
         BeAssert(false && "Failed to create column");

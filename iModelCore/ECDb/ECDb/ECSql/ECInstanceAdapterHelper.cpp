@@ -22,7 +22,7 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
         {
         StructECPropertyCP structProp = ecProperty.GetAsStructProperty();
         BeAssert(structProp != nullptr);
-        ECClassCR structType = structProp->GetType();
+        ECStructClassCR structType = structProp->GetType();
         return StructECValueBindingInfo::Create(enabler, structType, propertyAccessString, ecsqlParameterIndex);
         }
 
@@ -85,7 +85,7 @@ std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     {
     return std::unique_ptr<StructECValueBindingInfo>(new StructECValueBindingInfo(parentEnabler, structType, parentPropertyAccessString, ecsqlParameterIndex));
     }
@@ -94,7 +94,7 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create(ECN::
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNestedStruct(ECN::ECClassCR structType)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNestedStruct(ECN::ECStructClassCR structType)
     {
     return Create(*structType.GetDefaultStandaloneEnabler(), structType, nullptr, UNSET_INDEX);
     }
@@ -102,7 +102,7 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
+StructECValueBindingInfo::StructECValueBindingInfo(ECN::ECEnablerCR parentEnabler, ECN::ECStructClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     : ECValueBindingInfo(Type::Struct, ecsqlParameterIndex)
     {
     for (ECPropertyCP memberProp : structType.GetProperties(true))
@@ -148,8 +148,8 @@ ArrayECValueBindingInfo::ArrayECValueBindingInfo(ECN::ECPropertyCR prop, uint32_
     //to read out the values
     if (nullptr != structArrayProp)
         {
-        ECClassCP structType = structArrayProp->GetStructElementType();
-        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(*structType);
+        ECStructClassCR structType = structArrayProp->GetStructElementType();
+        m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct(structType);
         }
     }
 
@@ -437,8 +437,6 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
 //static
 BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, NavigationECValueBindingInfo const& valueBindingInfo)
     {
-    //WIP_NAV_PROP: this needs to be adjusted once navigation values are supported by ECValues/ECInstances
-    //Right now, they lose the RelECClassId information and just hold the id
     ECValue value;
     if (ECObjectsStatus::Success != instanceInfo.GetInstance().GetValue(value, valueBindingInfo.GetPropertyIndex()))
         return ERROR;
@@ -446,8 +444,11 @@ BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder,
     if (value.IsNull())
         return binder.BindNull() == ECSqlStatus::Success ? SUCCESS : ERROR;
 
-    ECInstanceId navId((uint64_t) value.GetLong());
-    return binder.BindNavigation(navId, ECClassId()) == ECSqlStatus::Success ? SUCCESS : ERROR;
+    ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
+    ECInstanceId navId((uint64_t) navInfo.GetIdAsLong());
+    ECClassId relClassId = navInfo.GetRelationshipClass().GetId();
+
+    return binder.BindNavigation(navId, relClassId) == ECSqlStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -499,7 +500,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
         if (nullptr == structArrayProp)
             return false;
 
-        structType = structArrayProp->GetStructElementType();
+        structType = &structArrayProp->GetStructElementType();
         }
     else if (prop.GetIsStruct())
         structType = &prop.GetAsStructProperty()->GetType();

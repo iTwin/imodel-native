@@ -83,14 +83,14 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
     EXPECT_TRUE(struct2->CreatePrimitiveProperty(primitiveProperty, "Struct2StringMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
     EXPECT_TRUE(struct2->CreatePrimitiveProperty(primitiveProperty, "Struct2DoubleMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
     StructArrayECPropertyP arrayProperty = nullptr;
-    EXPECT_TRUE(struct2->CreateStructArrayProperty(arrayProperty, "Struct2Array", struct1) == ECObjectsStatus::Success);
+    EXPECT_TRUE(struct2->CreateStructArrayProperty(arrayProperty, "Struct2Array", *struct1) == ECObjectsStatus::Success);
 
 
     ECCustomAttributeClassP testClassCustomAttribute = nullptr;
     testSchema->CreateCustomAttributeClass(testClassCustomAttribute, "StructArrayCustomAttribute");
     EXPECT_TRUE(testClassCustomAttribute->CreatePrimitiveProperty(primitiveProperty, "intMember", PrimitiveType::PRIMITIVETYPE_Integer) == ECObjectsStatus::Success);
     StructArrayECPropertyP nestedArrayProperty = nullptr;
-    EXPECT_TRUE(testClassCustomAttribute->CreateStructArrayProperty(nestedArrayProperty, "NestedArray", struct2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(testClassCustomAttribute->CreateStructArrayProperty(nestedArrayProperty, "NestedArray", *struct2) == ECObjectsStatus::Success);
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler();

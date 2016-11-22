@@ -17,7 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! directly as @ref ECN::IECInstance "ECInstances". 
 //! Works with the @ref ECSqlStatement to adapt the rows read from the %ECDb file into 
 //! @ref ECN::IECInstance "ECInstances".
-//! Note: When using Polymorphic queries, the SELECT statement must include the ECClassId 
+//! Note: 
+//!     * When using Polymorphic queries, the SELECT statement must include the ECClassId
 //! column in order to correctly determine the derived class.  Example: "Select Prop1, Prop2, ECClassId FROM"
 //! @see ECSqlStatement
 //! @ingroup ECDbGroup
@@ -31,16 +32,15 @@ private:
 
     ECSqlStatementCR m_ecSqlStatement;
     bool m_initialized;
+    int m_ecClassIdColumnIndex;
     int m_sourceECClassIdColumnIndex;
     int m_targetECClassIdColumnIndex;
-    int m_ecClassIdColumnIndex;
     bool m_isSingleClassSelectClause;
 
-    bool Initialize();
-    void CreateColumnHandlers();
+    BentleyStatus CreateColumnHandlers();
     //column handlers
     BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    ECDB_EXPORT BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
@@ -77,8 +77,8 @@ public:
     //! The SELECT clause must specifically request the ECInstanceId property in order for this to work
     //! (unless doing 'SELECT *', in which case the ECInstanceId will be retrieved automatically).
     //! @param[out] id  the ECInstanceId of the instance for the current row
-    //! @returns true if the ECInstanceId was found in the current row, false otherwise
-    ECDB_EXPORT bool GetInstanceId(ECInstanceId& id) const;
+    //! @returns SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus GetInstanceId(ECInstanceId& id) const;
     };
 
 //======================================================================================

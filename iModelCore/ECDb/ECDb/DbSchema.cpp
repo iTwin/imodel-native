@@ -126,7 +126,7 @@ struct ExistingColumn
 //****************************************************************************************
 //DbSchema
 //****************************************************************************************
-bool DbSchema::IsTableNameInUse(Utf8CP tableName) const
+bool DbSchema::IsTableNameInUse(Utf8StringCR tableName) const
     {
     SyncTableCache();
     return m_tableMapByName.find(tableName) != m_tableMapByName.end();
@@ -134,17 +134,17 @@ bool DbSchema::IsTableNameInUse(Utf8CP tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
     if (tableType == DbTable::Type::Existing)
         {
-        if (Utf8String::IsNullOrEmpty(name))
+        if (name.empty())
             {
             BeAssert(false && "Existing table name cannot be null or empty");
             return nullptr;
             }
 
-        if (!m_ecdb.TableExists(name))
+        if (!m_ecdb.TableExists(name.c_str()))
             {
             LOG.errorv("Table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", name);
             return nullptr;
@@ -152,7 +152,7 @@ DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, Persistence
         }
 
     Utf8String finalName;
-    if (!Utf8String::IsNullOrEmpty(name))
+    if (!name.empty())
         {
         if (IsTableNameInUse(name))
             {
@@ -167,20 +167,20 @@ DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, Persistence
         do
             {
             m_nameGenerator.Generate(finalName);
-            } while (IsTableNameInUse(finalName.c_str()));
+            } while (IsTableNameInUse(finalName));
         }
 
     BeBriefcaseBasedId tableId;
     m_ecdb.GetECDbImplR().GetTableIdSequence().GetNextValue(tableId);
-    return CreateTable(DbTableId(tableId.GetValue()), finalName.c_str(), tableType, persType, exclusiveRootClassId, primaryTable);
+    return CreateTable(DbTableId(tableId.GetValue()), finalName, tableType, persType, exclusiveRootClassId, primaryTable);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
-    if (Utf8String::IsNullOrEmpty(name) || !tableId.IsValid())
+    if (name.empty() || !tableId.IsValid())
         {
         BeAssert(false && "Table name cannot be empty, table id must be valid");
         return nullptr;
@@ -257,7 +257,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         for (Utf8CP addColumn : added)
             {
             auto itor = newColumnList.find(addColumn);
-            if (table->CreateColumn(addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
+            if (table->CreateColumn(Utf8String(addColumn), itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
                 {
                 BeAssert("Failed to create column");
                 return ERROR;
@@ -1176,7 +1176,7 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable) 
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
     : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
       m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable), m_overflowColumn(nullptr)
     {
@@ -1368,10 +1368,6 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
     else
         m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
 
-
-    for (auto& eh : m_columnEvents)
-        eh(ColumnEvent::Created, *newColumn);
-
     if (kind == DbColumn::Kind::Overflow)
         m_overflowColumn = newColumnP;
 
@@ -1417,9 +1413,6 @@ BentleyStatus DbTable::DeleteColumn(DbColumn& col)
                     return ERROR;
             }
         }
-
-    for (auto& eh : m_columnEvents)
-        eh(ColumnEvent::Deleted, col);
 
     m_columns.erase(col.GetName().c_str());
     auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
@@ -1480,20 +1473,6 @@ DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType, bool addNot
 
     col->GetConstraintsR().SetCollation(collation);
     return col;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-std::weak_ptr<DbColumn> DbTable::FindColumnWeakPtr(Utf8CP name) const
-    {
-    auto itor = m_columns.find(name);
-    if (itor != m_columns.end())
-        {
-        return itor->second;
-        }
-
-    return std::weak_ptr<DbColumn>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2141,9 +2120,9 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, DbTable::Type tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
-    DbTable* table = dbSchema.FindTableP(tableName);
+    DbTable* table = dbSchema.FindTableP(tableName.c_str());
     if (table != nullptr)
         {
         if (table->GetType() != tableType)
@@ -2151,7 +2130,7 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, Db
             std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
             LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
                          "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
-                         tableName,
+                         tableName.c_str(),
                          toStr(tableType == DbTable::Type::Existing), toStr(!table->IsOwnedByECDb()));
             BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
             }
@@ -2161,7 +2140,7 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, Db
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
             dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Table %s is exclusively used by the ECClass with Id %s and therefore "
                                                                         "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
-                                                                        tableName, table->GetExclusiveRootECClassId().ToString().c_str());
+                                                                        tableName.c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
             return nullptr;
             }
 
@@ -2170,7 +2149,7 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, Db
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
             dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECClass with Id %s requests exclusive use of the table %s, "
                                                                         "but it is already used by some other ECClass.",
-                                                                        exclusiveRootClassId.ToString().c_str(), tableName);
+                                                                        exclusiveRootClassId.ToString().c_str(), tableName.c_str());
             return nullptr;
             }
 
@@ -2188,14 +2167,13 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8CP tableName, Db
 // @bsimethod                                                Krischan.Eberle       11/2016
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8CP tableName, DbTable::Type tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
-    DbTable* table = dbSchema.CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
+    DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
     
-    if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
-        primaryKeyColumnName = "ECInstanceId"; //default name for PK column
-
-    DbColumn* pkColumn = table->CreateColumn(Utf8String(primaryKeyColumnName), DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
+    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName.empty() ? Utf8String("ECInstanceId") //default name for PK column
+                                                                            : primaryKeyColumnName, 
+                                             DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
     if (table->GetPersistenceType() == PersistenceType::Persisted)
         {
         std::vector<DbColumn*> pkColumns {pkColumn};
@@ -2221,16 +2199,18 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8CP t
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8CP existingTableName, Utf8CP primaryKeyColName)
+DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName)
     {
+    BeAssert(!existingTableName.empty() && !primaryKeyColName.empty());
+
     //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
     //cases where schema authors want to map two ECClasses to the same existing table.
-    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
+    DbTable* table = dbSchema.CreateTable(existingTableName.c_str(), DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
     if (table == nullptr)
         return nullptr;
 
     std::vector<ExistingColumn> existingColumns;
-    if (ExistingColumn::GetColumns(existingColumns, dbSchema.GetECDb(), existingTableName) == ERROR)
+    if (SUCCESS != ExistingColumn::GetColumns(existingColumns, dbSchema.GetECDb(), existingTableName.c_str()))
         {
         BeAssert(false && "Failed to get column informations");
         return nullptr;
@@ -2239,11 +2219,12 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     if (!table->GetEditHandle().CanEdit())
         table->GetEditHandleR().BeginEdit();
 
+    DbColumn* idColumn = nullptr;
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
     for (ExistingColumn const& col : existingColumns)
         {
-        DbColumn* column = table->CreateColumn(col.GetName().c_str(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(col.GetName(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
@@ -2261,6 +2242,9 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
             pkColumns.push_back(column);
             pkOrdinals.push_back(static_cast<size_t>(col.GetPrimaryKeyOrdinal() - 1));
             }
+
+        if (column->GetName().EqualsIAscii(primaryKeyColName))
+            idColumn = column;
         }
 
     if (!pkColumns.empty())
@@ -2273,16 +2257,15 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
 
         if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
             return nullptr;
+        }
 
-        DbColumn* pkColumn = pkColumns[0];
-        if (!Utf8String::IsNullOrEmpty(primaryKeyColName) && !pkColumn->GetName().EqualsIAscii(primaryKeyColName))
-            {
-            LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
-                       primaryKeyColName, table->GetName().c_str());
-            return nullptr;
-            }
-
-        pkColumn->SetKind(DbColumn::Kind::ECInstanceId);
+    if (idColumn != nullptr)
+        idColumn->SetKind(DbColumn::Kind::ECInstanceId);
+    else
+        {
+        LOG.errorv("ECInstanceId column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
+                   primaryKeyColName.c_str(), table->GetName().c_str());
+        return nullptr;
         }
 
     DbColumn* column = table->CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
@@ -2291,8 +2274,6 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         BeAssert(false);
         return nullptr;
         }
-
-    column->GetConstraintsR().SetNotNullConstraint();
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
     return table;

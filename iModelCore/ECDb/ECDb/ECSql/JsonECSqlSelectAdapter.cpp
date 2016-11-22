@@ -70,7 +70,7 @@ ECClassCP JsonECSqlSelectAdapter::GetClassFromStructOrStructArray(ECPropertyCR e
         {
         StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         BeAssert(structArrayProperty != nullptr);
-        return structArrayProperty->GetStructElementType();
+        return &structArrayProperty->GetStructElementType();
         }
 
     /* else */

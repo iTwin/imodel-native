@@ -17,7 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
+    if ((m_table == nullptr || m_table == &propertyMap.GetTable()) && 
+        Enum::Contains(m_filter, propertyMap.GetType()))
         m_columns.push_back(&propertyMap.GetColumn());
 
     return SUCCESS;
@@ -92,9 +93,7 @@ DbColumn const* GetColumnsPropertyMapVisitor::GetSingleColumn() const
     {
     BeAssert(GetColumns().size() == 1);
     if (GetColumns().size() != 1)
-        {
         return nullptr;
-        }
 
     return GetColumns().front();
     }
@@ -282,6 +281,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
         {
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         }
+
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenRight();
 

@@ -360,17 +360,14 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
    
-    if (!koq.GetDisplayLabel().empty())
+    if (koq.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
    
-    if (!koq.GetDescription().empty())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(5, koq.GetDescription().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindText(5, koq.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindText(6, koq.GetPersistenceUnit().c_str(), Statement::MakeCopy::No))
         return ERROR;
@@ -480,7 +477,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         if (nullptr != structArrayProperty)
             {
-            if (SUCCESS != ImportECClass(*structArrayProperty->GetStructElementType()))
+            if (SUCCESS != ImportECClass(structArrayProperty->GetStructElementType()))
                 return ERROR;
             }
         }
@@ -579,7 +576,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType().GetId()))
                 return ERROR;
             }
 

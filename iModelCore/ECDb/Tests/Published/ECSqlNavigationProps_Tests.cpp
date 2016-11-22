@@ -675,18 +675,19 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
-
+    ASSERT_TRUE(stmt.GetColumnInfo(0).GetDataType().IsNavigation());
+    ASSERT_TRUE(stmt.GetColumnInfo(0).GetProperty() != nullptr && stmt.GetColumnInfo(0).GetProperty()->GetIsNavigation());
+    
     ECClassId actualRelClassId;
-    ECInstanceId actualModelId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ECInstanceId actualModelId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(modelHasElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
 
     //make use of default parameter in GetValueNavigation
-    actualModelId = stmt.GetValueNavigation(0);
+    actualModelId = stmt.GetValueNavigation<ECInstanceId>(0);
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), actualModelId.GetValueUnchecked()) << stmt.GetECSql();
 
     //alternative API via struct value
-    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
     IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
     ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
     ASSERT_STREQ("Model.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
@@ -796,13 +797,15 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
 
+    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetDataType().IsNavigation());
+    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
+
     ECClassId actualRelClassId;
-    ECInstanceId actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    ECInstanceId actualParentId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_EQ(parentKey.GetECInstanceId().GetValue(), actualParentId.GetValueUnchecked()) << stmt.GetECSql();
     ASSERT_EQ(elementOwnsPhysicalElementsClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << stmt.GetECSql();
 
     //alternative API via struct value
-    ASSERT_TRUE(stmt.GetValue(0).GetColumnInfo().GetProperty()->GetIsNavigation());
     IECSqlStructValue const& navValue = stmt.GetValueStruct(0);
     ASSERT_EQ(2, navValue.GetMemberCount()) << stmt.GetECSql();
     ASSERT_STREQ("Parent.Id", navValue.GetValue(0).GetColumnInfo().GetPropertyPath().ToString().c_str()) << stmt.GetECSql();
@@ -815,7 +818,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementWithoutParentKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
-    actualParentId = stmt.GetValueNavigation(0, &actualRelClassId);
+    actualParentId = stmt.GetValueNavigation<ECInstanceId>(0, &actualRelClassId);
     ASSERT_FALSE(actualParentId.IsValid());
     ASSERT_FALSE(actualRelClassId.IsValid());
     stmt.Finalize();
@@ -968,9 +971,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     IECSqlValue const& modelVal = stmt.GetValue(1);
-    //Once ECTypeDescriptor was adjusted to support nav props this must fail:
+    ASSERT_TRUE(modelVal.GetColumnInfo().GetDataType().IsNavigation());
     ASSERT_TRUE(modelVal.GetColumnInfo().GetProperty()->GetIsNavigation());
-    ASSERT_TRUE(modelVal.GetColumnInfo().GetDataType().IsPrimitive());
 
     IECSqlValue const& modelIdVal = modelVal.GetStruct().GetValue(0);
     ASSERT_STRCASEEQ("Model.Id", modelIdVal.GetColumnInfo().GetPropertyPath().ToString().c_str());
@@ -991,7 +993,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     int navPropIx = -1;
     for (int i = 0; i < stmt.GetColumnCount(); i++)
         {
-        if (stmt.GetColumnInfo(i).GetProperty()->GetIsNavigation())
+        if (stmt.GetColumnInfo(i).GetDataType().IsNavigation())
             {
             navPropIx = i;
             break;
@@ -1255,7 +1257,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
             {
             verifiedElementWithSetNavProp = true;
 
-            ASSERT_EQ(modelKey.GetECInstanceId(), selStmt.GetValueNavigation(2)) << "Model via plain ECSQL";
+            ASSERT_EQ(modelKey.GetECInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(2)) << "Model via plain ECSQL";
 
             Json::Value const& modelJson = json["Model"];
             ASSERT_FALSE(modelJson.isNull()) << "Model is not expected to be null in the read ECInstance";

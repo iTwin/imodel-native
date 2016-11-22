@@ -536,7 +536,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
     auto assertColumn = [] (ECClassCR expected, IECSqlValue const& colVal, bool checkIsNull)
         {
         ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsStructArray());
-        ASSERT_TRUE(colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
+        ASSERT_TRUE(&colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
         ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
         if (checkIsNull)
             {
@@ -3845,7 +3845,9 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
-        "           <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "           <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "           </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='Prop2' typeName='double' />"
@@ -3859,9 +3861,9 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(1, DPoint3d::From(1.0, 2.0, 3.0)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
-    uint64_t sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId().GetValue();
+    ECClassId sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,%llu);INSERT INTO [ts_Sub1] ([sc02],[sc03],[sc04],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,%llu)", sub1ClassId, sub1ClassId);
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,%2)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();

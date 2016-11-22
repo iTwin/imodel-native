@@ -1040,7 +1040,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     }
 
                 StructArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, structClass))
+                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
                 arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
