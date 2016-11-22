@@ -31,6 +31,16 @@ GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNot
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupingRule::GroupingRule(GroupingRuleCR other)
+    : m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
+    m_contextMenuLabel(other.m_contextMenuLabel), m_settingsId(other.m_settingsId)
+    {
+    CommonTools::CloneRules(m_groups, other.m_groups);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::~GroupingRule (void)
@@ -327,6 +337,16 @@ PropertyGroup::PropertyGroup ()
 PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
     : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true), m_propertyName (propertyName)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyGroup::PropertyGroup(PropertyGroupCR other)
+    : m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
+    m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName)
+    {
+    CommonTools::CopyRules(m_ranges, other.m_ranges);
     }
 
 /*---------------------------------------------------------------------------------**//**
