@@ -167,10 +167,10 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     Tree& root = tile.GetTree();
 
     auto vp = DgnViewport::GetTileViewport();
-    if (vp)
-        vp->_CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
+    if (!vp)
+        return ERROR;
 
-    return m_image.IsValid() ? SUCCESS : ERROR;
+    return vp->_CreateTile(m_image, *root.m_view, tile.m_range, root.m_pixels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,17 +182,20 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
 BentleyStatus Attachment::Tile::Loader::_LoadTile() 
     {
     Tile& tile = static_cast<Tile&>(*m_tile);
-    Tree& root = tile.GetTree();
+    Tree& tree = tile.GetTree();
 
-    auto graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = tree.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = root.GetRenderSystem()->_CreateTexture(m_image, textureParams);
+    auto texture = tree.GetRenderSystem()->_CreateTexture(m_image, textureParams);
 
-    graphic->SetSymbology(root.m_tileColor, root.m_tileColor, 0); // this is to set transparency
+    graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
+    graphic->SetSymbology(ColorDef::Black(), ColorDef::Green(), 0);  // debugging
+    graphic->AddRangeBox(tile.m_range);                              // debugging
+    
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
@@ -272,8 +275,11 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
     m_maxPixelSize = DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
 
-    Transform location = attach->GetPlacement().GetTransform();
-    location.ScaleMatrixColumns(m_pixels.x, m_pixels.y, 1.0);
+    auto range = attach->GetPlacement().CalculateRange();
+    auto& box = attach->GetPlacement().GetElementBox();
+
+    Transform location = Transform::From(range.low);
+    location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
     }
 
