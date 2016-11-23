@@ -18,6 +18,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct ProxyHttpHandler> ProxyHttpHandlerPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ProxyHttpHandler : IHttpHandler
 {
 private:
@@ -26,8 +27,11 @@ private:
     Credentials m_proxyCredentials;
 
 public:
-    ProxyHttpHandler(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler = nullptr) : m_handler(customHandler ? customHandler : DefaultHttpHandler::GetInstance()),m_proxyUrl(proxyUrl)  {}
+    ProxyHttpHandler(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler = nullptr) : m_handler(customHandler ? customHandler : DefaultHttpHandler::GetInstance()), m_proxyUrl(proxyUrl) {}
     virtual ~ProxyHttpHandler() {}
+
+    //! Check if proxy is configured
+    BEHTTP_EXPORT bool IsConfigured() const {return !m_proxyUrl.empty();}
 
     //! Set credentials for an authenticating proxy
     void SetProxyCredentials(CredentialsCR credentials) {m_proxyCredentials = credentials;}
@@ -39,25 +43,18 @@ public:
     Utf8StringCR GetProxyUrl() {return m_proxyUrl;}
 
     //! Perform HttpRequest with proxy URL
-    BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
+    BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest (RequestCR request) override;
 
-    /*!
-     * GetProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
-     * Returns ProxyHttpHandler for specified proxy if reachable.
-     */
-    BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetProxyIfReachable(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler = nullptr);
+    //! Checks if proxy is reachable and returns proxy handler that uses customHandler. Returns customHandler in other case.
+    BEHTTP_EXPORT static IHttpHandlerPtr GetProxyIfReachable(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler = nullptr);
+    
+    //! Checks if proxy with credentials is reachable and returns proxy handler that uses customHandler. Returns customHandler in other case.
+    BEHTTP_EXPORT static IHttpHandlerPtr GetProxyIfReachable(Utf8StringCR proxyUrl, CredentialsCR proxyCredentials, IHttpHandlerPtr customHandler = nullptr);
 
-    /*!
-     * GetProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
-     * Returns ProxyHttpHandler for specified proxy if reachable and credentials are valid.
-     */
-    BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetProxyIfReachable(Utf8StringCR proxyUrl, CredentialsCR proxyCredentials, IHttpHandlerPtr customHandler = nullptr);
-
-    /*!
-     * GetFiddlerProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
-     * Returns ProxyHttpHandler for default Fiddler proxy if reachable.
-     */
-    BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetFiddlerProxyIfReachable(IHttpHandlerPtr customHandler = nullptr);
-};
+    //! Use only for testing or debugging!
+    //! Checks if Fiddler proxy is reachable and returns proxy handler that uses customHandler. Returns customHandler in other case.
+    //! If reachable, disables certificate validation for each request so Fiddler routing would work.
+    BEHTTP_EXPORT static IHttpHandlerPtr GetFiddlerProxyIfReachable(IHttpHandlerPtr customHandler = nullptr);
+    };
 
 END_BENTLEY_HTTP_NAMESPACE

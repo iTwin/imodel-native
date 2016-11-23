@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpBody.h>
 
-#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
-#pragma mark - HttpBody
-#endif
-
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
@@ -18,11 +14,30 @@ USING_NAMESPACE_BENTLEY_HTTP
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpFileBody::Open()
     {
-    if (!m_file.IsOpen())
+    OpenFile();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpFileBody::OpenFile(BeFileAccess access)
+    {
+    if (m_file.IsOpen ())
+        return SUCCESS;
+
+    if (!m_filePath.DoesPathExist())
         {
-        m_file.Open(m_filePath, BeFileAccess::ReadWrite);
-        CreateFile();
+        return CreateFile();
         }
+        
+    BeFileStatus status = m_file.Open(m_filePath, access);
+    if (BeFileStatus::Success != status)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -39,19 +54,37 @@ void HttpFileBody::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HttpFileBody::CreateFile()
     {
-    if (!m_fileCreated)
+    if (m_filePath.DoesPathExist ())
+        return SUCCESS;
+
+    BeFileStatus status = m_file.Create (m_filePath);
+    if (BeFileStatus::Success != status)
         {
-        if (!m_filePath.DoesPathExist())
-            {
-            BeFileStatus status = m_file.Create(m_filePath);
-            if (BeFileStatus::Success != status)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-            }
-        m_fileCreated = true;
+        BeAssert (false);
+        return ERROR;
         }
+     
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpFileBody::PrepareForWrite()
+    {
+    if (BeFileAccess::ReadWrite == m_file.GetAccess())
+        return SUCCESS;
+
+    uint64_t position = 0;
+    if (m_file.IsOpen() && BeFileStatus::Success != m_file.GetPointer(position))
+        return ERROR;
+
+    Close();
+    if (SUCCESS != OpenFile(BeFileAccess::ReadWrite))
+        return ERROR;
+
+    if (BeFileStatus::Success != m_file.SetPointer(position, BeFileSeekOrigin::Begin))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -61,8 +94,17 @@ BentleyStatus HttpFileBody::CreateFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HttpFileBody::SetPosition(uint64_t position)
     {
-    Open();
-    return (BeFileStatus::Success != m_file.SetPointer(position, BeFileSeekOrigin::Begin)) ? ERROR : SUCCESS;
+    if (SUCCESS != OpenFile())
+        {
+        return ERROR;
+        }
+
+    auto status = m_file.SetPointer(position, BeFileSeekOrigin::Begin);
+    if (BeFileStatus::Success != status)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -70,8 +112,17 @@ BentleyStatus HttpFileBody::SetPosition(uint64_t position)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HttpFileBody::GetPosition(uint64_t& position)
     {
-    Open();
-    return (BeFileStatus::Success != m_file.GetPointer(position)) ? ERROR : SUCCESS;
+    if (SUCCESS != OpenFile())
+        {
+        return ERROR;
+        }
+
+    auto status = m_file.GetPointer(position);
+    if (BeFileStatus::Success != status)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -79,17 +130,14 @@ BentleyStatus HttpFileBody::GetPosition(uint64_t& position)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HttpFileBody::Reset()
     {
-    m_file.Close();
+    m_file.Close ();
 
-    BeFileNameStatus status = m_filePath.BeDeleteFile();
-
+    BeFileNameStatus status = m_filePath.BeDeleteFile ();
     if (BeFileNameStatus::Success != status &&
         BeFileNameStatus::FileNotFound != status)
         {
         return ERROR;
         }
-
-    m_fileCreated = false;
 
     return SUCCESS;
     }
@@ -99,9 +147,12 @@ BentleyStatus HttpFileBody::Reset()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t HttpFileBody::Write(const char* buffer, size_t bufferSize)
     {
-    Open();
+    if (SUCCESS != PrepareForWrite())
+        {
+        return 0;
+        }
     unsigned bytesWritten = 0;
-    BeFileStatus status = m_file.Write(&bytesWritten, buffer, (unsigned)bufferSize);
+    BeFileStatus status = m_file.Write (&bytesWritten, buffer, (unsigned)bufferSize);
     if (BeFileStatus::Success != status)
         {
         return 0;
@@ -114,7 +165,6 @@ size_t HttpFileBody::Write(const char* buffer, size_t bufferSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t HttpFileBody::Read(char* bufferOut, size_t bufferSize)
     {
-    Open();
     unsigned bytesRead = 0;
     BeFileStatus status = m_file.Read(bufferOut, &bytesRead, (unsigned)bufferSize);
     if (BeFileStatus::Success != status)
@@ -129,16 +179,17 @@ size_t HttpFileBody::Read(char* bufferOut, size_t bufferSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t HttpFileBody::GetLength()
     {
-    bool wasOpen = m_file.IsOpen();
+    bool wasOpen = m_file.IsOpen ();
     if (!wasOpen)
-        Open();
+        Open ();
 
     uint64_t length;
-    if (BeFileStatus::Success != m_file.GetSize(length))
+    auto status = m_file.GetSize(length);
+    if (BeFileStatus::Success != status)
         return 0;
 
     if (!wasOpen)
-        Close();
+        Close ();
 
     return length;
     }
@@ -158,10 +209,6 @@ Utf8String HttpFileBody::AsString() const
     stringContents.append(fileContents.begin(), fileContents.end());
     return stringContents;
     }
-
-#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
-#pragma mark - HttpStringBody
-#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
@@ -229,10 +276,6 @@ size_t HttpStringBody::Read(char* bufferOut, size_t bufferSize)
     return static_cast<size_t>(bytesCopied);
     }
 
-#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
-#pragma mark - HttpByteStreamBody
-#endif
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -258,10 +301,6 @@ size_t HttpByteStreamBody::Read(char* bufferOut, size_t bufferSize)
     memcpy(bufferOut, m_stream.GetData(), copyBytesCount);
     return copyBytesCount;
     }
-
-#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
-#pragma mark - HttpMultipartBody
-#endif
 
 Utf8String HttpMultipartBody::DefaultBoundary() {return "----------------c74c9f339ca44dd48ee4b45a9dedd811";}
 
