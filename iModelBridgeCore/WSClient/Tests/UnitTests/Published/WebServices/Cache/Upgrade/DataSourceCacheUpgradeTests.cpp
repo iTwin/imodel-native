@@ -303,7 +303,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
     auto findInstanceByPropertyValue = [&] (Utf8StringCR testPropertyValue)
         {
         ECSqlStatement statement;
-        Utf8String ecsql = "SELECT GetECClassId(), ECInstanceId FROM [TS].[TestClass] WHERE [TestProperty] = ? ";
+        Utf8String ecsql = "SELECT ECClassId, ECInstanceId FROM TS.TestClass WHERE TestProperty=?";
         EXPECT_EQ(SUCCESS, cache.GetAdapter().PrepareStatement(statement, ecsql));
         EXPECT_EQ(ECSqlStatus::Success, statement.BindText(1, testPropertyValue.c_str(), IECSqlBinder::MakeCopy::No));
         EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
