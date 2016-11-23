@@ -89,7 +89,7 @@ TEST(FormattingTest, Simple)
 		EXPECT_EQ(1, curs.GetConstants()->GetSequenceLength(c));
 	}
 
-	char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
+	const char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
 	EXPECT_EQ(2, curs.GetConstants()->GetSequenceLength(uni[0]));
 	EXPECT_TRUE(curs.GetConstants()->IsTrailingByteValid(uni[1]));
 
