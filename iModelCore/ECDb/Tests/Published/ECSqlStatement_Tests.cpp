@@ -3863,7 +3863,8 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,%2)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:__p1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:__p1,:__p2,:__p3,:ecidauto_1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+                             //INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:__p1,58);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:__p1,:__p2,:__p3,:ecidauto_1,58)
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
