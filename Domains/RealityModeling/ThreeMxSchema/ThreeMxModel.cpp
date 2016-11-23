@@ -145,10 +145,10 @@ struct ThreeMxProgressive : ProgressiveTask
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
-    TileLoadsPtr m_loads;
+    LoadStatePtr m_loads;
     ClipVectorCPtr m_clip;
 
-    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadsPtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
+    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, LoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
     ~ThreeMxProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
@@ -165,10 +165,10 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
 
     for (auto const& node: m_missing)
         {
-        auto stat = node.second->GetLoadState();
-        if (stat == Tile::LoadState::Ready)
+        auto stat = node.second->GetLoadStatus();
+        if (stat == Tile::LoadStatus::Ready)
             node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadState::NotFound)
+        else if (stat != Tile::LoadStatus::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
@@ -275,7 +275,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        TileLoadsPtr loads = std::make_shared<TileLoads>();
+        LoadStatePtr loads = std::make_shared<LoadState>();
         args.RequestMissingTiles(*m_scene, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
         }
@@ -411,14 +411,14 @@ struct  PublishTileNode : ModelTileNode
         
         ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles, true); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, m_modelId, m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, DgnElementId(), m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, DgnElementId(), m_twoSidedTriangles, true); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
+virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
     {
     TileMeshList        tileMeshes;
     Transform           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
@@ -497,7 +497,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, m_model->GetModelId(), twoSidedTriangles, true);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, DgnElementId(), twoSidedTriangles, true);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
@@ -591,7 +591,7 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth, size_t sibling
                 }
             }
         }
-    folly::via(&BeFolly::IOThreadPool::GetPool(), [&]()  
+    folly::via(&BeFolly::ThreadPool::GetIoPool(), [&]()  
         {  
         m_collector._AcceptTile(tile);  
         m_completedTiles++;

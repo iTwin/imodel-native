@@ -13,7 +13,7 @@
 BEGIN_UNNAMED_NAMESPACE
 USING_NAMESPACE_TILETREE
 
-static Utf8String GetMagicString() { return "3MXBO"; }
+static Utf8String GetMagicString() {return "3MXBO";}
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
@@ -131,7 +131,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
     {
     BeAssert(IsQueued());
-    m_loadState.store(LoadState::Loading);
+    m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
 

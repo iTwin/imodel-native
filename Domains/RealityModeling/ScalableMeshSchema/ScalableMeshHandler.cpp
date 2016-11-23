@@ -176,7 +176,8 @@ static Byte s_transparency = 100;
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                              
                               Dgn::RenderContextR                         context,
-                              const DMatrix4d&                            storageToUors)
+                              const DMatrix4d&                            storageToUors,
+                              ScalableMeshDisplayCacheManager*            mgr)
     {    
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
 
@@ -310,16 +311,19 @@ protected:
     IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     const DMatrix4d&                        m_storageToUorsTransfo;    
+    IScalableMeshDisplayCacheManager*       m_displayNodesCache;
     uint64_t                                m_nextShow;
 
     ScalableMeshProgressiveTask (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                  ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                 DMatrix4d&                              storageToUorsTransfo) 
+                                    DMatrix4d&                              storageToUorsTransfo,
+                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
     : m_storageToUorsTransfo(storageToUorsTransfo)
         {    
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_nextShow = 0;
+        m_displayNodesCache = cacheManager.get();
         }
 
 public:
@@ -391,11 +395,13 @@ ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                       DMatrix4d&                              storageToUorsTransfo, 
-                      TerrainContextR                         context) 
+                      TerrainContextR                            context,
+                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
     {
     context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
                                                                                             currentDrawingInfoPtr,
-                                                                                            storageToUorsTransfo));
+                                                                                                        storageToUorsTransfo,
+                                                                                                        cacheManager));
     }
 
 };  
@@ -612,7 +618,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (needProgressive)
         {
-        ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
+        ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
         }
 #endif
     }                 
@@ -835,10 +841,16 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {    
     assert(m_smPtr == nullptr);
     m_path = smFilename;
+
+    bvector<IMeshSpatialModelP> allScalableMeshes;
+    ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
+    size_t nOfModels = allScalableMeshes.size();
+    allScalableMeshes.clear();
+
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
-    clipFileBase.AppendUtf8(std::to_string(GetModelId().GetValue()).c_str());
+    clipFileBase.AppendUtf8(std::to_string(nOfModels-1).c_str());
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
     if (m_smPtr->IsTerrain())
@@ -868,6 +880,24 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
+
+        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
+            {
+            DRange3d smExtent, smExtentUors;
+            m_smPtr->GetRange(smExtent);
+            Transform trans;
+            trans.InitFromScaleFactors(scale.x, scale.y, scale.z);
+            trans.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
+            if (0 == status || 1 == status)
+                m_smPtr->SetReprojection(*projGCS, approxTransform);
+            }
         }
     else
         {
@@ -1110,6 +1140,20 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
     m_properties.FromJson(v);
+
+    if (m_smPtr == 0 && !m_tryOpen)
+    {
+        //BeFileName smFileName(((this)->m_properties).m_fileId);
+        BeFileName smFileName;
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+
+        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        {
+            OpenFile(smFileName, GetDgnDb());
+        }
+
+        m_tryOpen = true;
+    }
     }
 
 

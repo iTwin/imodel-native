@@ -86,21 +86,21 @@ protected:
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  9/2016
     //=======================================================================================
-    struct WmsTileLoad : TileTree::TileLoad
+    struct WmsTileLoader : TileTree::TileLoader
         {
         Http::Credentials m_credentials;
         Http::Credentials m_proxyCredentials;
 
-        WmsTileLoad(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
-        virtual ~WmsTileLoad() {};
+        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::LoadStatePtr loads) :TileLoader(url, tile, loads, tile._GetTileName()) {}
+        virtual ~WmsTileLoader() {};
 
-        BentleyStatus _ReadFromSource() override;
+        folly::Future<BentleyStatus> _GetFromSource() override;
         BentleyStatus _LoadTile() override;
 
         WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }
         };
 
-    Dgn::TileTree::TileLoadPtr _CreateTileLoad(Dgn::TileTree::TileLoadsPtr) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::LoadStatePtr) override;
 
     root_type const& GetSource() const { return static_cast<root_type const&>(m_root); }
     root_type& GetSourceR() { return static_cast<root_type&>(m_root); }

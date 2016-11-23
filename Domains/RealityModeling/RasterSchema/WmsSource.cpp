@@ -405,11 +405,10 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
     return &m_children;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTile::WmsTileLoad::_ReadFromSource()
+folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
     {
     TileTree::HttpDataQuery query(m_fileName, m_loads);
 
@@ -442,7 +441,7 @@ BentleyStatus WmsTile::WmsTileLoad::_ReadFromSource()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTile::WmsTileLoad::_LoadTile()
+BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     {
     WmsTile& rasterTile = static_cast<WmsTile&>(*m_tile);
 
@@ -483,16 +482,15 @@ BentleyStatus WmsTile::WmsTileLoad::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-Dgn::TileTree::TileLoadPtr WmsTile::_CreateTileLoad(Dgn::TileTree::TileLoadsPtr loads)
+TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::LoadStatePtr loads)
     {
     auto status = GetSource().GetLastHttpError();
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
         return nullptr; // Need to authenticate before we try again.
 
-    RefCountedPtr<WmsTileLoad> tileLoad = new WmsTileLoad(GetRoot()._ConstructTileName(*this), *this, loads);
-    tileLoad->m_credentials = GetSource().GetCredentials();
-    tileLoad->m_proxyCredentials = GetSource().GetProxyCredentials();
+    RefCountedPtr<WmsTileLoader> TileLoader = new WmsTileLoader(GetRoot()._ConstructTileName(*this), *this, loads);
+    TileLoader->m_credentials = GetSource().GetCredentials();
+    TileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
 
-    return tileLoad;
+    return TileLoader;
     }
-

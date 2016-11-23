@@ -35,7 +35,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
     {
     private:
         
-        Dgn::Render::SystemP m_renderSys;        
+        Dgn::Render::SystemP m_renderSys
+        bool m_resourcesOutOfDate;
 
     public:
 
@@ -50,6 +51,7 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
                                                 int*                    indices,
                                                 float*                  params,
                                                 SmCachedDisplayTexture* cachedTexture) override;
+           // uint64_t nodeId) override;
 
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) override;
 
@@ -62,8 +64,14 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) override;
 
+        //virtual void _SetCacheDirty(bool isDirty) override;
         void SetRenderSys(Dgn::Render::SystemP renderSys);
-            
+        bool IsDirty();
+
+        bool IsValid(QvElem* elem);
+
+        bool IsValidForId(QvElem* elem, uint64_t id);
+
         ScalableMeshDisplayCacheManager();
 
         ~ScalableMeshDisplayCacheManager();

@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
@@ -44,18 +43,18 @@ public:
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  9/2016
     //=======================================================================================
-    struct RasterTileLoad : TileTree::TileLoad
+    struct RasterTileLoader : TileTree::TileLoader
         {
         Render::Image m_image;  // filled by _ReadFromSource
 
-        RasterTileLoad(TileTree::TileR tile, TileTree::TileLoadsPtr loads, Utf8StringCR cacheKey)
-            :TileTree::TileLoad("", tile, loads, cacheKey) {};
+        RasterTileLoader(TileTree::TileR tile, TileTree::LoadStatePtr loads, Utf8StringCR cacheKey)
+            :TileTree::TileLoader("", tile, loads, cacheKey) {};
             
-        virtual ~RasterTileLoad(){}
+        virtual ~RasterTileLoader(){}
         
         RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRootR()); }
 
-        BentleyStatus _ReadFromSource() override;        
+        folly::Future<BentleyStatus> _GetFromSource() override;        
         BentleyStatus _LoadTile() override;
         };
 protected:
@@ -67,8 +66,7 @@ public:
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoadPtr _CreateTileLoad(TileTree::TileLoadsPtr loads) override { return new RasterTileLoad(*this, loads, ""); }
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
 };
-
 
 END_BENTLEY_RASTER_NAMESPACE

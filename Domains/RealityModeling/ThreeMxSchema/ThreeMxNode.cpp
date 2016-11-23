@@ -49,13 +49,12 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
         }
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-Dgn::TileTree::TileLoadPtr Node::_CreateTileLoad(Dgn::TileTree::TileLoadsPtr loads)
+TileLoaderPtr Node::_CreateTileLoader(LoadStatePtr loads)
     {
-    return new NodeLoad(GetRoot()._ConstructTileName(*this), *this, loads);
+    return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1,10 +1,11 @@
 #include "ScalableMeshSchemaPCH.h"
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
-
+#include <mutex>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
+std::mutex elemMutex;
 
 //Inherited from IScalableMeshDisplayCacheManager
 BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
@@ -91,9 +92,35 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDis
     return SUCCESS;
     }
 
+bool ScalableMeshDisplayCacheManager::IsDirty()
+    {
+    return m_resourcesOutOfDate;
+    }
+
+bool ScalableMeshDisplayCacheManager::IsValid(QvElem* elem)
+{
+   // std::lock_guard<std::mutex> l(elemMutex);
+   // return state.count(elem) > 0 && state[elem] == true;
+    return true;
+}
+
+bool ScalableMeshDisplayCacheManager::IsValidForId(QvElem* elem, uint64_t id)
+{
+ /*   bvector<QvElData> allElements;
+    {
+        std::lock_guard<std::mutex> l(elemMutex);
+        allElements = elemsCreatedForNode[id];
+    }
+    for (auto& elemData : allElements)
+        if (elemData.handle == elem) return true;
+    return false;*/
+    return true;
+}
+
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     {
     m_renderSys = 0;    
+    m_resourcesOutOfDate = false;
     }
 
 ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()

@@ -66,13 +66,25 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     mutable DgnElement::Hilited m_hilited;
     };
 
+/*---------------------------------------------------------------------------------**//**
+* Hack: RasterHandler should be selecting a specific category rather than a random one.
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnCategoryId getDefaultCategoryId(DgnDbR db)
+    {
+    ElementIterator iterator = SpatialCategory::MakeIterator(db);
+    if (iterator.begin() == iterator.end())
+        return DgnCategoryId();
+
+    return (*iterator.begin()).GetId<DgnCategoryId>();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
 RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, RasterModel& model)
     :m_dgnDb(model.GetDgnDb()),
-    m_categoryId(DgnCategory::QueryFirstCategoryId(model.GetDgnDb())),
+    m_categoryId(getDefaultCategoryId(model.GetDgnDb())),
     m_hilited(DgnElement::Hilited::None),
     m_infoString(model.GetName())
     {
@@ -96,7 +108,6 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
 
     builder->Finish(*this);
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
@@ -387,7 +398,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        TileTree::TileLoadsPtr loads = std::make_shared<TileTree::TileLoads>();
+        TileTree::LoadStatePtr loads = std::make_shared<TileTree::LoadState>();
         args.RequestMissingTiles(*m_root, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads, depthTransfo));
         }
