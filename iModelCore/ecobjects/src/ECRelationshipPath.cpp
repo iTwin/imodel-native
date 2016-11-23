@@ -209,7 +209,7 @@ BentleyStatus ECRelationshipPath::GenerateECSql(Utf8StringR fromClause, Utf8Stri
             }
 
         currentClassAlias = m_rootClassAlias;
-        currentClassIdExpression.Sprintf ("[%s].GetECClassId()", m_rootClassAlias.c_str());
+        currentClassIdExpression.Sprintf ("[%s].ECClassId", m_rootClassAlias.c_str());
         currentInstanceIdExpression.Sprintf ("[%s].ECInstanceId", m_rootClassAlias.c_str());
         
         rootInfo.m_alias = currentClassAlias;
@@ -279,7 +279,7 @@ BentleyStatus ECRelationshipPath::GenerateECSql(Utf8StringR fromClause, Utf8Stri
                 }
 
             currentClassAlias = relatedClassAlias;
-            currentClassIdExpression.Sprintf ("[%s].GetECClassId()", relatedClassAlias.c_str());
+            currentClassIdExpression.Sprintf ("[%s].ECClassId", relatedClassAlias.c_str());
             currentInstanceIdExpression.Sprintf ("[%s].ECInstanceId", relatedClassAlias.c_str());
 
             Utf8String appendJoinClause;

@@ -40,6 +40,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Constructor.
         ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
+        
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () const = 0;
@@ -49,6 +52,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const = 0;
+        
+        //! Clones this specification.
+        virtual ChildNodeSpecification* _Clone() const = 0;
 
     public:
         //! Destructor.
@@ -59,6 +65,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Writes specification to xml node.
         ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
+        
+        //! Clones this specification.
+        ChildNodeSpecification* Clone() const {return _Clone();}
 
         //! Priority of the specification, defines the order in which specifications are evaluated and executed.
         ECOBJECTS_EXPORT int                          GetPriority (void) const;

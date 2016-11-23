@@ -43,6 +43,9 @@ struct UserSettingsGroup : public PresentationKey
         //! Constructor.
         ECOBJECTS_EXPORT UserSettingsGroup (Utf8StringCR categoryLabel);
 
+        //! Constructor.
+        ECOBJECTS_EXPORT UserSettingsGroup(UserSettingsGroupCR);
+
         //! Desctructor.
         ECOBJECTS_EXPORT                             ~UserSettingsGroup (void);
 

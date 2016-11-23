@@ -63,7 +63,7 @@ This specification returns search results instance nodes. Nodes are returned onl
 parent node is SearchNodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public ChildNodeSpecification
     {
     private:
         bvector<SearchQuerySpecification*> m_querySpecifications;
@@ -82,6 +82,9 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this specification.
+        virtual ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

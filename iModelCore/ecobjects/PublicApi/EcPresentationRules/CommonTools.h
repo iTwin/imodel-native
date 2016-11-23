@@ -36,6 +36,22 @@ public:
     //! Formats RequiredDirection string value
     static Utf8CP                     FormatRequiredDirectionString (RequiredRelationDirection direction);
 
+    //! Copies the rules in source vector into the target vector.
+    template<typename T> 
+    static void CopyRules(bvector<T*>& target, bvector<T*> const& source)
+        {
+        for (T* rule : source)
+            target.push_back(new T(*rule));
+        }
+    
+    //! Clones the rules in source vector into the target vector.
+    template<typename T> 
+    static void CloneRules(bvector<T*>& target, bvector<T*> const& source)
+        {
+        for (T const* rule : source)
+            target.push_back(rule->Clone());
+        }
+
     //! Frees and clears given list of objects
     template<typename T>
     static void                        FreePresentationRules (T& set)

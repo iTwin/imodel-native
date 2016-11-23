@@ -27,6 +27,18 @@ ContentSpecification::ContentSpecification(int priority, bool showImages)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecification::ContentSpecification(ContentSpecificationCR other)
+    : m_priority(other.m_priority), m_showImages(other.m_showImages)
+    {
+    CommonTools::CopyRules(m_relatedPropertiesSpecification, other.m_relatedPropertiesSpecification);
+    CommonTools::CopyRules(m_hiddenPropertiesSpecification, other.m_hiddenPropertiesSpecification);
+    CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
+    CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSpecification::~ContentSpecification ()

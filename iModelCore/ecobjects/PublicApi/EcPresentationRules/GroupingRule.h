@@ -70,6 +70,9 @@ struct GroupingRule : public PresentationRule
         //! Constructor.
         ECOBJECTS_EXPORT GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
 
+        //! Constructor.
+        ECOBJECTS_EXPORT GroupingRule(GroupingRuleCR);
+
         //! Desctructor.
         ECOBJECTS_EXPORT                     ~GroupingRule (void);
 
@@ -128,12 +131,18 @@ protected:
     
     //! Allows the visitor to visit this group specification.
     virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
+    
+    //! Clones this specification.
+    virtual GroupSpecification* _Clone() const = 0;
 
 public:
     //! Virtual destructor.
     virtual ~GroupSpecification(){}
 
 public:
+    //! Clones this specification.
+    GroupSpecification* Clone() const {return _Clone();}
+
     //! Allows the visitor to visit this group specification.
     ECOBJECTS_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
     
@@ -155,7 +164,7 @@ This grouping option allows to create a Instance NavNode that represents mutiple
 of the same label.
 * @bsiclass                                     Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SameLabelInstanceGroup : public GroupSpecification
+struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecification
     {
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -169,6 +178,9 @@ struct SameLabelInstanceGroup : public GroupSpecification
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+    
+        //! Clones this specification.
+        virtual GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -183,7 +195,7 @@ struct SameLabelInstanceGroup : public GroupSpecification
 ClassGroup that identifies parameters on how to group ECInstances.
 * @bsiclass                                     Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ClassGroup : public GroupSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
     {
     private:
         bool         m_createGroupForSingleItem;
@@ -202,6 +214,9 @@ struct ClassGroup : public GroupSpecification
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+    
+        //! Clones this specification.
+        virtual GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -225,7 +240,7 @@ PropertyGroup that identifies parameters on how to group specific class ECInstan
 by a specific property.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyGroup : public GroupSpecification
+struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
     {
     private:
         Utf8String              m_imageId;
@@ -246,6 +261,9 @@ struct PropertyGroup : public GroupSpecification
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+    
+        //! Clones this specification.
+        virtual GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -253,6 +271,9 @@ struct PropertyGroup : public GroupSpecification
 
         //! Constructor.
         ECOBJECTS_EXPORT PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel = NULL);
+
+        //! Constructor.
+        ECOBJECTS_EXPORT PropertyGroup(PropertyGroupCR);
 
         //! Destructor.
         ECOBJECTS_EXPORT                          ~PropertyGroup (void);

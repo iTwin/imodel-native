@@ -43,6 +43,9 @@ struct ContentRule : public PresentationRule
         //! Constructor.
         ECOBJECTS_EXPORT ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ContentRule(ContentRuleCR);
+
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ContentRule (void);
 
