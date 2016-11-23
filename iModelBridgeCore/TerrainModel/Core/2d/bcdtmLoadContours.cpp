@@ -1973,7 +1973,7 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
  long contourDirection = 0;
  long   weight=0,p3,sp1,sp2,lp2,lp1,llp1 ;
  double ra,zp1,zp2,lzp1,xc,yc,xlc=0.0,ylc=0.0 ;
- static long conSeq=0 ;
+ thread_local static long conSeq=0 ;
 /*
 ** Write Entry Message
 */
@@ -3509,8 +3509,8 @@ BENTLEYDTM_Private int bcdtmLoad_cubicInterpolateSpline(long Ind,long N,double x
 {
  long   i,nn ;
  double h,h1,h2,h3=0,h4,di,tt ;
- static double *A=nullptr,*B=nullptr,*C=nullptr,*D=nullptr,*E=nullptr,*G=nullptr,*Zm=nullptr,*Aa=nullptr,*Dd=nullptr ;
- static double *P=nullptr,*Q=nullptr,*R=nullptr,*S=nullptr,*T=nullptr,*U=nullptr,*V=nullptr,*W=nullptr ;
+ thread_local static double *A=nullptr,*B=nullptr,*C=nullptr,*D=nullptr,*E=nullptr,*G=nullptr,*Zm=nullptr,*Aa=nullptr,*Dd=nullptr ;
+ thread_local static double *P=nullptr,*Q=nullptr,*R=nullptr,*S=nullptr,*T=nullptr,*U=nullptr,*V=nullptr,*W=nullptr ;
 /*
 ** If First Call Calculate Spline Parameters
 */
