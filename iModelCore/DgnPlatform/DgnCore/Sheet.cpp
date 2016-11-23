@@ -27,7 +27,7 @@ using namespace Attachment;
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return SheetAuthority::CreateSheetCode(name, model.GetModeledElementId());
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Sheet, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,19 +158,17 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     return new Sheet::ViewController(*this);
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
     {
-#if defined (NEEDS_WORK_RANGE_INDEX)
     Tile& tile = static_cast<Tile&>(*m_tile);
-///    Root& root = tile.GetRoot();
+    Tree& root = tile.GetTree();
 
-//    m_image = root.m_view->RenderTile(DRange2d::From(tile.m_corners.m_pts, 4), root.m_pixels);
-#endif
+    auto vp = DgnViewport::GetTileViewport();
+    if (vp)
+        vp->_CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
 
     return m_image.IsValid() ? SUCCESS : ERROR;
     }

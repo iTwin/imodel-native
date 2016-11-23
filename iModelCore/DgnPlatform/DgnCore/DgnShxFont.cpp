@@ -988,6 +988,8 @@ public:
     virtual DRange2d _GetExactRange() const override { EnsureMetrics(); return m_exactRange; }
     virtual BentleyStatus _FillGpa(GPArrayR) const override;
     virtual bool _IsBlank() const override { EnsureMetrics(); return m_isBlank; }
+    DoFixup _DoFixup () const override { return DoFixup::Never; }
+
 };
 
 //---------------------------------------------------------------------------------------

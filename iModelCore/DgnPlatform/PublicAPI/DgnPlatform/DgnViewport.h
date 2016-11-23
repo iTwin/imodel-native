@@ -10,6 +10,7 @@
 
 #include "DgnDb.h"
 #include "ViewController.h"
+#include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -46,6 +47,7 @@ struct FitViewParams
     bool m_limitByVolume = false;
 };
 
+struct TileViewport;
 //=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
@@ -131,7 +133,7 @@ protected:
     Render::TargetPtr m_renderTarget;
     ColorDef        m_hiliteColor = ColorDef::Magenta();
     DMap4d          m_rootToView;
-    DMap4d          m_rootToNpc;
+    DMap4d                   m_rootToNpc;
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
@@ -176,6 +178,9 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
+    DGNPLATFORM_EXPORT static TileViewport* GetTileViewport();
+    DGNPLATFORM_EXPORT static void SetTileViewport(TileViewport*);
+
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
@@ -185,6 +190,7 @@ public:
     void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
     void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
+
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
@@ -314,7 +320,8 @@ public:
     DVec3d GetZVector() const {DVec3d v; GetRotMatrix().GetRow(v,2); return v;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
-    BSIRect GetViewRect() const {return m_renderTarget->GetViewRect();}
+    virtual BSIRect _GetViewRect() const {return m_renderTarget->GetViewRect();}
+    BSIRect GetViewRect() const {return _GetViewRect();}
 
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
     DGNPLATFORM_EXPORT DRange3d GetViewCorners() const;
@@ -557,6 +564,15 @@ public:
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/16
+//=======================================================================================
+struct TileViewport : DgnViewport
+{
+    virtual folly::Future<Render::Image> _CreateTile(ViewControllerR, DRange3dCR npc, Point2dCR tileSize) = 0;
+    TileViewport() : DgnViewport(nullptr) {}
 };
 
 //=======================================================================================
