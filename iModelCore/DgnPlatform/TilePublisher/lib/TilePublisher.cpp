@@ -729,7 +729,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
             if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
                 alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
 
-            DgnMaterialCPtr material = DgnMaterial::QueryMaterial(displayParams->GetMaterialId(), m_context.GetDgnDb());
+            DgnMaterialCPtr material = DgnMaterial::Get(m_context.GetDgnDb(), displayParams->GetMaterialId());
 
             if (material.IsValid())
                 materialValue["name"] = material->GetMaterialName().c_str();
@@ -748,7 +748,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
         }
     else
         {
-        auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
+        auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
         materialColor.append(rgb.red);
         materialColor.append(rgb.green);
@@ -1530,7 +1530,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
-        auto viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
+        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), view.GetId());
         if (!viewDefinition.IsValid())
             continue;
 

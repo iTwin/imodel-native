@@ -332,4 +332,9 @@
 		<ECProperty propertyName="Sub3Double" typeName="double" />
 	</ECClass>
 	
+    <ECClass typeName="TestOverrideAutohadledProperties" isDomainClass="True">
+      <BaseClass>TestElement</BaseClass>
+      <ECProperty propertyName='p2d' typeName='point2d' />
+    </ECClass>
+	
 </ECSchema>

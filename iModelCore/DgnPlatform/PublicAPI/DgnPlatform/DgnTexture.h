@@ -54,7 +54,7 @@ public:
         //! @param[in] width the width of the image
         //! @param[in] flags optional flags
         CreateParams(DgnDbR db, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) : 
-                T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
+                T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
     };
 
 private:
@@ -70,7 +70,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    
 public:
     static DgnTextureId ImportTexture(DgnImportContext& context, DgnTextureId source);
 
@@ -96,16 +97,16 @@ public:
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Update<DgnTexture>(*this, status);} //!< Updates the texture in the DgnDb and returns the persistent copy.
 
     // Creates a DgnCode for a texture with the specified name.
-    DGNPLATFORM_EXPORT static DgnCode CreateTextureCode(Utf8StringCR textureName);
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR textureName) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_Texture, db, textureName);}
 
     //! Looks up the ID of a texture by DgnCode
-    DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(DgnCode const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(DgnDbR db, DgnCodeCR code);
 
     //! Looks up the ID of a texture by name
-    static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) {return QueryTextureId(CreateTextureCode(textureName), db);}
+    static DgnTextureId QueryTextureId(DgnDbR db, Utf8StringCR textureName) {return QueryTextureId(db, CreateCode(db, textureName));}
 
     //! Looks up a texture by ID
-    static DgnTextureCPtr QueryTexture(DgnTextureId textureId, DgnDbR db) {return db.Elements().Get<DgnTexture>(textureId);}
+    static DgnTextureCPtr Get(DgnDbR db, DgnTextureId textureId) {return db.Elements().Get<DgnTexture>(textureId);}
 };
 
 namespace dgn_ElementHandler

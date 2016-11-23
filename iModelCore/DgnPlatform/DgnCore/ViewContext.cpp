@@ -1119,7 +1119,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
         }
     else
         {
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(m_subCategoryId, dgnDb);
+        DgnSubCategoryCPtr subCat = DgnSubCategory::Get(dgnDb, m_subCategoryId);
         BeAssert(subCat.IsValid());
         if (!subCat.IsValid())
             return;

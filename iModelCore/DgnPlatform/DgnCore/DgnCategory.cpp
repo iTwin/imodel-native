@@ -103,7 +103,7 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) const
     {
-    DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(GetDefaultSubCategoryId(), GetDgnDb());
+    DgnSubCategoryCPtr subCat = DgnSubCategory::Get(GetDgnDb(), GetDefaultSubCategoryId());
     BeAssert(subCat.IsValid());
     if (!subCat.IsValid())
         {
@@ -118,8 +118,25 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DrawingCategory::CreateCode(DgnModelCR model, Utf8StringCR categoryName)
+    {
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_DrawingCategory, model, categoryName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DrawingCategory::CreateCode(DgnDbR db, DgnModelId modelId, Utf8StringCR categoryName)
+    {
+    DgnModelPtr model = db.Models().GetModel(modelId);
+    return model.IsValid() ? CreateCode(*model, categoryName) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DrawingCategory::DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name)))
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, DgnModel::DictionaryId(), name)))
     {
     m_rank = rank;
     m_descr = descr;
@@ -151,8 +168,16 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SpatialCategory::CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace)
+    {
+    return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_SpatialCategory, db, categoryName, nameSpace);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SpatialCategory::SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name)))
+    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name)))
     {
     m_rank = rank;
     m_descr = descr;
@@ -301,14 +326,31 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, catId, name), nullptr, catId), m_data(app, descr)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DgnSubCategory::CreateCode(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR subCategoryName)
+    {
+    DgnCategoryCPtr category = DgnCategory::Get(db, categoryId);
+    return category.IsValid() ? CreateCode(*category, subCategoryName) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DgnSubCategory::CreateCode(DgnCategoryCR category, Utf8StringCR subCategoryName)
+    {
+    return ElementScopeAuthority::CreateCode(BIS_AUTHORITY_SubCategory, category, subCategoryName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(DgnCode const& code, DgnDbR db)
+DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(DgnDbR db, DgnCodeCR code)
     {
     return DgnSubCategoryId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -325,7 +367,7 @@ DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId parentId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR db)
+DgnCategoryId DgnSubCategory::QueryCategoryId(DgnDbR db, DgnSubCategoryId subCatId)
     {
     if (!subCatId.IsValid())
         return DgnCategoryId();
@@ -417,7 +459,7 @@ DgnCode DgnSubCategory::_GenerateDefaultCode() const
     {
     DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::Get(GetDgnDb(), GetCategoryId()) : nullptr;
     if (cat.IsValid())
-        return CreateSubCategoryCode(*cat, cat->GetCategoryName());
+        return CreateCode(*cat, cat->GetCategoryName());
 
     BeAssert(false && "The creator of a sub-category must set its code");
     return DgnCode();
@@ -559,7 +601,7 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
     DgnCategoryId srcCatId = DgnCategoryId(original.GetElementId().GetValue());
 
     // Copy over the default appearance and remap its internal IDs
-    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::QuerySubCategory(DgnCategory::GetDefaultSubCategoryId(srcCatId), importer.GetSourceDb());
+    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::Get(importer.GetSourceDb(), DgnCategory::GetDefaultSubCategoryId(srcCatId));
     DgnSubCategory::Appearance appearance = srcSubCat->GetAppearance();
     appearance.RelocateToDestinationDb(importer);
     SetDefaultAppearance(appearance);
@@ -633,7 +675,7 @@ DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId,
     {
     //  See if we already have a SubCategory in the destination Db.
     //  If so, map the source SubCategory to it.
-    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::QuerySubCategory(srcSubCatId, importer.GetSourceDb());
+    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::Get(importer.GetSourceDb(), srcSubCatId);
     BeAssert(srcSubCat.IsValid());
     if (srcSubCat.IsNull())
         {
@@ -641,7 +683,8 @@ DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId,
         return DgnSubCategoryId();
         }
 
-    DgnSubCategoryId dstSubCatId = QuerySubCategoryId(dstCatId, srcSubCat->GetSubCategoryName(), importer.GetDestinationDb());
+    DgnCode dstSubCatCode = DgnSubCategory::CreateCode(importer.GetDestinationDb(), dstCatId, srcSubCat->GetSubCategoryName());
+    DgnSubCategoryId dstSubCatId = QuerySubCategoryId(importer.GetDestinationDb(), dstSubCatCode);
     if (dstSubCatId.IsValid())
         {
         //  *** TBD: Check if the Appearances match. If not, rename and remap

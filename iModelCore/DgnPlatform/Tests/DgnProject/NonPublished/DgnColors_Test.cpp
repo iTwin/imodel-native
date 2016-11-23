@@ -98,14 +98,14 @@ TEST_F(DgnColorTests, TrueColors)
     EXPECT_TRUE(matchingColorId.IsValid());
     EXPECT_TRUE(color1.GetColorId() == matchingColorId);
 
-    DgnTrueColorCPtr toFind = DgnTrueColor::QueryColor(colorId, db);
+    DgnTrueColorCPtr toFind = DgnTrueColor::Get(db, colorId);
     EXPECT_TRUE(toFind.IsValid());
     EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
     EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
     EXPECT_TRUE(toFind->GetName() == color1.GetName());
     EXPECT_TRUE(toFind->GetBook() == color1.GetBook());
 
-    toFind = DgnTrueColor::QueryColorByName("TestName1", "TestBook1", db);
+    toFind = DgnTrueColor::QueryColorByName(db, "TestName1", "TestBook1");
     EXPECT_TRUE(toFind.IsValid());
     EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
     EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
@@ -118,7 +118,7 @@ TEST_F(DgnColorTests, TrueColors)
     EXPECT_TRUE(DgnTrueColor::FindMatchingColor(ColorDef(2, 3, 33), db).IsValid());
 
     // Cannot update or delete
-    auto cpColor4 = DgnTrueColor::QueryColor(colorId4, db);
+    DgnTrueColorCPtr cpColor4 = DgnTrueColor::Get(db, colorId4);
     ASSERT_TRUE(cpColor4.IsValid());
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, cpColor4->Delete());
     auto pColor4 = cpColor4->MakeCopy<DgnTrueColor>();
