@@ -1152,7 +1152,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
             ASSERT_FALSE(v.IsNull()) << "Model is not expected to be null in the read ECInstance";
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), v.GetNavigationInfo().GetIdAsLong()) << "Model via ECInstance";
-            ASSERT_EQ(relClass.GetId().GetValue(), v.GetNavigationInfo().GetRelationshipClass().GetId().GetValue()) << "Model via ECInstance";
+            ASSERT_EQ(relClass.GetId().GetValue(), v.GetNavigationInfo().GetRelationshipClass()->GetId().GetValue()) << "Model via ECInstance";
             }
         else
             {
