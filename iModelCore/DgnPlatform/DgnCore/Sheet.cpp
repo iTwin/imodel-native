@@ -11,37 +11,16 @@
 USING_NAMESPACE_TILETREE
 
 BEGIN_SHEET_NAMESPACE
-
 namespace Handlers
 {
 HANDLER_DEFINE_MEMBERS(Element);
-HANDLER_DEFINE_MEMBERS(Attachment)
+HANDLER_DEFINE_MEMBERS(AttachmentElement)
 HANDLER_DEFINE_MEMBERS(Model)
 }
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/16
-//=======================================================================================
-struct Tile : QuadTree::Tile
-{
-    DEFINE_T_SUPER(QuadTree::Tile)
-
-    struct Loader : TileLoader
-    {
-        Render::Image m_image;
-
-        Loader(Utf8StringCR url, Tile& tile, LoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
-        BentleyStatus _LoadTile() override;
-    };
-    Tile(AttachmentTree&, QuadTree::TileId id, Tile const* parent);
-    TilePtr _CreateChild(QuadTree::TileId id) const override {return new Tile(GetAttachmentTree(), id, this);}
-    AttachmentTree& GetAttachmentTree() const {return (AttachmentTree&) m_root;}
-    TileLoaderPtr _CreateTileLoader(LoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
-};
-
 END_SHEET_NAMESPACE
 
 USING_NAMESPACE_SHEET
+using namespace Attachment;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
@@ -180,15 +159,30 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
+    {
+    Tile& tile = static_cast<Tile&>(*m_tile);
+    Tree& root = tile.GetTree();
+
+    auto vp = DgnViewport::GetTileViewport();
+    if (vp)
+        vp->_CreateTile(*root.m_view, tile.m_range, root.m_pixels).then([=](Image image){m_image = image;});
+
+    return m_image.IsValid() ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * This sheet tile just became available from some source (cache, or created). Create a 
 * a Render::Graphic to draw it. Only when finished, set the "ready" flag.
 * @note this method can be called on many threads, simultaneously.
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Sheet::Tile::Loader::_LoadTile() 
+BentleyStatus Attachment::Tile::Loader::_LoadTile() 
     {
     Tile& tile = static_cast<Tile&>(*m_tile);
-    AttachmentTree& root = tile.GetAttachmentTree();
+    Tree& root = tile.GetTree();
 
     auto graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
 
@@ -212,7 +206,7 @@ BentleyStatus Sheet::Tile::Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Tile::Tile(AttachmentTree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
+Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
     {
     double tileSize = 1.0 / (1 << id.m_level); // the size of a tile for this level, in NPC
     double east  = id.m_column * tileSize;
@@ -221,9 +215,9 @@ Sheet::Tile::Tile(AttachmentTree& root, QuadTree::TileId id, Tile const* parent)
     double south = north + tileSize;
     
     m_corners.m_pts[0].Init(east, north, 0.0);   //  | [0]     [1]
-    m_corners.m_pts[0].Init(west, north, 0.0);   //  y
-    m_corners.m_pts[0].Init(east, south, 0.0);   //  | [2]     [3]
-    m_corners.m_pts[0].Init(west, south, 0.0);   //  v
+    m_corners.m_pts[1].Init(west, north, 0.0);   //  y
+    m_corners.m_pts[2].Init(east, south, 0.0);   //  | [2]     [3]
+    m_corners.m_pts[3].Init(west, south, 0.0);   //  v
 
     m_range.InitFrom(m_corners.m_pts, 4);
     }
@@ -231,41 +225,62 @@ Sheet::Tile::Tile(AttachmentTree& root, QuadTree::TileId id, Tile const* parent)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AttachmentTree::AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP system, uint32_t tileSize) : m_attachmentId(attachmentId), QuadTree::Root(db, Transform::FromIdentity(), "", system, 10, tileSize)
+void Attachment::Tree::Load(Render::SystemP renderSys)
     {
-    auto attach = m_db.Elements().Get<ViewAttachment>(attachmentId);
+    if (m_rootTile.IsValid() && (nullptr==renderSys || m_renderSystem==renderSys))
+        return;
+
+    m_renderSystem = renderSys;
+    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tree::Draw(RenderContextR context)
+    {
+    Load(&context.GetTargetR().GetSystem());
+    DrawInView(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)  
+    {
+    auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
         {
         BeAssert(false);
         return;
         }
 
-    auto& placement = attach->GetPlacement();
-    SetLocation(placement.GetTransform());
-
     auto viewId = attach->GetAttachedViewId();
-    m_view = m_db.Elements().Get<ViewDefinition>(DgnElementId(viewId.GetValue()));
+    m_view = ViewDefinition::LoadViewController(viewId, db);
     if (!m_view.IsValid())
         return;
 
-    double aspect = m_view->GetAspectRatio();
+    double aspect = m_view->GetViewDefinition().GetAspectRatio();
 
     if (aspect<1.0)
-        m_pixels.Init(tileSize, tileSize*aspect);
-    else
         m_pixels.Init(tileSize*aspect, tileSize);
+    else
+        m_pixels.Init(tileSize, tileSize/aspect);
 
-    // max pixel size is half the length of the diagonal
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    m_view->GetViewDefinition().AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
 
-    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
+    m_maxPixelSize = DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+
+    Transform location = attach->GetPlacement().GetTransform();
+    location.ScaleMatrixColumns(m_pixels.x, m_pixels.y, 1.0);
+    SetLocation(location);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::ViewController::AttachmentTreePtr Sheet::ViewController::FindAttachment(DgnElementId attachId) const
+Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId attachId) const
     {
     for (auto& attach : m_attachments)
         {
@@ -282,30 +297,30 @@ Sheet::ViewController::AttachmentTreePtr Sheet::ViewController::FindAttachment(D
 void Sheet::ViewController::_LoadState()
     {
     auto model = GetViewedModel();
-    if (nullptr == model || nullptr == m_vp)
+    if (nullptr == model)
         {
         BeAssert(false);
         return;
         }
 
-    bvector<AttachmentTreePtr> attachments;
+    bvector<TreePtr> attachments;
 
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
     stmt->BindId(1, model->GetModelId());
 
-    // If we're already loaded, look in existing AttachmentTrees so we don't reload them
+    // If we're already loaded, look in existing list so we don't reload them
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto attachId = stmt->GetValueId<DgnElementId>(0);
         auto tree = FindAttachment(attachId);
 
         if (!tree.IsValid())
-            tree = new AttachmentTree(GetDgnDb(), attachId, &m_vp->GetRenderTarget()->GetSystem(), 256);
+            tree = new Tree(GetDgnDb(), attachId, 256);
 
         attachments.push_back(tree);
         }
 
-    // save new list of attachment trees
+    // save new list of attachment
     m_attachments = attachments;
     }
 
@@ -319,7 +334,7 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     T_Super::_CreateTerrain(context);
 
     for (auto& attach : m_attachments)
-        attach->DrawInView(context);
+        attach->Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

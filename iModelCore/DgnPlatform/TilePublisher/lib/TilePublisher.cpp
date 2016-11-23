@@ -1075,6 +1075,10 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
             longitude = geoLocation->longitude;
             latitude  = geoLocation->latitude;
             }
+
+        // NB: We have to translate to surface of globe even if we're not using the globe, because
+        // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
+
         ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
         ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }
@@ -1335,11 +1339,20 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     auto spatialView = m_viewController._ToSpatialView();
-    if (nullptr == spatialView)
+    auto drawingView = m_viewController._ToDrawingView();
+    
+    if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
         return Status::NoGeometry;
         }
+
+    DgnModelIdSet viewedModels;
+
+    if (nullptr != spatialView)
+        viewedModels = spatialView->GetViewedModels();
+    else
+        viewedModels.insert (drawingView->GetViewedModelId());
 
     Json::Value     value;
     value["asset"]["version"] = "0.0";
@@ -1362,7 +1375,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     rootRange = DRange3d::NullRange();
 
     static size_t           s_maxPointsPerTile = 250000;
-    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile);
+    auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
     if (TileGenerator::Status::Success != status)
         return ConvertStatus(status);
 
@@ -1438,7 +1451,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
     OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
@@ -1450,7 +1463,11 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
 
     json["name"] = view.GetName();
-    json["modelSelector"] = view.GetModelSelectorId().ToString();
+
+    auto spatialView = view.ToSpatialView();
+    if (nullptr != spatialView)
+        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
+
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
@@ -1514,17 +1531,19 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
         auto viewDefinition = ViewDefinition::Get(GetDgnDb(), view.GetId());
-        SpatialViewDefinitionCP spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
-        if (nullptr == spatialView)
+        if (!viewDefinition.IsValid())
             continue;
 
         Json::Value entry(Json::objectValue);
 
-        allModelSelectors.insert(spatialView->GetModelSelectorId());
-        allCategorySelectors.insert(spatialView->GetCategorySelectorId());
-        allDisplayStyles.insert(spatialView->GetDisplayStyleId());
+        auto spatialView = viewDefinition->ToSpatialView();
+        if (nullptr != spatialView)
+            allModelSelectors.insert(spatialView->GetModelSelectorId());
 
-        GetSpatialViewJson(entry, *spatialView, transform);
+        allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
+        allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
+
+        GetViewJson(entry, *viewDefinition, transform);
         viewsJson[view.GetId().ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default
@@ -1540,6 +1559,11 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     WriteModelsJson(json, allModelSelectors);
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
+
+    AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
+    transform.Multiply(projectExtents, projectExtents);
+    json["projectExtents"]["low"] = PointToJson(projectExtents.low);
+    json["projectExtents"]["high"] = PointToJson(projectExtents.high);
 
     return Status::Success;
     }

@@ -45,7 +45,7 @@ public:
 //---------------------------------------------------------------------------------------
 int ChangeSummaryTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
     {
-    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, ECClassId, ECInstanceId)", qualifiedClassName);
 
     ECSqlStatement stmt;
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
@@ -947,7 +947,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.ECClassId, el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status.IsSuccess());
     

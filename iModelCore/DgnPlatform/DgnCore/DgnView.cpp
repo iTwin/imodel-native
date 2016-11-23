@@ -390,7 +390,7 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA("ViewDefinition");
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,CodeValue,[" PROPNAME_Source "]," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA("ViewDefinition");
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;

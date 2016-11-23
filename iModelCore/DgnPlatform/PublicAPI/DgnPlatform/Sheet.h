@@ -9,14 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnView.h>
-
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-    #include <DgnPlatform/TileTree.h>
-#endif
-
-BEGIN_BENTLEY_DGN_NAMESPACE
-struct SheetViewDefinition;
-END_BENTLEY_DGN_NAMESPACE
+#include <DgnPlatform/TileTree.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 #define BIS_CLASS_ViewAttachment "ViewAttachment"
@@ -162,19 +155,49 @@ public:
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
     };
 
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
-struct AttachmentTree : TileTree::QuadTree::Root
+namespace Attachment
 {
-    DgnElementId m_attachmentId;
-    ViewDefinitionCPtr m_view;
-    ClipVectorCPtr m_clip;
-    Point2d m_pixels;
+    struct Tree : TileTree::QuadTree::Root
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Root)
+        DgnElementId m_attachmentId;
+        Dgn::ViewControllerPtr m_view;
+        ClipVectorCPtr m_clip;
+        Point2d m_pixels;
 
-    AttachmentTree(DgnDbR db, DgnElementId attachmentId, Render::SystemP, uint32_t tileSize);
-    DgnElementId GetAttachmentId() const {return m_attachmentId;}
+        void Draw(RenderContextR context);
+        void Load(Render::SystemP renderSys);
+        Utf8CP _GetName() const override {return "SheetTile";}
+        Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize);
+        ~Tree(){ClearAllTiles();}
+        DgnElementId GetAttachmentId() const {return m_attachmentId;}
+    };
+
+    struct Tile : TileTree::QuadTree::Tile
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
+
+        struct Loader : TileTree::TileLoader
+        {
+            Render::Image m_image;
+
+            Loader(Utf8StringCR url, Tile& tile, TileTree::LoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
+            BentleyStatus _LoadTile() override;
+            BentleyStatus _SaveToDb() override {return ERROR;}
+            BentleyStatus _ReadFromDb() override {return ERROR;}
+            folly::Future<BentleyStatus> _GetFromSource() override;
+        };
+
+        Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
+        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
+        Tree& GetTree() const {return (Tree&) m_root;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileName(*this), *this, loads);}
+    };
+
+    DEFINE_REF_COUNTED_PTR(Tree)
 };
 
 //=======================================================================================
@@ -187,19 +210,17 @@ struct ViewController : Dgn::ViewController2d
     friend SheetViewDefinition;
 
 protected:
-    DEFINE_REF_COUNTED_PTR(AttachmentTree);
-    bvector<AttachmentTreePtr> m_attachments;
+    bvector<Attachment::TreePtr> m_attachments;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
     void _CreateTerrain(TerrainContextR context) override;
     void _LoadState() override;
-    AttachmentTreePtr FindAttachment(DgnElementId attachId) const;
+    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
 
     //! Construct a new SheetViewController.
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
 };
-#endif
 
 //=======================================================================================
 // Sheet::Handlers
@@ -213,9 +234,9 @@ namespace Handlers
     };
 
     //! The handler for Sheet::ViewAttachment elements
-    struct Attachment : dgn_ElementHandler::Geometric2d
+    struct AttachmentElement : dgn_ElementHandler::Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, Sheet::ViewAttachment, Attachment, Geometric2d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, Sheet::ViewAttachment, AttachmentElement, Geometric2d, DGNPLATFORM_EXPORT);
     };
 
     //! The ModelHandler for Sheet::Model

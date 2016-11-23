@@ -203,7 +203,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(ViewElementHandler::CameraView::GetHandler());
 
-    RegisterHandler(Sheet::Handlers::Attachment::GetHandler());
+    RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::DatabaseScope::GetHandler());

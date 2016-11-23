@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-#include "TestDomainElements.h"
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>
@@ -28,6 +27,11 @@ HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
+
+HANDLER_DEFINE_MEMBERS(PerfElementHandler)
+HANDLER_DEFINE_MEMBERS(PerfElementSub1Handler)
+HANDLER_DEFINE_MEMBERS(PerfElementSub2Handler)
+HANDLER_DEFINE_MEMBERS(PerfElementSub3Handler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
 
@@ -514,10 +518,10 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
 
-    RegisterHandler(TestElementSub1Handler::GetHandler());
-    RegisterHandler(TestElementSub2Handler::GetHandler());
-    RegisterHandler(TestElementSub3Handler::GetHandler()); 
-    RegisterHandler(TestElementComplexHandler::GetHandler());
+    RegisterHandler(PerfElementHandler::GetHandler());
+    RegisterHandler(PerfElementSub1Handler::GetHandler());
+    RegisterHandler(PerfElementSub2Handler::GetHandler());
+    RegisterHandler(PerfElementSub3Handler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -584,3 +588,38 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+PerfElementPtr PerfElement::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+    {
+    PerfElementPtr element = new PerfElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    return element;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+PerfElementSub1Ptr PerfElementSub1::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+    {
+    PerfElementSub1Ptr element = new PerfElementSub1(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    return element;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+PerfElementSub2Ptr PerfElementSub2::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+    {
+    PerfElementSub2Ptr element = new PerfElementSub2(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    return element;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+PerfElementSub3Ptr PerfElementSub3::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+    {
+    PerfElementSub3Ptr element = new PerfElementSub3(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    return element;
+    }

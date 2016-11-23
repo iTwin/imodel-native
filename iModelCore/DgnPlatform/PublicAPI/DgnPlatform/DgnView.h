@@ -681,7 +681,6 @@ public:
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
 
-    Render::Image RenderTile(DRange2d npc, Point2d size);
 
     //! Create a thumbnail for this ViewDefinition.
     //! @param[out] image The thumbnail image.

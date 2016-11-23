@@ -264,13 +264,12 @@ public:
 };
 
 //=======================================================================================
-// This object is created to read and load a single tile asynchronously. 
-// If caching is enabled, it will first attempt to read the data from the cache. If it's
-// not available it will call _ReadFromSource(). Once the data is available the _LoadTile
-// method is called. 
-// All methods of this class might be called from worker threads except for the constructor 
-// which is guaranteed to run on the client thread. If something you required is not thread 
-// safe you must capture it during construction.
+//! This object is created to read and load a single tile asynchronously. 
+//! If caching is enabled, it will first attempt to read the data from the cache. If it's
+//! not available it will call _ReadFromSource(). Once the data is available, _LoadTile is called. 
+//! All methods of this class might be called from worker threads except for the constructor 
+//! which is guaranteed to run on the client thread. If something you required is not thread 
+//! safe you must capture it during construction.
 // @bsiclass                                                    Mathieu.Marchand  11/2016
 //=======================================================================================
 struct TileLoader : RefCountedBase, NonCopyableClass
@@ -291,11 +290,11 @@ protected:
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
-    BentleyStatus SaveToDb();
-    BentleyStatus ReadFromDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
 
-    //! Called from worker threads to get the data from the original location disk, web, or created locally.
-    DGNPLATFORM_EXPORT virtual BentleyStatus _GetFromSource();
+    //! Called from worker threads to get the data from the original location. E.g. disk, web, or created locally.
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
     virtual BentleyStatus _LoadTile() = 0; 
@@ -309,7 +308,7 @@ public:
         };
 
     //! Called from worker threads to create a tile. Could be from cache or from source.
-    BentleyStatus CreateTile();
+    folly::Future<BentleyStatus> CreateTile();
 };
 
 //=======================================================================================
@@ -414,6 +413,7 @@ struct Root : TileTree::Root
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
 
+    virtual Utf8CP _GetName() const = 0;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
     void DrawInView(RenderContextR context);
@@ -456,9 +456,10 @@ struct ProgressiveTask : Dgn::ProgressiveTask
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
     LoadStatePtr m_loads;
+    Utf8String m_name;
 
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
+    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
     ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
 

@@ -44,6 +44,7 @@ protected:
     typedef RefCountedPtr<Worker> WorkerPtr;
     bool m_isStopped=false;
     bool m_saveActive = false;
+    bool m_workerRunning = false;
     int m_accessors = 0;
     std::chrono::milliseconds m_saveDelay = std::chrono::seconds(5);
     WorkerPtr m_worker;

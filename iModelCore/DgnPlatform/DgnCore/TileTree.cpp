@@ -46,7 +46,7 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::CreateTile()
+folly::Future<BentleyStatus> TileLoader::CreateTile()
     {
     if (m_loads != nullptr && m_loads->IsCanceled())
         {
@@ -59,7 +59,7 @@ BentleyStatus TileLoader::CreateTile()
     if (!m_tile->IsQueued())
         return SUCCESS; // this node was abandoned.
 
-    if (SUCCESS == ReadFromDb())
+    if (SUCCESS == _ReadFromDb())
         {
         if (SUCCESS == LoadTile())
             {
@@ -70,60 +70,54 @@ BentleyStatus TileLoader::CreateTile()
         // If we failed to load from the db, try from the source.
         }
         
-    if (SUCCESS != _GetFromSource())
+    return _GetFromSource().then([=](BentleyStatus status)
         {
-        if (m_loads != nullptr && m_loads->IsCanceled())
-            m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
-        else
+        if (status != SUCCESS)
+            {
+            if (m_loads != nullptr && m_loads->IsCanceled())
+                m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
+            else
+                m_tile->SetNotFound();
+            return ERROR;
+            }
+
+        if (SUCCESS != LoadTile())
+            {
             m_tile->SetNotFound();
+            return ERROR;
+            }
 
-        return ERROR;
-        }
+        m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-    if (SUCCESS != LoadTile())
-        {
-        m_tile->SetNotFound();
-        return ERROR;
-        }
+        // On a successful load, store the tile in the cache.
+        _SaveToDb();
 
-    m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-    // On a successful load, store the tile in the cache.
-    SaveToDb(); 
-
-    return SUCCESS;
+        return SUCCESS;
+        });
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::_GetFromSource()
+folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     {
     bool isHttp = (0 == strncmp("http:", m_fileName.c_str(), 5) || 0 == strncmp("https:", m_fileName.c_str(), 6));
 
     if (isHttp)
         {
         HttpDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
-        }
-    else
-        {
-        FileDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
+        return query.Perform(m_tileBytes);
         }
 
-    return SUCCESS;
+    FileDataQuery query(m_fileName, m_loads);
+    return query.Perform(m_tileBytes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::ReadFromDb()
+BentleyStatus TileLoader::_ReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -170,7 +164,7 @@ BentleyStatus TileLoader::ReadFromDb()
 * Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::SaveToDb()
+BentleyStatus TileLoader::_SaveToDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -620,7 +614,6 @@ void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -758,7 +751,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
 
-    DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
+    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 
     for (auto const& node: m_missing)
         {
@@ -774,7 +767,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
-    DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
+    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
         m_loads = nullptr; // for debugging
