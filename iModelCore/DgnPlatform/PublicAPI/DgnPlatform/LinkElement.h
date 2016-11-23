@@ -248,7 +248,7 @@ public:
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
 
-        stmt->BindId(1, linkModelId);
+        stmt->BindNavigationValue(1, linkModelId, ECN::ECClassId());
 
         return CollectElementIds(*stmt);
         }

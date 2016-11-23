@@ -568,7 +568,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -720,7 +720,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 

@@ -562,7 +562,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
     if (!statement.IsValid())
         return nullptr;
 
-    statement->BindId(1, table.GetElementId());
+    statement->BindNavigationValue(1, table.GetElementId(), ECClassId());
 
     return statement;
     }
@@ -572,7 +572,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
     {
-    statement.BindId (statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
+    statement.BindNavigationValue(statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId(), ECClassId());
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
         statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());

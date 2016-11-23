@@ -353,15 +353,15 @@ ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId
     if (whereClause)
         {
         combinedWhere.append(whereClause);
-        combinedWhere.append(" AND [ParentId]=?");
+        combinedWhere.append(" AND ParentId=?");
         }
     else
         {
-        combinedWhere.append("WHERE [ParentId]=?");
+        combinedWhere.append("WHERE ParentId=?");
         }
 
     ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
-    iterator.GetStatement()->BindId(1, categoryId);
+    iterator.GetStatement()->BindNavigationValue(1, categoryId, ECClassId());
     return iterator;
     }
 

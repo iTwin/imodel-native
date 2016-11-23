@@ -623,7 +623,9 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         AllocateBuffer(CalculateInitialAllocation(_GetClassLayout()));
         }
 
-    auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
+    CachedECSqlStatementPtr stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
+    if (stmt == nullptr)
+        return BSIERROR;
 
     stmt->BindId(1, m_element.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())

@@ -1840,7 +1840,7 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
         }
 
     ElementIterator iterator = m_dgndb.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element), where.c_str(), orderByClause);
-    iterator.GetStatement()->BindId(1, GetModelId());
+    iterator.GetStatement()->BindNavigationValue(1, GetModelId(), ECClassId());
 
     return iterator;
     }

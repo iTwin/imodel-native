@@ -48,7 +48,7 @@ DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
     else
         update->BindBinary(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
 
-    update->BindId(2, el.GetElementId());
+    update->BindNavigationValue(2, el.GetElementId(), ECClassId());
 
     if (BE_SQLITE_DONE != update->Step())
         return DgnDbStatus::WriteError;
@@ -67,7 +67,7 @@ DgnDbStatus TextAnnotationData::_LoadProperties(DgnElementCR el)
     if (!select.IsValid())
         return DgnDbStatus::ReadError;
 
-    select->BindId(1, el.GetElementId());
+    select->BindNavigationValue(1, el.GetElementId(), ECClassId());
 
     if ((BE_SQLITE_ROW != select->Step()) || select->IsValueNull(0))
         {
