@@ -160,9 +160,6 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_EXCLUDE SQL_TOKEN_OTHERS SQL_TOKEN_TIES SQL_TOKEN_FOLLOWING SQL_TOKEN_UNBOUNDED SQL_TOKEN_PRECEDING SQL_TOKEN_RANGE SQL_TOKEN_ROWS
 %token <pParseNode> SQL_TOKEN_PARTITION SQL_TOKEN_WINDOW SQL_TOKEN_NO
 
-//EC functions
-%token <pParseNode> SQL_TOKEN_GETECCLASSID
-
 // LIMIT and OFFSEt
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_NEXT SQL_TOKEN_ONLY
 
@@ -252,7 +249,7 @@ using namespace connectivity;
 %type <pParseNode> opt_window_frame_clause opt_window_partition_clause opt_existing_window_name window_specification opt_window_frame_exclusion opt_window_clause opt_offset
 %type <pParseNode> opt_fetch_first_row_count fetch_first_clause offset_row_count fetch_first_row_count first_or_next row_or_rows opt_result_offset_clause result_offset_clause
 /* LIMIT and OFFSET */
-%type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only ecclassid_fct_spec union_op
+%type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only union_op
 /* non-standard */
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
@@ -2417,7 +2414,6 @@ cast_spec:
 value_exp_primary:
         unsigned_value_spec
       | fct_spec 
-      | ecclassid_fct_spec 
 	  | column_ref
       | scalar_subquery
       | case_expression
@@ -2431,28 +2427,6 @@ value_exp_primary:
         }
       | cast_spec
     ;
-
-
-/* GetECClassId()*/
-ecclassid_fct_spec:
-        SQL_TOKEN_GETECCLASSID '(' ')'
-	{
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-        $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-        $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
-	}
-        |
-	property_path '.' SQL_TOKEN_GETECCLASSID '(' ')'
-	{
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-        $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
-        $$->append($3);
-        $$->append($4 = newNode("(", SQL_NODE_PUNCTUATION));
-        $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
-	}
-        ;
 
 num_primary:
         value_exp_primary

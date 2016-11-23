@@ -180,7 +180,6 @@ namespace connectivity
                 datetime_value_fct,
                 delete_statement_searched,
                 derived_column,
-                ecclassid_fct_spec,
                 ecrelationship_join,
                 ecsqloptions_clause,
                 existence_test,

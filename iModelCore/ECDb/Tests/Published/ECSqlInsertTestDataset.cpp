@@ -407,13 +407,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbR ecdb)
     ecsql = "INSERT INTO ecsql.P (I) VALUES (5 * 4)";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
-    ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + GetECClassId())";
-    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
-
     ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + ECClassId)";
-    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
-
-    ecsql = "INSERT INTO ecsql.P (L) VALUES (GetECClassId() * 4)";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
     ecsql = "INSERT INTO ecsql.P (L) VALUES (ECClassId * 4)";

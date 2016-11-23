@@ -751,61 +751,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp c
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdFunctionExp const& exp)
-    {
-    RangeClassRefExp const* classRefExp = exp.GetClassRefExp();
-    BeAssert(classRefExp != nullptr && "ECClassIdFunctionExp::GetClassRefExp is expected to never return null during preparation.");
-    if (classRefExp->GetType() != Exp::Type::ClassName)
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", classRefExp->ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    BeAssert(dynamic_cast<ClassNameExp const*> (classRefExp) != nullptr);
-    ClassNameExp const* classNameExp = static_cast<ClassNameExp const*> (classRefExp);
-
-    NativeSqlBuilder nativeSqlSnippet;
-
-    if (exp.HasParentheses())
-        nativeSqlSnippet.AppendParenLeft();
-
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    ECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
-    //!WIP_CLASSID need work ToNativeSql() is used in viewgenerator and ECSql this does not allow us but to add an addition parameter to it tell from where it is called.
-    //For this reason i am leaving following cases as is
-    if (classIdPropertyMap->IsPersisted())
-        {
-        Utf8CP classRefId = classRefExp->GetId().c_str();
-        nativeSqlSnippet.Append(classIdPropertyMap->ToNativeSql(classRefId, ECSqlType::Select, false).front());
-        }
-    else
-        {
-        if (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select)
-            {
-            //for select statements we need to use the view's ecclass id column to avoid
-            //that a constant class id number shows up in order by etc
-            Utf8CP classRefId = classRefExp->GetId().c_str();
-            nativeSqlSnippet.Append(classRefId, COL_ECClassId);
-            }
-        else
-            {
-            //no class id column -> class id is constant
-            nativeSqlSnippet.Append(classMap.GetClass().GetId().ToString().c_str());
-            }
-        }
-
-    if (exp.HasParentheses())
-        nativeSqlSnippet.AppendParenRight();
-
-    nativeSqlSnippets.push_back(move(nativeSqlSnippet));
-    return ECSqlStatus::Success;
-    }
-
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -1554,8 +1499,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareCastExp(nativeSqlSnippets, ctx, static_cast<CastExp const*> (exp));
             case Exp::Type::LiteralValue:
                 return PrepareLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (exp));
-            case Exp::Type::ECClassIdFunction:
-                return PrepareECClassIdFunctionExp(nativeSqlSnippets, ctx, *static_cast<ECClassIdFunctionExp const*> (exp));
             case Exp::Type::FunctionCall:
                 return PrepareFunctionCallExp(nativeSqlSnippets, ctx, *static_cast<FunctionCallExp const*> (exp));
             case Exp::Type::GetPointCoordinateFunction:

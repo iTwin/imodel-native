@@ -939,43 +939,6 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(unique_ptr<ValueExp>& exp, OSQLPar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseECClassIdFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
-    {
-    const size_t childNodeCount = parseNode->count();
-    if (!SQL_ISRULE(parseNode, ecclassid_fct_spec) || (childNodeCount != 3 && childNodeCount != 5))
-        {
-        BeAssert(false && "Wrong grammar. Expecting ecclassid_fct_spec.");
-        return ERROR;
-        }
-
-    OSQLParseNode const* firstChildNode = parseNode->getChild(0);
-    if (childNodeCount != 3)
-        {
-        std::unique_ptr<PropertyNameExp> prefixPath = nullptr;
-        BentleyStatus stat = ParsePropertyPath(prefixPath, firstChildNode);
-        if (SUCCESS != stat)
-            return stat;
-
-        if (prefixPath->GetPropertyPath().Size() == 1)
-            {
-            Utf8CP classAlias = prefixPath->GetPropertyPath()[0].GetPropertyName();
-            exp = std::unique_ptr<ECClassIdFunctionExp>(new ECClassIdFunctionExp(classAlias));
-            return SUCCESS;
-            }
-        else
-            {
-            BeAssert(false && "Wrong grammar. Expecting <class-alias>.GetECClassId().");
-            return ERROR;
-            }
-        }
-
-    exp = unique_ptr<ValueExp>(new ECClassIdFunctionExp(nullptr));
-    return SUCCESS;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ECSqlParser::ParseECSqlOption(std::unique_ptr<OptionExp>& exp, OSQLParseNode const* parseNode) const
     {
     const size_t childNodeCount = parseNode->count();
@@ -2658,8 +2621,6 @@ BentleyStatus ECSqlParser::ParseValueExp(unique_ptr<ValueExp>& valueExp, OSQLPar
                     return ParseConcatenation(valueExp, parseNode);
                 case OSQLParseNode::datetime_value_exp:
                     return ParseDatetimeValueExp(valueExp, parseNode);
-                case OSQLParseNode::ecclassid_fct_spec:
-                    return ParseECClassIdFctSpec(valueExp, parseNode);
                 case OSQLParseNode::factor:
                     return ParseFactor(valueExp, parseNode);
                 case OSQLParseNode::fold:

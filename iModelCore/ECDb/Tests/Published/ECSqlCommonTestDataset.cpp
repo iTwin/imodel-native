@@ -433,14 +433,8 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
         Utf8String ecsql;
-        ecsql.Sprintf ("%s WHERE GetECClassId() <> %s", pClassECSqlStub.c_str (), pClassId.ToString().c_str());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
         ecsql.Sprintf("%s WHERE ECClassId <> %s", pClassECSqlStub.c_str(), pClassId.ToString().c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
-
-        ecsql.Sprintf ("%s WHERE GetECClassId() = %s", pClassECSqlStub.c_str (), pClassId.ToString().c_str());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
         ecsql.Sprintf("%s WHERE ECClassId = %s", pClassECSqlStub.c_str(), pClassId.ToString().c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);

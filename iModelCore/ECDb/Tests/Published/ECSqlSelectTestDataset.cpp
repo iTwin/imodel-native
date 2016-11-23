@@ -1324,14 +1324,8 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ecsql = "SELECT p.ECClassId FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT p.GetECClassId() FROM ecsql.PSA p";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
     ecsql = "SELECT p.ECClassId, c.ECClassId FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
-
-    ecsql = "SELECT p.GetECClassId(), c.GetECClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA p WHERE ECClassId < 1000";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
@@ -1358,6 +1352,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     //invalid expressions
+    ecsql = "SELECT GetECClassId() FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT p.GetECClassId() FROM ecsql.PSA p";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
     ecsql = "SELECT p.GetECClassId FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
@@ -1420,9 +1420,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 1);
 
     ecsql = "SELECT count(*) FROM ecsql.THBase GROUP BY ECClassId";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 6);
-
-    ecsql = "SELECT count(*) FROM ecsql.THBase GROUP BY GetECClassId()";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 6);
 
     ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY ?";
@@ -2836,13 +2833,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::SelectClauseTests(int rowCountPerClass)
     ecsql = "select L, ECClassId L FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "select L, GetECClassId() L FROM ecsql.P";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
     ecsql = "select ECClassId S, S FROM ecsql.P";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "select GetECClassId() S, S FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select NULLIF(I,123) FROM ecsql.PSA";
@@ -3107,14 +3098,8 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 2);
 
-    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 2);
-
     ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 2);
-
-    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 2);
 
     ecsql = "SELECT S, NULL FROM ecsql.PSA UNION ALL SELECT NULL, I FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass * 2);
