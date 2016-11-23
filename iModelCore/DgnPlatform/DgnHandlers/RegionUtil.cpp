@@ -1571,6 +1571,8 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion(DgnElementPtr& eleme
     GetAdjustedSeedPoints(&seedPoints);
 
     return AssocRegionCellHeaderHandler::CreateAssocRegionElement(eeh, out, &depRoots[0], depRoots.size(), &seedPoints[0], seedPoints.size(), params, cellName);
+#endif
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1605,6 +1607,7 @@ BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion(DgnElementPtr& el
     return AssocRegionCellHeaderHandler::UpdateAssocRegionBoundary(eeh, out);
 #else
     return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
