@@ -8,9 +8,12 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+
 #include <functional>
 #include <atomic>
-#include <thread>
+#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+#   include <thread>
+#endif
 #include <Bentley/Tasks/Tasks.h>
 #include <Bentley/bvector.h>
 
@@ -64,10 +67,10 @@ struct EXPORT_VTABLE_ATTRIBUTE SimpleCancellationToken : ICancellationToken
         void OnCancelled() const;
 
     public:
-        explicit SimpleCancellationToken(bool canceled) : m_canceled (canceled) {};
+        explicit SimpleCancellationToken(bool canceled) : m_canceled(canceled) {};
         virtual ~SimpleCancellationToken() {};
 
-        BENTLEYDLL_EXPORT static SimpleCancellationTokenPtr Create (bool canceled = false);
+        BENTLEYDLL_EXPORT static SimpleCancellationTokenPtr Create(bool canceled = false);
 
         BENTLEYDLL_EXPORT virtual bool IsCanceled() override;
         BENTLEYDLL_EXPORT virtual void SetCanceled();
@@ -84,14 +87,14 @@ struct MergeCancellationToken : ICancellationToken
         bvector <ICancellationTokenPtr> m_tokens;
 
     public:
-        MergeCancellationToken (const bvector<ICancellationTokenPtr>& tokens);
-        virtual ~MergeCancellationToken ();
+        MergeCancellationToken(const bvector<ICancellationTokenPtr>& tokens);
+        virtual ~MergeCancellationToken();
 
-        BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create (const bvector<ICancellationTokenPtr>& tokens);
-        BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create (ICancellationTokenPtr left, ICancellationTokenPtr right);
+        BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create(const bvector<ICancellationTokenPtr>& tokens);
+        BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create(ICancellationTokenPtr left, ICancellationTokenPtr right);
 
         BENTLEYDLL_EXPORT virtual bool IsCanceled() override;
-        BENTLEYDLL_EXPORT virtual void Register (std::weak_ptr<ICancellationListener> listener) override;
+        BENTLEYDLL_EXPORT virtual void Register(std::weak_ptr<ICancellationListener> listener) override;
     };
 
 END_BENTLEY_TASKS_NAMESPACE
