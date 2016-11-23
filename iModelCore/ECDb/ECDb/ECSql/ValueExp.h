@@ -162,37 +162,6 @@ struct LiteralValueExp : ValueExp
     };
 
 //=======================================================================================
-//! @bsiclass                                                Krischan.Eberle      10/2013
-//+===============+===============+===============+===============+===============+======
-struct ECClassIdFunctionExp : ValueExp
-    {
-    DEFINE_EXPR_TYPE(ECClassIdFunction)
-
-    private:
-        static Utf8CP const NAME;
-
-        Utf8String m_classAlias;
-        RangeClassRefExp const* m_classRefExp;
-
-        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        virtual void _DoToECSql(Utf8StringR ecsql) const override;
-        virtual Utf8String _ToString() const override;
-
-        bool HasClassAlias() const { return !m_classAlias.empty(); }
-
-    public:
-        explicit ECClassIdFunctionExp(Utf8CP classAlias)
-            : ValueExp(), m_classAlias(classAlias), m_classRefExp(nullptr)
-            {}
-
-        ~ECClassIdFunctionExp() {}
-
-        Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
-
-        RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
-    };
-
-//=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      11/2015
 //+===============+===============+===============+===============+===============+======
 struct GetPointCoordinateFunctionExp : ValueExp

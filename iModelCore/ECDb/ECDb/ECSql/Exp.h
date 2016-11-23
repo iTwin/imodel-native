@@ -120,7 +120,6 @@ public:
         DerivedProperty,
         FromClause,
         FunctionCall,
-        ECClassIdFunction,
         ECRelationshipJoin,
         GetPointCoordinateFunction,
         GroupBy,
