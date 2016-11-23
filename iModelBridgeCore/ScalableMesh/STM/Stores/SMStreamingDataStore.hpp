@@ -304,7 +304,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
                 short groupMode = m_use_virtual_grouping;
                 memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
-                assert((groupMode == SMNodeGroup::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+                assert((groupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
                 position += sizeof(groupMode);
 
 
@@ -316,7 +316,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     position += sizeof(group_id);
 
                     uint64_t group_totalSizeOfHeaders(0);
-                    if (groupMode == SMNodeGroup::VIRTUAL)
+                    if (groupMode == SMNodeGroup::StrategyType::VIRTUAL)
                         {
                         memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
                         position += sizeof(group_totalSizeOfHeaders);
@@ -328,7 +328,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
                     auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
                                                                      group_id, 
-                                                                     SMNodeGroup::Mode(groupMode),
+                                                                     SMNodeGroup::StrategyType(groupMode),
                                                                      group_numNodes, 
                                                                      group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
@@ -412,7 +412,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     }
 
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize)
     {
     assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
@@ -842,6 +842,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 0;
         ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
+        header->m_id = blockID;
         }
     return 1;
     }

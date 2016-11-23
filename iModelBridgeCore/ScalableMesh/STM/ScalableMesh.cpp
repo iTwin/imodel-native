@@ -486,7 +486,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     bool                    openShareable,
     StatusInt&              status)
 {
-    return GetFor(filePath, Utf8String(filePath), true, openReadOnly, openShareable, status);
+    return GetFor(filePath, baseEditsFilePath, true, openReadOnly, openShareable, status);
 }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,

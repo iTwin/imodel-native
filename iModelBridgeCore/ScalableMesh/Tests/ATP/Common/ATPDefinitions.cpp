@@ -1618,16 +1618,20 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
 
+    BeFileName baseFiles(outputDir);
+    baseFiles.PopDir(); // remove //g
+    baseFiles.PopDir(); // remove //headers
+    Utf8String baseFilesDir(baseFiles.GetName());
     double t = clock();
 
     short groupMode = -1;
     if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
         {
-        groupMode = 0;
+        groupMode = 1;
         }
     else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
         {
-        groupMode = 1;
+        groupMode = 2;
         }
     else
         {
@@ -1637,7 +1641,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), baseFilesDir, false, false, false, status);
 
     if (scmFile != 0 && status == SUCCESS)
         {

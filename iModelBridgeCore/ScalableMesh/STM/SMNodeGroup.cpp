@@ -36,7 +36,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
         assert(m_isLoading == false);
         m_isLoading = true;
-        if (m_mode == VIRTUAL)
+        if (m_strategyType == VIRTUAL)
             {
             this->LoadGroupParallel();
 

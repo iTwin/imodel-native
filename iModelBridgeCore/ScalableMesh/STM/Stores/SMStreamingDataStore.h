@@ -85,7 +85,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SetDataFormatType(FormatType formatType);
 
-        void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
+        static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize);
 
         void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
 

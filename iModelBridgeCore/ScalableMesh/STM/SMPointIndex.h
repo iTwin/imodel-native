@@ -27,9 +27,12 @@
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
+#include <CloudDataSource/DataSourceManager.h>
 #include "SMNodeGroup.h"
 
 class DataSourceAccount;
+class SMNodeGroup;
+class SMNodeGroupMasterHeader;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -583,12 +586,8 @@ public:
             }
         }
 
-    virtual void         AddOpenGroup(const size_t&, SMNodeGroup* pi_pNodeGroup) const;
-
-    virtual void         SaveAllOpenGroups() const;
-
     void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1196,10 +1195,7 @@ protected:
         bool               m_isDirty;
         std::mutex         m_ptsLock;
         bool               m_loadNeighbors;
-        
-        static std::map<size_t, SMNodeGroup*> s_OpenGroups;
-        static int s_GroupID;    
-    };
+     };
 
 
 template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : public NODE

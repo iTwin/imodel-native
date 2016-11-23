@@ -6772,35 +6772,6 @@ template<class POINT, class EXTENT> uint64_t SMPointIndexNode<POINT, EXTENT>::Ge
     return (uint32_t)nbObjects;
     }
 
-/**----------------------------------------------------------------------------
-This method adds a group in the Open Group map. Will overwrite an existing value.
-
-@param
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> typename std::map<size_t, SMNodeGroup*> SMPointIndexNode<POINT, EXTENT>::s_OpenGroups = {};
-template<class POINT, class EXTENT> typename int SMPointIndexNode<POINT, EXTENT>::s_GroupID = 0;
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::AddOpenGroup(const size_t& pi_pGroupKey, SMNodeGroup* pi_pNodeGroup) const
-    {
-    s_OpenGroups[pi_pGroupKey] = pi_pNodeGroup;
-    }
-
-/**----------------------------------------------------------------------------
-This method saves all open groups in the Open Group map.
-
-@param
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAllOpenGroups() const
-    {
-    for (auto& openGroup : s_OpenGroups)
-        {
-        auto& group = openGroup.second;
-        if (!group->IsEmpty() && !group->IsFull())
-            {
-            group->Save();
-            }
-        }
-    }
-
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
@@ -6860,77 +6831,61 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup,
                                                                                                  SMNodeGroupMasterHeader* pi_pGroupsHeader)
     {
     if (!IsLoaded())
         Load();
 
-    // Fetch node header data
-    uint32_t headerSize = 0;
-    std::unique_ptr<Byte> headerData = nullptr;
-    SMStreamingStore<EXTENT>* streamingStore(dynamic_cast<SMStreamingStore<EXTENT>*>(this->GetDataStore().get()));
-    assert(streamingStore != nullptr);
-    streamingStore->SerializeHeaderToBinary(&this->m_nodeHeader, headerData, headerSize);
-
-
-    pi_pGroup->AddNode(ConvertBlockID(GetBlockID()), headerData, headerSize);
-    delete[] headerData.release();
-    
     auto groupID = pi_pGroup->GetID();
+    uint32_t headerSize = pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
+    
     pi_pGroupsHeader->AddNodeToGroup(groupID, ConvertBlockID(GetBlockID()), headerSize);
 
-    if (pi_pGroup->IsFull() || pi_pGroup->IsCommonAncestorTooFar(this->GetLevel()))
-        {
-        pi_pGroup->Close();
-        pi_pGroup->Open(++s_GroupID);
-        pi_pGroupsHeader->AddGroup(s_GroupID);
-        }
+    if (groupID != pi_pGroup->GetID())
+        pi_pGroupsHeader->AddGroup(pi_pGroup->GetID());
 
     if (!m_nodeHeader.m_IsLeaf)
         {
-        pi_pGroup->IncreaseDepth();
-        SMNodeGroup* nextGroup = pi_pGroup->IsMaxDepthAchieved() ? nullptr : pi_pGroup;
-        if (!nextGroup)
+
+        SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup((uint32_t)this->GetLevel(), pi_pGroup);
+        if (nextGroup != pi_pGroup)
+            pi_pGroupsHeader->AddGroup(nextGroup->GetID());
+
+        static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
             {
-            const size_t nextLevel = this->GetLevel() + 1;
-            nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
-            if (!nextGroup)
+            child->SetParentNodePtr(0);
+
+            s_createdNodeMutex.lock();
+
+            CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
+
+            if (nodeIter != child->m_createdNodeMap->end())
                 {
-                nextGroup = new SMNodeGroup(pi_pGroup->GetDataSourceAccount(),
-                                            pi_pGroup->GetFilePath(), 
-                                            nextLevel, 
-                                            ++s_GroupID, 
-                                            pi_pGroup->GetMode());
-                this->AddOpenGroup(nextLevel, nextGroup);
-                pi_pGroupsHeader->AddGroup(s_GroupID);
+                child->m_createdNodeMap->erase(nodeIter);
                 }
-            }
-        assert((nextGroup == pi_pGroup) || (nextGroup != nullptr));
+
+            s_createdNodeMutex.unlock();
+            child = NULL;
+            };
 
         if (m_pSubNodeNoSplit != NULL)
             {
             static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+            disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
+            this->m_pSubNodeNoSplit = nullptr;
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+                disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
+                this->m_apSubNodes[indexNode] = nullptr;
                 }
             }
 
-        // Set eldest parent visited (reverse order of traversal) to maintain proximity of nodes in a group
-        const size_t newAncestor = this->GetLevel();
-        for (auto rGroupIt = s_OpenGroups.rbegin(); rGroupIt != s_OpenGroups.rend(); ++rGroupIt)
-            {
-            auto& group = rGroupIt->second;
-            auto& groupID = rGroupIt->first;
-            if (newAncestor >= groupID) break;
-            group->SetAncestor(newAncestor);
-            }
-
-        pi_pGroup->DecreaseDepth();
+        pi_pGroup->GetStrategy<EXTENT>()->ApplyPostProcess((uint32_t)this->GetLevel(), pi_pGroup);
         }
     }
 
@@ -7793,7 +7748,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
             }
         }
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::Mode( pi_pGroupMode ));
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::StrategyType(pi_pGroupMode));
+
+    //group->InitGroupingStrategy<EXTENT>(SMNodeGroup::StrategyType(pi_pGroupMode));
 
     HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
     SMIndexMasterHeader<EXTENT> oldMasterHeader;
@@ -7805,13 +7762,12 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Add first group
     groupMasterHeader->AddGroup(0);
 
-    auto rootNode = GetRootNode();
-    rootNode->AddOpenGroup(0, group);
+    group->GetStrategy<EXTENT>()->AddOpenGroup(0, group);
 
-    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
+    GetRootNode()->SaveGroupedNodeHeaders(group, groupMasterHeader);
 
     // Handle all open groups 
-    rootNode->SaveAllOpenGroups();
+    group->GetStrategy<EXTENT>()->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
     BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
