@@ -2496,6 +2496,179 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertImplicitNullsUsingECSql)
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
     ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
+    
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedParametersAndMixOrder)
+    {
+    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "        <ECProperty propertyName='L' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='double'/>"
+        "        <ECProperty propertyName='DT' typeName='dateTime'/>"
+        "        <ECProperty propertyName='B' typeName='boolean'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECStructProperty propertyName='ST1P' typeName='ST1'/>"
+        "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+
+    //Point2D(3,4) (23,43,32)
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, arrayOfST1, I, arrayOfP3d, L, ST1P, D, DT, B, P2D, P3D, BIN) "
+                                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    int idx = 1;
+    Utf8CP pCode = "C8";
+    Utf8CP pS = "SampleText";
+    int    pI = 123452;
+    int64_t pL = 123324234234;
+    double pD = 1232.343234;
+    DateTime pDt = DateTime(DateTime::Kind::Unspecified, 2016, 11, 23, 0, 0);
+    bool pB = true;
+    DPoint2d pP2D = DPoint2d::From(12.33, -12.34);
+    DPoint3d pP3D = DPoint3d::From(22.13, -62.34, -13.12);
+    std::vector<Utf8Char> bin = {'H', 'e', 'l','l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd','!'};
+    double pST1P_D1 = 431231.3432;
+    DPoint2d pST1P_P2D = DPoint2d::From(-212.34, 2112.314);
+    double pST1P_ST2P_D2 = 431231.3432;
+    DPoint3d pST1P_ST2P_P3D = DPoint3d::From(-123.434, 3217.3, -1.03);
+    DPoint3d pArrayOfP3d[] = {DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11)};
+    double pArrayOfST1_D1[] = {123.3434, 345.223,-532.123};
+    DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
+    double pArrayOfST1_D2[] = {12.3, -45.72, -31.11};
+    DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pCode, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pS, IECSqlBinder::MakeCopy::No));
+    IECSqlArrayBinder& arrayOfST1 = stmt.BindArray(idx++, 3);
+    {
+    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[0]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[0]));
+    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[0]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[0]));
+    }
+    {
+    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[1]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[1]));
+    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[1]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[1]));
+    }
+    {
+    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[2]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[2]));
+    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[2]));
+    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[2]));
+    }
+    
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(idx++, pI));
+
+    IECSqlArrayBinder& arrayOfP3d = stmt.BindArray(idx++, 3);
+    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[0]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[1]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[2]));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idx++, pL));
+    IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
+    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
+    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("P2D").BindPoint2d(pST1P_P2D));
+    IECSqlStructBinder& st2p = st1p.GetMember("ST2P").BindStruct();
+    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("D2").BindDouble(pST1P_ST2P_D2));
+    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("P3D").BindPoint3d(pST1P_ST2P_P3D));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(idx++, pD));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(idx++, pDt));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(idx++, pB));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(idx++, pP2D));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
+
+    //SELECT * .. []
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C8'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    idx = 0;
+    ASSERT_STREQ(pCode, stmt.GetValueText(idx++));  //Code
+    ASSERT_STREQ(pS, stmt.GetValueText(idx++));     //S
+    ASSERT_EQ(pI, stmt.GetValueInt(idx++));         //I
+    ASSERT_EQ(pL, stmt.GetValueInt64(idx++));       //L
+    ASSERT_EQ(pD, stmt.GetValueDouble(idx++));      //D
+    ASSERT_EQ(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
+    ASSERT_EQ(pB, stmt.GetValueBoolean(idx++));     //B
+    ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
+    ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
+
+    IECSqlStructValue const& st1pv = stmt.GetValueStruct(idx++);    //ST1P
+    ASSERT_EQ(pST1P_D1, st1pv.GetValue(0).GetDouble());
+    ASSERT_EQ(pST1P_P2D, st1pv.GetValue(1).GetPoint2d());
+
+    IECSqlStructValue const& st2pv = st1pv.GetValue(2).GetStruct();  //ST1P.STP2
+    ASSERT_EQ(pST1P_ST2P_D2, st2pv.GetValue(0).GetDouble());
+    ASSERT_EQ(pST1P_ST2P_P3D, st2pv.GetValue(1).GetPoint3d());
+    IECSqlArrayValue const& arrayOfP3dv = stmt.GetValueArray(idx++); // //arrayOfP3d
+    int i = 0;
+    for (auto itor : arrayOfP3dv)
+        {
+        ASSERT_EQ(pArrayOfP3d[i++], itor->GetPoint3d());
+        }
+    ASSERT_EQ(3, i);
+
+    IECSqlArrayValue const& arrayOfST1v = stmt.GetValueArray(idx++);  //arrayOfST1
+    i = 0;
+    for (auto itor : arrayOfST1v)
+        {
+        ASSERT_EQ(pArrayOfST1_D1[i], itor->GetStruct().GetValue(0).GetDouble());//ST1P.D1
+        ASSERT_EQ(pArrayOfST1_P2D[i], itor->GetStruct().GetValue(1).GetPoint2d());//ST1P.P2D
+        ASSERT_EQ(pArrayOfST1_D2[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(0).GetDouble());//ST1P.STP2.D2
+        ASSERT_EQ(pArrayOfST1_P3D[i], itor->GetStruct().GetValue(2).GetStruct().GetValue(1).GetPoint3d());//ST1P.STP2.P3D
+        i++;
+        }
+    ASSERT_EQ(3, i);
+    ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
@@ -2559,7 +2732,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
     int    pI = 123452;
     int64_t pL = 123324234234;
     double pD = 1232.343234;
-    DateTime pDt = DateTime::GetCurrentTimeUtc();
+    DateTime pDt = DateTime(DateTime::Kind::Unspecified, 2016, 11, 23, 0, 0);
     bool pB = true;
     DPoint2d pP2D = DPoint2d::From(12.33, -12.34);
     DPoint3d pP3D = DPoint3d::From(22.13, -62.34, -13.12);
@@ -2635,7 +2808,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
     ASSERT_EQ(pI, stmt.GetValueInt(idx++));         //I
     ASSERT_EQ(pL, stmt.GetValueInt64(idx++));       //L
     ASSERT_EQ(pD, stmt.GetValueDouble(idx++));      //D
-    ASSERT_NE(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
+    ASSERT_EQ(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
     ASSERT_EQ(pB, stmt.GetValueBoolean(idx++));     //B
     ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
     ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
@@ -2734,7 +2907,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         int    pI = 123452;
         int64_t pL = 123324234234;
         double pD = 1232.343234;
-        DateTime pDt = DateTime::GetCurrentTimeUtc();
+        DateTime pDt = DateTime(DateTime::Kind::Unspecified, 2016, 11, 23, 0, 0);
         bool pB = true;
         DPoint2d pP2D = DPoint2d::From(12.33, -12.34);
         DPoint3d pP3D = DPoint3d::From(22.13, -62.34, -13.12);
@@ -2810,7 +2983,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         ASSERT_EQ(pI, stmt.GetValueInt(idx++));         //I
         ASSERT_EQ(pL, stmt.GetValueInt64(idx++));       //L
         ASSERT_EQ(pD, stmt.GetValueDouble(idx++));      //D
-        ASSERT_NE(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
+        ASSERT_EQ(pDt, stmt.GetValueDateTime(idx++));   //DT NOT SURE WHY COMPARE FAIL
         ASSERT_EQ(pB, stmt.GetValueBoolean(idx++));     //B
         ASSERT_EQ(pP2D, stmt.GetValuePoint2d(idx++));   //P2D
         ASSERT_EQ(pP3D, stmt.GetValuePoint3d(idx++));   //P3D
