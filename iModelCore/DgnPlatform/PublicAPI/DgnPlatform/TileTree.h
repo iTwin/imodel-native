@@ -277,7 +277,7 @@ struct TileLoader : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_fileName;      // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
-    TileLoadsPtr m_loads;
+    LoadStatePtr m_loads;
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
