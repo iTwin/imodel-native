@@ -3805,8 +3805,6 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     }
     }
 
-#ifdef WIP_MERGE_Maha    
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3816,8 +3814,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "<ECEntityClass typeName='Foo' modifier='None' >"
                 "   <ECProperty propertyName='FooProp' typeName='int' />"
                 "</ECEntityClass>"
@@ -3826,14 +3824,14 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
-                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
                 "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
                 "            </ForeignKeyRelationshipMap>"
                 "        </ECCustomAttributes>"
-                "    <Source cardinality='(0,1)' polymorphic='false'>"
+                "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
                 "      <Class class = 'Foo' />"
                 "    </Source>"
-                "    <Target cardinality='(1,1)' polymorphic='false'>"
+                "    <Target multiplicity='(1..1)' polymorphic='false' roleLabel='Goo'>"
                 "      <Class class = 'Goo' />"
                 "    </Target>"
                 "</ECRelationshipClass>"
@@ -3856,14 +3854,11 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                 "<ECEntityClass typeName='Parent' modifier='None' >"
                 "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.01.00'>"
-                "                <MapStrategy>"
-                "                   <Strategy>SharedTable</Strategy>"
-                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                "                 </MapStrategy>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "        </ECCustomAttributes>"
                 "   <ECProperty propertyName='ParentProp' typeName='int' />"
@@ -3874,7 +3869,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
-                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
                 "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
                 "            </ForeignKeyRelationshipMap>"
                 "        </ECCustomAttributes>"
@@ -3885,7 +3880,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
                 "      <Class class = 'Child' />"
                 "    </Target>"
                 "</ECRelationshipClass>"
-                "</ECSchema>", true, "NotNull constarint is honoured when multiple classes are mapped to a same table.");
+                "</ECSchema>", true, "NotNull constraint is honoured when multiple classes are mapped to a same table.");
 
             ECDb db;
             bool asserted = false;
@@ -10482,6 +10477,6 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
     }
 
-#endif
+
 
 END_ECDBUNITTESTS_NAMESPACE
