@@ -755,7 +755,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
         materialColor.append(rgb.blue);
         materialColor.append(alpha);
 
-        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
+        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
         }
 
     if (!isPolyline && !displayParams->GetIgnoreLighting())
@@ -1340,6 +1340,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     auto spatialView = m_viewController._ToSpatialView();
     auto drawingView = m_viewController._ToDrawingView();
+
+#ifndef WIP_2D_SUPPORT
+    drawingView = nullptr;
+#endif
     
     if (nullptr == spatialView && nullptr == drawingView)
         {
@@ -1534,12 +1538,19 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
         if (!viewDefinition.IsValid())
             continue;
 
-        Json::Value entry(Json::objectValue);
-
         auto spatialView = viewDefinition->ToSpatialView();
+
+#ifndef WIP_2D_SUPPORT
+        if (nullptr == spatialView)
+            continue;
+#endif
+    
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
 
+        Json::Value entry(Json::objectValue);
+
+ 
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
