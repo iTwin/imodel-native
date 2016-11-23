@@ -1422,7 +1422,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     ECRelationshipClassCP relationship = mapInfo.GetECClass().GetRelationshipClassCP();
     BeAssert(relationship != nullptr);
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
-    ECEntityClass const* foreignEndClass = foreignEndConstraint.GetClasses()[0];
+    ECClass const* foreignEndClass = foreignEndConstraint.GetClasses()[0];
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
     size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(foreignEndConstraint);
 
