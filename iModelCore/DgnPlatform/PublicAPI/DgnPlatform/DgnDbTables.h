@@ -22,7 +22,7 @@
 #define BIS_CLASS_AnnotationLeaderStyle     "AnnotationLeaderStyle"
 #define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
 #define BIS_CLASS_Authority                 "Authority"
-#define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
+#define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
@@ -33,6 +33,8 @@
 #define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
 #define BIS_CLASS_Drawing                   "Drawing"
 #define BIS_CLASS_DrawingAuthority          "DrawingAuthority"
+#define BIS_CLASS_DrawingCategory           "DrawingCategory"
+#define BIS_CLASS_DrawingCategoryAuthority  "DrawingCategoryAuthority"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
 #define BIS_CLASS_DrawingModel              "DrawingModel"
 #define BIS_CLASS_Element                   "Element"
@@ -83,6 +85,8 @@
 #define BIS_CLASS_Sheet                     "Sheet"
 #define BIS_CLASS_SheetAuthority            "SheetAuthority"
 #define BIS_CLASS_SheetModel                "SheetModel"
+#define BIS_CLASS_SpatialCategory           "SpatialCategory"
+#define BIS_CLASS_SpatialCategoryAuthority  "SpatialCategoryAuthority"
 #define BIS_CLASS_SpatialElement            "SpatialElement"
 #define BIS_CLASS_SpatialIndex              "SpatialIndex"
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
@@ -90,6 +94,8 @@
 #define BIS_CLASS_SpatialLocationPartition  "SpatialLocationPartition"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_StreetMapModel            "StreetMapModel"
+#define BIS_CLASS_SubCategory               "SubCategory"
+#define BIS_CLASS_SubCategoryAuthority      "SubCategoryAuthority"
 #define BIS_CLASS_Subject                   "Subject"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
@@ -265,10 +271,10 @@ public:
 };
 
 enum class ModelIterate
-    {
+{
     All = 1<<0,   //!< return all iterable models
     Gui = 1<<1,   //!< return only models marked as visible in Model list GUI
-    };
+};
 
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table

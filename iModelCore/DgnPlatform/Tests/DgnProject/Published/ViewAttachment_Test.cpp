@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnDbTables.h>
-#include <DgnPlatform/ViewAttachment.h>
+#include <DgnPlatform/Sheet.h>
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
@@ -67,14 +67,14 @@ void ViewAttachmentTest::SetUp()
 
     // Set up a sheet to hold attachments
     DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, "SheetListModel");
-    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0,1.0,1.0, "MySheet");
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
+    auto sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1.0,1.0,1.0, "MySheet");
+    auto sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
-    m_attachmentCatId = DgnDbTestUtils::InsertCategory(db, "Attachments", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_attachmentCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Attachments", ColorDef::Cyan());
     ASSERT_TRUE(m_attachmentCatId.IsValid());
-    m_annotationCatId = DgnDbTestUtils::InsertCategory(db, "Annotations", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_annotationCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Annotations", ColorDef::Cyan());
     ASSERT_TRUE(m_annotationCatId.IsValid());
 
     // Set up a viewed model
@@ -218,27 +218,27 @@ TEST_F(ViewAttachmentTest, CRUD)
     // Test some invalid CreateParams
     // Invalid view id
     {
-    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, DgnViewId(), m_attachmentCatId, placement);
+    Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, DgnViewId(), m_attachmentCatId, placement);
     EXPECT_INVALID(attachment.Insert());
     }
     // Invalid category
     {
-    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, DgnCategoryId(), placement);
+    Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, DgnCategoryId(), placement);
     EXPECT_INVALID(attachment.Insert());
     }
     // Not a sheet model
     {
-    ViewAttachment attachment(GetDgnDb(), m_drawingModelId, m_viewId, m_attachmentCatId, placement);
+    Sheet::ViewAttachment attachment(GetDgnDb(), m_drawingModelId, m_viewId, m_attachmentCatId, placement);
     EXPECT_INVALID(attachment.Insert());
     }
 
-    // Create a valid attachment attachment
-    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
+    // Create a valid attachment 
+    Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
     // Confirm data as expected
-    EXPECT_EQ(m_viewId, cpAttach->GetViewId());
+    EXPECT_EQ(m_viewId, cpAttach->GetAttachedViewId());
     EXPECT_TRUE(placement.GetOrigin().IsEqual(cpAttach->GetPlacement().GetOrigin()));
 
     // Modify
@@ -276,7 +276,7 @@ TEST_F(ViewAttachmentTest, Geom)
 
     // Create an attachment
     Placement2d placement(DPoint2d::From(0,0), AngleInDegrees(), ElementAlignedBox2d(0,0,1,1));
-    ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
+    Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
@@ -286,7 +286,7 @@ TEST_F(ViewAttachmentTest, Geom)
     AnnotationElement2dCPtr boxOnSheet; // make a box about the same size as the ViewAttachment, so that we can use it to check the attachment's BB by eye
     AddBoxToModel(boxOnSheet, m_sheetModelId, DPoint2d::From(0,0), placement.GetElementBox().GetWidth()+0.01, placement.GetElementBox().GetHeight()+0.01);
 
-    ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
+    Sheet::ViewAttachmentPtr pAttach = cpAttach->MakeCopy<Sheet::ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
 
     DisplayStylePtr noStyle = new DisplayStyle(db,"");
@@ -294,7 +294,7 @@ TEST_F(ViewAttachmentTest, Geom)
     SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *cats, *noStyle);
     sheetView.Insert();
 
-    SheetViewControllerPtr viewController = sheetView.LoadViewController();
+    Sheet::ViewControllerPtr viewController = sheetView.LoadViewController();
     SetupAndSaveViewController(*viewController, *cpAttach, m_sheetModelId);
 
     viewController->ChangeCategoryDisplay(m_attachmentCatId, true);

@@ -1195,15 +1195,16 @@ struct LocksManagerTest : RepositoryManagerTest
     DgnElementPtr Create3dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), catId);
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
+        return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), categoryId);
         }
 
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
         DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
-        return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
+        return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, categoryId));
         }
 };
 
@@ -1229,7 +1230,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
         {
         m_db = &db;
         m_modelId = DgnModel::DictionaryId();
-        m_elemId = DgnCategory::QueryFirstCategoryId(db);
+        m_elemId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
         }
 
     void SetUp()
@@ -1536,9 +1537,12 @@ struct DoubleBriefcaseTest : LocksManagerTest
         DgnModelPtr modelA2d0 = CreateModel("Model2d", *m_db);
         CreateElement(*modelA2d0.get(), false);
         CreateElement(*modelA2d0.get(), false);
+        _InitMasterFile();
         m_db->SaveChanges();
         ClearRevisions(*m_db);
         }
+
+    virtual void _InitMasterFile() { };
 
     void SetupDbs(uint32_t baseBcId=2)
         {
@@ -2236,11 +2240,11 @@ TEST_F(ExtractLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
     EXPECT_TRUE(req.IsEmpty());
 
-    // Modify an elem (it's a DgnCategory...)
+    // Modify an elem (it's a SpatialCategory...)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2295,7 +2299,7 @@ struct CodesManagerTest : RepositoryManagerTest
 
     static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
-        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : DgnCategory::CreateCategoryCode(name);
+        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : SpatialCategory::CreateCode(name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }
@@ -2609,5 +2613,87 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct IndirectLocksTest : DoubleBriefcaseTest
+{
+    DgnElementId    m_displayStyleId;
+
+    virtual void _InitMasterFile() override
+        {
+        DisplayStyle style(*m_db, "MyDisplayStyle");
+        style.Insert();
+        m_displayStyleId = style.GetElementId();
+        ASSERT_TRUE(m_displayStyleId.IsValid());
+        }
+
+    void Acquire(DgnElementCR el, BeSQLite::DbOpcode op)
+        {
+        IBriefcaseManager::Request req;
+        EXPECT_STATUS(Success, el.PopulateRequest(req, op));
+        EXPECT_STATUS(Success, el.GetDgnDb().BriefcaseManager().Acquire(req).Result());
+        }
+
+    bool DeleteDisplayStyle(DgnDbR db);
+    bool CreateView(DgnDbR db);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
+    {
+    auto style = DisplayStyle::GetByName(db, "MyDisplayStyle");
+    EXPECT_TRUE(style.IsValid());
+    if (!style.IsValid())
+        return false;
+
+    Acquire(*style, BeSQLite::DbOpcode::Delete);
+    return DgnDbStatus::Success == style->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IndirectLocksTest::CreateView(DgnDbR db)
+    {
+    CategorySelectorPtr categorySelector = new CategorySelector(db, "MyCategorySelector");
+    Acquire(*categorySelector, BeSQLite::DbOpcode::Insert);
+    if (!categorySelector->Insert().IsValid())
+        return false;
+
+    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle>(m_displayStyleId);
+    EXPECT_TRUE(displayStyleA.IsValid());
+    if (!displayStyleA.IsValid())
+        return false;
+
+    DrawingViewDefinition view(db, "MyView", Model2dId(), *categorySelector, *displayStyleA);
+    Acquire(view, BeSQLite::DbOpcode::Insert);
+    return view.Insert().IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IndirectLocksTest, UseThenDelete)
+    {
+    SetupDbs();
+
+    EXPECT_TRUE(CreateView(*m_dbA));
+    EXPECT_FALSE(DeleteDisplayStyle(*m_dbB));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IndirectLocksTest, DeleteThenUse)
+    {
+    SetupDbs();
+
+    EXPECT_TRUE(DeleteDisplayStyle(*m_dbB));
+    EXPECT_FALSE(CreateView(*m_dbA));
     }
 

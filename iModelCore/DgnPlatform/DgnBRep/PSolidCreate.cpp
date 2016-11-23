@@ -2579,7 +2579,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
                         bvector<IBRepEntityPtr> sewn;
                         bvector<IBRepEntityPtr> unsewn;
 
-                        if (SUCCESS == BRepUtil::Modify::SewBodies (sewn, unsewn, &tools.front(), tools.size(), 1.0))
+                        if (SUCCESS == BRepUtil::Modify::SewBodies (sewn, unsewn, tools, 1.0))
                             {
                             if (0 == sewn.size())
                                 return ERROR;
@@ -2598,7 +2598,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 
                                 if (0 != unsewn.size())
                                     {
-                                    if (SUCCESS != BRepUtil::Modify::BooleanUnion (entityOut, &unsewn.front(), unsewn.size()))
+                                    if (SUCCESS != PSolidUtil::DoBoolean(*entityOut, &unsewn.front(), unsewn.size(), PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint))
                                         return ERROR;
                                     }
                                 }
@@ -2707,6 +2707,195 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
         default:
             return ERROR;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
+    {
+    // NOTE: Parity/Union regions not currently supported...
+    if (NULL == profiles || 0 == nProfiles)
+        return ERROR;
+
+    DPoint3d    origin;
+
+    if (!profiles[0]->GetStartPoint (origin))
+        return ERROR;
+
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    Transform   solidToDgn, dgnToSolid;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+    PK_BODY_t*      profileBodies = (PK_BODY_t*) _alloca (nProfiles * sizeof (PK_BODY_t));
+    PK_VERTEX_t*    startVertices = (PK_VERTEX_t*) _alloca (nProfiles * sizeof (PK_VERTEX_t));
+
+    memset (profileBodies, 0, nProfiles * sizeof (PK_BODY_t));
+
+    StatusInt       status = ERROR;
+        
+    for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
+        {
+        bool    coverClosed = (0 == iProfile || iProfile+1 == nProfiles); // NOTE: Only end caps may be sheet bodies...
+
+        if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (profileBodies[iProfile], &startVertices[iProfile], *profiles[iProfile], dgnToSolid, coverClosed)))
+            break;
+        }
+
+    if (SUCCESS == status)
+        {
+        PK_BODY_t*   guideBodies = (nGuides ? (PK_BODY_t*) _alloca (nGuides * sizeof (PK_BODY_t)) : NULL);
+
+        if (nGuides)
+            {
+            memset (guideBodies, 0, nGuides * sizeof (PK_BODY_t));
+
+            for (size_t iGuide = 0; iGuide < nGuides; iGuide++)
+                PSolidGeom::BodyFromCurveVector (guideBodies[iGuide], NULL, *guides[iGuide], dgnToSolid, false);
+            }
+
+        PK_BODY_t   bodyTag = PK_ENTITY_null;
+
+        if (SUCCESS == (status = PSolidGeom::BodyFromLoft (bodyTag, profileBodies, startVertices, nProfiles, guideBodies, nGuides)))
+            {
+            if (nodeId)
+                PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+            out = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn, true);
+            }
+
+        PK_ENTITY_delete ((int) nGuides, guideBodies);
+        }
+
+    PK_ENTITY_delete ((int) nProfiles, profileBodies);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
+    {                                                                                                                                                       
+    DPoint3d    origin;
+
+    if (!path.GetStartPoint (origin))
+        return ERROR;
+
+    PSolidKernelManager::StartSession (); // Make sure frustrum is initialized...
+
+    Transform   solidToDgn, dgnToSolid;
+
+    PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
+
+    PK_BODY_t   pathTag = PK_ENTITY_null;
+    PK_VERTEX_t pathVertexTag = PK_ENTITY_null;
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector (pathTag, &pathVertexTag, path, dgnToSolid, false))
+        return ERROR;
+
+    PK_BODY_t   profileTag = PK_ENTITY_null;
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector (profileTag, NULL, profile, dgnToSolid, profile.IsAnyRegionType () && !createSheet))
+        {
+        PK_ENTITY_delete (1, &pathTag);
+
+        return ERROR;
+        }
+
+    DVec3d      unitLockDir;
+
+    if (lockDirection)
+        {
+        unitLockDir = *lockDirection;
+        dgnToSolid.MultiplyMatrixOnly (unitLockDir);
+        unitLockDir.Normalize ();
+        }
+
+    DPoint3d    solidScalePoint;
+    if (NULL != scalePoint)
+        dgnToSolid.Multiply (solidScalePoint, *scalePoint);
+
+    BentleyStatus   status;
+    PK_BODY_t       bodyTag = PK_ENTITY_null;
+
+    if (SUCCESS == (status = PSolidGeom::BodyFromSweep (bodyTag, profileTag, pathTag, pathVertexTag, alignParallel, selfRepair, lockDirection ? &unitLockDir : NULL, twistAngle, scale, NULL == scalePoint ? NULL : &solidScalePoint)))
+        {
+        if (nodeId)
+            PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);
+
+        out = PSolidUtil::CreateNewEntity (bodyTag, solidToDgn, true);
+        }
+
+    PK_ENTITY_delete (1, &pathTag);
+    PK_ENTITY_delete (1, &profileTag);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidGeom::BodyFromExtrusionToBody(IBRepEntityPtr& target, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
+    {                           
+    PK_ENTITY_t extrudeToTag = 0, profileTag = 0, extrusionTag = 0;
+    Transform   invTargetTransform, profileTransform;
+    DVec3d      direction;
+
+    if (0 == (extrudeToTag = PSolidUtil::GetEntityTag (extrudeTo)) ||
+        0 == (profileTag = PSolidUtil::GetEntityTag (profile)))
+        return ERROR;
+ 
+    PK_ENTITY_copy (profileTag, &profileTag);
+            
+    invTargetTransform.InverseOf (extrudeTo.GetEntityTransform ());
+    profileTransform.InitProduct (invTargetTransform, profile.GetEntityTransform ());
+    PSolidUtil::TransformBody (profileTag, profileTransform);
+
+    bvector <PK_FACE_t> profileFaces;
+
+    if (SUCCESS != PSolidTopo::GetBodyFaces (profileFaces, profileTag) ||
+        SUCCESS != PSolidUtil::GetPlanarFaceData (NULL, &direction, profileFaces.front()))
+        return ERROR;
+
+    direction.Normalize();
+
+    if (reverseDirection)
+        direction.Negate();
+
+    PK_BODY_extrude_o_t     options;
+    PK_TOPOL_track_r_t      tracking;
+    PK_TOPOL_local_r_t      results;
+    PK_VECTOR1_t            path;
+    int                     pkStatus;
+
+    PK_BODY_extrude_o_m (options);
+    memset (&tracking, 0, sizeof (tracking));
+    memset (&results, 0, sizeof (results));
+
+    options.end_bound.bound = PK_bound_body_c;
+    options.end_bound.forward = PK_LOGICAL_true;
+    options.allow_disjoint = PK_LOGICAL_true;
+    options.end_bound.entity = extrudeToTag;
+
+    direction.GetComponents (path.coord[0], path.coord[1], path.coord[2]);
+
+    BentleyStatus status = (SUCCESS == (pkStatus = PK_BODY_extrude (profileTag, path, &options, &extrusionTag, &tracking, &results))) ? SUCCESS : ERROR;
+
+    if (SUCCESS == status)
+        {
+        if (nodeId)
+            PSolidTopoId::AddNodeIdAttributes (extrusionTag, nodeId, true);
+
+        target = PSolidUtil::CreateNewEntity (extrusionTag, extrudeTo.GetEntityTransform (), true);
+        }
+
+    PK_TOPOL_track_r_f (&tracking);
+    PK_TOPOL_local_r_f (&results);
+
+    return status;
     }
 
 

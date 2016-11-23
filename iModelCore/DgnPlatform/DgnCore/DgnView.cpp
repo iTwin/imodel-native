@@ -257,14 +257,6 @@ ViewControllerPtr CameraViewDefinition::_SupplyController() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr SheetViewDefinition::_SupplyController() const
-    {
-    return new SheetViewController(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     {
     return new DrawingViewController(*this);
@@ -390,7 +382,7 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA("ViewDefinition");
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,CodeValue,[" PROPNAME_Source "]," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA("ViewDefinition");
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -576,7 +568,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)");
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -594,7 +586,7 @@ DgnDbStatus CategorySelector::WriteCategories()
         return DgnDbStatus::MissingId;
         }
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA("CategorySelectorRefersToCategories") " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA("CategorySelectorRefersToCategories") " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -728,7 +720,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)");
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -746,7 +738,7 @@ DgnDbStatus ModelSelector::WriteModels()
         return DgnDbStatus::MissingId;
         }
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -1124,6 +1116,8 @@ void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::_CopyFrom(DgnElementCR el)
     {
+    T_Super::_CopyFrom(el);
+
     auto& other = static_cast<DisplayStyleCR>(el);
 
     m_styles = other.m_styles;
@@ -1550,4 +1544,4 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
 CameraViewControllerPtr CameraViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
-SheetViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}
+Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}

@@ -17,6 +17,11 @@
 #include <DgnPlatform/DgnElementDependency.h>
 #include <DgnPlatform/TxnManager.h>
 
+#define PERF_TEST_PERFELEMENT_CLASS_NAME "PerfElement"
+#define PERF_TEST_PERFELEMENTSUB1_CLASS_NAME "PerfElementSub1"
+#define PERF_TEST_PERFELEMENTSUB2_CLASS_NAME "PerfElementSub2"
+#define PERF_TEST_PERFELEMENTSUB3_CLASS_NAME "PerfElementSub3"
+
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
 #define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
@@ -44,6 +49,7 @@
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
+#define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -126,6 +132,8 @@ public:
     void SetIntegerProperty(uint8_t which, int32_t i) { if (4 > which) m_intProps[which] = i; }
     void SetDoubleProperty(uint8_t which, double d) { if (4 > which) m_doubleProps[which] = d; }
     void SetPointProperty(uint8_t which, DPoint3dCR p) { if (4 > which) m_pointProps[which] = p; }
+
+    void SetAutoHandledProperty(int32_t i) { SetPropertyValue("IntegerProperty1", i); }
 };
 
 typedef RefCountedPtr<TestElement> TestElementPtr;
@@ -140,6 +148,110 @@ struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
 };
+
+struct PerfElement;
+struct PerfElementHandler;
+DEFINE_REF_COUNTED_PTR(PerfElement)
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElement : Dgn::PhysicalElement
+    {
+    friend struct PerfElementHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PERF_TEST_PERFELEMENT_CLASS_NAME, Dgn::PhysicalElement)
+        PerfElement(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
+        static PerfElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementHandler : Dgn::dgn_ElementHandler::Physical
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PERF_TEST_PERFELEMENT_CLASS_NAME, PerfElement, PerfElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    };
+
+struct PerfElementSub1;
+struct PerfElementSub1Handler;
+DEFINE_REF_COUNTED_PTR(PerfElementSub1)
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub1 : PerfElement
+    {
+    friend struct PerfElementSub1Handler;
+    DGNELEMENT_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, PerfElement)
+        PerfElementSub1(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
+        static PerfElementSub1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub1Handler : PerfElementHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, PerfElementSub1, PerfElementSub1Handler, PerfElementHandler, )
+    };
+
+struct PerfElementSub2;
+struct PerfElementSub2Handler;
+DEFINE_REF_COUNTED_PTR(PerfElementSub2)
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub2 : PerfElementSub1
+    {
+    friend struct PerfElementSub2Handler;
+    DGNELEMENT_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, PerfElementSub1)
+        PerfElementSub2(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
+        static PerfElementSub2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub2Handler : PerfElementSub1Handler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, PerfElementSub2, PerfElementSub2Handler, PerfElementSub1Handler, )
+    };
+
+struct PerfElementSub3;
+struct PerfElementSub3Handler;
+DEFINE_REF_COUNTED_PTR(PerfElementSub3)
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub3 : PerfElementSub2
+    {
+    friend struct PerfElementSub3Handler;
+    DGNELEMENT_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, PerfElementSub2)
+        PerfElementSub3(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
+        static PerfElementSub3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PerfElementSub3Handler : PerfElementSub2Handler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, PerfElementSub3, PerfElementSub3Handler, PerfElementSub2Handler, )
+    };
 
 //=======================================================================================
 //! A test Element

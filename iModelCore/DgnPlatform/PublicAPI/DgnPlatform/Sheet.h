@@ -1,0 +1,250 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/Sheet.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/TileTree.h>
+
+#define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
+#define BIS_CLASS_ViewAttachment "ViewAttachment"
+
+BEGIN_SHEET_NAMESPACE
+
+//=======================================================================================
+//! A Sheet::Model is a GraphicalModel2d that has the following characteristics:
+//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Can contain @b views of other models, like pictures pasted on a photo album.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Model : GraphicalModel2d
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SheetModel, GraphicalModel2d);
+
+protected:
+    ModelCP _ToSheetModel() const override final {return this;}
+
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+
+public:
+    //! construct a new SheetModel
+    explicit Model(CreateParams const& params) : T_Super(params) {}
+
+    //! Construct a SheetModel
+    //! @param[in] params The CreateParams for the new SheetModel
+    static ModelPtr Create(CreateParams const& params) {return new Model(params);}
+
+    //! Create a SheetModel that breaks down the specified Sheet element
+    DGNPLATFORM_EXPORT static ModelPtr Create(ElementCR sheet);
+};
+
+//=======================================================================================
+//! Sheet::Element
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Element : Document
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
+protected:
+    static Utf8CP str_Scale() {return "Scale";}
+    static Utf8CP str_Height() {return "Height";}
+    static Utf8CP str_Width() {return "Width";}
+    static Utf8CP str_Template() {return "Template";}
+    static Utf8CP str_Border() {return "Border";}
+
+public:
+    explicit Element(CreateParams const& params) : T_Super(params) {}
+
+    //! Create a DgnCode for a Sheet in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DocumentListModelCR model, Utf8CP name);
+    //! Create a unique DgnCode for a Sheet within the specified DocumentListModel
+    //! @param[in] model The uniqueness scope for the DgnCode
+    //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(DocumentListModelCR model, Utf8CP baseName);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] height The sheet height (meters)
+    //! @param[in] width The sheet width (meters)
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+
+    //! Creates a new Sheet in the specified InformationModel
+    //! @param[in] model The model where the Sheet element will be inserted by the caller.
+    //! @param[in] scale The sheet's drawing scale
+    //! @param[in] sheetTemplate The sheet template. Maybe in valid if there is no template.
+    //! @param[in] name This name will be used to form the Sheet element's DgnCode
+    //! @return a new, non-persistent Sheet element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
+    DGNPLATFORM_EXPORT static ElementPtr Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name);
+
+    //! Get the drawing scale of the sheet
+    double GetScale() const {return GetPropertyValueDouble(str_Scale());}
+
+    //! Set the drawing scale of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
+    DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
+
+    //! Get the height of the sheet
+    double GetHeight() const {return GetPropertyValueDouble(str_Height());}
+
+    //! Set the height of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the height is controlled by a template
+    DgnDbStatus SetHeight(double v) {return SetPropertyValue(str_Height(), v);}
+
+    //! Get the width of the sheet
+    double GetWidth() const {return GetPropertyValueDouble(str_Width());}
+
+    //! Set the width of the sheet.
+    //! @return DgnDbStatus::ReadOnly if the Width is controlled by a template
+    DgnDbStatus SetWidth(double v) {return SetPropertyValue(str_Width(), v);}
+
+    //! Get the sheet template, if any.
+    //! @return an invalid ID if the sheet has no template.
+    DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(str_Template());}
+
+    //! Set the sheet template.
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v);}
+
+    //! Get the sheet border, if any.
+    //! @return an invalid ID if the sheet has no border.
+    DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(str_Border());}
+
+    //! Set the sheet border.
+    //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
+};
+
+//=======================================================================================
+//! A Sheet::ViewAttachment is a reference to a View, placed on a sheet.
+//! The attachment specifies the Id of the View and the position on the sheet.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
+
+protected:
+    static Utf8CP str_ViewId() {return "ViewId";}
+    DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
+    virtual DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
+    virtual DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
+    virtual DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
+    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated) const override {return DgnDbStatus::InvalidParent;}
+    
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
+
+public:
+    explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
+    ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement) : T_Super(CreateParams(db, model, QueryClassId(db), cat, placement))
+        {
+        SetAttachedViewId(viewId);
+        SetCode(GenerateDefaultCode());
+        }
+
+    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
+    ClipVectorPtr GetClips() const;
+    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/16
+//=======================================================================================
+namespace Attachment
+{
+    struct Tree : TileTree::QuadTree::Root
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Root)
+        DgnElementId m_attachmentId;
+        Dgn::ViewControllerPtr m_view;
+        ClipVectorCPtr m_clip;
+        Point2d m_pixels;
+
+        void Draw(RenderContextR context);
+        void Load(Render::SystemP renderSys);
+        Utf8CP _GetName() const override {return "SheetTile";}
+        Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize);
+        ~Tree(){ClearAllTiles();}
+        DgnElementId GetAttachmentId() const {return m_attachmentId;}
+    };
+
+    struct Tile : TileTree::QuadTree::Tile
+    {
+        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
+
+        struct Loader : TileTree::TileLoader
+        {
+            Render::Image m_image;
+
+            Loader(Utf8StringCR url, Tile& tile, TileTree::LoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
+            BentleyStatus _LoadTile() override;
+            BentleyStatus _SaveToDb() override {return ERROR;}
+            BentleyStatus _ReadFromDb() override {return ERROR;}
+            folly::Future<BentleyStatus> _GetFromSource() override;
+        };
+
+        Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
+        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
+        Tree& GetTree() const {return (Tree&) m_root;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileName(*this), *this, loads);}
+    };
+
+    DEFINE_REF_COUNTED_PTR(Tree)
+};
+
+//=======================================================================================
+//! A Sheet::ViewController is used to control views of Sheet::Models
+// @bsiclass                                                    Keith.Bentley   03/12
+//=======================================================================================
+struct ViewController : Dgn::ViewController2d
+{
+    DEFINE_T_SUPER(ViewController2d);
+    friend SheetViewDefinition;
+
+protected:
+    bvector<Attachment::TreePtr> m_attachments;
+
+    ViewControllerCP _ToSheetView() const override {return this;}
+    void _DrawView(ViewContextR) override;
+    void _CreateTerrain(TerrainContextR context) override;
+    void _LoadState() override;
+    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
+
+    //! Construct a new SheetViewController.
+    ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
+};
+
+//=======================================================================================
+// Sheet::Handlers
+//=======================================================================================
+namespace Handlers
+{
+    //! The ElementHandler for Sheet::Elements
+    struct EXPORT_VTABLE_ATTRIBUTE Element : dgn_ElementHandler::Document
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Sheet, Sheet::Element, Element, Document, DGNPLATFORM_EXPORT)
+    };
+
+    //! The handler for Sheet::ViewAttachment elements
+    struct AttachmentElement : dgn_ElementHandler::Geometric2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, Sheet::ViewAttachment, AttachmentElement, Geometric2d, DGNPLATFORM_EXPORT);
+    };
+
+    //! The ModelHandler for Sheet::Model
+    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
+    };
+
+};
+
+END_SHEET_NAMESPACE

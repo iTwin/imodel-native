@@ -96,9 +96,10 @@ protected:
     friend struct ViewDefinition;
 
     DgnDbR m_dgndb;
+    DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     RotMatrix m_defaultDeviceOrientation;
-    bool m_defaultDeviceOrientationValid;
+    bool m_defaultDeviceOrientationValid = false;
     bool m_sceneReady = false;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -112,9 +113,11 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnAttachedToViewport(DgnViewportR) {}
+    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
+    DGNPLATFORM_EXPORT virtual void _LoadState();
+    DGNPLATFORM_EXPORT virtual void _StoreState();
 
     //! @return true to project un-snapped points to the view's ACS plane.
     //! @note Normally true for a 3d view. A 3d digitizier supplying real z values would not want this...maybe this would be a special ViewController?
@@ -154,11 +157,9 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
-    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
     virtual bool _IsSceneReady() const {return m_sceneReady;}
     virtual void _InvalidateScene() {m_sceneReady=false;}
     virtual void _DoHeal(HealContext&) {}
-    virtual void _CreateTerrain(TerrainContextR context) {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
@@ -208,6 +209,8 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
+    virtual void _CreateTerrain(TerrainContextR context) {}
+    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
@@ -223,11 +226,11 @@ public:
 
     //! Read the state of this controller from its definition elements.
     //! @see GetDefinitionR
-    DGNPLATFORM_EXPORT void LoadState();
+    void LoadState() {_LoadState();}
 
     //! Store the state of this controller to its definition elements. @note It is up to the caller to write the definition elements to the database if that is the goal.
     //! @see SaveDefinition
-    DGNPLATFORM_EXPORT void StoreState();
+    void StoreState() {_StoreState();}
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
     //! directed at the new view, and the previous view's state is unchanged.
@@ -265,8 +268,8 @@ public:
 
     //! perform the equivalent of a dynamic_cast to a SheetViewController.
     //! @return a valid SheetViewControllerCP, or nullptr if this is not a sheet view
-    virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
-    SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
+    virtual Sheet::ViewControllerCP _ToSheetView() const {return nullptr;}
+    Sheet::ViewControllerP ToSheetViewP() {return const_cast<Sheet::ViewControllerP>(_ToSheetView());}
 
     //! determine whether this view is a 3d view
     bool Is3d() const {return _Is3d();}
@@ -686,8 +689,8 @@ public:
 
     //! @name Active Volume
     //! @{
-    DGNPLATFORM_EXPORT void AssignActiveVolume(ClipPrimitiveR volume);
-    DGNPLATFORM_EXPORT void ClearActiveVolume();
+    void AssignActiveVolume(ClipPrimitiveR volume) {m_activeVolume = &volume;}
+    void ClearActiveVolume() {m_activeVolume = nullptr;}
     ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
     //! @}
 };
@@ -939,7 +942,7 @@ protected:
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
     //! Construct a new DrawingViewController.
-    DGNPLATFORM_EXPORT DrawingViewController(DrawingViewDefinitionCR def);
+    DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
 };
 
 //=======================================================================================
@@ -1040,23 +1043,6 @@ public:
     void SetDrawingSymbology(DrawingSymbology const& s) {m_symbology=s;} //!< Set the symbology for some aspects of the drawings when they are drawn in context.
     Pass GetPassesToDraw() const {return m_passesToDraw;} //!< Get the drawing elements to draw.
     void SetPassesToDraw(Pass p) {m_passesToDraw = p;} //!< Set the drawing elements to draw.
-};
-
-//=======================================================================================
-//! A SheetViewController is used to control views of SheetModels
-// @bsiclass                                                    Keith.Bentley   03/12
-//=======================================================================================
-struct SheetViewController : ViewController2d
-{
-    DEFINE_T_SUPER(ViewController2d);
-    friend struct SheetViewDefinition;
-
-protected:
-    SheetViewControllerCP _ToSheetView() const override {return this;}
-    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-
-    //! Construct a new SheetViewController.
-    DGNPLATFORM_EXPORT SheetViewController(SheetViewDefinitionCR def);
 };
 
 END_BENTLEY_DGN_NAMESPACE

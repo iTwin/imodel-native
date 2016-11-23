@@ -63,6 +63,7 @@
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />
+    <ClCompile Include="Performance\CRUDPerformance.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
@@ -130,6 +131,7 @@
     <ClInclude Include="BackDoor\TestDomainElements.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
+    <ClInclude Include="Performance\CRUDPerformance.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />

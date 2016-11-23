@@ -6,6 +6,8 @@
 #include "ChangeTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
+// #define DEBUG_REVISION_TEST_COMPRESSION 1
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -104,8 +106,7 @@ void ChangeTestFixture::OpenDgnDb()
     if (!m_testModelId.IsValid())
         {
         DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
-        DgnElementId partitionId = m_testDb->Elements().QueryElementIdByCode(partitionCode);
-        m_testModelId = DgnModelId(partitionId.GetValue());
+        m_testModelId = m_testDb->Models().QuerySubModelId(partitionCode);
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
@@ -123,7 +124,7 @@ void ChangeTestFixture::OpenDgnDb()
 
     if (!m_testCategoryId.IsValid())
         {
-        m_testCategoryId = DgnCategory::QueryCategoryId(DgnCategory::CreateCategoryCode("TestCategory"), *m_testDb);
+        m_testCategoryId = SpatialCategory::QueryCategoryId(*m_testDb, "TestCategory");
         ASSERT_TRUE(m_testCategoryId.IsValid());
         }
     }
@@ -144,7 +145,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    DgnCategory category(DgnCategory::CreateParams(*m_testDb, categoryName, DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
+    SpatialCategory category(*m_testDb, categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
@@ -168,6 +169,19 @@ DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
     return testAuthority->GetAuthorityId();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+double randFraction()
+    {
+#ifdef DEBUG_REVISION_TEST_COMPRESSION
+    return (double) rand() / RAND_MAX;
+#else
+    return 0.0;
+#endif
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -175,12 +189,12 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    DPoint3d sizeOfBlock = DPoint3d::From(1 + randFraction(), 1 + randFraction(), 1 + randFraction());
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(randFraction(), randFraction(), randFraction()), sizeOfBlock, true);
     ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(testGeomPtr.IsValid());
 
-    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
+    DPoint3d centerOfBlock = DPoint3d::From(x + randFraction(), y + randFraction(), z + randFraction());
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
     BentleyStatus status = builder->Finish(*testElement);
@@ -196,7 +210,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(*m_testDb))
+    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");

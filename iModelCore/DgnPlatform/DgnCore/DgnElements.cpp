@@ -884,7 +884,6 @@ void ElemIdTree::Destroy()
 DgnElements::~DgnElements() 
     {
     Destroy(); 
-    m_tree.release();
     }
 
 /*---------------------------------------------------------------------------------**//**

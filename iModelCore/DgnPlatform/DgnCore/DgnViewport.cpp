@@ -1231,6 +1231,24 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     m_sync.InvalidateController();
     }
 
+
+static RefCountedPtr<TileViewport> s_tileVp;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileViewport* DgnViewport::GetTileViewport()
+    {
+    return s_tileVp.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetTileViewport(TileViewport* creator)
+    {
+    s_tileVp = creator;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

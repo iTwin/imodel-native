@@ -33,7 +33,6 @@ protected:
     void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
 
     bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
-    BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
 
     int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 
@@ -46,7 +45,7 @@ public:
 //---------------------------------------------------------------------------------------
 int ChangeSummaryTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
     {
-    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, ECClassId, ECInstanceId)", qualifiedClassName);
 
     ECSqlStatement stmt;
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
@@ -176,19 +175,6 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ChangeSummary const
 
     DbResult result = statement->Step();
     return (result == BE_SQLITE_ROW);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb)
-    {
-    ECClassCR ecClass = instance.GetClass();
-    ECInstanceInserter inserter(dgndb, ecClass);
-    if (!inserter.IsValid())
-        return ERROR;
-
-    return inserter.Insert(instanceKey, instance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -961,7 +947,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.ECClassId, el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status.IsSuccess());
     

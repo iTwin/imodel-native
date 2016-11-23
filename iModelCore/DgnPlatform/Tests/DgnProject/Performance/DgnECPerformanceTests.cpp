@@ -35,8 +35,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (nullptr == elementHandler)
         return ERROR;
 
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId (model.GetDgnDb ()); // Do any categories exist? Test probably needs to add one...
-
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(model.GetDgnDb(), "TestCategory");
     if (!categoryId.IsValid ())
         return ERROR;
 
@@ -105,7 +104,8 @@ void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf
 
     StopWatch insertingTimer (inserting.c_str (), false);
     StopWatch attachingTimer (attaching.c_str (), false);
-    ECInstanceInserter inserter (project, *testClass);
+    //WIP All data modification must go through API. Must not use ECSQL or ECSQL adapters
+    ECInstanceInserter inserter (project, *testClass, nullptr);
     ASSERT_TRUE (inserter.IsValid ());
 
     totalInsertingStopwatch.Start ();

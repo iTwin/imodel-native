@@ -27,19 +27,19 @@ struct GraphicBuilderPtr;
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 enum class RenderMode
-    {
+{
     Wireframe      = 0,
     HiddenLine     = 3,
     SolidFill      = 4,
     SmoothShade    = 6,
-    };
+};
 
 /*=================================================================================**//**
 * Flags for view display style
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ViewFlags
-    {
+{
 private:
     RenderMode m_renderMode;
 
@@ -138,7 +138,7 @@ public:
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-    };
+};
 
 //=======================================================================================
 //! A rendering task to be performed on the render thread.
@@ -1640,7 +1640,6 @@ public:
 //=======================================================================================
 struct TransClip : RefCounted<NonCopyableClass>
 {
-
 };
 
 //=======================================================================================
@@ -1789,6 +1788,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual Image _RenderTile(StopWatch&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}

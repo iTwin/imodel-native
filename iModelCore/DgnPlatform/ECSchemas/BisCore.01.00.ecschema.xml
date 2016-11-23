@@ -140,7 +140,19 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="CategoryAuthority">
+    <ECEntityClass typeName="DrawingCategoryAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialCategoryAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SubCategoryAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -354,7 +366,7 @@
 
     <ECEntityClass typeName="IModellableElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can be modeled (by a "sub" Model) -->
-        <!-- Mutually exclusive with ICompositeElement -->
+        <!-- Mutually exclusive with IParentElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
@@ -449,6 +461,7 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesElementCode" direction="Backward">
@@ -561,7 +574,6 @@
 
     <ECEntityClass typeName="PhysicalType" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -705,6 +717,7 @@
         <ECProperty propertyName="RepositoryGuid" typeName="binary">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -879,7 +892,7 @@
         </ECNavigationProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -975,6 +988,7 @@
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point2d">
@@ -1025,7 +1039,11 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+        <ECProperty propertyName="TextAnnotation" typeName="binary">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <!-- 2D text element -->
@@ -1165,7 +1183,11 @@
         <!-- The aspect that holds properties of a cell of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
-        <ECProperty propertyName="TextBlock" typeName="binary"/>
+        <ECProperty propertyName="TextBlock" typeName="binary">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="FillKey" typeName="int"/>
         <ECProperty propertyName="Alignment" typeName="int"/>
         <ECProperty propertyName="Orientation" typeName="int"/>
@@ -1301,7 +1323,8 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECProperty propertyName="Details" typeName="string" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
@@ -1318,7 +1341,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ICompositeElement" modifier="Abstract">
+    <ECEntityClass typeName="IParentElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can composite/own child elements -->
         <!-- Mutually exclusive with IModellableElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
@@ -1403,7 +1426,11 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward"/>
+        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding">
         <Source cardinality="(1,1)" polymorphic="true">
@@ -1428,7 +1455,11 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward"/>
+        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
+            </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding">
         <Source cardinality="(1,1)" polymorphic="true">
@@ -1541,18 +1572,12 @@
         <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="Category">
+    <ECEntityClass typeName="Category" modifier="Abstract">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Scope" typeName="int">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty/>
@@ -1565,7 +1590,21 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECEntityClass typeName="SubCategory">
+    <ECEntityClass typeName="DrawingCategory" modifier="Sealed">
+        <!-- Category that only applies to drawing elements (2d) -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Category</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialCategory" modifier="Sealed">
+        <!-- Category that only applies to SpatialElements (3d) -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Category</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1592,7 +1631,7 @@
             <Class class="GeometricElement2d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
+            <Class class="DrawingCategory"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
@@ -1605,7 +1644,7 @@
             <Class class="GeometricElement3d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
+            <Class class="SpatialCategory"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1653,6 +1692,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1670,6 +1710,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1687,6 +1728,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1704,6 +1746,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1741,6 +1784,7 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
@@ -2034,6 +2078,7 @@
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
                 <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">

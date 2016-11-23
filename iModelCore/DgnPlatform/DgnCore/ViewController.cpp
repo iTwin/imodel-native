@@ -113,13 +113,12 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
     m_defaultDeviceOrientation.InitIdentity();
-    m_defaultDeviceOrientationValid = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LoadState()
+void ViewController::_LoadState()
     {
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_Load(*m_definition);
@@ -128,7 +127,7 @@ void ViewController::LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::StoreState()
+void ViewController::_StoreState()
     {
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
@@ -200,8 +199,8 @@ bool ViewController::_IsPointAdjustmentRequired(DgnViewportR vp) const {return v
 bool ViewController::_IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView();}
 bool ViewController::_IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
 
-static bool equalOne(double r1) {return BeNumerical::Compare(r1, 1.0) == 0;}
-static bool equalMinusOne(double r1) {return BeNumerical::Compare(r1, -1.0) == 0;}
+static bool equalOne(double r1) {return DoubleOps::AlmostEqual(r1, 1.0);}
+static bool equalMinusOne(double r1) {return DoubleOps::AlmostEqual(r1, -1.0);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   03/89
@@ -1721,104 +1720,3 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     obj->_Load(*m_definition);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrawingViewController::DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
-SheetViewController::SheetViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SheetViewController::_DrawView(ViewContextR context)
-    {
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return;
-
-    context.VisitDgnModel(*model);
-
-    // Find and draw the view attachments.
-    // While we know that the model is filled, and therefore we could iterate it to find the attachments, we won't do that.
-    // Soon, we'll get rid of the concept of filling a model
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[View] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
-    attachments->BindId(1, model->GetModelId());
-    while (BE_SQLITE_ROW == attachments->Step())
-        {
-        auto attachmentId = attachments->GetValueId<DgnElementId>(0);
-        auto viewId = attachments->GetValueId<DgnViewId>(1);
-        ViewDefinitionPtr view = const_cast<ViewDefinition*>(ViewDefinition::QueryView(viewId, GetDgnDb()).get());
-        if (view.IsNull())
-            continue;
-
-        // *** WIP_VIEW_ATTACHMENT - for now, show a thumbnail as a placeholder
-
-        auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachmentId);
-        if (!attachment.IsValid())
-            continue;
-
-        auto const& placement = attachment->GetPlacement();
-        auto const& box = placement.GetElementBox();
-
-        Render::GraphicBuilderPtr graphic = context.CreateGraphic();
-
-        IGraphicBuilder::TileCorners corners;
-        //  [2]     [3]
-        //  [0]     [1]
-        DPoint2d tc[4];
-        auto ll = box.low;
-        auto ur = box.high;
-        tc[0] = DPoint2d::From(ll.x , ll.y);
-        tc[1] = DPoint2d::From(ur.x , ll.y);
-        tc[2] = DPoint2d::From(ll.x , ur.y);
-        tc[3] = DPoint2d::From(ur.x , ur.y);
-        auto rot = placement.GetTransform();
-        rot.Multiply(tc, tc, 4);
-        for (auto i=0; i<4; ++i)
-            corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
-
-        if (nullptr == dynamic_cast<ViewDefinition3d*>(view.get())) // don't try to generate thumbnail for 3-D views
-            {
-            #define WIP_SHEETS_SHOW_THUMBNAIL
-            #ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
-                double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
-
-                auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
-
-                while (imageSize.x > 4096)
-                    {
-                    imageSize.x /= 10;
-                    imageSize.y /= 10;
-                    }
-
-                Render::Image image;
-                Render::RenderMode modeUsed;
-                if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
-                    continue;
-            #else
-                auto imageSource = GetViewDefinition().ReadThumbnail();
-                if (!imageSource.IsValid())
-                    continue;
-
-                Render::Image image(imageSource);
-
-            #endif
-
-            auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
-            Texture::CreateParams textureParams;
-            auto texture = rsys._CreateTexture(image, textureParams);
-
-            // auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
-            //graphic->SetSymbology(bgcolor, bgcolor, 4); *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black
-            graphic->SetSymbology(ColorDef::LightGrey(), ColorDef::LightGrey(), 0);
-
-            graphic->AddTile(*texture, corners);
-            }
-        else
-            {
-            graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
-            }
-
-        context.OutputGraphic(*graphic, nullptr);
-        }
-    }

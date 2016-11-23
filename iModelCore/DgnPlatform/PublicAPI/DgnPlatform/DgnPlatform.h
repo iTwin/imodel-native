@@ -195,8 +195,6 @@ DGNPLATFORM_TYPEDEFS(SectionDrawing)
 DGNPLATFORM_TYPEDEFS(SelectionSetManager)
 DGNPLATFORM_TYPEDEFS(Session)
 DGNPLATFORM_TYPEDEFS(SessionModel)
-DGNPLATFORM_TYPEDEFS(Sheet)
-DGNPLATFORM_TYPEDEFS(SheetViewController)
 DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
 DGNPLATFORM_TYPEDEFS(SnapContext)
 DGNPLATFORM_TYPEDEFS(SnapDetail)
@@ -285,8 +283,6 @@ DGNPLATFORM_REF_COUNTED_PTR(RepositoryModel)
 DGNPLATFORM_REF_COUNTED_PTR(SectionDrawing)
 DGNPLATFORM_REF_COUNTED_PTR(Session)
 DGNPLATFORM_REF_COUNTED_PTR(SessionModel)
-DGNPLATFORM_REF_COUNTED_PTR(Sheet)
-DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialLocationModel)
@@ -303,6 +299,18 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnLineStyles)
 DGNPLATFORM_REF_COUNTED_PTR(UrlLink)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
+
+BEGIN_SHEET_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewAttachment);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewController);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Model);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Element);
+
+    DEFINE_REF_COUNTED_PTR(ViewAttachment);
+    DEFINE_REF_COUNTED_PTR(Model);
+    DEFINE_REF_COUNTED_PTR(Element);
+    DEFINE_REF_COUNTED_PTR(ViewController);
+END_SHEET_NAMESPACE
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
@@ -502,6 +510,7 @@ struct ElementAlignedBox2d : BoundingBox2d
     double GetTop() const {return high.y;}
     double GetWidth() const {return XLength();}
     double GetHeight() const {return YLength();}
+    double GetAspectRatio() const {return XLength() / YLength();}
     void SetLeft(double left) {low.x = left;}
     void SetBottom(double bottom) {low.y = bottom;}
     void SetRight(double right) {high.x = right;}

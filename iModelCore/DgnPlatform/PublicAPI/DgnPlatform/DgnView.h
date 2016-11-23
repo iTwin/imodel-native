@@ -89,6 +89,8 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(name)));}
 
+    void CopyAllStyles(DisplayStyle const& rhs) {m_styles = rhs.m_styles;}
+
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
     JsonValueCR GetStyle(Utf8CP name) const {return m_styles[name];}
@@ -595,6 +597,9 @@ public:
     //! Get the extents of this view
     DVec3d GetExtents() const {return _GetExtents();}
 
+    //! Get the aspect ratio (width/height) of this view
+    double GetAspectRatio() const {auto extents=GetExtents(); return extents.x/extents.y;}
+
     //! Set the extents of this view
     void SetExtents(DVec3dCR delta) {_SetExtents(delta);}
 
@@ -686,6 +691,7 @@ public:
     //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
+
 
     //! Create a thumbnail for this ViewDefinition.
     //! @param[out] image The thumbnail image.
@@ -1117,6 +1123,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     DPoint3d _GetOrigin() const override {return DPoint3d::From(m_origin.x, m_origin.y);}
     void _SetExtents(DVec3dCR delta) override {m_delta.x = delta.x; m_delta.y = delta.y;}
     void _SetOrigin(DPoint3dCR origin) override {m_origin.x = origin.x; m_origin.y = origin.y;}
@@ -1124,7 +1131,6 @@ protected:
     DVec3d _GetExtents() const override {return DVec3d::From(m_delta.x, m_delta.y);}
     RotMatrix _GetRotation() const override {return RotMatrix::FromAxisAndRotationAngle(2, m_rotAngle);}
     bool _ViewsModel(DgnModelId mid) override {return mid == m_baseModelId;}
-    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1202,7 +1208,7 @@ public:
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) :
         T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
-    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(bool allowOverrides=true) const;
+    DGNPLATFORM_EXPORT Sheet::ViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}

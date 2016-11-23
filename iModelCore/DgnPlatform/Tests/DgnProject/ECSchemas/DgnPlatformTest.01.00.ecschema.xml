@@ -4,7 +4,7 @@
     <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
-
+	
   <ECClass typeName="TestElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
@@ -242,93 +242,10 @@
         <BaseClass>bis:Authority</BaseClass>
     </ECClass>
 
-    <ECClass typeName="TestElementSub1" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-        <BaseClass>TestElement</BaseClass>
-        <ECProperty propertyName='Prop1_1' typeName='string'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop1_2' typeName='long'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop1_3' typeName='double'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-
-    <ECClass typeName="TestElementSub2" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-        <BaseClass>TestElementSub1</BaseClass>
-        <ECProperty propertyName='Prop2_1' typeName='string'>
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop2_2' typeName='long'>
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop2_3' typeName='double'>
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-      </ECClass>
-
-    <ECClass typeName="TestElementSub3" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-        <BaseClass>TestElementSub2</BaseClass>
-        <ECProperty propertyName='Prop3_1' typeName='string'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop3_2' typeName='long'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName='Prop3_3' typeName='double'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-
     <ECClass typeName="TestStruct" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
         <ECProperty propertyName="TestStructIntMember" typeName="int" />"
         <ECProperty propertyName="TestStructBoolMember" typeName="boolean" />"
-    </ECClass>
-
-    <ECClass typeName="TestElementComplex" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-        <BaseClass>TestElement</BaseClass>
-        <ECProperty propertyName='Prop_point3d' typeName='point3d'>
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECStructProperty propertyName="Prop_struct" typeName="TestStruct">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECStructProperty>
     </ECClass>
 
     <ECClass typeName="TestElementWithNoHandler" isDomainClass="True">
@@ -373,5 +290,51 @@
         <ECProperty propertyName="Country" typeName="string" />
         <ECProperty propertyName="Zip" typeName="int"/>
     </ECClass>
-
+	
+	<!--Class Hierarchy used by PerformanceElementsCRUDTests -->
+	<ECClass typeName="PerfElement" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:PhysicalElement</BaseClass>
+		<ECProperty propertyName="Str" typeName="string" />
+		<ECProperty propertyName="Long" typeName="long" />
+		<ECProperty propertyName="Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub1" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElement</BaseClass>
+		<ECProperty propertyName="Sub1Str" typeName="string" />
+		<ECProperty propertyName="Sub1Long" typeName="long" />
+		<ECProperty propertyName="Sub1Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub2" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElementSub1</BaseClass>
+		<ECProperty propertyName="Sub2Str" typeName="string" />
+		<ECProperty propertyName="Sub2Long" typeName="long" />
+		<ECProperty propertyName="Sub2Double" typeName="double" />
+	</ECClass>
+	
+	<ECClass typeName="PerfElementSub3" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>PerfElementSub2</BaseClass>
+		<ECProperty propertyName="Sub3Str" typeName="string" />
+		<ECProperty propertyName="Sub3Long" typeName="long" />
+		<ECProperty propertyName="Sub3Double" typeName="double" />
+	</ECClass>
+	
+    <ECClass typeName="TestOverrideAutohadledProperties" isDomainClass="True">
+      <BaseClass>TestElement</BaseClass>
+      <ECProperty propertyName='p2d' typeName='point2d' />
+    </ECClass>
+	
 </ECSchema>

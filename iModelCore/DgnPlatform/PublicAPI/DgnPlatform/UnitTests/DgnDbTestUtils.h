@@ -50,11 +50,11 @@ public:
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
+    static Sheet::ElementPtr InsertSheet(DocumentListModelCR model, double scale, double height, double width, Utf8CP name);
 
     //! Insert a Sheet element
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
+    static Sheet::ElementPtr InsertSheet(DocumentListModelCR model, double scale, DgnElementId templateId, Utf8CP name);
 
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
@@ -62,7 +62,7 @@ public:
 
     //! Insert a SheetModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
-    static SheetModelPtr InsertSheetModel(SheetCR);
+    static Sheet::ModelPtr InsertSheetModel(Sheet::ElementCR);
 
     //! Insert a LinkModel
     //! @note Also creates an InformationPartitionElement for the DocumentListModel to model
@@ -81,13 +81,23 @@ public:
     //! Create a new PERSISTENT modelselector
     static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model);
 
-    //! Create a new Category
-    static DgnCategoryId InsertCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Scope scope = DgnCategory::Scope::Any, DgnCategory::Rank rank = DgnCategory::Rank::Application);
-    //! Create a new Category
-    static DgnCategoryId InsertCategory(DgnDbR, Utf8CP categoryName, ColorDefCR color, DgnCategory::Scope scope = DgnCategory::Scope::Any, DgnCategory::Rank rank = DgnCategory::Rank::Application);
+    //! Create a new DrawingCategory
+    static DgnCategoryId InsertDrawingCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Rank rank = DgnCategory::Rank::Application);
+    //! Create a new DrawingCategory
+    static DgnCategoryId InsertDrawingCategory(DgnDbR, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank = DgnCategory::Rank::Application);
+    //! Get the first DrawingCategory in the DgnDb
+    //! @note Instead of using this method you should explicitly insert a DrawingCategory as part of the test setup
+    //! @see InsertDrawingCategory
+    static DgnCategoryId GetFirstDrawingCategoryId(DgnDbR);
 
-    //! Create a new PERSISTENT CategorySelector
-    static CategorySelectorCPtr InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categories = nullptr);
+    //! Create a new SpatialCategory
+    static DgnCategoryId InsertSpatialCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Rank rank = DgnCategory::Rank::Application);
+    //! Create a new SpatialCategory
+    static DgnCategoryId InsertSpatialCategory(DgnDbR, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank = DgnCategory::Rank::Application);
+    //! Get the first SpatialCategory in the DgnDb
+    //! @note Instead of using this method you should explicitly insert a SpatialCategory as part of the test setup
+    //! @see InsertSpatialCategory
+    static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
     //! Create a new CodeAuthority
     static DgnAuthorityId InsertNamespaceAuthority(DgnDbR, Utf8CP authorityName);

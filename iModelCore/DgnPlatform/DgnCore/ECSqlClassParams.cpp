@@ -297,7 +297,7 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb) const
     {
-    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_insert.c_str());
+    return m_insert.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_insert.c_str(), dgndb.GetECSqlWriteToken());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,7 +317,7 @@ CachedECSqlStatementPtr ECSqlClassInfo::GetSelectStmt(DgnDbCR dgndb, ECInstanceI
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ECSqlClassInfo::GetUpdateStmt(DgnDbCR dgndb, ECInstanceId id) const
     {
-    CachedECSqlStatementPtr stmt = m_update.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_update.c_str());
+    CachedECSqlStatementPtr stmt = m_update.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_update.c_str(), dgndb.GetECSqlWriteToken());
     if (stmt.IsValid())
         stmt->BindId(m_updateParameterIndex, id);
 
