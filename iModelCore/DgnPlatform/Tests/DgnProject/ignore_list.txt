@@ -2,6 +2,7 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
+IndirectLocksTest.* # TFS 627787
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention

@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/DgnRscFontStructures.h>   // For HMASK_RSC_HOLE
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
@@ -1039,4 +1041,181 @@ DgnFontId DgnImportContext::_RemapFont(DgnFontId srcId)
         DgnFontPersistence::Db::Embed(m_destDb.Fonts().DbFaceData(), *srcFont);
     
     return m_remap.Add(srcId, dstId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool mightHaveHole(GPArrayCP gpa)
+    {
+    size_t  loopCount = 0;
+
+    for (int loopStart = 0, loopEnd = 0; loopStart < gpa->GetCount(); loopStart = loopEnd+1)
+        {
+        GraphicsPoint const* gPt = gpa->GetConstPtr(loopStart);
+
+        if (gPt && (HMASK_RSC_HOLE == (gPt->mask & HMASK_RSC_HOLE))) // NOTE: Mask value weirdness, hole shares bits with line/poly...
+            return true;
+
+        loopEnd = jmdlGraphicsPointArray_findMajorBreakAfter(gpa, loopStart);
+        loopCount++;
+        }
+
+    return loopCount > 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
+    {
+    switch (primitive.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            return (primitive.GetLineStringCP ()->size() > 3 && primitive.GetLineStringCP ()->front().IsEqual(primitive.GetLineStringCP ()->back()));
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            return primitive.GetArcCP ()->IsFullEllipse();
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+            return (primitive.GetProxyBsplineCurveCP ()->IsClosed());
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  DgnGlyph::GetCurveVector(bool& isFilled) const
+    {
+    CurveVectorPtr      curveVector = _GetCurveVector(isFilled);    // Give subclasses a chance to implement directly (instead of going through (stupid) GPA).
+
+    if (curveVector.IsValid())
+        return curveVector;
+
+    GPArraySmartP  gpaText;
+
+    if (SUCCESS != FillGpa(gpaText) || 0 == gpaText->GetCount())
+        return curveVector;;
+    
+    isFilled = (0 != gpaText->GetArrayMask(HPOINT_ARRAYMASK_FILL));
+
+    if (DoFixup::Always == _DoFixup() || (DoFixup::IfHoles == _DoFixup() && isFilled && mightHaveHole(gpaText)))
+        {
+        CurveVectorPtr  curves = gpaText->CreateCurveVector();
+
+        if (!curves.IsValid())
+            return curves;
+            
+        curves->ConsolidateAdjacentPrimitives();
+        curves->FixupXYOuterInner();
+
+        return curves;
+        }
+
+    // Create curve vector that is just a collection of curves and not an open/closed path or region...
+    BentleyStatus            status = SUCCESS;
+    bvector<CurveVectorPtr>  glyphCurves;
+
+    for (int i=0, count = gpaText->GetCount(); i < count && SUCCESS == status; )
+        {
+        bool                isPoly = 0 != (gpaText->GetConstPtr(i)->mask & HMASK_RSC_POLY);
+        ICurvePrimitivePtr  primitive;
+
+        switch (gpaText->GetCurveType(i))
+            {
+            case GPCurveType::LineString:
+                {
+                bvector<DPoint3d> points;
+
+                if (SUCCESS != (status = gpaText->GetLineString(&i, points)))
+                    break;
+
+                primitive = ICurvePrimitive::CreateLineString(points);
+                break;
+                }
+
+            case GPCurveType::Ellipse:
+                {
+                DEllipse3d  ellipse;
+
+                if (SUCCESS != (status = gpaText->GetEllipse(&i, &ellipse)))
+                    break;
+
+                primitive = ICurvePrimitive::CreateArc(ellipse);
+                break;
+                }
+
+            case GPCurveType::Bezier:
+            case GPCurveType::BSpline:
+                {
+                MSBsplineCurve  bcurve;
+
+                if (SUCCESS != (status = gpaText->GetBCurve(&i, &bcurve)))
+                    break;
+
+                primitive = ICurvePrimitive::CreateBsplineCurve(bcurve);
+                bcurve.ReleaseMem();
+                break;
+                }
+
+            default:
+                {
+                i++;
+                break;
+                }
+            }
+
+        if (!primitive.IsValid())
+            continue;
+
+        CurveVectorPtr  singleCurve = CurveVector::Create((isPoly && isPhysicallyClosed(*primitive)) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+
+        singleCurve->push_back(primitive);
+        glyphCurves.push_back(singleCurve);
+        }
+
+    size_t  nGlyphCurves = glyphCurves.size();
+
+    if (0 == nGlyphCurves)
+        return CurveVectorPtr(); // Empty glyph?!?
+
+    if (1 == nGlyphCurves)
+        {
+        return glyphCurves.front(); // NOTE: Glyph fill flag should be set correctly for this case...
+        }
+    else
+        {
+        size_t  nClosed = 0, nOpen = 0;
+        CurveVectorPtr  curves;
+
+        for (CurveVectorPtr singleCurve: glyphCurves)
+            {
+            if (singleCurve->IsClosedPath())
+                nClosed++;
+            else
+                nOpen++;
+            }
+
+        // NOTE: Create union region if all closed, create none for all open or mix...
+        curves = CurveVector::Create((nClosed == nGlyphCurves) ? CurveVector::BOUNDARY_TYPE_UnionRegion : CurveVector::BOUNDARY_TYPE_None);
+
+        for (CurveVectorPtr singleCurve: glyphCurves)
+            {
+            if (nOpen == nGlyphCurves)
+                curves->push_back(singleCurve->front()); // NOTE: Flatten hierarchy, better to not have child vectors for disjoint collection of sticks...
+            else
+                curves->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*singleCurve));
+            }
+
+        if (0 != nClosed && 0 != nOpen)
+            isFilled = true; // NOTE: Poly in mixed glyph treated as filled but glyph fill flag isn't set...
+
+        return curves;
+        }
     }

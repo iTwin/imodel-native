@@ -9,10 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnView.h>
-
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-    #include <DgnPlatform/TileTree.h>
-#endif
+#include <DgnPlatform/TileTree.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 #define BIS_CLASS_ViewAttachment "ViewAttachment"
@@ -158,8 +155,6 @@ public:
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
     };
 
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
@@ -167,12 +162,17 @@ namespace Attachment
 {
     struct Tree : TileTree::QuadTree::Root
     {
+        DEFINE_T_SUPER(TileTree::QuadTree::Root)
         DgnElementId m_attachmentId;
         Dgn::ViewControllerPtr m_view;
         ClipVectorCPtr m_clip;
         Point2d m_pixels;
 
+        void Draw(RenderContextR context);
+        void Load(Render::SystemP renderSys);
+        Utf8CP _GetName() const override {return "SheetTile";}
         Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize);
+        ~Tree(){ClearAllTiles();}
         DgnElementId GetAttachmentId() const {return m_attachmentId;}
     };
 
@@ -221,7 +221,6 @@ protected:
     //! Construct a new SheetViewController.
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
 };
-#endif
 
 //=======================================================================================
 // Sheet::Handlers

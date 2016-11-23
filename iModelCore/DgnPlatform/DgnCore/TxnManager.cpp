@@ -625,7 +625,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     {
     BeAssert(!InDynamicTxn());
     
-    ChangeStreamFileReader changeStream(revision.GetChangeStreamFile(), m_dgndb);
+    RevisionFileStreamReader changeStream(revision.GetChangeStreamFile(), m_dgndb);
 
     m_dgndb.Txns().EnableTracking(false);
     DbResult result = changeStream.ApplyChanges(m_dgndb);

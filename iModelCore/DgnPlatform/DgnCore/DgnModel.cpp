@@ -692,6 +692,9 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex()
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        if (stmt->IsValueNull(2)) // has no placement
+            continue;
+
         double yaw   = stmt->GetValueDouble(3);
         double pitch = stmt->GetValueDouble(4);
         double roll  = stmt->GetValueDouble(5);
@@ -723,6 +726,9 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        if (stmt->IsValueNull(2)) // has no placement
+            continue;
+
         DPoint2d low = stmt->GetValuePoint2d(4);
         DPoint2d high = stmt->GetValuePoint2d(5);
 
