@@ -264,9 +264,6 @@ ECSqlTestDataset ECSqlInsertTestDataset::DateTimeTests ()
 ECSqlTestDataset ECSqlInsertTestDataset::FunctionTests ()
     {
     ECSqlTestDataset dataset;
-
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, "INSERT INTO ecsql.P (I, L) VALUES (123, GetECClassId ())");
-
     return dataset;
     }
 

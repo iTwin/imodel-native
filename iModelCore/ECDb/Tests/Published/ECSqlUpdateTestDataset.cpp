@@ -286,10 +286,6 @@ ECSqlTestDataset ECSqlUpdateTestDataset::DateTimeTests (int rowCountPerClass)
 ECSqlTestDataset ECSqlUpdateTestDataset::FunctionTests (int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
-
-    Utf8CP ecsql = "UPDATE ONLY ecsql.P SET I = 123, L = GetECClassId ()";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
-
     return dataset;
     }
 

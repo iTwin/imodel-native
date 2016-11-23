@@ -387,14 +387,6 @@ TEST(ECSqlInsertTests, DateTimeTests)
     STATEMENT_EXECUTE_SUCCESS();
     }
 
-TEST(ECSqlInsertTests, FunctionTests)
-    {
-    ECTEST_SETUP("FunctionTests", "ECSqlTest.01.00.ecschema.xml", L"FunctionTests.ecdb");
-
-    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, L) VALUES (123, GetECClassId ())");
-    STATEMENT_EXECUTE_SUCCESS();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
