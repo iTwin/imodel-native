@@ -60,6 +60,8 @@ DbResult ECDb::Impl::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAsset
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
+    RegisterBuiltinFunctions();
+
     DbResult stat = InitializeSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -78,9 +80,7 @@ DbResult ECDb::Impl::OnDbCreated() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbOpening() const
     {
-    m_ecdb.AddFunction(Base64ToBlob::GetSingleton());
-    m_ecdb.AddFunction(BlobToBase64::GetSingleton());
-
+    RegisterBuiltinFunctions();
     return InitializeSequences();
     }
 
@@ -91,8 +91,7 @@ void ECDb::Impl::OnDbClose() const
     {
     ClearECDbCache();
     m_sqlFunctions.clear();
-    m_ecdb.RemoveFunction(Base64ToBlob::GetSingleton());
-    m_ecdb.RemoveFunction(BlobToBase64::GetSingleton());
+    UnregisterBuiltinFunctions();
     }
 
 //--------------------------------------------------------------------------------------
@@ -176,6 +175,25 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
     return true;
     }
 
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::RegisterBuiltinFunctions() const
+    {
+    m_ecdb.AddFunction(Base64ToBlob::GetSingleton());
+    m_ecdb.AddFunction(BlobToBase64::GetSingleton());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::UnregisterBuiltinFunctions() const
+    {
+    m_ecdb.RemoveFunction(Base64ToBlob::GetSingleton());
+    m_ecdb.RemoveFunction(BlobToBase64::GetSingleton());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  04/2016

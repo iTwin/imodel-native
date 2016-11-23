@@ -121,6 +121,9 @@ private:
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
 
+    void RegisterBuiltinFunctions() const;
+    void UnregisterBuiltinFunctions() const;
+
     ECSqlWriteToken const& EnableECSqlWriteTokenValidation() { m_expectedECSqlWriteToken = std::unique_ptr<ECSqlWriteToken>(new ECSqlWriteToken()); return *m_expectedECSqlWriteToken; }
 
 public:
