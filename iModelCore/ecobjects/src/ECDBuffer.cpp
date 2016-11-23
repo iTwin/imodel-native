@@ -2744,22 +2744,22 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
         else
             pValue = GetAddressOfPropertyValue(propertyLayout);
 
-        // Need to set the metadata first since the primitive type of the related instance id isn't know yet, but the 
-        // pointer to the relationship is always the same, Binary.
         int64_t relClassValue;
         memcpy(&relClassValue, pValue, sizeof(relClassValue));
         void const* relClassP = (void const*) relClassValue;
         ECClassCP ecClass = (ECClassCP) relClassP;
-        BeAssert(nullptr != ecClass);
-        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-        BeAssert(nullptr != relClass);
+        ECRelationshipClassCP relClass = (nullptr == ecClass) ? nullptr : ecClass->GetRelationshipClassCP();
+        BeAssert(nullptr == ecClass || nullptr != relClass);
 
         if (PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
             {
             int64_t value;
             Byte const * valueP = pValue + sizeof(int64_t);
             memcpy(&value, valueP, sizeof(value));
-            v.SetNavigationInfo(*relClass, value);
+            if (nullptr != relClass)
+                v.SetNavigationInfo(*relClass, value);
+            else
+                v.SetNavigationInfo(value);
             }
         else
             {
@@ -3182,8 +3182,11 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
     ECObjectsStatus result = ECObjectsStatus::Error;
 
     // The relationship class pointer is stored as an int64_t before the actual value
-    int64_t relClassValue = (int64_t) &v.GetNavigationInfo().GetRelationshipClass();
     Byte const* relClassValueP = GetPropertyData() + offset;
+    int64_t relClassValue = 0;
+    ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
+    if (nullptr != relClass)
+        relClassValue = (int64_t) relClass;
     if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
         return ECObjectsStatus::PropertyValueMatchesNoChange;
     

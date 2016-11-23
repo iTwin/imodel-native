@@ -92,13 +92,12 @@ public:
             ::int64_t m_idLong;
 
         public:
-            BentleyStatus SetRelationship(ECRelationshipClassCR relationshipClass);
-
-            //! Returns the relationship class that this navigation value was initialized with
-            ECOBJECTS_EXPORT ECRelationshipClassCR GetRelationshipClass() const;
-
+            BentleyStatus SetRelationship(ECRelationshipClassCP relationshipClass);
             ECObjectsStatus Set(::int64_t id);
 
+            //! Returns the relationship class that this navigation value was initialized with
+            ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
+            //! Returns the long value, if this ECValue holds a long
             ECOBJECTS_EXPORT::int64_t GetIdAsLong() const;
         };
 private:
@@ -488,10 +487,14 @@ public:
     //! Returns the array information defining this ECValue
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
 
-    //! Defined the navigation value for this ECValue
+    //! Defines the navigation value for this ECValue
     //! @param[in] relationshipClass The relationship used to set this ECValue
     //! @param[in] value             Value to set this ECValue to
     ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value);
+
+    //! Defines the navigation value for this ECValue
+    //! @param[in] value             Value to set this ECValue to
+    ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value);
 
     //! Returns the navigation information definig this ECValue
     ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;

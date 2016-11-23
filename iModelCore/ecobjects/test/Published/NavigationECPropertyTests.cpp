@@ -261,12 +261,12 @@ void VerifyNavPropStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Ut
     ECValueAccessor::PopulateValueAccessor(accessor, instance, propertyAccessor);
     ECValue myTarget;
     ASSERT_EQ(ECObjectsStatus::Success, instance.GetValueUsingAccessor(myTarget, accessor)) << "Failed to get ECValue for '" << propertyAccessor << "' Navigation Propertyt";
-    //ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
+    ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
     EXPECT_STREQ(expectedValue, myTarget.GetUtf8CP()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
     ASSERT_TRUE(myTarget.IsNavigation());
 
-    ECRelationshipClassCR relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass.GetName().c_str());
+    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
+    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
     }
 
 void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
@@ -305,17 +305,29 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
     EXPECT_TRUE(myTarget.IsNavigation()) << "";
     EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetIdAsLong()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
-    ECRelationshipClassCR relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass.GetName().c_str());
+    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
+    EXPECT_EQ(expectedRelClass, relClass);
+
+    if (nullptr != expectedRelClass)
+        EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
     }
 
 void TestSettingNavPropLongValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
     {
     ECValue myTargetValue(*expectedRelClass, 42LL);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a long";
-    EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Value of MyTarget nav property not as expected";
+    EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTarget nav property not as expected";
+    EXPECT_EQ(expectedRelClass, myTargetValue.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTarget nav property not as expected";
 
     VerifyNavPropLongValue(instance, "MyTarget", 42LL, expectedRelClass);
+
+    ECValue myTargetNoRel;
+    myTargetNoRel.SetNavigationInfo(50LL);
+    ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetNoRel", myTargetNoRel)) << "Failed to set the value of MyTargetNoRel nav prop to a long";
+    EXPECT_EQ(50LL, myTargetNoRel.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetNoRel nav property not as expected";
+    EXPECT_EQ(nullptr, myTargetNoRel.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTargetNoRel nav property not as expected";
+
+    VerifyNavPropLongValue(instance, "MyTargetNoRel", 50LL, nullptr);
 
     /*
     ECValueAccessor accessor;
@@ -363,6 +375,7 @@ void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInst
     else // type is PrimitiveType::PRIMITIVETYPE_Long
         {
         VerifyNavPropLongValue(*sourceDeserialized, "MyTarget", 42LL, schema->GetClassCP("RelClass")->GetRelationshipClassCP());
+        VerifyNavPropLongValue(*sourceDeserialized, "MyTargetNoRel", 50LL, nullptr);
         //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[0]", 42LL);
         //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[1]", 43LL);
         }
@@ -405,6 +418,8 @@ void InstanceWithNavProp(PrimitiveType navPropType)
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, navPropType);
+    NavigationECPropertyP navPropSourceNoRel;
+    CreateNavProp(sourceClass, "MyTargetNoRel", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceNoRel, navPropType);
     //NavigationECPropertyP navPropSourceMult;
     //CreateNavProp(sourceClass, "MyTargetMult", *relClass2, ECRelatedInstanceDirection::Forward, navPropSourceMult, navPropType);
     PrimitiveECPropertyP stringProp;
@@ -422,6 +437,11 @@ void InstanceWithNavProp(PrimitiveType navPropType)
 
     ECValue myTargetValueFromInst;
     ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetValueFromInst, "MyTarget")) << "Failed to get ECValue for MyTarget Navigation Property";
+    ASSERT_TRUE(myTargetValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
+
+    ECValue myTargetNoRelValueFromInst;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetNoRelValueFromInst, "MyTargetNoRel")) << "Failed to get ECValue for MyTarget Navigation Property";
     ASSERT_TRUE(myTargetValueFromInst.IsNull());
     ASSERT_TRUE(myTargetValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
@@ -468,7 +488,7 @@ TEST_F(NavigationECPropertyTests, ValueCopyTest)
     ASSERT_FALSE(v.IsNull()) << "The value is null after the copy when it shouldn't be.";
     ASSERT_TRUE(v.IsNavigation()) << "The value is not a navigation";
     EXPECT_EQ(42LL, v.GetNavigationInfo().GetIdAsLong()) << "Value did not have expected value";
-    EXPECT_STREQ(relClass->GetName().c_str(), v.GetNavigationInfo().GetRelationshipClass().GetName().c_str()) << "Value did not have the expected relationship";
+    EXPECT_STREQ(relClass->GetName().c_str(), v.GetNavigationInfo().GetRelationshipClass()->GetName().c_str()) << "Value did not have the expected relationship";
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
 

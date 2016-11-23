@@ -425,18 +425,18 @@ Utf8String ECValue::DateTimeInfo::MetadataToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCR relationshipClass)
+BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP relationshipClass)
     {
-    m_relClass = &relationshipClass;
+    m_relClass = relationshipClass;
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECRelationshipClassCR ECValue::NavigationInfo::GetRelationshipClass() const
+ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
     {
-    return *m_relClass;
+    return m_relClass;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2197,7 +2197,23 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relClass, ::int
     m_valueKind = VALUEKIND_Navigation;
     
     m_navigationInfo.Set(value);
-    m_navigationInfo.SetRelationship(relClass);
+    m_navigationInfo.SetRelationship(&relClass);
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value)
+    {
+    Clear();
+    SetIsNull(false);
+
+    m_valueKind = VALUEKIND_Navigation;
+
+    m_navigationInfo.Set(value);
+    m_navigationInfo.SetRelationship(nullptr);
 
     return ECObjectsStatus::Success;
     }
