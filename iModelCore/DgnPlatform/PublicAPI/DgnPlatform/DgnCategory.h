@@ -170,7 +170,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return SubCategoryAuthority::GetSubCategoryAuthorityId() == auth.GetAuthorityId();}
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -198,22 +198,19 @@ public:
     void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the description
 
     //! Create a DgnCode for the name of a sub-category of the specified category
-    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) {return SubCategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName);}
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR subCategoryName);
 
     //! Create a DgnCode for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
 
     //! Looks up a sub-category ID by code.
-    DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(DgnCode const& code, DgnDbR db);
-
-    //! Looks up a sub-category ID by name and category ID.
-    static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) {return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName), db);}
+    DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(DgnDbR db, DgnCodeCR code);
 
     //! Looks up a sub-category by ID.
-    static DgnSubCategoryCPtr QuerySubCategory(DgnSubCategoryId subCategoryId, DgnDbR db) {return db.Elements().Get<DgnSubCategory>(subCategoryId);}
+    static DgnSubCategoryCPtr Get(DgnDbR db, DgnSubCategoryId subCategoryId) {return db.Elements().Get<DgnSubCategory>(subCategoryId);}
 
     //! Looks up the ID of the category containing the specified sub-category
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnSubCategoryId subCategoryId);
 
     //! Make an iterator over sub-categories of the specified category in the specified DgnDb
     //! @param[in] db The DgnDb
@@ -334,12 +331,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingCategory : DgnCategory
     friend struct dgn_ElementHandler::DrawingCategory;
 
 protected:
-    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return DrawingCategoryAuthority::GetDrawingCategoryAuthorityId() == auth.GetAuthorityId();}
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     explicit DrawingCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a Code given a DrawingCategory name.
-    static DgnCode CreateCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return DrawingCategoryAuthority::CreateDrawingCategoryCode(categoryName, nameSpace);}
+    //! Create a DgnCode for a DrawingCategory
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnModelCR model, Utf8StringCR categoryName);
+    //! Create a DgnCode for a DrawingCategory
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR Db, DgnModelId modelId, Utf8StringCR categoryName);
 
     DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
     DGNPLATFORM_EXPORT DrawingCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
@@ -358,8 +357,6 @@ public:
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
-    //! Queries for the DgnCategoryId of a DrawingCategory by name.
-    static DgnCategoryId QueryCategoryId(DgnDbR db, Utf8StringCR categoryName) {return T_Super::QueryCategoryId(db, CreateCode(categoryName));}
     //! Gets a DrawingCategory by ID.
     static DrawingCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DrawingCategory>(categoryId);}
 
@@ -377,14 +374,16 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialCategory : DgnCategory
     friend struct dgn_ElementHandler::SpatialCategory;
 
 protected:
-    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return SpatialCategoryAuthority::GetSpatialCategoryAuthorityId() == auth.GetAuthorityId();}
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     explicit SpatialCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
     //! Creates a Code given a SpatialCategory name.
-    static DgnCode CreateCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") {return SpatialCategoryAuthority::CreateSpatialCategoryCode(categoryName, nameSpace);}
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace="");
 
+    //! Construct a new SpatialCategory
     DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
+    //! Construct a new SpatialCategory
     DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
 
     //! Inserts this SpatialCategory into the DgnDb and initializes its default sub-category with the specified appearance.
@@ -401,8 +400,6 @@ public:
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
 
-    //! Queries for the DgnCategoryId of a SpatialCategory by name.
-    static DgnCategoryId QueryCategoryId(DgnDbR db, Utf8StringCR categoryName) {return T_Super::QueryCategoryId(db, CreateCode(categoryName));}
     //! Gets a SpatialCategory by ID.
     static SpatialCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<SpatialCategory>(categoryId);}
 

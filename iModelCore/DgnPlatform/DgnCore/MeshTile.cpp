@@ -551,7 +551,7 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
 
-    return DgnTexture::QueryTexture(texId, db);
+    return DgnTexture::Get(db, texId);
     }
 
 /*---------------------------------------------------------------------------------**//**

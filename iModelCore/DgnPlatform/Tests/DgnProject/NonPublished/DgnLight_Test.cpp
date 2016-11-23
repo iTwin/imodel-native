@@ -64,13 +64,13 @@ TEST_F(DgnLightsTest, CRUD)
     Compare(lt, *updatedLt);
 
     // Query 
-    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, db);
+    LightDefinitionCPtr toFind = LightDefinition::Get(db, lightId);
     Compare(*updatedLt, *toFind);
 
-    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", db);
+    DgnLightId idToFind = LightDefinition::QueryLightId(db, "Light1");
     EXPECT_TRUE(lightId == idToFind);
 
-    idToFind = LightDefinition::QueryLightId(lightCode, db);
+    idToFind = LightDefinition::QueryLightId(db, lightCode);
     EXPECT_TRUE(lightId == idToFind);
 
     }

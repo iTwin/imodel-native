@@ -48,7 +48,7 @@ USING_NAMESPACE_SHEET
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return SheetAuthority::CreateSheetCode(name, model.GetModeledElementId());
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Sheet, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**

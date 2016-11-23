@@ -776,7 +776,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
     static JsDgnGeometryPart* Create(JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));
+        return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db, DgnCode::CreateEmpty())); // WIP: must pass in a valid code!
         }
     BentleyStatus Insert() {return m_value->GetDgnDb().Elements().Insert(*m_value).IsValid() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;}
 };
@@ -979,7 +979,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectId(SpatialCategory::QueryCategoryId(*db->m_db, name).GetValueUnchecked());
+        return new JsDgnObjectId(DgnCategory::QueryCategoryId(*db->m_db, SpatialCategory::CreateCode(*db->m_db, name)).GetValueUnchecked());
         }
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {

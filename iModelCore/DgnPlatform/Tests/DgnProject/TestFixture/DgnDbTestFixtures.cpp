@@ -73,10 +73,11 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    m_defaultModelId = m_db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
+    DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*m_db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+    m_defaultModelId = m_db->Models().QuerySubModelId(physicalPartitionCode);
     ASSERT_TRUE(m_defaultModelId.IsValid());
 
-    m_defaultCategoryId = SpatialCategory::QueryCategoryId(GetDgnDb(), s_seedFileInfo.categoryName);
+    m_defaultCategoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), s_seedFileInfo.categoryName));
     ASSERT_TRUE(m_defaultCategoryId.IsValid());
 
     m_db->SaveChanges();
@@ -194,7 +195,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(gpCode, *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))

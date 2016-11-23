@@ -138,7 +138,7 @@ void ViewController::_StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewController::SaveAs(Utf8CP newName)
     {
-    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(newName));
+    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(GetDgnDb(), newName));
 
     ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());

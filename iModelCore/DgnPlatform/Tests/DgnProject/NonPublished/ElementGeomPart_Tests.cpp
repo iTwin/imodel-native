@@ -27,9 +27,12 @@ struct ElementGeomPartTests : public DgnDbTestFixture
         EXPECT_EQ(a.high.y, b.high.y);
         EXPECT_EQ(a.high.z, b.high.z);
         }
-};
 
-static const DgnCode s_geomPartCode = DgnGeometryPart::CreateCode("GeomPart", "Test");
+    DgnCode GetTestGeomPartCode()
+        {
+        return DgnGeometryPart::CreateCode(GetDgnDb(), "GeomPart", "Test");
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
@@ -42,7 +45,7 @@ TEST_F(ElementGeomPartTests, CRUD)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
     
@@ -57,7 +60,7 @@ TEST_F(ElementGeomPartTests, CRUD)
     ASSERT_TRUE(partId.IsValid());
 
     // Query
-    EXPECT_TRUE(partId == DgnGeometryPart::QueryGeometryPartId(s_geomPartCode, *m_db));
+    EXPECT_TRUE(partId == DgnGeometryPart::QueryGeometryPartId(*m_db, GetTestGeomPartCode()));
     DgnGeometryPartCPtr toFind = m_db->Elements().Get<DgnGeometryPart>(partId);
     GeometryStream stream = toFind->GetGeometryStream();
     EXPECT_TRUE(stream.HasGeometry());
@@ -82,7 +85,7 @@ TEST_F(ElementGeomPartTests, CRUD)
 
     // Delete
     EXPECT_TRUE(DgnDbStatus::Success == m_db->Elements().Delete(partId));
-    EXPECT_FALSE(DgnGeometryPart::QueryGeometryPartId(s_geomPartCode, *m_db).IsValid());
+    EXPECT_FALSE(DgnGeometryPart::QueryGeometryPartId(*m_db, GetTestGeomPartCode()).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,13 +99,13 @@ TEST_F(ElementGeomPartTests, CreateElements)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     DgnElementId elementId1 = InsertElementUsingGeometryPart(existingPartId);
@@ -157,13 +160,13 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(s_geomPartCode, *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     DgnElementId elementId = InsertElement()->GetElementId();
@@ -190,13 +193,13 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(s_geomPartCode, *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     DgnElementId elementId = InsertElement()->GetElementId();
@@ -223,13 +226,13 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(s_geomPartCode, *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     DgnElementId elementId = InsertElement()->GetElementId();
@@ -244,7 +247,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
-    EXPECT_TRUE(DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db).IsValid());
+    EXPECT_TRUE(DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode()).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,13 +261,13 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     //Add two elements using this GeometryPart
@@ -279,7 +282,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 
     // Delete Geom Part
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(existingPartId));
-    EXPECT_FALSE(DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db).IsValid());
+    EXPECT_FALSE(DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode()).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(elementId1).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(elementId2).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(elementId3).IsValid());
@@ -296,13 +299,13 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
     builder->Append(*elGPtr);
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, GetTestGeomPartCode());
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
-    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");

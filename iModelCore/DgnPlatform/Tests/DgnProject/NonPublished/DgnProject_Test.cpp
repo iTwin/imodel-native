@@ -671,7 +671,7 @@ struct ElementUriTests : ::testing::Test
     static void TearDownTestCase();
 
     ScopedDgnHost m_host;
-    RefCountedPtr<Dgn::NamespaceAuthority> m_codeAuthority;
+    Dgn::DatabaseScopeAuthorityPtr m_codeAuthority;
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
@@ -681,11 +681,11 @@ struct ElementUriTests : ::testing::Test
         DgnPlatformTestDomain::Register();
         }
 
-    NamespaceAuthority& GetTestCodeAuthority(DgnDbR db)
+    DatabaseScopeAuthority& GetTestCodeAuthority(DgnDbR db)
         {
         if (!m_codeAuthority.IsValid())
             {
-            m_codeAuthority = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority", db);
+            m_codeAuthority = DatabaseScopeAuthority::Create("TestAuthority", db);
             DgnDbStatus status = m_codeAuthority->Insert();
             BeAssert(status == DgnDbStatus::Success);
             }
@@ -734,8 +734,9 @@ TEST_F(ElementUriTests, Test1)
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
     ASSERT_TRUE(db.IsValid());
 
-    DgnModelId mid = db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
-    DgnCategoryId catId = SpatialCategory::QueryCategoryId(*db, s_seedFileInfo.categoryName);
+    DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+    DgnModelId mid = db->Models().QuerySubModelId(physicalPartitionCode);
+    DgnCategoryId catId = DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName));
 
     DgnElementCPtr el;
     DgnElementCPtr elNoProps;
