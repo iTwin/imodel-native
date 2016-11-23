@@ -636,6 +636,24 @@ struct Modify
     //! @param[in] backDistance The offset distance in the opposite direction of the sheet body face normal.
     //! @return SUCCESS if thicken could be completed.
     DGNPLATFORM_EXPORT static BentleyStatus ThickenSheet(IBRepEntityR target, double frontDistance, double backDistance);
+
+    //! Modify the specified edges of the given body by changing them into faces having the requested blending surface geometry.
+    //! @param[in,out] target The target body to blend.
+    //! @param[in] edges The vector of edge sub-entities to attach blends to.
+    //! @param[in] radii The vector of blend radius values for each edge.
+    //! @param[in] propagateSmooth Whether to automatically continue blend along connected and tangent edges that aren't explicitly specified in edges array.
+    //! @return SUCCESS if blends could be created.
+    DGNPLATFORM_EXPORT static BentleyStatus BlendEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double>& radii, bool propagateSmooth = true);
+
+    //! Modify the specified edges of the given body by changing them into faces having the requested chamfer surface geometry.
+    //! @param[in,out] target The target body to chamfer.
+    //! @param[in] edges The vector of edge sub-entities to attach chamfers to.
+    //! @param[in] values1 The vector of chamfer values for each edge, value meaning varies by ChamferMode.
+    //! @param[in] values2 The vector of chamfer values for each edge, value meaning varies by ChamferMode. (Unused for ChamferMode::Length)
+    //! @param[in] mode Specifies chamfer type and determines how values1 and values2 are interpreted and used.
+    //! @param[in] propagateSmooth Whether to automatically continue chamfer along connected and tangent edges that aren't explicitly specified in edges array.
+    //! @return SUCCESS if chamfers could be created.
+//    DGNPLATFORM_EXPORT static BentleyStatus ChamferEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double>& values1, bvector<double>& values2, ChamferMode mode, bool propagateSmooth = true);
     };
 
 //! Support for persistent topological ids on faces, edges, and vertices.
