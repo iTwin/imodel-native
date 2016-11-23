@@ -497,9 +497,9 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
+Utf8String TilePublisher::AddUnlitShaderTechnique (Json::Value& rootNode)
     {
-    Utf8String      s_techniqueName = "polylineTechnique";
+    Utf8String      s_techniqueName = "unlitTechnique";
 
     if (rootNode.isMember("techniques") &&
         rootNode["techniques"].isMember(s_techniqueName.c_str()))
@@ -512,11 +512,11 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    static char         *s_programName                    = "polylineProgram",
-                        *s_vertexShaderName               = "polylineVertexShader",
-                        *s_fragmentShaderName             = "polylineFragmentShader",
-                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
-                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+    static char         *s_programName                    = "unlitProgram",
+                        *s_vertexShaderName               = "unlitVertexShader",
+                        *s_fragmentShaderName             = "unlitFragmentShader",
+                        *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "unlitFragmentShaderBufferView";
 
     technique["program"] = s_programName;
 
@@ -546,8 +546,8 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
 
     auto& bufferViews = rootNode["bufferViews"];
 
-    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
-    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_unlitVertexShader);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
 
     AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
     techniqueUniforms["u_color"] = "color";
@@ -706,10 +706,10 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
     uint32_t        rgbInt  = displayParams->GetFillColor();
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
-    bool            isPolyline = mesh.Triangles().empty();
+    bool            isUnlit = displayParams->GetIgnoreLighting();
     RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
-    if (!isPolyline && displayParams->GetMaterialId().IsValid())
+    if (!isUnlit && displayParams->GetMaterialId().IsValid())
         {
         JsonRenderMaterial  jsonMaterial;
 
@@ -741,7 +741,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
     TileTextureImageCP      textureImage = nullptr;
 
     displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (false != (isTextured = (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))))
+    if (false != (isTextured = (nullptr != (textureImage = displayParams->GetTextureImage()))))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
         materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
@@ -755,10 +755,10 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
         materialColor.append(rgb.blue);
         materialColor.append(alpha);
 
-        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
+        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
         }
 
-    if (!isPolyline && !displayParams->GetIgnoreLighting())
+    if (! isUnlit)
         {
         materialValue["values"]["specularExponent"] = specularExponent;
 
