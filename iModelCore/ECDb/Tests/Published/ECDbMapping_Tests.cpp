@@ -9327,11 +9327,12 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     stmt.Reset();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey2));
     }
-
     {
     //Create relationships:
     //Geom-Part
     //1-1
+    GetECDb().SaveChanges();
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
