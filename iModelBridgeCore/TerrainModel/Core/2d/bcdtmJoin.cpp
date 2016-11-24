@@ -148,7 +148,7 @@ BENTLEYDTM_EXPORT int bcdtmJoin_dtmFeatureTypeWithRollbackDtmObject
  DTM_JOIN_FEATURE_TABLE *ftP,*featureTableP=NULL ;
  DTM_JOIN_NODE_TABLE    *nodeTableP=NULL ;
  DTM_JOIN_LINE_TABLE    *lineTableP=NULL ;
- struct DTM_ROLLBACK_DATA* rollBackInfo = NULL;
+ struct DTMRollbackData* rollBackInfo = NULL;
  /*
 ** Write Entry Message
 */
@@ -964,7 +964,7 @@ BENTLEYDTM_Private int bcdtmJoin_appendJoinedLineStringsToDtmObject(BC_DTM_OBJ *
       {
        dtmFeature = ltP->featureOfs ;
        dtmFeatureP = ftableAddrP(joinP,dtmFeature) ; 
-       if( bcdtmObject_getPointsForDtmFeatureDtmObject(joinP,dtmFeature,(DTM_TIN_POINT **)&featurePtsP,&numFeaturePts)) goto errexit ; 
+       if( bcdtmObject_getPointsForDtmFeatureDtmObject(joinP,dtmFeature,(DPoint3d **)&featurePtsP,&numFeaturePts)) goto errexit ; 
        if( ltP->direction == 2 ) bcdtmMath_reversePolygonDirectionP3D(featurePtsP,numFeaturePts) ;
 /*
 **     Copy Feature Points To line Points

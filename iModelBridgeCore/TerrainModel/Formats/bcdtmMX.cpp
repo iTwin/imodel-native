@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/bcdtmMX.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/TerrainModel.h"
@@ -77,16 +77,15 @@ class MXDTM
             +-------------------------------------------------------------------*/
     private: int GetStringCodeBetweenPoints(int pnt1, int pnt2, int& stringCode)
                  {
-                 DTM_TIN_POINT_FEATURES *lineFeaturesP=NULL ;
-                 long numLineFeatures;
+                 bvector<DTMTinPointFeatures> lineFeaturesP;
 
                  stringCode = 0;
-                 if( bcdtmList_getDtmFeaturesForLineDtmObject(m_dtmP,pnt1,pnt2,&lineFeaturesP,&numLineFeatures) == DTM_SUCCESS)
+                 if( bcdtmList_getDtmFeaturesForLineDtmObject(m_dtmP,pnt1,pnt2,lineFeaturesP) == DTM_SUCCESS)
                      {
-                     if(numLineFeatures != 0)
+                     if (lineFeaturesP.size())
                          {
                          long code = -1;
-                         for(int i = 0; i < numLineFeatures; i++)
+                         for (int i = 0; i < (int)lineFeaturesP.size(); i++)
                              {
                              if(lineFeaturesP[i].dtmFeatureType != DTMFeatureType::Hole && 
                                  lineFeaturesP[i].dtmFeatureType != DTMFeatureType::Hull &&
@@ -112,7 +111,6 @@ class MXDTM
                              stringCode = code;
                          }
                      }
-                 if( lineFeaturesP != NULL ) free(lineFeaturesP) ;
 
                  return DTM_SUCCESS;
                  }
@@ -158,8 +156,8 @@ class MXDTM
                 MXTriangle::point** pointsP = pointsPtr.getArrayPtr();
                 MXTriangle::point** startPP = pointsPtr.getArrayPtr();
 
-                PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(m_dtmP->pointsPP, m_dtmP->numPoints, m_dtmP->numPointPartitions, m_dtmP->pointPartitionSize);
-                PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator>::iterator pointsIter = pointsArray.start();
+                PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(m_dtmP->pointsPP, m_dtmP->numPoints, m_dtmP->numPointPartitions, m_dtmP->pointPartitionSize);
+                PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator>::iterator pointsIter = pointsArray.start();
 
                 m_pointMapper.resize(m_dtmP->numPoints);
                 PartitionArray<int, 15, MAllocAllocator>::iterator bcPtMapperP = m_pointMapper.start();
@@ -810,8 +808,8 @@ errexit :
                 int ret = DTM_SUCCESS;
 
                 // Create PartitionArrays from the dtm Arrays
-                PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(m_dtmP->pointsPP, m_dtmP->numPoints, m_dtmP->numPointPartitions, m_dtmP->pointPartitionSize);
-                PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator>::iterator pointsIter = pointsArray.start();
+                PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(m_dtmP->pointsPP, m_dtmP->numPoints, m_dtmP->numPointPartitions, m_dtmP->pointPartitionSize);
+                PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator>::iterator pointsIter = pointsArray.start();
 
                 PartitionArray<DTM_TIN_NODE, DTM_PARTITION_SHIFT_NODE, MAllocAllocator> nodesArray(m_dtmP->nodesPP, m_dtmP->numNodes, m_dtmP->numNodePartitions, m_dtmP->nodePartitionSize);
                 PartitionArray<DTM_TIN_NODE, DTM_PARTITION_SHIFT_NODE, MAllocAllocator>::iterator nodesIter = nodesArray.start();
@@ -820,7 +818,7 @@ errexit :
                 long ptNum = 0;
                 for(long i = 0; i < NumPoints(); i++)
                     {
-                    DTM_TIN_POINT* p3dP = (DTM_TIN_POINT*)&Point(i);
+                    DPoint3d* p3dP = (DPoint3d*)&Point(i);
 
                     // If this is a point completely outside of the triangulation then ignore it.
                     if(i >= 4 && PointNumber(i) < 0)
@@ -1300,6 +1298,9 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmImport_MXTriangulationToDtmObject(BC_DTM_OBJ* 
     MXTriangle::TriangleArray& triPtr = *(MXTriangle::TriangleArray*)triPtrP;
     MXTriangle::PointArray& pointsPtr = *(MXTriangle::PointArray*)pointsPtrP;
     long startTime = bcdtmClock() ;
+
+    if (triPtr.size() == 0)
+        return DTM_SUCCESS;
     MXDTM mxdtmHelper(triPtr, pointsPtr, dtmP);
     TriangleToDTMHelper<MXDTM> mxdtm(mxdtmHelper, dtmP);
     // Check the inputs.
@@ -1420,7 +1421,7 @@ BENTLEYDTM_Private int bcdtmFormatMX_insertRectangleAroundTinDtmObject
     long cPriorPnt,cStartPnt,cNextPnt,cClkPnt ;
 //    long antPnt,padHull,hullPnt,nextHullPnt ;
     DPoint3d  rectanglePts[5],*hullPtsP=NULL ;
-    DTM_TIN_POINT *pointP ;
+    DPoint3d *pointP ;
     BC_DTM_OBJ *tempDtmP=NULL ;
     BC_DTM_FEATURE *dtmFeatureP ;
 
@@ -1744,7 +1745,8 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmFormatMX_loadMxTrianglesFromDtmObject
  */
     {
     int  ret=DTM_SUCCESS,dbg=0 ;
-    long p1,p2,p3,clc,numTriangles,voidTriangle ;
+    long p1, p2, p3, clc, numTriangles;
+    bool voidTriangle;
     long trgNum,side1Trg,side2Trg,side3Trg ;
     DTM_CIR_LIST *clistP ;
     DTM_MX_TRG_INDEX *indexP,*trgIndexP=NULL ;
@@ -1871,7 +1873,7 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmFormatMX_loadMxTrianglesFromDtmObject
         /*
         **  Test For Void triangles
         */
-        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,indexP->trgPnt1,indexP->trgPnt2,indexP->trgPnt3,&voidTriangle)) goto errexit ;
+        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,indexP->trgPnt1,indexP->trgPnt2,indexP->trgPnt3,voidTriangle)) goto errexit ;
         /*
         **  Call Load Function
         */

@@ -195,7 +195,7 @@ int bcdtmClean_appendRollbackDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *dtm2P)
 bool hullPresent = false;
  unsigned char *pointMarkP=nullptr ;
  DPoint3d* featurePtsP=nullptr ;
- DTM_TIN_POINT   *pointP ;
+ DPoint3d   *pointP ;
  BC_DTM_FEATURE  *dtmFeatureP = nullptr;
  DTMFeatureId  featureId ;
  const DTMUserTag nullUserTag = dtm1P->nullUserTag;
@@ -385,8 +385,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_rollBackDtmObject
  BC_DTM_OBJ *tempDtmP=nullptr,*trianglesDtmP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP,*dtmFeature1P;
  DTMFeatureId dtmFeatureId=dtmP->nullFeatureId ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
- DTM_TIN_POINT *pointP;
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
+ DPoint3d *pointP;
  long numCleanUpFeatures = 0,numTinFeaturesRolledBack = 0,numTinFeatureErrorsRolledBack = 0;
  long numNewFeaturesRolledBack = 0,numRandomPointsRolledBack = 0,totalCleanUpFeatures, markSize ;
  unsigned char *markFlagP=nullptr ;
@@ -1125,7 +1125,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_rollBackDtmObject
           firstPoint = dtmFeatureP->dtmFeaturePts.firstPoint ;
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeature[%5ld] ** dtmFeatureP->dtmFeatureType = %4ld ** firstPoint = %8ld",dtmFeature,dtmFeatureP->dtmFeatureType,firstPoint) ;
           if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
-          dtmFeatureP->dtmFeaturePts.pointsPI =  bcdtmMemory_allocate(dtmP, numFeaturePts * sizeof(DPoint3d)) ; 
+          dtmFeatureP->dtmFeaturePts.pointsPI =  bcdtmMemory_allocate(dtmP, numFeaturePts * sizeof(DPoint3d)) ;
           if( dtmFeatureP->dtmFeaturePts.pointsPI == 0 )
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -1133,7 +1133,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_rollBackDtmObject
             }
           else
             {
-             memcpy(bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),featurePtsP,numFeaturePts*sizeof(DPoint3d)) ; 
+             memcpy(bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),featurePtsP,numFeaturePts*sizeof(DPoint3d)) ;
             }
           dtmFeatureP->dtmFeatureState = DTMFeatureState::PointsArray ;
           for( pmarkP = pointMarkP + firstPoint ; pmarkP < pointMarkP + firstPoint + dtmFeatureP->numDtmFeaturePts ; ++pmarkP ) *pmarkP = 1 ;
@@ -1365,7 +1365,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_getTriangulationParametersDtmObject
 BENTLEYDTM_Private int bcdtmObject_featureIdCompareFunction
 (
  const DTMFeatureId *id1P ,
- const DTMFeatureId *id2P 
+ const DTMFeatureId *id2P
 )
 {
  if( *id1P <  *id2P ) return(-1) ;
@@ -1685,7 +1685,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool n
  long numDeletePts,edgeOption,dtmFeature,numFeaturePts;
  double maxSide ;
  DPoint3d  *featurePtsP=nullptr ;
- DTM_ROLLBACK_DATA* rollBackInfo=nullptr ;
+ DTMRollbackData* rollBackInfo=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP,*dtmCleanUpFeatureP ;
 /*
 ** Write Entry Message
@@ -1753,7 +1753,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool n
 */
     if (!dtmP->extended && bcdtmObject_createDTMExtended (&dtmP->extended)) goto errexit;
 
-    dtmP->extended->rollBackInfoP = rollBackInfo = new DTM_ROLLBACK_DATA ();
+    dtmP->extended->rollBackInfoP = rollBackInfo = new DTMRollbackData ();
     if( bcdtmObject_createDtmObject(&rollBackInfo->rollBackDtmP)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Created DTM %p For Roll Back Purposes",rollBackInfo->rollBackDtmP) ;
    }
@@ -1784,7 +1784,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool n
        dtmFeatureP->dtmUserTag             =  dtmCleanUpFeatureP->dtmUserTag          ;
        dtmFeatureP->dtmFeatureId           =  dtmCleanUpFeatureP->dtmFeatureId     ;
        dtmFeatureP->numDtmFeaturePts       =  dtmCleanUpFeatureP->numDtmFeaturePts  ;
-       dtmFeatureP->dtmFeaturePts.pointsPI =  bcdtmMemory_allocate(dtmP,dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d)) ; 
+       dtmFeatureP->dtmFeaturePts.pointsPI =  bcdtmMemory_allocate(dtmP,dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d)) ;
        if( dtmFeatureP->dtmFeaturePts.pointsPI == 0 )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -1792,7 +1792,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool n
          }
        else
          {
-          memcpy(bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),featurePtsP,numFeaturePts*sizeof(DPoint3d)) ; 
+          memcpy(bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),featurePtsP,numFeaturePts*sizeof(DPoint3d)) ;
          }
        ++dtmP->numFeatures ;
        if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
@@ -1894,7 +1894,7 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObject
  long numGraphicBreaks,numContourLines,numSoftBreaks,numHardBreaks,numVoids,numIslands,numHoles ;
  long numBreakVoids,numDrapeVoids,numGroupSpots,numRegions,numHulls,numDrapeHulls,numHullLines ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
 /*
 ** Write Entry Message
 */
@@ -2052,7 +2052,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObject
  long n,point,dtmFeature,startTime,firstPoint,numDuplicates ;
  DPoint3d  *hullPtsP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
 /*
 ** Write Entry Message
 */
@@ -2505,9 +2505,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_changeStateDtmObject(BC_DTM_OBJ *dtmP,DTMState
  unsigned char *markFlagP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
  BC_DTM_OBJ     *tempDtmP=nullptr ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  DTMFeatureId dtmFeatureId ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
 ** Write Entry Message
 */
@@ -2907,7 +2907,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_changeStateDtmObject(BC_DTM_OBJ *dtmP,DTMState
  ret = DTM_ERROR ;
  goto cleanup ;
 }
-typedef PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> DtmTinPointArray;
+typedef PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> DtmTinPointArray;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2920,7 +2920,7 @@ BENTLEYDTM_Public int bcdtmObject_sortDtmObjectDaryl(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   n,feature ;
-// DTM_TIN_POINT   dtmPoint,*p1P,*p2P  ;
+// DPoint3d   dtmPoint,*p1P,*p2P  ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
 /*
 ** Write Entry Message
@@ -2935,7 +2935,7 @@ BENTLEYDTM_Public int bcdtmObject_sortDtmObjectDaryl(BC_DTM_OBJ *dtmP)
 */
  if( dtmP->dtmState == DTMState::Data )
    {
-    PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(dtmP->pointsPP, dtmP->numPoints, dtmP->numPointPartitions, dtmP->pointPartitionSize);
+    PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(dtmP->pointsPP, dtmP->numPoints, dtmP->numPointPartitions, dtmP->pointPartitionSize);
 /*
 **  Only Sort If More Than One Dtm Point
 */
@@ -2945,7 +2945,7 @@ BENTLEYDTM_Public int bcdtmObject_sortDtmObjectDaryl(BC_DTM_OBJ *dtmP)
 **     Sort the Dtm Points
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Sorting") ;
-       XYPointArraySort<DTM_TIN_POINT,DtmTinPointArray>  sorter;
+       XYPointArraySort<DPoint3d,DtmTinPointArray>  sorter;
        sorter.DoSort(pointsArray);
        sorter.GetSortP();
        LongArray& tempP = sorter.GetTempP();
@@ -3010,7 +3010,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_sortDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   ofs,useMultiThread=TRUE ;
- DTM_TIN_POINT *p1P,*p2P  ;
+ DPoint3d *p1P,*p2P  ;
 /*
 ** Write Entry Message
 */
@@ -3103,7 +3103,7 @@ BENTLEYDTM_Private int bcdtmObject_singleThreadSortDtmObject(BC_DTM_OBJ *dtmP)
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long   n,ofs,*sP,*offsetP,*sortP=nullptr,*tempP=nullptr,feature ;
  long   startTime ;
- DTM_TIN_POINT   dtmPoint,*p1P,*p2P  ;
+ DPoint3d   dtmPoint,*p1P,*p2P  ;
  BC_DTM_FEATURE  *dtmFeatureP=nullptr ;
 /*
 ** Write Entry Message
@@ -3468,7 +3468,7 @@ BENTLEYDTM_Public int bcdtmObject_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lon
 */
 {
  long  i,temp,numPts1,numPts2,startPnt1,startPnt2 ;
- DTM_TIN_POINT *p1P , *p2P ;
+ DPoint3d *p1P , *p2P ;
 /*
 ** Two data points
 */
@@ -3579,14 +3579,14 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObject(BC_DTM_OBJ *dtmP,lon
  long   nowTime=bcdtmClock(),startTime=bcdtmClock() ;
  double dp  ;
  DPoint3d    *dupPtsP=nullptr ;
- DTM_TIN_POINT  *p1P,*p2P  ;
+ DPoint3d  *p1P,*p2P  ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
  LongArray temP;
  LongArray::iterator sP;
  LongArray::iterator sP2;
  LongArray::iterator temPEnd;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
 /*
 ** Write Entry Message
 */
@@ -3643,12 +3643,12 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObject(BC_DTM_OBJ *dtmP,lon
          {
           ++sP2;
           p2P = pointAddrP(dtmP,ofs2) ;
-//          if( p2P->X - p1P->X > dtmP->ppTol ) process = 0 ; 
+//          if( p2P->X - p1P->X > dtmP->ppTol ) process = 0 ;
 /*
 **        RobC Modification To Handle the long columns with raster DTM's
 **        Robc Modification Start 2-July-2009
 */
-          if( p2P->x - p1P->x > dtmP->ppTol )  
+          if( p2P->x - p1P->x > dtmP->ppTol )
             {
              process = 0 ;
              if( ofs2 - ofs1 > 2 && pointAddrP(dtmP,ofs2-1)->x == p1P->x )
@@ -3784,7 +3784,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
        goto errexit ;
       }
     numMarked = 0 ;
-    for( sP = temP.start() ; sP != temP.end() ; ++sP ) 
+    for( sP = temP.start() ; sP != temP.end() ; ++sP )
       {
        if( *sP != dtmP->nullPnt )
          {
@@ -3816,7 +3816,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
 **  Mark Merged Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Merged Points") ;
- for( sP = temP.start() ; sP != temPEnd; ++sP ) 
+ for( sP = temP.start() ; sP != temPEnd; ++sP )
    {
     if( *sP == dtmP->nullPnt ) *sP = 0 ;
     else                       *sP = 1 ;
@@ -3903,7 +3903,7 @@ BENTLEYDTM_Private int bcdtmObject_removeDuplicatePointOffsetsDtmObject(BC_DTM_O
  long n,ofs1,ofs2,feature,partNum,partOfs,duplicatesFound=FALSE ;
  DPoint3d featurePnt ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
 /*
 ** Write Entry Message
 */
@@ -4039,7 +4039,7 @@ long *numHullLinesP
  long feature ;
  char dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Write Entry Message
 */
@@ -4107,7 +4107,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateLatticeObject(DTM_LAT_OBJ *latticeP
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
  long i,j ;
  DPoint3d rasterPoint ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
 ** Write Entry Message
 */
@@ -4182,7 +4182,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDemDtmObject(BC_DTM_OBJ *dtmP,long 
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long point ;
  double dd,dx,dy ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Calculate Machine Precision
 */
@@ -4286,7 +4286,7 @@ BENTLEYDTM_Private int bcdtmObject_triangulateGridDtmObject(BC_DTM_OBJ *dtmP,lon
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
  long i,j,p1,p2,p3,p4 ;
  long nullFlag,point ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Entry Message
 */
@@ -4446,7 +4446,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_placeVoidsAroundNullValuesDtmObject(BC_DTM_OBJ
  long startPnt,nextPnt = 0,endPnt,scanPnt,numVoids=0,numIslands=0 ;
  unsigned char *charP,*voidLineP=nullptr ;
  double area ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  DTM_TIN_NODE  *nodeP  ;
 /*
@@ -4667,7 +4667,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_placeVoidsAroundNullValuesDtmObject(BC_DTM_OBJ
     for( p1 = 0 ; p1 < dtmP->numPoints ; ++p1 )
       {
        pointP = pointAddrP(dtmP,p1) ;
-       if( pointP->z == nullValue && nodeAddrP(dtmP,p1)->hPtr == dtmP->nullPnt ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ; 
+       if( pointP->z == nullValue && nodeAddrP(dtmP,p1)->hPtr == dtmP->nullPnt ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ;
        else if( pointP->z != nullValue )
          {
           if( p2 ) { dtmP->zMin = dtmP->zMax = pointP->z ; p2 = 0 ; }
@@ -4722,7 +4722,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
  long   p1,p2,p3,p4,clPtr ;
- long   swap,demDiagonal,voidsInDtm,voidLine ;
+ long   swap, demDiagonal;
+ bool voidsInDtm, voidLine;
  double descentAngle,ascentAngle,slope1,slope2,slope3,slope4 ;
  double angle,angleDelta,angle45,angle135,angle225,angle315 ;
  DTM_CIR_LIST *clistP ;
@@ -4746,7 +4747,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 /*
 ** Check For Voids In DTM
 */
- if( bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm)) goto errexit ;
+ if( bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm)) goto errexit ;
 /*
 **  Scan Tin Lines And Flip For Slope Criteria
 */
@@ -4772,8 +4773,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 /*
 **              Check For Void Line
 */
-                voidLine = FALSE ;
-                if( voidsInDtm )if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
+                voidLine = false ;
+                if( voidsInDtm )if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                 if( ! voidLine )
                   {
 /*
@@ -4880,15 +4881,15 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObjectOverload
  long numGraphicBreaks,numContourLines,numSoftBreaks,numHardBreaks,numVoids,numIslands,numHoles ;
  long numBreakVoids,numDrapeVoids,numGroupSpots,numRegions,numHulls,numDrapeHulls,numHullLines ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
 /*
 ** Write Entry Message
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Creating Tin For Dtm Object %p ** dtmState = %2ld dtmP->numPoints = %8ld",dtmP,dtmP->dtmState,dtmP->numPoints) ;
    }
-  createTime = bcdtmClock() ; 
+  createTime = bcdtmClock() ;
 /*
 ** Procees DTM Object For Triangulation
 */
@@ -4919,12 +4920,12 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObjectOverload
             }
          }
       }
-    if( featurePtsP != nullptr ) free(featurePtsP) ;  
+    if( featurePtsP != nullptr ) free(featurePtsP) ;
    }
 /*
 ** Check If DTM Is Triangulated
 */
- if( dtmP->dtmState == DTMState::Tin ) 
+ if( dtmP->dtmState == DTMState::Tin )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"DTM Is Triangulated") ;
     goto cleanup ;
@@ -4994,7 +4995,7 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObjectOverload
           pntP = pointAddrP(dtmP,(long)dtmFeatureP->dtmFeaturePts.firstPoint) ;
           bcdtmWrite_message(0,0,0,"Tin Feature %30s ** featureId = %10I64d ** firstPoint = %12.5lf %12.5lf %10.4lf",dtmFeatureTypeName,dtmFeatureP->dtmFeatureId,pntP->x,pntP->y,pntP->z) ;
          }
-      } 
+      }
     bcdtmWrite_message(0,0,0,"Number Tin Features             = %8ld",numTinFeatures) ;
     bcdtmWrite_message(0,0,0,"Number Tin Features With Errors = %8ld",numErrorTinFeatures) ;
     bcdtmWrite_message(0,0,0,"Number Deleted Features         = %8ld",numDeletedFeatures) ;
@@ -5014,7 +5015,7 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObjectOverload
 ** Error Exit
 */
  errexit :
- if( dtmP->dtmState == DTMState::DuplicatesRemoved || dtmP->dtmState == DTMState::PointsSorted || dtmP->dtmState == DTMState::TinError) 
+ if( dtmP->dtmState == DTMState::DuplicatesRemoved || dtmP->dtmState == DTMState::PointsSorted || dtmP->dtmState == DTMState::TinError)
      bcdtmObject_changeStateDtmObject (dtmP, DTMState::Data);
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
@@ -5039,7 +5040,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
  long n,point,dtmFeature,startTime,firstPoint,numDuplicates,numHullpts=0;
  DPoint3d  *hullPtsP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
 /*
 ** Write Entry Message
 */
@@ -5051,7 +5052,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 ** Check For Valid Prior Triangulation States
 */
- if( dtmP->dtmState != DTMState::Data && dtmP->dtmState != DTMState::Tin ) 
+ if( dtmP->dtmState != DTMState::Data && dtmP->dtmState != DTMState::Tin )
    {
     bcdtmWrite_message(0,0,0,"DTM Not In A Data or Tin State") ;
     goto errexit ;
@@ -5070,7 +5071,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
           startTime  = bcdtmClock() ;
           if ( bcdtmObject_changeStateDtmObject(dtmP,DTMState::Data)) goto errexit ;
           if( tdbg ) bcdtmWrite_message(0,0,0,"** Time To Change Dtm State        = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
-          dtmFeature = dtmP->numFeatures ;   
+          dtmFeature = dtmP->numFeatures ;
          }
       }
 /*
@@ -5084,16 +5085,16 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
             {
              if ( bcdtmObject_changeStateDtmObject(dtmP,DTMState::Data)) goto errexit ;
              point = dtmP->numPoints ;
-            } 
-         }      
-      }  
+            }
+         }
+      }
 /*
 **  If DTM Not In Data State No Need To Retriangulate
-    if( dtmP->dtmState == DTMState::Tin ) 
+    if( dtmP->dtmState == DTMState::Tin )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"No Need To Retriangulate") ;
        goto cleanup ;
-      } 
+      }
 */
    }
 /*
@@ -5108,7 +5109,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
            dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
            if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray )
              {
-              bool rollBack=false ; 
+              bool rollBack=false ;
               if     ( dtmFeatureP->dtmFeatureType == DTMFeatureType::Hull          ) rollBack = true ;
               else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::DrapeHull    ) rollBack = true ;
               else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::HullLine     ) rollBack = true ;
@@ -5118,9 +5119,9 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
               if( rollBack )
                 {
                  if (bcdtmInsert_rollBackDtmFeatureDtmObject (dtmP, dtmFeatureP->dtmFeatureId)) goto errexit;
-                } 
-             }  
-          } 
+                }
+             }
+          }
         }
     if ( bcdtmCleanUp_cleanDtmObject (dtmP)) goto errexit;
    }
@@ -5148,7 +5149,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 ** Normalise Dtm Points
 */
- if( normaliseOption == true )                             
+ if( normaliseOption == true )
    {
     startTime = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Normalising Dtm Points") ;
@@ -5163,12 +5164,12 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 ** Check Tolerances
 */
- if( dtmP->ppTol < dtmP->mppTol * 10000.0 ) 
+ if( dtmP->ppTol < dtmP->mppTol * 10000.0 )
    {
     dtmP->ppTol = dtmP->mppTol * 10000.0 ;
     dtmP->ppTol = dtmP->ppTol + dtmP->ppTol / 10.0 ;
     dtmP->plTol = dtmP->ppTol ;
-   } 
+   }
 /*
 ** Set Bounding Cube For Dtm Object
 */
@@ -5192,7 +5193,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 **     Allocate Memory For Point Offsets
        if( dbg == 2  ) bcdtmWrite_message(0,0,0,"dtmFeature[%5ld] ** type = %4ld firstPoint = %8ld numPoints = %8ld",dtmFeature,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmFeaturePts.firstPoint,dtmFeatureP->numDtmFeaturePts) ;
-       firstPoint = (long) dtmFeatureP->dtmFeaturePts.firstPoint ;      
+       firstPoint = (long) dtmFeatureP->dtmFeaturePts.firstPoint ;
        dtmFeatureP->dtmFeaturePts.offsetPI = bcdtmMemory_allocate(dtmP, dtmFeatureP->numDtmFeaturePts * sizeof(long)) ;
        if( dtmFeatureP->dtmFeaturePts.offsetPI == 0 )
          {
@@ -5202,7 +5203,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 **     Set Dtm Feature State
 */
-       dtmFeatureP->dtmFeatureState = DTMFeatureState::OffsetsArray ; 
+       dtmFeatureP->dtmFeatureState = DTMFeatureState::OffsetsArray ;
 /*
 **     Populate Point Offsets
 */
@@ -5225,9 +5226,9 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 */
  if( cdbg )
    {
-    bcdtmWrite_message(0,0,0,"Checking Point Offsets For Range Errors Before Sorting") ; 
+    bcdtmWrite_message(0,0,0,"Checking Point Offsets For Range Errors Before Sorting") ;
     if( bcdtmCheck_forPointOffsetIndexRangeErrorsDtmObject(dtmP)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ; 
+    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ;
     if( bcdtmCheck_forDuplicatePointOffsetPointersDtmObject(dtmP)) goto errexit ;
    }
 /*
@@ -5246,15 +5247,15 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 */
  if( cdbg )
    {
-    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After Sorting") ; 
+    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After Sorting") ;
     if( bcdtmCheck_forPointOffsetIndexRangeErrorsDtmObject(dtmP)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ; 
+    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ;
     if( bcdtmCheck_forDuplicatePointOffsetPointersDtmObject(dtmP)) goto errexit ;
    }
 /*
 ** Check Sort Order
 */
- if( cdbg ) 
+ if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Sort Order After Sorting Points") ;
     if( bcdtmCheck_sortOrderDtmObject(dtmP,0) != DTM_SUCCESS )
@@ -5263,7 +5264,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
        goto errexit ;
       }
     bcdtmWrite_message(0,0,0,"Sort Order Valid After Sorting Points") ;
-   } 
+   }
 /*
 ** Remove Duplicates
 */
@@ -5277,9 +5278,9 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 */
  if( cdbg )
    {
-    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After After Duplicate Removal") ; 
+    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After After Duplicate Removal") ;
     if( bcdtmCheck_forPointOffsetIndexRangeErrorsDtmObject(dtmP)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ; 
+    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ;
     if( bcdtmCheck_forDuplicatePointOffsetPointersDtmObject(dtmP)) goto errexit ;
    }
 /*
@@ -5293,9 +5294,9 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 */
  if( cdbg )
    {
-    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After After Duplicate Point Offsets Removal") ; 
+    bcdtmWrite_message(0,0,0,"Check Point Offsets For Range Errors After After Duplicate Point Offsets Removal") ;
     if( bcdtmCheck_forPointOffsetIndexRangeErrorsDtmObject(dtmP)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ; 
+    bcdtmWrite_message(0,0,0,"Checking For Duplicate Index Offset Memory Points") ;
     if( bcdtmCheck_forDuplicatePointOffsetPointersDtmObject(dtmP)) goto errexit ;
    }
 /*
@@ -5308,7 +5309,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 /*
 ** Check Sort Order
 */
- if( cdbg ) 
+ if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Sort Order After Removing Duplicates dtmP->numPoints = %8ld",dtmP->numPoints) ;
     if( bcdtmCheck_sortOrderDtmObject(dtmP,1) != DTM_SUCCESS )
@@ -5317,7 +5318,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
        goto errexit ;
       }
     bcdtmWrite_message(0,0,0,"Sort Order Valid After Removing Duplicates") ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -5342,10 +5343,10 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
-( 
+(
  BC_DTM_OBJ *dtmP,
  long       *numDuplicatesP,
- bool       duplicateOption 
+ bool       duplicateOption
 )
 /*
 ** This Function Removes Duplicate Points From The Dtm Object
@@ -5354,17 +5355,17 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   n,ofs1,ofs2,ofs3,process,feature,removeFlag,numMarked=0 ;
  long   rollBackDuplicatePoints=FALSE,numDuplicatesRolledBack=0 ;
- long   nowTime=bcdtmClock(),startTime=bcdtmClock() ; 
+ long   nowTime=bcdtmClock(),startTime=bcdtmClock() ;
  double dp  ;
  DPoint3d    *dupPtsP=nullptr ;
- DTM_TIN_POINT  *p1P,*p2P  ;
+ DPoint3d  *p1P,*p2P  ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
  LongArray temP;
  LongArray::iterator sP;
  LongArray::iterator sP2;
  LongArray::iterator temPEnd;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
 /*
 ** Write Entry Message
 */
@@ -5402,7 +5403,7 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
       {
        nowTime = bcdtmClock() ;
        if( ( double )( nowTime-startTime) / CLOCKS_PER_SEC > 0.025 )
-         {  
+         {
           if( bcdtmTin_checkForTriangulationTermination (dtmP)) goto errexit  ;
          }
        startTime = nowTime ;
@@ -5423,9 +5424,9 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
 /*
 **        RobC Modification To Handle the long columns with raster DTM's
 */
-          if( p2P->x - p1P->x > dtmP->ppTol )  
+          if( p2P->x - p1P->x > dtmP->ppTol )
             {
-             process = 0 ; 
+             process = 0 ;
              if( ofs2 - ofs1 > 2 && pointAddrP(dtmP,ofs2-1)->x == p1P->x )
                {
                 process = 1 ;
@@ -5440,7 +5441,7 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
                   {
                    for( n = ofs1 + 1 ; n < ofs3 ; ++n ) ++sP ;
                    ofs1 = ofs3 - 1 ;
-                  } 
+                  }
                }
             }
 /*
@@ -5456,7 +5457,7 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObjectOverload
                    dp = bcdtmMath_distance(p1P->x,p1P->y,p2P->x,p2P->y) ;
                    if      ( duplicateOption == false && dp <  dtmP->mppTol ) removeFlag = TRUE ;
                    else if ( duplicateOption == true  && dp <  dtmP->ppTol  ) removeFlag = TRUE ;
-                   if( removeFlag == TRUE ) 
+                   if( removeFlag == TRUE )
                      {
                       *sP2 = ofs1;
                       ++*numDuplicatesP ;
@@ -5503,14 +5504,14 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
             {
              bcdtmWrite_message(2,0,0,"Feature Point Index Range Error") ;
              goto errexit ;
-            }  
+            }
           if( *(temP+offsetP[n]) != dtmP->nullPnt )
             {
 /*
 **           Check For Duplicate Point Error
 */
-             if( bcdtmMath_pointDistance3DDtmObject(dtmP,*(temP+offsetP[n]),offsetP[n]) > 0.0 ) 
-               {  
+             if( bcdtmMath_pointDistance3DDtmObject(dtmP,*(temP+offsetP[n]),offsetP[n]) > 0.0 )
+               {
                 if( rollBackInfo && rollBacked == false && rollBackInfo->rollBackDtmP != nullptr )
                   {
                    dupPtsP = ( DPoint3d * ) malloc ( dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d)) ;
@@ -5518,15 +5519,15 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
                      {
                       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                       goto errexit ;
-                     } 
+                     }
                    for( int m = 0 ; m < dtmFeatureP->numDtmFeaturePts ; ++m )
                      {
                       int offset=offsetP[m] ;
                       if( offset < 0 ) offset = -(offset+1) ;
                       *(dupPtsP+m) = *(DPoint3d *) pointAddrP(dtmP,offset) ;
-                     }  
-                   if( dtmFeatureP->dtmFeatureType != DTMFeatureType::Hull       && dtmFeatureP->dtmFeatureType != DTMFeatureType::HullLine  && 
-                       dtmFeatureP->dtmFeatureType != DTMFeatureType::DrapeHull && dtmFeatureP->dtmFeatureType != DTMFeatureType::DrapeVoid &&  
+                     }
+                   if( dtmFeatureP->dtmFeatureType != DTMFeatureType::Hull       && dtmFeatureP->dtmFeatureType != DTMFeatureType::HullLine  &&
+                       dtmFeatureP->dtmFeatureType != DTMFeatureType::DrapeHull && dtmFeatureP->dtmFeatureType != DTMFeatureType::DrapeVoid &&
                        dtmFeatureP->dtmFeatureType != DTMFeatureType::GraphicBreak                                                      )
                      {
                      if (bcdtmInsert_rollBackDtmFeatureDtmObject (dtmP, dtmFeatureP->dtmFeatureId)) goto errexit;
@@ -5540,7 +5541,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
                 if( *(temP+offsetP[n]) != dtmP->nullPnt && *(temP+offsetP[n])  >= 0 ) *(temP+offsetP[n]) = -(*(temP+offsetP[n])+1) ;
                }
             }
-         } 
+         }
       }
    }
 /*
@@ -5556,17 +5557,17 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
     if( dupPtsP == nullptr )
       {
        bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
-       goto errexit ;  
+       goto errexit ;
       }
     numMarked = 0 ;
-    for( sP = temP.start() ; sP != temP.end() ; ++sP ) 
+    for( sP = temP.start() ; sP != temP.end() ; ++sP )
       {
-       if( *sP != dtmP->nullPnt ) 
+       if( *sP != dtmP->nullPnt )
          {
           if( *sP >= 0 )
             {
-             if( bcdtmMath_pointDistance3DDtmObject(dtmP,*sP,(long)(sP-temP.start())) > 0.0 ) 
-               {  
+             if( bcdtmMath_pointDistance3DDtmObject(dtmP,*sP,(long)(sP-temP.start())) > 0.0 )
+               {
                 *(dupPtsP+numMarked) = *( DPoint3d *)pointAddrP(dtmP,(long)(sP-temP.start())) ;
                 ++numMarked ;
                 if( numMarked == 1000 )
@@ -5584,17 +5585,17 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
        numDuplicatesRolledBack = numDuplicatesRolledBack + numMarked ;
        if( bcdtmObject_storeDtmFeatureInDtmObject(rollBackInfo->rollBackDtmP,DTMFeatureType::GroupSpots,-dtmP->nullUserTag,1,&nullFeatureId,dupPtsP,numMarked)) goto errexit ;
        numMarked = 0 ;
-      } 
+      }
     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"numDuplicatesRolledBack = %8ld",numDuplicatesRolledBack) ;
-   } 
+   }
 /*
 **  Mark Merged Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Merged Points") ;
- for( sP = temP.start() ; sP != temPEnd; ++sP ) 
+ for( sP = temP.start() ; sP != temPEnd; ++sP )
    {
     if( *sP == dtmP->nullPnt ) *sP = 0 ;
-    else                       *sP = 1 ; 
+    else                       *sP = 1 ;
    }
 /*
 **  Remove Merged Points
@@ -5629,7 +5630,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
        for( n = 0 ; n < dtmFeatureP->numDtmFeaturePts ; ++n )
          {
           offsetP[n] = offsetP[n] - *(temP+offsetP[n]) ;
-         } 
+         }
       }
    }
 /*
@@ -5919,7 +5920,7 @@ BENTLEYDTM_Private int bcdtmObject_checkAndFixTopologyStmTrianglesDtmObject
     long cNpnt, cSpnt, lcNpnt, mark = -9999, numMarked = 0, totalNumMarked = 0;
     long numHullPts, numVoidHullStartPoints = 0, hullStartPoints[100], voidHullStartPoints[100];
  DPoint3d trgPts[4],*hullPtsP=nullptr ;
-    DTM_TIN_POINT *pntP;
+    DPoint3d *pntP;
     BC_DTM_OBJ *tempDtmP = nullptr, *voidP = nullptr;
     bool missingPoints = false;
 
@@ -6680,7 +6681,7 @@ BENTLEYDTM_Public int bcdtmObject_findAndFixMissingStmTrianglesDtmObject
     DPoint3d *polyPtsP=nullptr ;
     double area;
     BC_DTM_OBJ *voidP = nullptr;
-    DTM_TIN_POINT *pntP;
+    DPoint3d *pntP;
     BC_DTM_FEATURE *dtmFeatureP;
 
     // Log Arguments
@@ -7551,6 +7552,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         {
         // Go through all links.
         long cPtr = nodeAddrP (dtmP, pnt)->cPtr;
+        if (cPtr == dtmP->nullPtr)
+            continue;
         long startPnt = clistAddrP (dtmP, cPtr)->pntNum;
 
         long linePnt = bcdtmList_nextAntDtmObject (dtmP, pnt, startPnt);
@@ -7607,7 +7610,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         }
 cleanup:
     return ret;
-errexit:   
+errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
@@ -7677,16 +7680,15 @@ int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
             hasDeletedPoints = true;
         else if (failedToDeleteAPoint)
             return DTM_ERROR;
-        }
-    while (deletedPoint);
+        } while (deletedPoint);
 
         if (hasDeletedPoints)
             bcdtmTin_compactPointAndNodeTablesDtmObject(dtmP);
         return DTM_SUCCESS;
     }
 
-//=======================================================================================
-// @bsimethod                                    Daryl.Holmwood                 11/2016
+double timeSpentTriangulating = 0;
+size_t nOfTriangulations = 0;
 //=======================================================================================
 int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmFeature, long& otherDtmFeature)
     {
@@ -7697,6 +7699,7 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
 
     otherDtmFeature = -1;
     long firstPnt = offsetP[0];
+
     for (int i = 1; i < 4; i++)
         {
         long lastPnt = offsetP[i];
@@ -7711,15 +7714,20 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
             double X, Y;
             DPoint3dP firstPt = pointAddrP(dtmP, firstPnt);
             DPoint3dP lastPt = pointAddrP(dtmP, lastPnt);
-            double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P2)->x, pointAddrP(dtmP, P2)->y, &X, &Y);
 
-            if (onLine && d1 < dtmP->plTol)
+            if (P2 != dtmP->nullPnt && P2 != offsetP[(i + 1) % 3])
                 {
-                splitTrianglePt = P2;
+                double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P2)->x, pointAddrP(dtmP, P2)->y, &X, &Y);
+
+                if (onLine && d1 < dtmP->plTol)
+                    {
+                    splitTrianglePt = P2;
+                    }
                 }
-            else
+
+            if (splitTrianglePt == -1 && P3 != dtmP->nullPnt && P3 != offsetP[(i + 1) % 3])
                 {
-                d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P3)->x, pointAddrP(dtmP, P3)->y, &X, &Y);
+                double d1 = bcdtmMath_distanceOfPointFromLine(&onLine, firstPt->x, firstPt->y, lastPt->x, lastPt->y, pointAddrP(dtmP, P3)->x, pointAddrP(dtmP, P3)->y, &X, &Y);
 
                 if (onLine && d1 < dtmP->plTol)
                     {
@@ -7751,6 +7759,7 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
                 newOffsetPoints[0] = newOffsetPoints[3] = splitTrianglePt;
                 newOffsetPoints[1] = offsetP[i];
                 newOffsetPoints[2] = offsetP[(i + 1) % 3];
+
                 otherDtmFeature = dtmP->numFeatures++;
 
                 offsetP[i] = splitTrianglePt;
@@ -7769,7 +7778,7 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
 // @bsimethod                                    Daryl.Holmwood                 11/2016
 //=======================================================================================
 int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeature)
- {
+    {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
     BeAssert(dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray);
     BeAssert(dtmFeatureP->numDtmFeaturePts == 4);
@@ -7798,7 +7807,7 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
     //    }
     firstPnt = offsetP[0];
     for (int i = 1; i < 4; i++)
-         {
+        {
         long lastPnt = offsetP[i];
         nodeAddrP(dtmP, firstPnt)->tPtr = lastPnt;
         firstPnt = lastPnt;
@@ -7810,12 +7819,14 @@ int bcdtmObject_tryAndAddTriangleFeatureDtmObject(BC_DTM_OBJ *dtmP, long dtmFeat
 
 //=======================================================================================
 // @bsimethod                                    Daryl.Holmwood                 11/2016
-//=======================================================================================
+
 BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 (
- BC_DTM_OBJ *dtmP //  Pointer To DTM Object
- )
+    BC_DTM_OBJ *dtmP //  Pointer To DTM Object
+)
     {
+    nOfTriangulations++;
+    clock_t timeAtStart = clock();
     int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
     long dtmFeature;
     DPoint3dP trgPtsP = nullptr;
@@ -7896,17 +7907,28 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
         if (side > 0)
             {
-            long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
-            numSwapped++;
-            std::swap(offsetP[2], offsetP[1]);
+            if (dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray)
+                {
+                long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+                numSwapped++;
+                std::swap(offsetP[2], offsetP[1]);
+                }
+            else if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Data)
+                {
+                std::swap(*pointAddrP(dtmP, dtmFeatureP->dtmFeaturePts.firstPoint + 1), *pointAddrP(dtmP, dtmFeatureP->dtmFeaturePts.firstPoint + 2));
+                }
+            else
+                {
+                bcdtmWrite_message(1, 0, 0, "Triangle is the wrong orientation.");
+                goto errexit;
+                }
             }
         }
 
     // Change all Graphic Breaks to hard breaks
-    // ToDo bcdtmData_changeAllOccurrencesOfDtmFeatureTypeDataObject
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; dtmFeature++)
         {
-        dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
+        dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
 
         // Check For None Graphic Break Feature
         dtmFeatureP->dtmFeatureType = DTMFeatureType::Breakline;
@@ -7919,96 +7941,88 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     dtmP->maxSide = dtmP->ppTol;
     dtmP->ppTol = 0;
     dtmP->plTol = 0;
-    bool newSTM = true;
-    
-        if (!newSTM)
-         {
-        bcdtmObject_triangulateDtmObject(dtmP, false, false);
+
+    if (bcdtmObject_processForTriangulationDtmObject(dtmP, false, false)) goto errexit;
+    previousNumPoints = dtmP->numPoints;
+
+    dtmP->dtmState = DTMState::Tin;
+    dtmP->numSortedPoints = dtmP->numPoints;
+
+    long colinear;
+    if (bcdtmTin_triangulateDtmObject(dtmP, &colinear)) goto errexit;
+    if (colinear == 1)
+        {
+        bcdtmWrite_message(1, 0, 0, "All DTM Points Colinear");
+        goto errexit;
         }
-        else
+    dtmP->ppTol /= 100;
+    dtmP->plTol /= 100;
+
+    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
+        {
+        if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
+            failedFeatures.push_back(dtmFeature);
+        }
+
+    int method = 0;
+    int numFailedTriangles = 0;
+    while (!failedFeatures.empty())
+        {
+        bvector<long> featureList;
+        bool restartScan = false;
+        std::swap(featureList, failedFeatures);
+        for (auto dtmFeature : featureList)
             {
-            if (bcdtmObject_processForTriangulationDtmObject(dtmP, false, false)) goto errexit;
-            previousNumPoints = dtmP->numPoints;
-
-            dtmP->dtmState = DTMState::Tin;
-            dtmP->numSortedPoints = dtmP->numPoints;
-
-            long colinear;
-            if (bcdtmTin_triangulateDtmObject(dtmP, &colinear)) goto errexit;
-            if (colinear == 1)
+            switch (method)
                 {
-                bcdtmWrite_message(1, 0, 0, "All DTM Points Colinear");
-                goto errexit;
-                }
-
-            dtmP->ppTol /= 100;
-            dtmP->plTol /= 100;
-
-            for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-                {
-                if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
-                    failedFeatures.push_back(dtmFeature);
-                }
-            int method = 0;
-            while (!failedFeatures.empty())
-                {
-                bvector<long> featureList;
-
-                std::swap(featureList, failedFeatures);
-                for (auto dtmFeature : featureList)
+                case 0: // Normal.
+                    if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
+                        failedFeatures.push_back(dtmFeature);
+                    break;
+                case 1: // Split triangles if there are points on the edge.
                     {
-                    switch (method)
+                    long otherDtmFeature;
+                    if (bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(dtmP, dtmFeature, otherDtmFeature) == DTM_SUCCESS)
                         {
-                        case 0: // Normal.
-                            if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
-                                failedFeatures.push_back(dtmFeature);
-                            break;
-                        case 1:
-                            {
-                            long otherDtmFeature;
-                            if (bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(dtmP, dtmFeature, otherDtmFeature) == DTM_SUCCESS)
-                                {
-                                failedFeatures.push_back(dtmFeature);
-                                failedFeatures.push_back(otherDtmFeature);
-                                }
-                            break;
-                            }
+                        failedFeatures.push_back(dtmFeature);
+                        failedFeatures.push_back(otherDtmFeature);
+                        restartScan = true;
                         }
+                    else
+                        {
+                        failedFeatures.push_back(dtmFeature);
+                        }
+                    break;
                     }
-
-                if (featureList.size() == failedFeatures.size())
-                    {
-                    method++;
-                    if (method == 2)
-                        // We couldn't swap any so exit.
-                        break;
-                    }
-                else
-                    method = 0;
                 }
-
-            dtmP->ppTol *= 100;
-            dtmP->plTol *= 100;
             }
+
+        if (!restartScan && featureList.size() == failedFeatures.size())
+            {
+            method++;
+            if (method == 2)
+                // We couldn't swap any so exit.
+                break;
+            }
+        else
+            method = 0;
+        }
+
+    numFailedTriangles = (int)failedFeatures.size();
+    dtmP->ppTol *= 100;
+    dtmP->plTol *= 100;
 
     dtmP->maxSide = prevMaxSide;
 
     // Remove as much tin edges as we can.
     bcdtmList_removeNoneFeatureHullLinesDtmObject (dtmP);
 
-    // Check if there are inserted points which aren't a triangle point.
-    /*if (previousNumPoints != dtmP->numPoints)
-        {
-        if (DTM_SUCCESS == bcdtmObject_stmFixInsertedPoints(dtmP))
-            bcdtmObject_addVoidsToInternalDtmObject(dtmP);
-        }
-    else*/
-        // Add internal voids.
-        bcdtmObject_addVoidsToInternalDtmObject(dtmP);
+    // Add internal voids.
+        bcdtmObject_addVoidsToInternalDtmObject (dtmP);
 
 
     // Delete all breaklines.
-    bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject (dtmP, DTMFeatureType::Breakline);
+    bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject(dtmP, DTMFeatureType::Breakline);
 
     // Remove the deleted flag from the nodes.
     for (int i = 0; i < dtmP->numNodes; i++)
@@ -8029,7 +8043,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
     /*
     **  Count Tin Lines And Triangles
-     */
+    */
     if (dbg) bcdtmWrite_message(0, 0, 0, "Counting Tin Lines And Triangles");
     if (bcdtmList_countTrianglesAndLinesDtmObject(dtmP, &dtmP->numTriangles, &dtmP->numLines)) goto errexit;
     if (dbg)
@@ -8039,8 +8053,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         bcdtmWrite_message(0, 0, 0, "Number Of Tin Triangles = %8ld", dtmP->numTriangles);
         }
     /*
-     ** Set Modified Time
-     */
+    ** Set Modified Time
+    */
     bcdtmObject_updateLastModifiedTime(dtmP);
 
     cleanup:
@@ -8050,6 +8064,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
     if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Completed");
     if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Error");
+    timeSpentTriangulating += clock() - timeAtStart;
     return (ret);
 
     // Error Exit
@@ -8063,35 +8078,27 @@ BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ*
     {
     long firstPointIndex = dtmP->numPoints;
     DTMFeatureId dtmFeatureId;
- 
+
     // Add the points.
     if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, DTM_NULL_USER_TAG, 1, &dtmFeatureId, points, numPoints))
         return DTM_ERROR;
- 
+
     dtmP->memFeatures += numTriangles;
- 
+
     if (bcdtmObject_allocateFeaturesMemoryDtmObject(dtmP))
         return DTM_ERROR;
- 
+
     for (int i = 0; i < numTriangles; i++)
         {
         BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmP->numFeatures);
- 
+
         dtmFeatureP->dtmFeatureState = DTMFeatureState::OffsetsArray;
         dtmFeatureP->dtmFeatureType = (DTMFeatureType)dtmFeatureType;
         dtmFeatureP->internalToDtmFeature = dtmP->nullPnt;
         dtmFeatureP->dtmFeaturePts._64bitPad = 0;
         dtmFeatureP->dtmUserTag = DTM_NULL_USER_TAG;
         dtmFeatureP->numDtmFeaturePts = 4;
-        //if (indexOption == 1)
         dtmFeatureP->dtmFeatureId = DTM_NULL_FEATURE_ID;
-        //if (indexOption == 2)
-        //    dtmFeatureP->dtmFeatureId = *userFeatureIdP;
-        //if (indexOption == 3)
-        //    {
-        //    *userFeatureIdP = dtmFeatureP->dtmFeatureId = dtmP->dtmFeatureIndex;
-        //    ++dtmP->dtmFeatureIndex;
-        //    }
         dtmFeatureP->dtmFeaturePts.offsetPI = bcdtmMemory_allocate(dtmP, 4 * sizeof(long));
         long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
         for (int j = 0; j < 3; j++)

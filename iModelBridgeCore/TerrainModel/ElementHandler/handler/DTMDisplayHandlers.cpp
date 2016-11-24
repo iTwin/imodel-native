@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayHandlers.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -77,6 +77,11 @@ bool DTMElementSubDisplayHandler::SetSymbology (DTMElementSubHandler::SymbologyP
 //=======================================================================================
 bool DTMElementSubDisplayHandler::TestLevelIsVisible (LevelId level, DTMDrawingInfo& drawingInfo, ViewContextR context)
     {
+    ViewportP vp = context.GetViewport();
+
+    if (nullptr == vp)  // If we dont have a viewport then draw all levels.
+        return true;
+
     MSElementCR elm = *drawingInfo.GetOriginalElement ().GetElementCP ();
     DgnModelRefP    model = drawingInfo.GetSymbologyElement ().GetModelRef ();
     int     elemLevel = ((level != LEVEL_BYCELL) ? level : elm.ehdr.level);
@@ -84,7 +89,6 @@ bool DTMElementSubDisplayHandler::TestLevelIsVisible (LevelId level, DTMDrawingI
     if (drawingInfo.GetOriginalElement().GetModelRef() == drawingInfo.GetSymbologyElement().GetModelRef())
         return context.GetLevelClassMask()->levelBitMaskP->Test(elemLevel - 1);
 
-    ViewportP vp = context.GetViewport();
     ViewInfoCP viewInfo = vp ? vp->GetViewInfoCP() : NULL;
     bool isDisplayed = false;
     if (nullptr != viewInfo)

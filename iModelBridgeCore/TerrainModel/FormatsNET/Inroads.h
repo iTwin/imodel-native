@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Inroads.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,20 @@ public ref class InroadsImporter : TerrainImporter
 
     public: static InroadsImporter^ Create (System::String^ filename);
     internal: InroadsImporter (InroadsImporterP importer);
+    };
+
+public ref class InroadsExporter : TerrainExporter
+    {
+    private: InroadsExporterP m_exporter;
+    private: InroadsExporter();
+
+    public: static InroadsExporter^ Create()
+        {
+        return gcnew InroadsExporter();
+        }
+
+    public: void InroadsExporter::CreateDTM(System::String^ filename, NamedTerrain^ terrain);
+
     };
 
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE

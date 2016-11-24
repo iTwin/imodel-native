@@ -63,6 +63,13 @@ struct IMrDTM abstract:  BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
                                                           const DRange3d&                      extentInTargetGCS) const = 0;
 
 
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, TerrainModel::DTMAreaValuesCallback progressiveCallback, TerrainModel::DTMCancelProcessCallback isCancelledCallback) override { return DTM_ERROR; }
+
+        virtual IDTMVolumeP _GetDTMVolume() override { return nullptr; }
+
+
+        virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override { return DTM_ERROR; }
+
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;

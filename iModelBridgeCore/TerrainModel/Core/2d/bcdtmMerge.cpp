@@ -2,25 +2,25 @@
 |
 |     $Source: Core/2d/bcdtmMerge.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 
 thread_local static double areaPerimeterRatio = 1.0;
 thread_local static double minImpliedVoidArea = 5.0;
 /*==============================================================================*//**
 * @memo   Merge Dtm Files
-* @doc    Merge Dtm Files 
+* @doc    Merge Dtm Files
 * @notes  Merges Dtm File 2 Into Dtm File 1 and writes the merged Dtm File as Dtm File 3
 * param dtmFile1P      ==>  Dtm File Name To Be Merged Into
-* param dtmFile2P      ==>  Dtm File Name To Be Merged 
-* param dtmFile3P      ==>  Dtm File Name To Be Created For The Merged File 
+* param dtmFile2P      ==>  Dtm File Name To Be Merged
+* param dtmFile3P      ==>  Dtm File Name To Be Created For The Merged File
 * @return DTM_SUCCESS or DTM_ERROR
 * @author Rob Cormack   rob.cormack@bentley.con
-* @version 
+* @version
 * @see None
 *===============================================================================*/
 BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
@@ -39,8 +39,8 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
 ** Write Status Message
 */
  if( dbg )
-   { 
-    bcdtmWrite_message(0,0,0,"Merging Dtm Files") ; 
+   {
+    bcdtmWrite_message(0,0,0,"Merging Dtm Files") ;
     bcdtmWrite_message(0,0,0,"Dtm File1 = %s",dtmFile1P) ;
     bcdtmWrite_message(0,0,0,"Dtm File2 = %s",dtmFile2P) ;
     bcdtmWrite_message(0,0,0,"Dtm File3 = %s",dtmFile3P) ;
@@ -56,15 +56,15 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
 /*
 ** Check For Different Files
 */
- if( wcscmp(dtmFile1P,dtmFile2P) == 0 ) 
-   { 
-    bcdtmWrite_message(1,0,0,"Dtm Files The Same") ; goto errexit ; 
-   } 
+ if( wcscmp(dtmFile1P,dtmFile2P) == 0 )
+   {
+    bcdtmWrite_message(1,0,0,"Dtm Files The Same") ; goto errexit ;
+   }
 /*
 ** Read Dtm Files Into Memory
 */
  if( bcdtmRead_fromFileDtmObject(&dtm1P,dtmFile1P)) goto errexit ;
- if( bcdtmRead_fromFileDtmObject(&dtm2P,dtmFile2P)) goto errexit ; 
+ if( bcdtmRead_fromFileDtmObject(&dtm2P,dtmFile2P)) goto errexit ;
 /*
 ** Check For Old Dtm Files
 */
@@ -79,7 +79,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
 /*
 ** Set Currency
 */
- if( bcdtmUtility_setCurrentDtmObject(dtm1P,dtmFile3P)) goto errexit ; 
+ if( bcdtmUtility_setCurrentDtmObject(dtm1P,dtmFile3P)) goto errexit ;
 /*
 ** Write Dtm File
 */
@@ -88,7 +88,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
 ** Clean Up
 */
  cleanup :
- if( dtm2P != NULL ) bcdtmObject_destroyDtmObject(&dtm2P) ; 
+ if( dtm2P != NULL ) bcdtmObject_destroyDtmObject(&dtm2P) ;
 /*
 ** Return
 */
@@ -97,8 +97,8 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmFiles
 ** Error Exit
 */
  errexit :
- if( dtm1P != NULL ) bcdtmObject_destroyDtmObject(&dtm1P) ; 
- if( dtm2P != NULL ) bcdtmObject_destroyDtmObject(&dtm2P) ; 
+ if( dtm1P != NULL ) bcdtmObject_destroyDtmObject(&dtm1P) ;
+ if( dtm2P != NULL ) bcdtmObject_destroyDtmObject(&dtm2P) ;
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -188,18 +188,18 @@ BENTLEYDTM_Private int bcdtmMerge_addVoidAreaDtmObject (
 
 /*==============================================================================*//**
 * @memo   Merge Dtm Objects
-* @doc    Merge Dtm Objects 
+* @doc    Merge Dtm Objects
 * @notes  Merges dtm2P Into dtm1P
 * @notes  interflag designates if dtm2P is totally or partially internal to dtm1P
 * @notes  If dtm2P is totally internal to dtm1P set internalFlag to 1
-* @notes  If dtm2P is both external and internal to dtm1P set internalFlag to 2       
+* @notes  If dtm2P is both external and internal to dtm1P set internalFlag to 2
 * @notes  If unsure set internalFlag to 0 and the merge function will determine.
-* @param  dtm1P             ==> Pointer To dtm1P Object        
-* @param  dtm2P             ==> Pointer To dtm2P Object        
-* @param  internalFlag      ==> Designates if dtm2P is internal to dtm1P <0,1,2>         
+* @param  dtm1P             ==> Pointer To dtm1P Object
+* @param  dtm2P             ==> Pointer To dtm2P Object
+* @param  internalFlag      ==> Designates if dtm2P is internal to dtm1P <0,1,2>
 * @return DTM_SUCCESS or DTM_ERROR
 * @author Rob Cormack rob.cormack@bentley.con
-* @version 
+* @version
 * @see None
 *===============================================================================*/
 BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
@@ -214,7 +214,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0),fifodbg=DTM_TRACE_VALUE(0) ;
- long startPnt,numDtm2HullPts=0 ; 
+ long startPnt,numDtm2HullPts=0 ;
  long mstart = 0,start=0 ;
  DPoint3d  *tin2hullPtsPP=NULL ;
  static long  mrgSeqNum=1 ;
@@ -223,13 +223,13 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 ** Write Status Message
 */
 // bcdtmWrite_message(0,0,0,"Merging Dtm Objects") ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Merging Dtm Objects") ;
     bcdtmWrite_message(0,0,0,"dtm1P        = %p",dtm1P) ;
     bcdtmWrite_message(0,0,0,"dtm2P        = %p",dtm2P) ;
     bcdtmWrite_message(0,0,0,"internalFlag = %8ld",internalFlag) ;
-   } 
+   }
 /*
 ** Test For Valid DTM Objects
 */
@@ -250,18 +250,18 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
     swprintf(mergeFile,128,L"mrg%4ld_1.tin",mrgSeqNum) ;
     cP = mergeFile ;
     while( *cP != 0 ) { if( *cP == ' ' ) *cP = '0' ; ++cP ; }
-    bcdtmWrite_toFileDtmObject(dtm1P,mergeFile) ; 
+    bcdtmWrite_toFileDtmObject(dtm1P,mergeFile) ;
     mergeFile[0] = 0 ;
     swprintf(mergeFile,128,L"mrg%4ld_2.tin",mrgSeqNum );
     cP = mergeFile ;
     while( *cP != 0 ) { if( *cP == ' ' ) *cP = '0' ; ++cP ; }
-    bcdtmWrite_toFileDtmObject(dtm2P,mergeFile) ; 
+    bcdtmWrite_toFileDtmObject(dtm2P,mergeFile) ;
     ++mrgSeqNum ;
    }
 /*
 ** Check For Old Dtm Files
 */
- if( dtm1P->ppTol == 0.0 || dtm2P->ppTol == 0.0 ) 
+ if( dtm1P->ppTol == 0.0 || dtm2P->ppTol == 0.0 )
    {
     bcdtmWrite_message(1,0,0,"Convert Dtm File(s)") ;
     goto errexit ;
@@ -289,7 +289,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
     bcdtmWrite_message(0,0,0,"dtm2P ** ppTol = %20.15lf plTol = %20.15lf mppTol = %20.15lf",dtm2P->ppTol,dtm2P->plTol,dtm2P->mppTol) ;
    }
 /*
-** Check Tins 
+** Check Tins
 */
  if( cdbg )
    {
@@ -302,8 +302,8 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 ** Set Tolerances For Merge
 */
  if( dtm1P->ppTol > dtm2P->ppTol ) { dtm1P->ppTol = dtm1P->plTol = dtm2P->ppTol ; }
- else                              { dtm2P->ppTol = dtm2P->plTol = dtm1P->ppTol ; }  
- if( dtm1P->ppTol < dtm1P->mppTol * 10000.0 ) dtm1P->ppTol = dtm1P->plTol = dtm1P->mppTol * 10000.0 ;                         
+ else                              { dtm2P->ppTol = dtm2P->plTol = dtm1P->ppTol ; }
+ if( dtm1P->ppTol < dtm1P->mppTol * 10000.0 ) dtm1P->ppTol = dtm1P->plTol = dtm1P->mppTol * 10000.0 ;
 /*
 ** Log Tolerances
 */
@@ -312,7 +312,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
     bcdtmWrite_message(0,0,0,"Adjusted Merge Tolerances") ;
     bcdtmWrite_message(0,0,0,"dtm1P ** ppTol = %16.14lf plTol = %16.14lf mppTol = %16.14lf",dtm1P->ppTol,dtm1P->plTol,dtm1P->mppTol) ;
     bcdtmWrite_message(0,0,0,"dtm2P ** ppTol = %16.14lf plTol = %16.14lf mppTol = %16.14lf",dtm2P->ppTol,dtm2P->plTol,dtm2P->mppTol) ;
-   } 
+   }
 /*
 ** Clean DTM Features ** Fix For Older Dtm Versions
 */
@@ -340,7 +340,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
         }
     if( internalFlag == 0 ) { bcdtmWrite_message(1,0,0,"Merge Tins Do Not Intersect") ; goto errexit  ; }
     if( internalFlag == 3 ) { bcdtmWrite_message(1,0,0,"Merge Dtm Encloses Old Tin") ; goto errexit  ; }
-    if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Check Tins Intersect = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),start)) ; 
+    if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Check Tins Intersect = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),start)) ;
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"Internal Flag = %2ld",internalFlag) ;
 /*
@@ -359,15 +359,15 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 */
  start = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Internally Clipping Update Dtm") ;
- if( bcdtmMerge_internallyClipDtmObject(dtm1P,internalFlag,tin2hullPtsPP,numDtm2HullPts,&startPnt)) goto errexit  ; 
+ if( bcdtmMerge_internallyClipDtmObject(dtm1P,internalFlag,tin2hullPtsPP,numDtm2HullPts,&startPnt)) goto errexit  ;
  if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Internally Clip Dtm = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),start)) ;
 /*
-** Insert Merge Dtm Into Update 
+** Insert Merge Dtm Into Update
 */
  start = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Merge Dtm") ;
  if( bcdtmMerge_insertMergeDtmObject(dtm1P,dtm2P,internalFlag,startPnt)) goto errexit  ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Insert Merge Dtm = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),start)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Insert Merge Dtm = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),start)) ;
 /*
 ** Write Merged Dtm Statistics
 */
@@ -378,13 +378,13 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
     bcdtmWrite_message(0,0,0,"dtm1P ** ppTol = %15.10lf plTol = %15.10lf",dtm1P->ppTol,dtm1P->plTol) ;
    }
 /*
-** Check Merged Dtm 
+** Check Merged Dtm
 */
  if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Merged Tin") ;
     if( bcdtmCheck_tinComponentDtmObject(dtm1P)) goto errexit  ;
-   } 
+   }
 /*
 **  Update Modified Time
  */
@@ -398,7 +398,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 /*
 ** Job Completed
 */
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Merge Tins = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),mstart)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Merge Tins = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),mstart)) ;
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Merging Dtm Objects Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Merging Dtm Objects Error") ;
 // if( ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Merging Dtm Objects Completed") ;
@@ -409,8 +409,8 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
-} 
+ goto cleanup ;
+}
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -430,7 +430,7 @@ BENTLEYDTM_EXPORT int  bcdtmMerge_checkTinsIntersectDtmObject(BC_DTM_OBJ *dtm1P,
  long numHullPts1=0,numHullPts2=0,intersectFlag ;
  DPoint3d  *hullPts1P=NULL,*hullPts2P=NULL ;
 /*
-** Initialise 
+** Initialise
 */
  *internalFlagP = 0 ;
 /*
@@ -451,7 +451,7 @@ BENTLEYDTM_EXPORT int  bcdtmMerge_checkTinsIntersectDtmObject(BC_DTM_OBJ *dtm1P,
 */
  cleanup :
  if( hullPts1P != NULL ) free(hullPts1P) ;
- if( hullPts1P != NULL ) free(hullPts2P) ; 
+ if( hullPts1P != NULL ) free(hullPts2P) ;
 /*
 ** Job Completed
 */
@@ -497,19 +497,19 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
        if( dbg ) bcdtmWrite_message(0,0,0,"Feature = %4ld Type = %4ld DTMFeatureType::Hole = %4ld Dtm Feature State = %2ld",dtmFeature,dtmFeatureP->dtmFeatureType,DTMFeatureType::Hole,dtmFeatureP->dtmFeatureState) ;
       }
    }
- if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Holes = %8ld",numHoles) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Holes = %8ld",numHoles) ;
 /*
 ** Only Process If Holes Present
 */
  if( numHoles )
-   {    
+   {
 /*
 **  Extract Dtm Hull To DPoint3d Array
 */
     if( bcdtmList_extractHullDtmObject(dtm1P,&hullPtsP,&numHullPts)) goto errexit ;
 /*
 **  Scan Features For Holes
-*/ 
+*/
     for( dtmFeature = 0 ; dtmFeature < dtm2P->numFeatures ; ++dtmFeature )
       {
        dtmFeatureP = ftableAddrP(dtm2P,dtmFeature) ;
@@ -524,9 +524,9 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
 **        Write Hole Points
 */
           if( dbg == 2 )
-            { 
+            {
              bcdtmWrite_message(0,0,0,"Number Of Hole Points = %8ld",numHolePts) ;
-             for( p3dP = holePtsP ; p3dP < holePtsP + numHolePts ; ++p3dP )       
+             for( p3dP = holePtsP ; p3dP < holePtsP + numHolePts ; ++p3dP )
                {
                 bcdtmWrite_message(0,0,0,"holePoint[%6ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-holePtsP),p3dP->x,p3dP->y,p3dP->z) ;
                }
@@ -539,7 +539,7 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"Checking Hole Is Internal To Dtm") ;
              if( bcdtmMerge_checkHoleInternalToDtmHull(hullPtsP,numHullPts,holePtsP,numHolePts,&holeInternalFlag) ) goto errexit ;
-            } 
+            }
           if( dbg ) bcdtmWrite_message(0,0,0,"holeInternalFlag = %2ld",holeInternalFlag) ;
 /*
 **       Set Hole To Void If Hole Not Totally Internal To dtm1P
@@ -554,7 +554,7 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
              if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtm2P,dtmFeature)) goto errexit ;
 /*
 **           Extract Hole Data From dtm1P And Insert Into dtm2P
-*/ 
+*/
              if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Hole Into DTM1") ;
              if( bcdtmMerge_extractAndInsertHoleDtmObject(dtm1P,dtm2P,holePtsP,numHolePts)) goto errexit ;
 /*
@@ -563,7 +563,7 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
              if( cdbg )
                {
                 if( dbg ) bcdtmWrite_message(0,0,0,"Checking Tin") ;
-                if( bcdtmCheck_tinComponentDtmObject(dtm2P) ) 
+                if( bcdtmCheck_tinComponentDtmObject(dtm2P) )
                   {
                    if( dbg )bcdtmWrite_message(0,0,0,"Tin Invalid") ;
                    goto errexit ;
@@ -574,15 +574,15 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
 **           Reset Scan To Start Because Of Clean Operation
 */
              dtmFeature = -1 ;
-            } 
+            }
 /*
 **        Free Hole Points Memory
 */
-          free(holePtsP) ; holePtsP = NULL ;  
-     
+          free(holePtsP) ; holePtsP = NULL ;
+
          }
       }
-   } 
+   }
 /*
 ** Flag Holes Detected
 */
@@ -596,7 +596,7 @@ BENTLEYDTM_Private int bcdtmMerge_insertHolesIntoDtmObject(BC_DTM_OBJ *dtm1P,BC_
 */
  cleanup :
  if( hullPtsP != NULL ) free(hullPtsP) ;
- if( holePtsP != NULL ) free(holePtsP) ; 
+ if( holePtsP != NULL ) free(holePtsP) ;
 /*
 ** Job Completed
 */
@@ -629,7 +629,7 @@ BENTLEYDTM_Public int bcdtmMerge_checkHoleInternalToDtmHull(DPoint3d *hullPtsP,l
 */
  *holeInternalFlag = 0 ;
 /*
-** Check For Coincident Points 
+** Check For Coincident Points
 */
  for( p3dP1 = hullPtsP ; p3dP1 < hullPtsP + numHullPts ; ++p3dP1 )
    {
@@ -662,7 +662,7 @@ BENTLEYDTM_Public int bcdtmMerge_checkHoleInternalToDtmHull(DPoint3d *hullPtsP,l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmMerge_extractAndInsertHoleDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *dtm2P,DPoint3d *holePtsP,long numHolePts) 
+BENTLEYDTM_Public int bcdtmMerge_extractAndInsertHoleDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *dtm2P,DPoint3d *holePtsP,long numHolePts)
 /*
 ** This Function Extracts The Hole Data From dtm1P and Stores The Hole Data In dtm2P
 */
@@ -721,7 +721,7 @@ BENTLEYDTM_Public int bcdtmMerge_extractAndInsertHoleDtmObject(BC_DTM_OBJ *dtm1P
 ** Check Connectivity Of Inserted Hole Points Polygon
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking Connectivity Of Tptr Polygon") ;
- if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtm2P,startPnt,0))  goto errexit ; 
+ if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtm2P,startPnt,0))  goto errexit ;
 /*
 ** Internally Clip Hole Triangles
 */
@@ -753,7 +753,7 @@ BENTLEYDTM_Public int bcdtmMerge_extractAndInsertHoleDtmObject(BC_DTM_OBJ *dtm1P
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
+ goto cleanup ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -772,7 +772,7 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
 **
 ** Notes :-
 ** If Internal Flag == 1 The clip polygon is totally internal to the Tin
-**                  == 2 The clip polgon is both internal and external to the Dtm 
+**                  == 2 The clip polgon is both internal and external to the Dtm
 **
 */
 {
@@ -785,12 +785,12 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
 ** Write Entry Message
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"Internally Clipping Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"internalFlag = %8ld",internalFlag) ;
     bcdtmWrite_message(0,0,0,"clipPtsP     = %p",clipPtsP) ;
-    bcdtmWrite_message(0,0,0,"numClipPts   = %6ld",numClipPts) ; 
+    bcdtmWrite_message(0,0,0,"numClipPts   = %6ld",numClipPts) ;
    }
 /*
 ** Perform Checks
@@ -825,7 +825,7 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
       {
        bcdtmWrite_message(2,0,0,"Large Difference %20.10lf Between Polygon And Insert Areas",fabs(insertArea-polyArea)) ;
        goto errexit ;
-      }  
+      }
     if( internalFlag == 1 )
       {
        bcdtmWrite_message(0,0,0,"Checking Dtm Topology") ;
@@ -879,10 +879,10 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Clearing Void Bits On Insert Hull") ;
  sp = startPnt ;
- do 
-   { 
-    bcdtmFlag_clearVoidBitPCWD(&nodeAddrP(dtmP,sp)->PCWD) ; 
-    sp = nodeAddrP(dtmP,sp)->tPtr ; 
+ do
+   {
+    bcdtmFlag_clearVoidBitPCWD(&nodeAddrP(dtmP,sp)->PCWD) ;
+    sp = nodeAddrP(dtmP,sp)->tPtr ;
    } while( sp != startPnt ) ;
 /*
 **  Internally Clip Update Tin
@@ -909,7 +909,7 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
       {
        fpts = numPolyPts = 0 ;
        sp = dtmFeatureP->dtmFeaturePts.firstPoint ;
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeature = %8ld of = %8ld type = %4ld sp = %9ld",dtmFeature,dtmP->numFeatures,dtmFeatureP->dtmFeatureType,sp) ; 
+       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeature = %8ld of = %8ld type = %4ld sp = %9ld",dtmFeature,dtmP->numFeatures,dtmFeatureP->dtmFeatureType,sp) ;
        ++fpts ;
        if( nodeAddrP(dtmP,sp)->tPtr != dtmP->nullPnt ) ++numPolyPts ;
        bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&np) ;
@@ -919,11 +919,11 @@ BENTLEYDTM_Private int bcdtmMerge_internallyClipDtmObject
           if( nodeAddrP(dtmP,np)->tPtr != dtmP->nullPnt ) ++numPolyPts ;
           bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,np,&np) ;
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"np = %6ld sp = %6ld",np,sp) ;
-         } 
+         }
        if( fpts == numPolyPts  )
          {
           if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
-         } 
+         }
       }
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Voids Coincident With Insert Dtm Hull Completed") ;
@@ -977,19 +977,19 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
 /*
 ** Check Feature Lists
 */
- if( cdbg ) 
+ if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking DTM Feature Lists Tin") ;
     if( bcdtmCheck_tinFeatureListsDtmObject(dtmP,1) )
       {
-       bcdtmWrite_message(0,0,0,"Error In DTM Feature Lists") ; 
+       bcdtmWrite_message(0,0,0,"Error In DTM Feature Lists") ;
        goto errexit ;
       }
    }
 /*
 ** Copy Tptr Values To Point List
 */
- if( bcdtmList_copyTptrValuesToPointListDtmObject(dtmP,&pointListP)) goto errexit ; 
+ if( bcdtmList_copyTptrValuesToPointListDtmObject(dtmP,&pointListP)) goto errexit ;
 /*
 ** Mark Insert Hull Points That Cannot be Merged
 */
@@ -1001,13 +1001,13 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
     sp = np ;
     do
       {
-       if( p3dP->x == pointAddrP(dtmP,sp)->x && p3dP->y == pointAddrP(dtmP,sp)->y ) 
-         { 
-          nodeAddrP(dtmP,sp)->PRGN = 1 ; 
+       if( p3dP->x == pointAddrP(dtmP,sp)->x && p3dP->y == pointAddrP(dtmP,sp)->y )
+         {
+          nodeAddrP(dtmP,sp)->PRGN = 1 ;
           np = sp  ;
          }
        else sp = nodeAddrP(dtmP,sp)->tPtr ;
-      } while ( sp != np ) ;  
+      } while ( sp != np ) ;
    }
 /*
 ** Mark Dtm Hull Points That Cannot be Merged
@@ -1038,9 +1038,9 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
    }
 /*
 ** Merge Close Points
-*/  
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Merging Close Points") ;
- pp = startPnt ; 
+ pp = startPnt ;
  process = 1 ;
  while( process )
    {
@@ -1048,9 +1048,9 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
     sp = startPnt ;
 /*
 **  Get Closest Points On Tptr Polygon
-*/ 
+*/
     cp1 =  cp2 = dtmP->nullPnt ;
-    cd = bcdtmMath_distance(dtmP->xMin,dtmP->yMin,dtmP->xMax,dtmP->yMax) ;    
+    cd = bcdtmMath_distance(dtmP->xMin,dtmP->yMin,dtmP->xMax,dtmP->yMax) ;
     do
       {
        np = nodeAddrP(dtmP,sp)->tPtr ;
@@ -1075,23 +1075,23 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
           {
            bcdtmWrite_message(0,0,0,"Merging cp1 = %6ld PRGN = %2ld ** %10.4lf %10.4lf %10.4lf",cp1,nodeAddrP(dtmP,cp1)->PRGN,pointAddrP(dtmP,cp1)->x,pointAddrP(dtmP,cp1)->y,pointAddrP(dtmP,cp1)->z) ;
            bcdtmWrite_message(0,0,0,"        cp2 = %6ld PRGN = %2ld ** %10.4lf %10.4lf %10.4lf",cp2,nodeAddrP(dtmP,cp2)->PRGN,pointAddrP(dtmP,cp2)->x,pointAddrP(dtmP,cp2)->y,pointAddrP(dtmP,cp2)->z) ;
-          } 
-        f1 = nodeAddrP(dtmP,cp1)->PRGN ; 
-        f2 = nodeAddrP(dtmP,cp2)->PRGN ; 
+          }
+        f1 = nodeAddrP(dtmP,cp1)->PRGN ;
+        f2 = nodeAddrP(dtmP,cp2)->PRGN ;
         if( ! f1 || ! f2 )
           {
-           nnp = nodeAddrP(dtmP,cp2)->tPtr ; 
+           nnp = nodeAddrP(dtmP,cp2)->tPtr ;
            bcdtmList_getTptrPriorAndNextPointsDtmObject(dtmP,cp1,&pp,&p1) ;
-           if( dbg ) 
+           if( dbg )
              {
               bcdtmWrite_message(0,0,0,"Distance = %20.15lf",bcdtmMath_distance(pointAddrP(dtmP,cp1)->x,pointAddrP(dtmP,cp1)->y,pointAddrP(dtmP,cp2)->x,pointAddrP(dtmP,cp2)->y)) ;
               bcdtmWrite_message(0,0,0,"pp = %6ld cp1 = %6ld cp2 = %6ld nnp = %6ld",pp,cp1,cp2,nnp) ;
               bcdtmWrite_message(0,0,0,"pp->Tptr = %6ld cp1->Tptr = %6ld cp2->Tptr = %6ld nnp-Tptr = %6ld",nodeAddrP(dtmP,pp)->tPtr,nodeAddrP(dtmP,cp1)->tPtr,nodeAddrP(dtmP,cp2)->tPtr,nodeAddrP(dtmP,nnp)->tPtr) ;
              }
 
-           p1 = cp1 ; p2 = cp2 ; 
+           p1 = cp1 ; p2 = cp2 ;
            if( f2 || (nodeAddrP(dtmP,p2)->hPtr != dtmP->nullPnt &&  ! f1) ) { p1 = cp2 ; p2 = cp1 ; }
-          
+
            if( nodeAddrP(dtmP,p2)->PRGN ) { sp = p1 ; p1 = p2 ; p2 = sp ; }
 
            if( bcdtmMerge_checkPointCanBeMergedDtmObject(dtmP,p1,p2,&mergeFlag)) goto errexit ;
@@ -1101,19 +1101,19 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
               if( bcdtmMerge_checkPointCanBeMergedDtmObject(dtmP,p1,p2,&mergeFlag)) goto errexit ;
              }
 
-           if( ! mergeFlag ) 
+           if( ! mergeFlag )
              {
               if( dbg ) bcdtmWrite_message(0,0,0,"Points Cannot Be Merged") ;
               if( nodeAddrP(dtmP,p1)->PRGN == 0 ) nodeAddrP(dtmP,p1)->PRGN = 2 ;
               if( nodeAddrP(dtmP,p2)->PRGN == 0 ) nodeAddrP(dtmP,p2)->PRGN = 2 ;
-             } 
+             }
            else
              {
               nodeAddrP(dtmP,p2)->hPtr = dtmP->nullPnt ;
 
 //              if( dbg ) bcdtmWrite_message(0,0,0,"Fixing Feature List For Last Point %6ld %6ld",p2,p1) ;
 //              if( bcdtmMerge_fixFeatureListForLastPointDtmObject(dtmP,p2,p1)) goto errexit ;
- 
+
               if( dbg ) bcdtmWrite_message(0,0,0,"Copying Feature List %6ld %6ld",p2,p1) ;
               if( bcdtmMerge_copyFeatureListFromPointToPointDtmObject(dtmP,p2,p1) ) goto errexit ;
 
@@ -1121,8 +1121,8 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
               if( bcdtmMerge_connectedPointsDtmObject(dtmP,p2,p1) ) goto errexit ;
               if( dbg ) bcdtmWrite_message(0,0,0,"Points Merged") ;
 
-              if( p1 == cp1 ) *(pointListP+cp1) = nnp ; 
-              else            *(pointListP+pp)  = cp2 ;    
+              if( p1 == cp1 ) *(pointListP+cp1) = nnp ;
+              else            *(pointListP+pp)  = cp2 ;
 
               if( dbg ) bcdtmWrite_message(0,0,0,"pp = %6ld cp1 = %6ld cp2 = %6ld nnp = %6ld",pp,cp1,cp2,nnp) ;
               if( dbg ) bcdtmWrite_message(0,0,0,"pp->Tptr = %6ld cp1->Tptr = %6ld cp2->Tptr = %6ld nnp-Tptr = %6ld",nodeAddrP(dtmP,pp)->tPtr,nodeAddrP(dtmP,cp1)->tPtr,nodeAddrP(dtmP,cp2)->tPtr,nodeAddrP(dtmP,nnp)->tPtr) ;
@@ -1131,12 +1131,12 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
 /*
 **            Check Feature Lists
 */
-              if( cdbg ) 
+              if( cdbg )
                 {
                  bcdtmWrite_message(0,0,0,"Checking DTM Feature Lists Tin") ;
                  if( bcdtmCheck_tinFeatureListsDtmObject(dtmP,1) )
                    {
-                    bcdtmWrite_message(0,0,0,"Error In DTM Feature Lists After Merging Point %9ld To Point %9ld",p2,p1) ; 
+                    bcdtmWrite_message(0,0,0,"Error In DTM Feature Lists After Merging Point %9ld To Point %9ld",p2,p1) ;
                     goto errexit ;
                    }
                 }
@@ -1150,21 +1150,21 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
                  sp = *(pointListP+sp) ;
                 } while ( sp != startPnt  ) ;
 /*
-**            Check Connectivity Of Tptr Polygon 
+**            Check Connectivity Of Tptr Polygon
 */
 
               if( cdbg )
                 {
                  if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,1))
-                   { 
+                   {
                     bcdtmList_writeTptrListDtmObject(dtmP,startPnt) ;
-                    goto errexit ; 
+                    goto errexit ;
                    }
                 }
              }
           }
        }
-    } 
+    }
 /*
 ** Remove Slivers On Insert Line
 */
@@ -1175,10 +1175,10 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
     np = nodeAddrP(dtmP,sp)->tPtr ;
     if( ( p1 = bcdtmList_nextClkDtmObject(dtmP,sp,np)) < 0 ) goto errexit ;
     if( bcdtmList_testLineDtmObject(dtmP,p1,np) && nodeAddrP(dtmP,p1)->tPtr == dtmP->nullPnt )
-      { 
+      {
        dd = bcdtmMath_distanceOfPointFromLine(&f1,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&dx,&dy) ;
        if( dd > dtmP->plTol ) f1 = 0 ;
-       if(nodeAddrP(dtmP,p1)->fPtr != dtmP->nullPtr ) f1 = 0 ; 
+       if(nodeAddrP(dtmP,p1)->fPtr != dtmP->nullPtr ) f1 = 0 ;
        if( f1 )
          {
           if( dbg )bcdtmWrite_message(0,0,0,"Removing Sliver On Insert Hull %6ld %6ld %6ld",sp,np,p1) ;
@@ -1187,33 +1187,33 @@ BENTLEYDTM_Private int bcdtmMerge_mergeClosePointsOnInsertBoundaryDtmObject(BC_D
             {
              if( ( p2 = bcdtmList_nextAntDtmObject(dtmP,sp,np)) < 0 ) goto errexit ;
              if( bcdtmList_testLineDtmObject(dtmP,p2,np) )
-               { 
+               {
                 if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,p2,sp)) goto errexit ;
                 if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,p1,np)) goto errexit ;
                 if( bcdtmList_deleteLineDtmObject(dtmP,sp,np)) goto errexit ;
                 nodeAddrP(dtmP,sp)->tPtr = p1 ;
                 pointAddrP(dtmP,p1)->x = dx ;
-                pointAddrP(dtmP,p1)->y = dy ; 
-                nodeAddrP(dtmP,p1)->tPtr = np ; 
+                pointAddrP(dtmP,p1)->y = dy ;
+                nodeAddrP(dtmP,p1)->tPtr = np ;
                }
              else
                {
                 if( bcdtmList_deleteLineDtmObject(dtmP,sp,np)) goto errexit ;
                 nodeAddrP(dtmP,sp)->tPtr = p1 ;
                 pointAddrP(dtmP,p1)->x = dx ;
-                pointAddrP(dtmP,p1)->y = dy ; 
-                nodeAddrP(dtmP,p1)->tPtr = np ; 
+                pointAddrP(dtmP,p1)->y = dy ;
+                nodeAddrP(dtmP,p1)->tPtr = np ;
                }
             }
           if( dbg ) bcdtmWrite_message(0,0,0,"Sliver Removed") ;
          }
       }
-    sp = np ; 
+    sp = np ;
    } while ( sp != startPnt ) ;
 
 /*
 ** Check Feature Topology - Development Only
-*/ 
+*/
  if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Dtm Feature Topology") ;
@@ -1268,7 +1268,7 @@ BENTLEYDTM_Public int bcdtmMerge_fixFeatureListForLastPointDtmObject(BC_DTM_OBJ 
 */
        if( ( pnt1 == firstPnt && pnt2 == lastPnt ) || ( pnt1 == lastPnt && pnt2 == firstPnt ) )
          {
-          if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;          
+          if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
          }
 /*
 **     Remove pnt1 From Feature If pnt1 Is The Last Point
@@ -1282,15 +1282,15 @@ BENTLEYDTM_Public int bcdtmMerge_fixFeatureListForLastPointDtmObject(BC_DTM_OBJ 
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"pnt2 %9ld On Feature Where pnt1 %9ld is last Point",pnt2,pnt1) ;
              if( dbg ) bcdtmWrite_message(0,0,0,"Removing Point %9ld From Dtm Feature %9ld",pnt1,dtmFeature) ;
-             if( priorPnt == pnt2 ) { if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,pnt1,dtmFeature)) goto errexit ; }       
-             else           
-               { 
+             if( priorPnt == pnt2 ) { if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,pnt1,dtmFeature)) goto errexit ; }
+             else
+               {
                 if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dtm Feature %9ld",dtmFeature) ;
-                if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ; 
+                if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
                }
-            } 
+            }
          }
-      } 
+      }
    }
 /*
 ** Claen Up
@@ -1331,7 +1331,7 @@ BENTLEYDTM_Public int bcdtmMerge_copyFeatureListFromPointToPointDtmObject(BC_DTM
 /*
 ** Only Copy If pnt1 Has A Feature List
 */
- if( nodeAddrP(dtmP,pnt1)->fPtr != dtmP->nullPtr ) 
+ if( nodeAddrP(dtmP,pnt1)->fPtr != dtmP->nullPtr )
    {
 /*
 **  Remove pnt1 From Dtm Features Lists That Include pnt2
@@ -1350,7 +1350,7 @@ BENTLEYDTM_Public int bcdtmMerge_copyFeatureListFromPointToPointDtmObject(BC_DTM
              bcdtmList_testForPointOnTinFeatureDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature,pnt2,&pnt2OnFeature) ;
              if( pnt2OnFeature )
                {
-                if( dbg ) 
+                if( dbg )
                   {
                    bcdtmWrite_message(0,0,0,"pnt1 = %6ld pnt2 = %6ld On Feature %6ld",pnt1,pnt2,flistAddrP(dtmP,clc1)->dtmFeature) ;
 //                   bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature) ;
@@ -1358,29 +1358,29 @@ BENTLEYDTM_Public int bcdtmMerge_copyFeatureListFromPointToPointDtmObject(BC_DTM
                 if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature,pnt1,&priorPnt)) goto errexit  ;
                 if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature,pnt1,&nextPnt)) goto errexit  ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"pnt1 ** nextPoint = %9ld priorPoint = %9ld",nextPnt,priorPnt) ;
-                if( pnt2 == nextPnt || pnt2 == priorPnt ) 
-                  { 
+                if( pnt2 == nextPnt || pnt2 == priorPnt )
+                  {
                    if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,pnt1,flistAddrP(dtmP,clc1)->dtmFeature)) goto errexit  ;
-                   process = 1 ; 
+                   process = 1 ;
                   }
-                else  
-                  {                     
+                else
+                  {
                    if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Feature %6ld",flistAddrP(dtmP,clc1)->dtmFeature) ;
-                   if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature)) goto errexit  ; 
+                   if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,flistAddrP(dtmP,clc1)->dtmFeature)) goto errexit  ;
                   }
-               } 
+               }
             }
 /*
 **        Get Next Feature For Point
 */
-          if( ! process ) clc1 = flistAddrP(dtmP,clc1)->nextPtr ; 
+          if( ! process ) clc1 = flistAddrP(dtmP,clc1)->nextPtr ;
           else            clc1 = dtmP->nullPtr ;
          }
       }
 /*
 **   Test For pnt1 Having A Feature List
 */
-    if( nodeAddrP(dtmP,pnt1)->fPtr  != dtmP->nullPtr ) 
+    if( nodeAddrP(dtmP,pnt1)->fPtr  != dtmP->nullPtr )
       {
 /*
 **     Copy pnt1 Features To pnt2
@@ -1388,7 +1388,7 @@ BENTLEYDTM_Public int bcdtmMerge_copyFeatureListFromPointToPointDtmObject(BC_DTM
        if( dbg ) bcdtmWrite_message(0,0,0,"Copying pnt1 Features To pnt2") ;
        while ( ( clc1 = nodeAddrP(dtmP,pnt1)->fPtr ) != dtmP->nullPtr )
          {
-          dtmFeature = flistAddrP(dtmP,clc1)->dtmFeature ; 
+          dtmFeature = flistAddrP(dtmP,clc1)->dtmFeature ;
           if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,dtmFeature,pnt1,&priorPnt)) goto errexit  ;
 /*
 **        Update Prior Point In Feature List
@@ -1398,30 +1398,30 @@ BENTLEYDTM_Public int bcdtmMerge_copyFeatureListFromPointToPointDtmObject(BC_DTM
             {
              clc3 = dtmP->nullPtr ;
              clc2 = nodeAddrP(dtmP,priorPnt)->fPtr ;
-             while( clc2 != dtmP->nullPtr && clc3 == dtmP->nullPtr ) 
-               { 
-                if( flistAddrP(dtmP,clc2)->dtmFeature == dtmFeature ) clc3 = clc2 ; 
+             while( clc2 != dtmP->nullPtr && clc3 == dtmP->nullPtr )
+               {
+                if( flistAddrP(dtmP,clc2)->dtmFeature == dtmFeature ) clc3 = clc2 ;
                 clc2 = flistAddrP(dtmP,clc2)->nextPtr ;
                }
              if( clc3 == dtmP->nullPtr ) { bcdtmWrite_message(2,0,0,"Cannot Find Feature In Prior Point ") ; goto errexit  ; }
              flistAddrP(dtmP,clc3)->nextPnt = pnt2 ;
-            }  
+            }
 /*
 **        Detach Feature List Entry From pnt1 And Attach To pnt2
 */
           nodeAddrP(dtmP,pnt1)->fPtr = flistAddrP(dtmP,clc1)->nextPtr ;  ;
-          clc2 = nodeAddrP(dtmP,pnt2)->fPtr ;  
+          clc2 = nodeAddrP(dtmP,pnt2)->fPtr ;
           if ( clc2 == dtmP->nullPtr ) nodeAddrP(dtmP,pnt2)->fPtr = clc1 ;
           else
-            {  
-             while( flistAddrP(dtmP,clc2)->nextPtr != dtmP->nullPtr ) clc2 = flistAddrP(dtmP,clc2)->nextPtr ; 
+            {
+             while( flistAddrP(dtmP,clc2)->nextPtr != dtmP->nullPtr ) clc2 = flistAddrP(dtmP,clc2)->nextPtr ;
              flistAddrP(dtmP,clc2)->nextPtr = clc1 ;
             }
           flistAddrP(dtmP,clc1)->nextPtr = dtmP->nullPtr ;
 /*
 **        Set First Pointer For Feature
 */
-          if( ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint == pnt1 ) ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint = pnt2 ; 
+          if( ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint == pnt1 ) ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint = pnt2 ;
          }
       }
    }
@@ -1454,7 +1454,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  long    ofs,newPnt = 0,clc,pp,p1,p2,p3,p4,np1,np2,np3,saveIncPoints,numListPts ;
  DPoint3d     *p3dP,*listPtsP=NULL ;
  DTM_TIN_NODE   *nodeP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Entry Message
 */
@@ -1485,7 +1485,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  for ( p3dP = listPtsP ; p3dP < listPtsP + numListPts ; ++p3dP )
    {
     bcdtmFind_closestPointDtmObject(dtm1P,p3dP->x,p3dP->y,&newPnt) ;
-    if( pointAddrP(dtm1P,newPnt)->x != p3dP->x || pointAddrP(dtm1P,newPnt)->y != p3dP->y ) 
+    if( pointAddrP(dtm1P,newPnt)->x != p3dP->x || pointAddrP(dtm1P,newPnt)->y != p3dP->y )
       {
        bcdtmWrite_message(2,0,0,"Cannot Find dtm1P Point Number For DPoint3d List Point") ;
        bcdtmWrite_message(0,0,0,"DPoint3d  List  Point[%6ld] ** %15.7lf %15.7lf %10.4lf",(long)(p3dP-listPtsP),p3dP->x,p3dP->y,p3dP->z) ;
@@ -1515,14 +1515,14 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  do
    {
     bcdtmFind_closestPointDtmObject(dtm1P,pointAddrP(dtm2P,p2)->x,pointAddrP(dtm2P,p2)->y,&newPnt) ;
-    if( pointAddrP(dtm1P,newPnt)->x != pointAddrP(dtm2P,p2)->x ||pointAddrP(dtm1P,newPnt)->y != pointAddrP(dtm2P,p2)->y ) 
+    if( pointAddrP(dtm1P,newPnt)->x != pointAddrP(dtm2P,p2)->x ||pointAddrP(dtm1P,newPnt)->y != pointAddrP(dtm2P,p2)->y )
       {
        bcdtmWrite_message(2,0,0,"Cannot Find dtm1P Point Number For dtm2P Hull Point") ;
        bcdtmWrite_message(0,0,0,"dtm2P Hull Point[%6ld] ** %15.7lf %15.7lf %10.4lf",p2,pointAddrP(dtm2P,p2)->x,pointAddrP(dtm2P,p2)->y,pointAddrP(dtm2P,p2)->z) ;
        bcdtmWrite_message(0,0,0,"dtm1P New  Point[%6ld] ** %15.7lf %15.7lf %10.4lf",newPnt,pointAddrP(dtm1P,newPnt)->x,pointAddrP(dtm1P,newPnt)->y,pointAddrP(dtm1P,newPnt)->z) ;
        goto errexit ;
       }
-    nodeAddrP(dtm2P,p2)->sPtr = newPnt ; 
+    nodeAddrP(dtm2P,p2)->sPtr = newPnt ;
     p2 = nodeAddrP(dtm2P,p2)->hPtr ;
    } while ( p2 != dtm2P->hullPoint ) ;
 /*
@@ -1537,11 +1537,11 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
     newPnt = dtm1P->nullPnt ;
     if( nodeP->hPtr == dtm2P->nullPnt )
       {
-       if( bcdtmInsert_addPointToDtmObject(dtm1P,pointP->x,pointP->y,pointP->z,&newPnt))  goto errexit  ; 
-       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtm2P,ofs)->PCWD) ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtm1P,newPnt)->PCWD) ; 
+       if( bcdtmInsert_addPointToDtmObject(dtm1P,pointP->x,pointP->y,pointP->z,&newPnt))  goto errexit  ;
+       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtm2P,ofs)->PCWD) ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtm1P,newPnt)->PCWD) ;
        nodeP->sPtr = newPnt ;
-      }  
-   } 
+      }
+   }
 /*
 ** Write Out dtm2P Point Numbers
 */
@@ -1569,10 +1569,10 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
              p2  = clistAddrP(dtm2P,clc)->pntNum ;
              clc = clistAddrP(dtm2P,clc)->nextPtr ;
              np2 = nodeAddrP(dtm2P,p2)->sPtr ;
-             if( bcdtmList_insertLineAfterPointDtmObject(dtm1P,np1,np2,np3)) goto errexit  ; 
+             if( bcdtmList_insertLineAfterPointDtmObject(dtm1P,np1,np2,np3)) goto errexit  ;
              np3 = np2 ;
             }
-         } 
+         }
       }
    }
 /*
@@ -1581,17 +1581,17 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  if( dbg ) bcdtmWrite_message(0,0,0,"Merging dtm2P Hull Lines Into dtm1P") ;
  p1 = dtm2P->hullPoint ;
  do
-   { 
+   {
     p3  = nodeAddrP(dtm2P,p1)->hPtr  ;
     np1 = nodeAddrP(dtm2P,p1)->sPtr  ;
     np3 = nodeAddrP(dtm1P,np1)->tPtr ;
-    if(( p2 = bcdtmList_nextAntDtmObject(dtm2P,p1,p3)) < 0 )  goto errexit  ; 
+    if(( p2 = bcdtmList_nextAntDtmObject(dtm2P,p1,p3)) < 0 )  goto errexit  ;
     while ( nodeAddrP(dtm2P,p2)->hPtr != p1 )
       {
        np2 = nodeAddrP(dtm2P,p2)->sPtr  ;
        if( bcdtmList_insertLineBeforePointDtmObject(dtm1P,np1,np2,np3)) goto errexit ;
-       np3 = np2 ; 
-       if(( p2 = bcdtmList_nextAntDtmObject(dtm2P,p1,p2)) < 0 ) goto errexit  ; 
+       np3 = np2 ;
+       if(( p2 = bcdtmList_nextAntDtmObject(dtm2P,p1,p2)) < 0 ) goto errexit  ;
       }
     p1 = nodeAddrP(dtm2P,p1)->hPtr  ;
    } while ( p1 != dtm2P->hullPoint ) ;
@@ -1612,11 +1612,11 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
       {
        pp = nodeAddrP(dtm2P,p1)->sPtr ;
        p3 = nodeAddrP(dtm1P,pp)->tPtr ;
-       if( ( p4 = bcdtmList_nextAntDtmObject(dtm1P,pp,p3)) < 0 ) goto errexit  ; 
+       if( ( p4 = bcdtmList_nextAntDtmObject(dtm1P,pp,p3)) < 0 ) goto errexit  ;
        while ( p3 != nodeAddrP(dtm2P,p2)->sPtr )
          {
-          if( bcdtmList_insertLineAfterPointDtmObject(dtm1P,p3,p4,pp))  goto errexit  ; 
-          if( bcdtmList_insertLineBeforePointDtmObject(dtm1P,p4,p3,pp)) goto errexit  ; 
+          if( bcdtmList_insertLineAfterPointDtmObject(dtm1P,p3,p4,pp))  goto errexit  ;
+          if( bcdtmList_insertLineBeforePointDtmObject(dtm1P,p4,p3,pp)) goto errexit  ;
           pp = p3 ;
           p3 = nodeAddrP(dtm1P,p3)->tPtr ;
          }
@@ -1629,24 +1629,24 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  if( mergeFlag == 2 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Detecting And Inserting Implied Voids") ;
-    if( bcdtmMerge_detectAndInsertImpliedVoidsDtmObject(dtm1P,dtm2P) ) goto errexit  ; 
-    bcdtmList_setConvexHullDtmObject(dtm1P) ; 
+    if( bcdtmMerge_detectAndInsertImpliedVoidsDtmObject(dtm1P,dtm2P) ) goto errexit  ;
+    bcdtmList_setConvexHullDtmObject(dtm1P) ;
    }
 /*
 ** Null Out Tptr Array
 */
- if( bcdtmList_nullTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,dtm2P->hullPoint)->sPtr))  goto errexit  ; 
+ if( bcdtmList_nullTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,dtm2P->hullPoint)->sPtr))  goto errexit  ;
 /*
 ** Check And Fix Any Precision Problems
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking And Fixing Precision For Triangles") ;
  if( bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(dtm1P) ) goto errexit ;
 /*
-** Copy Dtm Features To Merged 
-*/ 
+** Copy Dtm Features To Merged
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying DTM Features To Merge Tin") ;
- if( bcdtmMerge_copyDtmFeaturesToDtmObject(dtm1P,dtm2P)) goto errexit  ; 
- if( dbg ) 
+ if( bcdtmMerge_copyDtmFeaturesToDtmObject(dtm1P,dtm2P)) goto errexit  ;
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Dtm Feature Topology") ;
     if( bcdtmCheck_topologyDtmFeaturesDtmObject(dtm1P,1) ){ bcdtmWrite_message(0,0,0,"Feature Topology Corrupted") ; goto errexit  ; }
@@ -1656,7 +1656,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
 ** Resolve Adjoining Voids
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Resolving Adjoining Voids") ;
- if( bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(dtm1P))  goto errexit  ; 
+ if( bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(dtm1P))  goto errexit  ;
 /*
 ** Clean Dtm Object
 */
@@ -1702,10 +1702,10 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
 /*
 **  Only Process If Features Present
 */
- if( dtm2P->numFeatures > 0 ) 
+ if( dtm2P->numFeatures > 0 )
    {
 /*
-** Look For dtm1P Points Without Any Circular List . 
+** Look For dtm1P Points Without Any Circular List .
 ** This is caused by the precision fix prior to copying dtmFeatures
 ** Code Added  8 April 2004 - Rob Cormack
 */
@@ -1713,7 +1713,7 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
     for( sp = 0 ; sp < dtm2P->numPoints ; ++sp )
       {
        if( nodeAddrP(dtm2P,sp)->sPtr >= 0 && nodeAddrP(dtm2P,sp)->sPtr < dtm1P->numPoints )
-         { 
+         {
           if( nodeAddrP(dtm1P,nodeAddrP(dtm2P,sp)->sPtr)->cPtr == dtm1P->nullPtr )
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"dtm2PPoint[%6ld] dtm1PPoint[%6ld] = %12.6lf %12.6lf %12.6lf ** Has No Circular List",sp,nodeAddrP(dtm2P,sp)->sPtr,pointAddrP(dtm2P,sp)->x,pointAddrP(dtm2P,sp)->y,pointAddrP(dtm2P,sp)->z) ;
@@ -1740,7 +1740,7 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
             {
              fspnt = lpnt = spnt = dtmFeatureP->dtmFeaturePts.firstPoint    ;
              clc   = nodeAddrP(dtm2P,spnt)->fPtr ;
-             if( dbg ) 
+             if( dbg )
                {
                 bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName) ;
                 bcdtmWrite_message(0,0,0,"Copying Feature  %6ld of %6ld ** Fpnt = %6ld Type = %s",dtmFeature,dtm2P->numFeatures,fspnt,dtmFeatureTypeName) ;
@@ -1749,7 +1749,7 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
 **           Scan Feature List Pointers
 */
              process = 1 ;
-             if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Feature List") ; 
+             if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Feature List") ;
              while ( clc != dtm2P->nullPtr && process )
                {
                 while ( clc != dtm2P->nullPtr  && flistAddrP(dtm2P,clc)->dtmFeature != dtmFeature ) clc = flistAddrP(dtm2P,clc)->nextPtr ;
@@ -1758,7 +1758,7 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
                    spnt = flistAddrP(dtm2P,clc)->nextPnt ;
                    if( spnt != dtm2P->nullPnt )
                      {
-                      if(  dtmFeatureP->dtmFeatureType == DTMFeatureType::GroupSpots || bcdtmList_testLineDtmObject(dtm1P,nodeAddrP(dtm2P,lpnt)->sPtr,nodeAddrP(dtm2P,spnt)->sPtr)) 
+                      if(  dtmFeatureP->dtmFeatureType == DTMFeatureType::GroupSpots || bcdtmList_testLineDtmObject(dtm1P,nodeAddrP(dtm2P,lpnt)->sPtr,nodeAddrP(dtm2P,spnt)->sPtr))
                         {
                          nodeAddrP(dtm1P,nodeAddrP(dtm2P,lpnt)->sPtr)->tPtr = nodeAddrP(dtm2P,spnt)->sPtr ;
                         }
@@ -1768,14 +1768,14 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
                          nodeAddrP(dtm1P,nodeAddrP(dtm2P,spnt)->sPtr)->tPtr = dtm1P->nullPnt ;
                          if( bcdtmInsert_lineBetweenPointsDtmObject(dtm1P,nodeAddrP(dtm2P,lpnt)->sPtr,nodeAddrP(dtm2P,spnt)->sPtr,1,2)) process = 0 ;
                          else nodeAddrP(dtm1P,nodeAddrP(dtm2P,spnt)->sPtr)->tPtr = sp ;
-                        } 
+                        }
                       lpnt = spnt ;
                       if( clc != dtm2P->nullPtr ) clc = nodeAddrP(dtm2P,spnt)->fPtr ;
-                     } 
-                   if( spnt == dtm2P->nullPnt || spnt == fspnt )  process = 0 ; 
+                     }
+                   if( spnt == dtm2P->nullPnt || spnt == fspnt )  process = 0 ;
                   }
                }
-             if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Feature List Completed") ; 
+             if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Feature List Completed") ;
 /*
 **           Check Connectivity Of Tptr List
 */
@@ -1783,57 +1783,57 @@ BENTLEYDTM_Private int bcdtmMerge_copyDtmFeaturesToDtmObject(BC_DTM_OBJ *dtm1P,B
              switch( dtmFeatureP->dtmFeatureType )
                {
                 case  DTMFeatureType::Breakline   :
-                case  DTMFeatureType::ContourLine : 
+                case  DTMFeatureType::ContourLine :
                   if( bcdtmList_checkConnectivityTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,0))
                     {
-                     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning And Fixing String List") ; 
+                     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning And Fixing String List") ;
                      if( bcdtmInsert_scanAndInsertBrokenTptrLinksDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,2,2)) goto errexit ;
                      if( bcdtmList_checkConnectivityTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,0))
                        {
-                        addflag = 0 ;  
+                        addflag = 0 ;
                        }
                     }
                 break ;
- 
+
                 case  DTMFeatureType::Void   :
-                case  DTMFeatureType::Island :  
+                case  DTMFeatureType::Island :
                 case  DTMFeatureType::Hole   :
                 case  DTMFeatureType::Polygon  :
                 case  DTMFeatureType::Region  :
-                  if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,0)) 
+                  if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,0))
                     {
-                     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning And Fixing Polygon List") ; 
+                     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning And Fixing Polygon List") ;
                      if( bcdtmInsert_scanAndInsertBrokenTptrLinksDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,2,2)) goto errexit ;
                      if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr,0))
                        {
-                        addflag = 0 ;  
+                        addflag = 0 ;
                        }
-                    } 
+                    }
                 break ;
 
                 default :
                 break  ;
-               } ; 
+               } ;
 /*
 **          Add Feature To Merge Tin
 */
-            if( addflag ) 
+            if( addflag )
               {
                dtmFeatureP->dtmFeatureId = dtm1P->dtmFeatureIndex ;
                ++dtm1P->dtmFeatureIndex ;
-               if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,nodeAddrP(dtm2P,fspnt)->sPtr,1) ) goto errexit ; 
+               if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,nodeAddrP(dtm2P,fspnt)->sPtr,1) ) goto errexit ;
                if( bcdtmList_checkConnectivityOfDtmFeatureDtmObject(dtm1P,dtm1P->numFeatures-1,1))
                  {
                   bcdtmList_writePointsForDtmFeatureDtmObject(dtm1P,dtm1P->numFeatures-1) ;
                   goto errexit ;
                  }
-               bcdtmList_nullTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr) ; 
+               bcdtmList_nullTptrListDtmObject(dtm1P,nodeAddrP(dtm2P,fspnt)->sPtr) ;
               }
             else if( fspnt != dtm1P->nullPnt ) if( bcdtmList_nullTptrListDtmObject(dtm1P,fspnt)) goto errexit ;
-           } 
+           }
         }
      }
-  } 
+  }
 /*
 ** Clean Up
 */
@@ -1875,13 +1875,13 @@ BENTLEYDTM_Public int bcdtmMerge_detectAndInsertImpliedVoidsDtmObject(BC_DTM_OBJ
  do
    {
     p2 = nodeAddrP(dtm1P,p1)->tPtr ;
-    if( ( p3 = bcdtmList_nextClkDtmObject(dtm1P,p1,p2)) < 0 )  goto errexit ; 
+    if( ( p3 = bcdtmList_nextClkDtmObject(dtm1P,p1,p2)) < 0 )  goto errexit ;
     if( nodeAddrP(dtm1P,p3)->tPtr != p1 )
-      { 
+      {
        if( ! bcdtmList_testLineDtmObject(dtm1P,p2,p3) )
          {
           p3 = p1 ;
-          p4 = p2 ; 
+          p4 = p2 ;
           np = 1  ;
           area = 0.0 ;
           do
@@ -1891,18 +1891,18 @@ BENTLEYDTM_Public int bcdtmMerge_detectAndInsertImpliedVoidsDtmObject(BC_DTM_OBJ
              y  = pointAddrP(dtm1P,p4)->y - pointAddrP(dtm1P,p3)->y  ;
              area = area + x * y / 2.0 + x * pointAddrP(dtm1P,p3)->y ;
              tp = p4 ;
-             if(( p4 = bcdtmList_nextAntDtmObject(dtm1P,p4,p3)) < 0 ) goto errexit ; 
-             p3 = tp ; 
+             if(( p4 = bcdtmList_nextAntDtmObject(dtm1P,p4,p3)) < 0 ) goto errexit ;
+             p3 = tp ;
             } while ( p3 != p1 ) ;
 /*
 **        Insert Implied Void If Area Detected Between Voids
 */
-          if( area > 0.0 ) 
-            { 
-             if( bcdtmMerge_insertImpliedVoidDtmObject(dtm1P,p1,np))  goto errexit ; 
-            } 
+          if( area > 0.0 )
+            {
+             if( bcdtmMerge_insertImpliedVoidDtmObject(dtm1P,p1,np))  goto errexit ;
+            }
          }
-      } 
+      }
     p1 = p2 ;
    } while ( p1 != nodeAddrP(dtm2P,dtm2P->hullPoint)->sPtr ) ;
 /*
@@ -1935,7 +1935,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    np,sp,pp,cp,rsp,rcp,rnp,numPts ;
  DTMDirection direction;
- DPoint3d     *p3dP,*pointsP=NULL ; 
+ DPoint3d     *p3dP,*pointsP=NULL ;
  double  area,perimeter ;
  BC_DTM_OBJ  *tempDtmP=NULL ;
 /*
@@ -1951,7 +1951,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
 /*
 ** Copy Tptr List To Hptr List
 */
- if( bcdtmList_copyTptrListToHptrListDtmObject(dtmP,point)) goto errexit ; 
+ if( bcdtmList_copyTptrListToHptrListDtmObject(dtmP,point)) goto errexit ;
 /*
 ** Create Dtm Object
 */
@@ -2001,7 +2001,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
 ** Triangulate tempDtmP Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Temporary Dtm Object") ;
- tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;  
+ tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;
  if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0, false)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
@@ -2016,7 +2016,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
  sp  = nodeAddrP(tempDtmP,pp)->hPtr ;
  rsp = (long)pointAddrP(tempDtmP,sp)->z ;
   do
-   { 
+   {
     np  = nodeAddrP(tempDtmP,sp)->hPtr ;
     rnp = (long)pointAddrP(tempDtmP,np)->z ;
     if(( cp = bcdtmList_nextClkDtmObject(tempDtmP,sp,pp)) < 0 ) goto errexit ;
@@ -2060,7 +2060,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
 */
  cleanup :
  if( pointsP  != NULL ) free(pointsP) ;
- if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;  
+ if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;
 /*
 ** Job Completed
 */
@@ -2104,7 +2104,7 @@ BENTLEYDTM_Public int bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(BC_DT
     for( p1 = 0  ; p1 < dtmP->numPoints ; ++p1 )
       {
        nodeP = nodeAddrP(dtmP,p1) ;
-       if( nodeP->cPtr  != dtmP->nullPtr  ) 
+       if( nodeP->cPtr  != dtmP->nullPtr  )
          {
           clPtr = nodeP->cPtr ;
           if(( p2 = bcdtmList_nextAntDtmObject(dtmP,p1,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
@@ -2123,35 +2123,35 @@ BENTLEYDTM_Public int bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(BC_DT
                    d12 = bcdtmMath_pointDistanceDtmObject(dtmP,p1,p2) ;
                    d13 = bcdtmMath_pointDistanceDtmObject(dtmP,p1,p3) ;
                    d23 = bcdtmMath_pointDistanceDtmObject(dtmP,p2,p3) ;
-                   if      ( d12 <= d13 && d12 <= d23 ) 
-                     { 
+                   if      ( d12 <= d13 && d12 <= d23 )
+                     {
                       insertLine = bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p1,p2) ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"01 ** p1 = %6ld p2 = %6ld p3 = %6ld ** Insert Line = %2ld",p1,p2,p3,insertLine) ;
                       if( bcdtmMerge_fixFeatureListForLastPointDtmObject(dtmP,p2,p1)) goto errexit ;
                       if( bcdtmMerge_copyFeatureListFromPointToPointDtmObject(dtmP,p2,p1) ) goto errexit ;
-                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p2,p1)) goto errexit ; 
+                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p2,p1)) goto errexit ;
                      }
-                   else if ( d13 <= d12 && d13 <= d23 ) 
-                     { 
+                   else if ( d13 <= d12 && d13 <= d23 )
+                     {
                       insertLine = bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p1,p3) ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"02 ** p1 = %6ld p2 = %6ld p3 = %6ld ** Insert Line = %2ld",p1,p2,p3,insertLine) ;
                       if( bcdtmMerge_fixFeatureListForLastPointDtmObject(dtmP,p3,p1)) goto errexit ;
                       if( bcdtmMerge_copyFeatureListFromPointToPointDtmObject(dtmP,p3,p1) ) goto errexit ;
-                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p3,p1)) goto errexit ; 
+                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p3,p1)) goto errexit ;
                      }
-                   else if ( d23 <= d12 && d23 <= d13 ) 
-                     { 
+                   else if ( d23 <= d12 && d23 <= d13 )
+                     {
                       insertLine = bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p2,p3) ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"02 ** p1 = %6ld p2 = %6ld p3 = %6ld ** Insert Line = %2ld",p1,p2,p3,insertLine) ;
                       if( bcdtmMerge_fixFeatureListForLastPointDtmObject(dtmP,p3,p2)) goto errexit ;
                       if( bcdtmMerge_copyFeatureListFromPointToPointDtmObject(dtmP,p3,p2) ) goto errexit ;
-                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p3,p2)) goto errexit ; 
+                      if( bcdtmMerge_connectedPointsDtmObject(dtmP,p3,p2)) goto errexit ;
                      }
                    clPtr = dtmP->nullPtr ;
 //TODO                   --node ;
                    process = 1 ;
                    ++nip ;
-                  } 
+                  }
                }
              p2 = p3 ;
             }
@@ -2159,22 +2159,22 @@ BENTLEYDTM_Public int bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(BC_DT
       }
     if( dbg ) bcdtmWrite_message(0,0,0,"Loop = %6ld  Nip = %6ld",loop,nip) ;
     ++loop ;
-  } 
+  }
 /*
 ** Check Topology
 */
  if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Dtm Topology") ;
-    if( bcdtmCheck_topologyDtmObject(dtmP,0)) 
-      { 
+    if( bcdtmCheck_topologyDtmObject(dtmP,0))
+      {
        bcdtmWrite_message(1,0,0,"Dtm Topology Corrupted While Adjusting Precision Of Triangles ") ;
-       goto errexit ; 
+       goto errexit ;
       }
     else  bcdtmWrite_message(0,0,0,"Topology OK") ;
     bcdtmWrite_message(0,0,0,"Checking Dtm Feature Topology") ;
     if( bcdtmCheck_topologyDtmFeaturesDtmObject(dtmP,1) )
-      { 
+      {
        bcdtmWrite_message(1,0,0,"Feature Topology Corrupted While Adjusting Precision Of Triangle ") ;
        goto errexit ;
       }
@@ -2210,7 +2210,7 @@ BENTLEYDTM_Public int bcdtmMerge_writeTinLinesDtmObject(BC_DTM_OBJ *dtmP,WCharCP
  DPoint3d   linePts[2] ;
  BC_DTM_OBJ *dataP=NULL ;
  DTM_CIR_LIST *clistP ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Create Data Object
 */
@@ -2221,7 +2221,7 @@ BENTLEYDTM_Public int bcdtmMerge_writeTinLinesDtmObject(BC_DTM_OBJ *dtmP,WCharCP
 */
  for( p1 = 0 ; p1 < dtmP->numPoints ; ++p1 )
    {
-    if( ( clPtr = nodeAddrP(dtmP,p1)->cPtr ) != dtmP->nullPtr ) 
+    if( ( clPtr = nodeAddrP(dtmP,p1)->cPtr ) != dtmP->nullPtr )
       {
        while ( clPtr != dtmP->nullPtr )
          {
@@ -2231,7 +2231,7 @@ BENTLEYDTM_Public int bcdtmMerge_writeTinLinesDtmObject(BC_DTM_OBJ *dtmP,WCharCP
           linePts[0].z = p1P->z ;
           clistP = clistAddrP(dtmP,clPtr) ;
           p2     = clistP->pntNum ;
-          clPtr  = clistP->nextPtr ; 
+          clPtr  = clistP->nextPtr ;
           if( p2 > p1 )
             {
              p2P = pointAddrP(dtmP,p2) ;
@@ -2251,7 +2251,7 @@ BENTLEYDTM_Public int bcdtmMerge_writeTinLinesDtmObject(BC_DTM_OBJ *dtmP,WCharCP
 ** Clean Up
 */
  cleanup :
- bcdtmObject_destroyDtmObject(&dataP) ;  
+ bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -2310,15 +2310,15 @@ BENTLEYDTM_Public int bcdtmMerge_checkPointCanBeMergedDtmObject(BC_DTM_OBJ *dtmP
       {
        bcdtmList_testForPointOnTinFeatureDtmObject(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature,pnt1,&pnt1OnFeature) ;
        if( pnt1OnFeature )
-         { 
+         {
           if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature,pnt2,&priorPnt)) goto errexit  ;
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature,pnt2,&nextPnt)) goto errexit  ;
           if( pnt1 != nextPnt && pnt1 != priorPnt ) *mergeFlagP = 0 ;
          }
        fPtr = flistAddrP(dtmP,fPtr)->nextPtr ;
-      } 
+      }
    }
-   
+
 /*
 ** Job Completed
 */
@@ -2355,7 +2355,7 @@ BENTLEYDTM_Public int bcdtmMerge_connectedPointsDtmObject
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Merging Connected Points mrgPnt2 = %6ld mrgPnt1 = %6ld",mrgPnt2,mrgPnt1) ; 
+    bcdtmWrite_message(0,0,0,"Merging Connected Points mrgPnt2 = %6ld mrgPnt1 = %6ld",mrgPnt2,mrgPnt1) ;
     bcdtmWrite_message(0,0,0,"mrgPnt2 = %6ld Fptr = %9ld  ** %20.15lf %20.15lf %10.4lf",mrgPnt2,nodeAddrP(dtmP,mrgPnt2)->hPtr,pointAddrP(dtmP,mrgPnt2)->x,pointAddrP(dtmP,mrgPnt2)->y,pointAddrP(dtmP,mrgPnt2)->z ) ;
     bcdtmWrite_message(0,0,0,"mrgPnt1 = %6ld Fptr = %9ld  ** %20.15lf %20.15lf %10.4lf",mrgPnt1,nodeAddrP(dtmP,mrgPnt1)->hPtr,pointAddrP(dtmP,mrgPnt1)->x,pointAddrP(dtmP,mrgPnt1)->y,pointAddrP(dtmP,mrgPnt1)->z ) ;
     bcdtmList_writeCircularListForPointDtmObject(dtmP,mrgPnt2) ;
@@ -2371,7 +2371,7 @@ BENTLEYDTM_Public int bcdtmMerge_connectedPointsDtmObject
     if( nodeAddrP(dtmP,mrgPnt2)->hPtr != mrgPnt1 && nodeAddrP(dtmP,mrgPnt1)->hPtr != mrgPnt2 )
       { nodeAddrP(dtmP,mrgPnt1)->tPtr = dtmP->nullPnt ; return(0) ; }
     if( nodeAddrP(dtmP,mrgPnt1)->hPtr != mrgPnt2 ) { sp = mrgPnt2 ; mrgPnt2 = mrgPnt1 ; mrgPnt1 = sp ; }
-    if(( hullPnt = bcdtmList_nextClkDtmObject(dtmP,mrgPnt1,mrgPnt2)) < 0 ) goto errexit ; 
+    if(( hullPnt = bcdtmList_nextClkDtmObject(dtmP,mrgPnt1,mrgPnt2)) < 0 ) goto errexit ;
    }
  else
    {
@@ -2411,11 +2411,11 @@ BENTLEYDTM_Public int bcdtmMerge_connectedPointsDtmObject
       {
        if(( p1 = bcdtmList_nextAntDtmObject(dtmP,mrgPnt2,np))   < 0 ) goto errexit ;
        if(( p2 = bcdtmList_nextClkDtmObject(dtmP,mrgPnt2,np)) < 0 ) goto errexit ;
-       if( bcdtmList_deleteLineDtmObject(dtmP,mrgPnt2,np)) goto errexit ; 
+       if( bcdtmList_deleteLineDtmObject(dtmP,mrgPnt2,np)) goto errexit ;
        if( bcdtmList_insertLineBeforePointDtmObject(dtmP,p1,p2,mrgPnt2))  goto errexit ;
-       if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,p1,mrgPnt2)) goto errexit ; 
+       if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,p1,mrgPnt2)) goto errexit ;
       }
-    sp = np ; 
+    sp = np ;
    }
 /*
 ** Delete Point mrgPnt1
@@ -2426,7 +2426,7 @@ BENTLEYDTM_Public int bcdtmMerge_connectedPointsDtmObject
     np  = clistAddrP(dtmP,clc)->pntNum ;
     clc = clistAddrP(dtmP,clc)->nextPtr ;
     if( bcdtmList_deleteLineDtmObject(dtmP,mrgPnt1,np)) goto errexit ;
-   } 
+   }
  nodeAddrP(dtmP,mrgPnt1)->hPtr = dtmP->nullPnt ;
  nodeAddrP(dtmP,mrgPnt1)->tPtr = dtmP->nullPnt ;
  nodeAddrP(dtmP,mrgPnt1)->cPtr = dtmP->nullPtr ;
@@ -2439,12 +2439,12 @@ BENTLEYDTM_Public int bcdtmMerge_connectedPointsDtmObject
    {
     if( bcdtmList_insertLineAfterPointDtmObject(dtmP,mrgPnt2,np,sp))  goto errexit ;
     if ( np == hullPnt ) {  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,mrgPnt2,nodeAddrP(dtmP,np)->tPtr)) goto errexit ; }
-    else            
-      {  
-       if( bcdtmList_insertLineBeforePointDtmObject(dtmP,np,mrgPnt2,sp)) goto errexit ; 
+    else
+      {
+       if( bcdtmList_insertLineBeforePointDtmObject(dtmP,np,mrgPnt2,sp)) goto errexit ;
       }
     nodeAddrP(dtmP,sp)->tPtr = dtmP->nullPnt ;
-    sp = np ; 
+    sp = np ;
    }
 /*
 ** Reset Hull Pointer
@@ -2498,7 +2498,7 @@ BENTLEYDTM_Private int bcdtmMerge_removeTrianglesOnInsertHullDtmObject
        if( bcdtmList_testLineDtmObject(dtmP,cPnt,nPnt) )
          {
           if( ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,cPnt,nPnt) )
-            { 
+            {
              if( ( ncPnt = bcdtmList_nextClkDtmObject(dtmP,cPnt,nPnt) ) < 0 ) goto errexit ;
              if( bcdtmList_testLineDtmObject(dtmP,ncPnt,nPnt) )
                {
@@ -2522,17 +2522,17 @@ BENTLEYDTM_Private int bcdtmMerge_removeTrianglesOnInsertHullDtmObject
          }
       }
 /*
-**  Multiple Triangles At sPnt       
+**  Multiple Triangles At sPnt
 */
     else
       {
        scan = 1 ;
        while ( scan )
          {
-          scan = 0 ;            
+          scan = 0 ;
           nPnt = nodeAddrP(dtmP,sPnt)->tPtr ;
           if( ( cPnt = bcdtmList_nextClkDtmObject(dtmP,sPnt,nPnt)) < 0 ) goto errexit ;
-          while ( nodeAddrP(dtmP,cPnt)->tPtr != sPnt )  
+          while ( nodeAddrP(dtmP,cPnt)->tPtr != sPnt )
             {
              if( dbg )
                {
@@ -2544,11 +2544,11 @@ BENTLEYDTM_Private int bcdtmMerge_removeTrianglesOnInsertHullDtmObject
              if( nodeAddrP(dtmP,cPnt)->tPtr != dtmP->nullPnt )
                {
                 if( bcdtmList_testLineDtmObject(dtmP,cPnt,nPnt) )
-                  { 
+                  {
                    if( ( ncPnt = bcdtmList_nextClkDtmObject(dtmP,sPnt,cPnt)) < 0 ) goto errexit ;
                    if( dbg )   bcdtmWrite_message(0,0,0,"ncPnt ** %8ld ** %12.5lf %12.5lf %10.4lf",ncPnt,pointAddrP(dtmP,ncPnt)->x,pointAddrP(dtmP,ncPnt)->y,pointAddrP(dtmP,ncPnt)->z) ;
                    if( nodeAddrP(dtmP,ncPnt)->tPtr == dtmP->nullPnt )
-                     { 
+                     {
                       if( bcdtmList_testLineDtmObject(dtmP,ncPnt,cPnt) )
                         {
                          if( ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,cPnt,nPnt) )
@@ -2571,16 +2571,16 @@ BENTLEYDTM_Private int bcdtmMerge_removeTrianglesOnInsertHullDtmObject
                                scan = 1 ;
                               }
                            }
-                        } 
+                        }
                      }
                   }
-               } 
+               }
              nPnt = cPnt ;
              if( ( cPnt = bcdtmList_nextClkDtmObject(dtmP,sPnt,cPnt)) < 0 ) goto errexit ;
-            } 
+            }
          }
       }
-    sPnt = nodeAddrP(dtmP,sPnt)->tPtr ;  
+    sPnt = nodeAddrP(dtmP,sPnt)->tPtr ;
    } while ( sPnt != startPnt ) ;
 /*
 ** Clean Up

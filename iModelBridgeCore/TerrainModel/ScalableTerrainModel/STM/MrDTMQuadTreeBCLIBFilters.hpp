@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -293,7 +293,7 @@ template<class POINT, class EXTENT> void BuildCombinedDTM (BC_DTM_OBJ* pDtmObjec
 
 template<class POINT> void InsertDTMIntoVector (BC_DTM_OBJ* pDtm, HPMPooledVector<POINT>* outputVector)
 {
-    DTM_TIN_POINT* pBcPt;
+    DPoint3d* pBcPt;
     POINT          pt;                 
     
     //Add the filtered points to the parent node
@@ -315,7 +315,7 @@ template <class POINT, class EXTENT> void SpreadDTMIntoSubNodes (BC_DTM_OBJ* pDt
                                              HFCPtr<HGFPointIndexNode<POINT, EXTENT> >  subNodes[],
                                              size_t numSubNodes)
 {
-    DTM_TIN_POINT* pBcPt;
+    DPoint3d* pBcPt;
 
     // Clear subnodes and reserve points
 
@@ -488,7 +488,7 @@ template<class POINT, class EXTENT> bool MrDTMQuadTreeBCLIBFilter1<POINT, EXTENT
         if (status == 0)
             {
            //DPoint3d*   pPt;
-            DTM_TIN_POINT* pBcPt;
+            DPoint3d* pBcPt;
             DPoint3d    pt; 
             //POINT  bcPt;
             //long   numPointsRemove = pDtmObject->numPoints * 3/4;             
@@ -609,7 +609,7 @@ template<class POINT, class EXTENT> bool MrDTMQuadTreeBCLIBFilter2<POINT, EXTENT
         if (status == 0)
             {
            //DPoint3d*   pPt;
-            //DTM_TIN_POINT* pBcPt;
+            //DPoint3d* pBcPt;
             //DPoint3d    pt; 
             //POINT  bcPt;
             long   numPointsRemove = pDtmObject->numPoints * 3/4;             
@@ -728,7 +728,7 @@ template<class POINT, class EXTENT> bool MrDTMQuadTreeBCLIBFilter3<POINT, EXTENT
         if (status == 0)
             {
            //DPoint3d*   pPt;
-            //DTM_TIN_POINT* pBcPt;
+            //DPoint3d* pBcPt;
             //DPoint3d    pt; 
             //POINT  bcPt;
             long   numPointsRemove = pDtmObject->numPoints * 3/4;             
@@ -1026,7 +1026,7 @@ template<class POINT, class EXTENT> bool MrDTMQuadTreeBCLIBProgressiveFilter2<PO
         if (status == 0)
             {
            //DPoint3d*   pPt;
-            //DTM_TIN_POINT* pBcPt;
+            //DPoint3d* pBcPt;
             //DPoint3d    pt; 
             //POINT  bcPt;
           
@@ -1158,7 +1158,7 @@ template<class POINT, class EXTENT> bool MrDTMQuadTreeBCLIBProgressiveFilter3<PO
         if (status == 0)
             {
            //DPoint3d*   pPt;
-            //DTM_TIN_POINT* pBcPt;
+            //DPoint3d* pBcPt;
             //DPoint3d    pt; 
             //POINT  bcPt;
             long   numPointsRemove = pDtmObject->numPoints * 3/4;             

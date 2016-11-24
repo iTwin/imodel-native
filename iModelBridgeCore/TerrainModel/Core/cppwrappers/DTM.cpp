@@ -94,7 +94,7 @@ bool IDTM::GetTransformation (TransformR transformation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTMDraping::DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int* drapedType, DPoint3dCR point)
+DTMStatusInt IDTMDraping::DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, DPoint3dCR point)
     {
     return _DrapePoint(elevation, slope, aspect, triangle, drapedType, point);
     }
@@ -106,7 +106,6 @@ DTMStatusInt IDTMDraping::DrapeLinear (DTMDrapedLinePtr& ret, DPoint3dCP pts, in
     {
     return _DrapeLinear(ret, pts, numPoints);
     }
-
 
 bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
@@ -122,7 +121,6 @@ bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspec
     {
     return _DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);
     }
-
 
 DTMStatusInt IDTMDrainage::GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxpondDepth)
     {
@@ -256,7 +254,7 @@ DTMStatusInt IDTMDrapedLine::GetPointByIndex(DTMDrapedLinePointPtr& ret, unsigne
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTMDrapedLine::GetPointByIndex(DPoint3d* ptP, double* distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
+DTMStatusInt IDTMDrapedLine::GetPointByIndex(DPoint3dR ptP, double* distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
     {
     return _GetPointByIndex (ptP, distanceP, codeP, index);
     }

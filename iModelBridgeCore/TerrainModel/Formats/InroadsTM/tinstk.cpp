@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* tinstk.c                                        tmi    01-Nov-1990         */
@@ -32,28 +32,28 @@
 
 int aecDTM_triangleStack    /* <=  TRUE if error                   */
 (
-  long *ntinstkP,                      /* <=> # triangles on stack            */
-  long **tinstkPP,                     /* <=> triangle stack                  */
-  struct CIVdtmtin *tinP               /*  => triangle to add to stack        */
-)
-{
-  int sts = SUCCESS;
+long *ntinstkP,                      /* <=> # triangles on stack            */
+long **tinstkPP,                     /* <=> triangle stack                  */
+struct CIVdtmtin *tinP               /*  => triangle to add to stack        */
+    )
+    {
+    int sts = SUCCESS;
 
-  if ( *ntinstkP % TINSTK_SIZ == 0 )
-  {
-    unsigned int nalc = (unsigned int) ((*ntinstkP / TINSTK_SIZ + 1) * TINSTK_SIZ);
-    if ( *ntinstkP == 0 )
-      *tinstkPP = (long *) malloc ( nalc * sizeof(long) );
-    else
-      *tinstkPP = (long *) realloc ( *tinstkPP, nalc * sizeof(long) );
-    if ( *tinstkPP == (long *)0 )
-      return ( DTM_M_MEMALF );
-  }
+    if (*ntinstkP % TINSTK_SIZ == 0)
+        {
+        unsigned int nalc = (unsigned int) ((*ntinstkP / TINSTK_SIZ + 1) * TINSTK_SIZ);
+        if (*ntinstkP == 0)
+            *tinstkPP = (long *) malloc(nalc * sizeof(long));
+        else
+            *tinstkPP = (long *) realloc(*tinstkPP, nalc * sizeof(long));
+        if (*tinstkPP == (long *) 0)
+            return (DTM_M_MEMALF);
+        }
 
-  (*tinstkPP)[(*ntinstkP)++] = (long) tinP;
+    (*tinstkPP)[(*ntinstkP)++] = (long) (uintptr_t)tinP;
 
-  return ( sts );
-}
+    return (sts);
+    }
 
 
 
@@ -84,10 +84,10 @@ int aecDTM_triangleStackPut /* <= TRIE if error                    */
     long i;
 
     for ( i = 0; i < srfP->ntinstk; i++ )  /* don't add to stack if already there */
-      if ( srfP->tinstk[i] == (long)tinP )
+      if ( srfP->tinstk[i] == tinP )
         return ( sts );
 
-    if ( ( sts = aecDTM_triangleStack ( &srfP->ntinstk, &srfP->tinstk, tinP ) ) == SUCCESS )
+    if ( ( sts = aecDTM_triangleStack ( &srfP->ntinstk, (long **)&srfP->tinstk, tinP ) ) == SUCCESS )
     {
       aecDTM_setTriangleRemovedFlag ( tinP );
       aecDTM_deleteTriangle ( srfP, tinP, dis );
@@ -135,7 +135,7 @@ int aecDTM_triangleStackGet    /* <= TRUE if error                 */
         if ( srfP->ntinstk == 0 )
         {
           free ( srfP->tinstk );
-          srfP->tinstk = (long *)0;
+          srfP->tinstk = nullptr;
         }
       }
   }

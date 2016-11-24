@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmutifnc.h                                       aec    08-Feb-1994       */
@@ -14,7 +14,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include <dtmstr.h>
-#include <dtmuti.h>
 
 /*----------------------------------------------------------------------------*/
 /* Function prototypes                                                        */
@@ -66,7 +65,6 @@ void aecDTM_applyMaximumTriangleLengthAndMarkRangeTriangles
    struct CIVdtmsrf *srfP,              /* => surface to use                   */
    double maxTriLength                  /* => max. tri. side length            */
 );
-
 int aecDTM_crossingCheck    /* <= TRUE if error                         */
 (
    CIVdtmsrf *srfP,                     /* => surface to check                 */

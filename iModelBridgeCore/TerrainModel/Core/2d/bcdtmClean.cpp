@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmClean.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -27,7 +27,7 @@ BENTLEYDTM_Public int bcdtmClean_setDtmPolygonalFeatureAntiClockwiseDtmObject
  DTMDirection direction;
  double  area ;
  DPoint3d     *p3dP,*polyPtsP=NULL ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -127,7 +127,7 @@ BENTLEYDTM_Public int bcdtmClean_setDtmPolygonalFeatureTypeAntiClockwiseDtmObjec
  DTMDirection direction;
  double  area ;
  DPoint3d     *p3dP,*polyPtsP=NULL ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Check For Valid DTM Object
@@ -371,7 +371,7 @@ BENTLEYDTM_EXPORT int bcdtmClean_validateDtmFeatureTypeDtmObject
  long   numFeatures=0,validateResult,polygonalFeature=FALSE ;
  DPoint3d    *p3dP,*featurePtsP=NULL ; 
  char   dtmFeatureName[256] ;
- DTM_TIN_POINT  *pointP,*point1P,*point2P ;
+ DPoint3d  *pointP,*point1P,*point2P ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Status Message
@@ -1561,7 +1561,7 @@ BENTLEYDTM_Public int bcdtmClean_externalPointArrayPolygon(DPoint3d **polyPtsPP,
  long     sp ;
  DPoint3d      *p3dP ;
  BC_DTM_OBJ *dtmP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
  /*
 ** Write Status Message

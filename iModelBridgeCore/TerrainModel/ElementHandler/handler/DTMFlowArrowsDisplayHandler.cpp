@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMFlowArrowsDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -63,7 +63,7 @@ private:
     BcDTMR m_dtmElement;
     DP const &m_dp;
     DTMDrawingInfo& m_drawingInfo;
-    const uint32_t m_textStyleId;
+    const UInt32 m_textStyleId;
     ViewContextP m_context;
 
     static int StrokeCBAsPoints (DTMFeatureType featureType, DTMUserTag eltId, DTMFeatureId id, DPoint3dP tPoint, size_t nPoint, void* userArg)
@@ -96,7 +96,7 @@ private:
         RotMatrix rotMatrix;
         rotMatrixX.initFromAxisAndRotationAngle (2, tPoint[1].y);
         rotMatrixY.initFromAxisAndRotationAngle (1, atan2(tPoint[1].z, 1));
-        rotMatrix.InitProduct (&rotMatrixX, &rotMatrixY);
+        rotMatrix.productOf (&rotMatrixX, &rotMatrixY);
 
         //stroker->m_drawingInfo.FullStorageToUors (centroid);
         stroker->m_pointDrawer->DrawPoint (centroid, &rotMatrix);
@@ -111,7 +111,7 @@ private:
     BcDTMR              DTMDataRefXAttribute,
     DP const            &displayParams,
     DTMDrawingInfo      &drawingInfo,
-    uint32_t textStyleId
+    UInt32 textStyleId
     ) : m_drawingInfo (drawingInfo), m_dp (displayParams), m_dtmElement (DTMDataRefXAttribute), m_textStyleId (textStyleId)
         {}
 
@@ -160,7 +160,8 @@ private:
         m_pointDrawer->CreateSymbolFromPointDisplayParams (m_dp, m_textStyleId);
         DPoint3d pts[2];
 
-        pts[0] = ( trianglePts[0] + trianglePts[1] + trianglePts[2] ) / 3.;
+        double a = 1.0 / 3.0;
+        pts[0] = DPoint3d::FromSumOf (trianglePts[0], a, trianglePts[1], a, trianglePts[2], a);
         double dc_pi = Angle::Pi();
         pts[1].x = (1.5 * dc_pi) - ((aspect * dc_pi) / 180.0);
         pts[1].y = pts[1].x - dc_pi;
@@ -205,7 +206,7 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
     if (!SetSymbology (params, drawingInfo, context))
         return false;
 
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage(DrawFeatures, context));
+    Bentley::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage(DrawFeatures, context));
     BcDTMP dtm = NULL;
 
     if (dtmPtr != 0)
@@ -243,9 +244,9 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
                 DPoint3d trianglePts[4], point;
                 long drapedType;
                 BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
-                long voidFlag;
+                bool voidFlag;
 
-                if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+                if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
                     return true;
 
                 startPt = point;
@@ -257,7 +258,7 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
         int drapedType;
         double elevation, slope, aspect;
 
-        if (dtm->DrapePoint(&elevation, &slope, &aspect, trianglePts, &drapedType, &startPt) == DTM_SUCCESS)
+        if (dtm->DrapePoint(&elevation, &slope, &aspect, trianglePts, drapedType, startPt) == DTM_SUCCESS)
             {
             if (drapedType == 1 || drapedType == 3)
                 {
@@ -309,7 +310,8 @@ WCharCP                           delimiterStr
 
     if (dtm == nullptr)
         { return; }
-    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, nullptr, pt);
+    int drapeType;
+    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, drapeType, pt);
 
     pt.z = elev;
     ldip.Get().FullStorageToUors (pt);
@@ -321,7 +323,10 @@ WCharCP                           delimiterStr
     WCharCP delim = delimiterStr ? delimiterStr : L",";
 
     dgnModel_getGlobalOrigin (path.GetRoot()->GetDgnModelP(), &globalOrigin);
-    wElevString = DistanceFormatter::Create(*path.GetRoot ()->GetDgnModelP())->ToString (pt.z - globalOrigin.z);        // includeUnits ?? 
+    DistanceFormatterPtr formatter = DistanceFormatter::Create(*path.GetRoot()->GetDgnModelP());
+    formatter->SetUnitLabelFlag(true);   
+    wElevString = formatter->ToString(pt.z - globalOrigin.z);        // includeUnits ?? 
+
     WString::Sprintf (wSlopeString, L"%.2f", slope);
     WString::Sprintf (wAspectString, L"%.2f", aspect);
 
@@ -335,43 +340,6 @@ WCharCP                           delimiterStr
 
     string.append (delim + elevationString + delim + slopeString + delim + aspectString);
     }
-
-//=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 09/11
-//=======================================================================================
-void DTMElementFlowArrowsDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
-    {
-    T_Super::_EditProperties (element, xAttr, sid, context);
-
-    DTMElementFlowArrowsHandler::DisplayParams displayParams (element, sid);
-    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
-    bool changed = false;
-    if (0 != (ELEMENT_PROPERTY_TextStyle & context.GetElementPropertiesMask ()))
-        {
-        uint32_t textStyleId = (uint32_t)displayParams.GetTextStyleID ();
-        EachTextStyleArg arg (textStyleId, propsFlag, context);
-        changed |= context.DoTextStyleCallback (&textStyleId, arg);
-        displayParams.SetTextStyleID (textStyleId);
-        }
-
-    if (changed)
-        displayParams.SetElement (element, sid);
-
-    // If purpose is just a simple id remap we don't need to regenerate note...
-    if ((EditPropertyPurpose::Change == context.GetIEditPropertiesP ()->_GetEditPropertiesPurpose () || !context.GetElementChanged ()) && displayParams.GetTextStyleID() != 0)
-        {
-        // If properties being edited don't affect layout we don't beed to regenerate note...
-        if (0 != ((ELEMENT_PROPERTY_Font | ELEMENT_PROPERTY_TextStyle | ELEMENT_PROPERTY_DimStyle | ELEMENT_PROPERTY_ElementTemplate) & context.GetElementPropertiesMask ()))
-            {
-            if (AddDTMTextStyle (element, displayParams.GetTextStyleID(), sid.GetId()))
-                {
-                element.GetElementDescrP ()->h.isValid = false;
-                context.SetElementChanged ();
-                }
-            }
-        }
-    }
-
 
 SUBDISPLAYHANDLER_DEFINE_MEMBERS (DTMElementFlowArrowsDisplayHandler);
 

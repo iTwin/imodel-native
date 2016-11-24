@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDataRef.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -351,7 +351,7 @@ DPoint2d IPlotterInfo::GetPrinterResolutionInInches () const
 //--------------------------------------------------------------------------------------
 //IMrDTMDataRef interface definition
 //--------------------------------------------------------------------------------------
-    int IMrDTMDataRef::GetOverviewDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& overviewDTMPtr)
+    int IMrDTMDataRef::GetOverviewDTM(Bentley::TerrainModel::DTMPtr& overviewDTMPtr)
         {
         return _GetOverviewDTM(overviewDTMPtr);
         }   
@@ -614,7 +614,7 @@ DPoint2d IPlotterInfo::GetPrinterResolutionInInches () const
         return _IsUpToDate();
         }       
 
-    int64_t IMrDTMDataRef::GetPointCountForResolution(int resolutionIndex)
+    Int64 IMrDTMDataRef::GetPointCountForResolution(int resolutionIndex)
         {
         return _GetPointCountForResolution(resolutionIndex);
         }  
@@ -709,7 +709,7 @@ int MrDTMDataRef::GetClippedExtent(DRange3d& clippedExtent)
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 09/11
 //=======================================================================================
-int MrDTMDataRef::_GetOverviewDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& overviewDTMPtr)
+int MrDTMDataRef::_GetOverviewDTM(Bentley::TerrainModel::DTMPtr& overviewDTMPtr)
     {        
     int status = ERROR;
 
@@ -792,7 +792,10 @@ void MrDTMDataRef::ScheduleFromDtmFile (DgnModelRefP dgnModelRefP, EditElementHa
     (inTrfs).form3d[2][2] = 1.0;
        
     DTMElementHandlerManager::CheckAndCreateElementDescr (elem, nullptr, MrDTMDefaultElementHandler::GetElemHandlerId(), inTrfs, *dgnModelRefP);    
-                    
+        
+    // Apply active settings.
+    DgnTool::GetToolAdmin()._ApplyActiveSettings(elem);
+
     elem.SetModelRef(dgnModelRefP);
     elem.AddToModel();            
 
@@ -802,7 +805,7 @@ void MrDTMDataRef::ScheduleFromDtmFile (DgnModelRefP dgnModelRefP, EditElementHa
     
     XAttributeHandlerId xAttrHandlerId(MrDTMElementMajorId, XATTRIBUTES_SUBID_MRDTM_DETAILS);
 
-    editElementHandle.ScheduleWriteXAttribute(xAttrHandlerId, MRDTM_DETAILS_SCHEDULING, (uint32_t)sizeof(scheduling), &scheduling);
+    editElementHandle.ScheduleWriteXAttribute(xAttrHandlerId, MRDTM_DETAILS_SCHEDULING, (UInt32)sizeof(scheduling), &scheduling);
     
     //Create the MrDTMDataRef 
     RefCountedPtr<DTMDataRef> dtmDataRef(MrDTMDataRef::FromElemHandle(editElementHandle, mrdtmDocumentPtr, inCreation));    
@@ -817,7 +820,7 @@ void MrDTMDataRef::ScheduleFromDtmFile (DgnModelRefP dgnModelRefP, EditElementHa
     if (!xAttrIter.IsValid())
         {
         bool isCreated = true;        
-        editElementHandle.ScheduleWriteXAttribute(xAttrHandlerId, MRDTM_DETAILS_MRDTM_CREATED, (uint32_t)sizeof(isCreated), &isCreated);
+        editElementHandle.ScheduleWriteXAttribute(xAttrHandlerId, MRDTM_DETAILS_MRDTM_CREATED, (UInt32)sizeof(isCreated), &isCreated);
         }
     
     ((MrDTMDataRef*)dtmDataRef.get())->UpdateStorageToUORMatrix(editElementHandle);
@@ -954,7 +957,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
             //Default value
             m_isReadOnly = !inCreation; 
 
-            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_READ_ONLY, (uint32_t)sizeof(m_isReadOnly), &m_isReadOnly);        
+            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_READ_ONLY, (UInt32)sizeof(m_isReadOnly), &m_isReadOnly);        
             }    
         }    
         
@@ -982,7 +985,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
 
         descriptionDataExternalizer.put(monikerString);
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_FILE_MONIKER, (uint32_t)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());            
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_FILE_MONIKER, (UInt32)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());            
         }   
         
     if (inCreation == true)
@@ -1012,7 +1015,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
         }
     else
         {                
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (uint32_t)sizeof(m_minPoint), &m_minPoint);                   
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (UInt32)sizeof(m_minPoint), &m_minPoint);                   
         }
 
     ElementHandle::XAttributeIter xAttrIterMaxPoint(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT);
@@ -1023,7 +1026,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
         }
     else        
         {        
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (uint32_t)sizeof(m_maxPoint), &m_maxPoint);        
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (UInt32)sizeof(m_maxPoint), &m_maxPoint);        
         }
     
     ElementHandle::XAttributeIter xAttrIterPointDensity(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_POINT_DENSITY);
@@ -1056,7 +1059,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
 
         descriptionDataExternalizer.put(m_description);
             
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DESCRIPTION, (uint32_t)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());        
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DESCRIPTION, (UInt32)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());        
         }
     
     ElementHandle::XAttributeIter xAttrIterCanLocate(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CAN_LOCATE);    
@@ -1069,7 +1072,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
         //Default value
         m_canLocate = true;
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CAN_LOCATE, (uint32_t)sizeof(m_canLocate), &m_canLocate);        
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CAN_LOCATE, (UInt32)sizeof(m_canLocate), &m_canLocate);        
         }
 
     ElementHandle::XAttributeIter xAttrIterAnchored(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_ANCHORED);    
@@ -1082,7 +1085,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
         //Default value
         m_isAnchored = true;
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_ANCHORED, (uint32_t)sizeof(m_isAnchored), &m_isAnchored);        
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_ANCHORED, (UInt32)sizeof(m_isAnchored), &m_isAnchored);        
         }
     
     ElementHandle::XAttributeIter xAttrIterVisibilityPerView(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_VISIBILITY_PER_VIEW);    
@@ -1094,7 +1097,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
         {
         //Default value
         memset(&m_visibilityPerView, 1, sizeof(m_visibilityPerView));                                   
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_VISIBILITY_PER_VIEW, (uint32_t)sizeof(m_visibilityPerView), &m_visibilityPerView);        
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_VISIBILITY_PER_VIEW, (UInt32)sizeof(m_visibilityPerView), &m_visibilityPerView);        
         }   
     
     ElementHandle::XAttributeIter xAttrIterClip(editElementHandle, m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CLIPS);    
@@ -1207,7 +1210,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
                 descriptionDataExternalizerUnicode.put(1); 
                 descriptionDataExternalizerUnicode.put(pssFileName.c_str());     
 
-                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS_UNICODE, (uint32_t)descriptionDataExternalizerUnicode.getBytesWritten(), descriptionDataExternalizerUnicode.getBuf());                           
+                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS_UNICODE, (UInt32)descriptionDataExternalizerUnicode.getBytesWritten(), descriptionDataExternalizerUnicode.getBuf());                           
 
                 char* pssFileNameMultiByte = new char[pssFileName.GetMaxLocaleCharBytes()];
                 
@@ -1217,7 +1220,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
                 descriptionDataExternalizer.put(1); 
                 descriptionDataExternalizer.put(pssFileNameMultiByte);     
 
-                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS, (uint32_t)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());                           
+                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS, (UInt32)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());                           
 
                 delete [] pssFileNameMultiByte;
                 }
@@ -1255,7 +1258,7 @@ MrDTMDataRef::MrDTMDataRef(ElementHandleCR el, const DgnDocumentPtr& mrdtmDocume
             m_rasterTextureCacheDecimationMethod = IRasterTextureSourceCacheFile::NOT_SPECIFIED_DECIMATION;                
             }
         
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_RASTER_TEXTURE_CACHE_DECIMATION_METHOD, (uint32_t)sizeof(m_rasterTextureCacheDecimationMethod), &m_rasterTextureCacheDecimationMethod);
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_RASTER_TEXTURE_CACHE_DECIMATION_METHOD, (UInt32)sizeof(m_rasterTextureCacheDecimationMethod), &m_rasterTextureCacheDecimationMethod);
         }
 
 
@@ -1480,6 +1483,9 @@ RefCountedPtr<DTMDataRef> MrDTMDataRef::FromElemHandle(ElementHandleCR elemHandl
     if(elemHandle.GetElementRef() == NULL)
         return new MrDTMDataRef(elemHandle, mrdtmDocumentPtr, inCreation);
 
+    if (elemHandle.GetElementRef()->IsDeleted())
+        return NULL;
+
     DTMDataRef* pDataRef;
 
     // Don't cache using a DgnAttachment modelref.
@@ -1626,7 +1632,7 @@ void MrDTMDataRef::SetWarningForLoadStatus(MrDTMStatus warningStatus)
 //=======================================================================================
 // @bsimethod                                                   Chantal.Poulin 06/11
 //=======================================================================================
-int64_t MrDTMDataRef::_GetPointCountForResolution(int resolutionIndex)
+Int64 MrDTMDataRef::_GetPointCountForResolution(int resolutionIndex)
     { 
     IMrDTMFixResolutionIndexQueryParamsPtr queryParamsPtr(IMrDTMFixResolutionIndexQueryParams::CreateParams());
     queryParamsPtr->SetResolutionIndex(resolutionIndex); 
@@ -1637,7 +1643,7 @@ int64_t MrDTMDataRef::_GetPointCountForResolution(int resolutionIndex)
     //Get query interface
     IMrDTMQueryPtr fixResQueryPtr = m_mrDTM->GetQueryInterface(DTM_QUERY_FIX_RESOLUTION_VIEW, DTM_QUERY_DATA_POINT);   
 
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+    Bentley::TerrainModel::DTMPtr dtmPtr;
 
     fixResQueryPtr->Query(dtmPtr, 0, 0, IMrDTMQueryParametersPtr(queryParamsPtr));
 
@@ -1836,7 +1842,7 @@ int MrDTMDataRef::_SetRasterTextureCacheDecimationMethod(IRasterTextureSourceCac
 
         EditElementHandle editElementHandle(m_element.GetElementRef());      
                    
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_RASTER_TEXTURE_CACHE_DECIMATION_METHOD, (uint32_t)sizeof(m_rasterTextureCacheDecimationMethod), &m_rasterTextureCacheDecimationMethod);
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_RASTER_TEXTURE_CACHE_DECIMATION_METHOD, (UInt32)sizeof(m_rasterTextureCacheDecimationMethod), &m_rasterTextureCacheDecimationMethod);
         
         editElementHandle.ReplaceInModel(m_element.GetElementRef());    
         }
@@ -2120,7 +2126,7 @@ int MrDTMDataRef::_IsRasterTextureCacheFileUpToDate(bool& isUpToDate, EditElemen
             {
             elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, 
                                                 MRDTM_DETAILS_RASTER_TEXTURE_CACHE_STATE, 
-                                                (uint32_t)sizeof(m_rasterTextureCacheState), 
+                                                (UInt32)sizeof(m_rasterTextureCacheState), 
                                                 &m_rasterTextureCacheState);   
             }
         else
@@ -2129,7 +2135,7 @@ int MrDTMDataRef::_IsRasterTextureCacheFileUpToDate(bool& isUpToDate, EditElemen
 
             editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, 
                                                       MRDTM_DETAILS_RASTER_TEXTURE_CACHE_STATE, 
-                                                      (uint32_t)sizeof(m_rasterTextureCacheState), 
+                                                      (UInt32)sizeof(m_rasterTextureCacheState), 
                                                       &m_rasterTextureCacheState);   
 
             editElementHandle.ReplaceInModel(m_element.GetElementRef());
@@ -2316,7 +2322,7 @@ int MrDTMDataRef::SaveClipsInXAttribute(bool replaceInModel, EditElementHandle* 
 
     if (elmHandleP != NULL)
         {
-        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CLIPS, (uint32_t)d.getBytesWritten(), d.getBuf());
+        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CLIPS, (UInt32)d.getBytesWritten(), d.getBuf());
 
         if (replaceInModel == true)
             elmHandleP->ReplaceInModel(elmHandleP->GetElementRef());
@@ -2325,7 +2331,7 @@ int MrDTMDataRef::SaveClipsInXAttribute(bool replaceInModel, EditElementHandle* 
         {
         EditElementHandle editElementHandle(m_element.GetElementRef());      
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CLIPS, (uint32_t)d.getBytesWritten(), d.getBuf());
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CLIPS, (UInt32)d.getBytesWritten(), d.getBuf());
 
         if (replaceInModel == true)
             {
@@ -2383,7 +2389,7 @@ int MrDTMDataRef::_SetDescription(const WString& description)
 
     m_description = description;
 
-    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DESCRIPTION, (uint32_t)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());
+    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DESCRIPTION, (UInt32)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());
         
     editElementHandle.ReplaceInModel(editElementHandle.GetElementRef());
     
@@ -2418,7 +2424,7 @@ int MrDTMDataRef::SetReadOnly(bool isReadOnly, bool updateXAtt)
             {                
             EditElementHandle editElementHandle(m_element.GetElementRef());
 
-            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_READ_ONLY, (uint32_t)sizeof(isReadOnly), &isReadOnly);
+            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_READ_ONLY, (UInt32)sizeof(isReadOnly), &isReadOnly);
             
             ReloadMrDTM(GetDestinationGCS());
             
@@ -2442,7 +2448,7 @@ int MrDTMDataRef::_SetLocate(bool canLocate)
 
     m_canLocate = canLocate;
 
-    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CAN_LOCATE, (uint32_t)sizeof(canLocate), &canLocate);
+    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_CAN_LOCATE, (UInt32)sizeof(canLocate), &canLocate);
 
     editElementHandle.ReplaceInModel(editElementHandle.GetElementRef());    
 
@@ -2460,7 +2466,7 @@ int MrDTMDataRef::_SetAnchored(bool isAnchored)
 
     m_isAnchored = isAnchored;
 
-    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_ANCHORED, (uint32_t)sizeof(isAnchored), &isAnchored);
+    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_IS_ANCHORED, (UInt32)sizeof(isAnchored), &isAnchored);
 
     editElementHandle.ReplaceInModel(editElementHandle.GetElementRef());    
 
@@ -2485,7 +2491,7 @@ int MrDTMDataRef::_SetMrDTMDocument(DgnDocumentPtr& mrdtmDocumentPtr)
 
     descriptionDataExternalizer.put(monikerString);
        
-    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_FILE_MONIKER, (uint32_t)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());
+    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_FILE_MONIKER, (UInt32)descriptionDataExternalizer.getBytesWritten(), descriptionDataExternalizer.getBuf());
             
     editElementHandle.ReplaceInModel(editElementHandle.GetElementRef()); 
 
@@ -2659,7 +2665,7 @@ int MrDTMDataRef::_SetVisibilityForView(short viewNumber, bool isVisible)
 
     EditElementHandle editElementHandle(m_element.GetElementRef());
           
-    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_VISIBILITY_PER_VIEW, (uint32_t)sizeof(m_visibilityPerView), &m_visibilityPerView);
+    editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_VISIBILITY_PER_VIEW, (UInt32)sizeof(m_visibilityPerView), &m_visibilityPerView);
 
     editElementHandle.ReplaceInModel(editElementHandle.GetElementRef());
 
@@ -2888,11 +2894,11 @@ int MrDTMDataRef::_SetRasterTextureSource(IRasterTextureSourcePtr& rasterTexture
             delete fileNameDescMultiBytes;
             }    
 
-        status = editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS_UNICODE, (uint32_t)dUnicode.getBytesWritten(), dUnicode.getBuf());        
+        status = editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS_UNICODE, (UInt32)dUnicode.getBytesWritten(), dUnicode.getBuf());        
                        
         BeAssert(status == 0);
 
-        status = editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS, (uint32_t)d.getBytesWritten(), d.getBuf());        
+        status = editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_DRAPING_RASTERS, (UInt32)d.getBytesWritten(), d.getBuf());        
                        
         BeAssert(status == 0);
         }
@@ -3023,12 +3029,12 @@ int MrDTMDataRef::ReloadMrDTM(DgnGCSP targetGCS, bool updateRange)
             {
             if (memcmp(&m_minPoint, (byte*)xAttrIterMinPoint.PeekData(), sizeof(m_minPoint)) != 0)
                 {
-                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (uint32_t)sizeof(m_minPoint), &m_minPoint);
+                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (UInt32)sizeof(m_minPoint), &m_minPoint);
                 }            
             }
         else
             {                
-            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (uint32_t)sizeof(m_minPoint), &m_minPoint);
+            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MIN_POINT, (UInt32)sizeof(m_minPoint), &m_minPoint);
             }
 
         ElementHandle::XAttributeIter xAttrIterMaxPoint(editElementHandle);
@@ -3037,12 +3043,12 @@ int MrDTMDataRef::ReloadMrDTM(DgnGCSP targetGCS, bool updateRange)
             {
             if (memcmp(&m_maxPoint, (byte*)xAttrIterMaxPoint.PeekData(), sizeof(m_maxPoint)) != 0)
                 {
-                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (uint32_t)sizeof(m_maxPoint), &m_maxPoint);
+                editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (UInt32)sizeof(m_maxPoint), &m_maxPoint);
                 }                
             }
         else        
             {        
-            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (uint32_t)sizeof(m_maxPoint), &m_maxPoint);
+            editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_MAX_POINT, (UInt32)sizeof(m_maxPoint), &m_maxPoint);
             }       
        
         editElementHandle.GetDisplayHandler()->ValidateElementRange(editElementHandle, true);
@@ -3064,7 +3070,7 @@ void MrDTMDataRef::WriteXAttributePointDensityData(bool replaceInModel, EditElem
 
     if (elmHandleP != NULL)
         {
-        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_POINT_DENSITY, (uint32_t)d.getBytesWritten(), d.getBuf());
+        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_POINT_DENSITY, (UInt32)d.getBytesWritten(), d.getBuf());
 
         FlushAllViewData();      
 
@@ -3075,7 +3081,7 @@ void MrDTMDataRef::WriteXAttributePointDensityData(bool replaceInModel, EditElem
         { 
         EditElementHandle editElementHandle(m_element.GetElementRef());
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_POINT_DENSITY, (uint32_t)d.getBytesWritten(), d.getBuf());
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_POINT_DENSITY, (UInt32)d.getBytesWritten(), d.getBuf());
 
         FlushAllViewData();      
 
@@ -3095,7 +3101,7 @@ void MrDTMDataRef::WriteXAttributeTriangulationEdgeOptions(bool replaceInModel, 
 
     if (elmHandleP != NULL)
         {
-        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_TRIANGULATION_EDGE_OPTIONS, (uint32_t)d.getBytesWritten(), d.getBuf());
+        elmHandleP->ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_TRIANGULATION_EDGE_OPTIONS, (UInt32)d.getBytesWritten(), d.getBuf());
 
         FlushAllViewData();      
 
@@ -3106,7 +3112,7 @@ void MrDTMDataRef::WriteXAttributeTriangulationEdgeOptions(bool replaceInModel, 
         {
         EditElementHandle editElementHandle(m_element.GetElementRef());
 
-        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_TRIANGULATION_EDGE_OPTIONS, (uint32_t)d.getBytesWritten(), d.getBuf());
+        editElementHandle.ScheduleWriteXAttribute(m_xAttrMrDTMDetailsHandlerId, MRDTM_DETAILS_TRIANGULATION_EDGE_OPTIONS, (UInt32)d.getBytesWritten(), d.getBuf());
 
         FlushAllViewData();      
 
@@ -3541,7 +3547,7 @@ int MrDTMDataRef::ReadFile(DgnGCSP targetGCS)
                 queryParamsPtr->SetMaxSideLengthTriangulationParam(0);
 
                 //Get the lowest resolution view.        
-                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+                Bentley::TerrainModel::DTMPtr dtmPtr;
                      
                 fixResQueryPtr->Query(dtmPtr, 0, 0, IMrDTMQueryParametersPtr(queryParamsPtr.get()));
                     
@@ -3599,8 +3605,8 @@ int MrDTMDataRef::ReadFile(DgnGCSP targetGCS)
     ViewContextP g_currentViewContextP = 0;
 
     int CheckTriangulationStopCallback(DTMFeatureType dtmFeatureType)
-        {       
-        if ((g_currentViewContextP != 0) && (g_currentViewContextP->CheckStop() == true))
+        {  
+        if ((DgnPlatformLib::QueryHost() != NULL) && (g_currentViewContextP != 0) && (g_currentViewContextP->CheckStop() == true))
             {             
             return DTM_ERROR;
             }  
@@ -3863,7 +3869,7 @@ void MrDTMViewData::QueryRequiredDTM(ViewContextP context)
                 BeAssert(apparentPlottingDPIScaleDownFactor < 1.0);
                 BeAssert(context->GetDrawPurpose() == DrawPurpose::Plot);
 
-                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;    
+                Bentley::TerrainModel::DTMPtr dtmPtr;    
 
                 bool oldTriangulationState = viewDependentQueryParams->GetTriangulationState();                
 

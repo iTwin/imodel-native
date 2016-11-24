@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/transkit/commandsPal.r $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $	
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $	
 |
 +----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -109,7 +109,7 @@ CmdItemListRsc ItemList_LabelSpot =
 
 CmdItemListInformationRsc ItemList_LabelSpot = 
     { 
-    "TERRAINMODEL LABEL SPOTS", "TerrainModel Label Spots", __BFILE__, __LINE__, 0, CMDITEMLISTINFO_LayoutManager | CMDITEMLISTINFO_AspectRatioNotNeeded 
+    "TERRAINMODEL LABEL SPOTS", "TerrainModel Label Spots", "", __BFILE__, __LINE__, 0, CMDITEMLISTINFO_LayoutManager | CMDITEMLISTINFO_AspectRatioNotNeeded 
     };
 
 /// <summary>
@@ -153,7 +153,7 @@ CmdItemListRsc ItemList_LabelContours =
 
 CmdItemListInformationRsc ItemList_LabelContours = 
     { 
-    "TERRAINMODEL LABEL CONTOURS", "TerrainModel Label Contours", __BFILE__, __LINE__, 0, CMDITEMLISTINFO_LayoutManager | CMDITEMLISTINFO_AspectRatioNotNeeded 
+    "TERRAINMODEL LABEL CONTOURS", "TerrainModel Label Contours", "", __BFILE__, __LINE__, 0, CMDITEMLISTINFO_LayoutManager | CMDITEMLISTINFO_AspectRatioNotNeeded 
     };
 
 /// <summary>

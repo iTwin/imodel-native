@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDefaultElementHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h" 
@@ -104,7 +104,7 @@ size_t MrDTMDgnModelAppData::RemoveMrDTMElementRef(ElementRefP elemRefP)
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 05/11
 //=======================================================================================
-void MrDTMElementDisplayHandler::_GetTypeName(WStringR string, uint32_t desiredLength) 
+void MrDTMElementDisplayHandler::_GetTypeName(WStringR string, UInt32 desiredLength) 
     {
     MrDTMDefaultElementHandler::GetInstance().GetTypeName(string, desiredLength);
     }

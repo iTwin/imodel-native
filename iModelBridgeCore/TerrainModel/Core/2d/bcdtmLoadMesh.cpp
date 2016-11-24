@@ -2,241 +2,13 @@
 |
 |     $Source: Core/2d/bcdtmLoadMesh.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
-/*==============================================================================*//**
-* @memo   Loads The Dtm Tin Triangles As Consecutive 3 Tuple Point Indices
-* @doc    Loads The Dtm Tin Triangles As Consecutive 3 Tuple Point Indices
-* @param  dtmP                  ==> Pointer To DTM Dtm object        
-* @param  useFence              ==> Use Fence  <TRUE,FALSE>            
-* @param  fencePts              ==> DPoint3d Array Of Fence Points         
-* @param  numFencePts           ==> Number Of Fence Points            
-* @param  numTrianglesP         <== Number Of  Point Indicies
-* @param  trianglesPP           <== Pointer To Points Indices
-* @param  dtmPtsPPP             <== Pointer To Dtm Point Arrays ( Dpoint3d )
-* @return DTM_SUCCESS or DTM_ERROR
-* @author Rob Cormack - September 2007 - rob.cormack@bentley.com
-* @version 
-* @see None
-*===============================================================================*/
-BENTLEYDTM_EXPORT int bcdtmLoad_tinTrianglesFromDtmObject
-(
- BC_DTM_OBJ *dtmP,           /* ==> Dtm Object Pointer                             */
- long useFence,              /* ==> Use Fence  <TRUE,FALSE>                        */    
- DTMFenceType fenceType,             /* ==> Fence Type <DTMFenceType::Block,DTMFenceType::Shape>   */
- DPoint3d *fencePtsP,             /* ==> Pointer To Fence Points                        */
- long numFencePts,           /* ==> Number Of Fence Points                         */
- long *numTrianglesP,        /* <== Number Of Triangles                            */
- long **trianglesPP,         /* <== Pointer To Triangle Point Indicies             */
- DTM_TIN_POINT ***dtmPtsPPP  /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
-)
-{
- int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pnt1,pnt2,pnt3,voidsInDtm,loadTriangle,voidTriangle,clPtr,memTriangles=0,memTrianglesInc=0 ;
- DTMFenceOption triangleExtent;
- double xMin,yMin,xMax,yMax ;
- DPoint3d    trgPts[4] ; 
- BC_DTM_OBJ *clipDtmP=NULL ; 
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
- DTM_CIR_LIST  *clistP ;
-/*
-** Write Entry Message
-*/
- if( dbg )
-   { 
-    bcdtmWrite_message(0,0,0,"Loading Dtm Triangles") ;
-    bcdtmWrite_message(0,0,0,"dtmP          = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"useFence      = %8ld",useFence) ;
-    bcdtmWrite_message(0,0,0,"fenceType     = %8ld",fenceType) ;
-    bcdtmWrite_message(0,0,0,"fencePtsP     = %p",fencePtsP) ;
-    bcdtmWrite_message(0,0,0,"numTrianglesP = %8ld",*numTrianglesP) ;
-    bcdtmWrite_message(0,0,0,"trianglesPP   = %p",*trianglesPP) ;
-    bcdtmWrite_message(0,0,0,"dtmPtsPPP     = %p",*dtmPtsPPP) ;
-   }
-/*
-** Initialise
-*/
- *numTrianglesP =  0 ;
- if( *trianglesPP != NULL ) 
-   { 
-    free(*trianglesPP)  ;
-    *trianglesPP = NULL ; 
-   } 
- *dtmPtsPPP = NULL ;
-/*
-** Check For Valid Dtm Object
-*/
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
-/*
-**  Check If DTM Is In Tin State
-*/
- if( dtmP->dtmState != DTMState::Tin )
-   {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
-    goto errexit ;
-   }
-/*
-** Set Pointer To Dtm Points Array
-*/
- *dtmPtsPPP = dtmP->pointsPP ;
-/*
-** Validate Fence 
-*/
- if( useFence == TRUE && ( fencePtsP == NULL || numFencePts <= 2 ) ) useFence = FALSE ;
- if( useFence == TRUE && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = FALSE ;
-/*
-** Set Meory Allocation Parameters For Storing Triangles
-*/
- memTriangles = 0 ;
- if( useFence == FALSE ) memTrianglesInc = dtmP->numTriangles * 3 ;
- else                    memTrianglesInc = dtmP->numTriangles * 3 / 4 ;
- if( memTrianglesInc <= 0 ) memTrianglesInc = 100 ;
-/*
-** Build Clipping Dtm For Fence
-*/
- if( useFence == TRUE )
-   {
-    if( bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP,fencePtsP,numFencePts)) goto errexit ;
-   }
-/*
-** Scan And Check For Presence Of Voids
-*/
- voidsInDtm = FALSE ;
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
-/*
-** Scan Dtm For Triangle Triangles
-*/
- for( pnt1 = 0 ; pnt1 < dtmP->numPoints ; ++pnt1 )
-   {
-    if( ( clPtr = nodeAddrP(dtmP,pnt1)->cPtr ) != dtmP->nullPtr ) 
-      {
-       if( ( pnt2 = bcdtmList_nextAntDtmObject(dtmP,pnt1,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ; 
-       while ( clPtr != dtmP->nullPtr )
-         {
-          clistP = clistAddrP(dtmP,clPtr) ;
-          pnt3   = clistP->pntNum ;
-          clPtr  = clistP->nextPtr ;
-/*
-**        Test For Triangle
-*/        
-          if( pnt2 > pnt1 && pnt3 > pnt1 && nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )
-            {
-/*
-**           Test For Void Triangle
-*/  
-             voidTriangle = FALSE ; 
-             if( voidsInDtm == TRUE ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidTriangle)) goto errexit ;
-/*
-**           Process If None Void Triangle
-*/
-             if( voidTriangle == FALSE )  
-               {
-/*
-**              Check If Triangle Overlaps Fence
-*/
-                loadTriangle = TRUE ;
-                if( useFence == TRUE )
-                  { 
-/*
-**                 Set Triangle Point Addresses
-*/ 
-                   p1P = pointAddrP(dtmP,pnt1) ;
-                   p2P = pointAddrP(dtmP,pnt2) ;
-                   p3P = pointAddrP(dtmP,pnt3) ;
-/*
-**                 Get Bounding Rectangle For Triangle
-*/
-                   xMin = xMax = p1P->x ;
-                   yMin = yMax = p1P->y ;
-                   if( p2P->x < xMin ) xMin = p2P->x ;
-                   if( p2P->x > xMax ) xMax = p2P->x ;
-                   if( p2P->y < yMin ) yMin = p2P->y ;
-                   if( p2P->y > yMax ) yMax = p2P->y ;
-                   if( p3P->x < xMin ) xMin = p3P->x ;
-                   if( p3P->x > xMax ) xMax = p3P->x ;
-                   if( p3P->y < yMin ) yMin = p3P->y ;
-                   if( p3P->y > yMax ) yMax = p3P->y ;
-/*
-**                 Check For Triangle External To Fence
-*/
-                   if( xMin > clipDtmP->xMax || xMax < clipDtmP->xMin || yMin > clipDtmP->yMax || yMax < clipDtmP->yMin ) loadTriangle = FALSE ;
-                   else if( fenceType != DTMFenceType::Block ) 
-                     {
-                      trgPts[0].x = p1P->x ; trgPts[0].y = p1P->y ;
-                      trgPts[1].x = p2P->x ; trgPts[1].y = p2P->y ;
-                      trgPts[2].x = p3P->x ; trgPts[2].y = p3P->y ;
-                      trgPts[3].x = p1P->x ; trgPts[3].y = p1P->y ;
-                      if( bcdtmLoad_testForOverlapWithTinHullDtmObject(clipDtmP,trgPts,4,&triangleExtent)) goto errexit ; 
-                      if( triangleExtent == DTMFenceOption::Outside ) loadTriangle = FALSE ;
-                     }
-                  }
-/*
-**              Store Point Indices For Triangle
-*/
-                if( loadTriangle == TRUE )
-                  {
-/*
-**                 Check Memory
-*/
-                   if( *numTrianglesP + 2 >= memTriangles )
-                     {
-                      memTriangles = memTriangles + memTrianglesInc ;
-                      if ( *trianglesPP == NULL ) *trianglesPP = ( long *) malloc ( memTriangles * sizeof(long)) ;
-                      else                        *trianglesPP = ( long *) realloc ( *trianglesPP , memTriangles * sizeof(long)) ;
-                      if( trianglesPP == NULL )
-                        {
-                         bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-                         goto errexit ;
-                        }
-                     }
-/*
-**                 Store Triangle Point Indices
-*/
-                   *(*trianglesPP+*numTrianglesP) = pnt1 + 1 ;
-                   ++*numTrianglesP ;
-                   *(*trianglesPP+*numTrianglesP) = pnt2 + 1 ;
-                   ++*numTrianglesP ;
-                   *(*trianglesPP+*numTrianglesP) = pnt3 + 1 ;
-                   ++*numTrianglesP ;
-                  }
-               }
-            }
-/*
-**        Set For Next Triangle
-*/
-          pnt2 = pnt3 ;
-         }
-      }
-   }
-/*
-** Realloc Memory
-*/
- if( *numTrianglesP >  0 && *numTrianglesP < memTriangles ) *trianglesPP = ( long *) realloc ( *trianglesPP , *numTrianglesP * sizeof(long)) ;
- if( *numTrianglesP == 0 && *trianglesPP   != NULL        ) { free(*trianglesPP) ; *trianglesPP = NULL ; }
-/*
-** Clean Up
-*/
- cleanup :
- if( clipDtmP != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
-/*
-** Job Completed
-*/
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Loading Dtm Triangles Completed") ;
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Loading Dtm Triangles Error") ;
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR  ;
- *numTrianglesP = 0 ;
- if( *trianglesPP != NULL ) { free(*trianglesPP)   ; *trianglesPP   = NULL ; }
- goto cleanup ;
-}
+#include "bcdtminlines.h"
+#ifdef DOESNTWORKPROPERLY
 /*==============================================================================*//**
 * @memo   Loads The Tin Edges As Consecutive 2 Tuple Point Indices
 * @doc    Loads The Tin Edges As Consecutive 2 Tuple Point Indices
@@ -260,11 +32,12 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
  long numFencePts,           /* ==> Number Of Fence Points                         */
  long *numEdgesP,            /* <== Number Of Edges                                */
  long **edgesPP,             /* <== Pointer To Edge Point Indicies                 */
- DTM_TIN_POINT ***dtmPtsPPP  /* <== Pointer To Tin Points Array ( Dpoint3d )       */
+ DPoint3d ***dtmPtsPPP  /* <== Pointer To Tin Points Array ( Dpoint3d )       */
 )
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long  pnt1,pnt2,isVoids,voidLine,listPtr,dtmFeature,memEdges=0,memEdgesInc=0 ;
+ long  pnt1,pnt2,listPtr,dtmFeature,memEdges=0,memEdgesInc=0 ;
+ bool isVoids,voidLine;
  DTMFenceOption loadLine;
  DPoint3d   edgePts[2] ; 
  BC_DTM_OBJ *clipTinP=NULL ; 
@@ -322,15 +95,15 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
 /*
 ** Scan And Check For Presence Of Voids
 */
- isVoids = FALSE ;
+ isVoids = false;
  if( dtmP->numFeatures > 0 )
    {
-    for( dtmFeature = 0  ; dtmFeature < dtmP->numFeatures && isVoids == FALSE ; ++dtmFeature )
+    for( dtmFeature = 0  ; dtmFeature < dtmP->numFeatures && isVoids == false; ++dtmFeature )
       {
        dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ; 
        if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted && dtmFeatureP->dtmFeatureState != DTMFeatureState::TinError && dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback && dtmFeatureP->dtmFeaturePts.firstPoint != dtmP->nullPnt )
          {
-          if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole || dtmFeatureP->dtmFeatureType == DTMFeatureType::Island ) isVoids = TRUE ;
+          if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole || dtmFeatureP->dtmFeatureType == DTMFeatureType::Island ) isVoids = true ;
          }  
       } 
    }
@@ -353,12 +126,12 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
 /*
 **           Test For Void Line
 */  
-             voidLine = FALSE ; 
-             if( isVoids == TRUE ) if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidLine)) goto errexit ;
+             voidLine = false ; 
+             if( isVoids == true ) if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidLine)) goto errexit ;
 /*
 **           Process If None Void Line
 */
-             if( voidLine == FALSE )  
+             if( voidLine == false )  
                {
 /*
 **              Check If Line Overlaps Fence
@@ -428,6 +201,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
  if( *edgesPP != NULL ) { free(*edgesPP)   ; *edgesPP   = NULL ; }
  goto cleanup ;
 }
+#endif
 /*==============================================================================*//**
 * @memo   Loads The Dtm As A Mesh Suitable For Storing As A Microstation Poly Face Mesh Element
 * @doc    Loads The Dtm As A Mesh Suitable For Storing As A Microstation Poly Face Mesh Element
@@ -464,33 +238,33 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 (
- BC_DTM_OBJ *dtmP,           /* ==> Pointer To Dtm Object                          */
- long firstCall,             /* ==> TRUE for first call FALSE For subsequent calls */
- long maxTriangles,          /* ==> Maximum Number Of Triangles To Load            */
- long useFence,              /* ==> Use Fence  <TRUE,FALSE>                        */    
- DTMFenceType fenceType,             /* ==> Fence Type <DTMFenceType::Block,DTMFenceType::Shape>   */
- DTMFenceOption fenceOption,           /* ==> Fence Option <INSIDE(1),OVERLAP(2)>            */
- DPoint3d *fencePtsP,             /* ==> Pointer To Fence Points                        */
- long numFencePts,           /* ==> Number Of Fence Points                         */
- DPoint3d  **meshPtsPP,           /* <== Pointer To Mesh Points                         */
- long *numMeshPtsP,          /* <== Number Of Mesh Points                          */
- long **meshFacesPP,         /* <== Pointer To Mesh Faces                          */
- long *numMeshFacesP         /* <== Number Of Mesh Faces                           */
+ BC_DTM_OBJ *dtmP,            /* ==> Pointer To Dtm Object                          */
+ bool firstCall,              /* ==> TRUE for first call FALSE For subsequent calls */
+ long maxTriangles,           /* ==> Maximum Number Of Triangles To Load            */
+ long useFence,               /* ==> Use Fence  <TRUE,FALSE>                        */    
+ DTMFenceType fenceType,      /* ==> Fence Type <DTMFenceType::Block,DTMFenceType::Shape>   */
+ DTMFenceOption fenceOption,  /* ==> Fence Option <INSIDE(1),OVERLAP(2)>            */
+ DPoint3dCP fencePtsP,        /* ==> Pointer To Fence Points                        */
+ long numFencePts,            /* ==> Number Of Fence Points                         */
+ bvector<DPoint3d>&  meshPts, /* <== Pointer To Mesh Points                         */
+ bvector<long>& meshFaces     /* <== Pointer To Mesh Faces                          */
 )
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long  p1,p2,p3 = 0,lp1=0,lp2=0,lp3=0,*faceP,clPtr,numTriangles=0,voidTriangle,numTrianglesMarked=0 ;
- long  node, startPnt, lastPnt, nextPnt = 0, loadTriangle, firstTriangle;
+ long  p1,p2,p3 = 0,lp1=0,lp2=0,lp3=0,*faceP,clPtr,numTriangles=0,numTrianglesMarked=0 ;
+ bool voidTriangle, voidsInDtm = false, loadTriangle, firstTriangle;
+ long  node, startPnt, lastPnt, nextPnt = 0;
  DTMFenceOption triangleExtent;
  DPoint3d   *p3dP,trgPts[4] ; 
  double xMin,xMax,yMin,yMax ;
- static long sp1=0,sp2=0,sp3=0,scanStartPnt=0,scanLastPnt=0,totalTriangles=0,voidsInDtm=FALSE,startTime  ; 
+ static long sp1=0,sp2=0,sp3=0,scanStartPnt=0,scanLastPnt=0,totalTriangles=0,startTime  ; 
  static long useWindow = 0;
  static DTMFenceType windowType = DTMFenceType::Block;
  static DTMFenceOption windowOption = DTMFenceOption::Overlap;
  static BC_DTM_OBJ *clipDtmP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
+ long numMeshPts, numMeshFaces;
 /*
 ** Write Entry Message
 */
@@ -505,13 +279,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
     bcdtmWrite_message(0,0,0,"fenceOption      = %8ld",fenceOption) ;
     bcdtmWrite_message(0,0,0,"fencePtsP        = %p",fencePtsP) ;
     bcdtmWrite_message(0,0,0,"numFencePoints   = %8ld",numFencePts) ;
-    bcdtmWrite_message(0,0,0,"meshPtsPP        = %p",*meshPtsPP) ;
-    bcdtmWrite_message(0,0,0,"numMeshPtsP      = %8ld",*numMeshPtsP) ;
-    bcdtmWrite_message(0,0,0,"meshFacesPP      = %p",*meshFacesPP) ;
-    bcdtmWrite_message(0,0,0,"numMeshFacesP    = %8ld",*numMeshFacesP) ;
     if( useFence && numFencePts > 2 )
       {
-       for( p3dP = fencePtsP ; p3dP < fencePtsP + numFencePts ; ++p3dP )
+       for( DPoint3dCP p3dP = fencePtsP ; p3dP < fencePtsP + numFencePts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"Fence Point[%4ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-fencePtsP),p3dP->x,p3dP->y,p3dP->z) ;
          } 
@@ -524,9 +294,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 ** Initialise
 */
  numTriangles = 0 ;
- *numMeshPtsP = *numMeshFacesP = 0 ;
- if( *meshPtsPP   != NULL ) { free(*meshPtsPP)   ; *meshPtsPP   = NULL ; }
- if( *meshFacesPP != NULL ) { free(*meshFacesPP) ; *meshFacesPP = NULL ; } 
+ numMeshPts = numMeshFaces = 0 ;
+ meshPts.clear();
+ meshFaces.clear();
 /*
 ** Check Calls Are Correctly Synchronised Or Last Call
 */
@@ -623,7 +393,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 **  Scan Dtm Features And Check For The Presence Of Voids 
 */
     voidsInDtm = FALSE ;
-    bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+    bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
    }
 /*
@@ -632,7 +402,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
  lastPnt = 0 ;
  startPnt = sp1 ;
  numTriangles = 0 ;
- firstTriangle = TRUE ;
+ firstTriangle = true ;
  for( p1 = sp1 ; p1 < scanLastPnt && numTriangles < maxTriangles ; ++p1 )
    {
     if( ( clPtr = nodeAddrP(dtmP,p1)->cPtr ) != dtmP->nullPtr ) 
@@ -640,9 +410,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 /*
 **     Scan To First Load Triangle
 */
-       if( firstTriangle == TRUE ) 
+       if( firstTriangle == true ) 
          {
-          firstTriangle = FALSE ;
+          firstTriangle = false ;
           if( sp2 != 0 || sp3 != 0 )
             {
              if(( p3 = bcdtmList_nextAntDtmObject(dtmP,p1,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;  
@@ -674,17 +444,17 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 /*
 **           Test For Void Triangle
 */  
-             voidTriangle = FALSE ; 
-             if( voidsInDtm == TRUE ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             voidTriangle = false ; 
+             if( voidsInDtm == true ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
 /*
 **           Process If Valid Triangle
 */
-             if( voidTriangle == FALSE )  
+             if( voidTriangle == false )  
                {
 /*
 **              Check If Triangle Overlaps Fence
 */
-                loadTriangle = TRUE ;
+                loadTriangle = true ;
                 if( useWindow == TRUE )
                   { 
                    trgPts[0].x = pointAddrP(dtmP,p1)->x ; trgPts[0].y = pointAddrP(dtmP,p1)->y ;
@@ -715,7 +485,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 /*
 **              Mark Triangle Load Points
 */
-                if( loadTriangle == TRUE )
+                if( loadTriangle == true )
                   {
                    if( p2 < startPnt ) startPnt = p2 ;
                    if( p3 < startPnt ) startPnt = p3 ;
@@ -747,31 +517,31 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 /*
 **  Count Number Of Mesh Points
 */
-    *numMeshPtsP = 0 ;
+    numMeshPts = 0 ;
     for( node = startPnt ; node <= lastPnt ; ++node ) 
       {
        nodeP = nodeAddrP(dtmP,node) ;
        if( nodeP->sPtr != dtmP->nullPnt )
          {
-          ++*numMeshPtsP ;
-          nodeP->sPtr = *numMeshPtsP ; 
+          ++numMeshPts;
+          nodeP->sPtr = numMeshPts; 
          }
       }  
 /*
 **  Allocate Memory For Mesh Points
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Populating Mesh Points ** *numMeshPtsP = %8ld",*numMeshPtsP) ;
-    *meshPtsPP = ( DPoint3d * ) malloc( *numMeshPtsP * sizeof(DPoint3d) ) ;
-    if( *meshPtsPP == NULL )
-      {
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ;
-      }
-/*
+    if( dbg ) bcdtmWrite_message(0,0,0,"Populating Mesh Points ** *numMeshPtP = %8ld",numMeshPts) ;
+    meshPts.resize (numMeshPts) ;
+    if (meshPts.data() == nullptr)
+        {
+        bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+        goto errexit;
+        }
+    /*
 **  Populate Mesh Points Array
 */
     nextPnt = 1 ;              // One Based Adressing For Polyface Mesh
-    p3dP = *meshPtsPP ;
+    p3dP = meshPts.data() ;
     for( node = startPnt ; node <= lastPnt ; ++node ) 
       {
        nodeP = nodeAddrP(dtmP,node) ;
@@ -789,9 +559,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 /*
 **  Allocate Memory For Mesh Faces Array
 */
-    *numMeshFacesP = numTriangles ;
-    *meshFacesPP = (long * ) malloc( *numMeshFacesP * 3 * sizeof(long)) ;
-    if( *meshFacesPP == NULL )
+    numMeshFaces = numTriangles ;
+    meshFaces.resize (numMeshFaces * 3) ;
+    if( meshFaces.data() == nullptr)
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -800,8 +570,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 **  Polulate The Mesh Faces Array
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Populating Mesh Faces") ;
-    faceP = *meshFacesPP ;
-    firstTriangle = TRUE ;
+    faceP = meshFaces.data() ;
+    firstTriangle = true ;
     numTrianglesMarked = 0 ;
     for( p1 = sp1 ; p1 < scanLastPnt && numTrianglesMarked < numTriangles ; ++p1 )
       {
@@ -841,9 +611,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
                {
                 if( nodeAddrP(dtmP,p1)->sPtr != dtmP->nullPnt && nodeAddrP(dtmP,p2)->sPtr != dtmP->nullPnt && nodeAddrP(dtmP,p3)->sPtr != dtmP->nullPnt )
                   {
-                   voidTriangle = FALSE ;
-                   if( voidsInDtm == TRUE ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
-                   if( voidTriangle == FALSE )
+                   voidTriangle = false ;
+                   if( voidsInDtm == true ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
+                   if( voidTriangle == false )
                      { 
                       *faceP = nodeAddrP(dtmP,p1)->sPtr  ; ++faceP ;
                       *faceP = nodeAddrP(dtmP,p2)->sPtr  ; ++faceP ;
@@ -899,9 +669,9 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 */
  errexit :
  sp1 = sp2 = sp3 = 0 ;
- *numMeshPtsP = *numMeshFacesP = 0 ;
- if( *meshPtsPP    != NULL ) { free(*meshPtsPP)   ; *meshPtsPP   = NULL ; }
- if( *meshFacesPP  != NULL ) { free(*meshFacesPP) ; *meshFacesPP = NULL ; } 
+ numMeshPts = numMeshFaces = 0 ;
+ meshPts.clear();
+ meshFaces.clear();
  if( clipDtmP      != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
  bcdtmList_nullSptrValuesDtmObject(dtmP) ;
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR  ;

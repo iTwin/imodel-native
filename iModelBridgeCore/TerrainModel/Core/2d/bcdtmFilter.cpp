@@ -2,12 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmFilter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -29,9 +29,9 @@ BENTLEYDTM_EXPORT int bcdtmFilter_dtmFeatureTypeDtmObject
 {
  int            ret=DTM_SUCCESS;
  long           point,feature,dtmFeature,numFeaturePts,numBeforeFilter,numAfterFilter ;
- DPoint3d            *p3dP,*featurePtsP=NULL ; 
+ DPoint3d            *p3dP,*featurePtsP=NULL ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT   *point1P,*point2P ;
+ DPoint3d   *point1P,*point2P ;
 /*
 ** Initialise
 */
@@ -105,7 +105,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_dtmFeatureTypeDtmObject
 /*
 **           Reset number Of Points In Points Array
 */
-             dtmP->numPoints = dtmP->numPoints - ( numBeforeFilter - numAfterFilter) ;  
+             dtmP->numPoints = dtmP->numPoints - ( numBeforeFilter - numAfterFilter) ;
 /*
 **           Reset Lower Feature First Points
 */
@@ -122,7 +122,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_dtmFeatureTypeDtmObject
 **        Free Feature Points Memory
 */
           if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
-         }  
+         }
       }
    }
 /*
@@ -169,16 +169,16 @@ BENTLEYDTM_Private int bcdtmFilter_pointArray(DPoint3d **ptsPP,long *numPtsP,dou
     if( markArrayP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ; 
-      } 
+       goto errexit ;
+      }
     for( markP = markArrayP ; markP < markArrayP + numMark ; ++markP ) *markP = 255 ;
 /*
 **  Initialise Variables
 */
     deltaxy = fabs(xyTolerance) ;
     deltaz  = fabs(zTolerance)  ;
-    is1 = 0 ; 
-    is2 = 2 ; 
+    is1 = 0 ;
+    is2 = 2 ;
 /*
 **  Filter linear feature
 */
@@ -216,13 +216,13 @@ BENTLEYDTM_Private int bcdtmFilter_pointArray(DPoint3d **ptsPP,long *numPtsP,dou
        if( bcdtmFlag_testFlag(markArrayP,is1))
          {
           if( p3d1P != p3d2P ) *p3d1P = *p3d2P ;
-          ++p3d1P ; 
-         }  
-      } 
+          ++p3d1P ;
+         }
+      }
 /*
 **  Reset Number Of Points
 */
-    *numPtsP = (long ) (p3d1P - *ptsPP)  ;  
+    *numPtsP = (long ) (p3d1P - *ptsPP)  ;
     *ptsPP = ( DPoint3d * ) realloc(*ptsPP , *numPtsP * sizeof(DPoint3d)) ;
    }
 /*
@@ -251,19 +251,19 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object                         */
  long   filterOption,                  /* ==> Filter Option <1= Fine,2=Coarse>              */
  long   reinsertOption,                /* ==> Reinsert Points Out Of Tolerance <TRUE,FALSE> */
- double zTolerance,                    /* ==> Filter z Tolerance > 0.0                      */ 
+ double zTolerance,                    /* ==> Filter z Tolerance > 0.0                      */
  long   *numSpotsBeforeFilterP,        /* <== Number Of Spots Before Filter                 */
- long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */ 
- double *filterReductionP              /* <== Filter Reduction                              */ 
+ long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */
+ double *filterReductionP              /* <== Filter Reduction                              */
 )
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,firstPoint,lastPoint,numTiles,saveLastPoint,maxPts=500000 ;
  long *tileOffsetP=NULL,*numTilePtsP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin Filtering Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
@@ -338,7 +338,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
        if( bcdtmSort_pointsIntoTilesDtmObject(dtmP,firstPoint,lastPoint-firstPoint+1,maxPts,&tileOffsetP,&numTilePtsP,&numTiles)) goto errexit ;
        if( dbg )
          {
-          bcdtmWrite_message(0,0,0,"Number Of Tiles = %4ld",numTiles) ; 
+          bcdtmWrite_message(0,0,0,"Number Of Tiles = %4ld",numTiles) ;
           for( n = 0 ; n < numTiles ; ++n )
             {
              bcdtmWrite_message(0,0,0,"Tile[%4ld] ** offset = %8ld ** numPts = %8ld",n+1,*(tileOffsetP+n),*(numTilePtsP+n)) ;
@@ -350,17 +350,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
 */
     else
       {
-       numTiles = 1 ; 
+       numTiles = 1 ;
        tileOffsetP = ( long * ) malloc( numTiles * sizeof(long)) ;
        numTilePtsP = ( long * ) malloc( numTiles * sizeof(long)) ;
        if( tileOffsetP == NULL || numTilePtsP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         } 
+         }
        *tileOffsetP = 0 ;
-       *numTilePtsP = lastPoint - firstPoint + 1 ; 
-      } 
+       *numTilePtsP = lastPoint - firstPoint + 1 ;
+      }
 /*
 **  Filtering Random Points
 */
@@ -378,7 +378,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
  if( bcdtmObject_resizeMemoryDtmObject(dtmP)) goto errexit ;
 /*
 ** Set Return Values
-*/ 
+*/
  if( *numSpotsAfterFilterP == *numSpotsBeforeFilterP ) *filterReductionP = 0.0 ;
  else                                                  *filterReductionP = ( 1.0 - ( double ) *numSpotsAfterFilterP / ( double ) *numSpotsBeforeFilterP ) * 100.0 ;
 /*
@@ -387,7 +387,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"spotsBefore = %8ld spotsAfter = %8ld reduction = %8.4lf",*numSpotsBeforeFilterP,*numSpotsAfterFilterP,*filterReductionP) ;
-   } 
+   }
 /*
 **  Update Modified Time
  */
@@ -397,7 +397,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterRandomSpotsDtmObject
 */
  cleanup :
  if( tileOffsetP != NULL ) free(tileOffsetP) ;
- if( numTilePtsP != NULL ) free(numTilePtsP) ;  
+ if( numTilePtsP != NULL ) free(numTilePtsP) ;
 /*
 ** Job Completed
 */
@@ -423,12 +423,12 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
  long   *lastPointP                    /* ==> Index To Last Random Spot In DTM Object       */
 )
 {
- int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,pnt1,pnt2,markSize,dtmFeature,numFeaturePts,numFeatures=0,numRandomSpots,numCleared=0 ;
  unsigned char *cP,*markFlagP=NULL ;
  char dtmFeatureTypeName[50] ;
- DPoint3d  *featurePtsP=NULL ; 
- 
+ DPoint3d  *featurePtsP=NULL ;
+
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -459,7 +459,7 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      }         
+      }
     for( cP = markFlagP ; cP < markFlagP + markSize ; ++cP ) *cP = 0xff ;
 /*
 **  Mark None Random Spots
@@ -468,11 +468,11 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
     for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
       {
        dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-       if( dbg == 1 ) 
+       if( dbg == 1 )
          {
           bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName) ;
           bcdtmWrite_message(0,0,0,"dtmFeature = %6ld dtmFeatureType = %30s dtmFeatureState = %2ld numDtmFeaturePts = %8ld",dtmFeature,dtmFeatureTypeName,dtmFeatureP->dtmFeatureState,dtmFeatureP->numDtmFeaturePts) ;
-         } 
+         }
        if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Data )
          {
           bcdtmWrite_message(2,0,0,"Invalid DTM Feature State For Method") ;
@@ -498,15 +498,15 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
        memcpy(bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI), featurePtsP, numFeaturePts * sizeof(DPoint3d));
        free(featurePtsP);
        featurePtsP = NULL ;
-       ++numFeatures ; 
+       ++numFeatures ;
       }
 /*
 **  Write Number Of Features
 */
-    if( dbg ) 
+    if( dbg )
       {
-       bcdtmWrite_message(0,0,0,"Number Of Features = %8ld",numFeatures) ; 
-       bcdtmWrite_message(0,0,0,"Number Of Feature Points Cleared = %8ld",numCleared) ; 
+       bcdtmWrite_message(0,0,0,"Number Of Features = %8ld",numFeatures) ;
+       bcdtmWrite_message(0,0,0,"Number Of Feature Points Cleared = %8ld",numCleared) ;
       }
 /*
 **  Count Number Of Random Points
@@ -529,8 +529,8 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
          {
           if( pnt2 != pnt1 ) *pointAddrP(dtmP,pnt1) = *pointAddrP(dtmP,pnt2) ;
           ++pnt1 ;
-         } 
-      } 
+         }
+      }
     dtmP->numPoints = pnt1 ;
     if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->numPoints = %8ld",dtmP->numPoints) ;
 /*
@@ -565,11 +565,11 @@ BENTLEYDTM_Private int bcdtmFilter_blockRandomSpotsDtmObject
 BENTLEYDTM_Private int bcdtmFilter_setFeatureStatesToFirstPointDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   dtmFeature,numFeaturePts ; 
+ long   dtmFeature,numFeaturePts ;
  DPoint3d    *p3dP,*featurePtsP=NULL ;
  char   dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP  ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -581,8 +581,8 @@ BENTLEYDTM_Private int bcdtmFilter_setFeatureStatesToFirstPointDtmObject(BC_DTM_
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray )
-      { 
-       if( dbg ) 
+      {
+       if( dbg )
          {
           bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName) ;
           bcdtmWrite_message(0,0,0,"dtmFeature = %6ld dtmFeatureType = %30s dtmFeatureState = %2ld numDtmFeaturePts = %8ld",dtmFeature,dtmFeatureTypeName,dtmFeatureP->dtmFeatureState,dtmFeatureP->numDtmFeaturePts) ;
@@ -659,9 +659,9 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
  DPoint3d  randomSpot ;
  double z ;
  BC_DTM_OBJ *dtm1P=NULL,*dtm2P=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTMFeatureId featureId ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
 ** Write Entry Message
 */
@@ -721,17 +721,17 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
                }
              ++node1 ;
             }
-         } 
+         }
        dtm1P->numPoints = node1 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Deleted ** dtm1P->numPoints = %8ld",dtm1P->numPoints) ;
 /*
 **     Free Nodes memory
 */
-       if( dtm1P->nodesPP != NULL ) 
-         { 
+       if( dtm1P->nodesPP != NULL )
+         {
           for( m = 0 ; m < dtm1P->numPointPartitions ; ++m ) free(dtm1P->nodesPP[m]) ;
           free( dtm1P->nodesPP) ;
-          dtm1P->nodesPP = NULL  ; 
+          dtm1P->nodesPP = NULL  ;
           dtm1P->numNodePartitions = 0 ;
           dtm1P->numNodes = 0 ;
           dtm1P->memNodes = 0 ;
@@ -739,11 +739,11 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
 /*
 **     Free Circular List Memory
 */
-       if( dtm1P->cListPP != NULL ) 
-         { 
+       if( dtm1P->cListPP != NULL )
+         {
           for( m = 0 ; m < dtm1P->numClistPartitions ; ++m ) free(dtm1P->cListPP[m]) ;
           free( dtm1P->cListPP) ;
-          dtm1P->cListPP = NULL  ; 
+          dtm1P->cListPP = NULL  ;
           dtm1P->numClistPartitions = 0 ;
           dtm1P->numClist = 0 ;
           dtm1P->memClist = 0 ;
@@ -813,7 +813,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
 /*
 **  Change State DTM Object 2
 */
-    if( bcdtmObject_changeStateDtmObject(dtm2P,DTMState::Data)) goto errexit ; 
+    if( bcdtmObject_changeStateDtmObject(dtm2P,DTMState::Data)) goto errexit ;
 /*
 **  Store Reinserted Point In DTM Object 2
 */
@@ -829,7 +829,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
 /*
 **  Destroy DTM Object
 */
-    if( bcdtmObject_destroyDtmObject(&dtm1P)) goto errexit ; 
+    if( bcdtmObject_destroyDtmObject(&dtm1P)) goto errexit ;
 /*
 **  Write number Of Points Reinserted
 */
@@ -842,7 +842,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
 /*
 **  Set Number Of Spots
 */
- *numFilteredSpotsP = dtm2P->numPoints ;  
+ *numFilteredSpotsP = dtm2P->numPoints ;
 /*
 ** Set Number Of Points In Start Object
 */
@@ -890,20 +890,20 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterRandomSpotsDtmObject
  double tileLength,                    /* ==> Length Of Tile Side                           */
  double zTolerance,                    /* ==> z Filter Tolerance                            */
  long   *numSpotsBeforeFilterP,        /* <== Number Of Spots Before Filter                 */
- long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */ 
- double *filterReductionP              /* <== Filter Reduction                              */ 
+ long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */
+ double *filterReductionP              /* <== Filter Reduction                              */
 )
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long point,firstPoint,lastPoint ;
  DPoint3d  randomSpot;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ *filterDtmP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile Filtering Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
@@ -974,7 +974,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterRandomSpotsDtmObject
    {
     if( bcdtmFilter_tileFilterBlockRandomSpotsDtmObject(dtmP,&filterDtmP,firstPoint,lastPoint,zTolerance,minTilePts,maxTileDivide,tileLength)) goto errexit ;
     *numSpotsAfterFilterP = filterDtmP->numPoints ;
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"dtmP->numPoints       = %8ld",dtmP->numPoints) ;
        bcdtmWrite_message(0,0,0,"filterDtmP->numPoints = %8ld",filterDtmP->numPoints) ;
@@ -1006,7 +1006,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterRandomSpotsDtmObject
  if( dbg ) bcdtmObject_reportStatisticsDtmObject(dtmP) ;
 /*
 ** Set Return Values
-*/ 
+*/
  if( *numSpotsAfterFilterP == *numSpotsBeforeFilterP ) *filterReductionP = 0.0 ;
  else                                                  *filterReductionP = ( 1.0 - ( double ) *numSpotsAfterFilterP / ( double ) *numSpotsBeforeFilterP ) * 100.0 ;
 /*
@@ -1017,7 +1017,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterRandomSpotsDtmObject
     bcdtmWrite_message(0,0,0,"spotsBefore = %8ld spotsAfter = %8ld reduction = %8.4lf",*numSpotsBeforeFilterP,*numSpotsAfterFilterP,*filterReductionP) ;
 //    bcdtmObject_triangulateDtmObject(dtmP) ;
     bcdtmWrite_toFileDtmObject(dtmP,L"tileFiltered.bcdtm") ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -1046,14 +1046,14 @@ BENTLEYDTM_Private int bcdtmFilter_tileFilterBlockRandomSpotsDtmObject
  BC_DTM_OBJ   *dtmP,               /* ==> Pointer To Dtm Object With Spots To Be Filtered */
  BC_DTM_OBJ   **filterDtmPP,       /* <== Pointer To Dtm Object To Store Filtered Spots   */
  long         firstPoint,          /* ==> Index Of First Spot In Dtm Object               */
- long         lastPoint,           /* ==> Index Of Last Spot In Dtm Object                */ 
+ long         lastPoint,           /* ==> Index Of Last Spot In Dtm Object                */
  double       zTolerance,          /* ==> z Filter Tolerance                              */
  int          minTilePts,          /* ==> Minimum Points Per Tile                         */
- int          maxTileDivisions,    /* ==> Maximum Number Of Tile Subdivisisons            */ 
+ int          maxTileDivisions,    /* ==> Maximum Number Of Tile Subdivisisons            */
  double       tileLength           /* ==> Length Of Tile Side                             */
 )
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long slabNum=0,saveLastPoint ;
  int nTemp = 0;
  long iXL = 0, iXR = 0;
@@ -1190,7 +1190,7 @@ BENTLEYDTM_Private int bcdtmFilter_tileFilterBlockRandomSpotsDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject            
+BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
 (
  BC_DTM_OBJ* dtmP,               // all (sorted) points in current SlabX.
  BC_DTM_OBJ* filterDtmP,         // the thinned points.
@@ -1224,7 +1224,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
 
  long iniPts = 0 ;
  long point ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ  *tempFilterP=NULL ;  // all (sorted) points in current SlabX.
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -1265,7 +1265,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
           dZMin = ( pointAddrP(dtmP,iY)->z < dZMin ) ? pointAddrP(dtmP,iY)->z : dZMin;
           dZMax = ( pointAddrP(dtmP,iY)->z > dZMax ) ? pointAddrP(dtmP,iY)->z : dZMax;
          }
-      } 
+      }
 /*
 **  All Tile Points Are Within The z Tolerance
 */
@@ -1283,7 +1283,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
              pointP = pointAddrP(dtmP,point) ;
              bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %12.5lf",point,pointP->x,pointP->y,pointP->z) ;
             }
-         } 
+         }
        for( iY = iYL; iY < iYL + iYR; iY++ )
          {
           dNorm = ( pointAddrP(dtmP,iY)->x - dXM ) * ( pointAddrP(dtmP,iY)->x - dXM ) + ( pointAddrP(dtmP,iY)->y - dYM ) * ( pointAddrP(dtmP,iY)->y - dYM );
@@ -1304,8 +1304,8 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
        if( tempFilterP )
          {
           iniPts = iYR / 2 ;
-          if( iniPts < 1000 ) iniPts = 1000 ; 
-          bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempFilterP,iniPts,iniPts) ; 
+          if( iniPts < 1000 ) iniPts = 1000 ;
+          bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempFilterP,iniPts,iniPts) ;
 /*
 **        Bottom Left Sub Tile.
 */
@@ -1317,7 +1317,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
           for( iY = iYL; iY < iYL + iYR; iY++ )
             {
              if( dXL1 <= pointAddrP(dtmP,iY)->x && pointAddrP(dtmP,iY)->x < dXR1 && dYL1 <= pointAddrP(dtmP,iY)->y && pointAddrP(dtmP,iY)->y < dYR1 )
-               { 
+               {
                 ++iXR1 ;
                 bcdtmObject_storeDtmFeatureInDtmObject(tempFilterP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,iY),1) ;
                }
@@ -1334,7 +1334,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
           for( iY = iYL; iY < iYL + iYR; iY++ )
             {
              if( dXL1 <= pointAddrP(dtmP,iY)->x && pointAddrP(dtmP,iY)->x < dXR1 && dYL1 <= pointAddrP(dtmP,iY)->y && pointAddrP(dtmP,iY)->y < dYR1 )
-               { 
+               {
                 ++iXR1 ;
                 bcdtmObject_storeDtmFeatureInDtmObject(tempFilterP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,iY),1) ;
                }
@@ -1351,11 +1351,11 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
           for( iY = iYL; iY < iYL + iYR; iY++ )
             {
              if( dXL1 <= pointAddrP(dtmP,iY)->x && pointAddrP(dtmP,iY)->x < dXR1 && dYL1 <= pointAddrP(dtmP,iY)->y && pointAddrP(dtmP,iY)->y < dYR1 )
-               { 
+               {
                 ++iXR1 ;
                 bcdtmObject_storeDtmFeatureInDtmObject(tempFilterP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,iY),1) ;
                }
-            } 
+            }
           bcdtmFilter_processTileDtmObject(tempFilterP, filterDtmP, 0, iXR1, dXL1, dXM1, dXR1, dYL1, dYM1, dYR1, zTolerance, iDivision + 1, maxTileDivisions, minTilePts );
 /*
 **        Top Right Sub Tile.
@@ -1372,7 +1372,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
                 ++iXR1 ;
                 bcdtmObject_storeDtmFeatureInDtmObject(tempFilterP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,iY),1) ;
                }
-            } 
+            }
           bcdtmFilter_processTileDtmObject(tempFilterP, filterDtmP, 0, iXR1, dXL1, dXM1, dXR1, dYL1, dYM1, dYR1, zTolerance, iDivision + 1, maxTileDivisions, minTilePts );
           bcdtmObject_destroyDtmObject(&tempFilterP) ;
          }
@@ -1412,7 +1412,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmFilter_findPlaneDtmObject
 (
- BC_DTM_OBJ *dtmP, 
+ BC_DTM_OBJ *dtmP,
  long pnt,
  long nPnts,
  DTM_PLANE* pPlane
@@ -1424,7 +1424,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_findPlaneDtmObject
  double A[9] = {0.0};
  double b[3] = {0.0};
  DPoint3d pntC;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 
  pPlane->A = 0.0 ;
  pPlane->B = 0.0 ;
@@ -1600,10 +1600,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   ofs,pnt,numPoints=0 ; 
+ long   ofs,pnt,numPoints=0 ;
  long   *sP,*sortP=NULL,*tempP=NULL ;
  double dSave ;
- DTM_TIN_POINT *pnt1P,*pnt2P,dtmPoint  ;
+ DPoint3d *pnt1P,*pnt2P,dtmPoint  ;
 /*
 ** Write Entry Message
 */
@@ -1615,7 +1615,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
 /*
 ** Only Sort If Dtm Object Is In Dtm State DTMState::Data
 */
- if( dtmP->dtmState != DTMState::Data ) 
+ if( dtmP->dtmState != DTMState::Data )
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated Dtm") ;
     goto errexit ;
@@ -1635,7 +1635,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
    {
     bcdtmWrite_message(1,0,0,"Point Range Error") ;
     goto errexit ;
-   }  
+   }
 /*
 ** Initialise
 */
@@ -1643,7 +1643,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
 /*
 **  Only Sort If More Than One Dtm Point
 */
- if( numPoints > 1 )   
+ if( numPoints > 1 )
    {
 /*
 **  Exchange x & y For y Axis
@@ -1652,7 +1652,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
       {
        for( pnt = firstPoint ; pnt <= lastPoint ; ++pnt )
          {
-          pnt1P = pointAddrP(dtmP,pnt) ;  
+          pnt1P = pointAddrP(dtmP,pnt) ;
           dSave = pnt1P->x ;
           pnt1P->x = pnt1P->y ;
           pnt1P->y = dSave ;
@@ -1683,8 +1683,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
 */
    for( sP = sortP + firstPoint , ofs = firstPoint ; sP <= sortP + lastPoint ; ++sP , ++ofs )
      {
-      pnt1P = pointAddrP(dtmP,ofs) ; 
-      pnt2P = pointAddrP(dtmP,*sP) ; 
+      pnt1P = pointAddrP(dtmP,ofs) ;
+      pnt2P = pointAddrP(dtmP,*sP) ;
       dtmPoint = *pnt1P ;
       *pnt1P = *pnt2P ;
       *pnt2P = dtmPoint ;
@@ -1698,7 +1698,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
       {
        for( pnt = firstPoint ; pnt <= lastPoint ; ++pnt )
          {
-          pnt1P = pointAddrP(dtmP,pnt) ;  
+          pnt1P = pointAddrP(dtmP,pnt) ;
           dSave = pnt1P->x ;
           pnt1P->x = pnt1P->y ;
           pnt1P->y = dSave ;
@@ -1723,7 +1723,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
                }
              pnt1P = pnt2P ;
             }
-         }  
+         }
        if( axis == DTM_Y_AXIS )
          {
           pnt1P = pointAddrP(dtmP,firstPoint) ;
@@ -1737,7 +1737,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
                }
              pnt1P = pnt2P ;
             }
-         }  
+         }
        if( dbg ) bcdtmWrite_message(0,0,0,"Sort Order OK") ;
       }
    }
@@ -1779,10 +1779,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   ofs,pnt,numPoints=0,userTag ; 
+ long   ofs,pnt,numPoints=0,userTag ;
  long   *sP,*sortP=NULL,*tempP=NULL ;
  double dSave ;
- DTM_TIN_POINT *pnt1P,*pnt2P,dtmPoint  ;
+ DPoint3d *pnt1P,*pnt2P,dtmPoint  ;
 /*
 ** Write Entry Message
 */
@@ -1794,7 +1794,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
 /*
 ** Only Sort If Dtm Object Is In Dtm State DTMState::Data
 */
- if( dtmP->dtmState != DTMState::Data ) 
+ if( dtmP->dtmState != DTMState::Data )
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated Dtm") ;
     goto errexit ;
@@ -1814,7 +1814,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
    {
     bcdtmWrite_message(1,0,0,"Point Range Error") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Check Tags Are Set
 */
@@ -1822,7 +1822,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
    {
     bcdtmWrite_message(1,0,0,"Null Tag Array") ;
     goto errexit ;
-   }    
+   }
 /*
 ** Initialise
 */
@@ -1830,7 +1830,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
 /*
 **  Only Sort If More Than One Dtm Point
 */
- if( numPoints > 1 )   
+ if( numPoints > 1 )
    {
 /*
 **  Exchange x & y For y Axis
@@ -1839,7 +1839,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
       {
        for( pnt = firstPoint ; pnt <= lastPoint ; ++pnt )
          {
-          pnt1P = pointAddrP(dtmP,pnt) ;  
+          pnt1P = pointAddrP(dtmP,pnt) ;
           dSave = pnt1P->x ;
           pnt1P->x = pnt1P->y ;
           pnt1P->y = dSave ;
@@ -1870,8 +1870,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
 */
    for( sP = sortP + firstPoint , ofs = firstPoint ; sP <= sortP + lastPoint ; ++sP , ++ofs )
      {
-      pnt1P = pointAddrP(dtmP,ofs) ; 
-      pnt2P = pointAddrP(dtmP,*sP) ; 
+      pnt1P = pointAddrP(dtmP,ofs) ;
+      pnt2P = pointAddrP(dtmP,*sP) ;
       dtmPoint = *pnt1P ;
       *pnt1P = *pnt2P ;
       *pnt2P = dtmPoint ;
@@ -1888,7 +1888,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
       {
        for( pnt = firstPoint ; pnt <= lastPoint ; ++pnt )
          {
-          pnt1P = pointAddrP(dtmP,pnt) ;  
+          pnt1P = pointAddrP(dtmP,pnt) ;
           dSave = pnt1P->x ;
           pnt1P->x = pnt1P->y ;
           pnt1P->y = dSave ;
@@ -1913,7 +1913,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
                }
              pnt1P = pnt2P ;
             }
-         }  
+         }
        if( axis == DTM_Y_AXIS )
          {
           pnt1P = pointAddrP(dtmP,firstPoint) ;
@@ -1927,7 +1927,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
                }
              pnt1P = pnt2P ;
             }
-         }  
+         }
        if( dbg ) bcdtmWrite_message(0,0,0,"Checking Sort Order Completed") ;
       }
    }
@@ -1961,7 +1961,7 @@ BENTLEYDTM_Private int bcdtmFilter_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lo
 */
 {
  long  i,numPts1,numPts2,startPnt1,startPnt2 ;
- DTM_TIN_POINT *p1P,*p2P,point ;
+ DPoint3d *p1P,*p2P,point ;
 /*
 ** Two data points
 */
@@ -1981,10 +1981,10 @@ BENTLEYDTM_Private int bcdtmFilter_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lo
 */
  if( numPts > 2 )
    {
-    numPts1 = numPts / 2  ; 
-    if( numPts % 2 != 0 ) numPts1 = numPts1 + 1 ; 
+    numPts1 = numPts / 2  ;
+    if( numPts % 2 != 0 ) numPts1 = numPts1 + 1 ;
     numPts2 = numPts - numPts1 ;
-    startPnt1 = startPnt  ; 
+    startPnt1 = startPnt  ;
     startPnt2 = startPnt + numPts1 ;
     bcdtmFilter_divConqMergeSortDtmObject(dtmP,startPnt1,numPts1) ;
     bcdtmFilter_divConqMergeSortDtmObject(dtmP,startPnt2,numPts2) ;
@@ -2023,8 +2023,8 @@ BENTLEYDTM_Private int bcdtmFilter_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lo
 BENTLEYDTM_EXPORT int bcdtmFilter_removeDuplicatePointsFromRangeDtmObject(BC_DTM_OBJ *dtmP,long firstPoint,long *lastPointP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P  ;
+ long   pnt1,pnt2 ;
+ DPoint3d *pnt1P,*pnt2P  ;
 /*
 ** Write Entry Message
 */
@@ -2036,7 +2036,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeDuplicatePointsFromRangeDtmObject(BC_DTM
 /*
 ** Only Sort If Dtm Object Is In Dtm State DTMState::Data
 */
- if( dtmP->dtmState != DTMState::Data ) 
+ if( dtmP->dtmState != DTMState::Data )
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated Dtm") ;
     goto errexit ;
@@ -2056,7 +2056,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeDuplicatePointsFromRangeDtmObject(BC_DTM
    {
     bcdtmWrite_message(1,0,0,"Point Range Error") ;
     goto errexit ;
-   }  
+   }
 /*
 ** Remove Duplicates
 */
@@ -2106,8 +2106,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeDuplicatePointsFromRangeDtmObject(BC_DTM
 BENTLEYDTM_EXPORT int bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(BC_DTM_OBJ *dtmP,long *tagP,long firstPoint,long *lastPointP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P  ;
+ long   pnt1,pnt2 ;
+ DPoint3d *pnt1P,*pnt2P  ;
 /*
 ** Write Entry Message
 */
@@ -2119,7 +2119,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(
 /*
 ** Only Sort If Dtm Object Is In Dtm State DTMState::Data
 */
- if( dtmP->dtmState != DTMState::Data ) 
+ if( dtmP->dtmState != DTMState::Data )
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated Dtm") ;
     goto errexit ;
@@ -2139,7 +2139,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(
    {
     bcdtmWrite_message(1,0,0,"Point Range Error") ;
     goto errexit ;
-   }  
+   }
 /*
 ** Remove Duplicates
 */
@@ -2195,21 +2195,21 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject
  double tileLength,                    /* ==> Length Of Tile Side                           */
  double zTolerance,                    /* ==> z Filter Tolerance                            */
  long   *numSpotsBeforeFilterP,        /* <== Number Of Spots Before Filter                 */
- long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */ 
- double *filterReductionP              /* <== Filter Reduction                              */ 
+ long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */
+ double *filterReductionP              /* <== Filter Reduction                              */
 )
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long point,firstPoint,lastPoint,dtmFeature ;
  DPoint3d  randomSpot ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ *filterDtmP=NULL ;
  DTMFeatureId featureId ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile Filtering Single Point Group Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
@@ -2294,7 +2294,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject
    }
 /*
 ** Set Return Values
-*/ 
+*/
  if( *numSpotsAfterFilterP == *numSpotsBeforeFilterP ) *filterReductionP = 0.0 ;
  else                                                  *filterReductionP = ( 1.0 - ( double ) *numSpotsAfterFilterP / ( double ) *numSpotsBeforeFilterP ) * 100.0 ;
 /*
@@ -2322,8 +2322,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject
                }
             }
          }
-      } 
-   } 
+      }
+   }
 /*
 **  Update Modified Time
  */
@@ -2354,7 +2354,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject
 BENTLEYDTM_Private int bcdtmFilter_changeSinglePointGroupSpotsToRandomSpotsObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   dtmFeature,numDeleted ; 
+ long   dtmFeature,numDeleted ;
  BC_DTM_FEATURE *dtmFeatureP  ;
 /*
 ** Write Entry Message
@@ -2367,7 +2367,7 @@ BENTLEYDTM_Private int bcdtmFilter_changeSinglePointGroupSpotsToRandomSpotsObjec
 /*
 ** Only Change If Dtm Object Is In Dtm State DTMState::Data
 */
- if( dtmP->dtmState != DTMState::Data ) 
+ if( dtmP->dtmState != DTMState::Data )
    {
     bcdtmWrite_message(2,0,0,"Method Requires Untriangulated Dtm") ;
     goto errexit ;
@@ -2397,7 +2397,7 @@ BENTLEYDTM_Private int bcdtmFilter_changeSinglePointGroupSpotsToRandomSpotsObjec
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Compacting Feature Table") ;
     if( bcdtmData_compactUntriangulatedFeatureTableDtmObject(dtmP)) goto errexit ;
-   } 
+   }
 /*
 ** Write Number Of Points
 */
@@ -2429,13 +2429,13 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object                         */
  long   filterOption,                  /* ==> Filter Option <1= Fine,2=Coarse>              */
  long   reinsertOption,                /* ==> Reinsert Points Out Of Tolerance <TRUE,FALSE> */
- double zTolerance,                    /* ==> Filter z Tolerance > 0.0                      */ 
+ double zTolerance,                    /* ==> Filter z Tolerance > 0.0                      */
  long   *numSpotsBeforeFilterP,        /* <== Number Of Spots Before Filter                 */
- long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */ 
- double *filterReductionP              /* <== Filter Reduction                              */ 
+ long   *numSpotsAfterFilterP,         /* <== Number Of Spots After Filter                  */
+ double *filterReductionP              /* <== Filter Reduction                              */
 )
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ; 
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long n,firstPoint,lastPoint,numTiles,saveLastPoint,maxPts=500000,dtmFeature ;
  long *tileOffsetP=NULL,*numTilePtsP=NULL ;
  char dtmFeatureTypeName[50] ;
@@ -2443,7 +2443,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin Filtering Single Point Group Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
@@ -2522,7 +2522,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
        if( bcdtmSort_pointsIntoTilesDtmObject(dtmP,firstPoint,lastPoint-firstPoint+1,maxPts,&tileOffsetP,&numTilePtsP,&numTiles)) goto errexit ;
        if( dbg )
          {
-          bcdtmWrite_message(0,0,0,"Number Of Tiles = %4ld",numTiles) ; 
+          bcdtmWrite_message(0,0,0,"Number Of Tiles = %4ld",numTiles) ;
           for( n = 0 ; n < numTiles ; ++n )
             {
              bcdtmWrite_message(0,0,0,"Tile[%4ld] ** offset = %8ld ** numPts = %8ld",n+1,*(tileOffsetP+n),*(numTilePtsP+n)) ;
@@ -2534,17 +2534,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
 */
     else
       {
-       numTiles = 1 ; 
+       numTiles = 1 ;
        tileOffsetP = ( long * ) malloc( numTiles * sizeof(long)) ;
        numTilePtsP = ( long * ) malloc( numTiles * sizeof(long)) ;
        if( tileOffsetP == NULL || numTilePtsP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         } 
+         }
        *tileOffsetP = 0 ;
-       *numTilePtsP = lastPoint - firstPoint + 1 ; 
-      } 
+       *numTilePtsP = lastPoint - firstPoint + 1 ;
+      }
 /*
 **  Filtering Random Points
 */
@@ -2562,7 +2562,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
  if( bcdtmObject_resizeMemoryDtmObject(dtmP)) goto errexit ;
 /*
 ** Set Return Values
-*/ 
+*/
  if( *numSpotsAfterFilterP == *numSpotsBeforeFilterP ) *filterReductionP = 0.0 ;
  else                                                  *filterReductionP = ( 1.0 - ( double ) *numSpotsAfterFilterP / ( double ) *numSpotsBeforeFilterP ) * 100.0 ;
 /*
@@ -2597,8 +2597,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
          {
           bcdtmWrite_message(0,0,0,"Point[%4ld] = %12.5lf %12.5lf %10.4lf",n,pointAddrP(dtmP,n)->x,pointAddrP(dtmP,n)->y,pointAddrP(dtmP,n)->z) ;
          }
-      } 
-   } 
+      }
+   }
 /*
 **  Update Modified Time
  */
@@ -2608,7 +2608,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject
 */
  cleanup :
  if( tileOffsetP != NULL ) free(tileOffsetP) ;
- if( numTilePtsP != NULL ) free(numTilePtsP) ;  
+ if( numTilePtsP != NULL ) free(numTilePtsP) ;
 /*
 ** Job Completed
 */
@@ -2645,7 +2645,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
  DPoint3d  randomSpot ;
  double z ;
  BC_DTM_OBJ *dtm1P=NULL,*dtm2P=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTMFeatureId featureId ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -2707,17 +2707,17 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
                }
              ++node1 ;
             }
-         } 
+         }
        dtm1P->numPoints = node1 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Deleted ** dtm1P->numPoints = %8ld",dtm1P->numPoints) ;
 /*
 **     Free Nodes memory
 */
-       if( dtm1P->nodesPP != NULL ) 
-         { 
+       if( dtm1P->nodesPP != NULL )
+         {
           for( m = 0 ; m < dtm1P->numPointPartitions ; ++m ) free(dtm1P->nodesPP[m]) ;
           free( dtm1P->nodesPP) ;
-          dtm1P->nodesPP = NULL  ; 
+          dtm1P->nodesPP = NULL  ;
           dtm1P->numNodePartitions = 0 ;
           dtm1P->numNodes = 0 ;
           dtm1P->memNodes = 0 ;
@@ -2725,11 +2725,11 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
 /*
 **     Free Circular List Memory
 */
-       if( dtm1P->cListPP != NULL ) 
-         { 
+       if( dtm1P->cListPP != NULL )
+         {
           for( m = 0 ; m < dtm1P->numClistPartitions ; ++m ) free(dtm1P->cListPP[m]) ;
           free( dtm1P->cListPP) ;
-          dtm1P->cListPP = NULL  ; 
+          dtm1P->cListPP = NULL  ;
           dtm1P->numClistPartitions = 0 ;
           dtm1P->numClist = 0 ;
           dtm1P->memClist = 0 ;
@@ -2799,7 +2799,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
 /*
 **  Change State DTM Object 2
 */
-    if( bcdtmObject_changeStateDtmObject(dtm2P,DTMState::Data)) goto errexit ; 
+    if( bcdtmObject_changeStateDtmObject(dtm2P,DTMState::Data)) goto errexit ;
 /*
 **  Store Reinserted Point In DTM Object 2
 */
@@ -2815,7 +2815,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
 /*
 **  Destroy DTM Object
 */
-    if( bcdtmObject_destroyDtmObject(&dtm1P)) goto errexit ; 
+    if( bcdtmObject_destroyDtmObject(&dtm1P)) goto errexit ;
 /*
 **  Write number Of Points Reinserted
 */
@@ -2828,7 +2828,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
 /*
 **  Set Number Of Spots
 */
- *numFilteredSpotsP = dtm2P->numPoints ;  
+ *numFilteredSpotsP = dtm2P->numPoints ;
 /*
 ** Set Number Of Points In Start Object
 */
@@ -2931,16 +2931,16 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
 (
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object Containing points To Be Filtered       */
  long   filterOption,                  /* ==> < 1-Least Squares Plane , 2 - Average >                      */
- long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */ 
+ long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */
  double *elevationDifferencesP         /* <== Filter Tolerance Used To Decimate                            */
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long point,point1,clPtr,numElevationPoints,numPointDiffs ; 
+ long point,point1,clPtr,numElevationPoints,numPointDiffs ;
  long firstPoint,lastPoint,saveLastPoint,usePlane=TRUE,excludeBoundary=TRUE ;
- double elevation ; 
+ double elevation ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -2948,12 +2948,12 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin Decimating Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"filterOption      = %8ld",filterOption) ;
-    bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;        
+    bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
    }
 
 /*
@@ -2977,7 +2977,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
 /*
 ** Check For Valid DTM
 */
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ; 
+ if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
 /*
 ** Check For Data State
 */
@@ -2985,7 +2985,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated DTM") ;
     goto errexit ;
-   } 
+   }
 
 /*
 ** Sort Points On x Axis
@@ -3006,7 +3006,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
     if( saveLastPoint-lastPoint > 0 )
       {
        bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-       goto errexit ; 
+       goto errexit ;
       }
    }
 /*
@@ -3028,10 +3028,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Scan All Internal Points
@@ -3072,7 +3072,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
              pointP = pointAddrP(dtmP,point) ;
              elevation = pointP->z - ( plane.A * pointP->x + plane.B * pointP->y + plane.C );
              (elevDiffP+numPointDiffs)->elevation = fabs(elevation) ;
-             (elevDiffP+numPointDiffs)->point     = point ;                         
+             (elevDiffP+numPointDiffs)->point     = point ;
              elevationDifferencesP[point] = (elevDiffP+numPointDiffs)->elevation ;
              ++numPointDiffs ;
             }
@@ -3083,23 +3083,23 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
              (elevDiffP+numPointDiffs)->point     = point ;
              elevationDifferencesP[point] = (elevDiffP+numPointDiffs)->elevation ;
              ++numPointDiffs ;
-            } 
+            }
          }
        else
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Setting To Max Elevation Difference") ;
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
-          elevationDifferencesP[point] = (elevDiffP+numPointDiffs)->elevation ;          
+          elevationDifferencesP[point] = (elevDiffP+numPointDiffs)->elevation ;
           ++numPointDiffs ;
-         } 
+         }
       }
 /*
 **  Average Filter Point
 */
     else
       {
-       
+
           clPtr = nodeP->cPtr ;
           elevation = 0.0 ;
           numElevationPoints = 0 ;
@@ -3110,13 +3110,13 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
              clPtr  = clistP->nextPtr ;
              elevation = elevation + pointAddrP(dtmP,point1)->z ;
              ++numElevationPoints ;
-            } 
+            }
           elevation = elevation / ( double ) numElevationPoints ;
           elevation = fabs(elevation - pointAddrP(dtmP,point)->z ) ;
-          
+
           if(( excludeBoundary == TRUE ) && ( nodeP->hPtr != dtmP->nullPnt ))
             {
-            elevation = DBL_MAX;               
+            elevation = DBL_MAX;
             }
 
           (elevDiffP+numPointDiffs)->elevation = elevation ;
@@ -3125,7 +3125,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
 
 
           ++numPointDiffs ;
-         
+
 
     /*
        else
@@ -3177,19 +3177,19 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object Containing points To Be Filtered       */
  long   filterOption,                  /* ==> < 1-Least Squares Plane , 2 - Average >                      */
  long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */
- long   numPointsRemove,               /* ==> Number Of Points To Remove                                   */ 
+ long   numPointsRemove,               /* ==> Number Of Points To Remove                                   */
  long   *numFilteredPtsP,              /* <== Number Of Points After Filter                                */
  BC_DTM_OBJ *filteredPtsP,             /* <== Pointer To DTM Containing The Filtered Points                */
  double  *filterToleranceUsedP         /* <== Filter Tolerance Used To Decimate                            */
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long n,m,node1,node2,point,point1,clPtr,numElevationPoints,numPointDiffs ; 
+ long n,m,node1,node2,point,point1,clPtr,numElevationPoints,numPointDiffs ;
  long firstPoint,lastPoint,saveLastPoint,usePlane=TRUE,excludeBoundary=TRUE ;
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -3197,7 +3197,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin Decimating Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
@@ -3241,11 +3241,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated DTM") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Initialise
 */
- if( bcdtmObject_initialiseDtmObject(filteredPtsP)) goto errexit ; 
+ if( bcdtmObject_initialiseDtmObject(filteredPtsP)) goto errexit ;
 /*
 ** Sort Points On x Axis
 */
@@ -3265,7 +3265,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
     if( saveLastPoint-lastPoint > 0 )
       {
        bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-       goto errexit ; 
+       goto errexit ;
       }
    }
 /*
@@ -3287,10 +3287,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Scan All Internal Points
@@ -3340,7 +3340,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
              (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
              (elevDiffP+numPointDiffs)->point     = point ;
              ++numPointDiffs ;
-            } 
+            }
          }
        else
          {
@@ -3348,7 +3348,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
 /*
 **  Average Filter Point
@@ -3367,7 +3367,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
              clPtr  = clistP->nextPtr ;
              elevation = elevation + pointAddrP(dtmP,point1)->z ;
              ++numElevationPoints ;
-            } 
+            }
           elevation = elevation / ( double ) numElevationPoints ;
           elevation = fabs(elevation - pointAddrP(dtmP,point)->z ) ;
           (elevDiffP+numPointDiffs)->elevation = elevation ;
@@ -3379,7 +3379,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
    }
 /*
@@ -3423,17 +3423,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
          }
         ++node1 ;
        }
-    } 
+    }
   dtmP->numPoints = node1 ;
   if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Filtered Points ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
 /*
 ** Free Nodes memory
 */
- if( dtmP->nodesPP != NULL ) 
-   { 
+ if( dtmP->nodesPP != NULL )
+   {
     for( m = 0 ; m < dtmP->numPointPartitions ; ++m ) free(dtmP->nodesPP[m]) ;
     free( dtmP->nodesPP) ;
-    dtmP->nodesPP = NULL  ; 
+    dtmP->nodesPP = NULL  ;
     dtmP->numNodePartitions = 0 ;
     dtmP->numNodes = 0 ;
     dtmP->memNodes = 0 ;
@@ -3441,11 +3441,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 /*
 ** Free Circular List Memory
 */
- if( dtmP->cListPP != NULL ) 
-   { 
+ if( dtmP->cListPP != NULL )
+   {
     for( m = 0 ; m < dtmP->numClistPartitions ; ++m ) free(dtmP->cListPP[m]) ;
     free( dtmP->cListPP) ;
-    dtmP->cListPP = NULL  ; 
+    dtmP->cListPP = NULL  ;
     dtmP->numClistPartitions = 0 ;
     dtmP->numClist = 0 ;
     dtmP->memClist = 0 ;
@@ -3464,7 +3464,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 /*
 **  Set Number Of Spots
 */
- *numFilteredPtsP = filteredPtsP->numPoints ;  
+ *numFilteredPtsP = filteredPtsP->numPoints ;
 /*
 ** Clean Up
 */
@@ -3489,34 +3489,34 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 |                                                                    |
 |                                                                    |
 |                                                                    |
-+-------------------------------------------------------------------*/             
++-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
 (
- BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object Containing points To Be Filtered       */ 
+ BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object Containing points To Be Filtered       */
  double *elevationDifferencesP         /* <== Filter Tolerance Used To Decimate                            */
-) 
+)
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long saveLastPoint,numPointDiffs ; 
+ long saveLastPoint,numPointDiffs ;
  long pnt,firstPoint,lastPoint,maxTilePts,minTilePts,startTime ;
  long tile,numTiles;
  char *pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile Decimating Random Spots") ;
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;        
+    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
    }
 /*
 ** Initialise
-*/ 
+*/
  firstPoint = 0 ;
  lastPoint  = dtmP->numPoints - 1 ;
 /*
@@ -3535,7 +3535,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
  if( saveLastPoint-lastPoint > 0 )
    {
     bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-//    goto errexit ; 
+//    goto errexit ;
    }
 /*
 **  Tile Dtm Points
@@ -3545,7 +3545,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
  minTilePts = 5 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Tiling XYZ Points Into Tiles With A Maximum Of %8ld Points Per Tile",maxTilePts) ;
  if( bcdtmMedianTile_pointsDtmObject(dtmP,NULL,0,dtmP->numPoints,minTilePts,&pointTilesP,&numTiles)) goto errexit ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Write Tiles
 */
@@ -3574,10 +3574,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Filter Tiles
@@ -3592,7 +3592,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
       {
        plane.A = 0.0 ;
        plane.B = 0.0 ;
-       plane.C = 0.0 ;  
+       plane.C = 0.0 ;
        if( bcdtmFilter_findPlaneDtmObject(dtmP,(pointTilesP+tile)->tileOffset,(pointTilesP+tile)->numTilePts,&plane) == DTM_SUCCESS )
          {
           for( pnt = (pointTilesP+tile)->tileOffset ; pnt < (pointTilesP+tile)->tileOffset + (pointTilesP+tile)->numTilePts ; ++pnt )
@@ -3614,7 +3614,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
           elevationDifferencesP[numPointDiffs] = (elevDiffP+numPointDiffs)->elevation ;
            ++numPointDiffs ;
          }
-      }  
+      }
    }
 
 /*
@@ -3646,27 +3646,27 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
 int bcdtmFilter_tileDecimateRandomSpotsDtmObject
 (
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object                            */
- long   numPointsRemove,               /* ==> Number Of Points To Remove                       */ 
+ long   numPointsRemove,               /* ==> Number Of Points To Remove                       */
  long   *numFilteredSpotsP,            /* <== Number Of Spots After Filter                     */
  BC_DTM_OBJ *filteredDtmP,             /* <== Pointer To DTM Object With The Filtered Points   */
  double  *filterToleranceUsedP         /* <== Filter Tolerance Used To Decimate                */
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ; 
+ long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ;
  long pnt,firstPoint,lastPoint,maxTilePts,minTilePts,startTime ;
  long tile,numTiles;
  unsigned char *cP,*pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile Decimating Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
@@ -3696,7 +3696,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
  if( saveLastPoint-lastPoint > 0 )
    {
     bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-//    goto errexit ; 
+//    goto errexit ;
    }
 /*
 **  Tile Dtm Points
@@ -3706,7 +3706,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
  minTilePts = 5 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Tiling XYZ Points Into Tiles With A Maximum Of %8ld Points Per Tile",maxTilePts) ;
  if( bcdtmMedianTile_pointsDtmObject(dtmP,NULL,0,dtmP->numPoints,minTilePts,&pointTilesP,&numTiles)) goto errexit ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Write Tiles
 */
@@ -3735,10 +3735,10 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Filter Tiles
@@ -3753,7 +3753,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
       {
        plane.A = 0.0 ;
        plane.B = 0.0 ;
-       plane.C = 0.0 ;  
+       plane.C = 0.0 ;
        if( bcdtmFilter_findPlaneDtmObject(dtmP,(pointTilesP+tile)->tileOffset,(pointTilesP+tile)->numTilePts,&plane) == DTM_SUCCESS )
          {
           for( pnt = (pointTilesP+tile)->tileOffset ; pnt < (pointTilesP+tile)->tileOffset + (pointTilesP+tile)->numTilePts ; ++pnt )
@@ -3773,7 +3773,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->point     = pnt ;
            ++numPointDiffs ;
          }
-      }  
+      }
    }
 /*
 **  Quick Sort Elevation Difference Structure
@@ -3786,7 +3786,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
     for( eldP = elevDiffP ; eldP < elevDiffP + numPointDiffs ; ++eldP )
       {
        bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point) ;
-      } 
+      }
    }
  if( dbg )  bcdtmWrite_message(0,0,0,"Median Elevation Point Difference = %10.4lf",(elevDiffP+numPointsRemove-1)->elevation) ;
 /*
@@ -3826,8 +3826,8 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
      else
        {
         if( bcdtmObject_storeDtmFeatureInDtmObject(filteredDtmP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,node2),1)) goto errexit ;
-       } 
-    } 
+       }
+    }
   dtmP->numPoints = node1 ;
   if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Filtered Points ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
 /*
@@ -3984,26 +3984,26 @@ errexit:
 BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
 (
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object          */
- double filterTolerance,               /* ==> Number Of Points To Remove     */ 
+ double filterTolerance,               /* ==> Number Of Points To Remove     */
  long   *numFilteredSpotsP,            /* <== Number Of Spots After Filter   */
  BC_DTM_OBJ *filteredDtmP              /* <== Pointer To DTM Object With The Filtered Points   */
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ; 
+ long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ;
  long pnt,firstPoint,lastPoint,maxTilePts,minTilePts,startTime ;
  long tile,numTiles;
  unsigned char *cP,*pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile z Tolerance Filter Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
@@ -4032,7 +4032,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
  if( saveLastPoint-lastPoint > 0 )
    {
     bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-//    goto errexit ; 
+//    goto errexit ;
    }
 /*
 **  Tile Dtm Points
@@ -4042,7 +4042,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
  minTilePts = 5 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Tiling XYZ Points Into Tiles With A Maximum Of %8ld Points Per Tile",maxTilePts) ;
  if( bcdtmMedianTile_pointsDtmObject(dtmP,NULL,0,dtmP->numPoints,minTilePts,&pointTilesP,&numTiles)) goto errexit ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Write Tiles
 */
@@ -4071,10 +4071,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Filter Tiles
@@ -4089,7 +4089,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
       {
        plane.A = 0.0 ;
        plane.B = 0.0 ;
-       plane.C = 0.0 ;  
+       plane.C = 0.0 ;
        if( bcdtmFilter_findPlaneDtmObject(dtmP,(pointTilesP+tile)->tileOffset,(pointTilesP+tile)->numTilePts,&plane) == DTM_SUCCESS )
          {
           for( pnt = (pointTilesP+tile)->tileOffset ; pnt < (pointTilesP+tile)->tileOffset + (pointTilesP+tile)->numTilePts ; ++pnt )
@@ -4109,7 +4109,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->point     = pnt ;
            ++numPointDiffs ;
          }
-      }  
+      }
    }
 /*
 **  Quick Sort Elevation Difference Structure
@@ -4122,7 +4122,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
     for( eldP = elevDiffP ; eldP < elevDiffP + numPointDiffs ; ++eldP )
       {
        bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point) ;
-      } 
+      }
    }
 /*
 ** Allocate Memory For Marking Points For Removal
@@ -4144,7 +4144,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
     if( (elevDiffP+n)->elevation <= filterTolerance )
       {
        bcdtmFlag_clearFlag(pointMarkP,(elevDiffP+n)->point) ;
-      }  
+      }
    }
 /*
 ** Remove Marked Points
@@ -4163,8 +4163,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
      else
        {
         if( bcdtmObject_storeDtmFeatureInDtmObject(filteredDtmP,DTMFeatureType::RandomSpots,DTM_NULL_USER_TAG,1,&nullFeatureId,(DPoint3d *)pointAddrP(dtmP,node2),1)) goto errexit ;
-       } 
-    } 
+       }
+    }
   dtmP->numPoints = node1 ;
   if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Filtered Points ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
 /*
@@ -4197,18 +4197,18 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object Containing points To Be Filtered       */
  long   filterOption,                  /* ==> < 1-Least Squares Plane , 2 - Average >                      */
  long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */
- double filterTolerance,               /* ==> Filter Tolerance                                             */ 
+ double filterTolerance,               /* ==> Filter Tolerance                                             */
  long   *numFilteredPtsP,              /* <== Number Of Points After Filter                                */
  BC_DTM_OBJ *filteredPtsP              /* <== Pointer To DTM Containing The Filtered Points                */
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long n,m,node1,node2,point,point1,clPtr,numElevationPoints,numPointDiffs ; 
+ long n,m,node1,node2,point,point1,clPtr,numElevationPoints,numPointDiffs ;
  long firstPoint,lastPoint,saveLastPoint,usePlane=TRUE,excludeBoundary=TRUE ;
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -4216,7 +4216,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin z Tolerance Filter Random Spots") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
@@ -4261,11 +4261,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated DTM") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Initialise
 */
- if( bcdtmObject_initialiseDtmObject(filteredPtsP)) goto errexit ; 
+ if( bcdtmObject_initialiseDtmObject(filteredPtsP)) goto errexit ;
 /*
 ** Sort Points On x Axis
 */
@@ -4285,7 +4285,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
     if( saveLastPoint-lastPoint > 0 )
       {
        bcdtmWrite_message(1,0,0,"Duplicate points Found While Filtering") ;
-       goto errexit ; 
+       goto errexit ;
       }
    }
 /*
@@ -4307,10 +4307,10 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Scan All Internal Points
@@ -4360,7 +4360,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
              (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
              (elevDiffP+numPointDiffs)->point     = point ;
              ++numPointDiffs ;
-            } 
+            }
          }
        else
          {
@@ -4368,7 +4368,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
 /*
 **  Average Filter Point
@@ -4387,7 +4387,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
              clPtr  = clistP->nextPtr ;
              elevation = elevation + pointAddrP(dtmP,point1)->z ;
              ++numElevationPoints ;
-            } 
+            }
           elevation = elevation / ( double ) numElevationPoints ;
           elevation = fabs(elevation - pointAddrP(dtmP,point)->z ) ;
           (elevDiffP+numPointDiffs)->elevation = elevation ;
@@ -4399,7 +4399,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
    }
 /*
@@ -4430,7 +4430,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
        dtmPoint.y = pointP->y ;
        dtmPoint.z = pointP->z ;
        if( bcdtmObject_storeDtmFeatureInDtmObject(filteredPtsP,DTMFeatureType::RandomSpots,dtmP->nullUserTag,1,&dtmP->nullFeatureId,&dtmPoint,1)) goto errexit ;
-      } 
+      }
    }
 /*
 **  Remove Deleted Points From DTM
@@ -4445,17 +4445,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
          }
         ++node1 ;
        }
-    } 
+    }
   dtmP->numPoints = node1 ;
   if( dbg ) bcdtmWrite_message(0,0,0,"After Removing Filtered Points ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
 /*
 ** Free Nodes memory
 */
- if( dtmP->nodesPP != NULL ) 
-   { 
+ if( dtmP->nodesPP != NULL )
+   {
     for( m = 0 ; m < dtmP->numPointPartitions ; ++m ) free(dtmP->nodesPP[m]) ;
     free( dtmP->nodesPP) ;
-    dtmP->nodesPP = NULL  ; 
+    dtmP->nodesPP = NULL  ;
     dtmP->numNodePartitions = 0 ;
     dtmP->numNodes = 0 ;
     dtmP->memNodes = 0 ;
@@ -4463,11 +4463,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 /*
 ** Free Circular List Memory
 */
- if( dtmP->cListPP != NULL ) 
-   { 
+ if( dtmP->cListPP != NULL )
+   {
     for( m = 0 ; m < dtmP->numClistPartitions ; ++m ) free(dtmP->cListPP[m]) ;
     free( dtmP->cListPP) ;
-    dtmP->cListPP = NULL  ; 
+    dtmP->cListPP = NULL  ;
     dtmP->numClistPartitions = 0 ;
     dtmP->numClist = 0 ;
     dtmP->memClist = 0 ;
@@ -4486,7 +4486,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 /*
 **  Set Number Of Spots
 */
- *numFilteredPtsP = filteredPtsP->numPoints ;  
+ *numFilteredPtsP = filteredPtsP->numPoints ;
 /*
 ** Clean Up
 */
@@ -4516,7 +4516,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object           */
  long   filterOption,                  /* ==> < 1-Least Squares Plane , 2 - Average >                      */
  long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */
- double filterTolerance,               /* ==> Filter Tolerance                */ 
+ double filterTolerance,               /* ==> Filter Tolerance                */
  long   *numFilteredPtsP,              /* <== Number Of Points After Filter   */
  BC_DTM_OBJ *filteredPtsP              /* <== Pointer To DTM Object With The Filtered Points   */
 )
@@ -4527,14 +4527,14 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long point,point1,tile,numPointDiffs ;
- long numPoints,memPoints=0,numFilteredPoints,numUnFilteredPoints ; 
- long firstPoint,dtmFeature,saveNumPoints,usePlane=TRUE,excludeBoundary=TRUE ; 
+ long numPoints,memPoints=0,numFilteredPoints,numUnFilteredPoints ;
+ long firstPoint,dtmFeature,saveNumPoints,usePlane=TRUE,excludeBoundary=TRUE ;
  long clPtr,numElevationPoints ;
  double elevation ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -4543,16 +4543,16 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin z Tolerance Filter Group Spots") ;
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;    
-    bcdtmWrite_message(0,0,0,"dtmP->numPoints   = %8ld",dtmP->numPoints) ;    
+    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
+    bcdtmWrite_message(0,0,0,"dtmP->numPoints   = %8ld",dtmP->numPoints) ;
     bcdtmWrite_message(0,0,0,"filterOption      = %8ld",filterOption) ;
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"filterTolerance   = %8.3lf",filterTolerance) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;    
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Check Parameters
@@ -4587,7 +4587,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated DTM") ;
     goto errexit ;
-   }  
+   }
 /*
 ** Triangulate Dtm Object
 */
@@ -4666,14 +4666,14 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
              (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
              (elevDiffP+numPointDiffs)->point     = point ;
              ++numPointDiffs ;
-            } 
+            }
          }
        else
          {
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
 /*
 **  Average Filter points
@@ -4692,7 +4692,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
              clPtr  = clistP->nextPtr ;
              elevation = elevation + pointAddrP(dtmP,point1)->z ;
              ++numElevationPoints ;
-            } 
+            }
           elevation = elevation / ( double ) numElevationPoints ;
           elevation = fabs(elevation - pointAddrP(dtmP,point)->z ) ;
           (elevDiffP+numPointDiffs)->elevation = elevation ;
@@ -4704,7 +4704,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
    }
 /*
@@ -4722,7 +4722,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Qsorting Elevation Differences") ;
  qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifference),bcdtmFilter_elevationDifferenceCompareFunction) ;
 /*
-**  Mark All Points That Can Be Removed 
+**  Mark All Points That Can Be Removed
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Points For Removal") ;
  for( eldP = elevDiffP ; eldP < elevDiffP + numPointDiffs ; ++eldP )
@@ -4741,11 +4741,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
        if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
          {
           firstPoint = dtmFeatureP->dtmFeaturePts.firstPoint ;
-          do 
+          do
             {
              ++numPoints ;
              if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) ++numUnFilteredPoints ;
-             else                                                    ++numFilteredPoints ;  
+             else                                                    ++numFilteredPoints ;
              if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,firstPoint,&firstPoint)) goto errexit ;
             } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
          }
@@ -4754,7 +4754,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
           bcdtmWrite_message(1,0,0,"ERROR - Feature Not In Tin State") ;
          }
       }
-    if( dbg ) bcdtmWrite_message(0,0,0,"numPoints = %6ld ** numFilteredPoints = %8ld numUnfilteredPoints = %8ld",numPoints,numFilteredPoints,numUnFilteredPoints) ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"numPoints = %6ld ** numFilteredPoints = %8ld numUnfilteredPoints = %8ld",numPoints,numFilteredPoints,numUnFilteredPoints) ;
    }
 /*
 ** Copy Filtered And Unfiltered Points To Different DTMs
@@ -4766,17 +4766,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
       {
 /*
-**     Count Number Of Filtered And Un Filtered Points 
-*/      
+**     Count Number Of Filtered And Un Filtered Points
+*/
        numPoints = numFilteredPoints = numUnFilteredPoints = 0 ;
        firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
        tile        = (long)dtmFeatureP->dtmUserTag ;
-       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Processing Tile %8ld",tile) ;  
+       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Processing Tile %8ld",tile) ;
        do
          {
           ++numPoints ;
           if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) ++numUnFilteredPoints ;
-          else                                                    ++numFilteredPoints ;  
+          else                                                    ++numFilteredPoints ;
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,firstPoint,&firstPoint)) goto errexit ;
          } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
 /*
@@ -4792,19 +4792,19 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit ;
-            } 
-         }   
+            }
+         }
 /*
 **     Store Filtered Points In Filtered Points In FilteredPts DTM
 */
        if( numFilteredPoints > 0 )
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Filtered Points") ;
-          p3dP = pointsP ;         
+          p3dP = pointsP ;
           firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
           do
             {
-             if( nodeAddrP(dtmP,firstPoint)->tPtr != dtmP->nullPnt ) 
+             if( nodeAddrP(dtmP,firstPoint)->tPtr != dtmP->nullPnt )
                {
                 pointP = pointAddrP(dtmP,firstPoint) ;
                 p3dP->x = pointP->x ;
@@ -4822,12 +4822,12 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
        if( numUnFilteredPoints > 0 )
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Un Filtered Points") ;
-          p3dP = pointsP ;         
+          p3dP = pointsP ;
           firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
           tile        = (long)dtmFeatureP->dtmUserTag ;
           do
             {
-             if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) 
+             if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt )
                {
                 pointP = pointAddrP(dtmP,firstPoint) ;
                 p3dP->x = pointP->x ;
@@ -4839,7 +4839,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
             } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
           if( bcdtmObject_storeDtmFeatureInDtmObject(tempDtmP,DTMFeatureType::GroupSpots,tile,3,&dtmFeatureId,pointsP,numUnFilteredPoints)) goto errexit ;
          }
-      } 
+      }
    }
 /*
 **  Copy Temp DTM To DTM
@@ -4848,9 +4848,9 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(dtmP)) goto errexit ;
  if( tempDtmP->numPoints > 0 )
    {
-    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ; 
+    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ;
     if( bcdtmObject_appendDtmObject(dtmP,tempDtmP)) goto errexit ;
-   } 
+   }
 /*
 ** Write Stats
 */
@@ -4922,7 +4922,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object           */
  long   filterOption,                  /* ==> < 1-Least Squares Plane , 2 - Average >                      */
  long   boundaryOption,                /* ==> < 1-Do Not Filter Boundary Points 2-Filter Boundary Points > */
- long   numPointsRemove,               /* ==> Number Of Points To Remove      */ 
+ long   numPointsRemove,               /* ==> Number Of Points To Remove      */
  long   *numFilteredPtsP,              /* <== Number Of Points After Filter   */
  BC_DTM_OBJ *filteredPtsP,             /* <== Pointer To DTM Object With The Filtered Points   */
  double  *filterToleranceUsedP         /* <== Filter Tolerance Used To Decimate                */
@@ -4934,14 +4934,14 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long point,point1,tile,numPointDiffs ;
- long numPoints,memPoints=0,numFilteredPoints,numUnFilteredPoints ; 
- long firstPoint,dtmFeature,saveNumPoints,usePlane=TRUE,excludeBoundary=TRUE ; 
+ long numPoints,memPoints=0,numFilteredPoints,numUnFilteredPoints ;
+ long firstPoint,dtmFeature,saveNumPoints,usePlane=TRUE,excludeBoundary=TRUE ;
  long clPtr,numElevationPoints ;
  double elevation ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -4950,16 +4950,16 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tin Decimating Group Spots") ;
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;    
-    bcdtmWrite_message(0,0,0,"dtmP->numPoints   = %8ld",dtmP->numPoints) ;    
+    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
+    bcdtmWrite_message(0,0,0,"dtmP->numPoints   = %8ld",dtmP->numPoints) ;
     bcdtmWrite_message(0,0,0,"filterOption      = %8ld",filterOption) ;
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"numPointsRemove   = %8ld",numPointsRemove) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;    
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Check Parameters
@@ -4994,7 +4994,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Untriangulated DTM") ;
     goto errexit ;
-   }  
+   }
 /*
 ** Triangulate Dtm Object
 */
@@ -5073,14 +5073,14 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
              (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
              (elevDiffP+numPointDiffs)->point     = point ;
              ++numPointDiffs ;
-            } 
+            }
          }
        else
          {
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
 /*
 **  Average Filter points
@@ -5099,7 +5099,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
              clPtr  = clistP->nextPtr ;
              elevation = elevation + pointAddrP(dtmP,point1)->z ;
              ++numElevationPoints ;
-            } 
+            }
           elevation = elevation / ( double ) numElevationPoints ;
           elevation = fabs(elevation - pointAddrP(dtmP,point)->z ) ;
           (elevDiffP+numPointDiffs)->elevation = elevation ;
@@ -5111,7 +5111,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
           (elevDiffP+numPointDiffs)->elevation = dtmP->zMax - dtmP->zMin ;
           (elevDiffP+numPointDiffs)->point     = point ;
           ++numPointDiffs ;
-         } 
+         }
       }
    }
 /*
@@ -5134,7 +5134,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Qsorting Elevation Differences") ;
  qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifference),bcdtmFilter_elevationDifferenceCompareFunction) ;
 /*
-**  Mark All Points That Can Be Removed 
+**  Mark All Points That Can Be Removed
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Points For Removal") ;
  for( eldP = elevDiffP ; eldP < elevDiffP + numPointsRemove ; ++eldP )
@@ -5154,11 +5154,11 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
        if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
          {
           firstPoint = dtmFeatureP->dtmFeaturePts.firstPoint ;
-          do 
+          do
             {
              ++numPoints ;
              if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) ++numUnFilteredPoints ;
-             else                                                    ++numFilteredPoints ;  
+             else                                                    ++numFilteredPoints ;
              if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,firstPoint,&firstPoint)) goto errexit ;
             } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
          }
@@ -5167,7 +5167,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
           bcdtmWrite_message(1,0,0,"ERROR - Feature Not In Tin State") ;
          }
       }
-    if( dbg ) bcdtmWrite_message(0,0,0,"numPoints = %6ld ** numFilteredPoints = %8ld numUnfilteredPoints = %8ld",numPoints,numFilteredPoints,numUnFilteredPoints) ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"numPoints = %6ld ** numFilteredPoints = %8ld numUnfilteredPoints = %8ld",numPoints,numFilteredPoints,numUnFilteredPoints) ;
    }
 /*
 ** Copy Filtered And Unfiltered Points To Different DTMs
@@ -5179,17 +5179,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
       {
 /*
-**     Count Number Of Filtered And Un Filtered Points 
-*/      
+**     Count Number Of Filtered And Un Filtered Points
+*/
        numPoints = numFilteredPoints = numUnFilteredPoints = 0 ;
        firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
        tile        = (long)dtmFeatureP->dtmUserTag ;
-       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Processing Tile %8ld",tile) ;  
+       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Processing Tile %8ld",tile) ;
        do
          {
           ++numPoints ;
           if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) ++numUnFilteredPoints ;
-          else                                                    ++numFilteredPoints ;  
+          else                                                    ++numFilteredPoints ;
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,firstPoint,&firstPoint)) goto errexit ;
          } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
 /*
@@ -5205,19 +5205,19 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit ;
-            } 
-         }   
+            }
+         }
 /*
 **     Store Filtered Points In Filtered Points In FilteredPts DTM
 */
        if( numFilteredPoints > 0 )
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Filtered Points") ;
-          p3dP = pointsP ;         
+          p3dP = pointsP ;
           firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
           do
             {
-             if( nodeAddrP(dtmP,firstPoint)->tPtr != dtmP->nullPnt ) 
+             if( nodeAddrP(dtmP,firstPoint)->tPtr != dtmP->nullPnt )
                {
                 pointP = pointAddrP(dtmP,firstPoint) ;
                 p3dP->x = pointP->x ;
@@ -5235,12 +5235,12 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
        if( numUnFilteredPoints > 0 )
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Un Filtered Points") ;
-          p3dP = pointsP ;         
+          p3dP = pointsP ;
           firstPoint  = dtmFeatureP->dtmFeaturePts.firstPoint ;
           tile        = (long)dtmFeatureP->dtmUserTag ;
           do
             {
-             if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt ) 
+             if( nodeAddrP(dtmP,firstPoint)->tPtr == dtmP->nullPnt )
                {
                 pointP = pointAddrP(dtmP,firstPoint) ;
                 p3dP->x = pointP->x ;
@@ -5252,7 +5252,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
             } while( firstPoint != dtmP->nullPnt && firstPoint != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
           if( bcdtmObject_storeDtmFeatureInDtmObject(tempDtmP,DTMFeatureType::GroupSpots,tile,3,&dtmFeatureId,pointsP,numUnFilteredPoints)) goto errexit ;
          }
-      } 
+      }
    }
 /*
 **  Copy Temp DTM To DTM
@@ -5261,9 +5261,9 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(dtmP)) goto errexit ;
  if( tempDtmP->numPoints > 0 )
    {
-    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ; 
+    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ;
     if( bcdtmObject_appendDtmObject(dtmP,tempDtmP)) goto errexit ;
-   } 
+   }
 /*
 ** Write Stats
 */
@@ -5313,7 +5313,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
 BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 (
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object                            */
- long   numPointsRemove,               /* ==> Number Of Points To Remove                       */ 
+ long   numPointsRemove,               /* ==> Number Of Points To Remove                       */
  long   *numFilteredSpotsP,            /* <== Number Of Spots After Filter                     */
  BC_DTM_OBJ *filteredDtmP,             /* <== Pointer To DTM Object With The Filtered Points   */
  double  *filterToleranceUsedP         /* <== Filter Tolerance Used To Decimate                */
@@ -5324,13 +5324,13 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long point,saveLastPoint,numPointDiffs,numPoints=0,memPoints=0,numRemovePoints ; 
+ long point,saveLastPoint,numPointDiffs,numPoints=0,memPoints=0,numRemovePoints ;
  long pnt,firstPoint,lastPoint,maxTilePts,dtmFeature,startTime,lastTile,lastKeep ;
  long tile,numTiles,*tnumP,*tileNumberP=NULL,removeMethod=2 ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifferenceTile { double elevation ; long point ; long tile ; long keep ; } *eldP,*eld1P,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *tempDtmP=NULL ;
@@ -5339,10 +5339,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile Decimate Group Spots") ;
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;    
+    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"numPointsRemove   = %8ld",numPointsRemove) ;
     bcdtmWrite_message(0,0,0,"numFilteredSpotsP = %8ld",*numFilteredSpotsP) ;
    }
@@ -5355,10 +5355,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 ** Allocate Memory To Store Point Tile Numbers
 */
  tileNumberP = ( long * ) malloc ( dtmP->numPoints * sizeof(long)) ;
- if( tileNumberP == NULL ) 
-   { 
+ if( tileNumberP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
  if( cdbg ) for( tnumP = tileNumberP ; tnumP < tileNumberP + dtmP->numPoints ; ++tnumP ) *tnumP = -9999 ;
 /*
@@ -5373,7 +5373,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
     for( tnumP = tileNumberP + firstPoint ; tnumP <= tileNumberP + lastPoint ; ++tnumP )
       {
        *tnumP = (long ) dtmFeatureP->dtmUserTag ;
-      } 
+      }
    }
 /*
 ** Check All Points Have Been Allocated A Tile Number
@@ -5383,12 +5383,12 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking All Points Have A Tile Number") ;
     for( tnumP = tileNumberP ; tnumP < tileNumberP + dtmP->numPoints ; ++tnumP )
       {
-       if( *tnumP == -9999 ) 
+       if( *tnumP == -9999 )
          {
           bcdtmWrite_message(1,0,0,"Point %8ld Has Not Been Allocated A Tile Number",(long)(tnumP-tileNumberP)) ;
           goto errexit ;
-         } 
-      } 
+         }
+      }
    }
 /*
 ** Sort Points On x Axis
@@ -5404,7 +5404,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
  saveLastPoint = lastPoint ;
  if( bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(dtmP,tileNumberP,firstPoint,&lastPoint)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ;
- if( saveLastPoint-lastPoint > 0 ) bcdtmWrite_message(0,0,0,"Warning **** Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ; 
+ if( saveLastPoint-lastPoint > 0 ) bcdtmWrite_message(0,0,0,"Warning **** Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ;
 /*
 **  Tile Dtm Points
 */
@@ -5413,7 +5413,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Tiling XYZ Points Into Tiles With A Maximum Of %8ld Points Per Tile",maxTilePts) ;
 // if( bcdtmTile_pointsDtmObject(dtmP,tileNumberP,firstPoint,dtmP->numPoints,maxTilePts,&tilesP,&numTiles)) goto errexit ;
  if( bcdtmMedianTile_pointsDtmObject(dtmP,tileNumberP,firstPoint,dtmP->numPoints,maxTilePts,&tilesP,&numTiles)) goto errexit ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Write Tiles
 */
@@ -5442,10 +5442,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifferenceTile * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifferenceTile)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Filter Tiles
@@ -5461,7 +5461,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
       {
        plane.A = 0.0 ;
        plane.B = 0.0 ;
-       plane.C = 0.0 ;  
+       plane.C = 0.0 ;
        if( bcdtmFilter_findPlaneDtmObject(dtmP,(tilesP+tile)->tileOffset,(tilesP+tile)->numTilePts,&plane) == DTM_SUCCESS )
          {
           for( pnt = (tilesP+tile)->tileOffset ; pnt < (tilesP+tile)->tileOffset + (tilesP+tile)->numTilePts ; ++pnt )
@@ -5485,7 +5485,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
           (elevDiffP+numPointDiffs)->keep      = 1 ;
            ++numPointDiffs ;
          }
-      }  
+      }
    }
 /*
 ** Adjust Number Of Points To Remove
@@ -5508,7 +5508,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
        for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
          {
           bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point,eldP->tile) ;
-         } 
+         }
       }
     if( dbg )  bcdtmWrite_message(0,0,0,"Elevation Point Difference Of Last Remove Point = %10.4lf",(elevDiffP+numPointsRemove-1)->elevation) ;
 /*
@@ -5525,7 +5525,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
        lastPoint = (long)(eldP-elevDiffP) ;
        numPoints = lastPoint - firstPoint + 1 ;
        numRemovePoints = firstPoint + numPoints / 2 ;
-       for( eld1P = elevDiffP + firstPoint ; eld1P < elevDiffP + numRemovePoints ; ++eld1P ) 
+       for( eld1P = elevDiffP + firstPoint ; eld1P < elevDiffP + numRemovePoints ; ++eld1P )
          {
           eld1P->keep = 0 ;
           if( eld1P->elevation > *filterToleranceUsedP ) *filterToleranceUsedP = eld1P->elevation ;
@@ -5558,7 +5558,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
        for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
          {
           bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point,eldP->tile) ;
-         } 
+         }
       }
     if( dbg )  bcdtmWrite_message(0,0,0,"Elevation Point Difference Of Last Remove Point = %10.4lf",(elevDiffP+numPointsRemove-1)->elevation) ;
 /*
@@ -5567,11 +5567,11 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Marking Points For Removal") ;
     for( eldP = elevDiffP ; eldP < elevDiffP + numPointDiffs ; ++eldP )
       {
-       if( (long)(eldP-elevDiffP) < numPointsRemove ) 
+       if( (long)(eldP-elevDiffP) < numPointsRemove )
          {
           eldP->keep = 0 ;
           if( eldP->elevation > *filterToleranceUsedP ) *filterToleranceUsedP = eldP->elevation ;
-         } 
+         }
        else eldP->keep = 1 ;
       }
    }
@@ -5587,7 +5587,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
     for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
       {
        bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** keep = %2ld point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->keep,eldP->point,eldP->tile) ;
-      } 
+      }
    }
 /*
 ** Copy Filtered Points To Filtered DTM
@@ -5597,7 +5597,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(filteredDtmP)) goto errexit ;
  if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(filteredDtmP,numPointsRemove,numPointsRemove)) goto errexit ;
  if( numPointsRemove < numPointDiffs )
-   { 
+   {
     if( bcdtmObject_createDtmObject(&tempDtmP)) goto errexit ;
     if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempDtmP,numPointDiffs-numPointsRemove,1000)) goto errexit ;
    }
@@ -5620,7 +5620,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
          {
           bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         } 
+         }
       }
 /*
 **  Accumulate Points In Point Array
@@ -5633,9 +5633,9 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
        p3dP->y = pntP->y ;
        p3dP->z = pntP->z ;
        ++p3dP ;
-      } 
+      }
 /*
-**  Store Points As Point Feature 
+**  Store Points As Point Feature
 */
     if( lastKeep == 0 )
       {
@@ -5664,9 +5664,9 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(dtmP)) goto errexit ;
  if( tempDtmP->numPoints > 0 )
    {
-    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ; 
+    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ;
     if( bcdtmObject_appendDtmObject(dtmP,tempDtmP)) goto errexit ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -5696,7 +5696,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 (
  BC_DTM_OBJ *dtmP,                     /* ==> Pointer To DTM Object          */
- double filterTolerance,               /* ==> Number Of Points To Remove     */ 
+ double filterTolerance,               /* ==> Number Of Points To Remove     */
  long   *numFilteredSpotsP,            /* <== Number Of Spots After Filter   */
  BC_DTM_OBJ *filteredDtmP              /* <== Pointer To DTM Object With The Filtered Points   */
 )
@@ -5708,7 +5708,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifferenceTile { double elevation ; long point ; long tile ; long keep ; } *eldP,*eld1P,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *tempDtmP=NULL ;
@@ -5717,10 +5717,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Tile z Tolerance Filter Group Spots") ;
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;    
+    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"filterTolerance   = %8.3lf",filterTolerance) ;
     bcdtmWrite_message(0,0,0,"numFilteredSpotsP = %8ld",*numFilteredSpotsP) ;
    }
@@ -5732,10 +5732,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 ** Allocate Memory To Store Point Tile Numbers
 */
  tileNumberP = ( long * ) malloc ( dtmP->numPoints * sizeof(long)) ;
- if( tileNumberP == NULL ) 
-   { 
+ if( tileNumberP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
  if( cdbg ) for( tnumP = tileNumberP ; tnumP < tileNumberP + dtmP->numPoints ; ++tnumP ) *tnumP = -9999 ;
 /*
@@ -5750,7 +5750,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
     for( tnumP = tileNumberP + firstPoint ; tnumP <= tileNumberP + lastPoint ; ++tnumP )
       {
        *tnumP = (long ) dtmFeatureP->dtmUserTag ;
-      } 
+      }
    }
 /*
 ** Check All Points Have Been Allocated A Tile Number
@@ -5760,12 +5760,12 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking All Points Have A Tile Number") ;
     for( tnumP = tileNumberP ; tnumP < tileNumberP + dtmP->numPoints ; ++tnumP )
       {
-       if( *tnumP == -9999 ) 
+       if( *tnumP == -9999 )
          {
           bcdtmWrite_message(1,0,0,"Point %8ld Has Not Been Allocated A Tile Number",(long)(tnumP-tileNumberP)) ;
           goto errexit ;
-         } 
-      } 
+         }
+      }
    }
 /*
 ** Sort Points On x Axis
@@ -5781,7 +5781,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  saveLastPoint = lastPoint ;
  if( bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(dtmP,tileNumberP,firstPoint,&lastPoint)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ;
- if( saveLastPoint-lastPoint > 0 ) bcdtmWrite_message(0,0,0,"Warning **** Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ; 
+ if( saveLastPoint-lastPoint > 0 ) bcdtmWrite_message(0,0,0,"Warning **** Number Of Duplicates = %8ld",saveLastPoint-lastPoint) ;
 /*
 **  Tile Dtm Points
 */
@@ -5790,7 +5790,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Tiling XYZ Points Into Tiles With A Maximum Of %8ld Points Per Tile",maxTilePts) ;
 // if( bcdtmTile_pointsDtmObject(dtmP,tileNumberP,firstPoint,dtmP->numPoints,maxTilePts,&tilesP,&numTiles)) goto errexit ;
  if( bcdtmMedianTile_pointsDtmObject(dtmP,tileNumberP,firstPoint,dtmP->numPoints,maxTilePts,&tilesP,&numTiles)) goto errexit ;
- if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Tile %8ld Points Into %8ld Tiles = %8.3lf Secs",dtmP->numPoints,numTiles,bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Write Tiles
 */
@@ -5819,10 +5819,10 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 ** Allocate Memory To Store Point Elevation Differences
 */
  elevDiffP = ( struct ElevDifferenceTile * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifferenceTile)) ;
- if( elevDiffP == NULL ) 
-   { 
+ if( elevDiffP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Filter Tiles
@@ -5838,7 +5838,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
       {
        plane.A = 0.0 ;
        plane.B = 0.0 ;
-       plane.C = 0.0 ;  
+       plane.C = 0.0 ;
        if( bcdtmFilter_findPlaneDtmObject(dtmP,(tilesP+tile)->tileOffset,(tilesP+tile)->numTilePts,&plane) == DTM_SUCCESS )
          {
           for( pnt = (tilesP+tile)->tileOffset ; pnt < (tilesP+tile)->tileOffset + (tilesP+tile)->numTilePts ; ++pnt )
@@ -5862,7 +5862,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
           (elevDiffP+numPointDiffs)->keep      = 1 ;
            ++numPointDiffs ;
          }
-      }  
+      }
    }
 /*
 ** Remove Method 1
@@ -5880,7 +5880,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
        for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
          {
           bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point,eldP->tile) ;
-         } 
+         }
       }
 /*
 **  Mark All Points That Can Be Removed By Removing Equal Numbers From All Tiles
@@ -5925,7 +5925,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
        for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
          {
           bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->point,eldP->tile) ;
-         } 
+         }
       }
 /*
 **  Mark All Points That Can Be Removed By Removing The Points With The Smallest Difference
@@ -5950,7 +5950,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
     for( eldP = elevDiffP ; eldP < elevDiffP + 1000 ; ++eldP )
       {
        bcdtmWrite_message(0,0,0,"Point[%8ld] ** Diff = %10.4lf ** keep = %2ld point = %8ld tile = %8ld",(long)(eldP-elevDiffP),eldP->elevation,eldP->keep,eldP->point,eldP->tile) ;
-      } 
+      }
    }
 /*
 ** Copy Filtered Points To Filtered DTM
@@ -5960,7 +5960,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(filteredDtmP)) goto errexit ;
  if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(filteredDtmP,numPointsRemove,numPointsRemove)) goto errexit ;
  if( numPointsRemove < numPointDiffs )
-   { 
+   {
     if( bcdtmObject_createDtmObject(&tempDtmP)) goto errexit ;
     if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempDtmP,numPointDiffs-numPointsRemove,1000)) goto errexit ;
    }
@@ -5983,7 +5983,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
          {
           bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         } 
+         }
       }
 /*
 **  Accumulate Points In Point Array
@@ -5996,9 +5996,9 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
        p3dP->y = pntP->y ;
        p3dP->z = pntP->z ;
        ++p3dP ;
-      } 
+      }
 /*
-**  Store Points As Point Feature 
+**  Store Points As Point Feature
 */
     if( lastKeep == 0 )
       {
@@ -6027,9 +6027,9 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  if( bcdtmObject_initialiseDtmObject(dtmP)) goto errexit ;
  if( tempDtmP->numPoints > 0 )
    {
-    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ; 
+    if( bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,tempDtmP->numPoints,tempDtmP->numPoints)) goto errexit ;
     if( bcdtmObject_appendDtmObject(dtmP,tempDtmP)) goto errexit ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -6069,12 +6069,12 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
 {
 /*
 **  This Function Filters Points Represented by a Depth Balanced Quadtree Index.
-**  The Filtering Proceess Is A Two Step Process 
+**  The Filtering Proceess Is A Two Step Process
 **  1. Filter Nodes Individually Until There Is A Set Number Of Points At The Quadtree Index Level
 **  2. Once This Number Of Points Is Reached Combine All Nodes ( Decouple ) At The Index Level And Filter As One
-**  
-**  The Base ( leaf nodes ) Of The Index are not filtered. This could be done.  
-*/   
+**
+**  The Base ( leaf nodes ) Of The Index are not filtered. This could be done.
+*/
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  n,level,point,dtmFeature,firstPoint,lastPoint,parentTile = 0,numChildPoints,memChildPoints ; 
  long  numLevelPoints,numFilteredPoints,numPointsRemove,lastParentTile,internalTile = 0; 
@@ -6082,8 +6082,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
  DPoint3d   *p3dP,*childPointsP=NULL ;
  DTM_QUAD_TREE_TILE *tileP ;
  BC_DTM_OBJ *unFilteredPtsP=NULL,*filteredPtsP=NULL ;
- BC_DTM_FEATURE *dtmFeatureP ; 
- DTM_TIN_POINT *pointP ;
+ BC_DTM_FEATURE *dtmFeatureP ;
+ DPoint3d *pointP ;
  wchar_t fileName[32] ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -6113,7 +6113,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
     if( coplanarFilterOption )
       {
        if( bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject(quadTreeP->dtmP,1,1,coplanarFilterTolerance,&numFilteredPoints,filteredPtsP)) goto errexit ;
-       if( bcdtmObject_resizeMemoryDtmObject(quadTreeP->dtmP)) goto errexit ; 
+       if( bcdtmObject_resizeMemoryDtmObject(quadTreeP->dtmP)) goto errexit ;
        quadTreeP->numTilePts = quadTreeP->dtmP->numPoints ;
        if( dbg ) bcdtmWrite_toFileDtmObject(quadTreeP->dtmP,L"quadtreeFilter.dtm") ;
       }
@@ -6133,7 +6133,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
        for( tileP = quadTreeP ; tileP < quadTreeP + numQuadTreeTiles ; ++tileP )
          {
           if( tileP->quadTreeLevel == level + 1 ) numLevelPoints =  numLevelPoints + tileP->numTilePts ;
-         } 
+         }
        if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Points At Index Level %2ld = %8ld",level+1,numLevelPoints) ;
 /*
 **     Initialise DTM Objects - That Is Remove All Points
@@ -6148,7 +6148,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
           if( dbg ) bcdtmWrite_message(0,0,0,"Filtering Tiles") ;
           for( tileP = quadTreeP ; tileP < quadTreeP + numQuadTreeTiles ; ++tileP )
             {
-             if( tileP->quadTreeLevel == level ) 
+             if( tileP->quadTreeLevel == level )
                {
                 if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Parent Node = %8ld ** Child Nodes = %8ld %8ld %8ld %8ld",tileP->tileNumber,tileP->childNodes[0],tileP->childNodes[1],tileP->childNodes[2],tileP->childNodes[3]) ;
 /*
@@ -6165,17 +6165,17 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
 */
                 if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Number Of Parent Points = %8ld",unFilteredPtsP->numPoints) ;
                 numPointsRemove = unFilteredPtsP->numPoints -  unFilteredPtsP->numPoints / decimationFactor ;
-                if( unFilteredPtsP->numPoints > 5 ) 
-                  { 
+                if( unFilteredPtsP->numPoints > 5 )
+                  {
                    internalTile = TRUE ;     // Still To Do To Work Out If Tile Is Internal
-                   if( internalTile == TRUE ) 
+                   if( internalTile == TRUE )
                      {
                       if( bcdtmFilter_tileDecimateRandomSpotsDtmObject(unFilteredPtsP,numPointsRemove,&numFilteredPoints,filteredPtsP,&filterToleranceUsed)) goto errexit ;
                      }
                    else   // Maintain External Extent Of Data Set
                      {
                       if( bcdtmFilter_tinDecimateRandomSpotsDtmObject(unFilteredPtsP,2,1,numPointsRemove,&numFilteredPoints,filteredPtsP,&filterToleranceUsed)) goto errexit ;
-                     } 
+                     }
                   }
                 if( dbg == 2 )
                   {
@@ -6199,23 +6199,23 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
 /*
 **              Release Unused memory
 */
-                if( bcdtmObject_resizeMemoryDtmObject(unFilteredPtsP)) goto errexit ; 
+                if( bcdtmObject_resizeMemoryDtmObject(unFilteredPtsP)) goto errexit ;
 /*
 **              Copy Filtered Points To Tile
 */
                 if( unFilteredPtsP->numPoints > 0 )
-                  { 
+                  {
                    if( bcdtmObject_cloneDtmObject(unFilteredPtsP,&tileP->dtmP)) goto errexit ;
-                   tileP->numTilePts = unFilteredPtsP->numPoints ; 
+                   tileP->numTilePts = unFilteredPtsP->numPoints ;
                    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"tileP->numTilePts = %8ld",tileP->numTilePts) ;
                   }
                }
-            } 
+            }
          }
 /*
 **     Decouple The Filtering From The Tiles
 */
-       else 
+       else
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Decoupling The Filtering From The Tiles") ;
 /*
@@ -6227,22 +6227,22 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit ;
-            }  
+            }
 /*
 **        Get Points From All Child Nodes For This Index Level
 */
           for( tileP = quadTreeP ; tileP < quadTreeP + numQuadTreeTiles ; ++tileP )
             {
-             if( tileP->quadTreeLevel == level ) 
+             if( tileP->quadTreeLevel == level )
                {
                 for( n = 0 ; n < 4 ; ++n )
                   {
 /*
 **                 Check Child Points Memory
-*/ 
+*/
                    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Parent Node = %8ld ** Child Nodes = %8ld %8ld %8ld %8ld",tileP->tileNumber,tileP->childNodes[0],tileP->childNodes[1],tileP->childNodes[2],tileP->childNodes[3]) ;
                    if( (quadTreeP+tileP->childNodes[n])->dtmP != NULL )
-                     {   
+                     {
                       if( (quadTreeP+tileP->childNodes[n])->dtmP->numPoints > memChildPoints )
                         {
                          memChildPoints = (quadTreeP+tileP->childNodes[n])->dtmP->numPoints ;
@@ -6251,25 +6251,25 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
                            {
                             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                             goto errexit ;
-                           }  
+                           }
                         }
 /*
 **                    Copy All The Points For Each Tile As A Point Feature With The A Usertag Set To The Parent TileNumber
-*/ 
+*/
                       numChildPoints = 0 ;
                       for( p3dP = childPointsP , point = 0 ; point < (quadTreeP+tileP->childNodes[n])->dtmP->numPoints ; ++p3dP , ++point )
                         {
                          pointP = pointAddrP((quadTreeP+tileP->childNodes[n])->dtmP,point) ;
-                         p3dP->x = pointP->x ; 
-                         p3dP->y = pointP->y ; 
-                         p3dP->z = pointP->z ; 
+                         p3dP->x = pointP->x ;
+                         p3dP->y = pointP->y ;
+                         p3dP->z = pointP->z ;
                          ++numChildPoints ;
-                        } 
+                        }
                       if( bcdtmObject_storeDtmFeatureInDtmObject(unFilteredPtsP,DTMFeatureType::GroupSpots,tileP->tileNumber,1,&nullFeatureId,childPointsP,numChildPoints)) goto errexit ;
                      }
                   }
                }
-            } 
+            }
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Number Of Points To Be Filtered = %8ld",unFilteredPtsP->numPoints) ;
 /*
 **        Tin Decimate Points Maintaining Data Extent Shape
@@ -6304,7 +6304,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
                 if( lastParentTile != -1 )
                   {
                    if((quadTreeP+lastParentTile)->dtmP != NULL ) bcdtmObject_resizeMemoryDtmObject((quadTreeP+lastParentTile)->dtmP) ;
-                  } 
+                  }
                 lastParentTile = parentTile ;
                }
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Copying DTM Feature %2ld ** parentTile = %8ld numPoints = %8ld",dtmFeature,parentTile,dtmFeatureP->numDtmFeaturePts) ;
@@ -6325,13 +6325,13 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
 */
           for( tileP = quadTreeP ; tileP < quadTreeP + numQuadTreeTiles ; ++tileP )
             {
-             if( tileP->quadTreeLevel == level && tileP->dtmP != NULL ) 
+             if( tileP->quadTreeLevel == level && tileP->dtmP != NULL )
                {
-                 if( bcdtmObject_resizeMemoryDtmObject(tileP->dtmP)) goto errexit ; 
-               }  
-            } 
+                 if( bcdtmObject_resizeMemoryDtmObject(tileP->dtmP)) goto errexit ;
+               }
+            }
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"ParentTile = %8ld Number Of Points = %8ld",parentTile,(quadTreeP+parentTile)->numTilePts ) ;
-         } 
+         }
       }
    }
 /*
@@ -6346,7 +6346,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
        if( bcdtmObject_createDtmObject(&filteredPtsP)) goto errexit ;
        for( tileP = quadTreeP ; tileP < quadTreeP + numQuadTreeTiles ; ++tileP )
          {
-          if( tileP->quadTreeLevel == level ) 
+          if( tileP->quadTreeLevel == level )
             {
              if( tileP->dtmP != NULL ) if( bcdtmObject_appendDtmObject(filteredPtsP,tileP->dtmP)) goto errexit ;
             }
@@ -6354,14 +6354,14 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
        if( bcdtmObject_triangulateDtmObject(filteredPtsP) ) goto errexit ;
        swprintf(fileName,32,L"quadTreeLevel%d.dtm",level) ;
        bcdtmWrite_toFileDtmObject(filteredPtsP,fileName) ;
-      } 
+      }
     if( dbg ) bcdtmWrite_toFileDtmObject(quadTreeP->dtmP,L"quadtreeFilter.dtm") ;
-   } 
+   }
 /*
 ** Clean Up
 */
  cleanup :
- if( childPointsP   != NULL ) free(childPointsP) ;   
+ if( childPointsP   != NULL ) free(childPointsP) ;
  if( unFilteredPtsP != NULL ) bcdtmObject_destroyDtmObject(&unFilteredPtsP) ;
  if( filteredPtsP   != NULL ) bcdtmObject_destroyDtmObject(&filteredPtsP) ;
 /*

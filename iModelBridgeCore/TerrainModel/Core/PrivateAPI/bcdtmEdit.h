@@ -81,7 +81,7 @@ void bcdtmEdit_clearCurrentEditDtmObjects(void);
 int bcdtmEdit_checkAndUpdateCurrentDtmObject(wchar_t *EditTinFile);
 int bcdtmEdit_checkTinStructureDtmObject(BC_DTM_OBJ *dtmP);
 int bcdtmEdit_getDtmEditFeaturePoints(long *editPnt1P,long *editPnt2P,long *editPnt3P);
-int bcdtmEdit_selectDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,double x,double y,long *featureFoundP,DPoint3d **featurePtsPP,long *numFeaturePtsP );
+int bcdtmEdit_selectDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,double x,double y,bool& featureFound,bvector<DPoint3d>& featurePts);
 int bcdtmEdit_modifyDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP, long modifyOption, long *modifyResultP);
 int bcdtmEdit_cleanVoidDtmObject(BC_DTM_OBJ *dtmP,long VoidFeature);
 int bcdtmEdit_deleteTriangleDtmObject(BC_DTM_OBJ *dtmP,long tinPnt1,long tinPnt2,long tinPnt3);
@@ -126,10 +126,10 @@ int bcdtmEdit_drawPointPerimeterDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback lo
 int bcdtmEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long *deletedFeaturesP,long numDeletedFeatures,double contourInterval,void *userP);
 
 
-int bcdtmEdit_selectPointDtmObject(BC_DTM_OBJ *dtmP, double x,double y,long *pointFound,DPoint3d **featurePtsPP,long *numFeaturePtsP,long *editPointP) ;
+int bcdtmEdit_selectPointDtmObject(BC_DTM_OBJ *dtmP, double x, double y, bool &pointFound, bvector<DPoint3d>& featurePts, long& editPoint);
 int bcdtmEdit_findClosestNonVoidPointDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *editPointP) ;
-int bcdtmEdit_selectLineDtmObject(BC_DTM_OBJ *dtmP,double  x,double y,long *lineFoundP,DPoint3d **linePtsPP,long *numLinePtsP,long*pnt1P,long*pnt2P ) ;
-int bcdtmEdit_selectTriangleDtmObject( BC_DTM_OBJ *dtmP, double x, double y, long *trgFoundP, DPoint3d  **trgPtsPP, long *numTrgPtsP, long *pnt1P, long *pnt2P, long  *pnt3P ) ;
+int bcdtmEdit_selectLineDtmObject(BC_DTM_OBJ *dtmP,double  x,double y,bool& lineFound,bvector<DPoint3d>& linePts,long& pnt1,long& pnt2 ) ;
+int bcdtmEdit_selectTriangleDtmObject( BC_DTM_OBJ *dtmP, double x, double y, bool& trgFound, bvector<DPoint3d>& trgPts, long& pnt1, long& pnt2, long&  pnt3 ) ;
 int bcdtmEdit_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *hullPnt1P,long *hullPnt2P) ;
 BENTLEYDTM_Public int bcdtmEdit_findClosestHullLineForPointAddDtmObject (BC_DTM_OBJ *dtmP, double x, double y, long *hullPnt1P, long *hullPnt2P);
 int bcdtmEdit_checkForIntersectionWithTinHullDtmObject(BC_DTM_OBJ *dtmP,long point,double x,double y,bool& intersects ) ;
@@ -137,11 +137,11 @@ int bcdtmEdit_findClosestVoidLineDtmObject( BC_DTM_OBJ *dtmP,double x,double y,l
 int bcdtmEdit_findDtmFeatureTypeEnclosingPointDtmObject( BC_DTM_OBJ *dtmP,long point,DTMFeatureType dtmFeatureType,long *dtmFeatureP) ;
 int bcdtmEdit_testForPointOnDtmFeatureTypeDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType dtmFeatureType, long point, long *dtmFeatureP, long *numFeaturesP);
 int bcdtmEdit_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtmP,long islandFeature,long *voidFeatureP) ;
-int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTM_TIN_POINT_FEATURES **islandsPP,long *numIslandsP) ;
+int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islandsPP,long *numIslandsP) ;
 int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject(BC_DTM_OBJ *dtmP, BC_DTM_OBJ *dataDtmP) ;
-int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTM_TIN_POINT_FEATURES **intersectedFeaturesPP,long *numIntersectedFeaturesP) ;
-int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTM_TIN_POINT_FEATURES **intersectedFeaturesPP,long *numIntersectedFeaturesP) ;
-int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTM_TIN_POINT_FEATURES *intersectedFeaturesP,long numIntersectedFeatures) ;
+int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) ;
+int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) ;
+int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures *intersectedFeaturesP,long numIntersectedFeatures) ;
 int bcdtmEdit_resolveIslandsVoidsHolesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **resolvedFeaturesDtmPP) ;
 int bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature );
 int bcdtmEdit_clipVoidPointsFromGroupSpotsDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature ) ;
@@ -153,7 +153,7 @@ int bcdtmEdit_deleteInternalTptrVoidPolygonPointsAndLinesDtmObject(BC_DTM_OBJ *d
 int bcdtmEdit_deleteExternalTptrIslandPolygonPointsAndLinesDtmObject(BC_DTM_OBJ *dtmP,long sPnt) ;
 int bcdtmEdit_insertTptrPolygonAroundPointDtmObject(BC_DTM_OBJ *dtmP,long Point,long *Spnt) ;
 int bcdtmEdit_addPointToDtmObject(BC_DTM_OBJ *dtmP,double x,double y,double z,long *Point ) ;
-int bcdtmEdit_storePointFeaturesInDtmFeatureList (DTM_TIN_POINT_FEATURES **bcdtmList, long *numDtmList, long *memDtmList, long memDtmListInc, long dtmFeature, DTMFeatureType dtmFeatureType, DTMUserTag userTag, long priorPoint, long nextPoint);
+int bcdtmEdit_storePointFeaturesInDtmFeatureList (DTMTinPointFeatures **bcdtmList, long *numDtmList, long *memDtmList, long memDtmListInc, long dtmFeature, DTMFeatureType dtmFeatureType, DTMUserTag userTag, long priorPoint, long nextPoint);
 int bcdtmEdit_testForDtmFeatureHullLineDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType DtmFeatureType, long P1, long P2, long *HullLine, long *Feature, long *Direction);
 int bcdtmEdit_triangulateVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,long *islandFeaturesP,long numIslandFeatures,long internalPoint) ;
 int bcdtmEdit_breakDtmFeatureAtPointDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature,long breakPoint ) ;
@@ -176,7 +176,7 @@ int bcdtmEdit_selectDtmEditLinearFeatureDtmObject(BC_DTM_OBJ *dtmP,double x,doub
 int bcdtmEdit_deleteLinearFeatureDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature, DTMFeatureType dtmFeatureType);
 int bcdtmEdit_deletePolygonalFeatureDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature, DTMFeatureType dtmFeatureType);
 int bcdtmEdit_deleteNonePolygonalFeatureDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature, DTMFeatureType dtmFeatureType);
-int bcdtmEdit_getVoidFeaturesInternalToIslandDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType islandFeature, DTM_TIN_POINT_FEATURES **voidsPP, long *numVoidsP);
+int bcdtmEdit_getVoidFeaturesInternalToIslandDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType islandFeature, DTMTinPointFeatures **voidsPP, long *numVoidsP);
 int bcdtmEdit_getVoidsInternalToIslandDtmObject(BC_DTM_OBJ *dtmP,long islandFeature,long **voidsPP,long *numVoidsP) ;
 
 BENTLEYDTM_Public int bcdtmEdit_deleteExternalTriangleDtmObject (BC_DTM_OBJ *dtmP, long trgPnt1, long trgPnt2, long trgPnt3);

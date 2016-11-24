@@ -43,7 +43,7 @@ namespace Bentley.TerrainModel.ElementTemplate
                 }
             else
                 {
-                LsDefinition ls = dtmElement.DgnModel.GetDgnFile ().GetLineStyleMap ().GetLineStyle (lineStyleString);
+                LsEntry ls = dtmElement.DgnModel.GetDgnFile ().GetLineStyleMap ().GetLineStyleEntry (lineStyleString);
                 if (ls != null)
                     lineStyleValue = ls.StyleNumber;
                 }

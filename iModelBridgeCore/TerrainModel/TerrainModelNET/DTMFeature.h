@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeature.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -262,9 +262,13 @@ public enum class DTMDynamicFeatureType:long
     /// </summary>
     TriangleInfo = (long)::DTMFeatureType::TriangleInfo,
     /// <summary>
-    /// Traingle Edge
+    /// Traingle Lines around the Edge of the triangulation
     /// </summary>
     TriangleEdge = (long)::DTMFeatureType::TriangleEdge,
+    /// <summary>
+    /// Traingle Lines
+    /// </summary>
+    TriangleLine = (long)::DTMFeatureType::TinLine,
     /// <summary>
     /// Traingle Vertex
     /// </summary>

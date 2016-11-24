@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: TerrainModelNET/TerrainModelNET.mke $
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
@@ -64,9 +64,8 @@ DependsOnHeaders = \
     $(DependsOnAssemblies) \
     $(basedir)Bentley.Civil.DTM.h \
     $(basedir)DTM.h \
-    $(basedir)DTMEdges.h \
-    $(basedir)DTMFeature.h \
     $(basedir)DTMFeatureEnumerator.h \
+$(basedir)DTMMeshEnumerator.h \
     $(basedir)DTMHelpers.h \
     $(basedir)DTMMesh.h \
     $(basedir)DTMDrapedLinearElement.h \
@@ -77,30 +76,32 @@ DependsOnHeaders = \
     $(basedir)Stdafx.h \
     $(PCHHeaderObject)
 
+#$(basedir)DTMEdges.h \
+#$(basedir)DTMFeature.h \
 #....................................................................................................................................................
 %include MultiCppCompileRule.mki
 
-$(o)DTM$(oext)		: $(basedir)DTM.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTM$(oext)      : $(basedir)DTM.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMEdges$(oext)		: $(basedir)DTMEdges.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMFeature$(oext)       : $(basedir)DTMFeature.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMFeature$(oext)		: $(basedir)DTMFeature.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMFeatureEnumerator$(oext)     : $(basedir)DTMFeatureEnumerator.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMFeatureEnumerator$(oext)		: $(basedir)DTMFeatureEnumerator.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMMeshEnumerator$(oext)     : $(basedir)DTMMeshEnumerator.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMHelpers$(oext)		: $(basedir)DTMHelpers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMHelpers$(oext)       : $(basedir)DTMHelpers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMMesh$(oext)		: $(basedir)DTMMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMMesh$(oext)     : $(basedir)DTMMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMTinEditor$(oext)		: $(basedir)DTMTinEditor.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMTinEditor$(oext)     : $(basedir)DTMTinEditor.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMDrapedLinearElement$(oext)		: $(basedir)DTMDrapedLinearElement.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMDrapedLinearElement$(oext)       : $(basedir)DTMDrapedLinearElement.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMSideSlopeInput$(oext)		: $(basedir)DTMSideSlopeInput.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMSideSlopeInput$(oext)        : $(basedir)DTMSideSlopeInput.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMSideSlopeInputPoint$(oext)		: $(basedir)DTMSideSlopeInputPoint.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMSideSlopeInputPoint$(oext)       : $(basedir)DTMSideSlopeInputPoint.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMPond$(oext)		: $(basedir)DTMPond.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMPond$(oext)      : $(basedir)DTMPond.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -112,7 +113,7 @@ CCPchOpts =
 
 CCPchOpts = 
 CPchOpts  = 
-$(o)Caching$(oext)		: $(basedir)Caching.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)Caching$(oext)      : $(basedir)Caching.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmstr.h                                        aec        10-Apr-1990     */
@@ -259,8 +259,8 @@ struct CIVdtmdis                       /* display things                      */
     int (*confnc)(void *,              /* for interactive dis.                */
     struct CIVdtmtin *,
         int,void *);
-    struct CIVdistri *tinsym;          /* for interactive dis.                */
-    struct CIVdiscon *consym;          /* for interactive dis.                */
+    void *tinsym;          /* for interactive dis.                */
+    void *consym;          /* for interactive dis.                */
     };
 
 struct CIVdtmoffV8                     /* profile offset settings             */
@@ -275,7 +275,7 @@ struct CIVdtmoff                       /* profile offset settings             */
     wchar_t sym[CIV_C_NAMSIZ];         /* offset named symbology              */
     };
 
-#pragma warning (disable:4481)
+//#pragma warning (disable:4481)
 
 typedef struct CIVdtmsrf
     {
@@ -323,7 +323,7 @@ typedef struct CIVdtmsrf
         unsigned char flg;                          /* bit field flags                     */
         unsigned char pad[3];                       /* padding                             */
         long ntinstk;                      /* tin stack counter                   */
-        long *tinstk;                      /* tin stack                           */
+        struct CIVdtmtin* *tinstk;                      /* tin stack                           */
         void *ptrIndexTableP;              /* used to keep ptr/index table alive  */
         void *indexPtrTableP;              /* used to keep index/ptr table alive  */
         CMapStringToPtr *ftrGUIDMapP;      /* hash table of feature BeSQLite::BeGuid's        */
@@ -366,4 +366,4 @@ struct CIVptrindTwo                    /* for keeping permanent index table   */
 typedef wchar_t CIVdtmstynam[CIV_C_NAMSIZ];
 typedef wchar_t CIVdtmpaynam[CIV_C_NAMSIZ];
 
-#pragma warning (default:4481)
+//#pragma warning (default:4481)

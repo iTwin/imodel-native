@@ -2,13 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmMemory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "malloc.h"
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-//#pragma optimize( "p", on )
 #include "bcDTMElement.h"
 
 //#define DEBUGMEM

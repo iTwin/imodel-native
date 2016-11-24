@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4786)
-
+#pragma warning(disable: 4102)
 /*----------------------------------------------------------------------+
 | Include standard library header files                                 |
 +----------------------------------------------------------------------*/
@@ -252,7 +252,7 @@ class CrossingFeaturesCallbackTransformHelper
             data->m_helper->convertDistanceFromDTM (crossError.distance1);
             data->m_helper->convertElevationFromDTM (crossError.elevation1);
             data->m_helper->convertDistanceFromDTM (crossError.distance1);
-            return data->m_callBackFunctP (crossError, userP);
+            return data->m_callBackFunctP(crossError, data->m_userP);
             }
     };
 
@@ -286,8 +286,8 @@ class TriangleMeshCallbackTransformHelper
             TriangleMeshCallbackTransformHelper* data = (TriangleMeshCallbackTransformHelper*)userP;
 
             if (data->m_helper)
-                return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, data->m_helper->copyPointsFromDTM (meshPointsP, numMeshFaces), numMeshFaces, meshFacesP, userP);
-            return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, userP);
+                return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, data->m_helper->copyPointsFromDTM (meshPointsP, numMeshFaces), numMeshFaces, meshFacesP, data->m_userP);
+            return data->m_callBackFunctP(featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, data->m_userP);
             }
     };
 
@@ -309,7 +309,7 @@ class TriangleMeshCallbackTransformHelper
 struct PrflPoint_t
     {
     double          s;
-    DTM_DRAPE_POINT  bcdtmDrapeData;
+    DTMDrapePoint  bcdtmDrapeData;
     };
 
 
@@ -413,7 +413,7 @@ static int digitalTM_setPoint
     PrflPoint_t     *pointTabP,    /* <> Point table                     */
     int             index,         /* => Index in point table            */
     double          currAbc,      /* => Current abcissa                */
-    DTM_DRAPE_POINT  drapedPts[]
+    DTMDrapePoint  drapedPts[]
 )
     {
     BC_START ();
@@ -438,7 +438,7 @@ static int digitalTM_createProfile
     (
     PrflPoint_t     **pointTabPP,
     long            *nbPt,
-    DTM_DRAPE_POINT  drapedPt[],
+    DTMDrapePoint  drapedPt[],
     int             nResPt,         /* => Number of points in line string */
     DPoint3dCP      origStringP,   /* => Points of original line string  */
     const double*   sTabP,         /* => point chainage or nullptr          */
@@ -473,9 +473,9 @@ static int digitalTM_createProfile
         {
         // If there is an abcissa table, then go to the next origin point
         DPoint3d    pt;
-        pt.x = drapedPt[0].drapeX;
-        pt.y = drapedPt[0].drapeY;
-        pt.z = drapedPt[0].drapeZ;
+        pt.x = drapedPt[0].drapePt.x;
+        pt.y = drapedPt[0].drapePt.y;
+        pt.z = drapedPt[0].drapePt.z;
         BC_TRY (
             digitalTM_nextOriginPoint (&pt, origStringP, sTabP, nPts, &currPtOrig, &diffSOrig, &distOrig, &distOnCurrentSegment));
         }
@@ -483,13 +483,13 @@ static int digitalTM_createProfile
     for (iPt = 1; iPt < nResPt; iPt++)
         {
         DPoint3d    previousPt;
-        previousPt.x = drapedPt[iPt-1].drapeX;
-        previousPt.y = drapedPt[iPt-1].drapeY;
-        previousPt.z = drapedPt[iPt-1].drapeZ;
+        previousPt.x = drapedPt[iPt - 1].drapePt.x;
+        previousPt.y = drapedPt[iPt - 1].drapePt.y;
+        previousPt.z = drapedPt[iPt - 1].drapePt.z;
         DPoint3d    currentPt;
-        currentPt.x = drapedPt[iPt].drapeX;
-        currentPt.y = drapedPt[iPt].drapeY;
-        currentPt.z = drapedPt[iPt].drapeZ;
+        currentPt.x = drapedPt[iPt].drapePt.x;
+        currentPt.y = drapedPt[iPt].drapePt.y;
+        currentPt.z = drapedPt[iPt].drapePt.z;
         if (sTabP)
             {
             if (distOrig == dc_zero)
@@ -573,20 +573,21 @@ static int digitalTM_convertPrflPointTabToDrapedPoints
         {
         DPoint3d    pt;
 
-        pt.x = pointTab[iPt].bcdtmDrapeData.drapeX;
-        pt.y = pointTab[iPt].bcdtmDrapeData.drapeY;
-        pt.z = pointTab[iPt].bcdtmDrapeData.drapeZ;
+        pt.x = pointTab[iPt].bcdtmDrapeData.drapePt.x;
+        pt.y = pointTab[iPt].bcdtmDrapeData.drapePt.y;
+        pt.z = pointTab[iPt].bcdtmDrapeData.drapePt.z;
 
         RefCountedPtr<BcDTMDrapedLinePoint> drapedPoint = BcDTMDrapedLinePoint::Create (pt, pointTab[iPt].s, pointTab[iPt].bcdtmDrapeData.drapeType);
-        for (int iFeature = 0; iFeature < pointTab[iPt].bcdtmDrapeData.numDrapeFeatures; iFeature++)
+        for (int iFeature = 0; iFeature < pointTab[iPt].bcdtmDrapeData.drapeFeatures.size(); iFeature++)
             {
+            auto& feature = pointTab[iPt].bcdtmDrapeData.drapeFeatures[iFeature];
             drapedPoint->AddFeature (
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].dtmFeature,
-                (DTMFeatureType)pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].dtmFeatureType,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].userTag,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].userFeatureId,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].priorPoint,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].nextPoint
+                feature.dtmFeature,
+                feature.dtmFeatureType,
+                feature.userTag,
+                feature.userFeatureId,
+                feature.priorPoint,
+                feature.nextPoint
                 );
             }
 
@@ -611,28 +612,24 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     int                     nPts            /* => Number of points in line string     */
     )
     {
-    long			nResPt = 0;
-    DTM_DRAPE_POINT *drapedPtsP = nullptr;
+    bvector<DTMDrapePoint> drapedPts;
     PrflPoint_t     *prflPointTabP = nullptr;
     long            nbPtProfile;
-    int			    status = 0;
+    int             status = 0;
 
     BC_START ();
 
-    nResPt = 0;
     if (dtmHandleP == nullptr) BC_RETURN_ERRSTATUS (DTM_ERROR);
-    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts , TRUE, &drapedPtsP, &nResPt);
-    if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS (DTM_ERROR) ;
+    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts, true, drapedPts);
+    if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
 
     // Create a digital TM profile with readjustment of the distances along
-    BC_TRY (digitalTM_createProfile (&prflPointTabP, &nbPtProfile, drapedPtsP, nResPt, lineStringP, absTabP, nPts));
+    BC_TRY(digitalTM_createProfile(&prflPointTabP, &nbPtProfile, drapedPts.data(), (int)drapedPts.size(), lineStringP, absTabP, nPts));
 
     // Drape the points
     BC_TRY (digitalTM_convertPrflPointTabToDrapedPoints (drapedPoints, prflPointTabP, nbPtProfile));
 
 BC_END:;
-
-    if (drapedPtsP != nullptr) bcdtmDrape_freeDrapePointMemory (&drapedPtsP, &nResPt);
 
     if (prflPointTabP != nullptr) bcMem_free (prflPointTabP);
 
@@ -721,7 +718,7 @@ BcDTMPtr BcDTM::Create (int initPoint, int incPoint)
 +----------------------------------------------------------------------*/
 BcDTMPtr BcDTM::CreateFromDtmHandle
     (
-    BC_DTM_OBJ* dtmHandleP
+    BC_DTM_OBJ& dtmHandleP
     )
     {
     // Create a new Digital TM instance
@@ -735,7 +732,7 @@ BcDTMPtr BcDTM::CreateFromDtmHandle
 +----------------------------------------------------------------------*/
 BcDTMPtr BcDTM::CreateFromDtmHandles
     (
-    void *headerP,
+    BC_DTM_OBJ* headerP,
     void *featureArraysP,
     void *pointArraysP,
     void *nodeArraysP,
@@ -769,7 +766,7 @@ BcDTMPtr BcDTM::CreateFromTinFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -793,7 +790,7 @@ BcDTMPtr BcDTM::CreateFromGeopakDatFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -819,7 +816,7 @@ BcDTMPtr BcDTM::CreateFromXyzFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -841,7 +838,7 @@ BcDTMPtr BcDTM::CreateFromStream (IBcDtmStreamR streamP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -863,7 +860,7 @@ BcDTMPtr BcDTM::CreateFromMemoryBlock (const char *memoryBlockP, unsigned long m
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 
@@ -885,7 +882,7 @@ BcDTMPtr BcDTM::CreateFromTinFile (WCharCP fileNameP, double filePosition)
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 BcDTMPtr BcDTM::DesignPondToTargetVolumeOrElevation
@@ -964,14 +961,13 @@ BcDTM::BcDTM (int initPoint, int incPoint)
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTM::BcDTM (BC_DTM_OBJ* dtmHandleP, TMTransformHelperP transformHelper, bool readonly)
+BcDTM::BcDTM (BC_DTM_OBJ& dtmHandleP, TMTransformHelperP transformHelper, bool readonly)
     {
     // Assign the DTMFeatureState::Tin handle
-    _dtmHandleP = dtmHandleP;
+    _dtmHandleP = &dtmHandleP;
     _dtmTransformHelper = transformHelper;
 
-    if (dtmHandleP != nullptr)
-        (_dtmHandleP)->refCount++;
+    _dtmHandleP->refCount++;
 
     // Initialisations
     _readonly = readonly;
@@ -983,7 +979,7 @@ BcDTM::BcDTM (BC_DTM_OBJ* dtmHandleP, TMTransformHelperP transformHelper, bool r
 |   spu.25aug2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTM::BcDTM (void* headerP, void* featureArraysP, void* pointArraysP, void* nodeArraysP, void* fListArraysP, void* cListArraysP)
+BcDTM::BcDTM(BC_DTM_OBJ* headerP, void* featureArraysP, void* pointArraysP, void* nodeArraysP, void* fListArraysP, void* cListArraysP)
     {
     int dbg=DTM_TRACE_VALUE(0) ;
 
@@ -1010,7 +1006,7 @@ BcDTM::BcDTM (void* headerP, void* featureArraysP, void* pointArraysP, void* nod
     _dtmHandleP->DTMAllocationClass = nullptr ;
     _dtmHandleP->refCount = 0 ;
     _dtmHandleP->fTablePP = (BC_DTM_FEATURE **)featureArraysP;
-    _dtmHandleP->pointsPP = (DTM_TIN_POINT **)pointArraysP;
+    _dtmHandleP->pointsPP = (DPoint3d **)pointArraysP;
     _dtmHandleP->nodesPP = (DTM_TIN_NODE **)nodeArraysP;
     _dtmHandleP->cListPP = (DTM_CIR_LIST **)cListArraysP;
     _dtmHandleP->fListPP = (DTM_FEATURE_LIST **)fListArraysP;
@@ -1052,7 +1048,7 @@ BcDTM::~BcDTM ()
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_DrapeLinearPoints
+DTMStatusInt BcDTM::DrapeLinearPoints
     (
     BcDTMDrapedLinePtr&     drapedLinePP,
     DPoint3dCP              pointsP,
@@ -1074,12 +1070,12 @@ DTMStatusInt BcDTM::_DrapeLinearPoints
     // Drape the points
     if (_dtmTransformHelper.IsValid ())
         {
-        BC_TRY (digitalTM_getDrapedPoints (_GetTinHandle (), drapedPoints, _dtmTransformHelper->copyPointsToDTM (pointsP, nbPt), _dtmTransformHelper->copyDistanceTableToDTM (distTabP, nbPt), nbPt));
+        BC_TRY (digitalTM_getDrapedPoints (GetTinHandle (), drapedPoints, _dtmTransformHelper->copyPointsToDTM (pointsP, nbPt), _dtmTransformHelper->copyDistanceTableToDTM (distTabP, nbPt), nbPt));
         _dtmTransformHelper->convertDrapedPointsFromDTM (drapedPoints);
         }
     else
         {
-        BC_TRY (digitalTM_getDrapedPoints (_GetTinHandle (), drapedPoints, pointsP, distTabP, nbPt));
+        BC_TRY (digitalTM_getDrapedPoints (GetTinHandle (), drapedPoints, pointsP, distTabP, nbPt));
         }
     // Create the resultant point array
     // Here there is a direct call to the function which make a BcDTMDrapedLine, because
@@ -1099,12 +1095,12 @@ BC_END:
 |   cbe.04Apr2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId identP)
+DTMStatusInt BcDTM::GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId identP)
     {
     DTMFeatureType memFeatureType = DTMFeatureType::None;
-    DPoint3d	*pointsP = nullptr;
-    DPoint3d	*memPointsP = nullptr;
-    long		memNbFeaturePts = 0;
+    DPoint3d    *pointsP = nullptr;
+    DPoint3d    *memPointsP = nullptr;
+    long        memNbFeaturePts = 0;
    DTMStatusInt status=DTM_SUCCESS;
     DTMFeatureId    dtmFeatureId;
     DTMUserTag memUserTag = 0;
@@ -1121,7 +1117,7 @@ DTMStatusInt BcDTM::_GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId id
 
         dtmFeatureId = identP ;
         status = (DTMStatusInt)bcdtmScanLoad_nextDtmFeatureOccurrenceForDtmFeatureIdFromDtmObject (
-            _GetTinHandle(), dtmFeatureId, firstCall, FALSE, DTMFenceType::Block, DTMFenceOption::Inside,  nullptr,
+            GetTinHandle(), dtmFeatureId, firstCall, FALSE, DTMFenceType::Block, DTMFenceOption::Inside,  nullptr,
             0, &featureFound, &dtmFeature );
 
         if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
@@ -1209,11 +1205,11 @@ BC_END:;
 |   cbe.23jmar2005   -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetFeatureByUserTag (BcDTMFeaturePtr& featurePP, DTMUserTag userTag)
+DTMStatusInt BcDTM::GetFeatureByUserTag (BcDTMFeaturePtr& featurePP, DTMUserTag userTag)
     {
     WString     featureName;
     WString     featureDescription;
-    DPoint3d	*pointsP = nullptr;
+    DPoint3d    *pointsP = nullptr;
     int         status = 0;
     DTMFeatureId   guId = DTM_NULL_FEATURE_ID;
     long        featureFound = 0;
@@ -1227,7 +1223,7 @@ DTMStatusInt BcDTM::_GetFeatureByUserTag (BcDTMFeaturePtr& featurePP, DTMUserTag
     memset (&dtmFeature, 0, sizeof (BC_DTM_USER_FEATURE));
 
     status = bcdtmScanLoad_nextDtmFeatureOccurrenceForUserTagFromDtmObject (
-        _GetTinHandle(), userTag, TRUE, FALSE, DTMFenceType::Block, DTMFenceOption::Inside,  nullptr,
+        GetTinHandle(), userTag, TRUE, FALSE, DTMFenceType::Block, DTMFenceOption::Inside,  nullptr,
         0, &featureFound, &dtmFeature);
     if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
 
@@ -1264,7 +1260,7 @@ BC_END:;
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetFeatureEnumerator
+DTMStatusInt BcDTM::GetFeatureEnumerator
     (
     BcDTMFeatureEnumeratorPtr& enumPP
     )
@@ -1279,7 +1275,7 @@ DTMStatusInt BcDTM::_GetFeatureEnumerator
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ClipByPointString
+DTMStatusInt BcDTM::ClipByPointString
     (
     BcDTMPtr&        clippedPP,
     DPoint3dCP       points,
@@ -1299,14 +1295,14 @@ DTMStatusInt BcDTM::_ClipByPointString
     DTMStatusInt status;
 
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmClip_cloneAndClipToPolygonDtmObject (_GetTinHandle (), (BC_DTM_OBJ **)&resultTinP, _dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, clippingMethod);
+        status = (DTMStatusInt)bcdtmClip_cloneAndClipToPolygonDtmObject (GetTinHandle (), (BC_DTM_OBJ **)&resultTinP, _dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, clippingMethod);
     else
-        status = (DTMStatusInt)bcdtmClip_cloneAndClipToPolygonDtmObject (_GetTinHandle (), (BC_DTM_OBJ **)&resultTinP, (DPoint3d*)points, nbPt, clippingMethod);
+        status = (DTMStatusInt)bcdtmClip_cloneAndClipToPolygonDtmObject (GetTinHandle (), (BC_DTM_OBJ **)&resultTinP, (DPoint3d*)points, nbPt, clippingMethod);
     if (status != DTM_SUCCESS) return status;
 
     // Return result
     if (resultTinP != nullptr)
-        clippedPP = new BcDTM (resultTinP, _dtmTransformHelper.get());
+        clippedPP = new BcDTM (*resultTinP, _dtmTransformHelper.get());
     else
         clippedPP = nullptr;
 
@@ -1323,13 +1319,13 @@ DTMStatusInt BcDTM::_GetRange (DRange3dR range)
     {
     DPoint3d    diffRange;
 
-    if (_GetTinHandle ()->numPoints == 0)
+    if (GetTinHandle ()->numPoints == 0)
         {
         range = DRange3d::NullRange ();
         return DTM_SUCCESS;
         }
     // Call Rob's function
-    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getBoundingCubeDtmObject (_GetTinHandle (),
+    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getBoundingCubeDtmObject (GetTinHandle (),
         &range.low.x, &range.low.y, &range.low.z,
         &range.high.x, &range.high.y, &range.high.z,
         &diffRange.x, &diffRange.y, &diffRange.z);
@@ -1347,31 +1343,27 @@ DTMStatusInt BcDTM::_GetRange (DRange3dR range)
 |   rsc.07jun2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_DrapePoint
+DTMStatusInt BcDTM::DrapePoint
     (
-    int         *drapeTypeP,
-    DPoint3dP   pointP
+    int&        drapeTypeP,
+    DPoint3d&   pointP
     )
     {
     DTMStatusInt ret=DTM_SUCCESS ;
     long drapeFlag=0 ;
 
-    // Check argument
-    if (pointP == nullptr) goto errexit ;
-
     /* Drape the point on the tin object */
-
     if (_dtmTransformHelper.IsValid ())
         {
-        DPoint3d p = *pointP;
+        DPoint3d p = pointP;
         _dtmTransformHelper->convertPointToDTM (p);
-        if (bcdtmDrape_pointDtmObject (_GetTinHandle (), p.x, p.y, &p.z, &drapeFlag) != DTM_SUCCESS) goto errexit;
-        pointP->z = _dtmTransformHelper->convertElevationFromDTM (p.z);
+        if (bcdtmDrape_pointDtmObject (GetTinHandle (), p.x, p.y, &p.z, &drapeFlag) != DTM_SUCCESS) goto errexit;
+        pointP.z = _dtmTransformHelper->convertElevationFromDTM (p.z);
         }
     else
-        if (bcdtmDrape_pointDtmObject (_GetTinHandle (), pointP->x, pointP->y, &pointP->z, &drapeFlag) != DTM_SUCCESS) goto errexit;
+        if (bcdtmDrape_pointDtmObject (GetTinHandle (), pointP.x, pointP.y, &pointP.z, &drapeFlag) != DTM_SUCCESS) goto errexit;
 
-    *drapeTypeP = (int)drapeFlag;
+    drapeTypeP = (int)drapeFlag;
 
     //  Clean Up
 
@@ -1395,27 +1387,8 @@ errexit :
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_DrapePoint
-    (
-    double          *elevationP,
-    double          *slopeP,
-    double          *aspectP,
-    DPoint3d        triangle[3],
-    int             *drapedTypeP,
-    const DPoint3d& point
-    )
-    {
-    DPoint3d locPt = point;
 
-    DTMStatusInt result = DrapePoint (elevationP, slopeP, aspectP, triangle, drapedTypeP, &locPt);
-    return result;
-    }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.03jul2002   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     // Drape the resulting point array
@@ -1432,20 +1405,20 @@ DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDraped
 
 bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
-    return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
+    return GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
 bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
     DPoint3d endPoint;
     endPoint.SumOf(testPoint, direction);
-    return _IntersectVector(pointOnDTM, testPoint, endPoint);
+    return IntersectVector(pointOnDTM, testPoint, endPoint);
     }
 
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
-    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag==2));
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag == 2));
     }
 
 /*----------------------------------------------------------------------+
@@ -1459,8 +1432,8 @@ DTMStatusInt BcDTM::_DrapePoint
     double      *slopeP,
     double      *aspectP,
     DPoint3d    triangle[3],
-    int         *drapedTypeP,
-    DPoint3d    *pointP
+    int&         drapedTypeP,
+    const DPoint3d&    pointP
     )
     {
     long        drapeFlag = 0;
@@ -1474,10 +1447,6 @@ DTMStatusInt BcDTM::_DrapePoint
 
     BC_START ();
 
-    // Check argument
-    if (pointP == nullptr)
-        BC_RETURN_ERRSTATUS(DTM_ERROR);
-
     // Initialize results
     if (elevationP) *elevationP = dc_zero;
     if (slopeP) *slopeP = dc_zero;
@@ -1488,10 +1457,10 @@ DTMStatusInt BcDTM::_DrapePoint
 
     if (_dtmTransformHelper.IsValid ())
         {
-        DPoint3d p = *pointP;
+        DPoint3d p = pointP;
         _dtmTransformHelper->convertPointToDTM (p);
         status = bcdtmDrape_pointReturnAttributesDtmObject (
-            _GetTinHandle (),
+            GetTinHandle (),
             p.x,
             p.y,
             &z,
@@ -1512,9 +1481,9 @@ DTMStatusInt BcDTM::_DrapePoint
     else
         {
         status = bcdtmDrape_pointReturnAttributesDtmObject (
-            _GetTinHandle (),
-            pointP->x,
-            pointP->y,
+            GetTinHandle (),
+            pointP.x,
+            pointP.y,
             &z,
             &drapeFlag,
             (DPoint3d *)&trianglePoints[0],
@@ -1530,13 +1499,34 @@ DTMStatusInt BcDTM::_DrapePoint
         if (elevationP) *elevationP = z;
         if (slopeP)     *slopeP = slope;
         if (aspectP)    *aspectP = aspect;
-        if (triangle) memcpy (triangle, &trianglePoints[0], 3*sizeof(DPoint3d));
+        if (triangle) memcpy(triangle, &trianglePoints[0], 3 * sizeof(trianglePoints[0]));
         }
-    if (drapedTypeP) *drapedTypeP = drapeFlag;
+    drapedTypeP = drapeFlag;
 
 BC_END:;
 
     BC_END_RETURNSTATUS();
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    Daryl.Holmwood   10/16
+//---------------+---------------+---------------+---------------+---------------+------
+BcDTMPtr GetDTMForExport(BcDTMR dtm)
+    {
+    Transform trfs;
+    if (dtm.GetTransformation(trfs))
+        return nullptr;
+
+    BC_DTM_OBJ *dtmHandleP = nullptr;
+
+    bcdtmObject_cloneDtmObject(dtm.GetTinHandle(), (BC_DTM_OBJ **)&dtmHandleP);
+
+    // Create a new Digital TM instance
+    BcDTMPtr transformed = BcDTM::CreateFromDtmHandle(*dtmHandleP);
+
+    transformed->Transform(trfs);
+    return transformed;
     }
 
 /*----------------------------------------------------------------------+
@@ -1544,30 +1534,33 @@ BC_END:;
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Save
+DTMStatusInt BcDTM::Save
     (
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation???
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_toFileDtmObject (_GetTinHandle (), fileNameP);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_toFileDtmObject(transformedDTM->GetTinHandle(), fileNameP);
+    return (DTMStatusInt)bcdtmWrite_toFileDtmObject(GetTinHandle(), fileNameP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.03sep2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SaveAsGeopakDat
+DTMStatusInt BcDTM::SaveAsGeopakDat
     (
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject (_GetTinHandle (), fileNameP);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(transformedDTM->GetTinHandle(), fileNameP);
+
+    return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(GetTinHandle(), fileNameP);
     }
 
 /*----------------------------------------------------------------------+
@@ -1575,16 +1568,17 @@ DTMStatusInt BcDTM::_SaveAsGeopakDat
 |   vru.16apr2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SaveAsGeopakAsciiDat
+DTMStatusInt BcDTM::SaveAsGeopakAsciiDat
     (
     WCharCP fileNameP,
     int numDecPts
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject (_GetTinHandle (), fileNameP, numDecPts);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject (transformedDTM->GetTinHandle (), fileNameP, numDecPts);
+    return (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject(GetTinHandle(), fileNameP, numDecPts);
     }
 
 /*----------------------------------------------------------------------+
@@ -1592,15 +1586,17 @@ DTMStatusInt BcDTM::_SaveAsGeopakAsciiDat
 |   djh.03mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SaveToStream
+DTMStatusInt BcDTM::SaveToStream
     (
     IBcDtmStreamR streamP
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject (_GetTinHandle (), &streamP, 0);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject(transformedDTM->GetTinHandle(), &streamP, 0);
+
+    return (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject (GetTinHandle (), &streamP, 0);
     }
 
 /*----------------------------------------------------------------------+
@@ -1608,13 +1604,16 @@ DTMStatusInt BcDTM::_SaveToStream
 |   rsc.28jul2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SaveAsGeopakTinFile
+DTMStatusInt BcDTM::SaveAsGeopakTinFile
     (
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation
-    return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject (_GetTinHandle (), fileNameP));
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject(transformedDTM->GetTinHandle(), fileNameP));
+    return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject(GetTinHandle(), fileNameP));
     }
 
 /*----------------------------------------------------------------------+
@@ -1622,9 +1621,9 @@ DTMStatusInt BcDTM::_SaveAsGeopakTinFile
 |   MathieuSt 4 april 2016                                              |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ExportToGeopakTinFile 
+DTMStatusInt BcDTM::_ExportToGeopakTinFile
     (
-    WCharCP fileNameP, 
+    WCharCP fileNameP,
     TransformCP transformation
     )
     {
@@ -1636,7 +1635,7 @@ DTMStatusInt BcDTM::_ExportToGeopakTinFile
         bcDtmToExport->Transform(*transformation);
         }
 
-    return bcDtmToExport->_SaveAsGeopakTinFile(fileNameP);
+    return bcDtmToExport->SaveAsGeopakTinFile(fileNameP);
     }
 
 /*----------------------------------------------------------------------+
@@ -1644,14 +1643,14 @@ DTMStatusInt BcDTM::_ExportToGeopakTinFile
 |   rsc.29jul2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_PopulateFromGeopakTinFile
+DTMStatusInt BcDTM::PopulateFromGeopakTinFile
     (
     WCharCP fileNameP
     )
     {
     // ToDo Translatation???
     SetMemoryAccess(DTMAccessMode::Write);
-    return( (DTMStatusInt)bcdtmImport_geopakTriangulationToExistingDtmObject(_GetTinHandle(), fileNameP)) ;
+    return( (DTMStatusInt)bcdtmImport_geopakTriangulationToExistingDtmObject(GetTinHandle(), fileNameP)) ;
     }
 
 /*----------------------------------------------------------------------+
@@ -1659,9 +1658,9 @@ DTMStatusInt BcDTM::_PopulateFromGeopakTinFile
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateSlopeArea
+DTMStatusInt BcDTM::CalculateSlopeArea
     (
-    double          *areaP,
+    double&         areaP,
     DPoint3dCP      points,
     int             nbPt
     )
@@ -1674,12 +1673,12 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
     else
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)points, nbPt, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (GetTinHandle (), (DPoint3d *)points, nbPt, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
-        *areaP = _dtmTransformHelper->convertAreaFromDTM (*areaP);
+        areaP = _dtmTransformHelper->convertAreaFromDTM (areaP);
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
 
@@ -1692,9 +1691,9 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateSlopeArea
+DTMStatusInt BcDTM::CalculateSlopeArea
     (
-    double          *areaP
+    double&          areaP
     )
     {
     DTMStatusInt status = DTM_SUCCESS;
@@ -1704,10 +1703,10 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
-    status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), nullptr, 0, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+    status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (GetTinHandle (), nullptr, 0, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
-        *areaP = _dtmTransformHelper->convertAreaFromDTM (*areaP);
+        areaP = _dtmTransformHelper->convertAreaFromDTM (areaP);
 
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
@@ -1722,8 +1721,8 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_CalculateSlopeArea
     (
-    double          *flatAreaP ,
-    double          *slopeAreaP,
+    double&         flatAreaP ,
+    double&         slopeAreaP,
     DPoint3dCP      polygonPts,
     int             numPolygonPts
 
@@ -1736,14 +1735,14 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (polygonPts, numPolygonPts), (long)numPolygonPts, nullptr, flatAreaP, slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (polygonPts, numPolygonPts), (long)numPolygonPts, nullptr, &flatAreaP, &slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
     else
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)polygonPts, (long)numPolygonPts, nullptr, flatAreaP, slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (GetTinHandle (), (DPoint3d *)polygonPts, (long)numPolygonPts, nullptr, &flatAreaP, &slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
         {
-        *flatAreaP = _dtmTransformHelper->convertAreaFromDTM (*flatAreaP);
-        *slopeAreaP = _dtmTransformHelper->convertAreaFromDTM (*slopeAreaP);
+        flatAreaP = _dtmTransformHelper->convertAreaFromDTM (flatAreaP);
+        slopeAreaP = _dtmTransformHelper->convertAreaFromDTM (slopeAreaP);
         }
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
@@ -1757,7 +1756,7 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Merge
+DTMStatusInt BcDTM::Merge
     (
     BcDTMR toMergeP
     )
@@ -1770,7 +1769,7 @@ DTMStatusInt BcDTM::_Merge
         return DTM_ERROR;
         }
     toMerge->SetMemoryAccess (DTMAccessMode::Temporary);
-    DTMStatusInt status = (DTMStatusInt)bcdtmMerge_dtmObjects (_GetTinHandle (), toMerge->GetTinHandle (), 0);
+    DTMStatusInt status = (DTMStatusInt)bcdtmMerge_dtmObjects (GetTinHandle (), toMerge->GetTinHandle (), 0);
     if (status != DTM_SUCCESS) return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -1780,7 +1779,7 @@ DTMStatusInt BcDTM::_Merge
 |   cbe.10jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_MergeAdjacent
+DTMStatusInt BcDTM::MergeAdjacent
     (
     BcDTMR toMergeP
     )
@@ -1793,7 +1792,7 @@ DTMStatusInt BcDTM::_MergeAdjacent
         return DTM_ERROR;
         }
     toMerge->SetMemoryAccess(DTMAccessMode::Temporary);
-    DTMStatusInt status = (DTMStatusInt)bcdtmMerge_dtmObjects (_GetTinHandle (), (BC_DTM_OBJ*)toMerge->GetTinHandle (), 1);
+    DTMStatusInt status = (DTMStatusInt)bcdtmMerge_dtmObjects (GetTinHandle (), (BC_DTM_OBJ*)toMerge->GetTinHandle (), 1);
     if (status != DTM_SUCCESS) return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -1803,23 +1802,23 @@ DTMStatusInt BcDTM::_MergeAdjacent
 |   cbe.10jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTMPtr BcDTM::_Clone()
+BcDTMPtr BcDTM::Clone()
     {
     BC_DTM_OBJ *dtmHandleP = nullptr;
 
     // ToDo what coordinates do we want this to be.
     // Merge the TINs in this DTMFeatureState::Tin
-    bcdtmObject_cloneDtmObject(_GetTinHandle(), (BC_DTM_OBJ **) &dtmHandleP);
+    bcdtmObject_cloneDtmObject(GetTinHandle(), (BC_DTM_OBJ **) &dtmHandleP);
 
     // Create a new Digital TM instance
-    return new BcDTM (dtmHandleP, _dtmTransformHelper.get());
+    return new BcDTM (*dtmHandleP, _dtmTransformHelper.get());
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.02may2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Append (BcDTMR dtmP)
+DTMStatusInt BcDTM::Append (BcDTMR dtmP)
     {
     BcDTMPtr dtm = (TMTransformHelper::convertDTMToDTM (*this, dtmP));
 
@@ -1829,7 +1828,7 @@ DTMStatusInt BcDTM::_Append (BcDTMR dtmP)
         return DTM_ERROR;
         }
     // Append The DTM Object
-    return((DTMStatusInt)bcdtmObject_appendDtmObject (_GetTinHandle (), dtm->GetTinHandle ()));
+    return((DTMStatusInt)bcdtmObject_appendDtmObject (GetTinHandle (), dtm->GetTinHandle ()));
 
     }
 
@@ -1838,7 +1837,7 @@ DTMStatusInt BcDTM::_Append (BcDTMR dtmP)
 |   rsc.17Oct2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_AppendWithUserTag (BcDTMR dtmP, DTMUserTag userTag)
+DTMStatusInt BcDTM::AppendWithUserTag (BcDTMR dtmP, DTMUserTag userTag)
     {
     BcDTMPtr dtm = (TMTransformHelper::convertDTMToDTM (*this, dtmP));
 
@@ -1848,7 +1847,7 @@ DTMStatusInt BcDTM::_AppendWithUserTag (BcDTMR dtmP, DTMUserTag userTag)
         return DTM_ERROR;
         }
     // Append The DTM Object
-    return((DTMStatusInt)bcdtmObject_appendWithUsertagDtmObject (_GetTinHandle (), dtm->GetTinHandle (), userTag));
+    return((DTMStatusInt)bcdtmObject_appendWithUsertagDtmObject (GetTinHandle (), dtm->GetTinHandle (), userTag));
 
     }
 
@@ -1857,7 +1856,7 @@ DTMStatusInt BcDTM::_AppendWithUserTag (BcDTMR dtmP, DTMUserTag userTag)
 |   djh.10apr2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTMPtr BcDTM::_Delta (BcDTMR toDeltaP, DPoint3dCP points, int numPoints)
+BcDTMPtr BcDTM::Delta (BcDTMR toDeltaP, DPoint3dCP points, int numPoints)
     {
     BcDTMPtr toDelta = (TMTransformHelper::convertDTMToDTM (*this, toDeltaP));
 
@@ -1865,41 +1864,41 @@ BcDTMPtr BcDTM::_Delta (BcDTMR toDeltaP, DPoint3dCP points, int numPoints)
 
     SetMemoryAccess(DTMAccessMode::Temporary);
     toDelta->SetMemoryAccess(DTMAccessMode::Temporary);
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 
     BC_DTM_OBJ* toDeltaHandleP = toDelta->GetTinHandle();
     // make the delta tin
-    DTMStatusInt status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject (_GetTinHandle (), toDeltaHandleP, &deltaP, (DPoint3d*)points, numPoints);
+    DTMStatusInt status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject (GetTinHandle (), toDeltaHandleP, &deltaP, (DPoint3d*)points, numPoints);
     if (status == DTM_ERROR)
         {
         return nullptr;
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (deltaP, _dtmTransformHelper.get());
+    return new BcDTM (*deltaP, _dtmTransformHelper.get());
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.04Oct2011   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTMPtr BcDTM::_DeltaElevation (double elevation, DPoint3dCP points, int numPoints)
+BcDTMPtr BcDTM::DeltaElevation (double elevation, DPoint3dCP points, int numPoints)
     {
     BC_DTM_OBJ *deltaP = nullptr;
 
     DTMStatusInt status;
     // Call the Core Method To Create The Delta Tin To An Elevation
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject (_GetTinHandle (), &deltaP, _dtmTransformHelper->convertElevationToDTM (elevation), _dtmTransformHelper->copyPointsToDTM (points, numPoints), numPoints);
+        status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject (GetTinHandle (), &deltaP, _dtmTransformHelper->convertElevationToDTM (elevation), _dtmTransformHelper->copyPointsToDTM (points, numPoints), numPoints);
     else
-        status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject (_GetTinHandle (), &deltaP, elevation, (DPoint3d*)points, numPoints);
+        status = (DTMStatusInt)bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject (GetTinHandle (), &deltaP, elevation, (DPoint3d*)points, numPoints);
     if (status == DTM_ERROR)
         {
         return nullptr;
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (deltaP, _dtmTransformHelper.get());
+    return new BcDTM (*deltaP, _dtmTransformHelper.get());
     }
 
 /*----------------------------------------------------------------------+
@@ -1907,9 +1906,9 @@ BcDTMPtr BcDTM::_DeltaElevation (double elevation, DPoint3dCP points, int numPoi
 |   cbe.10jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_OffsetDeltaElevation (double offset)
+DTMStatusInt BcDTM::OffsetDeltaElevation (double offset)
     {
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message(1,0,0, "DTM is readonly");
@@ -1918,9 +1917,10 @@ DTMStatusInt BcDTM::_OffsetDeltaElevation (double offset)
     DTMStatusInt status;
     if (_dtmTransformHelper.IsValid ())
         offset = _dtmTransformHelper->convertDistanceToDTM (offset);
-    status = (DTMStatusInt)bcdtmData_moveZDtmObject (_GetTinHandle (), 2 /*increment*/, offset);
+    status = (DTMStatusInt)bcdtmData_moveZDtmObject (GetTinHandle (), 2 /*increment*/, offset);
     return status ;
     }
+
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1943,14 +1943,14 @@ DTMStatusInt BcDTM::_ShotVector(double* endSlopeP, double* endAspectP, DPoint3d 
         _dtmTransformHelper->convertPointToDTM (startPt);
         direction = _dtmTransformHelper->convertAspectToDTM (direction);
         slope = _dtmTransformHelper->convertSlopeToDTM (slope);
-        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPt.x, startPt.y, startPt.z,
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPt.x, startPt.y, startPt.z,
                                                          direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
         if (status == DTM_SUCCESS)
             _dtmTransformHelper->convertPointFromDTM (endPt);
         }
     else
         {
-        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
                                                          direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
         }
     if (status != DTM_SUCCESS) return DTM_ERROR;
@@ -1964,7 +1964,57 @@ DTMStatusInt BcDTM::_ShotVector(double* endSlopeP, double* endAspectP, DPoint3d 
     if (endSlopeP != nullptr || endAspectP != nullptr || endTriangle != nullptr || endDrapedTypeP != nullptr)
         {
         // If other info about the end point are required return them
-        DTMStatusInt status = DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, endDrapedTypeP, &endPt);
+        DTMStatusInt status = DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, *endDrapedTypeP, endPt);
+        if (status != DTM_SUCCESS)
+            return DTM_ERROR;
+        }
+
+    return DTM_SUCCESS;
+    }
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+|   spu.06nov2003   -  Created.                                         |
+|                                                                       |
++----------------------------------------------------------------------*/
+DTMStatusInt BcDTM::ShotVector (double* endSlopeP, double* endAspectP, DPoint3d endTriangle[3], int* endDrapedTypeP, DPoint3dP endPtP, DPoint3dP startPtP,
+    double direction, double slope)
+    {
+    DPoint3d    endPt = {0, 0, 0};
+    long        startFlag = 0, endFlag = 0;
+
+    // Call DTMFeatureState::Tin function
+    DTMStatusInt status;
+
+    if (_dtmTransformHelper.IsValid ())
+        {
+        DPoint3d startPt = *startPtP;
+        _dtmTransformHelper->convertPointToDTM (startPt);
+        direction = _dtmTransformHelper->convertAspectToDTM (direction);
+        slope = _dtmTransformHelper->convertSlopeToDTM (slope);
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPt.x, startPt.y, startPt.z,
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
+        if (status == DTM_SUCCESS)
+            _dtmTransformHelper->convertPointFromDTM (endPt);
+        }
+    else
+        {
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
+        }
+    if (status != DTM_SUCCESS) return DTM_ERROR;
+
+    if (endPtP != nullptr)
+        {
+        // If the end point is required return it
+        *endPtP = endPt;
+        }
+
+    if (endSlopeP != nullptr || endAspectP != nullptr || endTriangle != nullptr || endDrapedTypeP != nullptr)
+        {
+        // If other info about the end point are required return them
+        int tmp;
+        DTMStatusInt status = _DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, endDrapedTypeP ? *endDrapedTypeP : tmp, endPt);
         if (status != DTM_SUCCESS)
             return DTM_ERROR;
         }
@@ -1978,7 +2028,7 @@ DTMStatusInt BcDTM::_ShotVector(double* endSlopeP, double* endAspectP, DPoint3d 
 |   mah.09nov2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ComputePlanarPrismoidalVolume (
+DTMStatusInt BcDTM::ComputePlanarPrismoidalVolume (
     BcDTMVolumeAreaResult& result, double elevation, DPoint3dCP points,
     int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
     {
@@ -1987,12 +2037,12 @@ DTMStatusInt BcDTM::_ComputePlanarPrismoidalVolume (
     if (_dtmTransformHelper.IsValid())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (_GetTinHandle (), volRange, numRanges, (DPoint3d*)points, nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (GetTinHandle (), volRange, numRanges, (DPoint3d*)points, nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
         if(rangeTableP && status == DTM_SUCCESS)
             _dtmTransformHelper->copyVOLRANGETABFromDTM (volRange, rangeTableP, numRanges);
         }
     else
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (_GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
     if (status != DTM_SUCCESS) return DTM_ERROR;
 
     if (_dtmTransformHelper.IsValid())
@@ -2013,7 +2063,7 @@ DTMStatusInt BcDTM::_ComputePlanarPrismoidalVolume (
 |   spu.06nov2003   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateCutFillVolume (BcDTMVolumeAreaResult& result, BcDTMR otherDtmP, DPoint3dCP points,
+DTMStatusInt BcDTM::CalculateCutFillVolume (BcDTMVolumeAreaResult& result, BcDTMR otherDtmP, DPoint3dCP points,
                                              int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
     {
     DTMStatusInt status;
@@ -2022,7 +2072,7 @@ DTMStatusInt BcDTM::_CalculateCutFillVolume (BcDTMVolumeAreaResult& result, BcDT
     if (_dtmTransformHelper.IsValid ())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), (BC_DTM_OBJ*)otherDtm->GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), (BC_DTM_OBJ*)otherDtm->GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
         if (_dtmTransformHelper.IsValid ())
             {
@@ -2035,7 +2085,7 @@ DTMStatusInt BcDTM::_CalculateCutFillVolume (BcDTMVolumeAreaResult& result, BcDT
             }
         }
     else
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, nullptr, nullptr, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
     if (status != DTM_SUCCESS) return status;
 
@@ -2095,7 +2145,7 @@ errexit :
 |   rsc.12mar2009   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult& result, DtmVectorString* volumePolygonsP,
+DTMStatusInt BcDTM::CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult& result, DtmVectorString* volumePolygonsP,
     double elevation, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
     {
     DTMStatusInt status=DTM_SUCCESS ;
@@ -2108,7 +2158,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult
     if (_dtmTransformHelper.IsValid ())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (_GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
         if (status != DTM_SUCCESS)
             {
@@ -2123,7 +2173,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult
         }
     else
         {
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (_GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
         }
     result.totalArea = result.cutArea + result.fillArea;
 
@@ -2135,7 +2185,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult
 |    rsc.12mar2009   -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& result, DtmVectorString* volumePolygonsP,
+DTMStatusInt BcDTM::CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& result, DtmVectorString* volumePolygonsP,
                                                 BcDTMR otherDtmP, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
     {
     DTMStatusInt status = DTM_SUCCESS;
@@ -2149,7 +2199,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& 
     if (_dtmTransformHelper.IsValid ())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), (BC_DTM_OBJ*)otherDtm->GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), (BC_DTM_OBJ*)otherDtm->GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
         if (status != DTM_SUCCESS)
             {
@@ -2163,7 +2213,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& 
             }
         }
     else
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), rangeTableP, numRanges, (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
     result.totalArea = result.cutArea + result.fillArea;
 
     // Return
@@ -2175,7 +2225,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& 
 |    rsc.13mar2009   -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculatePrismoidalVolumeBalanceToSurface (double &fromAreaP, double &toAreaP, double &balanceP, DtmVectorString* volumePolygonsP,
+DTMStatusInt BcDTM::CalculatePrismoidalVolumeBalanceToSurface (double &fromAreaP, double &toAreaP, double &balanceP, DtmVectorString* volumePolygonsP,
                                                        BcDTMR otherDtmP, DPoint3dCP points, int nbPt)
     {
    DTMStatusInt status=DTM_SUCCESS;
@@ -2187,7 +2237,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeBalanceToSurface (double &fromArea
     // Call Core Dtm Function
     if (_dtmTransformHelper.IsValid ())
         {
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, &fromAreaP, &toAreaP, &balanceP);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, &fromAreaP, &toAreaP, &balanceP);
         if (status == DTM_SUCCESS)
             {
             fromAreaP = _dtmTransformHelper->convertAreaFromDTM (fromAreaP);
@@ -2197,7 +2247,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeBalanceToSurface (double &fromArea
             }
         }
     else
-        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, &fromAreaP, &toAreaP, &balanceP);
+        status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, &fromAreaP, &toAreaP, &balanceP);
 
     return status;
     }
@@ -2206,7 +2256,7 @@ DTMStatusInt BcDTM::_CalculatePrismoidalVolumeBalanceToSurface (double &fromArea
 |   rsc.13mar2009   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& result, long& numCellsUsedP, double& cellAreaP,
+DTMStatusInt BcDTM::CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& result, long& numCellsUsedP, double& cellAreaP,
                                             DtmVectorString* volumePolygonsP, long numLatticePoints, double elevation, DPoint3dCP points, int nbPt,
                                             VOLRANGETAB* rangeTableP, int numRanges)
     {
@@ -2220,7 +2270,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& resu
     if (_dtmTransformHelper.IsValid ())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToElevationDtmObject (_GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
+        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToElevationDtmObject (GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
         if (status != DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
@@ -2234,7 +2284,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& resu
             }
         }
     else
-        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToElevationDtmObject (_GetTinHandle (), numLatticePoints, rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
+        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToElevationDtmObject (GetTinHandle (), numLatticePoints, rangeTableP, numRanges, (DPoint3d*)points, nbPt, elevation, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
 
     result.totalArea = result.cutArea + result.fillArea;
     return  status;
@@ -2245,7 +2295,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& resu
 |   rsc.13mar2009   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result, long& numCellsUsedP, double& cellAreaP,
+DTMStatusInt BcDTM::CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result, long& numCellsUsedP, double& cellAreaP,
                                           DtmVectorString* volumePolygonsP, BcDTMR otherDtmP, long numLatticePoints, DPoint3dCP points, int nbPt,
                                           VOLRANGETAB* rangeTableP, int numRanges)
     {
@@ -2261,7 +2311,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result
     if (_dtmTransformHelper.IsValid ())
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
-        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
+        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
         if (status != DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
@@ -2275,7 +2325,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result
             }
         }
     else
-        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToSurfaceDtmObjects (_GetTinHandle (), otherDtm->GetTinHandle (), numLatticePoints, rangeTableP, numRanges, (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
+        status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), numLatticePoints, rangeTableP, numRanges, (DPoint3d*)points, nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
 
     result.totalArea = result.cutArea + result.fillArea;
 
@@ -2287,7 +2337,7 @@ DTMStatusInt BcDTM::_CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result
 |   djh.05mar2011   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateFeatureStatistics (DTMFeatureStatisticsInfo& info) const
+DTMStatusInt BcDTM::CalculateFeatureStatistics (DTMFeatureStatisticsInfo& info) const
     {
     DTMState dummyState;
     long dummy = 0;
@@ -2302,9 +2352,9 @@ DTMStatusInt BcDTM::_CalculateFeatureStatistics (DTMFeatureStatisticsInfo& info)
     long numHoles;
     long numGroupSpots;
     bool hasHull;
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getStatisticsDtmObject (_GetTinHandle (), dummyState, numPoints, numTinLines, numTriangles, dummy,
+    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getStatisticsDtmObject (GetTinHandle (), dummyState, numPoints, numTinLines, numTriangles, dummy,
         dummy, numDtmFeatures, numBreaks, numContourLines, numVoids, numIslands, numHoles, numGroupSpots, hasHull, dummy);
 
     info.numPoints = numPoints;
@@ -2328,13 +2378,13 @@ DTMStatusInt BcDTM::_CalculateFeatureStatistics (DTMFeatureStatisticsInfo& info)
 |   djh.05mar2011   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int BcDTM::_GetTrianglesCount () const
+int BcDTM::GetTrianglesCount () const
     {
     long    nbTriangles, nbTriangleEdges = 0;
 
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmList_countNonVoidTrianglesAndLinesDtmObject (_GetTinHandle (), &nbTriangles, &nbTriangleEdges);
+    DTMStatusInt status = (DTMStatusInt)bcdtmList_countNonVoidTrianglesAndLinesDtmObject (GetTinHandle (), &nbTriangles, &nbTriangleEdges);
     BeAssert (status == DTM_SUCCESS);
 
     return (int)nbTriangles;
@@ -2345,9 +2395,9 @@ int BcDTM::_GetTrianglesCount () const
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseSlopeIndicator (BcDTMR dtmP, double majorInterval, double minorInterval, void* userP, DTMBrowseSlopeIndicatorCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseSlopeIndicator (BcDTMR dtmP, double majorInterval, double minorInterval, void* userP, DTMBrowseSlopeIndicatorCallback callBackFunctP)
     {
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
     BrowseSlopeIndicatorCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     Dtm_Handler_t dtmHandlerArgs;
     dtmHandlerArgs.slopeIndicatorHandler = callBackFunctP;
@@ -2355,7 +2405,7 @@ DTMStatusInt BcDTM::_BrowseSlopeIndicator (BcDTMR dtmP, double majorInterval, do
 
     DTMStatusInt status;
     BcDTMPtr dtm = (TMTransformHelper::convertDTMToDTM (*this, dtmP));
-    status = (DTMStatusInt)bcdtmInterruptLoad_slopeLinesBetweenDtmObjects (_GetTinHandle (), dtm->GetTinHandle (), slopeIndicatorsCallBack, majorInterval, minorInterval, &dtmHandlerArgs);
+    status = (DTMStatusInt)bcdtmInterruptLoad_slopeLinesBetweenDtmObjects (GetTinHandle (), dtm->GetTinHandle (), slopeIndicatorsCallBack, majorInterval, minorInterval, &dtmHandlerArgs);
 
     return status;
     }
@@ -2365,10 +2415,10 @@ DTMStatusInt BcDTM::_BrowseSlopeIndicator (BcDTMR dtmP, double majorInterval, do
 |   rsc.3Mar2011  -  Created.                                           |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculateCatchments (bool refineOption, double falseLowDepth, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::CalculateCatchments (bool refineOption, double falseLowDepth, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
     // BeAssert If Tin handle Is nullptr
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     SetMemoryAccess (DTMAccessMode::Temporary);
 
@@ -2470,7 +2520,7 @@ int DTMFeatureBuffer::GetDtmDynamicFeaturesArray (DTMDynamicFeatureArray& dynami
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseDrainageFeatures (DTMFeatureType featureType, double* minLowPointP, const DTMFenceParams& fence, void *userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseDrainageFeatures (DTMFeatureType featureType, double* minLowPointP, const DTMFenceParams& fence, void *userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt status = DTM_SUCCESS;
     bool useFence = false;
@@ -2480,7 +2530,7 @@ DTMStatusInt BcDTM::_BrowseDrainageFeatures (DTMFeatureType featureType, double*
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
     // BeAssert If Tin handle Is nullptr
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     SetMemoryAccess (DTMAccessMode::Temporary);
 
@@ -2494,33 +2544,33 @@ DTMStatusInt BcDTM::_BrowseDrainageFeatures (DTMFeatureType featureType, double*
             case DTMFeatureType::LowPoint:
                 if (*minLowPointP == 0)
                     {
-                    status = (DTMStatusInt)bcdtmDrainage_returnLowPointsDtmObject (_GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
+                    status = (DTMStatusInt)bcdtmDrainage_returnLowPointsDtmObject (GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
                                                                      TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                     }
                 else
                     {
-                    status = (DTMStatusInt)bcdtmDrainage_returnNoneFalseLowPointsDtmObject (_GetTinHandle (), *minLowPointP, callBackFunctP, useFence, fence.fenceType, fenceOption,
+                    status = (DTMStatusInt)bcdtmDrainage_returnNoneFalseLowPointsDtmObject (GetTinHandle (), *minLowPointP, callBackFunctP, useFence, fence.fenceType, fenceOption,
                                                                               TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                     }
                 break;
 
             case  DTMFeatureType::HighPoint:
-                status = (DTMStatusInt)bcdtmDrainage_returnHighPointsDtmObject (_GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnHighPointsDtmObject (GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
                                                                   TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
 
             case DTMFeatureType::SumpLine:
-                status = (DTMStatusInt)bcdtmDrainage_returnSumpLinesDtmObject (_GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnSumpLinesDtmObject (GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
                                                                  TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
 
             case DTMFeatureType::RidgeLine:
-                status = (DTMStatusInt)bcdtmDrainage_returnRidgeLinesDtmObject (_GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnRidgeLinesDtmObject (GetTinHandle (), callBackFunctP, useFence, fence.fenceType, fenceOption,
                                                                   TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
 
             case DTMFeatureType::Catchment:
-                // ToDo Drainage status = (DTMStatusInt)bcdtmDrainage_determineCatchmentsDtmObject (_GetTinHandle (), callBackFunctP, *minLowPointP, useFence, fence.fenceType, fenceOption,  TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
+                // ToDo Drainage status = (DTMStatusInt)bcdtmDrainage_determineCatchmentsDtmObject (GetTinHandle (), callBackFunctP, *minLowPointP, useFence, fence.fenceType, fenceOption,  TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
         };
     return status;
@@ -2530,20 +2580,20 @@ DTMStatusInt BcDTM::_BrowseDrainageFeatures (DTMFeatureType featureType, double*
 |   rsc.26June2009  -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseTriangleMesh (long maxTriangles, const DTMFenceParams& fence, void* userP, DTMTriangleMeshCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseTriangleMesh (long maxTriangles, const DTMFenceParams& fence, void* userP, DTMTriangleMeshCallback callBackFunctP)
     {
     DTMStatusInt status = DTM_SUCCESS;
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
     TriangleMeshCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     callBackFunctP = helper.GetCallBackFunc ();
     userP = helper.GetUserArg ();
 
     // Call the core DTM function
     if (fence.fenceType != DTMFenceType::None)
-        status = (DTMStatusInt)bcdtmInterruptLoad_triangleMeshFromDtmObject (_GetTinHandle (), maxTriangles, callBackFunctP, true, fence.fenceType, fence.fenceOption, (DPoint3d *)fence.points, fence.numPoints, userP);
+        status = (DTMStatusInt)bcdtmInterruptLoad_triangleMeshFromDtmObject (GetTinHandle (), maxTriangles, callBackFunctP, true, fence.fenceType, fence.fenceOption, (DPoint3d *)fence.points, fence.numPoints, userP);
     else
-        status = (DTMStatusInt)bcdtmInterruptLoad_triangleMeshFromDtmObject (_GetTinHandle (), maxTriangles, callBackFunctP, false, DTMFenceType::None, DTMFenceOption::None, nullptr, 0, userP);
+        status = (DTMStatusInt)bcdtmInterruptLoad_triangleMeshFromDtmObject (GetTinHandle (), maxTriangles, callBackFunctP, false, DTMFenceType::None, DTMFenceOption::None, nullptr, 0, userP);
 
     return status;
     }
@@ -2553,9 +2603,9 @@ DTMStatusInt BcDTM::_BrowseTriangleMesh (long maxTriangles, const DTMFenceParams
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, long maxSpots, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseFeatures (DTMFeatureType featureType, long maxSpots, void* userP, DTMFeatureCallback callBackFunctP)
     {
-    return _BrowseFeatures (featureType, DTMFenceParams (), maxSpots, userP, callBackFunctP);
+    return BrowseFeatures (featureType, DTMFenceParams (), maxSpots, userP, callBackFunctP);
     }
 
 /*----------------------------------------------------------------------+
@@ -2563,7 +2613,7 @@ DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, long maxSpots, 
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, const DTMFenceParams& fence, long maxSpots, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseFeatures (DTMFeatureType featureType, const DTMFenceParams& fence, long maxSpots, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt status = DTM_ERROR;
 
@@ -2574,18 +2624,18 @@ DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, const DTMFenceP
     int numFeatures = 0;
     bool isFence = true;
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     switch (featureType)
         {
             case DTMFeatureType::SumpLine:
-                status = (DTMStatusInt)bcdtmDrainage_returnSumpLinesDtmObject (_GetTinHandle (), callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnSumpLinesDtmObject (GetTinHandle (), callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
                                                                  TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
 
             case DTMFeatureType::RidgeLine:
                 // ToDo : Drainage
-                status = (DTMStatusInt)bcdtmDrainage_returnRidgeLinesDtmObject (_GetTinHandle (), callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnRidgeLinesDtmObject (GetTinHandle (), callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
                                                                   TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP, numFeatures);
                 break;
 
@@ -2594,7 +2644,7 @@ DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, const DTMFenceP
                 break;
 
             default:
-                status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (_GetTinHandle (), featureType, maxSpots, callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
+                status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
                                                                          TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
                 break;
         }
@@ -2606,7 +2656,7 @@ DTMStatusInt BcDTM::_BrowseFeatures (DTMFeatureType featureType, const DTMFenceP
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseSinglePointFeatures (DTMFeatureType featureType, double* minDepthP, const DTMFenceParams& fence, long* nPointP, void* userP, DTMBrowseSinglePointFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseSinglePointFeatures (DTMFeatureType featureType, double* minDepthP, const DTMFenceParams& fence, long* nPointP, void* userP, DTMBrowseSinglePointFeatureCallback callBackFunctP)
     {
     DTMStatusInt status=DTM_SUCCESS;
     bool useFence = false;
@@ -2618,7 +2668,7 @@ DTMStatusInt BcDTM::_BrowseSinglePointFeatures (DTMFeatureType featureType, doub
     double transformedMinDepth;
 
     // BeAssert If Tin handle Is nullptr
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     // Check For And Set Fence
     if (fence.points)
@@ -2638,17 +2688,17 @@ DTMStatusInt BcDTM::_BrowseSinglePointFeatures (DTMFeatureType featureType, doub
             case DTMFeatureType::LowPoint:
                 if (*minDepthP <= 0.0)
                     {
-                    status = (DTMStatusInt)bcdtmDrainage_returnLowPointsDtmObject (_GetTinHandle (), loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
+                    status = (DTMStatusInt)bcdtmDrainage_returnLowPointsDtmObject (GetTinHandle (), loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
                                                                      TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, &dtmHandlerArgs, nPoints);
                     }
                 else
                     {
-                    status = (DTMStatusInt)bcdtmDrainage_returnNoneFalseLowPointsDtmObject (_GetTinHandle (), *minDepthP, loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
+                    status = (DTMStatusInt)bcdtmDrainage_returnNoneFalseLowPointsDtmObject (GetTinHandle (), *minDepthP, loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
                                                                               TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, &dtmHandlerArgs, nPoints);
                     }
                 break;
             case DTMFeatureType::HighPoint:
-                status = (DTMStatusInt)bcdtmDrainage_returnHighPointsDtmObject (_GetTinHandle (), loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
+                status = (DTMStatusInt)bcdtmDrainage_returnHighPointsDtmObject (GetTinHandle (), loadSinglePointFeatureCallBack, useFence, fence.fenceType, fence.fenceOption,
                                                                   TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, &dtmHandlerArgs, nPoints);
                 break;
         };
@@ -2663,9 +2713,9 @@ DTMStatusInt BcDTM::_BrowseSinglePointFeatures (DTMFeatureType featureType, doub
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseContours (DTMContourParamsCR contourParams, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseContours (DTMContourParamsCR contourParams, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     DTMStatusInt status = DTM_SUCCESS;
     double smoothLength = 0.0;
@@ -2685,10 +2735,10 @@ DTMStatusInt BcDTM::_BrowseContours (DTMContourParamsCR contourParams, const DTM
         transformedParams.conValuesP = contourValues;
 
 
-        status = (DTMStatusInt)bcdtmLoad_contoursFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), contourParams, _dtmTransformHelper->convertDTMFenceParamsToDTM (fence), callBackFunctP, userP);
+        status = (DTMStatusInt)bcdtmLoad_contoursFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), contourParams, _dtmTransformHelper->convertDTMFenceParamsToDTM (fence), callBackFunctP, userP);
         }
     else
-        status = (DTMStatusInt)bcdtmLoad_contoursFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), contourParams, fence, callBackFunctP, userP);
+        status = (DTMStatusInt)bcdtmLoad_contoursFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), contourParams, fence, callBackFunctP, userP);
     return status;
     }
 /*----------------------------------------------------------------------+
@@ -2696,10 +2746,10 @@ DTMStatusInt BcDTM::_BrowseContours (DTMContourParamsCR contourParams, const DTM
 |   rsc.06Jul2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ContourAtPoint (double x, double y, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity,
+DTMStatusInt BcDTM::ContourAtPoint (double x, double y, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity,
                             const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     DTMStatusInt status = DTM_SUCCESS;
 
@@ -2708,13 +2758,13 @@ DTMStatusInt BcDTM::_ContourAtPoint (double x, double y, double contourInterval,
         FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
         userP = helper.GetUserArg ();
         callBackFunctP = helper.GetCallBackFunc ();
-        status = (DTMStatusInt)bcdtmLoad_contourForPointDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), x, y, contourInterval,
+        status = (DTMStatusInt)bcdtmLoad_contourForPointDtmObject ((BC_DTM_OBJ *)GetTinHandle (), x, y, contourInterval,
                                                      smoothOption, _dtmTransformHelper->convertDistanceToDTM (smoothFactor), smoothDensity, callBackFunctP, fence.points != nullptr, fence.fenceOption, fence.fenceType,
                                                      _dtmTransformHelper->copyPointsToDTM (fence.points, fence.numPoints), fence.numPoints, userP);
         }
     else
         {
-        status = (DTMStatusInt)bcdtmLoad_contourForPointDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), x, y, contourInterval,
+        status = (DTMStatusInt)bcdtmLoad_contourForPointDtmObject ((BC_DTM_OBJ *)GetTinHandle (), x, y, contourInterval,
                                                      smoothOption, smoothFactor, smoothDensity, callBackFunctP,
                                                      fence.points != nullptr, fence.fenceOption, fence.fenceType, (DPoint3d*)fence.points, fence.numPoints, userP);
         }
@@ -2738,7 +2788,7 @@ int GetContourPointArray (DTMFeatureType featureType, DTMUserTag featureTag, DTM
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence)
     {
-    return _ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, fence, &ret, &GetContourPointArray);
+    return ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, fence, &ret, &GetContourPointArray);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -2746,7 +2796,7 @@ DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity)
     {
-    return _ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (), &ret, &GetContourPointArray);
+    return ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (), &ret, &GetContourPointArray);
     }
 
 /*----------------------------------------------------------------------+
@@ -2754,10 +2804,10 @@ DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPo
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetAscentTrace (double minDepth, double pX, double pY, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::GetAscentTrace (double minDepth, double pX, double pY, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt status=DTM_SUCCESS ;
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
     SetMemoryAccess(DTMAccessMode::Temporary);
     if (_dtmTransformHelper.IsValid ())
         {
@@ -2765,10 +2815,10 @@ DTMStatusInt BcDTM::_GetAscentTrace (double minDepth, double pX, double pY, void
         userP = helper.GetUserArg ();
         callBackFunctP = helper.GetCallBackFunc ();
         _dtmTransformHelper->convertPointToDTM (pX, pY);
-        status = (DTMStatusInt)bcdtmDrainage_traceMaximumAscentDtmObject (_GetTinHandle (), nullptr, callBackFunctP, 0.0, pX, pY, userP);
+        status = (DTMStatusInt)bcdtmDrainage_traceMaximumAscentDtmObject (GetTinHandle (), nullptr, callBackFunctP, 0.0, pX, pY, userP);
         }
     else
-        status = (DTMStatusInt)bcdtmDrainage_traceMaximumAscentDtmObject (_GetTinHandle (), nullptr, callBackFunctP, 0.0, pX, pY, userP);
+        status = (DTMStatusInt)bcdtmDrainage_traceMaximumAscentDtmObject (GetTinHandle (), nullptr, callBackFunctP, 0.0, pX, pY, userP);
 
     return status;
     }
@@ -2778,10 +2828,10 @@ DTMStatusInt BcDTM::_GetAscentTrace (double minDepth, double pX, double pY, void
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetDescentTrace (double minDepth, double pX, double pY, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::GetDescentTrace (double minDepth, double pX, double pY, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt status=DTM_SUCCESS ;
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
     SetMemoryAccess(DTMAccessMode::Temporary);
     if (_dtmTransformHelper.IsValid ())
         {
@@ -2789,10 +2839,10 @@ DTMStatusInt BcDTM::_GetDescentTrace (double minDepth, double pX, double pY, voi
         userP = helper.GetUserArg ();
         callBackFunctP = helper.GetCallBackFunc ();
         _dtmTransformHelper->convertPointToDTM (pX, pY);
-        status = (DTMStatusInt)bcdtmDrainage_traceMaximumDescentDtmObject (_GetTinHandle (), nullptr, callBackFunctP, _dtmTransformHelper->convertDistanceToDTM (minDepth), pX, pY, userP);
+        status = (DTMStatusInt)bcdtmDrainage_traceMaximumDescentDtmObject (GetTinHandle (), nullptr, callBackFunctP, _dtmTransformHelper->convertDistanceToDTM (minDepth), pX, pY, userP);
         }
     else
-        status = (DTMStatusInt)bcdtmDrainage_traceMaximumDescentDtmObject (_GetTinHandle (), nullptr, callBackFunctP, minDepth, pX, pY, userP);
+        status = (DTMStatusInt)bcdtmDrainage_traceMaximumDescentDtmObject (GetTinHandle (), nullptr, callBackFunctP, minDepth, pX, pY, userP);
     return status;
     }
 
@@ -2801,11 +2851,11 @@ DTMStatusInt BcDTM::_GetDescentTrace (double minDepth, double pX, double pY, voi
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_AnalyzeElevation (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::AnalyzeElevation (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt status = DTM_SUCCESS;
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
@@ -2814,10 +2864,10 @@ DTMStatusInt BcDTM::_AnalyzeElevation (DRange1d* tInterval, int nInterval, bool 
 
     // Call the core DTM theme function
     if (_dtmTransformHelper.IsNull ())
-        status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), polygonized, 1, tInterval, nInterval,
+        status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 1, tInterval, nInterval,
           callBackFunctP, fence.points != nullptr ? TRUE : FALSE, (DPoint3dP)fence.points, fence.numPoints, userP);
     else
-        status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), polygonized, 1, _dtmTransformHelper->copyBcDTMElevationRangeToDTM (tInterval, nInterval), nInterval,
+        status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 1, _dtmTransformHelper->copyBcDTMElevationRangeToDTM (tInterval, nInterval), nInterval,
         callBackFunctP, fence.points != nullptr ? TRUE : FALSE, _dtmTransformHelper->copyPointsToDTM (fence.points, fence.numPoints), fence.numPoints, userP);
     // Return
     return status;
@@ -2828,12 +2878,12 @@ DTMStatusInt BcDTM::_AnalyzeElevation (DRange1d* tInterval, int nInterval, bool 
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_AnalyzeSlope (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::AnalyzeSlope (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
    DTMStatusInt status=DTM_SUCCESS;
    DRange1d   *themeTable = tInterval;
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     if (_dtmTransformHelper.IsValid ())
         {
@@ -2853,7 +2903,7 @@ DTMStatusInt BcDTM::_AnalyzeSlope (DRange1d* tInterval, int nInterval, bool poly
     callBackFunctP = helper.GetCallBackFunc ();
 
     // Call the core DTM theme function
-    status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), polygonized, 2, themeTable, nInterval,
+    status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 2, themeTable, nInterval,
                                                 callBackFunctP, fence.points != nullptr ? TRUE : FALSE, TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
     if (_dtmTransformHelper.IsValid () && themeTable != nullptr)
         bcMem_free ((void*)themeTable);
@@ -2866,12 +2916,12 @@ DTMStatusInt BcDTM::_AnalyzeSlope (DRange1d* tInterval, int nInterval, bool poly
 |   cbe.11jan2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_AnalyzeAspect (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::AnalyzeAspect (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt  status=DTM_SUCCESS ;
     DRange1d   *themeTable = tInterval;
 
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 
     themeTable = (DRange1d *)bcMem_malloc (nInterval * sizeof (DRange1d));
     if (themeTable == nullptr)
@@ -2902,7 +2952,7 @@ DTMStatusInt BcDTM::_AnalyzeAspect (DRange1d* tInterval, int nInterval, bool pol
     callBackFunctP = helper.GetCallBackFunc ();
 
     // Call the core DTM theme function
-    status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), polygonized, 4, themeTable, nInterval,
+    status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 4, themeTable, nInterval,
                                                 callBackFunctP, fence.points != nullptr ? TRUE : FALSE, TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
 
     if( themeTable != nullptr ) bcMem_free ((void*)themeTable);
@@ -2916,7 +2966,7 @@ DTMStatusInt BcDTM::_AnalyzeAspect (DRange1d* tInterval, int nInterval, bool pol
 |   cbe.08feb2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TracePath (double pointX, double pointY, double slope, double dist, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::TracePath (double pointX, double pointY, double slope, double dist, void* userP, DTMFeatureCallback callBackFunctP)
     {
    DTMStatusInt status=DTM_SUCCESS;
     double        pointZ = 0;
@@ -2924,7 +2974,7 @@ DTMStatusInt BcDTM::_TracePath (double pointX, double pointY, double slope, doub
     double        startingAngle[4], triangleSlope = 0;
 
     // Check For nullptr DTM Pointer
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
@@ -2936,13 +2986,13 @@ DTMStatusInt BcDTM::_TracePath (double pointX, double pointY, double slope, doub
         slope = _dtmTransformHelper->convertSlopeToDTM (slope);
         dist = _dtmTransformHelper->convertDistanceToDTM (dist);
         }
-    status = (DTMStatusInt)bcdtmGrade_getGradeSlopeStartDirectionsDtmObject (_GetTinHandle (), pointX, pointY, slope, &pointZ, &tp1, &tp2, &tp3, &triangleSlope, startingAngle, &numbOfStartgAng);
+    status = (DTMStatusInt)bcdtmGrade_getGradeSlopeStartDirectionsDtmObject (GetTinHandle (), pointX, pointY, slope, &pointZ, &tp1, &tp2, &tp3, &triangleSlope, startingAngle, &numbOfStartgAng);
 
     if (status == DTM_SUCCESS)
         {
         for (int iSol = 0; iSol < numbOfStartgAng; iSol++)
             {
-            status = (DTMStatusInt)bcdtmGrade_traceGradeDtmObject (_GetTinHandle (), pointX, pointY, pointZ, callBackFunctP, tp1, tp2, tp3, slope, startingAngle[iSol], dist, userP);
+            status = (DTMStatusInt)bcdtmGrade_traceGradeDtmObject (GetTinHandle (), pointX, pointY, pointZ, callBackFunctP, tp1, tp2, tp3, slope, startingAngle[iSol], dist, userP);
             if (status != DTM_SUCCESS)
                 break;
             }
@@ -2956,26 +3006,23 @@ DTMStatusInt BcDTM::_TracePath (double pointX, double pointY, double slope, doub
 |   cbe.08feb2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TraceLine (double pointX, double pointY, double slope, double dist, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::TraceLine (double pointX, double pointY, double slope, double dist, void* userP, DTMFeatureCallback callBackFunctP)
     {
     long        numbOfStartgAng = 0;
     double      *anglesP = nullptr;
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
-    // ToDo remove dtmdllloadfunction
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_setDtmDllLoadFunction (callBackFunctP);
 
-    status = (DTMStatusInt)bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject (_GetTinHandle (), pointX, pointY,
+    DTMStatusInt status = (DTMStatusInt)bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject(GetTinHandle(), pointX, pointY,
         slope, dist, &anglesP, &numbOfStartgAng);
 
     for (int iSol = 0; iSol < numbOfStartgAng; iSol++)
         {
         }
 
-    bcdtmLoad_setDtmDllLoadFunction(nullptr);
 
     return status;
     }
@@ -2985,10 +3032,10 @@ DTMStatusInt BcDTM::_TraceLine (double pointX, double pointY, double slope, doub
 |   spu.26aug2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-void BcDTM::_GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP, int*  nFeatureArraysP, int*  featureArraysSize, int*  lastFeatureArraysSize, void*** pointArraysPP, int*  nPointArraysP, int*  pointArraysSize, int*  lastPointArraysSize, void*** nodeArraysPP, int*  nNodeArraysP, int*  nodeArraysSize, int*  lastNodeArraysSize, void*** cListArraysPP, int*  nCListArraysP, int*  cListArraysSize, int*  lastCListArraysSize, void*** fListArraysPP, int*  nFListArraysP, int*  fListArraysSize, int*  lastFListArraysSize)
+void BcDTM::GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP, int*  nFeatureArraysP, int*  featureArraysSize, int*  lastFeatureArraysSize, void*** pointArraysPP, int*  nPointArraysP, int*  pointArraysSize, int*  lastPointArraysSize, void*** nodeArraysPP, int*  nNodeArraysP, int*  nodeArraysSize, int*  lastNodeArraysSize, void*** cListArraysPP, int*  nCListArraysP, int*  cListArraysSize, int*  lastCListArraysSize, void*** fListArraysPP, int*  nFListArraysP, int*  fListArraysSize, int*  lastFListArraysSize)
     {
-    BC_DTM_OBJ* _dtmHandleP = _GetTinHandle ();
-    *headerPP = _GetTinHandle ();
+    BC_DTM_OBJ* _dtmHandleP = GetTinHandle ();
+    *headerPP = GetTinHandle ();
     *nHeaderP = BCDTMSize;
 
     *featureArraysPP = (void**)_dtmHandleP->fTablePP;
@@ -3009,8 +3056,8 @@ void BcDTM::_GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP
     *nPointArraysP = _dtmHandleP->numPointPartitions;
     if (_dtmHandleP->numPointPartitions)
         {
-        *pointArraysSize = _dtmHandleP->pointPartitionSize * sizeof (DTM_TIN_POINT);
-        *lastPointArraysSize = (_dtmHandleP->memPoints * sizeof(DTM_TIN_POINT))
+        *pointArraysSize = _dtmHandleP->pointPartitionSize * sizeof (DPoint3d);
+        *lastPointArraysSize = (_dtmHandleP->memPoints * sizeof(DPoint3d))
             - ((*nPointArraysP - 1) * (*pointArraysSize));
         }
     else
@@ -3067,79 +3114,19 @@ void BcDTM::_GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP
 |   spu.04sep2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTMMeshPtr BcDTM::_GetMesh (long firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
+BcDTMMeshPtr BcDTM::GetMesh (bool firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
     {
-    DPoint3dP meshPtsP = nullptr;
-    long numMeshPts = 0;
-    long* meshFacesP = nullptr;
-    long numMeshFaces = 0;
+    bvector<DPoint3d> meshPts;
+    bvector<long> meshFaces;
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject (_GetTinHandle (), firstCall, maxMeshSize, fencePts != nullptr, DTMFenceType::Block, DTMFenceOption::Overlap, (DPoint3d*)fencePts, numFencePts, (DPoint3d**)&meshPtsP, &numMeshPts, &meshFacesP, &numMeshFaces);
+    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject (GetTinHandle (), firstCall, maxMeshSize, fencePts != nullptr, DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, numFencePts, meshPts, meshFaces);
 
-    if (status == DTM_ERROR || numMeshFaces == 0)
-        {
-        if( meshPtsP   != nullptr ) bcMem_free ((void*)meshPtsP) ;
-        if( meshFacesP != nullptr ) bcMem_free ((void*)meshFacesP) ;
+    if (status == DTM_ERROR || meshFaces.empty())
         return nullptr;
-        }
 
     if (_dtmTransformHelper.IsValid ())
-        _dtmTransformHelper->convertPointsFromDTM (meshPtsP, numMeshPts);
-    return BcDTMMesh::Create (meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.04sep2005   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
-BcDTMEdgesPtr BcDTM::_GetEdges (DPoint3dCP fencePts, int numFencePts)
-    {
-    long *edgesP = nullptr;
-    long numEdges = 0;
-
-    DTM_TIN_POINT** tinPointsPP = nullptr;    // Pointer To The Tin Point Arrays - Do not Free
-
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinEdgesFromDtmObject (_GetTinHandle (), fencePts != nullptr, (DPoint3d*)fencePts, numFencePts, &numEdges, &edgesP, &tinPointsPP);
-
-    if (status == DTM_ERROR || numEdges == 0)
-        {
-        if( edgesP != nullptr ) bcMem_free ((void*)edgesP) ;
-        return nullptr ;
-        }
-
-    // Translation is handled in BcDTMEdges.
-    return BcDTMEdges::Create (this, edgesP, numEdges);
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.04sep2005   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
-void BcDTM::_GetMesh (DPoint3dCP fencePts, int numFencePts, DPoint3dP* pointsPP, long *numIndices, long** triangleIndexPP)
-    {
-    BeAssert (false && "Needs Work");
-    BC_DTM_OBJ *dtmHandleP = _GetTinHandle();
-    DTMFenceType   fenceType=DTMFenceType::Shape ;
-    DTM_TIN_POINT **tinPointsPP = nullptr ;
-
-    // Call DTMFeatureState::Tin function to get triangle index.
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinTrianglesFromDtmObject (dtmHandleP, fencePts != nullptr, fenceType, (DPoint3d*)fencePts, numFencePts, numIndices, triangleIndexPP, &tinPointsPP);
-
-    if( status == DTM_ERROR && *numIndices == 0 )
-        {
-        *numIndices = 0 ;
-        *pointsPP = nullptr ; // Temporary Until Fixed
-        if( *triangleIndexPP != nullptr ) bcMem_free ((void*)*triangleIndexPP) ;
-        }
-
-    // Directly reference the points into the DTMFeatureState::Tin.
-    else
-        {
-        *pointsPP = nullptr  ; // Temporary Until Fixed
-        //     *pointsPPP = (DPoint3d **) tinPointsPP ;
-        }
+        _dtmTransformHelper->convertPointsFromDTM (meshPts.data(), (int)meshPts.size());
+    return BcDTMMesh::Create (meshPts, meshFaces);
     }
 
 /*----------------------------------------------------------------------+
@@ -3148,10 +3135,10 @@ void BcDTM::_GetMesh (DPoint3dCP fencePts, int numFencePts, DPoint3dP* pointsPP,
 |   rsc.2008Apr03   -  Updated                                          |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Transform (TransformCR trsfMatP)
+DTMStatusInt BcDTM::Transform (TransformCR trsfMatP)
     {
     // This method gets new header and point array after a DTM transformation.
-    BC_DTM_OBJ* dtmHandleP = _GetTinHandle();
+    BC_DTM_OBJ* dtmHandleP = GetTinHandle();
     double dtmTransform[3][4] ;
 
     // ToDo Translatation???
@@ -3174,10 +3161,10 @@ DTMStatusInt BcDTM::_Transform (TransformCR trsfMatP)
 |   djh.2010Feb22   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TransformUsingCallback (DTMTransformPointsCallback callback, void* userP)
+DTMStatusInt BcDTM::TransformUsingCallback (DTMTransformPointsCallback callback, void* userP)
     {
     // This method gets new header and point array after a DTM transformation.
-    BC_DTM_OBJ *dtmHandleP = _GetTinHandle();
+    BC_DTM_OBJ *dtmHandleP = GetTinHandle();
 
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3198,7 +3185,7 @@ DTMStatusInt BcDTM::_TransformUsingCallback (DTMTransformPointsCallback callback
 |   rsc.2009Nov25   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ConvertUnits (double xyFactor, double zFactor)
+DTMStatusInt BcDTM::ConvertUnits (double xyFactor, double zFactor)
     {
     // Call Core DTM Function
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -3207,7 +3194,7 @@ DTMStatusInt BcDTM::_ConvertUnits (double xyFactor, double zFactor)
         return DTM_ERROR;
         }
 // ToDo Translatation probably only if there is rotation.
-    return((DTMStatusInt)bcdtmMath_convertUnitsDtmObject (_GetTinHandle (), xyFactor, zFactor));
+    return((DTMStatusInt)bcdtmMath_convertUnitsDtmObject (GetTinHandle (), xyFactor, zFactor));
     };
 
 /*----------------------------------------------------------------------+
@@ -3215,7 +3202,7 @@ DTMStatusInt BcDTM::_ConvertUnits (double xyFactor, double zFactor)
 |   cbe.07apr2006   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Triangulate()
+DTMStatusInt BcDTM::Triangulate()
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3225,7 +3212,7 @@ DTMStatusInt BcDTM::_Triangulate()
     // Set the autoCleanOptions
     SetCleanUpOptions (DTMCleanupFlags::All);
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_triangulateDtmObject (_GetTinHandle ());
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_triangulateDtmObject (GetTinHandle ());
     return status;
     }
 
@@ -3234,29 +3221,29 @@ DTMStatusInt BcDTM::_Triangulate()
 |   djh.18feb2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CheckTriangulation()
+DTMStatusInt BcDTM::CheckTriangulation()
     {
-    return((DTMStatusInt)bcdtmCheck_tinComponentDtmObject (_GetTinHandle ()));
+    return((DTMStatusInt)bcdtmCheck_tinComponentDtmObject (GetTinHandle ()));
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.05mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseFeaturesWithTinErrors (void* userP, DTMFeatureCallback callback)
+DTMStatusInt BcDTM::BrowseFeaturesWithTinErrors (void* userP, DTMFeatureCallback callback)
     {
     FeatureCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callback = helper.GetCallBackFunc ();
 
-    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesWithTinErrorsDtmObject (_GetTinHandle (), (DTMFeatureCallback)callback, userP);
+    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesWithTinErrorsDtmObject (GetTinHandle (), (DTMFeatureCallback)callback, userP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.05mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseFeaturesWithUserTag(DTMUserTag userTag, void* userP, DTMFeatureCallback callback)
+DTMStatusInt BcDTM::BrowseFeaturesWithUserTag(DTMUserTag userTag, void* userP, DTMFeatureCallback callback)
     {
     long maxSpots=50000 ;
     long useFence=FALSE ;
@@ -3268,14 +3255,14 @@ DTMStatusInt BcDTM::_BrowseFeaturesWithUserTag(DTMUserTag userTag, void* userP, 
     FeatureCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callback = helper.GetCallBackFunc ();
-    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesForUsertagDtmObject (_GetTinHandle (), (DTMUserTag)userTag, maxSpots, (DTMFeatureCallback)callback, useFence, fenceType, fenceOption, fencePts, numFencePts, userP);
+    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesForUsertagDtmObject (GetTinHandle (), (DTMUserTag)userTag, maxSpots, (DTMFeatureCallback)callback, useFence, fenceType, fenceOption, fencePts, numFencePts, userP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.05mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseFeaturesWithFeatureId(DTMFeatureId featureId, void* userP, DTMFeatureCallback callback)
+DTMStatusInt BcDTM::BrowseFeaturesWithFeatureId(DTMFeatureId featureId, void* userP, DTMFeatureCallback callback)
     {
     long maxSpots=50000 ;
     long useFence=FALSE ;
@@ -3286,21 +3273,21 @@ DTMStatusInt BcDTM::_BrowseFeaturesWithFeatureId(DTMFeatureId featureId, void* u
     FeatureCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callback = helper.GetCallBackFunc ();
-    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesForFeatureIdDtmObject (_GetTinHandle (), (DTMFeatureId)featureId, maxSpots, (DTMFeatureCallback)callback, useFence, fenceType, fenceOption, fencePts, numFencePts, userP);
+    return (DTMStatusInt)bcdtmInterruptLoad_dtmFeaturesForFeatureIdDtmObject (GetTinHandle (), (DTMFeatureId)featureId, maxSpots, (DTMFeatureCallback)callback, useFence, fenceType, fenceOption, fencePts, numFencePts, userP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   djh.13mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallback callback)
+DTMStatusInt BcDTM::BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallback callback)
     {
     DuplicatePointsCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     callback = helper.GetCallBackFunc ();
     userP = helper.GetUserArg ();
 
     SetMemoryAccess(DTMAccessMode::Temporary);
-    return (DTMStatusInt)bcdtmReport_duplicatePointErrorsDtmObject (_GetTinHandle (), callback, userP);
+    return (DTMStatusInt)bcdtmReport_duplicatePointErrorsDtmObject (GetTinHandle (), callback, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3308,14 +3295,14 @@ DTMStatusInt BcDTM::_BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallba
 |   djh.13mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseCrossingFeatures (DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback)
+DTMStatusInt BcDTM::BrowseCrossingFeatures (const DTMFeatureType featureList[], int numFeatureTypes, void* userP, DTMCrossingFeaturesCallback callback)
     {
     CrossingFeaturesCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     callback = helper.GetCallBackFunc ();
     userP = helper.GetUserArg ();
 
     SetMemoryAccess(DTMAccessMode::Temporary);
-    return (DTMStatusInt)bcdtmReport_crossingFeaturesDtmObject (_GetTinHandle (), featureList, numFeaturesList, callback, userP);
+    return (DTMStatusInt)bcdtmReport_crossingFeaturesDtmObject(GetTinHandle(), featureList, numFeatureTypes, callback, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3323,7 +3310,7 @@ DTMStatusInt BcDTM::_BrowseCrossingFeatures (DTMFeatureType* featureList, int nu
 |   djh.18feb2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SetTriangulationParameters (double pointTol, double lineTol, long edgeOption, double maxSide)
+DTMStatusInt BcDTM::SetTriangulationParameters (double pointTol, double lineTol, long edgeOption, double maxSide)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3337,7 +3324,7 @@ DTMStatusInt BcDTM::_SetTriangulationParameters (double pointTol, double lineTol
         lineTol = _dtmTransformHelper->convertDistanceToDTM (lineTol);
         maxSide = _dtmTransformHelper->convertDistanceToDTM (maxSide);
         }
-    return (DTMStatusInt)bcdtmObject_setTriangulationParametersDtmObject (_GetTinHandle (), pointTol, lineTol, edgeOption, maxSide);
+    return (DTMStatusInt)bcdtmObject_setTriangulationParametersDtmObject (GetTinHandle (), pointTol, lineTol, edgeOption, maxSide);
     }
 
 /*----------------------------------------------------------------------+
@@ -3345,9 +3332,9 @@ DTMStatusInt BcDTM::_SetTriangulationParameters (double pointTol, double lineTol
 |   djh.18feb2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetTriangulationParameters (double& pointTol, double& lineTol, long& edgeOption, double& maxSide)
+DTMStatusInt BcDTM::GetTriangulationParameters (double& pointTol, double& lineTol, long& edgeOption, double& maxSide)
     {
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getTriangulationParametersDtmObject (_GetTinHandle (), &pointTol, &lineTol, &edgeOption, &maxSide);
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getTriangulationParametersDtmObject (GetTinHandle (), &pointTol, &lineTol, &edgeOption, &maxSide);
 
     if (status == DTM_SUCCESS && _dtmTransformHelper.IsValid ())
         {
@@ -3363,12 +3350,12 @@ DTMStatusInt BcDTM::_GetTriangulationParameters (double& pointTol, double& lineT
 |   djh.25feb2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMState BcDTM::_GetDTMState()
+DTMState BcDTM::GetDTMState()
     {
     DTMState dtmState;
-// ToDo Vancouver may need two functions,   bcdtmUtility_getDtmStateDtmObject (_GetTinHandle(), &dtmState);
+// ToDo Vancouver may need two functions,   bcdtmUtility_getDtmStateDtmObject (GetTinHandle(), &dtmState);
 
-    dtmState = _GetTinHandle()->dtmState;
+    dtmState = GetTinHandle()->dtmState;
     return dtmState;
     }
 
@@ -3377,7 +3364,7 @@ DTMState BcDTM::_GetDTMState()
 |   djh.18mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TinFilterPoints (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
+DTMStatusInt BcDTM::TinFilterPoints (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3386,7 +3373,7 @@ DTMStatusInt BcDTM::_TinFilterPoints (long filterOption, int reinsertOption, dou
         }
     if (_dtmTransformHelper.IsValid ())
         zTolerance = _dtmTransformHelper->convertDistanceToDTM (zTolerance);
-    return (DTMStatusInt)bcdtmFilter_tinFilterRandomSpotsDtmObject (_GetTinHandle (), filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
+    return (DTMStatusInt)bcdtmFilter_tinFilterRandomSpotsDtmObject (GetTinHandle (), filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
     }
 
 /*----------------------------------------------------------------------+
@@ -3394,7 +3381,7 @@ DTMStatusInt BcDTM::_TinFilterPoints (long filterOption, int reinsertOption, dou
 |   djh.19mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TileFilterPoints (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter,
+DTMStatusInt BcDTM::TileFilterPoints (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter,
                                    double* filterReduction)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -3405,14 +3392,14 @@ DTMStatusInt BcDTM::_TileFilterPoints (long minTilePts, long maxTileDivide, doub
 
     if (_dtmTransformHelper.IsValid ())
         zTolerance = _dtmTransformHelper->convertDistanceToDTM (zTolerance);
-    return (DTMStatusInt)bcdtmFilter_tileFilterRandomSpotsDtmObject (_GetTinHandle (), minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
+    return (DTMStatusInt)bcdtmFilter_tileFilterRandomSpotsDtmObject (GetTinHandle (), minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.28mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TinFilterSinglePointPointFeatures (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter,
+DTMStatusInt BcDTM::TinFilterSinglePointPointFeatures (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter,
                                             double* filterReduction)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -3422,7 +3409,7 @@ DTMStatusInt BcDTM::_TinFilterSinglePointPointFeatures (long filterOption, int r
         }
     if (_dtmTransformHelper.IsValid ())
         zTolerance = _dtmTransformHelper->convertDistanceToDTM (zTolerance);
-    return (DTMStatusInt)bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject (_GetTinHandle (), filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
+    return (DTMStatusInt)bcdtmFilter_tinFilterSinglePointGroupSpotsDtmObject (GetTinHandle (), filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
     }
 
 /*----------------------------------------------------------------------+
@@ -3430,7 +3417,7 @@ DTMStatusInt BcDTM::_TinFilterSinglePointPointFeatures (long filterOption, int r
 |   rsc.28mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TileFilterSinglePointPointFeatures (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore,
+DTMStatusInt BcDTM::TileFilterSinglePointPointFeatures (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore,
                                              long* numPointsAfter, double* filterReduction)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -3440,7 +3427,7 @@ DTMStatusInt BcDTM::_TileFilterSinglePointPointFeatures (long minTilePts, long m
         }
     if (_dtmTransformHelper.IsValid ())
         zTolerance = _dtmTransformHelper->convertDistanceToDTM (zTolerance);
-    return (DTMStatusInt)bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject (_GetTinHandle (), minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
+    return (DTMStatusInt)bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject (GetTinHandle (), minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
     }
 
 /*----------------------------------------------------------------------+
@@ -3448,13 +3435,13 @@ DTMStatusInt BcDTM::_TileFilterSinglePointPointFeatures (long minTilePts, long m
 |   djh.12apr2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP)
+DTMStatusInt BcDTM::EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, bool& featureFoundP, bvector<DPoint3d>& featurePts)
     {
     if (_dtmTransformHelper.IsValid())
         _dtmTransformHelper->convertPointToDTM (pt);
-    DTMStatusInt status = (DTMStatusInt)bcdtmEdit_selectDtmEditFeatureDtmObject (_GetTinHandle (), dtmFeatureType, pt.x, pt.y, featureFoundP, (DPoint3d**)featurePtsPP, numFeaturePtsP);
-    if (status == DTM_SUCCESS && _dtmTransformHelper.IsValid() && featurePtsPP && *featurePtsPP)
-        _dtmTransformHelper->convertPointsFromDTM (*featurePtsPP, *numFeaturePtsP);
+    DTMStatusInt status = (DTMStatusInt)bcdtmEdit_selectDtmEditFeatureDtmObject (GetTinHandle (), dtmFeatureType, pt.x, pt.y, featureFoundP, featurePts);
+    if (status == DTM_SUCCESS && _dtmTransformHelper.IsValid() && featurePts.empty())
+        _dtmTransformHelper->convertPointsFromDTM (featurePts);
     return status;
     }
 /*----------------------------------------------------------------------+
@@ -3462,14 +3449,14 @@ DTMStatusInt BcDTM::_EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DP
 |   djh.12apr2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_EditorDeleteDtmTinFeature (long* result)
+DTMStatusInt BcDTM::EditorDeleteDtmTinFeature (long* result)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message(1,0,0, "DTM is readonly");
         return DTM_ERROR;
         }
-    return (DTMStatusInt)bcdtmEdit_modifyDtmEditFeatureDtmObject (_GetTinHandle (), 1, result);
+    return (DTMStatusInt)bcdtmEdit_modifyDtmEditFeatureDtmObject (GetTinHandle (), 1, result);
     }
 
 /*----------------------------------------------------------------------+
@@ -3477,12 +3464,12 @@ DTMStatusInt BcDTM::_EditorDeleteDtmTinFeature (long* result)
 |   djh.09may2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetMemoryUsed (size_t& memoryUsed)
+DTMStatusInt BcDTM::GetMemoryUsed (size_t& memoryUsed)
     {
     unsigned long a1,a2,a4,a5,a6,a7,total = 0;
     try
         {
-        bcdtmObject_reportMemoryUsageDtmObject(_GetTinHandle(), &a1, &a2, nullptr, &a4, &a5 ,&a6, &a7, &total);
+        bcdtmObject_reportMemoryUsageDtmObject(GetTinHandle(), &a1, &a2, nullptr, &a4, &a5 ,&a6, &a7, &total);
         }
     catch(...)
         {
@@ -3496,7 +3483,7 @@ DTMStatusInt BcDTM::_GetMemoryUsed (size_t& memoryUsed)
 |   djh.8jun2008    -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_PurgeDTM (unsigned int flags)
+DTMStatusInt BcDTM::PurgeDTM (unsigned int flags)
     {
     DTMStatusInt ret = DTM_SUCCESS;
 
@@ -3506,16 +3493,16 @@ DTMStatusInt BcDTM::_PurgeDTM (unsigned int flags)
         return DTM_ERROR;
         }
     if ((flags & 4) == 4)
-        bcdtmData_deleteAllRollBackFeaturesDtmObject (_GetTinHandle ());
+        bcdtmData_deleteAllRollBackFeaturesDtmObject (GetTinHandle ());
     if (ret != SUCCESS) return ret;
 
     if ((flags & 2) == 2)
-        bcdtmData_deleteAllTinErrorFeaturesDtmObject(_GetTinHandle());
+        bcdtmData_deleteAllTinErrorFeaturesDtmObject(GetTinHandle());
 
     if(ret != SUCCESS) return ret;
 
     if((flags & 1) == 1)
-        ret = (DTMStatusInt)bcdtmData_compactFeatureTableDtmObject (_GetTinHandle ());
+        ret = (DTMStatusInt)bcdtmData_compactFeatureTableDtmObject (GetTinHandle ());
 
     return ret;
     }
@@ -3525,9 +3512,9 @@ DTMStatusInt BcDTM::_PurgeDTM (unsigned int flags)
 |   djh.8jun2008    -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_GetPoint (long index, DPoint3d& pt)
+DTMStatusInt BcDTM::GetPoint (long index, DPoint3d& pt)
     {
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getPointByIndexDtmObject (_GetTinHandle (), index, (DTM_TIN_POINT*)&pt);
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getPointByIndexDtmObject (GetTinHandle (), index, (DPoint3d*)&pt);
     if (status && _dtmTransformHelper.IsValid())
         _dtmTransformHelper->convertPointFromDTM (pt);
     return status;
@@ -3537,10 +3524,10 @@ DTMStatusInt BcDTM::_GetPoint (long index, DPoint3d& pt)
 |   rsc.18may2009    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CopyToMemoryBlock (char** memoryBlockPP,unsigned long *memoryBlockSizeP)
+DTMStatusInt BcDTM::CopyToMemoryBlock (char** memoryBlockPP,unsigned long *memoryBlockSizeP)
     {
     // ToDo Translatation
-    return (DTMStatusInt)bcdtmObject_copyToMemoryBlockDtmObject (_GetTinHandle (), memoryBlockPP, memoryBlockSizeP);
+    return (DTMStatusInt)bcdtmObject_copyToMemoryBlockDtmObject (GetTinHandle (), memoryBlockPP, memoryBlockSizeP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3548,7 +3535,7 @@ DTMStatusInt BcDTM::_CopyToMemoryBlock (char** memoryBlockPP,unsigned long *memo
 |   rsc.05Aug2009    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_Clip (DPoint3dCP clipPolygonPtsP, int numClipPolygonPts, DTMClipOption clippingMethod)
+DTMStatusInt BcDTM::Clip (DPoint3dCP clipPolygonPtsP, int numClipPolygonPts, DTMClipOption clippingMethod)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3561,14 +3548,14 @@ DTMStatusInt BcDTM::_Clip (DPoint3dCP clipPolygonPtsP, int numClipPolygonPts, DT
     if (numClipPolygonPts < 3   )   return DTM_ERROR;
 
     // Clip the DTM
-    return (DTMStatusInt)bcdtmClip_toPolygonDtmObject (_GetTinHandle (), TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), clipPolygonPtsP, numClipPolygonPts), numClipPolygonPts, clippingMethod);
+    return (DTMStatusInt)bcdtmClip_toPolygonDtmObject (GetTinHandle (), TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), clipPolygonPtsP, numClipPolygonPts), numClipPolygonPts, clippingMethod);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.05Aug2009    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ConvertToDataState(void)
+DTMStatusInt BcDTM::ConvertToDataState(void)
     {
     // Convert To Data Sate
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -3576,7 +3563,7 @@ DTMStatusInt BcDTM::_ConvertToDataState(void)
         bcdtmWrite_message(1,0,0, "DTM is readonly");
         return DTM_ERROR;
         }
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_changeStateDtmObject (_GetTinHandle (), DTMState::Data);
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_changeStateDtmObject (GetTinHandle (), DTMState::Data);
     if( status ) return DTM_ERROR ;
     else         return DTM_SUCCESS;
     }
@@ -3585,7 +3572,7 @@ DTMStatusInt BcDTM::_ConvertToDataState(void)
 |   rsc.05Aug2009    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_SetPointMemoryAllocationParameters (int iniPointAllocation, int incPointAllocation)
+DTMStatusInt BcDTM::SetPointMemoryAllocationParameters (int iniPointAllocation, int incPointAllocation)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3595,7 +3582,7 @@ DTMStatusInt BcDTM::_SetPointMemoryAllocationParameters (int iniPointAllocation,
     if( iniPointAllocation < 0 ) iniPointAllocation = DTM_INI_MEM_PTS ;
     if( incPointAllocation < 0 ) incPointAllocation = DTM_INC_MEM_PTS ;
     // Convert To Data Sate
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_setPointMemoryAllocationParametersDtmObject (_GetTinHandle (), iniPointAllocation, incPointAllocation);
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_setPointMemoryAllocationParametersDtmObject (GetTinHandle (), iniPointAllocation, incPointAllocation);
     if( status ) return DTM_ERROR ;
     else         return DTM_SUCCESS;
     }
@@ -3604,12 +3591,12 @@ DTMStatusInt BcDTM::_SetPointMemoryAllocationParameters (int iniPointAllocation,
 |   rsc.19Jan2010    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_InterpolateDtmFeatureType (DTMFeatureType dtmFeatureType, double snapTolerance, BcDTMR pointsDtmP, BcDTMR intDtmP, long* numDtmFeaturesP, long* numDtmFeaturesInterpolatedP )
+DTMStatusInt BcDTM::InterpolateDtmFeatureType (DTMFeatureType dtmFeatureType, double snapTolerance, BcDTMR pointsDtmP, BcDTMR intDtmP, long* numDtmFeaturesP, long* numDtmFeaturesInterpolatedP )
     {
     // Interpolate Dtm Feature Type
     BcDTMPtr pointsDtm = TMTransformHelper::convertDTMToDTM (*this, pointsDtmP);
     BcDTMPtr intDtm = TMTransformHelper::convertDTMToDTM (*this, intDtmP);
-    return (DTMStatusInt)bcdtmInterpolate_dtmFeatureTypeDtmObject (_GetTinHandle (), dtmFeatureType, snapTolerance, pointsDtm->GetTinHandle (), intDtm->GetTinHandle (), numDtmFeaturesP, numDtmFeaturesInterpolatedP);
+    return (DTMStatusInt)bcdtmInterpolate_dtmFeatureTypeDtmObject (GetTinHandle (), dtmFeatureType, snapTolerance, pointsDtm->GetTinHandle (), intDtm->GetTinHandle (), numDtmFeaturesP, numDtmFeaturesInterpolatedP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3617,7 +3604,7 @@ DTMStatusInt BcDTM::_InterpolateDtmFeatureType (DTMFeatureType dtmFeatureType, d
 |   rsc.24Jan2011    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowsePonds (void* userP, DTMFeatureCallback callBack)
+DTMStatusInt BcDTM::BrowsePonds (void* userP, DTMFeatureCallback callBack)
     {
     // ToDo : Drainage
     bool loadFlag=true ;
@@ -3630,24 +3617,24 @@ DTMStatusInt BcDTM::_BrowsePonds (void* userP, DTMFeatureCallback callBack)
     userP = helper.GetUserArg ();
     callBack = helper.GetCallBackFunc ();
 
-    return (DTMStatusInt)bcdtmDrainage_determinePondsDtmObject(_GetTinHandle(),nullptr, (DTMFeatureCallback)callBack, loadFlag ,buildTable, userP);
+    return (DTMStatusInt)bcdtmDrainage_determinePondsDtmObject(GetTinHandle(),nullptr, (DTMFeatureCallback)callBack, loadFlag ,buildTable, userP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.12Mar2010    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculatePond (double x , double y , bool& pondCalculatedP, double& pondElevationP, double& pondDepthP, double& pondAreaP,
+DTMStatusInt BcDTM::CalculatePond (double x , double y , bool& pondCalculatedP, double& pondElevationP, double& pondDepthP, double& pondAreaP,
                            double& pondVolumeP, DTMDynamicFeatureArray& ponds)
     {
-    return _CalculatePond (x, y, 0, pondCalculatedP, pondElevationP, pondDepthP, pondAreaP, pondVolumeP, ponds);
+    return CalculatePond (x, y, 0, pondCalculatedP, pondElevationP, pondDepthP, pondAreaP, pondVolumeP, ponds);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.12Mar2010    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CalculatePond (double x, double y, double falseLowDepth, bool& pondCalculatedP, double& pondElevationP, double& pondDepthP,
+DTMStatusInt BcDTM::CalculatePond (double x, double y, double falseLowDepth, bool& pondCalculatedP, double& pondElevationP, double& pondDepthP,
                            double& pondAreaP, double& pondVolumeP, DTMDynamicFeatureArray& ponds)
     {
     //  Call Core DTM Function
@@ -3675,7 +3662,7 @@ DTMStatusInt BcDTM::_CalculatePond (double x, double y, double falseLowDepth, bo
 |   rsc.16Mar2010    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_TraceCatchmentForPoint (double x, double y, double maxPondDepth, bool& catchmentDetermined, DPoint3d& sumpPoint, bvector<DPoint3d>& catchmentPts)
+DTMStatusInt BcDTM::TraceCatchmentForPoint (double x, double y, double maxPondDepth, bool& catchmentDetermined, DPoint3d& sumpPoint, bvector<DPoint3d>& catchmentPts)
     {
     SetMemoryAccess (DTMAccessMode::Temporary);
     if (_dtmTransformHelper.IsValid ())
@@ -3704,21 +3691,21 @@ DTMStatusInt BcDTM::_TraceCatchmentForPoint (double x, double y, double maxPondD
 |   rsc.12Mar2010    -  Created.                                        |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_RemoveNoneFeatureHullLines()
+DTMStatusInt BcDTM::RemoveNoneFeatureHullLines()
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message(1,0,0, "DTM is readonly");
         return DTM_ERROR;
         }
-    return (DTMStatusInt)bcdtmList_removeNoneFeatureHullLinesDtmObject (_GetTinHandle ());
+    return (DTMStatusInt)bcdtmList_removeNoneFeatureHullLinesDtmObject (GetTinHandle ());
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.17Mar2010    -  Created                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
+DTMStatusInt BcDTM::PointVisibility (bool& pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
     {
     DTMStatusInt status = DTM_SUCCESS;
     long isVisible = 0;
@@ -3729,9 +3716,9 @@ DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double e
         _dtmTransformHelper->convertPointToDTM (pntX, pntY, pntZ);
         }
     //   Call Core DTM Function
-    status = (DTMStatusInt)bcdtmVisibility_determinePointVisibilityDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, pntX, pntY, pntZ, &isVisible);
+    status = (DTMStatusInt)bcdtmVisibility_determinePointVisibilityDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, pntX, pntY, pntZ, &isVisible);
 
-    *pointVisibleP = isVisible != 0;
+    pointVisibleP = isVisible != 0;
     return status;
     }
 
@@ -3740,7 +3727,7 @@ DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double e
 |   rsc.17Mar2010    -  Created                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_LineVisibility (long* lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1,
+DTMStatusInt BcDTM::LineVisibility (bool& lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1,
                             double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures)
     {
     DTMStatusInt status = DTM_SUCCESS;
@@ -3754,7 +3741,9 @@ DTMStatusInt BcDTM::_LineVisibility (long* lineVisibleP, double eyeX, double eye
         }
 
     //   Call Core DTM Function
-    status = (DTMStatusInt)bcdtmVisibility_determineLineVisibiltyDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, X1, Y1, Z1, X2, Y2, Z2, lineVisibleP, AddDtmFeatureToBuffer, &buffer);
+    long lineVisible = false;
+    status = (DTMStatusInt)bcdtmVisibility_determineLineVisibiltyDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, X1, Y1, Z1, X2, Y2, Z2, &lineVisible, AddDtmFeatureToBuffer, &buffer);
+    lineVisibleP = lineVisible != false;
 
     if (status == DTM_SUCCESS)
         {
@@ -3770,18 +3759,18 @@ DTMStatusInt BcDTM::_LineVisibility (long* lineVisibleP, double eyeX, double eye
 |   rsc.18mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseTinPointsVisibility (double eyeX, double eyeY, double eyeZ, void* userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseTinPointsVisibility (double eyeX, double eyeY, double eyeZ, void* userP, DTMFeatureCallback callBackFunctP)
     {
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     if (_dtmTransformHelper.IsValid ())
         _dtmTransformHelper->convertPointToDTM (eyeX, eyeY, eyeZ);
     // Call the core DTM function
-    return (DTMStatusInt)bcdtmVisibility_determineVisibilityTinPointsDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
+    return (DTMStatusInt)bcdtmVisibility_determineVisibilityTinPointsDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3789,9 +3778,9 @@ DTMStatusInt BcDTM::_BrowseTinPointsVisibility (double eyeX, double eyeY, double
 |   rsc.18mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseTinLinesVisibility (double eyeX, double eyeY, double eyeZ, void*userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseTinLinesVisibility (double eyeX, double eyeY, double eyeZ, void*userP, DTMFeatureCallback callBackFunctP)
     {
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
@@ -3799,7 +3788,7 @@ DTMStatusInt BcDTM::_BrowseTinLinesVisibility (double eyeX, double eyeY, double 
     // Call the core DTM function
     if (_dtmTransformHelper.IsValid ())
         _dtmTransformHelper->convertPointToDTM (eyeX, eyeY, eyeZ);
-    return (DTMStatusInt)bcdtmVisibility_determineVisibilityTinLinesDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
+    return (DTMStatusInt)bcdtmVisibility_determineVisibilityTinLinesDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3807,18 +3796,18 @@ DTMStatusInt BcDTM::_BrowseTinLinesVisibility (double eyeX, double eyeY, double 
 |   rsc.18mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseRadialViewSheds(double eyeX, double eyeY, double eyeZ, long viewShedOption, long numberRadials, double radialIncrement, void *userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseRadialViewSheds(double eyeX, double eyeY, double eyeZ, long viewShedOption, long numberRadials, double radialIncrement, void *userP, DTMFeatureCallback callBackFunctP)
     {
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     // Call the core DTM function
     if (_dtmTransformHelper.IsValid ())
         _dtmTransformHelper->convertPointToDTM (eyeX, eyeY, eyeZ);
 
-    return (DTMStatusInt)bcdtmVisibility_determineRadialViewShedsDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, viewShedOption, numberRadials, radialIncrement, callBackFunctP, userP);
+    return (DTMStatusInt)bcdtmVisibility_determineRadialViewShedsDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, viewShedOption, numberRadials, radialIncrement, callBackFunctP, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3826,19 +3815,19 @@ DTMStatusInt BcDTM::_BrowseRadialViewSheds(double eyeX, double eyeY, double eyeZ
 |   rsc.22mar2010   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseRegionViewSheds (double eyeX, double eyeY, double eyeZ, void *userP, DTMFeatureCallback callBackFunctP)
+DTMStatusInt BcDTM::BrowseRegionViewSheds (double eyeX, double eyeY, double eyeZ, void *userP, DTMFeatureCallback callBackFunctP)
     {
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     // Call the core DTM function
     if (_dtmTransformHelper.IsValid ())
         _dtmTransformHelper->convertPointToDTM (eyeX, eyeY, eyeZ);
 
-    return (DTMStatusInt)bcdtmVisibility_determineRegionViewShedsDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
+    return (DTMStatusInt)bcdtmVisibility_determineRegionViewShedsDtmObject (GetTinHandle (), eyeX, eyeY, eyeZ, callBackFunctP, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3847,7 +3836,7 @@ DTMStatusInt BcDTM::_BrowseRegionViewSheds (double eyeX, double eyeY, double eye
 |                                                                       |
 +----------------------------------------------------------------------*/
 // ToDo Should this function be in here?
-DTMStatusInt BcDTM::_ClipToTinHull (DTMClipOption clipOption, DPoint3dCP featurePtsP, int numFeaturePts, bvector<DtmString>& clipSections)
+DTMStatusInt BcDTM::ClipToTinHull (DTMClipOption clipOption, DPoint3dCP featurePtsP, int numFeaturePts, bvector<DtmString>& clipSections)
     {
     DTMStatusInt status = DTM_SUCCESS;
     long     n, numClipArrays = 0, clipResult = 0;
@@ -3860,14 +3849,14 @@ DTMStatusInt BcDTM::_ClipToTinHull (DTMClipOption clipOption, DPoint3dCP feature
         return DTM_ERROR;
         }
 
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
     // Call the core DTM function
 
     if (_dtmTransformHelper.IsValid ())
-        status = (DTMStatusInt)bcdtmClip_featurePointArrayToTinHullDtmObject (_GetTinHandle (), (DTMFenceOption)clipOption, (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (featurePtsP, numFeaturePts), numFeaturePts, &clipResult, &clipArraysPP, &numClipArrays);
+        status = (DTMStatusInt)bcdtmClip_featurePointArrayToTinHullDtmObject (GetTinHandle (), (DTMFenceOption)clipOption, (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (featurePtsP, numFeaturePts), numFeaturePts, &clipResult, &clipArraysPP, &numClipArrays);
     else
-        status = (DTMStatusInt)bcdtmClip_featurePointArrayToTinHullDtmObject (_GetTinHandle (), (DTMFenceOption)clipOption, (DPoint3d *)featurePtsP, numFeaturePts, &clipResult, &clipArraysPP, &numClipArrays);
+        status = (DTMStatusInt)bcdtmClip_featurePointArrayToTinHullDtmObject (GetTinHandle (), (DTMFenceOption)clipOption, (DPoint3d *)featurePtsP, numFeaturePts, &clipResult, &clipArraysPP, &numClipArrays);
     if (status == DTM_SUCCESS)
         {
         if (clipResult == 1) // Feature Was Not Clipped - Copy Entire Feature
@@ -3898,7 +3887,7 @@ DTMStatusInt BcDTM::_ClipToTinHull (DTMClipOption clipOption, DPoint3dCP feature
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Rob.Cormack  01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_ReplaceFeaturePoints(DTMFeatureId dtmFeatureId, DPoint3d *pointsP , int numPoints)
+DTMStatusInt BcDTM::ReplaceFeaturePoints(DTMFeatureId dtmFeatureId, DPoint3d *pointsP , int numPoints)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -3906,23 +3895,23 @@ DTMStatusInt BcDTM::_ReplaceFeaturePoints(DTMFeatureId dtmFeatureId, DPoint3d *p
         return DTM_ERROR;
         }
     if (_dtmTransformHelper.IsValid())
-        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsDtmObject (_GetTinHandle (), (DTMFeatureId)dtmFeatureId, (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (pointsP, (long)numPoints), (long)numPoints);
+        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsDtmObject (GetTinHandle (), (DTMFeatureId)dtmFeatureId, (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (pointsP, (long)numPoints), (long)numPoints);
     else
-        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsDtmObject (_GetTinHandle (), (DTMFeatureId)dtmFeatureId, (DPoint3d *)pointsP, (long)numPoints);
+        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsDtmObject (GetTinHandle (), (DTMFeatureId)dtmFeatureId, (DPoint3d *)pointsP, (long)numPoints);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   rsc.29Aug2011   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BulkDeleteFeaturesByUserTag (DTMUserTag* userTagP, int numUserTag)
+DTMStatusInt BcDTM::BulkDeleteFeaturesByUserTag (DTMUserTag* userTagP, int numUserTag)
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message (1, 0, 0, "DTM is readonly");
         return DTM_ERROR;
         }
-    DTMStatusInt status = (DTMStatusInt)bcdtmData_bulkUserTagDeleteDtmFeaturesDtmObject (_GetTinHandle (), (DTMUserTag *)userTagP, (long)numUserTag);
+    DTMStatusInt status = (DTMStatusInt)bcdtmData_bulkUserTagDeleteDtmFeaturesDtmObject (GetTinHandle (), (DTMUserTag *)userTagP, (long)numUserTag);
     return status;
     }
 /*----------------------------------------------------------------------+
@@ -3931,55 +3920,55 @@ DTMStatusInt BcDTM::_BulkDeleteFeaturesByUserTag (DTMUserTag* userTagP, int numU
 |                                                                       |
 +----------------------------------------------------------------------*/
 
-DTMStatusInt BcDTM::_BulkDeleteFeaturesByFeatureId (DTMFeatureId* featureIdP, int numFeatureId)
+DTMStatusInt BcDTM::BulkDeleteFeaturesByFeatureId (DTMFeatureId* featureIdP, int numFeatureId)
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message (1, 0, 0, "DTM is readonly");
         return DTM_ERROR;
         }
-    DTMStatusInt status = (DTMStatusInt)bcdtmData_bulkFeatureIdDeleteDtmFeaturesDtmObject (_GetTinHandle (), (DTMFeatureId *)featureIdP, (long)numFeatureId);
+    DTMStatusInt status = (DTMStatusInt)bcdtmData_bulkFeatureIdDeleteDtmFeaturesDtmObject (GetTinHandle (), (DTMFeatureId *)featureIdP, (long)numFeatureId);
     return status;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Rob.Cormack  01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_SetCleanUpOptions (DTMCleanupFlags options)
+DTMStatusInt BcDTM::SetCleanUpOptions (DTMCleanupFlags options)
     {
-    return (DTMStatusInt)bcdtmObject_setApiCleanUpDtmObject (_GetTinHandle (), options);
+    return (DTMStatusInt)bcdtmObject_setApiCleanUpDtmObject (GetTinHandle (), options);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Rob.Cormack  01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetCleanUpOptions (DTMCleanupFlags& options)
+DTMStatusInt BcDTM::GetCleanUpOptions (DTMCleanupFlags& options)
     {
-    return (DTMStatusInt)bcdtmObject_getApiCleanUpDtmObject (_GetTinHandle (), &options);
+    return (DTMStatusInt)bcdtmObject_getApiCleanUpDtmObject (GetTinHandle (), &options);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_SetMemoryAccess (DTMAccessMode accessMode)
+DTMStatusInt BcDTM::SetMemoryAccess (DTMAccessMode accessMode)
     {
     // Todo check for readonly instance.
     if (DTMAccessMode::Commit == accessMode && _readonly)
         return DTMStatusInt::DTM_ERROR;
-    return (DTMStatusInt)bcdtmMemory_setMemoryAccess (_GetTinHandle (), accessMode);
+    return (DTMStatusInt)bcdtmMemory_setMemoryAccess (GetTinHandle (), accessMode);
     }
 
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/11
 //+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetLastModifiedTime (int64_t& lastModifiedTime)
+DTMStatusInt BcDTM::GetLastModifiedTime (int64_t& lastModifiedTime)
     {
-    lastModifiedTime = _GetTinHandle()->lastModifiedTime;
+    lastModifiedTime = GetTinHandle()->lastModifiedTime;
 
     if (lastModifiedTime == 0)
         {
         const int64_t date1Jan1970 = 116444736000000000;
-        lastModifiedTime = date1Jan1970 + ((int64_t)_GetTinHandle()->modifiedTime) * 10000000;
+        lastModifiedTime = date1Jan1970 + ((int64_t)GetTinHandle()->modifiedTime) * 10000000;
         }
     return DTM_SUCCESS;
     }
@@ -4047,23 +4036,16 @@ DTMStatusInt BcDTM::_GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMP
         if (!trfs.IsIdentity())
             transformHelper = TMTransformHelper::Create (trfs);
 
-        BcDTMPtr bcDtm = new BcDTM (_GetTinHandle(), transformHelper);
+        BcDTMPtr bcDtm = new BcDTM (*GetTinHandle(), transformHelper);
         transformedDTM = bcDtm;
         }
     return DTM_SUCCESS;
     }
 
-DTMStatusInt BcDTM::_GetReadOnlyDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& readonlyDTM)
+DTMStatusInt BcDTM::GetReadOnlyDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& readonlyDTM)
     {
-    readonlyDTM = new BcDTM (_GetTinHandle (), _dtmTransformHelper.get(), true);
+    readonlyDTM = new BcDTM (*GetTinHandle (), _dtmTransformHelper.get(), true);
     return DTM_SUCCESS;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-TMTransformHelperP BcDTM::GetTransformHelper ()
-    {
-    return _GetTransformHelper();
     }
 
 /*---------------------------------------------------------------------------------------
@@ -4092,9 +4074,9 @@ DTMStatusInt BcDTM::_GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointA
     {
     DPoint3d *verticesP = nullptr;
     long nPts;
-    BeAssert (_GetTinHandle () != nullptr);
+    BeAssert (GetTinHandle () != nullptr);
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmList_extractHullDtmObject (_GetTinHandle (), &verticesP, &nPts);
+    DTMStatusInt status = (DTMStatusInt)bcdtmList_extractHullDtmObject (GetTinHandle (), &verticesP, &nPts);
     if (status == DTM_SUCCESS)
         {
         if (_dtmTransformHelper.IsValid ())
@@ -4107,29 +4089,13 @@ DTMStatusInt BcDTM::_GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointA
     return status;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints)
-    {
-    if (_dtmTransformHelper.IsValid ())
-        {
-        DTMStatusInt status = (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, _dtmTransformHelper->copyPointsToDTM (pts, numPoints), numPoints);
-        if (status == DTM_SUCCESS)
-            {
-            flatArea = _dtmTransformHelper->convertAreaFromDTM (flatArea);
-            slopeArea = _dtmTransformHelper->convertAreaFromDTM (slopeArea);
-            }
-        }
-    return (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, const_cast<DPoint3d*>(pts), numPoints);
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Elenie.Godzaridis  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
     {
-    DTMStatusInt retval = _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints);
+    DTMStatusInt retval = CalculateSlopeArea(flatArea, slopeArea, pts, numPoints);
     progressiveCallback(retval,flatArea, slopeArea);
     return retval;
     }
@@ -4275,7 +4241,7 @@ DTMStatusInt BcDTM::_TraceCatchmentForPoint (BENTLEY_NAMESPACE_NAME::TerrainMode
 |   rsc.18Oct2012   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CreatePointStockPile
+DTMStatusInt BcDTM::CreatePointStockPile
     (
     DPoint3d    headCoordinates,    // ==> Conveyor Head Coordinates
     double      stockPileSlope,     // ==> Slope Of Stock Pile Expressed As Ratio Of Rise / Run
@@ -4285,7 +4251,7 @@ DTMStatusInt BcDTM::_CreatePointStockPile
     BcDTMPtr     *mergedTmPP        // <== Merged Ground And StockPile TM
     )
     {
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 // ToDo Translatation
 
     DTMStatusInt status = DTM_SUCCESS;
@@ -4307,15 +4273,15 @@ DTMStatusInt BcDTM::_CreatePointStockPile
 
     //  Call Core To Create Stock Pile
 
-    status = (DTMStatusInt)bcdtmStockPile_createPointStockPileDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), p3dHeadCoordinates, stockPileSlope, mergeOption, &stockPileDtmP, &mergedDtmP, &volume);
+    status = (DTMStatusInt)bcdtmStockPile_createPointStockPileDtmObject ((BC_DTM_OBJ *)GetTinHandle (), p3dHeadCoordinates, stockPileSlope, mergeOption, &stockPileDtmP, &mergedDtmP, &volume);
 
     if( status == DTM_SUCCESS )
         {
         stockPileVolume = volume ;
-        *stockPileTmPP = BcDTM::CreateFromDtmHandle (stockPileDtmP);
+        *stockPileTmPP = BcDTM::CreateFromDtmHandle (*stockPileDtmP);
         if( mergeOption )
             {
-            *mergedTmPP = BcDTM::CreateFromDtmHandle (mergedDtmP);
+            *mergedTmPP = BcDTM::CreateFromDtmHandle (*mergedDtmP);
             }
         }
     else
@@ -4337,10 +4303,10 @@ DTMStatusInt BcDTM::_CreatePointStockPile
 |   rsc.19Oct2012   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_CreateAlignmentStockPile
+DTMStatusInt BcDTM::CreateAlignmentStockPile
     (
     DPoint3dCP      headCoordinates,   // ==> Conveyor Head Alignment Coordinates
-    int             numHeadCoordinates, // ==> Number Of Head Coordinates
+    long            numHeadCoordinates, // ==> Number Of Head Coordinates
     double          stockPileSlope,     // ==> Slope Of Stock Pile Expressed As Ratio Of Rise / Run
     bool            mergeOption,        // ==> Merge Option If True Create DTM Of Stockpile And Ground DTM
     double&         stockPileVolume,    // <== Volume Of Stock Pile
@@ -4348,7 +4314,7 @@ DTMStatusInt BcDTM::_CreateAlignmentStockPile
     BcDTMPtr*       mergedTmPP        // <== Merged Ground And StockPile TM
     )
     {
-    BeAssert (_GetTinHandle() != nullptr);
+    BeAssert (GetTinHandle() != nullptr);
 // ToDo Translatation
 
     DTMStatusInt status = DTM_SUCCESS;
@@ -4366,15 +4332,15 @@ DTMStatusInt BcDTM::_CreateAlignmentStockPile
 
     //  Call Core To Create Stock Pile
 
-    status = (DTMStatusInt)bcdtmStockPile_createStringStockPileDtmObject ((BC_DTM_OBJ *)_GetTinHandle (), (DPoint3d *)headCoordinates, numHeadCoordinates, stockPileSlope, mergeOption, &stockPileDtmP, &mergedDtmP, &volume);
+    status = (DTMStatusInt)bcdtmStockPile_createStringStockPileDtmObject ((BC_DTM_OBJ *)GetTinHandle (), (DPoint3d *)headCoordinates, numHeadCoordinates, stockPileSlope, mergeOption, &stockPileDtmP, &mergedDtmP, &volume);
 
     if( status == DTM_SUCCESS )
         {
         stockPileVolume = volume ;
-        *stockPileTmPP = BcDTM::CreateFromDtmHandle (stockPileDtmP);
+        *stockPileTmPP = BcDTM::CreateFromDtmHandle (*stockPileDtmP);
         if( mergeOption )
             {
-            *mergedTmPP = BcDTM::CreateFromDtmHandle (mergedDtmP);
+            *mergedTmPP = BcDTM::CreateFromDtmHandle (*mergedDtmP);
             }
         }
     else
@@ -4396,7 +4362,7 @@ DTMStatusInt BcDTM::_CreateAlignmentStockPile
 |   djh.27May2014   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint, DPoint3dCR endPoint)
+bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint, DPoint3dCR endPoint)
     {
     DPoint3d startPt = startPoint;
     DPoint3d endPt = endPoint;
@@ -4408,7 +4374,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
             {
             _dtmTransformHelper->convertPointToDTM (startPt);
             _dtmTransformHelper->convertPointToDTM (endPt);
-            BcDTMPtr tempDtm = BcDTM::CreateFromDtmHandle (GetTinHandle ());
+            BcDTMPtr tempDtm = BcDTM::CreateFromDtmHandle (*GetTinHandle ());
             if (!tempDtm->IntersectVector (intersectionPoint, startPt, endPt))
                 return false;
             _dtmTransformHelper->convertPointFromDTM (intersectionPoint);
@@ -4436,9 +4402,9 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = GetTinHandle ();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, &sP, &eP, &drapedType, &point, trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, &sP, &eP, &drapedType, &point, trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
             return false;
 
         startPt = point;
@@ -4451,7 +4417,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != DrapePoint (&elevation, nullptr, nullptr, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != _DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt))
         {
         return false;
         }
@@ -4461,7 +4427,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
     }
 
 
-StatusInt BcDTM::_Clean ()
+DTMStatusInt BcDTM::Clean ()
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -4471,18 +4437,18 @@ StatusInt BcDTM::_Clean ()
 
     BC_DTM_OBJ* bcDTM = GetTinHandle ();
 
-    int status = DTM_SUCCESS;
+    DTMStatusInt status = DTM_SUCCESS;
     if (bcDTM->dtmState == DTMState::Tin)
-        status = bcdtmList_cleanDtmObject (bcDTM);
+        status = (DTMStatusInt)bcdtmList_cleanDtmObject(bcDTM);
     else if (bcDTM->dtmState == DTMState::Data)
-        status = bcdtmData_compactUntriangulatedFeatureTableDtmObject (bcDTM);
+        status = (DTMStatusInt)bcdtmData_compactUntriangulatedFeatureTableDtmObject(bcDTM);
     return status;
     }
 
 //=======================================================================================
 //
 //+===============+===============+===============+===============+===============+======
-StatusInt BcDTM::_AddFeatureWithMultipleSegments
+DTMStatusInt BcDTM::AddFeatureWithMultipleSegments
 (
 DTMFeatureType dtmFeatureType,   // =>
 const DtmVectorString& features, // =>
@@ -4497,7 +4463,7 @@ DTMFeatureId *featureIdP       // <=
         bcdtmWrite_message (1, 0, 0, "DTM is readonly");
         return DTM_ERROR;
         }
-    int sts = DTM_SUCCESS;
+    DTMStatusInt sts = DTM_SUCCESS;
 
     TMTransformHelperP helper = GetTransformHelper ();
     // Store the feature in the DTM
@@ -4505,12 +4471,12 @@ DTMFeatureId *featureIdP       // <=
         {
         if (helper)
             {
-            if ((sts = bcdtmObject_storeDtmFeatureInDtmObject (GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, helper->copyPointsToDTM (features[i].data (), (int)features[i].size ()), (int)features[i].size ())) != DTM_SUCCESS)
+            if ((sts = (DTMStatusInt)bcdtmObject_storeDtmFeatureInDtmObject(GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, helper->copyPointsToDTM(features[i].data(), (int)features[i].size()), (int)features[i].size())) != DTM_SUCCESS)
                 return sts;
             }
         else
             {
-            if ((sts = bcdtmObject_storeDtmFeatureInDtmObject (GetTinHandle (), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, features[i].data (), (int)features[i].size ())) != DTM_SUCCESS)
+            if ((sts = (DTMStatusInt)bcdtmObject_storeDtmFeatureInDtmObject(GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, features[i].data(), (int)features[i].size())) != DTM_SUCCESS)
                 return sts;
             }
         }
@@ -4521,7 +4487,7 @@ DTMFeatureId *featureIdP       // <=
 //=======================================================================================
 //
 //+===============+===============+===============+===============+===============+======
-StatusInt BcDTM::_ReplaceFeatureWithMultipleSegments
+DTMStatusInt BcDTM::ReplaceFeatureWithMultipleSegments
 (
 const DtmVectorString& features, // =>
 DTMFeatureId featureId       // <=
@@ -4542,12 +4508,12 @@ DTMFeatureId featureId       // <=
         {
         DtmVectorString transformedfeatures = features;
         helper->convertDtmStringVectorToDTM (transformedfeatures);
-        return bcdtmData_replaceDtmFeaturePointsMultipleDtmObject (GetTinHandle (), (DTMFeatureId)featureId, transformedfeatures);
+        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsMultipleDtmObject(GetTinHandle(), (DTMFeatureId)featureId, transformedfeatures);
         }
-    return bcdtmData_replaceDtmFeaturePointsMultipleDtmObject (GetTinHandle (), (DTMFeatureId)featureId, features);
+    return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsMultipleDtmObject(GetTinHandle(), (DTMFeatureId)featureId, features);
     }
 
-bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     TMTransformHelperP helper = GetTransformHelper ();
     DPoint3d startPt = testPoint;
@@ -4593,9 +4559,9 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = GetTinHandle ();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
             {
             return false;
             }
@@ -4608,7 +4574,7 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
         {
         return false;
         }
@@ -4619,7 +4585,7 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     return true;
     }
 
-StatusInt BcDTM::_FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
+DTMStatusInt BcDTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -4627,883 +4593,45 @@ StatusInt BcDTM::_FilterPoints (long numPointsToRemove, double percentageToRemov
         return DTM_ERROR;
         }
 
-    return bcdtmFilter_tileDecimateRandomSpotsDtmObject (GetTinHandle (), numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
+    return (DTMStatusInt)bcdtmFilter_tileDecimateRandomSpotsDtmObject(GetTinHandle(), numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
+    }
+
+DTMStatusInt BcDTM::DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nPts, bool getFeatures)
+    {
+    DTMStatusInt status = DTM_SUCCESS;
+
+    drapedPts.clear();
+    if (_dtmTransformHelper.IsValid())
+        {
+        status = (DTMStatusInt)bcdtmDrape_stringDtmObject(GetTinHandle(), _dtmTransformHelper->copyPointsToDTM(pointsP, nPts), nPts, getFeatures, drapedPts);
+        if (SUCCESS == status)
+            {
+            for (auto& pt : drapedPts)
+                {
+                _dtmTransformHelper->convertPointToDTM(pt.drapePt);
+                }
+            }
+        }
+    else
+        status = (DTMStatusInt)bcdtmDrape_stringDtmObject(GetTinHandle(), pointsP, nPts, getFeatures, drapedPts);
+    return status;
     }
 
 
 /////////////////////////////////////////////
-
-#pragma region Virtual Access Functions
-
-/*-------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CreatePointStockPile (DPoint3d headCoordinates, double stockPileSlope, bool mergeOption, double& stockPileVolume, BcDTMPtr *stockPileTmPP, BcDTMPtr *mergedTmPP)
-    {
-    return _CreatePointStockPile(headCoordinates,stockPileSlope,mergeOption,stockPileVolume,stockPileTmPP,mergedTmPP) ;
-    }
-/*-------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CreateAlignmentStockPile (DPoint3d *headCoordinates, long numHeadCoordinates, double stockPileSlope, bool mergeOption, double& stockPileVolume, BcDTMPtr *stockPileTmPP, BcDTMPtr *mergedTmPP)
-    {
-    return _CreateAlignmentStockPile(headCoordinates,numHeadCoordinates,stockPileSlope,mergeOption,stockPileVolume,stockPileTmPP,mergedTmPP) ;
-    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetMemoryUsed (size_t& memoryUsed)
+DTMStatusInt BcDTM::DrapePoint(double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, const DPoint3d& point)
     {
-    return _GetMemoryUsed(memoryUsed);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMState BcDTM::GetDTMState ()
-    {
-    return _GetDTMState();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SetTriangulationParameters(double pointTol, double lineTol, long edgeOption, double maxSide)
-    {
-    return _SetTriangulationParameters(pointTol, lineTol, edgeOption, maxSide);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetTriangulationParameters(double& pointTol, double& lineTol, long& edgeOption, double& maxSide)
-    {
-    return _GetTriangulationParameters(pointTol, lineTol, edgeOption, maxSide);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Triangulate ()
-    {
-    return _Triangulate ();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CheckTriangulation()
-    {
-    return _CheckTriangulation();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TinFilterPoints(long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
-    {
-    return _TinFilterPoints(filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TileFilterPoints(long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
-    {
-    return _TileFilterPoints(minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TinFilterSinglePointPointFeatures (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
-    {
-    return _TinFilterSinglePointPointFeatures (filterOption, reinsertOption, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TileFilterSinglePointPointFeatures (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction)
-    {
-    return _TileFilterSinglePointPointFeatures (minTilePts, maxTileDivide, tileLength, zTolerance, numPointsBefore, numPointsAfter, filterReduction);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP)
-    {
-    return _EditorSelectDtmTinFeature(dtmFeatureType, pt, featureFoundP, featurePtsPP, numFeaturePtsP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::EditorDeleteDtmTinFeature(long* result)
-    {
-    return _EditorDeleteDtmTinFeature(result);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseFeaturesWithTinErrors(void* userP, DTMFeatureCallback callback)
-    {
-    return _BrowseFeaturesWithTinErrors(userP, callback);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseFeaturesWithUserTag(DTMUserTag userTag, void* userP, DTMFeatureCallback callback)
-    {
-    return _BrowseFeaturesWithUserTag(userTag, userP, callback) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseFeaturesWithFeatureId(DTMFeatureId featureId, void* userP, DTMFeatureCallback callback)
-    {
-    return _BrowseFeaturesWithFeatureId(featureId, userP, callback) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallback callback)
-    {
-    return _BrowseDuplicatePoints(userP, callback);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseCrossingFeatures(DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback)
-    {
-    return _BrowseCrossingFeatures(featureList, numFeaturesList, userP, callback);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetFeatureById(BcDTMFeaturePtr& featurePP, DTMFeatureId identP )
-    {
-    return _GetFeatureById(featurePP, identP );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetFeatureByUserTag(BcDTMFeaturePtr& featurePP, DTMUserTag userTag )
-    {
-    return _GetFeatureByUserTag(featurePP, userTag );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetFeatureEnumerator( BcDTMFeatureEnumeratorPtr& enumPP)
-    {
-    return _GetFeatureEnumerator(enumPP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ClipByPointString(BcDTMPtr& clippedPP,DPoint3dCP points,int nbPt,DTMClipOption clippingMethod)
-    {
-    return _ClipByPointString(clippedPP,points,nbPt,clippingMethod);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::DrapePoint (int *drapedTypeP,DPoint3dP pointP)
-    {
-    return _DrapePoint(drapedTypeP, pointP) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::DrapePoint(double *elevationP,double *slopeP,double *aspectP,DPoint3d triangle[3],int *drapedTypeP,DPoint3dP pointP)
-    {
-    return _DrapePoint(elevationP,slopeP,aspectP,triangle,drapedTypeP,pointP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SaveAsGeopakTinFile(WCharCP fileNameP)
-    {
-    return _SaveAsGeopakTinFile(fileNameP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::PopulateFromGeopakTinFile(WCharCP fileNameP)
-    {
-    return _PopulateFromGeopakTinFile(fileNameP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Save(WCharCP fileNameP)
-    {
-    return _Save(fileNameP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SaveAsGeopakDat(WCharCP fileNameP)
-    {
-    return _SaveAsGeopakDat(fileNameP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SaveAsGeopakAsciiDat (WCharCP fileNameP,int numDecPts)
-    {
-    return _SaveAsGeopakAsciiDat (fileNameP,numDecPts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SaveToStream(IBcDtmStreamR stream)
-    {
-    return _SaveToStream(stream);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea (double *areaP, DPoint3dCP points, int nbPt )
-    {
-    return _CalculateSlopeArea (areaP,points,nbPt );
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea(double *areaP)
-    {
-    return _CalculateSlopeArea(areaP);
+    return _DrapePoint(elevation, slope, aspect, triangle, drapedType, point);
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Rob.Cormack    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea (double *flatAreaP,double *slopeAreaP,DPoint3dCP points,int numPoints)
+DTMStatusInt BcDTM::CalculateSlopeArea(double& flatAreaP, double& slopeAreaP, DPoint3dCP points, int numPoints)
     {
-    return _CalculateSlopeArea(flatAreaP,slopeAreaP,points,numPoints);
+    return _CalculateSlopeArea(flatAreaP, slopeAreaP, points, numPoints);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Merge (BcDTMR toMergeP)
-    {
-    return _Merge (toMergeP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::MergeAdjacent(BcDTMR toMergeP)
-    {
-    return _MergeAdjacent(toMergeP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::InterpolateDtmFeatureType(DTMFeatureType dtmFeatureType, double snapTolerance, BcDTMR spotsP, BcDTMR intDtmP, long *numDtmFeaturesP, long *numDtmFeaturesInterpolatedP )
-    {
-    return _InterpolateDtmFeatureType(dtmFeatureType, snapTolerance, spotsP, intDtmP, numDtmFeaturesP, numDtmFeaturesInterpolatedP ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::RemoveNoneFeatureHullLines()
-    {
-    return _RemoveNoneFeatureHullLines() ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculatePond(double x ,double y ,bool& pondCalculatedP,double& pondElevationP,double& pondDepthP,double& pondAreaP,double& pondVolumeP ,DTMDynamicFeatureArray& ponds)
-    {
-    return _CalculatePond(x ,y ,pondCalculatedP,pondElevationP,pondDepthP,pondAreaP,pondVolumeP, ponds) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculatePond(double x ,double y ,double falseLowPoint, bool& pondCalculatedP,double& pondElevationP,double& pondDepthP,double& pondAreaP,double& pondVolumeP ,DTMDynamicFeatureArray& ponds )
-    {
-    return _CalculatePond(x ,y ,falseLowPoint, pondCalculatedP,pondElevationP,pondDepthP,pondAreaP,pondVolumeP , ponds) ;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TraceCatchmentForPoint (double x, double y, double maxPondDepth, bool& catchmentDetermined, DPoint3d& sumpPoint, bvector<DPoint3d>& catchmentPts)
-    {
-    return _TraceCatchmentForPoint (x, y, maxPondDepth, catchmentDetermined, sumpPoint, catchmentPts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::PointVisibility( bool *pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
-    {
-    return _PointVisibility( pointVisibleP, eyeX, eyeY, eyeZ, pntX, pntY, pntZ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::LineVisibility(long *lineVisibleP,double eyeX,double eyeY,double eyeZ,double X1,double Y1,double Z1,double X2,double Y2,double Z2, DTMDynamicFeatureArray& visibilityFeatures)
-    {
-    return _LineVisibility(lineVisibleP,eyeX,eyeY,eyeZ,X1,Y1,Z1,X2,Y2,Z2,visibilityFeatures) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseTinPointsVisibility(double eyeX,double eyeY,double eyeZ,void *userP, DTMFeatureCallback callBackFunctP )
-    {
-    return _BrowseTinPointsVisibility(eyeX,eyeY,eyeZ,userP, callBackFunctP ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseTinLinesVisibility(double eyeX,double eyeY,double eyeZ,void *userP, DTMFeatureCallback callBackFunctP )
-    {
-    return _BrowseTinLinesVisibility(eyeX,eyeY,eyeZ,userP, callBackFunctP ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseRadialViewSheds(double eyeX, double eyeY,double eyeZ,long viewShedOption,long numberRadials,double radialIncrement,void *userP,DTMFeatureCallback callBackFunctP )
-    {
-    return _BrowseRadialViewSheds(eyeX, eyeY,eyeZ,viewShedOption,numberRadials,radialIncrement,userP,callBackFunctP ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseRegionViewSheds(double eyeX,double eyeY,double eyeZ,void *userP,DTMFeatureCallback callBackFunctP )
-    {
-    return _BrowseRegionViewSheds(eyeX,eyeY,eyeZ,userP,callBackFunctP ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ClipToTinHull (DTMClipOption clipOption, DPoint3dCP featurePtsP, int numFeaturePts, bvector<DtmString>& clipSections)
-    {
-    return _ClipToTinHull(clipOption,featurePtsP,numFeaturePts,clipSections );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Append( BcDTMR appendDtmP )
-    {
-    return _Append( appendDtmP );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::AppendWithUserTag( BcDTMR appendDtmP,DTMUserTag userTag )
-    {
-    return _AppendWithUserTag( appendDtmP,userTag );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMPtr BcDTM::Clone()
-    {
-    return _Clone();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMPtr BcDTM::Delta(BcDTMR toDeltaP,DPoint3dCP points,int numPoints)
-    {
-    return _Delta(toDeltaP,points,numPoints);
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  04/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMPtr BcDTM::DeltaElevation(double elevation,DPoint3dCP points,int numPoints)
-    {
-    return _DeltaElevation(elevation,points,numPoints);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::OffsetDeltaElevation (double offset)
-    {
-    return _OffsetDeltaElevation (offset);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BC_DTM_OBJ* BcDTM::GetTinHandle()  const
-    {
-    return _GetTinHandle();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::DrapeLinearPoints (BcDTMDrapedLinePtr& drapedLinePP,DPoint3dCP pointsP,const double *distTabP,int nbPt)
-    {
-    return _DrapeLinearPoints (drapedLinePP, pointsP, distTabP, nbPt);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ShotVector(double *endSlopeP,double *endAspectP,DPoint3d endTriangle[3],int  *endDrapedTypeP,DPoint3d *endPtP,DPoint3d *startPtP,double direction,double slope)
-    {
-    long startFlag, endFlag;
-    return _ShotVector(endSlopeP,endAspectP,endTriangle,endDrapedTypeP,&startFlag,&endFlag,endPtP,startPtP,direction,slope);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ShotVector(double *endSlopeP,double *endAspectP,DPoint3d endTriangle[3],int  *endDrapedTypeP,long *startFlag,long *endFlag, DPoint3d *endPtP,DPoint3d *startPtP,double direction,double slope)
-    {
-    return _ShotVector(endSlopeP,endAspectP,endTriangle,endDrapedTypeP,startFlag,endFlag,endPtP,startPtP,direction,slope);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ComputePlanarPrismoidalVolume (BcDTMVolumeAreaResult& result, double elevation, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _ComputePlanarPrismoidalVolume(result,elevation,points,nbPt,rangeTableP,numRanges);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateCutFillVolume (BcDTMVolumeAreaResult& result, BcDTMR otherDtmP, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _CalculateCutFillVolume (result, otherDtmP, points, nbPt, rangeTableP, numRanges);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult& result, DtmVectorString *volumePolygonsP, double elevation, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _CalculatePrismoidalVolumeToElevation(result,volumePolygonsP,elevation,points,nbPt,rangeTableP,numRanges) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& result, DtmVectorString *volumePolygonsP, BcDTMR otherDtmP, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _CalculatePrismoidalVolumeToSurface(result,volumePolygonsP,otherDtmP,points,nbPt,rangeTableP,numRanges) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& result, long &numCellsUsedP, double &cellAreaP, DtmVectorString *volumePolygonsP, long numLatticePoints, double elevation, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _CalculateGridVolumeToElevation(result,numCellsUsedP,cellAreaP,volumePolygonsP,numLatticePoints,elevation,points,nbPt,rangeTableP,numRanges) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result, long &numCellsUsedP, double &cellAreaP, DtmVectorString *volumePolygonsP, BcDTMR otherDtmP, long numLatticePoints, DPoint3dCP points, int nbPt, VOLRANGETAB* rangeTableP, int numRanges)
-    {
-    return _CalculateGridVolumeToSurface(result,numCellsUsedP,cellAreaP,volumePolygonsP,otherDtmP,numLatticePoints,points,nbPt,rangeTableP,numRanges) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculatePrismoidalVolumeBalanceToSurface(double &fromAreaP,double &toAreaP,double &balanceP,DtmVectorString *volumePolygonsP,BcDTMR otherDtmP,DPoint3dCP points,int nbPt)
-    {
-    return _CalculatePrismoidalVolumeBalanceToSurface(fromAreaP,toAreaP,balanceP,volumePolygonsP,otherDtmP,points,nbPt) ;
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  05/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateFeatureStatistics (DTMFeatureStatisticsInfo& info) const
-    {
-    return _CalculateFeatureStatistics (info);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  05/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-int BcDTM::GetTrianglesCount () const
-    {
-    return _GetTrianglesCount ();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseSlopeIndicator(BcDTMR dtmP,double majorInterval, double minorInterval, void *userP,DTMBrowseSlopeIndicatorCallback callBackFunctP)
-    {
-    return _BrowseSlopeIndicator(dtmP,majorInterval, minorInterval, userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateCatchments (bool refineOption, double falseLowDepth, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
-    {
-    return _CalculateCatchments (refineOption,falseLowDepth,fence, userP, callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseDrainageFeatures(DTMFeatureType featureType,double *minLowPointP, const DTMFenceParams& fence, void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _BrowseDrainageFeatures(featureType,minLowPointP,fence, userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseTriangleMesh(long maxTriangles ,const DTMFenceParams& fence, void *userP,DTMTriangleMeshCallback callBackFunctP)
-    {
-    return _BrowseTriangleMesh(maxTriangles, fence, userP,callBackFunctP) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseFeatures(DTMFeatureType featureType,long maxSpots,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _BrowseFeatures(featureType,maxSpots,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseFeatures(DTMFeatureType featureType,const DTMFenceParams& fence, long maxSpots,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _BrowseFeatures(featureType,fence, maxSpots,userP,callBackFunctP);
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowsePonds(void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _BrowsePonds(userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseSinglePointFeatures(DTMFeatureType featureType,double *minDepthP,const DTMFenceParams& fence, long *nPointP,void *userP,DTMBrowseSinglePointFeatureCallback callBackFunctP)
-    {
-    return _BrowseSinglePointFeatures(featureType,minDepthP,fence, nPointP,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseContours(DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _BrowseContours(contourParams, fenceParams,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ContourAtPoint(double x,double y,double contourInterval, DTMContourSmoothing smoothOption,double smoothFactor,int smoothDensity,const DTMFenceParams& fence, void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _ContourAtPoint(x,y,contourInterval,smoothOption,smoothFactor,smoothDensity,fence,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetAscentTrace(double minDepth,double pX,double pY,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _GetAscentTrace(minDepth,pX,pY,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetDescentTrace(double minDepth,double pX,double pY,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _GetDescentTrace(minDepth,pX,pY,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::AnalyzeElevation(DRange1d *tInterval,int nInterval,bool polygonized,const DTMFenceParams& fence,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _AnalyzeElevation(tInterval,nInterval,polygonized,fence,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::AnalyzeSlope(DRange1d *tInterval,int nInterval,bool polygonized,const DTMFenceParams& fence,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _AnalyzeSlope(tInterval,nInterval,polygonized,fence,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::AnalyzeAspect(DRange1d *tInterval,int nInterval,bool polygonized,const DTMFenceParams& fence,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _AnalyzeAspect(tInterval,nInterval,polygonized,fence,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TracePath(double pointX,double pointY,double slope,double dist,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _TracePath(pointX,pointY,slope,dist,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TraceLine(double pointX,double pointY,double slope,double dist,void *userP,DTMFeatureCallback callBackFunctP)
-    {
-    return _TraceLine(pointX,pointY,slope,dist,userP,callBackFunctP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BcDTM::GetHandles(void **headerPP,int *nHeaderP,void ***featureArraysPP,int *nFeatureArraysP,int *featureArraysSize,int *lastFeatureArraysSize,void ***pointArraysPP,int *nPointArraysP,int *pointArraysSize,int *lastPointArraysSize,void ***nodeArraysPP,int *nNodeArraysP,int *nodeArraysSize,int *lastNodeArraysSize,void ***cListArraysPP,int *nCListArraysP,int *cListArraysSize,int *lastCListArraysSize,void ***fListArraysPP,int *nFListArraysP,int *fListArraySize,int *lastFListArraySize)
-    {
-    return _GetHandles(headerPP,nHeaderP,featureArraysPP,nFeatureArraysP,featureArraysSize,lastFeatureArraysSize,pointArraysPP,nPointArraysP,pointArraysSize,lastPointArraysSize,nodeArraysPP,nNodeArraysP,nodeArraysSize,lastNodeArraysSize,cListArraysPP,nCListArraysP,cListArraysSize,lastCListArraysSize,fListArraysPP,nFListArraysP,fListArraySize,lastFListArraySize);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMMeshPtr BcDTM::GetMesh (long firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
-    {
-    return _GetMesh (firstCall, maxMeshSize, fencePts, numFencePts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMEdgesPtr BcDTM::GetEdges(DPoint3dCP fencePts, int numFencePts )
-    {
-    return _GetEdges(fencePts, numFencePts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BcDTM::GetMesh(DPoint3dCP fencePts, int numFencePts, DPoint3dP* pointsPP, long *numIndices,long** triangleIndexPP )
-    {
-    return _GetMesh(fencePts, numFencePts, pointsPP, numIndices,triangleIndexPP );
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ConvertUnits(double xyFactor,double zFactor)
-    {
-    return _ConvertUnits(xyFactor,zFactor);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Transform(TransformCR trsfMatP)
-    {
-    return _Transform(trsfMatP);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::TransformUsingCallback (DTMTransformPointsCallback callback, void* userP)
-    {
-    return _TransformUsingCallback (callback, userP);
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::PurgeDTM(unsigned int flags)
-    {
-    return _PurgeDTM(flags);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetPoint(long index, DPoint3d& pt)
-    {
-    return _GetPoint(index, pt);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::Clip (DPoint3dCP clipPolygonPtsP,int numClipPolygonPts,DTMClipOption clippingMethod )
-    {
-    return _Clip (clipPolygonPtsP,numClipPolygonPts,clippingMethod ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CopyToMemoryBlock (char **memoryBlockPP,unsigned long *memoryBlockSizeP)
-    {
-    return _CopyToMemoryBlock(memoryBlockPP,memoryBlockSizeP) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ConvertToDataState(void)
-    {
-    return _ConvertToDataState() ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SetPointMemoryAllocationParameters(int iniPointAllocation, int incPointAllocation )
-    {
-    return _SetPointMemoryAllocationParameters(iniPointAllocation, incPointAllocation ) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::ReplaceFeaturePoints(DTMFeatureId dtmFeatureId, DPoint3d *pointsP , int numPoints)
-    {
-    return _ReplaceFeaturePoints(dtmFeatureId,pointsP,numPoints) ;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  08/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BulkDeleteFeaturesByUserTag(DTMUserTag *userTagP,int numUserTag )
-    {
-    return _BulkDeleteFeaturesByUserTag(userTagP,numUserTag) ;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  08/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BulkDeleteFeaturesByFeatureId(DTMFeatureId *dtmFeatureIdP,int numFeatureId )
-    {
-    return _BulkDeleteFeaturesByFeatureId(dtmFeatureIdP,numFeatureId) ;
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SetCleanUpOptions (DTMCleanupFlags options)
-    {
-    return _SetCleanUpOptions (options) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Rob.Cormack  01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetCleanUpOptions (DTMCleanupFlags& options)
-    {
-    return _GetCleanUpOptions (options) ;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::SetMemoryAccess(DTMAccessMode accessMode)
-    {
-    return _SetMemoryAccess(accessMode);
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  07/11
-//+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetLastModifiedTime (int64_t& lastModifiedTime)
-    {
-    return _GetLastModifiedTime(lastModifiedTime);
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  05/14
-//+---------------+---------------+---------------+---------------+---------------+------*
-bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint, DPoint3dCR endPoint)
-    {
-    return _IntersectVector (intersectionPoint, startPoint, endPoint);
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  07/15
-//+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::Clean ()
-    {
-    return _Clean ();
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  07/15
-//+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP)
-    {
-    return _AddFeatureWithMultipleSegments (dtmFeatureType, features, userTag, featureIdP);
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  07/15
-//+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId)
-    {
-    return _ReplaceFeatureWithMultipleSegments (features, featureId);
-    }
-
-///*---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Daryl.Holmwood  07/15
-//+---------------+---------------+---------------+---------------+---------------+------*
-bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
-    {
-    return _GetProjectedPointOnDTM (pointOnDTM, w2vMap, testPoint);
-    }
-
-StatusInt BcDTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
-    {
-    return _FilterPoints (numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
-    }
-
-#pragma endregion
 END_BENTLEY_TERRAINMODEL_NAMESPACE
