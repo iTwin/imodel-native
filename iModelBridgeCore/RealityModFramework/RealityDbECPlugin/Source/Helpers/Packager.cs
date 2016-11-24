@@ -108,11 +108,20 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
-            if((selectedRegion.Count % 2) != 0)
+            if((selectedRegion.Count % 2) != 0 || selectedRegion.Count < 6)
                 {
                 //We need an even number of coordinates
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
+            for(int i = 0; i < selectedRegion.Count; i = i+2)
+                {
+                //We verify if the lat/long bounds are correct.
+                if(selectedRegion[i] < -180.0 || selectedRegion[i] > 180.0 || selectedRegion[i + 1] < -90.0 || selectedRegion[i + 1] > 90.0)
+                    {
+                    throw new UserFriendlyException("The given polygon's format was not correct.");
+                    }
+                }
+
             // Create data source.
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
 
