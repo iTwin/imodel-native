@@ -979,7 +979,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, DISABLED_QueryMultipleSessions)
+TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
     CreateDgnDb();
     m_testDb->SaveChanges();
