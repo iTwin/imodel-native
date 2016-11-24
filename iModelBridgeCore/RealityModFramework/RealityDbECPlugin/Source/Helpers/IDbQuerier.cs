@@ -98,131 +98,133 @@ namespace IndexECPlugin.Source.Helpers
             List<IECInstance> instanceList = new List<IECInstance>();
 
             //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            IDbConnection dbConnection = new SqlConnection(connectionString);
-
-            dbConnection.Open();
-
-            using ( IDbCommand dbCommand = dbConnection.CreateCommand() )
+            using ( IDbConnection dbConnection = new SqlConnection(connectionString) )
                 {
 
-                dbCommand.CommandText = sqlCommandString;
-                dbCommand.CommandType = CommandType.Text;
-                dbCommand.Connection = dbConnection;
+                dbConnection.Open();
 
-                SetDbCommandParameters(paramNameValueMap, dbCommand);
-
-
-                using ( IDataReader reader = dbCommand.ExecuteReader() )
+                using ( IDbCommand dbCommand = dbConnection.CreateCommand() )
                     {
 
-                    while ( reader.Read() )
+                    dbCommand.CommandText = sqlCommandString;
+                    dbCommand.CommandType = CommandType.Text;
+                    dbCommand.Connection = dbConnection;
+
+                    SetDbCommandParameters(paramNameValueMap, dbCommand);
+
+
+                    using ( IDataReader reader = dbCommand.ExecuteReader() )
                         {
-                        IECInstance instance = ecClass.CreateInstance();
-                        int? streamDataColumn = dataReadingHelper.getStreamDataColumn();
-                        if ( streamDataColumn.HasValue )
+
+                        while ( reader.Read() )
                             {
-                            Byte[] byteArray = reader[streamDataColumn.Value] as byte[];
-
-                            MemoryStream mStream;
-
-                            if ( byteArray != null )
+                            IECInstance instance = ecClass.CreateInstance();
+                            int? streamDataColumn = dataReadingHelper.getStreamDataColumn();
+                            if ( streamDataColumn.HasValue )
                                 {
-                                mStream = new MemoryStream(byteArray);
-                                StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
-                                StreamBackedDescriptorAccessor.SetIn(instance, desc);
-                                }
-                            else
-                                {
-                                if ( createDefaultThumbnail )
+                                Byte[] byteArray = reader[streamDataColumn.Value] as byte[];
+
+                                MemoryStream mStream;
+
+                                if ( byteArray != null )
                                     {
-                                    mStream = new MemoryStream();
-                                    Assembly.GetExecutingAssembly().GetManifestResourceStream("NoImage.jpg").CopyTo(mStream);
+                                    mStream = new MemoryStream(byteArray);
                                     StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
                                     StreamBackedDescriptorAccessor.SetIn(instance, desc);
                                     }
-                                }
-
-                            }
-
-                        int? relatedInstanceIdColumn = dataReadingHelper.getRelatedInstanceIdColumn();
-
-                        if ( relatedInstanceIdColumn.HasValue )
-                            {
-                            string relatedInstanceId = reader[relatedInstanceIdColumn.Value] as string;
-                            instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("relInstID", relatedInstanceId));
-                            }
-
-                        if ( nonInstanceDataColumnList != null )
-                            {
-                            foreach ( string columnName in nonInstanceDataColumnList )
-                                {
-                                int? nonInstanceDataColumn = dataReadingHelper.getNonPropertyDataColumn(columnName);
-                                if ( nonInstanceDataColumn.HasValue )
-                                    {
-                                    object columnData = reader[nonInstanceDataColumn.Value];
-                                    instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(columnName, columnData));
-                                    }
-                                }
-                            }
-
-                        foreach ( IECProperty prop in propertyList )
-                            {
-                            if ( ecClass.Contains(prop.Name) )
-                                {
-                                IECPropertyValue instancePropertyValue = instance[prop.Name];
-
-                                int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
-
-                                if ( !columnNumber.HasValue )
-                                    {
-                                    // We did not query this property. We skip it...
-                                    continue;
-                                    //throw new ProgrammerException("There should have been a column number.");
-                                    }
-
-                                if ( !prop.IsSpatial() )
-                                    {
-
-                                    if ( !reader.IsDBNull(columnNumber.Value) )
-                                        {
-                                        ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, columnNumber.Value);
-                                        }
-                                    }
                                 else
                                     {
-                                    if ( !ECTypeHelper.IsString(instancePropertyValue.Type) )
+                                    if ( createDefaultThumbnail )
                                         {
-                                        throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
+                                        mStream = new MemoryStream();
+                                        Assembly.GetExecutingAssembly().GetManifestResourceStream("NoImage.jpg").CopyTo(mStream);
+                                        StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
+                                        StreamBackedDescriptorAccessor.SetIn(instance, desc);
+                                        }
+                                    }
+
+                                }
+
+                            int? relatedInstanceIdColumn = dataReadingHelper.getRelatedInstanceIdColumn();
+
+                            if ( relatedInstanceIdColumn.HasValue )
+                                {
+                                string relatedInstanceId = reader[relatedInstanceIdColumn.Value] as string;
+                                instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("relInstID", relatedInstanceId));
+                                }
+
+                            if ( nonInstanceDataColumnList != null )
+                                {
+                                foreach ( string columnName in nonInstanceDataColumnList )
+                                    {
+                                    int? nonInstanceDataColumn = dataReadingHelper.getNonPropertyDataColumn(columnName);
+                                    if ( nonInstanceDataColumn.HasValue )
+                                        {
+                                        object columnData = reader[nonInstanceDataColumn.Value];
+                                        instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(columnName, columnData));
+                                        }
+                                    }
+                                }
+
+                            foreach ( IECProperty prop in propertyList )
+                                {
+                                if ( ecClass.Contains(prop.Name) )
+                                    {
+                                    IECPropertyValue instancePropertyValue = instance[prop.Name];
+
+                                    int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
+
+                                    if ( !columnNumber.HasValue )
+                                        {
+                                        // We did not query this property. We skip it...
+                                        continue;
+                                        //throw new ProgrammerException("There should have been a column number.");
+                                        }
+
+                                    if ( !prop.IsSpatial() )
+                                        {
+
+                                        if ( !reader.IsDBNull(columnNumber.Value) )
+                                            {
+                                            ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, columnNumber.Value);
+                                            }
                                         }
                                     else
                                         {
-                                        if ( !reader.IsDBNull(columnNumber.Value) && !reader.IsDBNull(columnNumber.Value + 1) )
+                                        if ( !ECTypeHelper.IsString(instancePropertyValue.Type) )
                                             {
-                                            string WKTString = reader.GetString(columnNumber.Value);
+                                            throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
+                                            }
+                                        else
+                                            {
+                                            if ( !reader.IsDBNull(columnNumber.Value) && !reader.IsDBNull(columnNumber.Value + 1) )
+                                                {
+                                                string WKTString = reader.GetString(columnNumber.Value);
 
-                                            //DbGeometry geom = DbGeometry.FromText(WKTString);
+                                                //DbGeometry geom = DbGeometry.FromText(WKTString);
 
-                                            //int SRID = reader.GetInt32(i);
+                                                //int SRID = reader.GetInt32(i);
 
-                                            //instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractPointsLongLat(geom) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
-                                            instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(columnNumber.Value + 1) + "\" }";
+                                                //instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractPointsLongLat(geom) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
+                                                instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(columnNumber.Value + 1) + "\" }";
+                                                }
                                             }
                                         }
                                     }
                                 }
+
+
+                            string IDProperty = ecClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
+                            instance.InstanceId = instance.GetInstanceStringValue(IDProperty, "");
+
+                            instanceList.Add(instance);
+
                             }
-
-
-                        string IDProperty = ecClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-                        instance.InstanceId = instance.GetInstanceStringValue(IDProperty, "");
-
-                        instanceList.Add(instance);
-
                         }
                     }
+                dbConnection.Close();
+                return instanceList;
                 }
-            dbConnection.Close();
-            return instanceList;
             }
 
         /// <summary>
@@ -239,25 +241,26 @@ namespace IndexECPlugin.Source.Helpers
             )
             {
             //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            IDbConnection dbConnection = new SqlConnection(connectionString);
-
-            dbConnection.Open();
-
-            int result;
-            using ( IDbCommand dbCommand = dbConnection.CreateCommand() )
+            using ( IDbConnection dbConnection = new SqlConnection(connectionString) )
                 {
+                dbConnection.Open();
 
-                dbCommand.CommandText = sqlCommandString;
-                dbCommand.CommandType = CommandType.Text;
-                dbCommand.Connection = dbConnection;
+                int result;
+                using ( IDbCommand dbCommand = dbConnection.CreateCommand() )
+                    {
 
-                SetDbCommandParameters(paramNameValueMap, dbCommand);
+                    dbCommand.CommandText = sqlCommandString;
+                    dbCommand.CommandType = CommandType.Text;
+                    dbCommand.Connection = dbConnection;
 
-                result = dbCommand.ExecuteNonQuery();
+                    SetDbCommandParameters(paramNameValueMap, dbCommand);
+
+                    result = dbCommand.ExecuteNonQuery();
+                    }
+
+                dbConnection.Close();
+                return result;
                 }
-
-            dbConnection.Close();
-            return result;
 
             }
 
