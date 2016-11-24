@@ -875,12 +875,16 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
                 BeAssert(false && "classMap is not subclass of baseClass");
                 return ERROR;
                 }
-            if (propertyMap->GetType() != basePropertyMap->GetType())
+                /* ECObjects allows this for one case: where base prop is prim array and sub prop is prim
+                of same prim type. ECObjects might be disallowing this with EC3.1
+                if (propertyMap->GetType() != basePropertyMap->GetType())
                 {
                 BeAssert(propertyMap->GetType() == basePropertyMap->GetType());
                 return ERROR;
                 }
-            //!We assum that in case of joinedTable we can only have exactly one table to joint to.
+                */
+
+            //!We assum that in case of joinedTable we can only have exactly one table to join to.
             //!Therefore not using a set/vector to store joinTable list
             if (requireJoinToTableForDataProperties == nullptr)
                 {
@@ -940,7 +944,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
         RecordPropertyMapIfRequried(*propertyMap);
 
         NativeSqlBuilder propertySql;
-        // We only need table qualifer if there is atleast one data property selected that require joining to another table
+        // We only need table qualifier if there is at least one data property selected that require joining to another table
         // In this case all data properties are table qualified name to ensure no conflict between two tables columns.
         // System property never require a join but therefor requireJoinToTableForDataProperties = nullptr if no data property was choosen
         if (propertyMap->IsSystem())
@@ -962,7 +966,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
 
 
             SingleColumnDataPropertyMap const* dataProperty = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
-            //! Join table does not require casting as we only split table into exactly two possiable tables and only if shared table is enabled.
+            //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
             if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
                 {
                 ToSqlPropertyMapVisitor toSqlVisitor(*requireJoinToTableForDataProperties, ToSqlPropertyMapVisitor::SqlTarget::Table, requireJoinToTableForDataProperties->GetName().c_str(), false, false);
