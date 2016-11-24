@@ -267,13 +267,21 @@ struct DestroyTargetTask : Render::SceneTask
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Target::DestroyNow()
+    {
+    DgnViewport::RenderQueue().AddAndWait(*new DestroyTargetTask(*this));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SetRenderTarget(Target* newTarget)
     {
     DgnDb::VerifyClientThread();
     if (m_renderTarget.IsValid())
-        RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
+        m_renderTarget->DestroyNow();
 
     m_renderTarget = newTarget; 
     if (newTarget)
