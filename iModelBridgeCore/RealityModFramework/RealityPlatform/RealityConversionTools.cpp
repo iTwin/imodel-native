@@ -180,17 +180,85 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
     }
 
 /*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                           11/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSisterVector(RealityPackage::RealityDataSourceCP dataSource)
+    {
+    bvector<RealityPackage::UriPtr> sisters;
+    RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
+    RealityPackage::UriCR mainFile = dataSource->GetUri();
+    WString filename;
+
+    RealityDataDownload::ExtractFileName(filename, mainFile.ToString());
+    sfVector.push_back(std::make_pair(mainFile.ToString(), filename));
+
+    sisters = dataSource->GetSisterFiles();
+    for (RealityPackage::UriPtr sister : sisters)
+        {
+        if (sister->GetSource().length() > 0)
+            {
+            RealityDataDownload::ExtractFileName(filename, sister->ToString());
+            sfVector.push_back(std::make_pair(sister->ToString(), filename));
+            }
+        }
+
+    return sfVector;
+    }
+
+/*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPackage::RealityDataPackagePtr package)
     {
-    bvector<RealityPackage::UriPtr> sisters;
 
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
     
-    RealityPackage::RealityDataPackage::ImageryGroup files = package->GetImageryGroup();
+    RealityPackage::RealityDataPackage::ImageryGroup imageFiles = package->GetImageryGroup();
 
-    for (RealityPackage::ImageryDataPtr file : files)
+    for (RealityPackage::ImageryDataPtr file : imageFiles)
+        {
+        RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
+
+        size_t mirrorCount = file->GetNumSources();
+        
+        RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
+
+        for (size_t i = 0; i < mirrorCount; ++i)
+            {
+            RealityPackage::RealityDataSourceR mirror = file->GetSourceR(i);
+
+            RealityPackage::MultiBandSource* mbSource = dynamic_cast<RealityPackage::MultiBandSource*>(&mirror);
+            /*RealityPackage::WmsDataSource* wmsSource = dynamic_cast<RealityPackage::WmsDataSource*>(&mirror);
+            RealityPackage::OsmDataSource* osmSource = dynamic_cast<RealityPackage::OsmDataSource*>(&mirror);*/
+
+            if(mbSource != nullptr)
+                {
+                RealityDataDownload::sisterFileVector subVector = RealityDataToSisterVector(mbSource->GetRedBand());
+                sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
+                subVector = RealityDataToSisterVector(mbSource->GetBlueBand());
+                sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
+                subVector = RealityDataToSisterVector(mbSource->GetGreenBand());
+                sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
+                subVector = RealityDataToSisterVector(mbSource->GetPanchromaticBand());
+                sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
+                }
+            /*else if (wmsSource != nullptr)
+                {}
+            else if (osmSource != nullptr)
+                {}*/
+            else
+                {
+                sfVector = RealityDataToSisterVector(&mirror);
+                }
+            mVector.push_back(sfVector);
+            }
+
+        downloadOrder.push_back(mVector);
+        }
+
+    RealityPackage::RealityDataPackage::TerrainGroup terrainFiles = package->GetTerrainGroup();
+
+    for (RealityPackage::TerrainDataPtr file : terrainFiles)
         {
         RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
@@ -198,29 +266,12 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
         RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
 
-        WString filename;
         for (size_t i = 0; i < mirrorCount; ++i)
             {
-            RealityPackage::RealityDataSourceCR mirror = file->GetSource(i);
-
-            RealityPackage::UriCR mainFile = mirror.GetUri();
-
-            RealityDataDownload::ExtractFileName(filename, mainFile.ToString());
-            sfVector.push_back(std::make_pair(mainFile.ToString(), filename));
-
-            sisters = mirror.GetSisterFiles();
-            for (RealityPackage::UriPtr sister : sisters)
-                {
-                if (sister->GetSource().length() > 0)
-                    {
-                    RealityDataDownload::ExtractFileName(filename, sister->ToString());
-                    sfVector.push_back(std::make_pair(sister->ToString(), filename));
-                    }
-                }
-            mVector.push_back(sfVector);
-
+            mVector.push_back(RealityDataToSisterVector(&(file->GetSourceR(i))));
             }
         downloadOrder.push_back(mVector);
         }
+
     return downloadOrder;
     }

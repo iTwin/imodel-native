@@ -14,6 +14,7 @@
 #include <Bentley/BeFile.h>
 #include <RealityAdmin/ContextServicesWorkbench.h>
 #include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatform/RealityDataDownload.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -66,7 +67,22 @@ class ContextServicesTestFixture : public testing::Test
 
         return retString;
         }
-        
+
+
+    BeFileName GetPemLocation()
+        {
+        WChar exePath[MAX_PATH];
+        GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+        WString exeDir = exePath;
+        size_t pos = exeDir.find_last_of(L"/\\");
+        exeDir = exeDir.substr(0, pos + 1);
+
+        BeFileName caBundlePath(exeDir);
+        caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+        return caBundlePath;
+        }
+
     };
 
 //-------------------------------------------------------------------------------------
@@ -574,3 +590,72 @@ TEST_F(ContextServicesTestFixture, PackageDownloadTest)
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
     BeFileName::EmptyAndRemoveDirectory(packageFile);
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+// From WSG to Package to download
+//-------------------------------------------------------------------------------------
+TEST_F(ContextServicesTestFixture, COMPLETETest)
+{
+    Utf8String token = GetToken();
+    ASSERT_TRUE(token.length() > 100);
+
+    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
+    GeoPoint2d p1, p2, p3, p4, p5;
+    p1.Init(-79.25, 38.57);
+    p2.Init(-79.05, 38.57);
+    p3.Init(-79.05, 38.77);
+    p4.Init(-79.25, 38.77);
+    p5.Init(-79.25, 38.57);
+    filterPolygon.push_back(p1);
+    filterPolygon.push_back(p2);
+    filterPolygon.push_back(p3);
+    filterPolygon.push_back(p4);
+    filterPolygon.push_back(p5);
+
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+
+    RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadSpatialEntityWithDetails());
+
+    cswBench->FilterSpatialEntity();
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+
+    BeFileName packageFile = cswBench->GetPackageFileName();
+    ASSERT_TRUE(BeFileName::DoesPathExist(packageFile.GetName()));
+
+    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(packageFile);
+
+    ASSERT_TRUE(downloadOrder.size() >= 1);
+
+    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
+    ASSERT_TRUE(pDownload != NULL);
+    
+    pDownload->SetCertificatePath(GetPemLocation());
+    RealityDataDownload::DownloadReport* report = pDownload->Perform();
+    
+    ASSERT_TRUE(report != nullptr);
+
+    BeXmlStatus status;
+    Utf8String reportString;
+    report->ToXml(reportString);
+    BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(status, reportString.c_str());
+    ASSERT_TRUE(status == BeXmlStatus::BEXML_Success);
+    int fileCount = 0;
+
+    while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element)))
+    {
+        Utf8String xmlNodeName;
+        reader->GetCurrentNodeName(xmlNodeName);
+        IBeXmlReader::NodeType nodeType = reader->GetCurrentNodeType();
+        if (IBeXmlReader::NodeType::NODE_TYPE_Element != nodeType
+            || 0 == xmlNodeName.CompareTo("File"))
+            fileCount++;
+    }
+
+    ASSERT_TRUE(fileCount >= 4);
+
+    BeFileName::EmptyAndRemoveDirectory(packageFile.GetName());
+}
