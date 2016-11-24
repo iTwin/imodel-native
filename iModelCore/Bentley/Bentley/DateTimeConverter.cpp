@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DateTime"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"DateTime"))
 
 BEGIN_BENTLEY_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -42,23 +42,23 @@ const uint64_t DateTimeConverter::CE_EPOCH_AS_JD_HNS = 1487311632000000000ULL;
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ToJulianDay (uint64_t& julianDayInHns, DateTimeCR dateTime)
-    {   
-    return ConvertToJulianDay (julianDayInHns, dateTime, true);
+BentleyStatus DateTimeConverter::ToJulianDay(uint64_t& julianDayInHns, DateTimeCR dateTime)
+    {
+    return ConvertToJulianDay(julianDayInHns, dateTime, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ToJulianDay (double& julianDay, DateTimeCR dateTime)
+BentleyStatus DateTimeConverter::ToJulianDay(double& julianDay, DateTimeCR dateTime)
     {
     uint64_t jdInHns = 0ULL;
-    BentleyStatus stat = ToJulianDay (jdInHns, dateTime);
+    BentleyStatus stat = ToJulianDay(jdInHns, dateTime);
     if (SUCCESS != stat)
         return ERROR;
-    
-    julianDay = HnsToRationalDay (jdInHns);
+
+    julianDay = HnsToRationalDay(jdInHns);
     return SUCCESS;
     }
 
@@ -66,33 +66,33 @@ BentleyStatus DateTimeConverter::ToJulianDay (double& julianDay, DateTimeCR date
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::FromJulianDay (DateTime& dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo)
+BentleyStatus DateTimeConverter::FromJulianDay(DateTime& dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo)
     {
-    return ConvertFromJulianDay (dateTime, julianDayInHns, targetInfo, true);
+    return ConvertFromJulianDay(dateTime, julianDayInHns, targetInfo, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::FromJulianDay (DateTime& dateTime, double julianDay, DateTime::Info const& targetInfo)
+BentleyStatus DateTimeConverter::FromJulianDay(DateTime& dateTime, double julianDay, DateTime::Info const& targetInfo)
     {
-    const uint64_t jdInHns = RationalDayToHns (julianDay);
-    return FromJulianDay (dateTime, jdInHns, targetInfo);
+    const uint64_t jdInHns = RationalDayToHns(julianDay);
+    return FromJulianDay(dateTime, jdInHns, targetInfo);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ConvertToJulianDay (uint64_t& julianDayInHns, DateTime const& dateTime, bool applyTimezoneOffset)
+BentleyStatus DateTimeConverter::ConvertToJulianDay(uint64_t& julianDayInHns, DateTime const& dateTime, bool applyTimezoneOffset)
     {
-    if (!dateTime.IsValid ())
+    if (!dateTime.IsValid())
         return ERROR;
 
     //compute raw JD (without time zone offset)
     uint64_t rawJd = 0ULL;
-    BentleyStatus stat = ComputeJulianDay (rawJd, dateTime);
+    BentleyStatus stat = ComputeJulianDay(rawJd, dateTime);
     if (SUCCESS != stat)
         return ERROR;
 
@@ -106,7 +106,7 @@ BentleyStatus DateTimeConverter::ConvertToJulianDay (uint64_t& julianDayInHns, D
     int64_t localTimezoneOffsetInHns = 0LL;
     if (dateTime.GetKind() == DateTime::Kind::Local)
         {
-        stat = ComputeLocalTimezoneOffsetFromLocalTime (localTimezoneOffsetInHns, rawJd);
+        stat = ComputeLocalTimezoneOffsetFromLocalTime(localTimezoneOffsetInHns, rawJd);
         if (SUCCESS != stat)
             return ERROR;
         }
@@ -121,10 +121,10 @@ BentleyStatus DateTimeConverter::ConvertToJulianDay (uint64_t& julianDayInHns, D
 //does the raw computation without considering time zones (i.e. treats the given
 //date as if it were in UTC)
 //static
-BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, DateTime const& dateTime)
+BentleyStatus DateTimeConverter::ComputeJulianDay(uint64_t& julianDayInHns, DateTime const& dateTime)
     {
-    return ComputeJulianDay (julianDayInHns, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay(),
-                                            dateTime.GetHour(), dateTime.GetMinute(), dateTime.GetSecond(), dateTime.GetHectoNanosecond());
+    return ComputeJulianDay(julianDayInHns, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay(),
+                            dateTime.GetHour(), dateTime.GetMinute(), dateTime.GetSecond(), dateTime.GetHectoNanosecond());
     }
 
 //---------------------------------------------------------------------------------------
@@ -133,14 +133,14 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, Dat
 //does the raw computation without considering time zones (i.e. treats the given
 //date as if it were in UTC)
 //static
-BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, tm const& dateTimeTm)
+BentleyStatus DateTimeConverter::ComputeJulianDay(uint64_t& julianDayInHns, tm const& dateTimeTm)
     {
-    return ComputeJulianDay (julianDayInHns, static_cast <int16_t> (dateTimeTm.tm_year + 1900), //tm year is based on 1900
-                                             static_cast <uint8_t> (dateTimeTm.tm_mon + 1), //tm month is 0-based
-                                             static_cast <uint8_t> (dateTimeTm.tm_mday),
-                                             static_cast <uint8_t> (dateTimeTm.tm_hour),
-                                             static_cast <uint8_t> (dateTimeTm.tm_min),
-                                             static_cast <uint8_t> (dateTimeTm.tm_sec), 0);
+    return ComputeJulianDay(julianDayInHns, static_cast <int16_t> (dateTimeTm.tm_year + 1900), //tm year is based on 1900
+                            static_cast <uint8_t> (dateTimeTm.tm_mon + 1), //tm month is 0-based
+                            static_cast <uint8_t> (dateTimeTm.tm_mday),
+                            static_cast <uint8_t> (dateTimeTm.tm_hour),
+                            static_cast <uint8_t> (dateTimeTm.tm_min),
+                            static_cast <uint8_t> (dateTimeTm.tm_sec), 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -149,7 +149,7 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, tm 
 //does the raw computation without considering time zones (i.e. treats the given
 //date as if it were in UTC)
 //static 
-BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t hectoNanosecond)
+BentleyStatus DateTimeConverter::ComputeJulianDay(uint64_t& julianDayInHns, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t hectoNanosecond)
     {
     julianDayInHns = 0ULL;
 
@@ -157,15 +157,15 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int
     if (!
         (year > -4713 ||
         (year == -4713 && (month > 11 ||
-        (month == 11 && (day > 24 ||
-        (day == 24 && hour >= 12))))))
+         (month == 11 && (day > 24 ||
+                           (day == 24 && hour >= 12))))))
         )
         return ERROR;
 
     //Algorithm adopted from Meeus page 61 (as in SQLite)
 
     //*** compute date component 
-    
+
     //think of Jan and Feb as being month 13 and 14 of the previous year
     if (month <= 2)
         {
@@ -174,7 +174,7 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int
         }
 
     const int a = year / 100;
-    const int b = 2 - a + (a/4);
+    const int b = 2 - a + (a / 4);
     const int x1 = static_cast<int> (365.25 * (year + 4716));
     const int x2 = static_cast<int> (30.6001 * (month + 1));
 
@@ -182,18 +182,18 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int
 
     //the minimum value is -0.5 (in fractional notation) which maps to the beginning of the epoch.
     //values below are wrong as the precondition checks that the input is not before the epoch.
-    BeAssert (dateComponentInSecs >= -43200LL);
+    BeAssert(dateComponentInSecs >= -43200LL);
 
     //internally compute the JulianDays in hecto-nanosecs since start of JulianDay epoch
     //(no loss of accuracy here)
 
     //*** compute time component
     const uint64_t timeComponentInSecs = hour * 3600ULL + minute * 60ULL + second;
-    
+
     const uint64_t julianDayInSecs = dateComponentInSecs + timeComponentInSecs;
     //check for UInt64 overflow 
     const uint64_t maxAllowedInSecs = ULLONG_MAX / HECTONANOSECS_IN_SEC;
-    BeAssert (julianDayInSecs < maxAllowedInSecs);
+    BeAssert(julianDayInSecs < maxAllowedInSecs);
 
     //convert to hecto nanosecs and add the input hecto-nanosecond component
     julianDayInHns = julianDayInSecs * HECTONANOSECS_IN_SEC + hectoNanosecond;
@@ -211,7 +211,7 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int
     //years since 4800
     const int y = year + 4800 - a;
     const Int64 jdd = day + (153*m + 2) / 5 + 365 * y + y/4 - y/100 + y/400 - 32045;
-    
+
     const Int64 dateComponentInSecs = jdd * SECS_IN_DAY - 43200LL;
     */
     }
@@ -220,19 +220,19 @@ BentleyStatus DateTimeConverter::ComputeJulianDay (uint64_t& julianDayInHns, int
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-BentleyStatus DateTimeConverter::ConvertFromJulianDay (DateTime& dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo, bool applyTimezoneOffset)
+BentleyStatus DateTimeConverter::ConvertFromJulianDay(DateTime& dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo, bool applyTimezoneOffset)
     {
-    if (applyTimezoneOffset && targetInfo.GetKind () == DateTime::Kind::Local)
+    if (applyTimezoneOffset && targetInfo.GetKind() == DateTime::Kind::Local)
         {
         int64_t localTimezoneOffsetInHns = 0LL;
-        BentleyStatus stat = ComputeLocalTimezoneOffsetFromUtcTime (localTimezoneOffsetInHns, julianDayInHns);
+        BentleyStatus stat = ComputeLocalTimezoneOffsetFromUtcTime(localTimezoneOffsetInHns, julianDayInHns);
         if (stat != SUCCESS)
             return ERROR;
 
         julianDayInHns -= localTimezoneOffsetInHns;
         }
 
-    return ParseJulianDay (dateTime, julianDayInHns, targetInfo);
+    return ParseJulianDay(dateTime, julianDayInHns, targetInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -241,7 +241,7 @@ BentleyStatus DateTimeConverter::ConvertFromJulianDay (DateTime& dateTime, uint6
 //does the raw computation without considering time zones (i.e. expects the given
 //date to be in UTC)
 //static 
-BentleyStatus DateTimeConverter::ParseJulianDay (DateTimeR dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo)
+BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t julianDayInHns, DateTime::Info const& targetInfo)
     {
     const uint64_t HALFDAY_IN_HECTONANOSECS = HECTONANOSECS_IN_DAY / 2;
 
@@ -275,7 +275,7 @@ BentleyStatus DateTimeConverter::ParseJulianDay (DateTimeR dateTime, uint64_t ju
     if (timeFraction != 0ULL)
         {
         hectoNanosecond = timeFraction % HECTONANOSECS_IN_SEC;
-    
+
         //now remaining time fraction is in secs
         timeFraction = (timeFraction - hectoNanosecond) / HECTONANOSECS_IN_SEC;
 
@@ -284,13 +284,13 @@ BentleyStatus DateTimeConverter::ParseJulianDay (DateTimeR dateTime, uint64_t ju
         timeFraction = (timeFraction - second) / 60;
 
         minute = timeFraction % 60;
-    
+
         //now remaining time fraction is the hours
         hour = (uint8_t) ((timeFraction - minute) / 60);
-        BeAssert (hour < 24);
+        BeAssert(hour < 24);
         }
 
-    dateTime = DateTime (targetInfo, year, month, day, hour, minute, second, hectoNanosecond);
+    dateTime = DateTime(targetInfo, year, month, day, hour, minute, second, hectoNanosecond);
 
     return SUCCESS;
 
@@ -323,7 +323,7 @@ BentleyStatus DateTimeConverter::ParseJulianDay (DateTimeR dateTime, uint64_t ju
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromLocalTime (int64_t& timezoneOffsetInHns, uint64_t rawJdInHns)
+BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromLocalTime(int64_t& timezoneOffsetInHns, uint64_t rawJdInHns)
     {
     //rawJdInHns does not yet include time zone transformation.
     //In this algo we first treat it as if it was UTC based and compute an approximate offset from it.
@@ -331,7 +331,7 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromLocalTime (int64_
     //to / from DST. In that case treating local time as UTC yields the wrong offset.
     //This algo computes stuff based on the wrong offset which finally yields the right offset.
     int64_t approximateOffset = 0LL;
-    BentleyStatus stat = ComputeLocalTimezoneOffsetFromUtcTime (approximateOffset, rawJdInHns);
+    BentleyStatus stat = ComputeLocalTimezoneOffsetFromUtcTime(approximateOffset, rawJdInHns);
     if (SUCCESS != stat)
         return ERROR;
 
@@ -339,7 +339,7 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromLocalTime (int64_
     uint64_t approximateUtcJD = rawJdInHns + approximateOffset;
 
     int64_t correctOffset = 0LL;
-    stat = ComputeLocalTimezoneOffsetFromUtcTime (correctOffset, approximateUtcJD);
+    stat = ComputeLocalTimezoneOffsetFromUtcTime(correctOffset, approximateUtcJD);
     if (SUCCESS != stat)
         return ERROR;
 
@@ -351,15 +351,15 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromLocalTime (int64_
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime (int64_t& timezoneOffsetInHns, uint64_t jdInHns)
+BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& timezoneOffsetInHns, uint64_t jdInHns)
     {
-    if (!IsInUnixEpoch (jdInHns))
+    if (!IsInUnixEpoch(jdInHns))
         {
-        if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
             {
-            double jd = HnsToRationalDay (jdInHns);
-            LOG.debugv (L"Date [Julian Day %lf] is outside Unix epoch. Using default date in Unix epoch (2000-01-01 00:00:00 UTC) for computing the local time zone offset.",
-                            jd);
+            double jd = HnsToRationalDay(jdInHns);
+            LOG.debugv(L"Date [Julian Day %lf] is outside Unix epoch. Using default date in Unix epoch (2000-01-01 00:00:00 UTC) for computing the local time zone offset.",
+                       jd);
             }
 
         //use a default date time within the epoch (2000-1-1 midnight) outside DST.
@@ -374,23 +374,23 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime (int64_t&
         }
 
     //assert that the below seconds components are gone
-    BeAssert (jdInHns % HECTONANOSECS_IN_SEC == 0);
+    BeAssert(jdInHns % HECTONANOSECS_IN_SEC == 0);
 
-    int64_t utcUnixMillis = JulianDayToUnixMilliseconds (jdInHns);
-    BeAssert (utcUnixMillis >= 0);
+    int64_t utcUnixMillis = JulianDayToUnixMilliseconds(jdInHns);
+    BeAssert(utcUnixMillis >= 0);
 
     uint64_t utcUnixMillisUnsigned = static_cast<uint64_t> (utcUnixMillis);
     struct tm localTime;
-    BentleyStatus stat = BeTimeUtilities::ConvertUnixMillisToLocalTime (localTime, utcUnixMillisUnsigned);
-    if (SUCCESS != stat)
-        return stat;
-    
-    uint64_t localJdInHns = 0ULL;
-    stat = ComputeJulianDay (localJdInHns, localTime);
+    BentleyStatus stat = BeTimeUtilities::ConvertUnixMillisToLocalTime(localTime, utcUnixMillisUnsigned);
     if (SUCCESS != stat)
         return stat;
 
-    BeAssert (localJdInHns % HECTONANOSECS_IN_SEC == 0);
+    uint64_t localJdInHns = 0ULL;
+    stat = ComputeJulianDay(localJdInHns, localTime);
+    if (SUCCESS != stat)
+        return stat;
+
+    BeAssert(localJdInHns % HECTONANOSECS_IN_SEC == 0);
 
     //cast both operands to int64 before substracting them from each other to avoid implicit conversions
     timezoneOffsetInHns = static_cast<int64_t>(jdInHns) - static_cast<int64_t> (localJdInHns);
@@ -401,7 +401,7 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime (int64_t&
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeConverter::IsInUnixEpoch (uint64_t jdInHns)
+bool DateTimeConverter::IsInUnixEpoch(uint64_t jdInHns)
     {
     return jdInHns >= UNIXEPOCH_BASELINE_IN_JULIANDAY_HNS && jdInHns <= UNIXEPOCH_END_IN_JULIANDAY_HNS;
     }
@@ -410,14 +410,14 @@ bool DateTimeConverter::IsInUnixEpoch (uint64_t jdInHns)
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ToUnixMilliseconds (int64_t& unixMilliseconds, DateTimeCR dateTime)
+BentleyStatus DateTimeConverter::ToUnixMilliseconds(int64_t& unixMilliseconds, DateTimeCR dateTime)
     {
     uint64_t jdInHns = 0ULL;
-    BentleyStatus stat = ToJulianDay (jdInHns, dateTime);
+    BentleyStatus stat = ToJulianDay(jdInHns, dateTime);
     if (SUCCESS != stat)
         return stat;
 
-    unixMilliseconds = JulianDayToUnixMilliseconds (jdInHns);
+    unixMilliseconds = JulianDayToUnixMilliseconds(jdInHns);
     return SUCCESS;
     }
 
@@ -425,10 +425,10 @@ BentleyStatus DateTimeConverter::ToUnixMilliseconds (int64_t& unixMilliseconds, 
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-BentleyStatus DateTimeConverter::FromUnixMilliseconds (DateTimeR dateTime, uint64_t unixMilliseconds, DateTime::Info const& targetInfo)
+BentleyStatus DateTimeConverter::FromUnixMilliseconds(DateTimeR dateTime, uint64_t unixMilliseconds, DateTime::Info const& targetInfo)
     {
-    const uint64_t jd = UnixMillisecondsToJulianDay (unixMilliseconds);
-    FromJulianDay (dateTime, jd, targetInfo);
+    const uint64_t jd = UnixMillisecondsToJulianDay(unixMilliseconds);
+    FromJulianDay(dateTime, jd, targetInfo);
     return SUCCESS;
     }
 
@@ -436,18 +436,18 @@ BentleyStatus DateTimeConverter::FromUnixMilliseconds (DateTimeR dateTime, uint6
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int64_t DateTimeConverter::JulianDayToUnixMilliseconds (uint64_t julianDayInHectoNanoseconds)
+int64_t DateTimeConverter::JulianDayToUnixMilliseconds(uint64_t julianDayInHectoNanoseconds)
     {
     //cast to Int64 so that difference will not get stuffed in UInt64
     const int64_t unixHns = static_cast<int64_t> (julianDayInHectoNanoseconds) - UNIXEPOCH_BASELINE_IN_JULIANDAY_HNS;
-    return RoundToMilliseconds (unixHns);
+    return RoundToMilliseconds(unixHns);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTimeConverter::UnixMillisecondsToJulianDay (uint64_t unixMilliseconds)
+uint64_t DateTimeConverter::UnixMillisecondsToJulianDay(uint64_t unixMilliseconds)
     {
     return unixMilliseconds * HECTONANOSECS_IN_MILLISEC + UNIXEPOCH_BASELINE_IN_JULIANDAY_HNS;
     }
@@ -456,15 +456,15 @@ uint64_t DateTimeConverter::UnixMillisecondsToJulianDay (uint64_t unixMillisecon
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::ToCommonEraTicks (int64_t& commonEraTicks, DateTimeCR dateTime)
+BentleyStatus DateTimeConverter::ToCommonEraTicks(int64_t& commonEraTicks, DateTimeCR dateTime)
     {
     uint64_t jdInHns = 0ULL;
 
-    BentleyStatus stat = ToJulianDay (jdInHns, dateTime);
+    BentleyStatus stat = ToJulianDay(jdInHns, dateTime);
     if (SUCCESS != stat)
         return stat;
 
-    commonEraTicks = JulianDayToCommonEraTicks (jdInHns);
+    commonEraTicks = JulianDayToCommonEraTicks(jdInHns);
     return SUCCESS;
     }
 
@@ -472,18 +472,18 @@ BentleyStatus DateTimeConverter::ToCommonEraTicks (int64_t& commonEraTicks, Date
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeConverter::FromCommonEraTicks (DateTime& dateTime, int64_t commonEraTicks, DateTime::Info const& targetInfo)
+BentleyStatus DateTimeConverter::FromCommonEraTicks(DateTime& dateTime, int64_t commonEraTicks, DateTime::Info const& targetInfo)
     {
-    const uint64_t jdInHns = CommonEraTicksToJulianDay (commonEraTicks);
+    const uint64_t jdInHns = CommonEraTicksToJulianDay(commonEraTicks);
 
-    return FromJulianDay (dateTime, jdInHns, targetInfo);
+    return FromJulianDay(dateTime, jdInHns, targetInfo);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int64_t DateTimeConverter::JulianDayToCommonEraTicks (uint64_t julianDayInHectoNanoseconds)
+int64_t DateTimeConverter::JulianDayToCommonEraTicks(uint64_t julianDayInHectoNanoseconds)
     {
     // commonEraTicks is number of ticks since 0001-01-01 00:00:00
     return julianDayInHectoNanoseconds - static_cast<int64_t> (CE_EPOCH_AS_JD_HNS);
@@ -493,11 +493,11 @@ int64_t DateTimeConverter::JulianDayToCommonEraTicks (uint64_t julianDayInHectoN
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTimeConverter::CommonEraTicksToJulianDay (int64_t commonEraTicks)
+uint64_t DateTimeConverter::CommonEraTicksToJulianDay(int64_t commonEraTicks)
     {
     // commonEraTicks is number of ticks since 0001-01-01 00:00:00
     const int64_t jdInHnsSigned = commonEraTicks + static_cast<int64_t> (CE_EPOCH_AS_JD_HNS);
-    BeAssert (jdInHnsSigned >= 0);
+    BeAssert(jdInHnsSigned >= 0);
     return static_cast<uint64_t> (jdInHnsSigned);
     }
 
@@ -505,7 +505,7 @@ uint64_t DateTimeConverter::CommonEraTicksToJulianDay (int64_t commonEraTicks)
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-double DateTimeConverter::HnsToRationalDay (uint64_t hns)
+double DateTimeConverter::HnsToRationalDay(uint64_t hns)
     {
     return hns / (1.0 * HECTONANOSECS_IN_DAY);
     }
@@ -514,7 +514,7 @@ double DateTimeConverter::HnsToRationalDay (uint64_t hns)
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTimeConverter::RationalDayToHns (double rationalDay)
+uint64_t DateTimeConverter::RationalDayToHns(double rationalDay)
     {
     if (rationalDay <= 0.0)
         return 0ULL;
@@ -527,7 +527,7 @@ uint64_t DateTimeConverter::RationalDayToHns (double rationalDay)
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int64_t DateTimeConverter::RoundToMilliseconds (int64_t hns)
+int64_t DateTimeConverter::RoundToMilliseconds(int64_t hns)
     {
     const double hnsInMillisecs = hns / (1.0 * HECTONANOSECS_IN_MILLISEC);
     double roundOffset = 0.5;
@@ -543,7 +543,7 @@ int64_t DateTimeConverter::RoundToMilliseconds (int64_t hns)
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint16_t DateTimeConverter::ToMillisecond (uint32_t hectoNanosecond)
+uint16_t DateTimeConverter::ToMillisecond(uint32_t hectoNanosecond)
     {
     //only millisecond component is returned (not rounded)
     return static_cast <uint16_t> (hectoNanosecond / HECTONANOSECS_IN_MILLISEC);
@@ -559,42 +559,42 @@ uint16_t DateTimeConverter::ToMillisecond (uint32_t hectoNanosecond)
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP const Iso8601Regex::PATTERN = 
-    "^([+-]?[\\d]{4})" //Group 1: Year (Group 0 is entire match) - Pattern starts with ^ as no leading stuff is supported
-    "-?" //date component delimiter '-' is optional
-    "(1[0-2]|0[1-9])" //Group 2: Month
-    "-?" //date component delimiter '-' is optional
-    "(3[0-1]|0[1-9]|[1-2][\\d])" //Group 3: Day
-    "(?:"                          //Non-capture group: Entire time component
-    "[T ]" //both T and space are supported as delimiters so that SQL-99 date time literals can be parsed, too. (see comment above)
-    "(2[0-3]|[0-1][\\d])" //Group 4: Hour
-    ":?" //time component delimiter ':' is optional
-    "([0-5][\\d])" //Group 5: Minute
-    "(?:" //non-capture group: Second component is optional
-    ":?" //time component delimiter ':' is optional
-    "([0-5][\\d])" //Group 6: Second
-    "(\\.[\\d]+)?" //Group 7: Second fraction
-    ")?"
-    "(Z|[+-](?:2[0-3]|[0-1][\\d]):?[0-5][\\d])?" //Group 8: time zone (time zone delimiter ':' is optional)
-    ")?$"; // string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
+Utf8CP const Iso8601Regex::PATTERN =
+"^([+-]?[\\d]{4})" //Group 1: Year (Group 0 is entire match) - Pattern starts with ^ as no leading stuff is supported
+"-?" //date component delimiter '-' is optional
+"(1[0-2]|0[1-9])" //Group 2: Month
+"-?" //date component delimiter '-' is optional
+"(3[0-1]|0[1-9]|[1-2][\\d])" //Group 3: Day
+"(?:"                          //Non-capture group: Entire time component
+"[T ]" //both T and space are supported as delimiters so that SQL-99 date time literals can be parsed, too. (see comment above)
+"(2[0-3]|[0-1][\\d])" //Group 4: Hour
+":?" //time component delimiter ':' is optional
+"([0-5][\\d])" //Group 5: Minute
+"(?:" //non-capture group: Second component is optional
+":?" //time component delimiter ':' is optional
+"([0-5][\\d])" //Group 6: Second
+"(\\.[\\d]+)?" //Group 7: Second fraction
+")?"
+"(Z|[+-](?:2[0-3]|[0-1][\\d]):?[0-5][\\d])?" //Group 8: time zone (time zone delimiter ':' is optional)
+")?$"; // string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //Characters in the ISO string have to be upper case, so not using case-insensitivity flag with regex
-Iso8601Regex::Iso8601Regex () : m_regex (PATTERN) {}
+Iso8601Regex::Iso8601Regex() : m_regex(PATTERN) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Iso8601Regex::~Iso8601Regex () {}
+Iso8601Regex::~Iso8601Regex() {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Iso8601Regex::Match (Matches& matches, Utf8CP iso8601DateTime) const
+bool Iso8601Regex::Match(Matches& matches, Utf8CP iso8601DateTime) const
     {
-    return std::regex_search (iso8601DateTime, matches, m_regex);
+    return std::regex_search(iso8601DateTime, matches, m_regex);
     }
 
 //************************ DateTimeStringConverter ********************************
@@ -609,33 +609,33 @@ const Utf8Char DateTimeStringConverter::ISO8601_TIMEZONE_UTC_LOWERCASE = 'z';
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8String DateTimeStringConverter::ToIso8601 (DateTimeCR dateTime)
+Utf8String DateTimeStringConverter::ToIso8601(DateTimeCR dateTime)
     {
-    if (!dateTime.IsValid ())
-        return Utf8String ();
+    if (!dateTime.IsValid())
+        return Utf8String();
 
-    if (dateTime.GetInfo ().GetComponent () == DateTime::Component::Date)
+    if (dateTime.GetInfo().GetComponent() == DateTime::Component::Date)
         {
         Utf8CP isoFormat = "%.4d-%.2d-%.2d";
         size_t approxSize = 11;
         Utf8String str;
-        str.reserve (approxSize);
-        str.Sprintf (isoFormat, dateTime.GetYear (), dateTime.GetMonth (), dateTime.GetDay ());
+        str.reserve(approxSize);
+        str.Sprintf(isoFormat, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
         return str;
         }
 
-    BeAssert (dateTime.GetInfo ().GetComponent () == DateTime::Component::DateAndTime);
+    BeAssert(dateTime.GetInfo().GetComponent() == DateTime::Component::DateAndTime);
 
-    double effectiveSeconds = ToRationalSeconds (dateTime.GetSecond (), dateTime.GetHectoNanosecond ());
+    double effectiveSeconds = ToRationalSeconds(dateTime.GetSecond(), dateTime.GetHectoNanosecond());
     //round to the milliseconds
     uint32_t millisecs = static_cast<uint32_t> (effectiveSeconds * 1000.0 + 0.5);
     effectiveSeconds = millisecs / 1000.0;
 
-    uint8_t effectiveMinute = dateTime.GetMinute ();
-    uint8_t effectiveHour = dateTime.GetHour ();
-    uint8_t effectiveDay = dateTime.GetDay ();
-    uint8_t effectiveMonth = dateTime.GetMonth ();
-    int16_t effectiveYear = dateTime.GetYear ();
+    uint8_t effectiveMinute = dateTime.GetMinute();
+    uint8_t effectiveHour = dateTime.GetHour();
+    uint8_t effectiveDay = dateTime.GetDay();
+    uint8_t effectiveMonth = dateTime.GetMonth();
+    int16_t effectiveYear = dateTime.GetYear();
     if (millisecs >= 60000)
         {
         effectiveSeconds = 0.0;
@@ -654,7 +654,7 @@ Utf8String DateTimeStringConverter::ToIso8601 (DateTimeCR dateTime)
         effectiveDay++;
         }
 
-    if (effectiveDay > DateTime::GetMaxDay (effectiveYear, effectiveMonth))
+    if (effectiveDay > DateTime::GetMaxDay(effectiveYear, effectiveMonth))
         {
         effectiveDay = 1;
         effectiveMonth++;
@@ -668,20 +668,20 @@ Utf8String DateTimeStringConverter::ToIso8601 (DateTimeCR dateTime)
 
     Utf8CP isoFormat = "%.4d-%.2d-%.2dT%.2d:%.2d:%06.3lf%hc";
     size_t approxSize = 23;
-    
+
     Utf8Char timeZoneIndicator = '\0';
     //if date is in UTC suffix the string with Z according to ISO
     //for local and unspecified dates don't suffix anything (compliant with ISO, too)
-    if (dateTime.GetKind () == DateTime::Kind::Utc)
+    if (dateTime.GetKind() == DateTime::Kind::Utc)
         {
         timeZoneIndicator = ISO8601_TIMEZONE_UTC;
         approxSize = 24;
         }
 
     Utf8String str;
-    str.reserve (approxSize);
-    str.Sprintf (isoFormat, effectiveYear, effectiveMonth, effectiveDay,
-        effectiveHour, effectiveMinute, effectiveSeconds, timeZoneIndicator);
+    str.reserve(approxSize);
+    str.Sprintf(isoFormat, effectiveYear, effectiveMonth, effectiveDay,
+                effectiveHour, effectiveMinute, effectiveSeconds, timeZoneIndicator);
 
     return str;
     }
@@ -690,67 +690,67 @@ Utf8String DateTimeStringConverter::ToIso8601 (DateTimeCR dateTime)
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTimeStringConverter::FromIso8601 (DateTimeR dateTime, Utf8CP iso8601DateTime)
+BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP iso8601DateTime)
     {
     if (Utf8String::IsNullOrEmpty(iso8601DateTime))
         return ERROR;
 
     Iso8601Regex::Matches matches;
     static const Iso8601Regex regex;
-    const bool hasMatches = regex.Match (matches, iso8601DateTime);
+    const bool hasMatches = regex.Match(matches, iso8601DateTime);
     size_t matchCount = 0;
-    if (!hasMatches || (matchCount = matches.size ()) == 0 || matchCount != Iso8601Regex::EXPECTED_MATCH_COUNT)
+    if (!hasMatches || (matchCount = matches.size()) == 0 || matchCount != Iso8601Regex::EXPECTED_MATCH_COUNT)
         return ERROR;
 
     //Parse date component
-    BeAssert (RegexGroupMatched (matches, Iso8601Regex::YEAR_GROUPINDEX) && RegexGroupMatched (matches, Iso8601Regex::MONTH_GROUPINDEX) && RegexGroupMatched (matches, Iso8601Regex::DAY_GROUPINDEX) && "All three date components are mandatory");
+    BeAssert(RegexGroupMatched(matches, Iso8601Regex::YEAR_GROUPINDEX) && RegexGroupMatched(matches, Iso8601Regex::MONTH_GROUPINDEX) && RegexGroupMatched(matches, Iso8601Regex::DAY_GROUPINDEX) && "All three date components are mandatory");
     int intValue = 0;
-    TryRetrieveValueFromRegexMatch (intValue, matches, Iso8601Regex::YEAR_GROUPINDEX);
+    TryRetrieveValueFromRegexMatch(intValue, matches, Iso8601Regex::YEAR_GROUPINDEX);
     int16_t year = static_cast<int16_t> (intValue);
 
     uint8_t month = 0;
-    TryRetrieveValueFromRegexMatch (month, matches, Iso8601Regex::MONTH_GROUPINDEX);
+    TryRetrieveValueFromRegexMatch(month, matches, Iso8601Regex::MONTH_GROUPINDEX);
 
     uint8_t day = 0;
-    TryRetrieveValueFromRegexMatch (day, matches, Iso8601Regex::DAY_GROUPINDEX);
+    TryRetrieveValueFromRegexMatch(day, matches, Iso8601Regex::DAY_GROUPINDEX);
 
     //Parse time component (if specified in input string)
     uint8_t hour = 0;
-    if (!TryRetrieveValueFromRegexMatch (hour, matches, Iso8601Regex::HOUR_GROUPINDEX))
+    if (!TryRetrieveValueFromRegexMatch(hour, matches, Iso8601Regex::HOUR_GROUPINDEX))
         {
         //no time component specified.
-        BeAssert (!RegexGroupMatched (matches, Iso8601Regex::MINUTE_GROUPINDEX) && !RegexGroupMatched (matches, Iso8601Regex::SECOND_GROUPINDEX) && !RegexGroupMatched (matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX) && !RegexGroupMatched (matches, Iso8601Regex::TIMEZONE_GROUPINDEX));
-        dateTime = DateTime (year, month, day);
+        BeAssert(!RegexGroupMatched(matches, Iso8601Regex::MINUTE_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECOND_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::TIMEZONE_GROUPINDEX));
+        dateTime = DateTime(year, month, day);
         return SUCCESS;
         }
 
     //if hour component is given, minute must be given too (all the rest is optional)
-    BeAssert (RegexGroupMatched (matches, Iso8601Regex::MINUTE_GROUPINDEX));
+    BeAssert(RegexGroupMatched(matches, Iso8601Regex::MINUTE_GROUPINDEX));
 
     uint8_t minute = 0;
-    TryRetrieveValueFromRegexMatch (minute, matches, Iso8601Regex::MINUTE_GROUPINDEX);
+    TryRetrieveValueFromRegexMatch(minute, matches, Iso8601Regex::MINUTE_GROUPINDEX);
 
     uint8_t second = 0;
     uint32_t hns = 0;
-    if (TryRetrieveValueFromRegexMatch (second, matches, Iso8601Regex::SECOND_GROUPINDEX))
+    if (TryRetrieveValueFromRegexMatch(second, matches, Iso8601Regex::SECOND_GROUPINDEX))
         {
         double secondFraction = 0.0;
-        if (TryRetrieveValueFromRegexMatch (secondFraction, matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX))
+        if (TryRetrieveValueFromRegexMatch(secondFraction, matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX))
             {
-            hns = FractionToHectoNanosecond (secondFraction);
+            hns = FractionToHectoNanosecond(secondFraction);
             }
         }
     else
         {
         //if seconds are not specified, second fraction must not exist either
-        BeAssert (!RegexGroupMatched (matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX));
+        BeAssert(!RegexGroupMatched(matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX));
         }
 
     DateTime::Kind kind = DateTime::Kind::Unspecified;
     Utf8String timezoneIndicator;
-    if (TryRetrieveValueFromRegexMatch (timezoneIndicator, matches, Iso8601Regex::TIMEZONE_GROUPINDEX))
+    if (TryRetrieveValueFromRegexMatch(timezoneIndicator, matches, Iso8601Regex::TIMEZONE_GROUPINDEX))
         {
-        BeAssert (!timezoneIndicator.empty ());
+        BeAssert(!timezoneIndicator.empty());
         const Utf8Char firstChar = timezoneIndicator[0];
         if (firstChar == ISO8601_TIMEZONE_UTC || firstChar == ISO8601_TIMEZONE_UTC_LOWERCASE)
             kind = DateTime::Kind::Utc;
@@ -758,7 +758,7 @@ BentleyStatus DateTimeStringConverter::FromIso8601 (DateTimeR dateTime, Utf8CP i
             kind = DateTime::Kind::Local;
         }
 
-    dateTime = DateTime (kind, year, month, day, hour, minute, second, hns);
+    dateTime = DateTime(kind, year, month, day, hour, minute, second, hns);
     return SUCCESS;
     }
 
@@ -766,23 +766,23 @@ BentleyStatus DateTimeStringConverter::FromIso8601 (DateTimeR dateTime, Utf8CP i
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::RegexGroupMatched (Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::RegexGroupMatched(Iso8601Regex::Matches const& matches, size_t groupIndex)
     {
-    return matches[groupIndex].length () > 0 && matches[groupIndex].matched;
+    return matches[groupIndex].length() > 0 && matches[groupIndex].matched;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (int& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(int& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
     {
-    if (!RegexGroupMatched (matches, groupIndex))
+    if (!RegexGroupMatched(matches, groupIndex))
         {
         return false;
         }
 
-    matchValue = atoi (matches[groupIndex].str ().c_str ());
+    matchValue = atoi(matches[groupIndex].str().c_str());
     return true;
     }
 
@@ -790,14 +790,14 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (int& matchValue, I
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (uint8_t& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(uint8_t& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
     {
-    if (!RegexGroupMatched (matches, groupIndex))
+    if (!RegexGroupMatched(matches, groupIndex))
         {
         return false;
         }
 
-    int matchValueInt = atoi (matches[groupIndex].str ().c_str ());
+    int matchValueInt = atoi(matches[groupIndex].str().c_str());
     matchValue = static_cast<uint8_t> (matchValueInt);
     return true;
     }
@@ -807,14 +807,14 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (uint8_t& matchValu
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (double& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(double& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
     {
-    if (!RegexGroupMatched (matches, groupIndex))
+    if (!RegexGroupMatched(matches, groupIndex))
         {
         return false;
         }
 
-    matchValue = atof (matches[groupIndex].str ().c_str ());
+    matchValue = atof(matches[groupIndex].str().c_str());
     return true;
     }
 
@@ -822,14 +822,14 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (double& matchValue
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (Utf8StringR matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
     {
-    if (!RegexGroupMatched (matches, groupIndex))
+    if (!RegexGroupMatched(matches, groupIndex))
         {
         return false;
         }
 
-    matchValue.assign (matches[groupIndex].str ().c_str ());
+    matchValue.assign(matches[groupIndex].str().c_str());
     return true;
     }
 
@@ -837,7 +837,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch (Utf8StringR matchV
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-double DateTimeStringConverter::ToRationalSeconds (uint8_t second, uint32_t hectoNanosecond)
+double DateTimeStringConverter::ToRationalSeconds(uint8_t second, uint32_t hectoNanosecond)
     {
     return second + (hectoNanosecond / (1.0 * DateTimeConverter::HECTONANOSECS_IN_SEC));
     }
@@ -846,9 +846,9 @@ double DateTimeStringConverter::ToRationalSeconds (uint8_t second, uint32_t hect
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint32_t DateTimeStringConverter::FractionToHectoNanosecond (double secondFraction)
+uint32_t DateTimeStringConverter::FractionToHectoNanosecond(double secondFraction)
     {
-    BeAssert (secondFraction >= 0.0 && secondFraction < 1.0);
+    BeAssert(secondFraction >= 0.0 && secondFraction < 1.0);
     return static_cast<uint32_t> (secondFraction * DateTimeConverter::HECTONANOSECS_IN_SEC + 0.5);
     }
 
