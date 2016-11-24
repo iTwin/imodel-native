@@ -348,6 +348,7 @@ protected:
     GroundDetectionGridPtr              m_pGDGrid;
     IDtmProviderPtr                     m_pBcDtm;
     PCGroundTriangleCollection          m_trianglesToProcess;
+    DRange3d                            m_triangleToProcessExtent;
     T_DPoint3dPointContainer            m_newPointToAdd;
     bool                                m_isFirstIteration;
 
@@ -401,11 +402,9 @@ public:
 
 
 private:
-    
-    static BeMutex        s_CSPCGroundTIN;
-    static BeMutex        s_newPointToAddCS;
-    static BeMutex        s_dtmLibCS;
-    intptr_t                        m_mainThreadID;
+        
+    static BeMutex        s_newPointToAddCS;    
+    intptr_t              m_mainThreadID;
 
     GroundDetectionThreadPoolPtr m_newThreadPool;
     GroundDetectionThreadPoolPtr GetWorkThreadPool();
