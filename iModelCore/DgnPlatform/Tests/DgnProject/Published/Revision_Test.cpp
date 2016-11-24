@@ -386,12 +386,12 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, discardedCodes);
 
     expectedCodes.insert(defaultCat->GetCode());
-    expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
+    expectedCodes.insert(DgnSubCategory::Get(db, defaultCat->GetDefaultSubCategoryId())->GetCode());
     expectedCodes.insert(subCat.GetCode());
-    expectedCodes.insert(ViewDefinition::CreateCode("Default"));
-    expectedCodes.insert(ModelSelector::CreateCode("Default"));
-    expectedCodes.insert(CategorySelector::CreateCode("Default"));
-    expectedCodes.insert(DisplayStyle::CreateCode("Default"));
+    expectedCodes.insert(ViewDefinition::CreateCode(db, "Default"));
+    expectedCodes.insert(ModelSelector::CreateCode(db, "Default"));
+    expectedCodes.insert(CategorySelector::CreateCode(db, "Default"));
+    expectedCodes.insert(DisplayStyle::CreateCode(db, "Default"));
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create some new elements with codes, and delete one with a code
@@ -427,7 +427,7 @@ TEST_F(RevisionTestFixture, Codes)
 
     // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
     auto defaultCode = DgnCode::CreateEmpty();
-    auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
+    auto auth = DatabaseScopeAuthority::Create("MyAuthority", db);
     EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
 
     auto cpElX1 = InsertPhysicalElementByCode(auth->CreateCode("X", "1")),

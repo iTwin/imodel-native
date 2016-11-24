@@ -289,6 +289,7 @@ protected:
     TileLoader(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
+public:
     BentleyStatus LoadTile();
     DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
     DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
@@ -299,7 +300,6 @@ protected:
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
     virtual BentleyStatus _LoadTile() = 0; 
 
-public:
     struct LoadFlag
         {
         Root& m_root;

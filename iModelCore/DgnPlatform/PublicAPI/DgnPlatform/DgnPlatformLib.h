@@ -659,10 +659,10 @@ public:
     //! Associate a host with the current thread, allowing it to call DgnPlatform functions. The host must have been initialized already.
     //! This function can be used to move a Host between threads or to sharea Host among multiple threads. See \ref HostsAndThreads
     //! Note that, before you call DgnPlatformLib::Host::Terminate on a host object, you must call ForgetHost in any thread that is sharing it.
-    DGNPLATFORM_EXPORT static void AdoptHost(Host&);
+    static void AdoptHost(Host&) {}
 
     //! Break the association between the curent thread and its host. See \ref HostsAndThreads
-    DGNPLATFORM_EXPORT static void ForgetHost();
+    static void ForgetHost() {}
 
     //! Query if a Host is associated with the current thread
     //! @return nullptr if not Host is associated with the current thread. Otherwise, a pointer to the Host object.

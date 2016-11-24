@@ -100,7 +100,7 @@ public:
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
     //! Create a new CodeAuthority
-    static DgnAuthorityId InsertNamespaceAuthority(DgnDbR, Utf8CP authorityName);
+    static DgnAuthorityId InsertDatabaseScopeAuthority(DgnDbR, Utf8CP authorityName);
     
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);

@@ -2508,7 +2508,7 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT void SaveVariables() const;
-    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : SessionAuthority::CreateSessionCode(name);} //!< @private
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8StringCR name);
 
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this Session
 

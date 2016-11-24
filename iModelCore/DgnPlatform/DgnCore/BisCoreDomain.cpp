@@ -92,20 +92,10 @@ HANDLER_DEFINE_MEMBERS(Aspect)
 namespace dgn_AuthorityHandler
 {
 HANDLER_DEFINE_MEMBERS(Authority)
-HANDLER_DEFINE_MEMBERS(Local)
-HANDLER_DEFINE_MEMBERS(Namespace)
-HANDLER_DEFINE_MEMBERS(Material)
-HANDLER_DEFINE_MEMBERS(Partition)
-HANDLER_DEFINE_MEMBERS(TrueColor)
-HANDLER_DEFINE_MEMBERS(Resource)
-HANDLER_DEFINE_MEMBERS(DrawingCategory)
-HANDLER_DEFINE_MEMBERS(SpatialCategory)
-HANDLER_DEFINE_MEMBERS(SubCategory)
-HANDLER_DEFINE_MEMBERS(GeometryPart)
-HANDLER_DEFINE_MEMBERS(Session)
-HANDLER_DEFINE_MEMBERS(Link)
-HANDLER_DEFINE_MEMBERS(Drawing)
-HANDLER_DEFINE_MEMBERS(Sheet)
+HANDLER_DEFINE_MEMBERS(DatabaseScope)
+HANDLER_DEFINE_MEMBERS(ModelScope)
+HANDLER_DEFINE_MEMBERS(ElementScope)
+HANDLER_DEFINE_MEMBERS(Null)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -216,20 +206,10 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Partition::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::DrawingCategory::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::SpatialCategory::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::SubCategory::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Link::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Drawing::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Sheet::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::DatabaseScope::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::ModelScope::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::ElementScope::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Null::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
