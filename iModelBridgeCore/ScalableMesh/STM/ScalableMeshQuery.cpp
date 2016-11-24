@@ -1555,7 +1555,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         {
         for (auto& idx : indices) idx += 1;
         size_t nIndices = indices.size();
-        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-11-02\\") + L"fpostgetmesh_";
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-11-16\\") + L"fpostgetmesh_";
         DRange3d range;
         bcdtm->GetRange(range);
         nameBefore.append(to_wstring(range.low.x).c_str());
