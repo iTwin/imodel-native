@@ -34,14 +34,6 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 
-DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized; notified Paul
-    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
-    # Actual: 123
-    # Expected: 321
-    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
-    # Actual: 456
-    # Expected: 654
-
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
 
