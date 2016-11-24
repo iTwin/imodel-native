@@ -178,7 +178,7 @@ typedef std::vector<PCGroundTrianglePtr> PCGroundTriangleCollection;
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct QueryAllPointsForFirstSeedPointWork : RefCounted<PointCloudWork>
+struct QueryAllPointsForFirstSeedPointWork : RefCounted<GroundDetectionWork> //RefCounted<PointCloudWork>
     {
     protected:
         GridCellEntryPtr m_pGridCellEntry;
@@ -199,7 +199,7 @@ struct QueryAllPointsForFirstSeedPointWork : RefCounted<PointCloudWork>
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct FindFirstSeedPointWork : RefCounted<PointCloudWork>
+struct FindFirstSeedPointWork : RefCounted<GroundDetectionWork> //RefCounted<PointCloudWork>
     {
     protected:
         GridCellEntryPtr m_pGridCellEntry;
@@ -221,7 +221,7 @@ struct FindFirstSeedPointWork : RefCounted<PointCloudWork>
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct QueryAllPointsForTriangleWork : RefCounted<PointCloudWork>
+struct QueryAllPointsForTriangleWork : RefCounted<GroundDetectionWork> //RefCounted<PointCloudWork>
     {
     protected:
         PCGroundTrianglePtr                 m_PCGroundTriangle;
@@ -243,7 +243,7 @@ struct QueryAllPointsForTriangleWork : RefCounted<PointCloudWork>
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct DensifyTriangleWork : RefCounted<PointCloudWork>
+struct DensifyTriangleWork : RefCounted<GroundDetectionWork> //RefCounted<PointCloudWork>
     {
     protected:
         PCGroundTrianglePtr m_PCGroundTriangle;

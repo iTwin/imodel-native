@@ -900,6 +900,7 @@ GroundDetectionThreadPool::GroundDetectionThreadPool(int numWorkingThreads)
             m_areWorkingThreadRunning[ind] = false;
             */
                 
+    m_currentWorkInd = 0;
     m_run = false;    
     }
 
@@ -916,6 +917,7 @@ GroundDetectionThreadPool::~GroundDetectionThreadPool()
 
 void GroundDetectionThreadPool::ClearQueueWork()
     {
+    m_currentWorkInd = 0;
     m_workQueue.clear();
     }
 
@@ -930,6 +932,7 @@ void GroundDetectionThreadPool::Start()
     if (m_run == false)
         {        
         m_run = true;
+        assert(m_currentWorkInd == 0);
 
         //Launch a group of threads
         for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
@@ -946,7 +949,7 @@ void GroundDetectionThreadPool::WaitAndStop()
         if (m_workingThreads[threadId].joinable())
             m_workingThreads[threadId].join();                                
         }
-
+    
     m_run = false;
     }    
     
