@@ -132,7 +132,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
         {
-        dtmP = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+        dtmP = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
         }
     else return;
     DPoint3d triangle[4];
@@ -169,7 +169,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
 
     assert(status == SUCCESS);
         {
-        WString str(L"e:\\makeTM\\clipIssue");
+        WString str(L"e:\\makeTM\\newcliptm");
         str.append(L".bcdtm");
         bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
         }
@@ -177,7 +177,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
     status = bcdtmObject_triangulateStmTrianglesDtmObject(dtmP->GetTinHandle());
     assert(status == SUCCESS);
         {
-        WString str(L"e:\\makeTM\\clipIssue");
+        WString str(L"e:\\makeTM\\newcliptm");
         str.append(L".tin");
         bcdtmWrite_toFileDtmObject(dtmP->GetTinHandle(), str.c_str());
         }
@@ -452,7 +452,7 @@ void RunPrecisionTest(WString& stmFileName)
         DPoint3d tmpPoint;
         tmpPoint.x = val_x(e1);
         tmpPoint.y = val_y(e1);
-        draping->DrapePoint(&tmpPoint.z, NULL, NULL, NULL, &drapeType, tmpPoint);
+        draping->DrapePoint(&tmpPoint.z, NULL, NULL, NULL, drapeType, tmpPoint);
         if(tmpPoint.z != DBL_MAX) allTestPts.push_back(tmpPoint);
         }
     for (size_t i = 0; i < nbResolutions - 1; ++i)
@@ -472,7 +472,7 @@ void RunPrecisionTest(WString& stmFileName)
                     auto dtm = node->GetBcDTM();
                     if (dtm.get() != nullptr)
                         {
-                        node->GetBcDTM()->DrapePoint(&z, NULL, NULL, NULL, &drapeType, &tmpPoint);
+                        node->GetBcDTM()->DrapePoint(&z, NULL, NULL, NULL, drapeType, tmpPoint);
                         if (z != DBL_MAX)
                             {
                             precisionVals[i] += fabs(z - tmpPoint.z);
@@ -583,7 +583,7 @@ void RunDTMTriangulateTest()
         if (dtmCreateStatus == 0)
             {
             TerrainModel::BcDTMPtr bcDtmObjPtr;
-            bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+            bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
             dtmPtr = bcDtmObjPtr.get();
             }
         bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)allVerts.size());
@@ -591,7 +591,7 @@ void RunDTMTriangulateTest()
         if (status != SUCCESS)
             {
             std::cout << "ERROR!" << std::endl;
-            WString str(L"e:\\test");
+            WString str(L"e:\\newcliptm");
             str.append(L".dtm");
             bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
             }
@@ -600,7 +600,7 @@ void RunDTMTriangulateTest()
 
 void RunDTMSTMTriangulateTest()
     {
-    WString pathMeshes = L"E:\\makeTM\\test1";
+    WString pathMeshes = L"E:\\makeTM\\newcliptm";
     WString path = pathMeshes + WString(L".m");
     FILE* mesh = _wfopen(path.c_str(), L"rb");
     size_t nVerts = 0;
