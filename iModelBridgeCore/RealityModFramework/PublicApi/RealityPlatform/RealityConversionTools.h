@@ -32,6 +32,7 @@ public:
 
 private:
     static RealityDataDownload::sisterFileVector RealityDataToSisterVector(RealityPackage::RealityDataSourceCP dataSource);
+    static RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToMirrorVector(RealityPackage::RealityDataPtr realityData);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

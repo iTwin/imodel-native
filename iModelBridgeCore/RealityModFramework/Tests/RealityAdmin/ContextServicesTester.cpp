@@ -9,6 +9,7 @@
 //#ifdef REALITYMODFRAMEWORK_LOCALTEST
 
 #include <windows.h>
+#include <omp.h>
 
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
@@ -629,6 +630,14 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(packageFile);
 
     ASSERT_TRUE(downloadOrder.size() >= 1);
+    BeFileName::BeDeleteFile(packageFile.GetName());
+
+    //make sure none of the files are already in the cache
+#pragma omp parallel for
+    for(RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
+        for(RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
+            for(RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
+                BeFileName::BeDeleteFile(ufPair.second.c_str());
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
     ASSERT_TRUE(pDownload != NULL);
@@ -644,6 +653,8 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(status, reportString.c_str());
     ASSERT_TRUE(status == BeXmlStatus::BEXML_Success);
     int fileCount = 0;
+    Utf8String attributeName = "FileName";
+    WString filename;
 
     while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element)))
     {
@@ -652,10 +663,18 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
         IBeXmlReader::NodeType nodeType = reader->GetCurrentNodeType();
         if (IBeXmlReader::NodeType::NODE_TYPE_Element != nodeType
             || 0 == xmlNodeName.CompareTo("File"))
+            {
             fileCount++;
+            reader->ReadToNextAttribute(&attributeName, &filename);
+            ASSERT_TRUE(BeFileName::DoesPathExist(filename.c_str()));
+            }
     }
 
+    // clear the filesys
+#pragma omp parallel for
+    for (RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
+        for (RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
+            for (RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
+                BeFileName::BeDeleteFile(ufPair.second.c_str());
     ASSERT_TRUE(fileCount >= 4);
-
-    BeFileName::EmptyAndRemoveDirectory(packageFile.GetName());
 }
