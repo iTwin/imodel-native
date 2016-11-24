@@ -55,7 +55,8 @@ struct WSQuery
         //! Construct query for given class.
         //! @param[in] schemaName - schema name ("SchemaName")
         //! @param[in] className - class name only ("ClassName")
-        WSCLIENT_EXPORT WSQuery(Utf8StringCR schemaName, Utf8StringCR className);
+        //! @param[in] polymorphic - set true to add !poly to class name
+        WSCLIENT_EXPORT WSQuery(Utf8StringCR schemaName, Utf8StringCR className, bool polymorphic = false);
 
         //! Construct query for given class.
         WSCLIENT_EXPORT WSQuery(ECN::ECClassCR ecClass, bool polymorphic = false);
