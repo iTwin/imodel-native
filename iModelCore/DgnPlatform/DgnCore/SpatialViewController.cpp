@@ -368,7 +368,6 @@ void SpatialViewController::AddtoSceneQuick(SceneContextR context, QueryResults&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_CreateTerrain(TerrainContextR context) 
     {
-    DgnDb::VerifyClientThread();
 
     T_Super::_CreateTerrain(context);
 
@@ -398,7 +397,6 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_CreateScene(SceneContextR context)
     {
-    DgnDb::VerifyClientThread();
 
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);

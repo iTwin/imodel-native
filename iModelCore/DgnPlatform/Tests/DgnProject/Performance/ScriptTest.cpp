@@ -111,11 +111,12 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
         ASSERT_TRUE(m_db->Txns().IsTracking());
         }
 
-    m_defaultModelId = m_db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
+    DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*m_db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+    m_defaultModelId = m_db->Models().QuerySubModelId(physicalPartitionCode);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(s_seedFileInfo.categoryName));
+    m_defaultCategoryId = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, s_seedFileInfo.categoryName));
     }
 
 //---------------------------------------------------------------------------------------

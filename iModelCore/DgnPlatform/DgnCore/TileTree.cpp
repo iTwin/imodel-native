@@ -72,30 +72,7 @@ folly::Future<BentleyStatus> TileLoader::CreateTile()
         // If we failed to load from the db, try from the source.
         }
         
-    return _GetFromSource().then([=](BentleyStatus status)
-        {
-        if (status != SUCCESS)
-            {
-            if (m_loads != nullptr && m_loads->IsCanceled())
-                m_tile->SetNotLoaded();     // Mark it as not loaded so we can retry again.
-            else
-                m_tile->SetNotFound();
-            return ERROR;
-            }
-
-        if (SUCCESS != LoadTile())
-            {
-            m_tile->SetNotFound();
-            return ERROR;
-            }
-
-        m_tile->SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-        // On a successful load, store the tile in the cache.
-        _SaveToDb();
-
-        return SUCCESS;
-        });
+    return _GetFromSource();
     }
 
 //----------------------------------------------------------------------------------------
@@ -454,7 +431,32 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
 
     tile.SetIsQueued(); // mark as queued so we don't request it again.
 
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]() {return loader->CreateTile();}); // add to download queue
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [loader,loads,&tile]() 
+        {
+        return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
+            {
+            if (status != SUCCESS)
+                {
+                if (loads != nullptr && loads->IsCanceled())
+                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
+                else
+                    tile.SetNotFound();
+                return ERROR;
+                }
+
+            if (SUCCESS != loader->LoadTile())
+                {
+                tile.SetNotFound();
+                return ERROR;
+                }
+
+            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+
+            // On a successful load, store the tile in the cache.
+            loader->_SaveToDb();
+            return SUCCESS;
+            });
+        });    
     }
 
 /*---------------------------------------------------------------------------------**//**

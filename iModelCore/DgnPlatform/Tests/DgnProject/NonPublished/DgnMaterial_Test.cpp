@@ -72,13 +72,13 @@ TEST_F(MaterialTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName)
     {
-    DgnMaterialId childId = DgnMaterial::QueryMaterialId("Palette", childName, db),
-                  parentId = DgnMaterial::QueryMaterialId("Palette", parentName, db);
+    DgnMaterialId childId = DgnMaterial::QueryMaterialId(db, "Palette", childName),
+                  parentId = DgnMaterial::QueryMaterialId(db, "Palette", parentName);
     EXPECT_TRUE(childId.IsValid());
     EXPECT_TRUE(parentId.IsValid());
 
-    DgnMaterialCPtr child = DgnMaterial::QueryMaterial(childId, db),
-                    parent = DgnMaterial::QueryMaterial(parentId, db);
+    DgnMaterialCPtr child = DgnMaterial::Get(db, childId),
+                    parent = DgnMaterial::Get(db, parentId);
     EXPECT_TRUE(child.IsValid());
     EXPECT_TRUE(parent.IsValid());
     if (child.IsValid() && parent.IsValid())
@@ -174,8 +174,8 @@ TEST_F(MaterialTest, ParentChildClone)
 
     ExpectParent(*db2, "GrandchildA", "ChildA");
     ExpectParent(*db2, "ChildA", "Parent");
-    EXPECT_FALSE(DgnMaterial::QueryMaterialId(palette, "ChildB", *db2).IsValid());
-    EXPECT_FALSE(DgnMaterial::QueryMaterialId(palette, "GrandchildB", *db2).IsValid());
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(*db2, palette, "ChildB").IsValid());
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(*db2, palette, "GrandchildB").IsValid());
 
     // Importing a child when the parent already exists (by Code) associates the child to the existing parent.
     // The version of ChildB in the destination db does not have a parent material.
@@ -187,7 +187,7 @@ TEST_F(MaterialTest, ParentChildClone)
     ASSERT_TRUE(destGrandchildB.IsValid());
 
     ExpectParent(*db2, "GrandchildB", "ChildB");
-    DgnMaterialCPtr destChildB = DgnMaterial::QueryMaterial(DgnMaterial::QueryMaterialId(palette, "ChildB", *db2), *db2);
+    DgnMaterialCPtr destChildB = DgnMaterial::Get(*db2, DgnMaterial::QueryMaterialId(*db2, palette, "ChildB"));
     EXPECT_FALSE(destChildB->GetParentMaterialId().IsValid());
 
     db2->SaveChanges();

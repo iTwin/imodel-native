@@ -139,7 +139,7 @@ public:
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
     DGNPLATFORM_EXPORT void SetSubRectFromViewRect(BSIRectCP viewRect);
-    void SetSubRectNpc(DRange3dCR subRect);
+    DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}

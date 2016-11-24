@@ -571,7 +571,11 @@ public:
 //=======================================================================================
 struct TileViewport : DgnViewport
 {
-    virtual folly::Future<Render::Image> _CreateTile(ViewControllerR, DRange3dCR npc, Point2dCR tileSize) = 0;
+    BeMutex m_mutex;
+    BSIRect m_rect;
+
+    virtual folly::Future<BentleyStatus> _CreateTile(Render::Image&, ViewControllerR, DRange3dCR npc, Point2dCR tileSize) = 0;
+    BSIRect _GetViewRect() const override {return m_rect;}
     TileViewport() : DgnViewport(nullptr) {}
 };
 

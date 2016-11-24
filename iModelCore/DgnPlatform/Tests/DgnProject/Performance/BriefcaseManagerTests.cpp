@@ -93,7 +93,7 @@ public:
     DgnCode GetNextCode()
         {
         Utf8PrintfString name("%i-%i", m_codeValueBatch, m_codeValueIndex++);
-        return DgnMaterial::CreateMaterialCode("HOUSE", name);
+        return DgnMaterial::CreateCode(*m_db, "HOUSE", name);
         }
 
     DgnCodeSet PopulateCodeSet(uint32_t numCodes);

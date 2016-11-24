@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus JsonRenderMaterial::Load(DgnMaterialId materialId, DgnDbR dgnDb)
     {
-    DgnMaterialCPtr material = DgnMaterial::QueryMaterial(materialId, dgnDb);
+    DgnMaterialCPtr material = DgnMaterial::Get(dgnDb, materialId);
     return material.IsValid() ? material->GetRenderingAsset(m_value) : ERROR;
     }
 
