@@ -283,7 +283,7 @@ namespace IndexECPlugin.Source
                         Log.Logger.error(String.Format("Inner error message : {0}. Stack Trace : {1}", e.Message, e.StackTrace));
                         innerEx = innerEx.InnerException;
                         }
-                    throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
+                    throw new EnvironmentalException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
                     }
                 Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}. Stack trace : {2}", query.ID, e.Message, e.StackTrace));
                 if ( e is UserFriendlyException )
