@@ -353,15 +353,15 @@ ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId
     if (whereClause)
         {
         combinedWhere.append(whereClause);
-        combinedWhere.append(" AND ParentId=?");
+        combinedWhere.append(" AND ParentId.Id=?");
         }
     else
         {
-        combinedWhere.append("WHERE ParentId=?");
+        combinedWhere.append("WHERE ParentId.Id=?");
         }
 
     ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
-    iterator.GetStatement()->BindNavigationValue(1, categoryId, ECClassId());
+    iterator.GetStatement()->BindId(1, categoryId);
     return iterator;
     }
 
@@ -740,7 +740,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
             stat = DgnDbStatus::InvalidParent;
             return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
             }
-        categoryId = DgnCategoryId((uint64_t) v.GetLong());
+        categoryId = DgnCategoryId((uint64_t) v.GetNavigationInfo().GetIdAsLong());
         if (!categoryId.IsValid())
             {
             stat = DgnDbStatus::InvalidParent;
