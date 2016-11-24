@@ -6831,26 +6831,17 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup,
-                                                                                                 SMNodeGroupMasterHeader* pi_pGroupsHeader)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup)
     {
     if (!IsLoaded())
         Load();
 
-    auto groupID = pi_pGroup->GetID();
-    uint32_t headerSize = pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
+    pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     
-    pi_pGroupsHeader->AddNodeToGroup(groupID, ConvertBlockID(GetBlockID()), headerSize);
-
-    if (groupID != pi_pGroup->GetID())
-        pi_pGroupsHeader->AddGroup(pi_pGroup->GetID());
-
     if (!m_nodeHeader.m_IsLeaf)
         {
 
         SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup((uint32_t)this->GetLevel(), pi_pGroup);
-        if (nextGroup != pi_pGroup)
-            pi_pGroupsHeader->AddGroup(nextGroup->GetID());
 
         static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
             {
@@ -6871,7 +6862,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup);
             disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
             this->m_pSubNodeNoSplit = nullptr;
             }
@@ -6879,7 +6870,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
                 disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 this->m_apSubNodes[indexNode] = nullptr;
                 }
@@ -7739,7 +7730,7 @@ This method saves the points for streaming.
 template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
     BeFileName path(pi_pOutputDirPath.c_str());
-    if (pi_pGroupMode == SMNodeGroup::NORMAL)
+    if (pi_pGroupMode != SMNodeGroup::VIRTUAL)
         {
         BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
         if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
@@ -7748,33 +7739,29 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
             }
         }
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::StrategyType(pi_pGroupMode));
-
-    //group->InitGroupingStrategy<EXTENT>(SMNodeGroup::StrategyType(pi_pGroupMode));
-
-    HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
     SMIndexMasterHeader<EXTENT> oldMasterHeader;
     this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
-    // Force multi file (in case the originating dataset is single file)
+
+    // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
-    groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
 
-    // Add first group
-    groupMasterHeader->AddGroup(0);
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::StrategyType(pi_pGroupMode));
 
-    group->GetStrategy<EXTENT>()->AddOpenGroup(0, group);
+    auto strategy = group->GetStrategy<EXTENT>();
 
-    GetRootNode()->SaveGroupedNodeHeaders(group, groupMasterHeader);
+    strategy->SetOldMasterHeader(oldMasterHeader);
+
+    GetRootNode()->SaveGroupedNodeHeaders(group);
 
     // Handle all open groups 
-    group->GetStrategy<EXTENT>()->SaveAllOpenGroups();
+    strategy->SaveAllOpenGroups();
 
-    // Save group info file which contains info about all the generated groups (groupID and blockID)
+    // Save group master file which contains info about all the generated groups (groupID and blockID)
     BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
     masterHeaderPath.PopDir();
     masterHeaderPath.PopDir();
 
-    groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
+    strategy->SaveMasterHeader(masterHeaderPath);
 
     return SUCCESS;
     }

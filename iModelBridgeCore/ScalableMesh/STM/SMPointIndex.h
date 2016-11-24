@@ -587,7 +587,7 @@ public:
         }
 
     void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
