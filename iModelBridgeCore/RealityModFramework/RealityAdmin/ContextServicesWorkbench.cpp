@@ -161,7 +161,7 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
     case ServerType::DEV:
         tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
     case ServerType::PROD:
-        tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.3";
+        tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";
     default:
         tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
     }

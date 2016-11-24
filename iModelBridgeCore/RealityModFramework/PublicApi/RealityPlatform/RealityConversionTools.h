@@ -29,6 +29,9 @@ public:
     REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL);
     REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL);
     REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPackage::RealityDataPackagePtr package);
+
+private:
+    static RealityDataDownload::sisterFileVector RealityDataToSisterVector(RealityPackage::RealityDataSourceCP dataSource);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

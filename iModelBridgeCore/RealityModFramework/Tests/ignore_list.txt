@@ -12,3 +12,4 @@ ContextServicesTestFixture.USGSTest
 ContextServicesTestFixture.IndexTest
 ContextServicesTestFixture.PackageIdTest
 ContextServicesTestFixture.PackageDownloadTest
+ContextServicesTestFixture.COMPLETETest
