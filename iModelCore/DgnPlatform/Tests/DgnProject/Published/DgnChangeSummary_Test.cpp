@@ -305,7 +305,7 @@ TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(DgnChangeSummaryTestFixture, DISABLED_ValidateChangeSummaries)
+TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     {
     WCharCP fileName = L"SampleBuildingTest.bim";
     CreateSampleBuilding(fileName);
