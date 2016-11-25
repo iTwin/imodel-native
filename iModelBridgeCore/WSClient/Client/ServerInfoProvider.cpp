@@ -102,14 +102,11 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             finalResult->SetSuccess(result.GetValue());
             return;
             }
-        if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
+
+        WSError error(result.GetError());
+        if (error.GetStatus() != WSError::Status::ServerNotSupported)
             {
-            finalResult->SetError(result.GetError());
-            return;
-            }
-        if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
-            {
-            finalResult->SetError(result.GetError());
+            finalResult->SetError(error);
             return;
             }
 
