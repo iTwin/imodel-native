@@ -297,5 +297,33 @@
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/BeHttp-iOSXCTest.log</Files>
         </Bindings>
     </Part>
-    
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Integration Tests - used for debugging                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Product Name="BeHttp-IntegrationGtest" >
+        <SubPart PartName="Integration-Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Integration-Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+        <SubProduct ProductName="BeHttp-IntegrationTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeHttpIntegrationTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BeHttpIntegrationTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="BeHttp-IntegrationTests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="IntegrationTests-Published"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="IntegrationTests-Published" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BeHttp" />
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+    </Part>
+
 </BuildContext>
