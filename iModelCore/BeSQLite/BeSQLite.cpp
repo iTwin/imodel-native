@@ -4179,7 +4179,7 @@ BeBriefcaseBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, u
         else
             {
             double lastModifiedJulianDay = stmt.GetValueDouble(5);
-            DateTime::FromJulianDay(*lastModified, lastModifiedJulianDay, DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+            DateTime::FromJulianDay(*lastModified, lastModifiedJulianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
             }
         }
 
@@ -4257,7 +4257,7 @@ uint32_t DbEmbeddedFileTable::Iterator::Entry::GetChunkSize() const {return m_sq
 DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     {
     DateTime lastModified;
-    DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+    DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
     return lastModified;
     }
 
@@ -5021,7 +5021,7 @@ Utf8String BeIdSet::ToString() const
 DbResult Db::SaveCreationDate()
     {
     SavePropertyString(Properties::BeSQLiteBuild(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
-    return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String());
+    return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToString());
     }
 
 //---------------------------------------------------------------------------------------
