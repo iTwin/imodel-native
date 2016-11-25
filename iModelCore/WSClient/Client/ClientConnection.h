@@ -11,6 +11,7 @@
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
 #include "ClientConfiguration.h"
 #include "WebApi/WebApi.h"
+#include "ServerInfoProvider.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -25,7 +26,7 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
     {
     private:
         std::shared_ptr<ClientConfiguration> m_configuration;
-        std::shared_ptr<struct ServerInfoProvider> m_infoProvider;
+        std::shared_ptr<ServerInfoProvider> m_infoProvider;
 
         mutable BeCriticalSection m_webApiCS;
         mutable std::shared_ptr<WebApi> m_webApi;
