@@ -1554,10 +1554,10 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
 
+#if SM_TRACE_EMPTY_FEATURES
     if (bcdtm->GetTinHandle()->numFeatures > 0)
         {
         std::cout << "DTM SHOULD NOT HAVE FEATURES" << std::endl;
-//#ifndef NDEBUG
         bool dbg = true;
         if (dbg)
             {
@@ -1578,8 +1578,8 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
             fwrite(&indices[0], sizeof(int32_t), nIndices, meshBeforeClip);
             fclose(meshBeforeClip);
             }
-//#endif
         }
+#endif
 
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
